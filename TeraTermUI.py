@@ -383,7 +383,7 @@ class TeraTermUI(customtkinter.CTk):
         # Database
         appdata_path = os.getenv("APPDATA")
         self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
-        self.connection = sqlite3.connect("database.db")
+        self.connection = sqlite3.connect(self.db_path)
         self.cursor = self.connection.cursor()
         location = self.cursor.execute("SELECT location FROM user_data WHERE location IS NOT NULL").fetchall()
         host = self.cursor.execute("SELECT host FROM user_data WHERE host IS NOT NULL").fetchall()
@@ -2594,7 +2594,7 @@ class TeraTermUI(customtkinter.CTk):
                                 (self.scaling_optionemenu.get(),))
         elif len(resultScaling) == 1:
             self.cursor.execute("UPDATE user_data SET scaling=?", (self.scaling_optionemenu.get(),))
-        with closing(sqlite3.connect("database.db")) as connection:
+        with closing(sqlite3.connect(self.db_path)) as connection:
             with closing(connection.cursor()) as self.cursor:
                 self.connection.commit()
 
@@ -2707,6 +2707,7 @@ class TeraTermUI(customtkinter.CTk):
         width = right - left
         height = bottom - top
         self.hide_loading_screen()
+        time.sleep(0.5)
         screenshot = pyautogui.screenshot(region=(x, y - 50, width + 125, height + 150))
         text = pytesseract.image_to_string(screenshot)
         self.show_loading_screen_again()
@@ -3161,3 +3162,11 @@ class TeraTermUI(customtkinter.CTk):
 
 if __name__ == "__main__":
     try:
+        app = TeraTermUI()
+        app.after(201, lambda: app.iconbitmap("images/tera-term.ico"))
+        app.mainloop()
+    except KeyboardInterrupt:
+        try:
+            sys.exit(0)
+        except SystemExit:
+            os._exit(0)
