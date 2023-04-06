@@ -2602,6 +2602,7 @@ class TeraTermUI(customtkinter.CTk):
     def show_loading_screen(self):
         lang = self.language_menu.get()
         self.loading_screen = customtkinter.CTkToplevel(self)
+        self.loading_screen.grab_set()
         if lang == "English":
             self.loading_screen.title("Loading...")
         if lang == "Español":
@@ -2619,7 +2620,7 @@ class TeraTermUI(customtkinter.CTk):
         center_x = main_window_x + (main_window_width // 2) - (loading_screen_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (loading_screen_height // 2)
         self.loading_screen.geometry(f"{width}x{height}+{center_x + 105}+{center_y}")
-        self.loading_screen.attributes("-topmost", True)
+        self.loading_screen.attributes("-topmost", True, "-alpha", 0.90)
         self.loading_screen.resizable(False, False)
         self.loading_screen.after(201, lambda: self.loading_screen.iconbitmap("images/tera-term.ico"))
         if lang == "English":
@@ -2702,12 +2703,13 @@ class TeraTermUI(customtkinter.CTk):
     def capture_screenshot(self):
         window_title = "uprbay.uprb.edu - Tera Term VT"
         hwnd = win32gui.FindWindow(None, window_title)
+        win32gui.SetForegroundWindow(hwnd)
         left, top, right, bottom = win32gui.GetClientRect(hwnd)
         x, y = win32gui.ClientToScreen(hwnd, (left, top))
         width = right - left
         height = bottom - top
         self.hide_loading_screen()
-        time.sleep(0.5)
+        time.sleep(0.2)
         screenshot = pyautogui.screenshot(region=(x, y - 50, width + 125, height + 150))
         text = pytesseract.image_to_string(screenshot)
         self.show_loading_screen_again()
