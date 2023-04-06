@@ -4,7 +4,7 @@
 #define MyAppName "Tera Term UI"
 #define MyAppVersion "0.90"
 #define MyAppPublisher "Armando Del Valle Tejada"
-#define MyAppURL "github.com/Hanuwa/Tera-Term-UI"
+#define MyAppURL "github.com/Hanuwa/TeraTermUI"
 #define MyAppExeName "TeraTermUI.exe"
 
 [Setup]
@@ -36,7 +36,7 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 
 [CustomMessages]
 english.teraterm=Do you wish to install Tera Term too?
-spanish.teraterm=¿Desea instalar Tera Term también?
+spanish.teraterm=Â¿Desea instalar Tera Term tambiÃ©n?
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
