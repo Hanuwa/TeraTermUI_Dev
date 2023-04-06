@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.90 - 4/5/23
+# DATE - Started 1/1/23, Current Build v0.90 - 4/6/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1429,7 +1429,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.show_information_message(350, 265, "Reached Enrollment limit!")
                                     elif lang == "Español":
                                         self.show_information_message(350, 265, "Llegó al Límite de Matrícula")
-                                self.submit.configure(command=self.submit2_event)
+                                self.submit.configure(command=self.submit2_event_handler)
                                 self.bind("<Return>", lambda event: self.my_classes_event())
                             elif "INVALID ACTION" in text:
                                 self.uprb.UprbayTeraTermVt.type_keys(semester.strip())
@@ -2637,6 +2637,12 @@ class TeraTermUI(customtkinter.CTk):
 
         return self.loading_screen
 
+    def hide_loading_screen(self):
+        self.loading_screen.withdraw()
+
+    def show_loading_screen_again(self):
+        self.loading_screen.deiconify()
+
     # tells the loading screen when it should stop and close
     def update_loading_screen(self, loading_screen, task_done):
         if task_done.is_set():
@@ -2700,8 +2706,10 @@ class TeraTermUI(customtkinter.CTk):
         x, y = win32gui.ClientToScreen(hwnd, (left, top))
         width = right - left
         height = bottom - top
+        self.hide_loading_screen()
         screenshot = pyautogui.screenshot(region=(x, y - 50, width + 125, height + 150))
         text = pytesseract.image_to_string(screenshot)
+        self.show_loading_screen_again()
         return text
 
     # Error message image
@@ -3153,11 +3161,3 @@ class TeraTermUI(customtkinter.CTk):
 
 if __name__ == "__main__":
     try:
-        app = TeraTermUI()
-        app.after(201, lambda: app.iconbitmap("images/tera-term.ico"))
-        app.mainloop()
-    except KeyboardInterrupt:
-        try:
-            sys.exit(0)
-        except SystemExit:
-            os._exit(0)
