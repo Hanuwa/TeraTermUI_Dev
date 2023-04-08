@@ -74,8 +74,7 @@ class TeraTermUI(customtkinter.CTk):
         # path for tesseract application
         tesseract_path = os.path.join(os.path.dirname(__file__), "Tesseract-OCR")
         pytesseract.pytesseract.tesseract_cmd = os.path.join(tesseract_path, "tesseract.exe")
-        tessdata_prefix = os.path.join(tesseract_path, 'tessdata')
-        os.environ['TESSDATA_PREFIX'] = tessdata_prefix
+        self.tessdata_dir_config = f"--tessdata-dir {os.path.join(tesseract_path, 'tessdata')}"
 
         # configure grid layout (4x4)
         self.grid_columnconfigure(1, weight=1)
