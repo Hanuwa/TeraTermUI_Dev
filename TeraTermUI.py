@@ -74,7 +74,8 @@ class TeraTermUI(customtkinter.CTk):
         # path for tesseract application
         tesseract_path = os.path.join(os.path.dirname(__file__), "Tesseract-OCR")
         pytesseract.pytesseract.tesseract_cmd = os.path.join(tesseract_path, "tesseract.exe")
-        self.tessdata_dir_config = f"--tessdata-dir {os.path.join(tesseract_path, 'tessdata')}"
+        tessdata_prefix = os.path.join(tesseract_path, 'tessdata')
+        os.environ['TESSDATA_PREFIX'] = tessdata_prefix
 
         # configure grid layout (4x4)
         self.grid_columnconfigure(1, weight=1)
@@ -476,123 +477,126 @@ class TeraTermUI(customtkinter.CTk):
         if self.test_connection(lang) and self.check_server():
             if self.checkIfProcessRunning("ttermpro"):
                 try:
-                    ssn = int(self.ssn_entry.get().strip())
-                    code = int(self.code_entry.get().strip())
-                    if re.match("^(?!666|000|9\\d{2})\\d{3}(?!00)\\d{2}(?!0{4})\\d{4}$", str(ssn)) \
-                            and len(str(code)) == 4:
-                        try:
+                    screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                    screenshot_thread.start()
+                    screenshot_thread.join()
+                    text = self.capture_screenshot()
+                    error_occurred = False
+                    if "ACCESO AL SISTEMA" not in text and "Press return to continue" in text:
+                        send_keys("{ENTER 3}")
+                    if "ACCESO AL SISTEMA" not in text and "Press return to continue" not in text:
+                        raise Exception()
+                except Exception as e:
+                    error_occurred = True
+                    if lang == "English":
+                        self.show_error_message(300, 215, "Unknown Error! Please try again")
+                    if lang == "Español":
+                        self.show_error_message(300, 215, "¡Error Desconocido! Por favor intente de nuevo")
+                if not error_occurred:
+                    try:
+                        ssn = int(self.ssn_entry.get().strip())
+                        code = int(self.code_entry.get().strip())
+                        if re.match("^(?!666|000|9\\d{2})\\d{3}(?!00)\\d{2}(?!0{4})\\d{4}$", str(ssn)) \
+                                and len(str(code)) == 4:
+                            publicKey1, privateKey1 = rsa.newkeys(1024)
+                            publicKey2, privateKey2 = rsa.newkeys(1024)
+                            ssnEnc = rsa.encrypt(str(ssn).encode(), publicKey1)
+                            codeEnc = rsa.encrypt(str(code).encode(), publicKey2)
+                            ctypes.windll.user32.BlockInput(True)
+                            uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
+                            uprb_window.wait('visible', timeout=100)
+                            self.uprb.UprbayTeraTermVt.type_keys(rsa.decrypt(ssnEnc, privateKey1).decode())
+                            self.uprb.UprbayTeraTermVt.type_keys(rsa.decrypt(codeEnc, privateKey2).decode())
+                            send_keys("{ENTER}")
                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
                             screenshot_thread.start()
                             screenshot_thread.join()
                             text = self.capture_screenshot()
-                            if "ACCESO AL SISTEMA" not in text and "Press return to continue" in text:
-                                send_keys("{ENTER 3}")
-                            if "ACCESO AL SISTEMA" not in text and "Press return to continue" not in text:
-                                raise Exception()
-                        except Exception as e:
-                            if lang == "English":
-                                self.show_error_message(300, 215, "Unknown Error! Please try again")
-                            if lang == "Español":
-                                self.show_error_message(300, 215, "¡Error Desconocido! Por favor intente de nuevo")
-                            return
-                        publicKey1, privateKey1 = rsa.newkeys(1024)
-                        publicKey2, privateKey2 = rsa.newkeys(1024)
-                        ssnEnc = rsa.encrypt(str(ssn).encode(), publicKey1)
-                        codeEnc = rsa.encrypt(str(code).encode(), publicKey2)
-                        ctypes.windll.user32.BlockInput(True)
-                        uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                        uprb_window.wait('visible', timeout=100)
-                        self.uprb.UprbayTeraTermVt.type_keys(rsa.decrypt(ssnEnc, privateKey1).decode())
-                        self.uprb.UprbayTeraTermVt.type_keys(rsa.decrypt(codeEnc, privateKey2).decode())
-                        send_keys("{ENTER}")
-                        if "ID NOT ON FILE" in text or "INVALID PASSWORD AND/OR BIRTHDATE" in text:
+                            if "ID NOT ON FILE" in text or "INVALID PASSWORD AND/OR BIRTHDATE" in text:
+                                self.bind("<Return>", lambda event: self.tuition_event_handler())
+                                if "INVALID PASSWORD AND/OR BIRTHDATE" in text:
+                                    send_keys("{TAB 2}")
+                                if lang == "English":
+                                    self.show_error_message(300, 215, "Error! Invalid SSN or Code")
+                                if lang == "Español":
+                                    self.show_error_message(300, 215, "¡Error! SSN y Código Incorrecto")
+                            elif "ID NOT ON FILE" not in text or "INVALID PASSWORD AND/OR BIRTHDATE" not in text:
+                                screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                                screenshot_thread.start()
+                                screenshot_thread.join()
+                                text = self.capture_screenshot()
+                                self.set_focus_to_tkinter()
+                                self.bind("<Return>", lambda event: self.my_classes_event())
+                                self.reset_activity_timer(None)
+                                self.start_check_idle_thread()
+                                self.tabview.grid(row=0, column=1, padx=(20, 20), pady=(20, 0))
+                                self.tabview.tab("Enroll/Matricular").grid_columnconfigure(3, weight=2)
+                                self.tabview.tab("Search/Buscar").grid_columnconfigure(3, weight=2)
+                                self.tabview.tab("Other/Otros").grid_columnconfigure(3, weight=2)
+                                self.t_buttons_frame.grid(row=2, column=1, padx=(20, 20), pady=(20, 0))
+                                self.t_buttons_frame.grid_columnconfigure(2, weight=1)
+                                self.explanation4.grid(row=0, column=1, padx=(70, 10), pady=(10, 20))
+                                self.e_classes.grid(row=1, column=1, padx=(0, 140), pady=(0, 0))
+                                self.e_classes_entry.grid(row=1, column=1, padx=(45, 0), pady=(0, 0))
+                                self.section.grid(row=2, column=1, padx=(0, 150), pady=(20, 0))
+                                self.section_entry.grid(row=2, column=1, padx=(45, 0), pady=(20, 0))
+                                self.e_semester.grid(row=3, column=1, padx=(0, 160), pady=(20, 0))
+                                self.e_semester_entry.grid(row=3, column=1, padx=(45, 0), pady=(20, 0))
+                                self.register_menu.grid(row=4, column=1, padx=(45, 0), pady=(20, 0))
+                                self.submit.grid(row=5, column=1, padx=(45, 0), pady=(40, 0))
+                                if lang == "English":
+                                    self.explanation5.grid(row=0, column=1, padx=(60, 10), pady=(10, 20))
+                                    self.s_classes.grid(row=1, column=1, padx=(0, 140), pady=(0, 0))
+                                    self.s_classes_entry.grid(row=1, column=1, padx=(45, 0), pady=(0, 0))
+                                    self.s_semester.grid(row=2, column=1, padx=(0, 160), pady=(20, 0))
+                                    self.s_semester_entry.grid(row=2, column=1, padx=(45, 0), pady=(20, 0))
+                                    self.show_all.grid(row=3, column=1, padx=(45, 0), pady=(20, 0))
+                                    self.search.grid(row=4, column=1, padx=(45, 0), pady=(40, 0))
+                                elif lang == "Español":
+                                    self.explanation5.grid(row=0, column=1, padx=(80, 10), pady=(10, 20))
+                                    self.s_classes.grid(row=1, column=1, padx=(0, 115), pady=(0, 0))
+                                    self.s_classes_entry.grid(row=1, column=1, padx=(75, 10), pady=(0, 0))
+                                    self.s_semester.grid(row=2, column=1, padx=(0, 140), pady=(20, 0))
+                                    self.s_semester_entry.grid(row=2, column=1, padx=(75, 10), pady=(20, 0))
+                                    self.show_all.grid(row=3, column=1, padx=(75, 10), pady=(20, 0))
+                                    self.search.grid(row=4, column=1, padx=(80, 10), pady=(40, 0))
+                                if lang == "English":
+                                    self.explanation6.grid(row=0, column=1, padx=(90, 10), pady=(10, 20))
+                                    self.menu_intro.grid(row=1, column=1, padx=(70, 0), pady=(0, 0))
+                                    self.menu.grid(row=2, column=1, padx=(0, 115), pady=(10, 0))
+                                    self.menu_entry.grid(row=2, column=1, padx=(70, 0), pady=(10, 0))
+                                    self.menu_semester.grid(row=3, column=1, padx=(0, 140), pady=(10, 0))
+                                    self.menu_semester_entry.grid(row=3, column=1, padx=(70, 0), pady=(20, 0))
+                                    self.menu_submit.grid(row=5, column=1, padx=(70, 0), pady=(40, 0))
+                                elif lang == "Español":
+                                    self.explanation6.grid(row=0, column=1, padx=(60, 10), pady=(10, 20))
+                                    self.menu_intro.grid(row=1, column=1, padx=(45, 0), pady=(0, 0))
+                                    self.menu.grid(row=2, column=1, padx=(0, 145), pady=(10, 0))
+                                    self.menu_entry.grid(row=2, column=1, padx=(45, 0), pady=(10, 0))
+                                    self.menu_semester.grid(row=3, column=1, padx=(0, 160), pady=(10, 0))
+                                    self.menu_semester_entry.grid(row=3, column=1, padx=(45, 0), pady=(20, 0))
+                                    self.menu_submit.grid(row=5, column=1, padx=(45, 0), pady=(40, 0))
+                                self.back3.grid(row=4, column=0, padx=(0, 10), pady=(0, 0))
+                                self.show_classes.grid(row=4, column=1, padx=(0, 10), pady=(0, 0))
+                                self.multiple.grid(row=4, column=2, padx=(0, 0), pady=(0, 0))
+                                self.student_frame.grid_forget()
+                                self.s_buttons_frame.grid_forget()
+                                self.ssn_entry.delete(0, "end")
+                                self.code_entry.delete(0, "end")
+                                del ssn, code, publicKey1, privateKey1, publicKey2, privateKey2, ssnEnc, codeEnc
+                                gc.collect()
+                        else:
                             self.bind("<Return>", lambda event: self.tuition_event_handler())
-                            if "INVALID PASSWORD AND/OR BIRTHDATE" in text:
-                                send_keys("{TAB 2}")
                             if lang == "English":
                                 self.show_error_message(300, 215, "Error! Invalid SSN or Code")
-                            if lang == "Español":
+                            elif lang == "Español":
                                 self.show_error_message(300, 215, "¡Error! SSN y Código Incorrecto")
-                        elif "ID NOT ON FILE" not in text or "INVALID PASSWORD AND/OR BIRTHDATE" not in text:
-                            self.set_focus_to_tkinter()
-                            self.bind("<Return>", lambda event: self.my_classes_event())
-                            self.reset_activity_timer(None)
-                            self.start_check_idle_thread()
-                            self.tabview.grid(row=0, column=1, padx=(20, 20), pady=(20, 0))
-                            self.tabview.tab("Enroll/Matricular").grid_columnconfigure(3, weight=2)
-                            self.tabview.tab("Search/Buscar").grid_columnconfigure(3, weight=2)
-                            self.tabview.tab("Other/Otros").grid_columnconfigure(3, weight=2)
-                            self.t_buttons_frame.grid(row=2, column=1, padx=(20, 20), pady=(20, 0))
-                            self.t_buttons_frame.grid_columnconfigure(2, weight=1)
-                            self.explanation4.grid(row=0, column=1, padx=(70, 10), pady=(10, 20))
-                            self.e_classes.grid(row=1, column=1, padx=(0, 140), pady=(0, 0))
-                            self.e_classes_entry.grid(row=1, column=1, padx=(45, 0), pady=(0, 0))
-                            self.section.grid(row=2, column=1, padx=(0, 150), pady=(20, 0))
-                            self.section_entry.grid(row=2, column=1, padx=(45, 0), pady=(20, 0))
-                            self.e_semester.grid(row=3, column=1, padx=(0, 160), pady=(20, 0))
-                            self.e_semester_entry.grid(row=3, column=1, padx=(45, 0), pady=(20, 0))
-                            self.register_menu.grid(row=4, column=1, padx=(45, 0), pady=(20, 0))
-                            self.submit.grid(row=5, column=1, padx=(45, 0), pady=(40, 0))
-                            if lang == "English":
-                                self.explanation5.grid(row=0, column=1, padx=(60, 10), pady=(10, 20))
-                                self.s_classes.grid(row=1, column=1, padx=(0, 140), pady=(0, 0))
-                                self.s_classes_entry.grid(row=1, column=1, padx=(45, 0), pady=(0, 0))
-                                self.s_semester.grid(row=2, column=1, padx=(0, 160), pady=(20, 0))
-                                self.s_semester_entry.grid(row=2, column=1, padx=(45, 0), pady=(20, 0))
-                                self.show_all.grid(row=3, column=1, padx=(45, 0), pady=(20, 0))
-                                self.search.grid(row=4, column=1, padx=(45, 0), pady=(40, 0))
-                            elif lang == "Español":
-                                self.explanation5.grid(row=0, column=1, padx=(80, 10), pady=(10, 20))
-                                self.s_classes.grid(row=1, column=1, padx=(0, 115), pady=(0, 0))
-                                self.s_classes_entry.grid(row=1, column=1, padx=(75, 10), pady=(0, 0))
-                                self.s_semester.grid(row=2, column=1, padx=(0, 140), pady=(20, 0))
-                                self.s_semester_entry.grid(row=2, column=1, padx=(75, 10), pady=(20, 0))
-                                self.show_all.grid(row=3, column=1, padx=(75, 10), pady=(20, 0))
-                                self.search.grid(row=4, column=1, padx=(80, 10), pady=(40, 0))
-                            if lang == "English":
-                                self.explanation6.grid(row=0, column=1, padx=(90, 10), pady=(10, 20))
-                                self.menu_intro.grid(row=1, column=1, padx=(70, 0), pady=(0, 0))
-                                self.menu.grid(row=2, column=1, padx=(0, 115), pady=(10, 0))
-                                self.menu_entry.grid(row=2, column=1, padx=(70, 0), pady=(10, 0))
-                                self.menu_semester.grid(row=3, column=1, padx=(0, 140), pady=(10, 0))
-                                self.menu_semester_entry.grid(row=3, column=1, padx=(70, 0), pady=(20, 0))
-                                self.menu_submit.grid(row=5, column=1, padx=(70, 0), pady=(40, 0))
-                            elif lang == "Español":
-                                self.explanation6.grid(row=0, column=1, padx=(60, 10), pady=(10, 20))
-                                self.menu_intro.grid(row=1, column=1, padx=(45, 0), pady=(0, 0))
-                                self.menu.grid(row=2, column=1, padx=(0, 145), pady=(10, 0))
-                                self.menu_entry.grid(row=2, column=1, padx=(45, 0), pady=(10, 0))
-                                self.menu_semester.grid(row=3, column=1, padx=(0, 160), pady=(10, 0))
-                                self.menu_semester_entry.grid(row=3, column=1, padx=(45, 0), pady=(20, 0))
-                                self.menu_submit.grid(row=5, column=1, padx=(45, 0), pady=(40, 0))
-                            self.back3.grid(row=4, column=0, padx=(0, 10), pady=(0, 0))
-                            self.show_classes.grid(row=4, column=1, padx=(0, 10), pady=(0, 0))
-                            self.multiple.grid(row=4, column=2, padx=(0, 0), pady=(0, 0))
-                            self.student_frame.grid_forget()
-                            self.s_buttons_frame.grid_forget()
-                            self.explanation3.grid_forget()
-                            self.ssn.grid_forget()
-                            self.ssn_entry.grid_forget()
-                            self.code.grid_forget()
-                            self.code_entry.grid_forget()
-                            self.back2.grid_forget()
-                            self.system.grid_forget()
-                            self.ssn_entry.delete(0, "end")
-                            self.code_entry.delete(0, "end")
-                            del ssn, code, publicKey1, privateKey1, publicKey2, privateKey2, ssnEnc, codeEnc
-                            gc.collect()
-                    else:
+                    except ValueError:
                         self.bind("<Return>", lambda event: self.tuition_event_handler())
                         if lang == "English":
                             self.show_error_message(300, 215, "Error! Invalid SSN or Code")
                         elif lang == "Español":
                             self.show_error_message(300, 215, "¡Error! SSN y Código Incorrecto")
-                except ValueError:
-                    self.bind("<Return>", lambda event: self.tuition_event_handler())
-                    if lang == "English":
-                        self.show_error_message(300, 215, "Error! Invalid SSN or Code")
-                    elif lang == "Español":
-                        self.show_error_message(300, 215, "¡Error! SSN y Código Incorrecto")
             else:
                 self.bind("<Return>", lambda event: self.tuition_event_handler())
                 if lang == "English":
@@ -1159,37 +1163,6 @@ class TeraTermUI(customtkinter.CTk):
         self.m_remove.configure(state="disabled")
         self.tabview.grid_forget()
         self.t_buttons_frame.grid_forget()
-        self.explanation4.grid_forget()
-        self.e_classes.grid_forget()
-        self.e_classes_entry.grid_forget()
-        self.section.grid_forget()
-        self.section_entry.grid_forget()
-        self.e_semester.grid_forget()
-        self.e_semester_entry.grid_forget()
-        self.register_menu.grid_forget()
-        self.submit.grid_forget()
-        self.explanation5.grid_forget()
-        self.s_classes.grid_forget()
-        self.s_classes_entry.grid_forget()
-        self.s_semester.grid_forget()
-        self.s_semester_entry.grid_forget()
-        self.show_all.grid_forget()
-        self.search.grid_forget()
-        self.explanation6.grid_forget()
-        self.menu_intro.grid_forget()
-        self.menu.grid_forget()
-        self.menu_semester.grid_forget()
-        self.menu_entry.grid_forget()
-        self.menu_semester_entry.grid_forget()
-        self.menu_submit.grid_forget()
-        self.go_next_1VE.grid_forget()
-        self.go_next_1GP.grid_forget()
-        self.go_next_4CM.grid_forget()
-        self.go_next_409.grid_forget()
-        self.go_next_683.grid_forget()
-        self.back3.grid_forget()
-        self.show_classes.grid_forget()
-        self.multiple.grid_forget()
 
     def submit_multiple_event_handler(self):
         task_done = threading.Event()
@@ -2057,12 +2030,6 @@ class TeraTermUI(customtkinter.CTk):
                     self.system.grid(row=5, column=1, padx=(10, 0), pady=(0, 0))
                     self.a_buttons_frame.grid_forget()
                     self.authentication_frame.grid_forget()
-                    self.explanation.grid_forget()
-                    self.explanation2.grid_forget()
-                    self.username.grid_forget()
-                    self.username_entry.grid_forget()
-                    self.student.grid_forget()
-                    self.back.grid_forget()
                 elif username != "students":
                     self.bind("<Return>", lambda event: self.student_event_handler())
                     if lang == "English":
@@ -2212,11 +2179,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.host.grid(row=2, column=0, columnspan=2, padx=(0, 20), pady=(20, 20))
             elif self.language_menu.get() == "English":
                 self.host.grid(row=2, column=0, columnspan=2, padx=(20, 0), pady=(20, 20))
-            self.go_next_1VE.grid_forget()
-            self.go_next_1GP.grid_forget()
-            self.go_next_683.grid_forget()
-            self.go_next_409.grid_forget()
-            self.go_next_683.grid_forget()
             self.go_next_1VE.configure(state="disabled")
             self.go_next_1GP.configure(state="disabled")
             self.go_next_409.configure(state="disabled")
@@ -2232,35 +2194,8 @@ class TeraTermUI(customtkinter.CTk):
             self.s_buttons_frame.grid_forget()
             self.tabview.grid_forget()
             self.t_buttons_frame.grid_forget()
-            self.explanation.grid_forget()
-            self.explanation2.grid_forget()
-            self.username.grid_forget()
-            self.username_entry.grid_forget()
-            self.back.grid_forget()
-            self.student.grid_forget()
-            self.explanation3.grid_forget()
-            self.ssn.grid_forget()
-            self.ssn_entry.grid_forget()
-            self.code.grid_forget()
-            self.code_entry.grid_forget()
-            self.back2.grid_forget()
-            self.system.grid_forget()
-            self.explanation4.grid_forget()
-            self.e_classes.grid_forget()
-            self.e_classes_entry.grid_forget()
-            self.submit.grid_forget()
-            self.search.grid_forget()
-            self.explanation5.grid_forget()
-            self.explanation6.grid_forget()
-            self.menu_intro.grid_forget()
-            self.menu.grid_forget()
-            self.menu_semester.grid_forget()
-            self.menu_entry.grid_forget()
-            self.menu_submit.grid_forget()
-            self.s_classes.grid_forget()
-            self.s_classes_entry.grid_forget()
-            self.back3.grid_forget()
-            self.show_all.grid_forget()
+            self.multiple_frame.grid_forget()
+            self.m_button_frame.grid_forget()
             self.username_entry.delete(0, "end")
             self.ssn_entry.delete(0, "end")
             self.code_entry.delete(0, "end")
@@ -2330,14 +2265,6 @@ class TeraTermUI(customtkinter.CTk):
         self.multiple.grid(row=4, column=2, padx=(0, 0), pady=(0, 0))
         self.multiple_frame.grid_forget()
         self.m_button_frame.grid_forget()
-        self.explanation7.grid_forget()
-        self.m_classes_entry.grid_forget()
-        self.m_section_entry.grid_forget()
-        self.m_semester_entry.grid_forget()
-        self.m_register_menu.grid_forget()
-        self.m_add.grid_forget()
-        self.m_remove.grid_forget()
-        self.back4.grid_forget()
 
     # function for changing language
     def change_language_event(self, lang):
