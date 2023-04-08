@@ -2637,7 +2637,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # captures a screenshot of tera term and perform OCR
     def capture_screenshot(self):
-        screen = screeninfo.get_monitors()[1]
+        screen = screeninfo.get_monitors()[0]
         settings = win32api.EnumDisplaySettings(None, -1)
         refresh_rate = settings.DisplayFrequency
         window_title = "uprbay.uprb.edu - Tera Term VT"
