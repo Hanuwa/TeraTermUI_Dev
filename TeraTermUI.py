@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.90 - 4/6/23
+# DATE - Started 1/1/23, Current Build v0.90 - 4/823
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -21,12 +21,14 @@ from contextlib import closing
 from tkinter import filedialog
 import gc
 import pyautogui
+import win32api
 import win32gui
 import subprocess
 import pygetwindow as gw
 from collections import deque
 from CTkMessagebox import CTkMessagebox
 from pywinauto.application import Application
+import screeninfo
 from pywinauto.keyboard import send_keys
 import pytesseract
 import sqlite3
@@ -357,6 +359,8 @@ class TeraTermUI(customtkinter.CTk):
         self.m_register_menu6 = customtkinter.CTkOptionMenu(master=self.multiple_frame, values=["Register", "Drop"],
                                                             height=30)
         self.m_register_menu6.set("Choose")
+        # Get the current display settings
+
         # Top level window management, flags and counters
         self.check = False
         self.status = None
@@ -383,7 +387,7 @@ class TeraTermUI(customtkinter.CTk):
         # Database
         appdata_path = os.getenv("APPDATA")
         self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
-        self.connection = sqlite3.connect(self.db_path)
+        self.connection = sqlite3.connect("database.db")
         self.cursor = self.connection.cursor()
         location = self.cursor.execute("SELECT location FROM user_data WHERE location IS NOT NULL").fetchall()
         host = self.cursor.execute("SELECT host FROM user_data WHERE host IS NOT NULL").fetchall()
@@ -443,9 +447,6 @@ class TeraTermUI(customtkinter.CTk):
                                 hover_color=("darkred", "darkblue", "darkblue"))
         response = msg.get()
         if response == "Yes" or response == "Sí":
-            if hasattr(self, 'monitor_thread') and self.monitor_thread.is_alive():
-                self.stop_monitor.set()
-                self.monitor_thread.join()
             if hasattr(self, 'thread') and self.thread.is_alive():
                 self.stop_check_idle.set()
                 self.thread.join()
@@ -479,6 +480,21 @@ class TeraTermUI(customtkinter.CTk):
                     code = int(self.code_entry.get().strip())
                     if re.match("^(?!666|000|9\\d{2})\\d{3}(?!00)\\d{2}(?!0{4})\\d{4}$", str(ssn)) \
                             and len(str(code)) == 4:
+                        try:
+                            screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                            screenshot_thread.start()
+                            screenshot_thread.join()
+                            text = self.capture_screenshot()
+                            if "ACCESO AL SISTEMA" not in text and "Press return to continue" in text:
+                                send_keys("{ENTER 3}")
+                            if "ACCESO AL SISTEMA" not in text and "Press return to continue" not in text:
+                                raise Exception()
+                        except Exception as e:
+                            if lang == "English":
+                                self.show_error_message(300, 215, "Unknown Error! Please try again")
+                            if lang == "Español":
+                                self.show_error_message(300, 215, "¡Error Desconocido! Por favor intente de nuevo")
+                            return
                         publicKey1, privateKey1 = rsa.newkeys(1024)
                         publicKey2, privateKey2 = rsa.newkeys(1024)
                         ssnEnc = rsa.encrypt(str(ssn).encode(), publicKey1)
@@ -489,10 +505,6 @@ class TeraTermUI(customtkinter.CTk):
                         self.uprb.UprbayTeraTermVt.type_keys(rsa.decrypt(ssnEnc, privateKey1).decode())
                         self.uprb.UprbayTeraTermVt.type_keys(rsa.decrypt(codeEnc, privateKey2).decode())
                         send_keys("{ENTER}")
-                        screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                        screenshot_thread.start()
-                        screenshot_thread.join()
-                        text = self.capture_screenshot()
                         if "ID NOT ON FILE" in text or "INVALID PASSWORD AND/OR BIRTHDATE" in text:
                             self.bind("<Return>", lambda event: self.tuition_event_handler())
                             if "INVALID PASSWORD AND/OR BIRTHDATE" in text:
@@ -2027,7 +2039,6 @@ class TeraTermUI(customtkinter.CTk):
                     time.sleep(3)
                     send_keys("{ENTER 3}")
                     self.set_focus_to_tkinter()
-                    ctypes.windll.user32.BlockInput(False)
                     self.student_frame.grid(row=0, column=1, padx=(20, 20), pady=(20, 0))
                     self.student_frame.grid_columnconfigure(2, weight=1)
                     self.s_buttons_frame.grid(row=2, column=1, padx=(20, 20), pady=(20, 0))
@@ -2104,7 +2115,6 @@ class TeraTermUI(customtkinter.CTk):
                             .connect(title="Tera Term - [disconnected] VT", timeout=100)
                         uprb_window = self.uprb.window(title="Tera Term - [disconnected] VT")
                         uprb_window.wait('visible', timeout=100)
-
                         hostText = self.uprb.TeraTermDisconnectedVt.child_window(title="Host:",
                                                                                  control_type="Edit").wrapper_object()
                         hostText.type_keys('uprbay.uprb.edu', with_spaces=False)
@@ -2342,7 +2352,7 @@ class TeraTermUI(customtkinter.CTk):
                                   "El propósito de esta aplicación"
                                   " es facilitar el proceso de inscripción y baja de clases, "
                                   "dado que Tera Term usa la interfaz de terminal, "
-                                  "es difícil para los nuevos usuarios usar y "
+                                  "es difícil nuevos usuarios usar y "
                                   "aprender a navegar y hacer cosas en "
                                   "Tera Term. "
                                   "Esta aplicación tiene una interfaz de usuario muy agradable "
@@ -2594,7 +2604,7 @@ class TeraTermUI(customtkinter.CTk):
                                 (self.scaling_optionemenu.get(),))
         elif len(resultScaling) == 1:
             self.cursor.execute("UPDATE user_data SET scaling=?", (self.scaling_optionemenu.get(),))
-        with closing(sqlite3.connect(self.db_path)) as connection:
+        with closing(sqlite3.connect("database.db")) as connection:
             with closing(connection.cursor()) as self.cursor:
                 self.connection.commit()
 
@@ -2685,7 +2695,7 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         HOST = "uprbay.uprb.edu"
         PORT = 22
-        timeout = 3  # increase timeout to 5 seconds
+        timeout = 3
 
         try:
             with socket.create_connection((HOST, PORT), timeout=timeout) as sock:
@@ -2701,6 +2711,9 @@ class TeraTermUI(customtkinter.CTk):
 
     # captures a screenshot of tera term and perform OCR
     def capture_screenshot(self):
+        screen = screeninfo.get_monitors()[1]
+        settings = win32api.EnumDisplaySettings(None, -1)
+        refresh_rate = settings.DisplayFrequency
         window_title = "uprbay.uprb.edu - Tera Term VT"
         hwnd = win32gui.FindWindow(None, window_title)
         win32gui.SetForegroundWindow(hwnd)
@@ -2708,7 +2721,8 @@ class TeraTermUI(customtkinter.CTk):
         x, y = win32gui.ClientToScreen(hwnd, (left, top))
         width = right - left
         height = bottom - top
-        self.hide_loading_screen()
+        if screen.width >= 1920 and screen.height <= 1080 and refresh_rate <= 60:
+            self.hide_loading_screen()
         time.sleep(0.2)
         screenshot = pyautogui.screenshot(region=(x, y - 50, width + 125, height + 150))
         text = pytesseract.image_to_string(screenshot)
@@ -2887,7 +2901,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.num_checks += 1
                 else:
                     pass
-            if self.num_checks == 6:
+            if self.num_checks == 15:
                 break
             time.sleep(3)
 
