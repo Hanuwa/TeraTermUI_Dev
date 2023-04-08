@@ -2647,7 +2647,7 @@ class TeraTermUI(customtkinter.CTk):
         x, y = win32gui.ClientToScreen(hwnd, (left, top))
         width = right - left
         height = bottom - top
-        if screen.width >= 1920 and screen.height <= 1080 and refresh_rate <= 60:
+        if screen.width <= 1920 and screen.height <= 1080 and refresh_rate <= 60:
             self.hide_loading_screen()
         time.sleep(0.2)
         screenshot = pyautogui.screenshot(region=(x, y - 50, width + 125, height + 150))
