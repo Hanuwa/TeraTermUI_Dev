@@ -26,6 +26,7 @@ import win32gui
 import subprocess
 import pygetwindow as gw
 from collections import deque
+from CTkToolTip import CTkToolTip
 from CTkMessagebox import CTkMessagebox
 from pywinauto.application import Application
 import screeninfo
@@ -171,6 +172,8 @@ class TeraTermUI(customtkinter.CTk):
         self.back = customtkinter.CTkButton(master=self.a_buttons_frame, fg_color="transparent", border_width=2,
                                             text="Back",
                                             text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
+        self.back_tooltip = CTkToolTip(self.back, message="Go back to the main menu\n"
+                                                          "of the application")
 
         # Student Information
         self.student_frame = customtkinter.CTkFrame(self, corner_radius=10)
@@ -194,6 +197,8 @@ class TeraTermUI(customtkinter.CTk):
         self.back2 = customtkinter.CTkButton(master=self.s_buttons_frame, fg_color="transparent", border_width=2,
                                              text="Back",
                                              text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
+        self.back2_tooltip = CTkToolTip(self.back2, message="Go back to the main menu\n"
+                                                            "of the application")
 
         # Classes
         self.tabview = customtkinter.CTkTabview(self, corner_radius=10)
@@ -229,10 +234,13 @@ class TeraTermUI(customtkinter.CTk):
         self.s_semester_entry.set("C31")
         self.show_all = customtkinter.CTkCheckBox(master=self.tabview.tab("Search/Buscar"), text="Show All?",
                                                   onvalue="on", offvalue="off")
-
+        self.show_all_tooltip = CTkToolTip(self.show_all, message="Display all sections or\n"
+                                                                  "only ones with spaces")
         self.back3 = customtkinter.CTkButton(master=self.t_buttons_frame, fg_color="transparent", border_width=2,
                                              text="Back",
                                              text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
+        self.back3_tooltip = CTkToolTip(self.back3, message="Go back to the main menu\n"
+                                                            "of the application")
         self.submit = customtkinter.CTkButton(master=self.tabview.tab("Enroll/Matricular"), border_width=2,
                                               text="Submit",
                                               text_color=("gray10", "#DCE4EE"), command=self.submit_event_handler)
@@ -243,10 +251,15 @@ class TeraTermUI(customtkinter.CTk):
                                                     text="Show My Classes",
                                                     text_color=("gray10", "#DCE4EE"),
                                                     command=self.my_classes_event)
+        self.show_classes_tooltip = CTkToolTip(self.show_classes, message="Shows the classes you are\n "
+                                                                          "enrolled in for a \n"
+                                                                          "specific semester")
         self.multiple = customtkinter.CTkButton(master=self.t_buttons_frame, fg_color="transparent", border_width=2,
                                                 text="Multiple Classes",
                                                 text_color=("gray10", "#DCE4EE"),
                                                 command=self.multiple_classes_event)
+        self.multiple_tooltip = CTkToolTip(self.multiple, message="Enroll Multiple Classes at Once", resampling=True,
+                                           bg_color="blue")
         # Third Tab
         self.explanation6 = customtkinter.CTkLabel(master=self.tabview.tab("Other/Otros"),
                                                    text="Option Menu: ",
@@ -303,12 +316,15 @@ class TeraTermUI(customtkinter.CTk):
         self.m_add = customtkinter.CTkButton(master=self.m_button_frame, border_width=2, text="+",
                                              text_color=("gray10", "#DCE4EE"), command=self.add_event, height=40,
                                              width=50, hover=True, fg_color="blue")
+        self.m_add_tooltip = CTkToolTip(self.m_add, message="Add more classes", resampling=True, bg_color="blue")
         self.m_remove = customtkinter.CTkButton(master=self.m_button_frame, border_width=2, text="-",
                                                 text_color=("gray10", "#DCE4EE"), command=self.remove_event,
                                                 height=40, width=50, fg_color="red", hover=True, hover_color="darkred")
+        self.m_remove_tooltip = CTkToolTip(self.m_remove, message="Remove classes", resampling=True, bg_color="red")
         self.back4 = customtkinter.CTkButton(master=self.m_button_frame, fg_color="transparent", border_width=2,
                                              text="Back", height=40, width=70,
                                              text_color=("gray10", "#DCE4EE"), command=self.go_back_event2)
+        self.back4_tooltip = CTkToolTip(self.back4, message="Go back to the previous screen")
         self.submit_multiple = customtkinter.CTkButton(master=self.m_button_frame, border_width=2,
                                                        text="Submit", text_color=("gray10", "#DCE4EE"),
                                                        command=self.submit_multiple_event_handler, height=40, width=70)
@@ -2384,6 +2400,22 @@ class TeraTermUI(customtkinter.CTk):
             self.m_section_entry6.configure(placeholder_text="Sección")
             self.m_register_menu6.configure(values=["Registra", "Baja"])
             self.m_register_menu6.set("Escoge")
+            self.back_tooltip.configure(message="Volver al menú principal\n"
+                                                " de la aplicación")
+            self.back2_tooltip.configure(message="Volver al menú principal\n"
+                                                 " de la aplicación")
+            self.back3_tooltip.configure(message="Volver al menú principal\n"
+                                                 " de la aplicación")
+            self.back4_tooltip.configure(message="Volver a la pantalla anterior")
+            self.show_all_tooltip.configure(message="Muestre todas las secciones\n"
+                                                    "o solamente las que están\n"
+                                                    "abiertas")
+            self.show_classes_tooltip.configure(message="Enseña las clases que tienes\n"
+                                                        "matriculadas en un semestre")
+            self.m_add_tooltip.configure(message="Añade más clases")
+            self.m_remove_tooltip.configure(message="Eliminar clases")
+            self.multiple_tooltip.configure(message="Matricula múltiples clases\n"
+                                                    " a la misma vez")
         elif lang == "English":
             self.sidebar_button_1.configure(text="Status")
             self.sidebar_button_2.configure(text="Help")
@@ -2497,6 +2529,21 @@ class TeraTermUI(customtkinter.CTk):
             self.m_section_entry6.configure(placeholder_text="Section")
             self.m_register_menu6.configure(values=["Register", "Drop"])
             self.m_register_menu6.set("Choose")
+            self.back_tooltip.configure(message="Go back to the main menu\n"
+                                                "of the application")
+            self.back2_tooltip.configure(message="Go back to the main menu\n"
+                                                 "of the application")
+            self.back3_tooltip.configure(message="Go back to the main menu\n"
+                                                 "of the application")
+            self.back4_tooltip.configure(message="Go back to the previous screen")
+            self.show_classes_tooltip.configure(message="Shows the classes you are\n "
+                                                "enrolled in for a \n"
+                                                "specific semester")
+            self.show_all_tooltip.configure(message="Display all sections or\n"
+                                                    "only ones with spaces")
+            self.m_add_tooltip.configure(message="Add more classes")
+            self.m_remove_tooltip.configure(message="Remove classes")
+            self.multiple_tooltip.configure(message="Enroll Multiple Classes at Once")
 
     def save_user_data(self):
         host = self.host_entry.get()
