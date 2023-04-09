@@ -473,13 +473,12 @@ class TeraTermUI(customtkinter.CTk):
         block_window.attributes("-alpha", 0.0)
         block_window.grab_set()
         lang = self.language_menu.get()
+        text = self.capture_screenshot()
         if self.test_connection(lang) and self.check_server():
             if self.checkIfProcessRunning("ttermpro"):
                 try:
                     screenshot_thread = threading.Thread(target=self.capture_screenshot)
                     screenshot_thread.start()
-                    screenshot_thread.join()
-                    text = self.capture_screenshot()
                     error_occurred = False
                     if "ACCESO AL SISTEMA" not in text and "Press return to continue" in text:
                         send_keys("{ENTER 3}")
@@ -510,7 +509,6 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
                             screenshot_thread.start()
                             screenshot_thread.join()
-                            text = self.capture_screenshot()
                             if "ID NOT ON FILE" in text or "INVALID PASSWORD AND/OR BIRTHDATE" in text:
                                 self.bind("<Return>", lambda event: self.tuition_event_handler())
                                 if "INVALID PASSWORD AND/OR BIRTHDATE" in text:
@@ -523,7 +521,6 @@ class TeraTermUI(customtkinter.CTk):
                                 screenshot_thread = threading.Thread(target=self.capture_screenshot)
                                 screenshot_thread.start()
                                 screenshot_thread.join()
-                                text = self.capture_screenshot()
                                 self.set_focus_to_tkinter()
                                 self.bind("<Return>", lambda event: self.my_classes_event())
                                 self.reset_activity_timer(None)
