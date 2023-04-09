@@ -6,6 +6,6 @@ Link: https://digi.bib.uni-mannheim.de/tesseract/ (tesseract-ocr-w32-setup-v5.3.
 **Important** module of ctkmessagebox.py is included here beacuse it has some modifications
 
 # GUI Framework
-The whole GUI is mafe using customtinter, read wiki to familirize yourself with it, can work in conjunction with the normal tkinter too
+The whole GUI is made using customtinter, read wiki to familiarize yourself with it, can work in conjunction with the normal tkinter too
 
 Link: https://github.com/TomSchimansky/CustomTkinter
