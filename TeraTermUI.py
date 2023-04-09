@@ -403,7 +403,7 @@ class TeraTermUI(customtkinter.CTk):
         # Database
         appdata_path = os.getenv("APPDATA")
         self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
-        self.connection = sqlite3.connect("database.db")
+        self.connection = sqlite3.connect(self.db_path)
         self.cursor = self.connection.cursor()
         location = self.cursor.execute("SELECT location FROM user_data WHERE location IS NOT NULL").fetchall()
         host = self.cursor.execute("SELECT host FROM user_data WHERE host IS NOT NULL").fetchall()
@@ -489,12 +489,13 @@ class TeraTermUI(customtkinter.CTk):
         block_window.attributes("-alpha", 0.0)
         block_window.grab_set()
         lang = self.language_menu.get()
-        text = self.capture_screenshot()
         if self.test_connection(lang) and self.check_server():
             if self.checkIfProcessRunning("ttermpro"):
                 try:
                     screenshot_thread = threading.Thread(target=self.capture_screenshot)
                     screenshot_thread.start()
+                    screenshot_thread.join()
+                    text = self.capture_screenshot()
                     error_occurred = False
                     if "ACCESO AL SISTEMA" not in text and "Press return to continue" in text:
                         send_keys("{ENTER 3}")
@@ -525,6 +526,7 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
                             screenshot_thread.start()
                             screenshot_thread.join()
+                            text = self.capture_screenshot()
                             if "ID NOT ON FILE" in text or "INVALID PASSWORD AND/OR BIRTHDATE" in text:
                                 self.bind("<Return>", lambda event: self.tuition_event_handler())
                                 if "INVALID PASSWORD AND/OR BIRTHDATE" in text:
@@ -534,9 +536,6 @@ class TeraTermUI(customtkinter.CTk):
                                 if lang == "Español":
                                     self.show_error_message(300, 215, "¡Error! SSN y Código Incorrecto")
                             elif "ID NOT ON FILE" not in text or "INVALID PASSWORD AND/OR BIRTHDATE" not in text:
-                                screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                screenshot_thread.start()
-                                screenshot_thread.join()
                                 self.set_focus_to_tkinter()
                                 self.bind("<Return>", lambda event: self.my_classes_event())
                                 self.reset_activity_timer(None)
@@ -2574,7 +2573,7 @@ class TeraTermUI(customtkinter.CTk):
                                 (self.scaling_optionemenu.get(),))
         elif len(resultScaling) == 1:
             self.cursor.execute("UPDATE user_data SET scaling=?", (self.scaling_optionemenu.get(),))
-        with closing(sqlite3.connect("database.db")) as connection:
+        with closing(sqlite3.connect(self.db_path)) as connection:
             with closing(connection.cursor()) as self.cursor:
                 self.connection.commit()
 
@@ -2681,9 +2680,6 @@ class TeraTermUI(customtkinter.CTk):
 
     # captures a screenshot of tera term and perform OCR
     def capture_screenshot(self):
-        screen = screeninfo.get_monitors()[0]
-        settings = win32api.EnumDisplaySettings(None, -1)
-        refresh_rate = settings.DisplayFrequency
         window_title = "uprbay.uprb.edu - Tera Term VT"
         hwnd = win32gui.FindWindow(None, window_title)
         win32gui.SetForegroundWindow(hwnd)
@@ -2691,8 +2687,12 @@ class TeraTermUI(customtkinter.CTk):
         x, y = win32gui.ClientToScreen(hwnd, (left, top))
         width = right - left
         height = bottom - top
-        if screen.width <= 1920 and screen.height <= 1080 and refresh_rate <= 60:
-            self.hide_loading_screen()
+        monitors = screeninfo.get_monitors()
+        for screen in monitors:
+            settings = win32api.EnumDisplaySettings(None, -1)
+            refresh_rate = settings.DisplayFrequency
+            if screen.width <= 1920 and screen.height <= 1080 and refresh_rate <= 60:
+                self.hide_loading_screen()
         time.sleep(0.2)
         screenshot = pyautogui.screenshot(region=(x, y - 50, width + 125, height + 150))
         text = pytesseract.image_to_string(screenshot)
