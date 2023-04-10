@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.90 - 4/9/23
+# DATE - Started 1/1/23, Current Build v0.90 - 4/10/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -403,7 +403,7 @@ class TeraTermUI(customtkinter.CTk):
         # Database
         appdata_path = os.getenv("APPDATA")
         self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
-        self.connection = sqlite3.connect(self.db_path)
+        self.connection = sqlite3.connect("database.db")
         self.cursor = self.connection.cursor()
         location = self.cursor.execute("SELECT location FROM user_data WHERE location IS NOT NULL").fetchall()
         host = self.cursor.execute("SELECT host FROM user_data WHERE host IS NOT NULL").fetchall()
@@ -2573,7 +2573,7 @@ class TeraTermUI(customtkinter.CTk):
                                 (self.scaling_optionemenu.get(),))
         elif len(resultScaling) == 1:
             self.cursor.execute("UPDATE user_data SET scaling=?", (self.scaling_optionemenu.get(),))
-        with closing(sqlite3.connect(self.db_path)) as connection:
+        with closing(sqlite3.connect("database.db")) as connection:
             with closing(connection.cursor()) as self.cursor:
                 self.connection.commit()
 
@@ -2918,7 +2918,13 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         if lang == "English":
             self.status = customtkinter.CTkToplevel(self)
-            self.status.geometry("450x250+1100+90")
+            screen_width = self.winfo_screenwidth()
+            screen_height = self.winfo_screenheight()
+            scaling_factor = self.tk.call("tk", "scaling")
+            x_position = int((screen_width - 450 * scaling_factor) / 2)
+            y_position = int((screen_height - 250 * scaling_factor) / 2)
+            window_geometry = f"{450}x{250}+{x_position + 100}+{y_position - 438}"
+            self.status.geometry(window_geometry)
             self.status.title("Status")
             self.status.after(201, lambda: self.status.iconbitmap("images/tera-term.ico"))
             self.status.resizable(False, False)
@@ -2951,8 +2957,13 @@ class TeraTermUI(customtkinter.CTk):
             faqA1.pack()
 
         elif lang == "Español":
-            self.status = customtkinter.CTkToplevel(self)
-            self.status.geometry("450x250+1100+90")
+            screen_width = self.winfo_screenwidth()
+            screen_height = self.winfo_screenheight()
+            scaling_factor = self.tk.call("tk", "scaling")
+            x_position = int((screen_width - 450 * scaling_factor) / 2)
+            y_position = int((screen_height - 250 * scaling_factor) / 2)
+            window_geometry = f"{450}x{250}+{x_position + 100}+{y_position - 438}"
+            self.status.geometry(window_geometry)
             self.status.title("Estado")
             self.status.after(201, lambda: self.status.iconbitmap("images/tera-term.ico"))
             self.status.resizable(False, False)
@@ -3062,7 +3073,13 @@ class TeraTermUI(customtkinter.CTk):
         listbox_font = ("Arial", 11)
         if lang == "English":
             self.help = customtkinter.CTkToplevel(self)
-            self.help.geometry("450x250+1100+95")
+            screen_width = self.winfo_screenwidth()
+            screen_height = self.winfo_screenheight()
+            scaling_factor = self.tk.call("tk", "scaling")
+            x_position = int((screen_width - 450 * scaling_factor) / 2)
+            y_position = int((screen_height - 250 * scaling_factor) / 2)
+            window_geometry = f"{450}x{250}+{x_position + 100}+{y_position - 438}"
+            self.help.geometry(window_geometry)
             self.help.title("Help")
             self.help.after(201, lambda: self.help.iconbitmap("images/tera-term.ico"))
             self.help.resizable(False, False)
@@ -3103,7 +3120,13 @@ class TeraTermUI(customtkinter.CTk):
 
         elif lang == "Español":
             self.help = customtkinter.CTkToplevel(self)
-            self.help.geometry("450x250+1100+95")
+            screen_width = self.winfo_screenwidth()
+            screen_height = self.winfo_screenheight()
+            scaling_factor = self.tk.call("tk", "scaling")
+            x_position = int((screen_width - 450 * scaling_factor) / 2)
+            y_position = int((screen_height - 250 * scaling_factor) / 2)
+            window_geometry = f"{450}x{250}+{x_position + 100}+{y_position - 438}"
+            self.help.geometry(window_geometry)
             self.help.title("Ayuda")
             self.help.after(201, lambda: self.help.iconbitmap("images/tera-term.ico"))
             self.help.resizable(False, False)
