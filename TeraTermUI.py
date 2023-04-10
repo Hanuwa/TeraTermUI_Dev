@@ -12,6 +12,9 @@
 # Application sometimes feels sluggish/slow to use, could use some efficiency/performance improvements.
 # The grid of the UI interface and placement of widgets could use some work.
 
+# FUTURE PLANS: Display more information in the app itself, which will make the app less relaint on Tera Term, like
+# when you search for classes it would be nice if they appear on this app
+
 import customtkinter
 import tkinter as tk
 from tkinter import *
@@ -2678,7 +2681,21 @@ class TeraTermUI(customtkinter.CTk):
                 self.show_error_message(300, 215, "¡Error! El servidor de la UPRB\nestá actualmente caído")
             return False
 
-    # captures a screenshot of tera term and perform OCR
+    # Get DPI and set the scaling factor
+    def get_scaling_factor(self):
+        try:
+            LOGPIXELSX = 88
+            LOGPIXELSY = 90
+            dc = ctypes.windll.user32.GetDC(0)
+            dpi_x = ctypes.windll.gdi32.GetDeviceCaps(dc, LOGPIXELSX)
+            dpi_y = ctypes.windll.gdi32.GetDeviceCaps(dc, LOGPIXELSY)
+            ctypes.windll.user32.ReleaseDC(0, dc)
+            return dpi_x / 96.0, dpi_y / 96.0
+        except Exception as e:
+            print("Error getting scaling factor:", e)
+            return 1.0, 1.0
+
+    # captures a screenshot of tera term and performs OCR
     def capture_screenshot(self):
         window_title = "uprbay.uprb.edu - Tera Term VT"
         hwnd = win32gui.FindWindow(None, window_title)
@@ -2688,13 +2705,20 @@ class TeraTermUI(customtkinter.CTk):
         width = right - left
         height = bottom - top
         monitors = screeninfo.get_monitors()
+        scaling_x, scaling_y = self.get_scaling_factor()
         for screen in monitors:
             settings = win32api.EnumDisplaySettings(None, -1)
             refresh_rate = settings.DisplayFrequency
             if screen.width <= 1920 and screen.height <= 1080 and refresh_rate <= 60:
                 self.hide_loading_screen()
         time.sleep(0.2)
-        screenshot = pyautogui.screenshot(region=(x, y - 50, width + 125, height + 150))
+        scaled_x = int(x * scaling_x)
+        scaled_y = int((y - 50) * scaling_y)
+        scaled_width = int((width + 125) * scaling_x)
+        scaled_height = int((height + 150) * scaling_y)
+        screenshot = pyautogui.screenshot(region=(scaled_x, scaled_y, scaled_width, scaled_height))
+        fixed_width, fixed_height = 1280, 720
+        screenshot = screenshot.resize((fixed_width, fixed_height), resample=Image.LANCZOS)
         text = pytesseract.image_to_string(screenshot)
         self.show_loading_screen_again()
         return text
@@ -2923,11 +2947,12 @@ class TeraTermUI(customtkinter.CTk):
             scaling_factor = self.tk.call("tk", "scaling")
             x_position = int((screen_width - 450 * scaling_factor) / 2)
             y_position = int((screen_height - 250 * scaling_factor) / 2)
-            window_geometry = f"{450}x{250}+{x_position + 100}+{y_position - 438}"
+            window_geometry = f"{450}x{250}+{x_position + 150}+{y_position - 90}"
             self.status.geometry(window_geometry)
             self.status.title("Status")
             self.status.after(201, lambda: self.status.iconbitmap("images/tera-term.ico"))
             self.status.resizable(False, False)
+            self.status.attributes("-topmost", True)
             scrollable_frame = customtkinter.CTkScrollableFrame(self.status, width=450, height=250)
             scrollable_frame.pack()
             text = customtkinter.CTkLabel(scrollable_frame, text="Status of the application",
@@ -2962,11 +2987,12 @@ class TeraTermUI(customtkinter.CTk):
             scaling_factor = self.tk.call("tk", "scaling")
             x_position = int((screen_width - 450 * scaling_factor) / 2)
             y_position = int((screen_height - 250 * scaling_factor) / 2)
-            window_geometry = f"{450}x{250}+{x_position + 100}+{y_position - 438}"
+            window_geometry = f"{450}x{250}+{x_position + 150}+{y_position - 90}"
             self.status.geometry(window_geometry)
             self.status.title("Estado")
             self.status.after(201, lambda: self.status.iconbitmap("images/tera-term.ico"))
             self.status.resizable(False, False)
+            self.status.attributes("-topmost", True)
             scrollable_frame = customtkinter.CTkScrollableFrame(self.status, width=450, height=250, corner_radius=10)
             scrollable_frame.pack()
             text = customtkinter.CTkLabel(scrollable_frame, text="Estado de la aplicación",
@@ -3078,11 +3104,12 @@ class TeraTermUI(customtkinter.CTk):
             scaling_factor = self.tk.call("tk", "scaling")
             x_position = int((screen_width - 450 * scaling_factor) / 2)
             y_position = int((screen_height - 250 * scaling_factor) / 2)
-            window_geometry = f"{450}x{250}+{x_position + 100}+{y_position - 438}"
+            window_geometry = f"{450}x{250}+{x_position + 150}+{y_position - 90}"
             self.help.geometry(window_geometry)
             self.help.title("Help")
             self.help.after(201, lambda: self.help.iconbitmap("images/tera-term.ico"))
             self.help.resizable(False, False)
+            self.help.attributes("-topmost", True)
             scrollable_frame = customtkinter.CTkScrollableFrame(self.help, width=450, height=250)
             scrollable_frame.pack()
             text = customtkinter.CTkLabel(scrollable_frame, text="Help",
@@ -3125,11 +3152,12 @@ class TeraTermUI(customtkinter.CTk):
             scaling_factor = self.tk.call("tk", "scaling")
             x_position = int((screen_width - 450 * scaling_factor) / 2)
             y_position = int((screen_height - 250 * scaling_factor) / 2)
-            window_geometry = f"{450}x{250}+{x_position + 100}+{y_position - 438}"
+            window_geometry = f"{450}x{250}+{x_position + 150}+{y_position - 90}"
             self.help.geometry(window_geometry)
             self.help.title("Ayuda")
             self.help.after(201, lambda: self.help.iconbitmap("images/tera-term.ico"))
             self.help.resizable(False, False)
+            self.help.attributes("-topmost", True)
             scrollable_frame = customtkinter.CTkScrollableFrame(self.help, width=450, height=250, corner_radius=10)
             scrollable_frame.pack()
             text = customtkinter.CTkLabel(scrollable_frame, text="Ayuda",
