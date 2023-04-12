@@ -37,7 +37,7 @@ import sqlite3
 import ctypes
 import winsound
 import threading
-from PIL import Image, ImageOps
+from PIL import Image
 import sys
 import rsa
 import psutil
@@ -259,7 +259,7 @@ class TeraTermUI(customtkinter.CTk):
                                                 text="Multiple Classes",
                                                 text_color=("gray10", "#DCE4EE"),
                                                 command=self.multiple_classes_event)
-        self.multiple_tooltip = CTkToolTip(self.multiple, message="Enroll Multiple Classes \nat once", resampling=True,
+        self.multiple_tooltip = CTkToolTip(self.multiple, message="Enroll Multiple Classes \nat once",
                                            bg_color="blue")
         # Third Tab
         self.explanation6 = customtkinter.CTkLabel(master=self.tabview.tab("Other/Otros"),
@@ -1408,6 +1408,37 @@ class TeraTermUI(customtkinter.CTk):
                             self.go_next_409.configure(state="disabled")
                             self.go_next_683.configure(state="disabled")
                             self.go_next_4CM.configure(state="disabled")
+                            self.m_classes_entry.delete(0, "end")
+                            self.m_section_entry.delete(0, "end")
+                            self.m_classes_entry2.delete(0, "end")
+                            self.m_section_entry2.delete(0, "end")
+                            self.m_classes_entry3.delete(0, "end")
+                            self.m_section_entry3.delete(0, "end")
+                            self.m_classes_entry4.delete(0, "end")
+                            self.m_section_entry4.delete(0, "end")
+                            self.m_classes_entry5.delete(0, "end")
+                            if lang == "English":
+                                self.m_classes_entry.configure(placeholder_text="Class")
+                                self.m_section_entry.configure(placeholder_text="Section")
+                                self.m_classes_entry2.configure(placeholder_text="Class")
+                                self.m_section_entry2.configure(placeholder_text="Section")
+                                self.m_classes_entry3.configure(placeholder_text="Class")
+                                self.m_section_entry3.configure(placeholder_text="Section")
+                                self.m_classes_entry4.configure(placeholder_text="Class")
+                                self.m_section_entry4.configure(placeholder_text="Section")
+                                self.m_classes_entry5.configure(placeholder_text="Class")
+                                self.m_section_entry5.configure(placeholder_text="Section")
+                            if lang == "Español":
+                                self.m_classes_entry.configure(placeholder_text="Clase")
+                                self.m_section_entry.configure(placeholder_text="Sección")
+                                self.m_classes_entry2.configure(placeholder_text="Clase")
+                                self.m_section_entry2.configure(placeholder_text="Sección")
+                                self.m_classes_entry3.configure(placeholder_text="Clase")
+                                self.m_section_entry3.configure(placeholder_text="Sección")
+                                self.m_classes_entry4.configure(placeholder_text="Clase")
+                                self.m_section_entry4.configure(placeholder_text="Sección")
+                                self.m_classes_entry5.configure(placeholder_text="Clase")
+                                self.m_section_entry5.configure(placeholder_text="Sección")
                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
                             screenshot_thread.start()
                             screenshot_thread.join()
@@ -2699,15 +2730,6 @@ class TeraTermUI(customtkinter.CTk):
             print("Error getting scaling factor:", e)
             return 1.0, 1.0
 
-    def preprocess_image(self, screenshot):
-        gray_image = ImageOps.grayscale(screenshot)
-        threshold = 128
-        binary_image = gray_image.point(lambda p: p > threshold and 255)
-        scale_factor = 2
-        scaled_image = binary_image.resize((binary_image.width * scale_factor, binary_image.height * scale_factor),
-                                           Image.BICUBIC)
-        return scaled_image
-
     # captures a screenshot of tera term and performs OCR
     def capture_screenshot(self):
         window_title = "uprbay.uprb.edu - Tera Term VT"
@@ -2726,8 +2748,7 @@ class TeraTermUI(customtkinter.CTk):
         scaled_x = int(window_center_x - (scaled_width // 2))
         scaled_y = int(window_center_y - (scaled_height // 2))
         screenshot = pyautogui.screenshot(region=(scaled_x, scaled_y, scaled_width, scaled_height))
-        processed_screenshot = self.preprocess_image(screenshot)
-        text = pytesseract.image_to_string(processed_screenshot)
+        text = pytesseract.image_to_string(screenshot)
         return text
 
     # Error message image
