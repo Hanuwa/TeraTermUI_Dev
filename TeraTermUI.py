@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.90 - 4/12/23
+# DATE - Started 1/1/23, Current Build v0.90 - 4/13/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -3098,16 +3098,19 @@ class TeraTermUI(customtkinter.CTk):
     # list of classes available for all departments in the university
     def search_classes(self, event):
         self.class_list.delete(0, tk.END)
-        search_term = self.search_box.get().strip()
+        search_term = self.search_box.get().strip().lower()
         if search_term == "":
             return
-        if search_term == "all" or search_term == "ALL":
+        if search_term == "all":
             query = "SELECT name, code FROM courses"
-        elif search_term.isalpha() and len(search_term) == 1:
-            query = f"SELECT name, code FROM courses WHERE name LIKE '%{search_term}%' OR code LIKE '%{search_term}%'"
         else:
-            query = f"SELECT name, code FROM courses WHERE name LIKE '{search_term}%' OR name LIKE '% {search_term}%'" \
-                    f" OR code LIKE '{search_term}%'"
+            search_words = search_term.split()
+            query_conditions = []
+            for word in search_words:
+                query_conditions.append(f"LOWER(name) LIKE '%{word}%'")
+                query_conditions.append(f"LOWER(code) LIKE '%{word}%'")
+            query_conditions_str = " OR ".join(query_conditions)
+            query = f"SELECT name, code FROM courses WHERE {query_conditions_str}"
         results = self.cursor.execute(query).fetchall()
         for row in results:
             self.class_list.insert(tk.END, row[0])
@@ -3118,13 +3121,13 @@ class TeraTermUI(customtkinter.CTk):
         if len(selection) == 0:
             return
         selected_class = self.class_list.get(self.class_list.curselection())
-        query = f"SELECT code FROM courses WHERE name = '{selected_class}'"
-        result = self.cursor.execute(query).fetchone()
-        if result is None:
-            query = f"SELECT code FROM courses WHERE code = '{selected_class}'"
-            result = self.cursor.execute(query).fetchone()
-        self.search_box.delete(0, tk.END)
-        self.search_box.insert(0, result[0])
+
+        query = "SELECT code FROM courses WHERE name = ? OR code = ?"
+        result = self.cursor.execute(query, (selected_class, selected_class)).fetchone()
+
+        if result is not None:
+            self.search_box.delete(0, tk.END)
+            self.search_box.insert(0, result[0])
 
     # opens up help window
     def sidebar_button_event2(self):
