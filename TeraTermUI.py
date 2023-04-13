@@ -1320,7 +1320,7 @@ class TeraTermUI(customtkinter.CTk):
                             elif counter >= 1:
                                 send_keys("{TAB}")
                                 self.m_counter += 1
-                            if counter >= 1 and choice2 == "Register":
+                            if counter >= 1 and choice2 == "Register" or choice2 == "Registra":
                                 self.uprb.UprbayTeraTermVt.type_keys("R")
                                 self.uprb.UprbayTeraTermVt.type_keys(classes2)
                                 self.uprb.UprbayTeraTermVt.type_keys(section2)
@@ -1479,6 +1479,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.show_error_message(320, 235, "¡Error! No se pudo "
                                                                       "matricular las clases")
                                 self.check = False
+                                self.m_counter = self.m_counter - counter
                                 self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                         else:
                             if lang == "English":
@@ -3225,7 +3226,7 @@ class TeraTermUI(customtkinter.CTk):
                                                                     "\n las cosas correctamente")
             fixText.pack()
             fix = customtkinter.CTkButton(scrollable_frame, border_width=2,
-                                          text="Fix it",
+                                          text="Arreglalo",
                                           text_color=("gray10", "#DCE4EE"), command=self.fix_execution)
             fix.pack(pady=5)
         self.class_list.bind('<<ListboxSelect>>', self.show_class_code)
