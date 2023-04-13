@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.90 - 4/10/23
+# DATE - Started 1/1/23, Current Build v0.90 - 4/12/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -39,6 +39,8 @@ import winsound
 import threading
 from PIL import Image
 import sys
+import cv2
+import numpy as np
 import rsa
 import psutil
 import time
@@ -1408,37 +1410,6 @@ class TeraTermUI(customtkinter.CTk):
                             self.go_next_409.configure(state="disabled")
                             self.go_next_683.configure(state="disabled")
                             self.go_next_4CM.configure(state="disabled")
-                            self.m_classes_entry.delete(0, "end")
-                            self.m_section_entry.delete(0, "end")
-                            self.m_classes_entry2.delete(0, "end")
-                            self.m_section_entry2.delete(0, "end")
-                            self.m_classes_entry3.delete(0, "end")
-                            self.m_section_entry3.delete(0, "end")
-                            self.m_classes_entry4.delete(0, "end")
-                            self.m_section_entry4.delete(0, "end")
-                            self.m_classes_entry5.delete(0, "end")
-                            if lang == "English":
-                                self.m_classes_entry.configure(placeholder_text="Class")
-                                self.m_section_entry.configure(placeholder_text="Section")
-                                self.m_classes_entry2.configure(placeholder_text="Class")
-                                self.m_section_entry2.configure(placeholder_text="Section")
-                                self.m_classes_entry3.configure(placeholder_text="Class")
-                                self.m_section_entry3.configure(placeholder_text="Section")
-                                self.m_classes_entry4.configure(placeholder_text="Class")
-                                self.m_section_entry4.configure(placeholder_text="Section")
-                                self.m_classes_entry5.configure(placeholder_text="Class")
-                                self.m_section_entry5.configure(placeholder_text="Section")
-                            if lang == "Español":
-                                self.m_classes_entry.configure(placeholder_text="Clase")
-                                self.m_section_entry.configure(placeholder_text="Sección")
-                                self.m_classes_entry2.configure(placeholder_text="Clase")
-                                self.m_section_entry2.configure(placeholder_text="Sección")
-                                self.m_classes_entry3.configure(placeholder_text="Clase")
-                                self.m_section_entry3.configure(placeholder_text="Sección")
-                                self.m_classes_entry4.configure(placeholder_text="Clase")
-                                self.m_section_entry4.configure(placeholder_text="Sección")
-                                self.m_classes_entry5.configure(placeholder_text="Clase")
-                                self.m_section_entry5.configure(placeholder_text="Sección")
                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
                             screenshot_thread.start()
                             screenshot_thread.join()
@@ -1464,7 +1435,37 @@ class TeraTermUI(customtkinter.CTk):
                                     elif lang == "Español":
                                         self.show_information_message(350, 265, "Llegó al Límite de Matrícula")
                                 self.submit.configure(command=self.submit2_event_handler)
-                                self.bind("<Return>", lambda event: self.my_classes_event())
+                                self.m_classes_entry.delete(0, "end")
+                                self.m_section_entry.delete(0, "end")
+                                self.m_classes_entry2.delete(0, "end")
+                                self.m_section_entry2.delete(0, "end")
+                                self.m_classes_entry3.delete(0, "end")
+                                self.m_section_entry3.delete(0, "end")
+                                self.m_classes_entry4.delete(0, "end")
+                                self.m_section_entry4.delete(0, "end")
+                                self.m_classes_entry5.delete(0, "end")
+                                if lang == "English":
+                                    self.m_classes_entry.configure(placeholder_text="Class")
+                                    self.m_section_entry.configure(placeholder_text="Section")
+                                    self.m_classes_entry2.configure(placeholder_text="Class")
+                                    self.m_section_entry2.configure(placeholder_text="Section")
+                                    self.m_classes_entry3.configure(placeholder_text="Class")
+                                    self.m_section_entry3.configure(placeholder_text="Section")
+                                    self.m_classes_entry4.configure(placeholder_text="Class")
+                                    self.m_section_entry4.configure(placeholder_text="Section")
+                                    self.m_classes_entry5.configure(placeholder_text="Class")
+                                    self.m_section_entry5.configure(placeholder_text="Section")
+                                if lang == "Español":
+                                    self.m_classes_entry.configure(placeholder_text="Clase")
+                                    self.m_section_entry.configure(placeholder_text="Sección")
+                                    self.m_classes_entry2.configure(placeholder_text="Clase")
+                                    self.m_section_entry2.configure(placeholder_text="Sección")
+                                    self.m_classes_entry3.configure(placeholder_text="Clase")
+                                    self.m_section_entry3.configure(placeholder_text="Sección")
+                                    self.m_classes_entry4.configure(placeholder_text="Clase")
+                                    self.m_section_entry4.configure(placeholder_text="Sección")
+                                    self.m_classes_entry5.configure(placeholder_text="Clase")
+                                    self.m_section_entry5.configure(placeholder_text="Sección")
                             elif "INVALID ACTION" in text:
                                 self.uprb.UprbayTeraTermVt.type_keys(semester.replace(" ", ""))
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -2716,20 +2717,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.show_error_message(300, 215, "¡Error! El servidor de la UPRB\nestá actualmente caído")
             return False
 
-    # Get DPI and set the scaling factor
-    def get_scaling_factor(self):
-        try:
-            LOGPIXELSX = 88
-            LOGPIXELSY = 90
-            dc = ctypes.windll.user32.GetDC(0)
-            dpi_x = ctypes.windll.gdi32.GetDeviceCaps(dc, LOGPIXELSX)
-            dpi_y = ctypes.windll.gdi32.GetDeviceCaps(dc, LOGPIXELSY)
-            ctypes.windll.user32.ReleaseDC(0, dc)
-            return dpi_x / 96.0, dpi_y / 96.0
-        except Exception as e:
-            print("Error getting scaling factor:", e)
-            return 1.0, 1.0
-
     # captures a screenshot of tera term and performs OCR
     def capture_screenshot(self):
         window_title = "uprbay.uprb.edu - Tera Term VT"
@@ -2739,16 +2726,13 @@ class TeraTermUI(customtkinter.CTk):
         x, y = win32gui.ClientToScreen(hwnd, (left, top))
         width = right - left
         height = bottom - top
-        scaling_x, scaling_y = self.get_scaling_factor()
         time.sleep(0.2)
-        scaled_width = int((width + 150) * scaling_x)
-        scaled_height = int((height + 150) * scaling_y)
-        window_center_x = x + (width // 2)
-        window_center_y = y + (height // 2)
-        scaled_x = int(window_center_x - (scaled_width // 2))
-        scaled_y = int(window_center_y - (scaled_height // 2))
-        screenshot = pyautogui.screenshot(region=(scaled_x, scaled_y, scaled_width, scaled_height))
-        text = pytesseract.image_to_string(screenshot)
+        screenshot = pyautogui.screenshot(region=(x, y - 50, width + 20, height + 50))
+        img = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2GRAY)
+        _, img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+        img = Image.fromarray(img)
+        custom_config = r'--oem 3 --psm 6'
+        text = pytesseract.image_to_string(img, config=custom_config)
         return text
 
     # Error message image
