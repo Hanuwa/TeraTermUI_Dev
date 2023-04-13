@@ -967,91 +967,82 @@ class TeraTermUI(customtkinter.CTk):
             dialog.geometry("1100+225")
             dialog.attributes("-topmost", True)
             dialog.after(201, lambda: dialog.iconbitmap("images/tera-term.ico"))
-            dialog_input = dialog.get_input().upper()
-            if len(dialog_input) != 0:
-                if self.test_connection(lang) and self.check_server():
-                    if self.checkIfProcessRunning("ttermpro"):
-                        if (re.fullmatch("^[A-Z][0-9]{2}$", dialog_input, flags=re.IGNORECASE)
-                                and dialog_input in ("B61", "B62", "B63", "B71", "B72", "B73", "B81", "B82", "B83",
-                                                     "B91", "B92", "B93", "C01", "C02", "C03", "C11", "C12", "C13",
-                                                     "C21", "C22", "C23", "C31")):
-                            block_window = customtkinter.CTkToplevel()
-                            block_window.attributes("-alpha", 0.0)
-                            block_window.grab_set()
-                            ctypes.windll.user32.BlockInput(True)
-                            uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                            uprb_window.wait('visible', timeout=100)
-                            self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                            send_keys("{ENTER}")
-                            self.uprb.UprbayTeraTermVt.type_keys("1CP")
-                            self.uprb.UprbayTeraTermVt.type_keys(dialog_input.replace(" ", ""))
-                            send_keys("{ENTER}")
-                            ctypes.windll.user32.BlockInput(False)
-                            self.reset_activity_timer(None)
-                            self.go_next_1VE.configure(state="disabled")
-                            self.go_next_1GP.configure(state="disabled")
-                            self.go_next_409.configure(state="disabled")
-                            self.go_next_683.configure(state="disabled")
-                            self.go_next_4CM.configure(state="disabled")
-                            block_window.destroy()
-                        else:
-                            self.show_error_message(300, 215, "¡Error! Semestre Incorrecto")
-                            self.bind("<Return>", lambda event: self.my_classes_event())
+            dialog_input = dialog.get_input()
+            if self.test_connection(lang) and self.check_server():
+                if self.checkIfProcessRunning("ttermpro"):
+                    if (re.fullmatch("^[A-Z][0-9]{2}$", dialog_input, flags=re.IGNORECASE)
+                            and dialog_input in ("B61", "B62", "B63", "B71", "B72", "B73", "B81", "B82", "B83",
+                                                 "B91", "B92", "B93", "C01", "C02", "C03", "C11", "C12", "C13",
+                                                 "C21", "C22", "C23", "C31")):
+                        block_window = customtkinter.CTkToplevel()
+                        block_window.attributes("-alpha", 0.0)
+                        block_window.grab_set()
+                        ctypes.windll.user32.BlockInput(True)
+                        uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
+                        uprb_window.wait('visible', timeout=100)
+                        self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                        send_keys("{ENTER}")
+                        self.uprb.UprbayTeraTermVt.type_keys("1CP")
+                        self.uprb.UprbayTeraTermVt.type_keys(dialog_input.replace(" ", "").upper())
+                        send_keys("{ENTER}")
+                        ctypes.windll.user32.BlockInput(False)
+                        self.reset_activity_timer(None)
+                        self.go_next_1VE.configure(state="disabled")
+                        self.go_next_1GP.configure(state="disabled")
+                        self.go_next_409.configure(state="disabled")
+                        self.go_next_683.configure(state="disabled")
+                        self.go_next_4CM.configure(state="disabled")
+                        block_window.destroy()
                     else:
-                        if self.language_menu.get() == "English":
-
-                            self.show_error_message(300, 215, "Error! Tera Term is disconnected")
-                        elif self.language_menu.get() == "Español":
-                            self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
-                            self.bind("<Return>", lambda event: self.my_classes_event())
-            elif len(dialog_input) == 0:
-                self.show_error_message(300, 215, "¡Error! Semestre Incorrecto")
-                self.bind("<Return>", lambda event: self.my_classes_event())
+                        self.show_error_message(300, 215, "¡Error! Semestre Incorrecto")
+                        self.bind("<Return>", lambda event: self.my_classes_event())
+                else:
+                    if self.language_menu.get() == "English":
+                        self.show_error_message(300, 215, "Error! Tera Term is disconnected")
+                    elif self.language_menu.get() == "Español":
+                        self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
+                        self.bind("<Return>", lambda event: self.my_classes_event())
 
         elif lang == "English":
             dialog = customtkinter.CTkInputDialog(text="Enter the semester:", title="Show My Classes")
             dialog.geometry("1100+225")
             dialog.attributes("-topmost", True)
             dialog.after(201, lambda: dialog.iconbitmap("images/tera-term.ico"))
-            dialog_input = dialog.get_input()
-            if len(dialog_input) != 0:
-                if self.test_connection(lang) and self.check_server():
-                    if self.checkIfProcessRunning("ttermpro"):
-                        if (re.match("^[A-Z][0-9]{2}$", dialog_input, flags=re.IGNORECASE)
-                                and dialog_input in ("B61", "B62", "B63", "B71", "B72", "B73", "B81", "B82", "B83",
-                                                     "B91", "B92", "B93", "C01", "C02", "C03", "C11", "C12", "C13",
-                                                     "C21", "C22", "C23", "C31")):
-                            block_window = customtkinter.CTkToplevel()
-                            block_window.attributes("-alpha", 0.0)
-                            block_window.grab_set()
-                            ctypes.windll.user32.BlockInput(True)
-                            uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                            uprb_window.wait('visible', timeout=100)
-                            self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                            send_keys("{ENTER}")
-                            self.uprb.UprbayTeraTermVt.type_keys("1CP")
-                            self.uprb.UprbayTeraTermVt.type_keys(dialog_input.replace(" ", ""))
-                            send_keys("{ENTER}")
-                            ctypes.windll.user32.BlockInput(False)
-                            self.reset_activity_timer(None)
-                            self.go_next_1VE.configure(state="disabled")
-                            self.go_next_1GP.configure(state="disabled")
-                            self.go_next_409.configure(state="disabled")
-                            self.go_next_683.configure(state="disabled")
-                            self.go_next_4CM.configure(state="disabled")
-                            block_window.destroy()
-                        else:
-                            self.show_error_message("300x215+1220+500", "Error! Wrong Semester")
-                            self.bind("<Return>", lambda event: self.my_classes_event())
+            dialog_input = dialog.get_input().replace(" ", "").upper()
+            if self.test_connection(lang) and self.check_server():
+                if self.checkIfProcessRunning("ttermpro"):
+                    if (re.match("^[A-Z][0-9]{2}$", dialog_input, flags=re.IGNORECASE)
+                            and dialog_input in ("B61", "B62", "B63", "B71", "B72", "B73", "B81", "B82", "B83",
+                                                 "B91", "B92", "B93", "C01", "C02", "C03", "C11", "C12", "C13",
+                                                 "C21", "C22", "C23", "C31")):
+                        block_window = customtkinter.CTkToplevel()
+                        block_window.attributes("-alpha", 0.0)
+                        block_window.grab_set()
+                        ctypes.windll.user32.BlockInput(True)
+                        uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
+                        uprb_window.wait('visible', timeout=100)
+                        self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                        send_keys("{ENTER}")
+                        self.uprb.UprbayTeraTermVt.type_keys("1CP")
+                        self.uprb.UprbayTeraTermVt.type_keys(dialog_input)
+                        send_keys("{ENTER}")
+                        ctypes.windll.user32.BlockInput(False)
+                        self.reset_activity_timer(None)
+                        self.go_next_1VE.configure(state="disabled")
+                        self.go_next_1GP.configure(state="disabled")
+                        self.go_next_409.configure(state="disabled")
+                        self.go_next_683.configure(state="disabled")
+                        self.go_next_4CM.configure(state="disabled")
+                        block_window.destroy()
                     else:
-                        if self.language_menu.get() == "English":
-                            self.show_error_message(300, 215, "Error! Tera Term is disconnected")
-                        elif self.language_menu.get() == "Español":
-                            self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
+                        self.show_error_message(300, 215, "Error! Wrong Semester")
                         self.bind("<Return>", lambda event: self.my_classes_event())
-            elif len(dialog_input) == 0:
-                self.show_error_message(300, 215, "Error! Wrong Semester")
-                self.bind("<Return>", lambda event: self.my_classes_event())
+                else:
+                    if self.language_menu.get() == "English":
+                        self.show_error_message(300, 215, "Error! Tera Term is disconnected")
+                    elif self.language_menu.get() == "Español":
+                        self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
+                    self.bind("<Return>", lambda event: self.my_classes_event())
 
     # function that adds new entries
     def add_event(self):
@@ -1319,7 +1310,6 @@ class TeraTermUI(customtkinter.CTk):
                                 send_keys("{ENTER}")
                             elif counter >= 1:
                                 send_keys("{TAB}")
-                                self.m_counter += 1
                             if counter >= 1 and choice2 == "Register" or choice2 == "Registra":
                                 self.uprb.UprbayTeraTermVt.type_keys("R")
                                 self.uprb.UprbayTeraTermVt.type_keys(classes2)
@@ -1328,6 +1318,7 @@ class TeraTermUI(customtkinter.CTk):
                                     send_keys("{ENTER}")
                                 if counter >= 1:
                                     send_keys("{TAB}")
+                                self.m_counter += 1
                             elif counter >= 1 and choice2 == "Drop" or choice2 == "Baja":
                                 self.uprb.UprbayTeraTermVt.type_keys("D")
                                 self.uprb.UprbayTeraTermVt.type_keys(classes2)
@@ -1336,6 +1327,7 @@ class TeraTermUI(customtkinter.CTk):
                                     send_keys("{ENTER}")
                                 elif counter >= 1:
                                     send_keys("{TAB}")
+                                self.m_counter += 1
                             if counter >= 2 and choice3 == "Register" or choice3 == "Registra":
                                 self.uprb.UprbayTeraTermVt.type_keys("R")
                                 self.uprb.UprbayTeraTermVt.type_keys(classes3)
@@ -1344,7 +1336,7 @@ class TeraTermUI(customtkinter.CTk):
                                     send_keys("{ENTER}")
                                 elif counter >= 2:
                                     send_keys("{TAB}")
-                                    self.m_counter += 1
+                                self.m_counter += 1
                             elif counter >= 2 and choice3 == "Drop" or choice3 == "Baja":
                                 self.uprb.UprbayTeraTermVt.type_keys("D")
                                 self.uprb.UprbayTeraTermVt.type_keys(classes3)
@@ -1353,7 +1345,7 @@ class TeraTermUI(customtkinter.CTk):
                                     send_keys("{ENTER}")
                                 elif counter >= 2:
                                     send_keys("{TAB}")
-                                    self.m_counter += 1
+                                self.m_counter += 1
                             if counter >= 3 and choice4 == "Register" or choice4 == "Registra":
                                 self.uprb.UprbayTeraTermVt.type_keys("R")
                                 self.uprb.UprbayTeraTermVt.type_keys(classes4)
@@ -1362,7 +1354,7 @@ class TeraTermUI(customtkinter.CTk):
                                     send_keys("{ENTER}")
                                 elif counter >= 3:
                                     send_keys("{TAB}")
-                                    self.m_counter += 1
+                                self.m_counter += 1
                             elif counter >= 3 and choice4 == "Drop" or choice4 == "Baja":
                                 self.uprb.UprbayTeraTermVt.type_keys("D")
                                 self.uprb.UprbayTeraTermVt.type_keys(classes4)
@@ -1371,7 +1363,7 @@ class TeraTermUI(customtkinter.CTk):
                                     send_keys("{ENTER}")
                                 elif counter >= 3:
                                     send_keys("{TAB}")
-                                    self.m_counter += 1
+                                self.m_counter += 1
                             if counter >= 4 and choice5 == "Register" or choice5 == "Registra":
                                 self.uprb.UprbayTeraTermVt.type_keys("R")
                                 self.uprb.UprbayTeraTermVt.type_keys(classes5)
@@ -1380,7 +1372,7 @@ class TeraTermUI(customtkinter.CTk):
                                     send_keys("{ENTER}")
                                 elif counter >= 4:
                                     send_keys("{TAB}")
-                                    self.m_counter += 1
+                                self.m_counter += 1
                             elif counter >= 4 and choice5 == "Drop" or choice5 == "Baja":
                                 self.uprb.UprbayTeraTermVt.type_keys("D")
                                 self.uprb.UprbayTeraTermVt.type_keys(classes5)
@@ -1389,7 +1381,7 @@ class TeraTermUI(customtkinter.CTk):
                                     send_keys("{ENTER}")
                                 elif counter >= 4:
                                     send_keys("{TAB}")
-                                    self.m_counter += 1
+                                self.m_counter += 1
                             if counter == 5 and choice6 == "Register" or choice6 == "Registra":
                                 self.uprb.UprbayTeraTermVt.type_keys("R")
                                 self.uprb.UprbayTeraTermVt.type_keys(classes6)
@@ -1479,7 +1471,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.show_error_message(320, 235, "¡Error! No se pudo "
                                                                       "matricular las clases")
                                 self.check = False
-                                self.m_counter = self.m_counter - counter
+                                self.m_counter = self.m_counter - counter - 1
                                 self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                         else:
                             if lang == "English":
@@ -2650,8 +2642,8 @@ class TeraTermUI(customtkinter.CTk):
             loading = customtkinter.CTkLabel(self.loading_screen, text="Cargando...",
                                              font=customtkinter.CTkFont(size=20, weight="bold"))
             loading.pack(pady=30)
-        self.progress_bar = customtkinter.CTkProgressBar(self.loading_screen, mode="indeterminate", height=15, width=270,
-                                                         indeterminate_speed=1.5)
+        self.progress_bar = customtkinter.CTkProgressBar(self.loading_screen, mode="indeterminate",
+                                                         height=15, width=270, indeterminate_speed=1.5)
         self.progress_bar.pack(pady=1)
         self.progress_bar.start()
 
@@ -2741,9 +2733,6 @@ class TeraTermUI(customtkinter.CTk):
         if self.error and self.error.winfo_exists():
             self.error.lift()
             return
-        if self.loading_screen and self.loading_screen.winfo_exists():
-            if self.loading_screen:
-                self.loading_screen.destroy()
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         scaling_factor = self.tk.call("tk", "scaling")
@@ -2773,9 +2762,6 @@ class TeraTermUI(customtkinter.CTk):
         if self.success and self.success.winfo_exists():
             self.success.lift()
             return
-        if self.loading_screen and self.loading_screen.winfo_exists():
-            if self.loading_screen:
-                self.loading_screen.destroy()
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         scaling_factor = self.tk.call("tk", "scaling")
@@ -2803,9 +2789,6 @@ class TeraTermUI(customtkinter.CTk):
         if self.information and self.information.winfo_exists():
             self.information.lift()
             return
-        if self.loading_screen and self.loading_screen.winfo_exists():
-            if self.loading_screen:
-                self.loading_screen.destroy()
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         scaling_factor = self.tk.call("tk", "scaling")
