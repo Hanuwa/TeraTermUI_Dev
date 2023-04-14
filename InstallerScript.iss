@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Tera Term UI"
-#define MyAppVersion "0.90"
+#define MyAppVersion "0.9.0"
 #define MyAppPublisher "Armando Del Valle Tejada"
 #define MyAppURL "github.com/Hanuwa/TeraTermUI"
 #define MyAppExeName "TeraTermUI.exe"
