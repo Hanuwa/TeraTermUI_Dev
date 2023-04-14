@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/13/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/14/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1105,7 +1105,7 @@ class TeraTermUI(customtkinter.CTk):
     # function that removes existing entries
     def remove_event(self):
         self.m_add.configure(state="normal")
-        if self.a_counter == 1:
+        if self.a_counter == 1 or self.a_counter == 0:
             self.m_remove.configure(state="disabled")
         elif self.a_counter != 1:
             self.m_remove.configure(state="normal")
@@ -1156,6 +1156,10 @@ class TeraTermUI(customtkinter.CTk):
         self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
         if scaling not in ("90%", "95%", "100%"):
             self.change_scaling_event("100%")
+        if self.a_counter == 1 or self.a_counter == 0:
+            self.m_remove.configure(state="disabled")
+        if self.a_counter == 5:
+            self.m_add.configure(state="disabled")
         self.scaling_optionemenu.configure(state="disabled")
         self.multiple_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 35))
         self.multiple_frame.grid_columnconfigure(2, weight=1)
@@ -1171,7 +1175,6 @@ class TeraTermUI(customtkinter.CTk):
         self.back4.grid(row=3, column=1, padx=(0, 20), pady=(0, 0))
         self.submit_multiple.grid(row=3, column=2, padx=(0, 0), pady=(0, 0))
         self.m_remove.grid(row=3, column=3, padx=(20, 0), pady=(0, 0))
-        self.m_remove.configure(state="disabled")
         self.tabview.grid_forget()
         self.t_buttons_frame.grid_forget()
 
@@ -2260,7 +2263,8 @@ class TeraTermUI(customtkinter.CTk):
         scaling = self.scaling_optionemenu.get()
         self.bind("<Return>", lambda event: self.my_classes_event())
         self.scaling_optionemenu.configure(state="normal")
-        self.change_scaling_event(scaling)
+        if scaling not in ("90%", "95%", "100%"):
+            self.change_scaling_event(scaling)
         self.tabview.grid(row=0, column=1, columnspan=2, rowspan=2, padx=(20, 20), pady=(20, 0))
         self.t_buttons_frame.grid(row=2, column=1, padx=(20, 20), pady=(20, 0))
         self.t_buttons_frame.grid_columnconfigure(2, weight=1)
@@ -2917,7 +2921,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.num_checks += 1
                 else:
                     pass
-            if self.num_checks == 15:
+            if self.num_checks == 8:
                 break
             time.sleep(3)
 
