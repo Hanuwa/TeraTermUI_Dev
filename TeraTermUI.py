@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.90 - 4/13/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/13/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1511,7 +1511,7 @@ class TeraTermUI(customtkinter.CTk):
         block_window = customtkinter.CTkToplevel()
         block_window.attributes("-alpha", 0.0)
         block_window.grab_set()
-        menu = self.menu_entry.get().replace(" ", "")
+        menu = self.menu_entry.get()
         lang = self.language_menu.get()
         semester = self.menu_semester_entry.get().upper().replace(" ", "")
         if menu == "SRM (Main Menu)" or menu == "SRM (Menú Principal)":
@@ -1547,7 +1547,7 @@ class TeraTermUI(customtkinter.CTk):
                     ctypes.windll.user32.BlockInput(True)
                     uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                     uprb_window.wait('visible', timeout=100)
-                    match menu:
+                    match menu.replace(" ", ""):
                         case "SRM":
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             send_keys("{ENTER}")
@@ -2980,7 +2980,7 @@ class TeraTermUI(customtkinter.CTk):
             text = customtkinter.CTkLabel(scrollable_frame, text="Status of the application",
                                           font=customtkinter.CTkFont(size=15, weight="bold"))
             text.pack()
-            text2 = customtkinter.CTkLabel(scrollable_frame, text="\n\n 0.90 Version \n"
+            text2 = customtkinter.CTkLabel(scrollable_frame, text="\n\n 0.9.0 Version \n"
                                                                   "--Testing Phase-- \n")
             text2.pack()
             text3 = customtkinter.CTkLabel(scrollable_frame, text="\nGitHub Repository:")
@@ -3020,7 +3020,7 @@ class TeraTermUI(customtkinter.CTk):
             text = customtkinter.CTkLabel(scrollable_frame, text="Estado de la aplicación",
                                           font=customtkinter.CTkFont(size=15, weight="bold"))
             text.pack()
-            text2 = customtkinter.CTkLabel(scrollable_frame, text="\n\n Versión 0.90 \n"
+            text2 = customtkinter.CTkLabel(scrollable_frame, text="\n\n Versión 0.9.0 \n"
                                                                   "--Fase de Pruebas-- \n")
             text2.pack()
             text3 = customtkinter.CTkLabel(scrollable_frame, text="\nRepositorio de GitHub:")
