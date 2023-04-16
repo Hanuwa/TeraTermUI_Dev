@@ -261,7 +261,7 @@ class TeraTermUI(customtkinter.CTk):
                                                 text="Multiple Classes",
                                                 text_color=("gray10", "#DCE4EE"),
                                                 command=self.multiple_classes_event)
-        self.multiple_tooltip = CTkToolTip(self.multiple, message="Enroll Multiple Classes \nat once",
+        self.multiple_tooltip = CTkToolTip(self.multiple, message="Enroll Multiple Classes\nat once",
                                            bg_color="blue")
         # Third Tab
         self.explanation6 = customtkinter.CTkLabel(master=self.tabview.tab("Other/Otros"),
@@ -542,7 +542,7 @@ class TeraTermUI(customtkinter.CTk):
                                 if lang == "English":
                                     self.show_error_message(300, 215, "Error! Invalid SSN or Code")
                                 if lang == "Español":
-                                    self.show_error_message(300, 215, "¡Error! SSN y Código Incorrecto")
+                                    self.show_error_message(300, 215, "¡Error! SSN o Código Incorrecto")
                                 self.screenshot_skip = True
                             elif "ID NOT ON FILE" not in text or "INVALID PASSWORD AND/OR BIRTHDATE" not in text:
                                 self.set_focus_to_tkinter()
@@ -611,14 +611,14 @@ class TeraTermUI(customtkinter.CTk):
                             if lang == "English":
                                 self.show_error_message(300, 215, "Error! Invalid SSN or Code")
                             elif lang == "Español":
-                                self.show_error_message(300, 215, "¡Error! SSN y Código Incorrecto")
+                                self.show_error_message(300, 215, "¡Error! SSN o Código Incorrecto")
                             self.screenshot_skip = True
                     except ValueError:
                         self.bind("<Return>", lambda event: self.tuition_event_handler())
                         if lang == "English":
                             self.show_error_message(300, 215, "Error! Invalid SSN or Code")
                         elif lang == "Español":
-                            self.show_error_message(300, 215, "¡Error! SSN y Código Incorrecto")
+                            self.show_error_message(300, 215, "¡Error! SSN o Código Incorrecto")
                         self.screenshot_skip = True
             else:
                 self.bind("<Return>", lambda event: self.tuition_event_handler())
@@ -2588,7 +2588,7 @@ class TeraTermUI(customtkinter.CTk):
             self.host.configure(text="Servidor: ")
             self.host.grid(row=2, column=0, columnspan=2, padx=(0, 10), pady=(20, 20))
             self.log_in.configure(text="Iniciar Sesión")
-            self.explanation.configure(text="Conectado al servidor exitosamente")
+            self.explanation.configure(text="Conectado al servidor éxitosamente")
             self.explanation2.configure(text="Autenticación requerida")
             self.username.configure(text="Usuario: ")
             self.student.configure(text="Próximo")
@@ -2676,7 +2676,7 @@ class TeraTermUI(customtkinter.CTk):
                                                         "matriculadas en un semestre")
             self.m_add_tooltip.configure(message="Añade más clases")
             self.m_remove_tooltip.configure(message="Eliminar clases")
-            self.multiple_tooltip.configure(message="Matricula múltiples clases\n"
+            self.multiple_tooltip.configure(message="Matricula múltiples \nclases"
                                                     " a la misma vez")
         elif lang == "English":
             self.sidebar_button_1.configure(text="Status")
@@ -2805,7 +2805,7 @@ class TeraTermUI(customtkinter.CTk):
                                                     "only ones with spaces")
             self.m_add_tooltip.configure(message="Add more classes")
             self.m_remove_tooltip.configure(message="Remove classes")
-            self.multiple_tooltip.configure(message="Enroll Multiple Classes at Once")
+            self.multiple_tooltip.configure(message="Enroll multiple classes\nat once")
 
     def save_user_data(self):
         host = self.host_entry.get()
