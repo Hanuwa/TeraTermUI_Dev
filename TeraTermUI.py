@@ -2949,7 +2949,7 @@ class TeraTermUI(customtkinter.CTk):
         width = right - left
         height = bottom - top
         time.sleep(0.2)
-        screenshot = pyautogui.screenshot(region=(x, y - 50, width + 20, height + 75))
+        screenshot = pyautogui.screenshot(region=(x, y - 50, width + 20, height + 70))
         img = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2GRAY)
         _, img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
         img = Image.fromarray(img)
