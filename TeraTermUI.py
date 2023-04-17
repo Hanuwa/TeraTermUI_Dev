@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/16/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/17/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -715,7 +715,7 @@ class TeraTermUI(customtkinter.CTk):
                         if lang == "English":
                             self.show_error_message(300, 215, "Error! Unable to enroll class")
                         elif lang == "Español":
-                            self.show_error_message(300, 215, "¡Error! No se puede matricular la clase")
+                            self.show_error_message(320, 235, "¡Error! No se puede matricular la clase")
                         self.bind("<Return>", lambda event: self.my_classes_event())
                 else:
                     if lang == "English":
@@ -2949,12 +2949,14 @@ class TeraTermUI(customtkinter.CTk):
         width = right - left
         height = bottom - top
         time.sleep(0.2)
+        self.hide_loading_screen()
         screenshot = pyautogui.screenshot(region=(x, y - 50, width + 20, height + 50))
         img = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2GRAY)
         _, img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
         img = Image.fromarray(img)
         custom_config = r'--oem 3 --psm 6'
         text = pytesseract.image_to_string(img, config=custom_config)
+        self.show_loading_screen_again()
         return text
 
     # Error message image
