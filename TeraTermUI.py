@@ -705,8 +705,6 @@ class TeraTermUI(customtkinter.CTk):
                                 self.show_success_message(350, 265, "Dropped class successfully")
                             elif lang == "Español":
                                 self.show_success_message(350, 265, "Clase abandonada exitósamente")
-                        print("Enrolled", self.enrolled_classes_list)
-                        print("Dropped", self.dropped_classes_list)
                     elif "INVALID ACTION" in text:
                         send_keys("{TAB}")
                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
