@@ -64,7 +64,7 @@ class TeraTermUI(customtkinter.CTk):
         screen_height = self.winfo_screenheight()
         x = (screen_width - width * scaling_factor) / 2
         y = (screen_height - height * scaling_factor) / 2
-        self.geometry(f"{width}x{height}+{int(x) + 125}+{int(y)}")
+        self.geometry(f"{width}x{height}+{int(x) + 175}+{int(y)}")
 
         # creates a thread separate from the main application for check_idle and to monitor cpu usage
         self.last_activity = time.time()
@@ -2848,7 +2848,7 @@ class TeraTermUI(customtkinter.CTk):
         if lang == "Español":
             self.loading_screen.title("Cargando...")
         self.loading_screen.overrideredirect(True)
-        width = 320
+        width = 300
         height = 150
         self.loading_screen.update_idletasks()
         main_window_x = self.winfo_x()
@@ -2859,7 +2859,7 @@ class TeraTermUI(customtkinter.CTk):
         loading_screen_height = height
         center_x = main_window_x + (main_window_width // 2) - (loading_screen_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (loading_screen_height // 2)
-        self.loading_screen.geometry(f"{width}x{height}+{center_x + 105}+{center_y}")
+        self.loading_screen.geometry(f"{width}x{height}+{center_x + 95}+{center_y}")
         self.loading_screen.attributes("-topmost", True, "-alpha", 0.90)
         self.loading_screen.resizable(False, False)
         self.loading_screen.after(201, lambda: self.loading_screen.iconbitmap("images/tera-term.ico"))
@@ -2949,14 +2949,12 @@ class TeraTermUI(customtkinter.CTk):
         width = right - left
         height = bottom - top
         time.sleep(0.2)
-        self.hide_loading_screen()
-        screenshot = pyautogui.screenshot(region=(x, y - 50, width + 20, height + 50))
+        screenshot = pyautogui.screenshot(region=(x, y - 50, width + 20, height + 75))
         img = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2GRAY)
         _, img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
         img = Image.fromarray(img)
         custom_config = r'--oem 3 --psm 6'
         text = pytesseract.image_to_string(img, config=custom_config)
-        self.show_loading_screen_again()
         return text
 
     # Error message image
