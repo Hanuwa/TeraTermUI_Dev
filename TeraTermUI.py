@@ -585,7 +585,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.menu_intro.grid(row=1, column=1, padx=(70, 0), pady=(0, 0))
                                     self.menu.grid(row=2, column=1, padx=(0, 115), pady=(10, 0))
                                     self.menu_entry.grid(row=2, column=1, padx=(70, 0), pady=(10, 0))
-                                    self.menu_semester.grid(row=3, column=1, padx=(0, 140), pady=(10, 0))
+                                    self.menu_semester.grid(row=3, column=1, padx=(0, 140), pady=(20, 0))
                                     self.menu_semester_entry.grid(row=3, column=1, padx=(70, 0), pady=(20, 0))
                                     self.menu_submit.grid(row=5, column=1, padx=(70, 0), pady=(40, 0))
                                 elif lang == "Español":
@@ -593,7 +593,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.menu_intro.grid(row=1, column=1, padx=(45, 0), pady=(0, 0))
                                     self.menu.grid(row=2, column=1, padx=(0, 145), pady=(10, 0))
                                     self.menu_entry.grid(row=2, column=1, padx=(45, 0), pady=(10, 0))
-                                    self.menu_semester.grid(row=3, column=1, padx=(0, 160), pady=(10, 0))
+                                    self.menu_semester.grid(row=3, column=1, padx=(0, 160), pady=(20, 0))
                                     self.menu_semester_entry.grid(row=3, column=1, padx=(45, 0), pady=(20, 0))
                                     self.menu_submit.grid(row=5, column=1, padx=(45, 0), pady=(40, 0))
                                 self.back3.grid(row=4, column=0, padx=(0, 10), pady=(0, 0))
