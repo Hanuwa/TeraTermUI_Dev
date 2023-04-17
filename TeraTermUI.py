@@ -2949,12 +2949,15 @@ class TeraTermUI(customtkinter.CTk):
         width = right - left
         height = bottom - top
         time.sleep(0.2)
-        screenshot = pyautogui.screenshot(region=(x, y - 50, width + 20, height + 65))
+        self.hide_loading_screen()
+        screenshot = pyautogui.screenshot(region=(x, y - 50, width + 20, height + 150))
         img = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2GRAY)
+        img = cv2.resize(img, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
         _, img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
         img = Image.fromarray(img)
         custom_config = r'--oem 3 --psm 6'
         text = pytesseract.image_to_string(img, config=custom_config)
+        self.show_loading_screen_again()
         return text
 
     # Error message image
