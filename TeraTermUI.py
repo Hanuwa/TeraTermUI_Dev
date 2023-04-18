@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/17/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/18/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -556,7 +556,10 @@ class TeraTermUI(customtkinter.CTk):
                                 self.t_buttons_frame.grid(row=2, column=1, padx=(20, 20), pady=(20, 0), sticky="n")
                                 self.t_buttons_frame.grid_columnconfigure(2, weight=1)
                                 self.explanation4.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-                                self.e_classes.grid(row=1, column=1, padx=(41, 0), pady=(0, 0), sticky="w")
+                                if lang == "English":
+                                    self.e_classes.grid(row=1, column=1, padx=(42, 0), pady=(0, 0), sticky="w")
+                                elif lang == "Español":
+                                    self.e_classes.grid(row=1, column=1, padx=(43, 0), pady=(0, 0), sticky="w")
                                 self.e_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
                                 self.section.grid(row=2, column=1, padx=(30, 0), pady=(20, 0), sticky="w")
                                 self.section_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
@@ -565,7 +568,10 @@ class TeraTermUI(customtkinter.CTk):
                                 self.register_menu.grid(row=4, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
                                 self.submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
                                 self.explanation5.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-                                self.s_classes.grid(row=1, column=1, padx=(41, 0), pady=(0, 0), sticky="w")
+                                if lang == "English":
+                                    self.s_classes.grid(row=1, column=1, padx=(43, 0), pady=(0, 0), sticky="w")
+                                elif lang == "Español":
+                                    self.s_classes.grid(row=1, column=1, padx=(43, 0), pady=(0, 0), sticky="w")
                                 self.s_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
                                 self.s_semester.grid(row=2, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
                                 self.s_semester_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
@@ -573,7 +579,10 @@ class TeraTermUI(customtkinter.CTk):
                                 self.search.grid(row=4, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
                                 self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
                                 self.menu_intro.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-                                self.menu.grid(row=2, column=1, padx=(43, 0), pady=(10, 0), sticky="w")
+                                if lang == "English":
+                                    self.menu.grid(row=2, column=1, padx=(46, 0), pady=(10, 0), sticky="w")
+                                elif lang == "Español":
+                                    self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
                                 self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
                                 self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
                                 self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
@@ -1808,7 +1817,10 @@ class TeraTermUI(customtkinter.CTk):
                             self.menu_submit.configure(width=100)
                             self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
                             self.menu_intro.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-                            self.menu.grid(row=2, column=1, padx=(43, 0), pady=(10, 0), sticky="w")
+                            if lang == "English":
+                                self.menu.grid(row=2, column=1, padx=(46, 0), pady=(10, 0), sticky="w")
+                            elif lang == "Español":
+                                self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
                             self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
                             self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
                             self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
@@ -1862,7 +1874,10 @@ class TeraTermUI(customtkinter.CTk):
                                 self.menu_submit.configure(width=100)
                                 self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
                                 self.menu_intro.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-                                self.menu.grid(row=2, column=1, padx=(43, 0), pady=(10, 0), sticky="w")
+                                if lang == "English":
+                                    self.menu.grid(row=2, column=1, padx=(46, 0), pady=(10, 0), sticky="w")
+                                elif lang == "Español":
+                                    self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
                                 self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
                                 self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
                                 self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
@@ -1901,7 +1916,10 @@ class TeraTermUI(customtkinter.CTk):
                             self.menu_submit.configure(width=100)
                             self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
                             self.menu_intro.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-                            self.menu.grid(row=2, column=1, padx=(43, 0), pady=(10, 0), sticky="w")
+                            if lang == "English":
+                                self.menu.grid(row=2, column=1, padx=(46, 0), pady=(10, 0), sticky="w")
+                            elif lang == "Español":
+                                self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
                             self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
                             self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
                             self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
@@ -1940,7 +1958,10 @@ class TeraTermUI(customtkinter.CTk):
                                 self.submit.configure(width=100)
                                 self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
                                 self.menu_intro.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-                                self.menu.grid(row=2, column=1, padx=(43, 0), pady=(10, 0), sticky="w")
+                                if lang == "English":
+                                    self.menu.grid(row=2, column=1, padx=(46, 0), pady=(10, 0), sticky="w")
+                                elif lang == "Español":
+                                    self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
                                 self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
                                 self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
                                 self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
@@ -1995,7 +2016,10 @@ class TeraTermUI(customtkinter.CTk):
                             self.menu_submit.configure(width=100)
                             self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
                             self.menu_intro.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-                            self.menu.grid(row=2, column=1, padx=(43, 0), pady=(10, 0), sticky="w")
+                            if lang == "English":
+                                self.menu.grid(row=2, column=1, padx=(46, 0), pady=(10, 0), sticky="w")
+                            elif lang == "Español":
+                                self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
                             self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
                             self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
                             self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
@@ -2435,6 +2459,7 @@ class TeraTermUI(customtkinter.CTk):
     # function that goes back to Enrolling frame screen
     def go_back_event2(self):
         scaling = self.scaling_optionemenu.get()
+        lang = self.language_menu.get()
         self.bind("<Return>", lambda event: self.my_classes_event())
         self.scaling_optionemenu.configure(state="normal")
         if scaling not in ("90%", "95%", "100%"):
@@ -2446,7 +2471,10 @@ class TeraTermUI(customtkinter.CTk):
         self.t_buttons_frame.grid(row=2, column=1, padx=(20, 20), pady=(20, 0), sticky="n")
         self.t_buttons_frame.grid_columnconfigure(2, weight=1)
         self.explanation4.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-        self.e_classes.grid(row=1, column=1, padx=(41, 0), pady=(0, 0), sticky="w")
+        if lang == "English":
+            self.e_classes.grid(row=1, column=1, padx=(42, 0), pady=(0, 0), sticky="w")
+        elif lang == "Español":
+            self.e_classes.grid(row=1, column=1, padx=(43, 0), pady=(0, 0), sticky="w")
         self.e_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         self.section.grid(row=2, column=1, padx=(30, 0), pady=(20, 0), sticky="w")
         self.section_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
@@ -2455,7 +2483,10 @@ class TeraTermUI(customtkinter.CTk):
         self.register_menu.grid(row=4, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
         self.submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
         self.explanation5.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-        self.s_classes.grid(row=1, column=1, padx=(41, 0), pady=(0, 0), sticky="w")
+        if lang == "English":
+            self.s_classes.grid(row=1, column=1, padx=(43, 0), pady=(0, 0), sticky="w")
+        elif lang == "Español":
+            self.s_classes.grid(row=1, column=1, padx=(43, 0), pady=(0, 0), sticky="w")
         self.s_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         self.s_semester.grid(row=2, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
         self.s_semester_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
@@ -2465,7 +2496,10 @@ class TeraTermUI(customtkinter.CTk):
         self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
         self.menu_intro.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         self.menu.grid(row=2, column=1, padx=(43, 0), pady=(10, 0), sticky="w")
-        self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+        if lang == "English":
+            self.menu.grid(row=2, column=1, padx=(46, 0), pady=(10, 0), sticky="w")
+        elif lang == "Español":
+            self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
         self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
         self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
         self.menu_submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
@@ -2742,6 +2776,7 @@ class TeraTermUI(customtkinter.CTk):
             self.m_remove_tooltip.configure(message="Remove classes")
             self.multiple_tooltip.configure(message="Enroll multiple classes\nat once")
 
+    # saves the information to the database when the app closes
     def save_user_data(self):
         host = self.host_entry.get()
         resultWelcome = self.cursor.execute("SELECT welcome FROM user_data").fetchall()
@@ -2809,15 +2844,17 @@ class TeraTermUI(customtkinter.CTk):
                                              font=customtkinter.CTkFont(size=20, weight="bold"))
             loading.pack(pady=30)
         self.progress_bar = customtkinter.CTkProgressBar(self.loading_screen, mode="indeterminate",
-                                                         height=15, width=250, indeterminate_speed=1.5)
+                                                         height=15, width=230, indeterminate_speed=1.5)
         self.progress_bar.pack(pady=1)
         self.progress_bar.start()
 
         return self.loading_screen
 
+    # hides the loading screen
     def hide_loading_screen(self):
         self.loading_screen.withdraw()
 
+    # bring the loading screen back
     def show_loading_screen_again(self):
         self.loading_screen.deiconify()
 
@@ -2894,7 +2931,7 @@ class TeraTermUI(customtkinter.CTk):
         text = pytesseract.image_to_string(img, config=custom_config)
         return text
 
-    # Error message image
+    # error window pop up message
     def show_error_message(self, width, height, error_msg_text):
         if self.error and self.error.winfo_exists():
             self.error.lift()
@@ -2923,6 +2960,7 @@ class TeraTermUI(customtkinter.CTk):
                                            font=customtkinter.CTkFont(size=15, weight="bold"))
         error_msg.pack(side="top", fill="both", expand=True, padx=10, pady=20)
 
+    # success window pop up message
     def show_success_message(self, width, height, success_msg_text):
         if self.success and self.success.winfo_exists():
             self.success.lift()
@@ -2950,6 +2988,7 @@ class TeraTermUI(customtkinter.CTk):
         success_msg.pack(side="top", fill="both", expand=True, padx=10, pady=20)
         self.success.after(3000, lambda: self.success.destroy())
 
+    # important information window pop up message
     def show_information_message(self, width, height, success_msg_text):
         if self.information and self.information.winfo_exists():
             self.information.lift()
@@ -3022,11 +3061,14 @@ class TeraTermUI(customtkinter.CTk):
 
         return sleep_time
 
+    # (Unused) Monitors the usage of the CPU of the user to determine the time.sleep of how long should the function
+    # take before executing something
     def cpu_monitor(self, interval=1):
         while not self.stop_monitor.is_set():
             cpu_percent = psutil.cpu_percent(interval=interval)
             self.cpu_load_history.append(cpu_percent)
 
+    # If user messes up the execution of the program this can solve it and make program work as expected
     def fix_execution(self):
         lang = self.language_menu.get()
         if self.checkIfProcessRunning("ttermpro"):
@@ -3111,17 +3153,17 @@ class TeraTermUI(customtkinter.CTk):
             elif lang == "Español":
                 self.show_error_message(300, 215, "¡Error! No Conectado al internet")
 
-    # focus on the UI application window
+    # Set focus on the UI application window
     def set_focus_to_tkinter(self):
         tk_handle = win32gui.FindWindow(None, "Tera Term UI")
         win32gui.SetForegroundWindow(tk_handle)
 
-    # focus on Tera Term window
+    # Set focus on Tera Term window
     def unfocus_tkinter(self):
         pywinauto_handle = self.uprb.top_window().handle
         win32gui.SetForegroundWindow(pywinauto_handle)
 
-    # status window
+    # Creates the status window
     def sidebar_button_event(self):
         if self.status and self.status.winfo_exists():
             self.status.lift()
@@ -3279,7 +3321,7 @@ class TeraTermUI(customtkinter.CTk):
             self.search_box.delete(0, tk.END)
             self.search_box.insert(0, result[0])
 
-    # opens up help window
+    # Creates the Help window
     def sidebar_button_event2(self):
         if self.help and self.help.winfo_exists():
             self.help.lift()
