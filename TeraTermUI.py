@@ -5,14 +5,14 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/18/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/20/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
 # Application sometimes feels sluggish/slow to use, could use some efficiency/performance improvements.
 # The grid of the UI interface and placement of widgets could use some work.
 
-# FUTURE PLANS: Display more information in the app itself, which will make the app less relaint on Tera Term, like
+# FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term, like
 # when you search for classes it would be nice if they appear on this app
 
 import customtkinter
@@ -64,7 +64,7 @@ class TeraTermUI(customtkinter.CTk):
         screen_height = self.winfo_screenheight()
         x = (screen_width - width * scaling_factor) / 2
         y = (screen_height - height * scaling_factor) / 2
-        self.geometry(f"{width}x{height}+{int(x) + 175}+{int(y)}")
+        self.geometry(f"{width}x{height}+{int(x) + 175}+{int(y + 50)}")
 
         # creates a thread separate from the main application for check_idle and to monitor cpu usage
         self.last_activity = time.time()
@@ -535,16 +535,16 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread.start()
                             screenshot_thread.join()
                             text = self.capture_screenshot()
-                            if "ID NOT ON FILE" in text or "INVALID PASSWORD AND/OR BIRTHDATE" in text:
+                            if "R-Z0105" in text or "R-Z0051" in text:
                                 self.bind("<Return>", lambda event: self.tuition_event_handler())
-                                if "INVALID PASSWORD AND/OR BIRTHDATE" in text:
+                                if "R-Z0051" in text:
                                     send_keys("{TAB 2}")
                                 if lang == "English":
                                     self.show_error_message(300, 215, "Error! Invalid SSN or Code")
                                 if lang == "Español":
                                     self.show_error_message(300, 215, "¡Error! SSN o Código Incorrecto")
                                 self.screenshot_skip = True
-                            elif "ID NOT ON FILE" not in text or "INVALID PASSWORD AND/OR BIRTHDATE" not in text:
+                            elif "R-Z0105" not in text or "R-Z0051" not in text:
                                 self.set_focus_to_tkinter()
                                 self.bind("<Return>", lambda event: self.my_classes_event())
                                 self.reset_activity_timer(None)
@@ -673,7 +673,7 @@ class TeraTermUI(customtkinter.CTk):
                     screenshot_thread.start()
                     screenshot_thread.join()
                     text = self.capture_screenshot()
-                    if "INVALID ACTION" not in text:
+                    if "R-Z0101" not in text:
                         self.submit.configure(command=self.submit2_event_handler)
                         self.e_classes_entry.delete(0, "end")
                         self.section_entry.delete(0, "end")
@@ -696,7 +696,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.show_success_message(350, 265, "Dropped class successfully")
                             elif lang == "Español":
                                 self.show_success_message(350, 265, "Clase abandonada exitósamente")
-                    elif "INVALID ACTION" in text:
+                    elif "R-Z0101" in text:
                         send_keys("{TAB}")
                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                         self.uprb.UprbayTeraTermVt.type_keys(semester)
@@ -786,7 +786,7 @@ class TeraTermUI(customtkinter.CTk):
                         screenshot_thread.start()
                         screenshot_thread.join()
                         text = self.capture_screenshot()
-                        if "INVALID ACTION" not in text:
+                        if "R-Z0101" not in text:
                             self.e_classes_entry.delete(0, "end")
                             self.section_entry.delete(0, "end")
                             self.e_counter += 1
@@ -821,7 +821,7 @@ class TeraTermUI(customtkinter.CTk):
                                 elif lang == "Español":
                                     self.show_information_message(350, 265, "Llegó al Límite de Matrícula")
                                 self.bind("<Return>", lambda event: self.my_classes_event())
-                        elif "INVALID ACTION" in text:
+                        elif "R-Z0101" in text:
                             send_keys("{TAB}")
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             self.uprb.UprbayTeraTermVt.type_keys(semester.replace(" ", ""))
@@ -1544,7 +1544,7 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread.start()
                             screenshot_thread.join()
                             text = self.capture_screenshot()
-                            if "INVALID ACTION" not in text:
+                            if "R-Z0101" not in text:
                                 if choice == "Register":
                                     if section:
                                         if classes in self.dropped_classes_list:
@@ -1679,7 +1679,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.m_section_entry4.configure(placeholder_text="Sección")
                                     self.m_classes_entry6.configure(placeholder_text="Clase")
                                     self.m_section_entry6.configure(placeholder_text="Sección")
-                            elif "INVALID ACTION" in text:
+                            elif "R-Z0101" in text:
                                 self.uprb.UprbayTeraTermVt.type_keys(semester.replace(" ", ""))
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                 send_keys("{ENTER}")
@@ -1856,7 +1856,7 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread.start()
                             screenshot_thread.join()
                             text = self.capture_screenshot()
-                            if "STUDENT HAS HOLD FLAG CONFLICT" in text:
+                            if "R-A0155" in text:
                                 if lang == "English":
                                     self.show_information_message(310, 225, "Student has a hold flag")
                                 if lang == "Español":
@@ -1865,7 +1865,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.uprb.UprbayTeraTermVt.type_keys(semester)
                                 send_keys("{ENTER}")
                                 self.bind("<Return>", lambda event: self.my_classes_event())
-                            if "STUDENT HAS HOLD FLAG CONFLICT" not in text:
+                            if "R-A0155" not in text:
                                 self.go_next_1VE.configure(state="normal")
                                 self.go_next_1GP.grid_forget()
                                 self.go_next_409.grid_forget()
@@ -1945,7 +1945,7 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread.start()
                             screenshot_thread.join()
                             text = self.capture_screenshot()
-                            if "STUDENT HAS HOLD FLAG CONFLICT" in text:
+                            if "R-A0155" in text:
                                 if lang == "English":
                                     self.show_information_message("310x225+1220+500", "Student has a hold flag")
                                 if lang == "Español":
@@ -1953,7 +1953,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.uprb.UprbayTeraTermVt.type_keys("004")
                                 send_keys("{ENTER}")
                                 self.bind("<Return>", lambda event: self.my_classes_event())
-                            if "STUDENT HAS HOLD FLAG CONFLICT" not in text:
+                            if "R-A0155" not in text:
                                 self.go_next_683.configure(state="normal")
                                 self.submit.configure(width=100)
                                 self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
@@ -1984,8 +1984,8 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread.start()
                             screenshot_thread.join()
                             text = self.capture_screenshot()
-                            if "TERM OUTDATED" in text or "NO PUEDE REALIZAR CAMBIOS" in text:
-                                if "TERM OUTDATED" in text:
+                            if "R-R0021" in text or "NO PUEDE REALIZAR CAMBIOS" in text:
+                                if "R-R0021" in text:
                                     send_keys("{TAB}")
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
@@ -2029,7 +2029,7 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread.start()
                             screenshot_thread.join()
                             text = self.capture_screenshot()
-                            if "TERM OUTDATED" in text:
+                            if "R-R0021" in text:
                                 send_keys("{TAB}")
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                 send_keys("{ENTER}")
@@ -2058,8 +2058,8 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread.start()
                             screenshot_thread.join()
                             text = self.capture_screenshot()
-                            if "TERM OUTDATED" in text or "NO PUEDE REALIZAR CAMBIOS" in text:
-                                if "TERM OUTDATED" in text:
+                            if "R-R0021" in text or "NO PUEDE REALIZAR CAMBIOS" in text:
+                                if "R-R0021" in text:
                                     send_keys("{TAB}")
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
@@ -2925,8 +2925,9 @@ class TeraTermUI(customtkinter.CTk):
         time.sleep(0.2)
         screenshot = pyautogui.screenshot(region=(x, y - 50, width + 20, height + 125))
         img = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2GRAY)
-        img = cv2.resize(img, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+        img = cv2.resize(img, None, fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
         img = Image.fromarray(img)
+        img.save("img.png")
         custom_config = r'--oem 3 --psm 6'
         text = pytesseract.image_to_string(img, config=custom_config)
         return text
@@ -2941,7 +2942,7 @@ class TeraTermUI(customtkinter.CTk):
         scaling_factor = self.tk.call("tk", "scaling")
         x_position = int((screen_width - width * scaling_factor) / 2)
         y_position = int((screen_height - height * scaling_factor) / 2)
-        window_geometry = f"{width}x{height}+{x_position + 175}+{y_position - 100}"
+        window_geometry = f"{width}x{height}+{x_position + 175}+{y_position - 75}"
         winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
         self.error = customtkinter.CTkToplevel(self)
         self.error.title("Error")
@@ -2970,7 +2971,7 @@ class TeraTermUI(customtkinter.CTk):
         scaling_factor = self.tk.call("tk", "scaling")
         x_position = int((screen_width - width * scaling_factor) / 2)
         y_position = int((screen_height - height * scaling_factor) / 2)
-        window_geometry = f"{width}x{height}+{x_position + 175}+{y_position - 100}"
+        window_geometry = f"{width}x{height}+{x_position + 175}+{y_position - 75}"
         winsound.PlaySound("sounds/success.wav", winsound.SND_ASYNC)
         self.success = customtkinter.CTkToplevel()
         self.success.geometry(window_geometry)
@@ -2998,7 +2999,7 @@ class TeraTermUI(customtkinter.CTk):
         scaling_factor = self.tk.call("tk", "scaling")
         x_position = int((screen_width - width * scaling_factor) / 2)
         y_position = int((screen_height - height * scaling_factor) / 2)
-        window_geometry = f"{width}x{height}+{x_position + 175}+{y_position - 100}"
+        window_geometry = f"{width}x{height}+{x_position + 175}+{y_position - 75}"
         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
         self.information = customtkinter.CTkToplevel()
         self.information.geometry(window_geometry)
