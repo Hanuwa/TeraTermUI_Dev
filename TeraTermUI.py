@@ -2250,6 +2250,7 @@ class TeraTermUI(customtkinter.CTk):
                     uprb_window.wait('visible', timeout=100)
                     user = self.uprb.UprbayTeraTermVt.child_window(title="User name:",
                                                                    control_type="Edit").wrapper_object()
+                    time.sleep(0.1)
                     user.type_keys('students', with_spaces=False)
                     okConn2 = self.uprb.UprbayTeraTermVt.child_window(title="OK",
                                                                       control_type="Button").wrapper_object()
