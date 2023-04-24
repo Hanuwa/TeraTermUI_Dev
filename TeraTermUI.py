@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/21/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/23/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -150,8 +150,8 @@ class TeraTermUI(customtkinter.CTk):
                                 "like the Social Security Number it's encrypted using a asymmetric-key. \n\n" +
                               "Thanks for using our application, for more information, help and to customize your "
                               "experience"
-                              " make sure to click the buttons on the sidebar, the application is also open source"
-                              "for anyone who is interested in working/seeing the project. \n\n " +
+                              " make sure to click the buttons on the sidebar, the application is also open source "
+                              "for anyone who is interested in working/seeing the project. \n\n" +
                               "IMPORTANT: DO NOT USE WHILE HAVING ANOTHER INSTANCE OF THE APPLICATION OPENED.")
         self.intro_box.configure(state="disabled", wrap="word", border_spacing=8)
 
@@ -398,6 +398,7 @@ class TeraTermUI(customtkinter.CTk):
         self.flag5 = False
         self.screenshot_skip = False
         self.error_occurred = False
+        self.run_fix = False
         self.a_counter = 0
         self.m_counter = 0
         self.e_counter = 0
@@ -596,6 +597,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.ssn_entry.delete(0, "end")
                                 self.code_entry.delete(0, "end")
                                 self.screenshot_skip = False
+                                self.run_fix = True
                                 del ssn, code, publicKey1, privateKey1, publicKey2, privateKey2, ssnEnc, codeEnc
                                 gc.collect()
                         else:
@@ -604,14 +606,12 @@ class TeraTermUI(customtkinter.CTk):
                                 self.show_error_message(300, 215, "Error! Invalid SSN or Code")
                             elif lang == "Español":
                                 self.show_error_message(300, 215, "¡Error! SSN o Código Incorrecto")
-                            self.screenshot_skip = True
                     except ValueError:
                         self.bind("<Return>", lambda event: self.tuition_event_handler())
                         if lang == "English":
                             self.show_error_message(300, 215, "Error! Invalid SSN or Code")
                         elif lang == "Español":
                             self.show_error_message(300, 215, "¡Error! SSN o Código Incorrecto")
-                        self.screenshot_skip = True
             else:
                 self.bind("<Return>", lambda event: self.tuition_event_handler())
                 if lang == "English":
@@ -2682,7 +2682,7 @@ class TeraTermUI(customtkinter.CTk):
                                   "Thanks for using our application, for more information, help and to customize your "
                                   "experience"
                                   " make sure to click the buttons on the sidebar, the application is also open source"
-                                  "for anyone who is interested in working/seeing the project. \n\n " +
+                                  " for anyone who is interested in working/seeing the project. \n\n" +
                                   "IMPORTANT: DO NOT USE WHILE HAVING ANOTHER INSTANCE OF THE APPLICATION OPENED.")
             self.intro_box.configure(state="disabled")
             self.appearance_mode_optionemenu.configure(values=["Light", "Dark", "System"])
@@ -3073,7 +3073,7 @@ class TeraTermUI(customtkinter.CTk):
     # If user messes up the execution of the program this can solve it and make program work as expected
     def fix_execution(self):
         lang = self.language_menu.get()
-        if self.checkIfProcessRunning("ttermpro"):
+        if self.checkIfProcessRunning("ttermpro") and self.run_fix:
             if lang == "English":
                 msg = CTkMessagebox(master=self, title="Exit", message="This button is only made to fix the issue "
                                                                        "mentioned, are you sure you want to do it?",
@@ -3178,7 +3178,7 @@ class TeraTermUI(customtkinter.CTk):
             scaling_factor = self.tk.call("tk", "scaling")
             x_position = int((screen_width - 450 * scaling_factor) / 2)
             y_position = int((screen_height - 250 * scaling_factor) / 2)
-            window_geometry = f"{450}x{250}+{x_position + 150}+{y_position - 90}"
+            window_geometry = f"{450}x{250}+{x_position + 190}+{y_position - 65}"
             self.status.geometry(window_geometry)
             self.status.title("Status")
             self.status.after(256, lambda: self.status.iconbitmap("images/tera-term.ico"))
@@ -3190,7 +3190,8 @@ class TeraTermUI(customtkinter.CTk):
                                           font=customtkinter.CTkFont(size=15, weight="bold"))
             text.pack()
             text2 = customtkinter.CTkLabel(scrollable_frame, text="\n\n 0.9.0 Version \n"
-                                                                  "--Testing Phase-- \n")
+                                                                  "--Testing Phase-- \n\n"
+                                                                  "Any feedback is greatly appreciated!\n")
             text2.pack()
             text3 = customtkinter.CTkLabel(scrollable_frame, text="\nGitHub Repository:")
             text3.pack()
@@ -3219,7 +3220,7 @@ class TeraTermUI(customtkinter.CTk):
             scaling_factor = self.tk.call("tk", "scaling")
             x_position = int((screen_width - 450 * scaling_factor) / 2)
             y_position = int((screen_height - 250 * scaling_factor) / 2)
-            window_geometry = f"{450}x{250}+{x_position + 150}+{y_position - 90}"
+            window_geometry = f"{450}x{250}+{x_position + 190}+{y_position - 65}"
             self.status.geometry(window_geometry)
             self.status.title("Estado")
             self.status.after(256, lambda: self.status.iconbitmap("images/tera-term.ico"))
@@ -3231,7 +3232,8 @@ class TeraTermUI(customtkinter.CTk):
                                           font=customtkinter.CTkFont(size=15, weight="bold"))
             text.pack()
             text2 = customtkinter.CTkLabel(scrollable_frame, text="\n\n Versión 0.9.0 \n"
-                                                                  "--Fase de Pruebas-- \n")
+                                                                  "--Fase de Pruebas-- \n\n"
+                                                                  "¡Cualquier comentario es muy apresiado!")
             text2.pack()
             text3 = customtkinter.CTkLabel(scrollable_frame, text="\nRepositorio de GitHub:")
             text3.pack()
@@ -3339,7 +3341,7 @@ class TeraTermUI(customtkinter.CTk):
             scaling_factor = self.tk.call("tk", "scaling")
             x_position = int((screen_width - 450 * scaling_factor) / 2)
             y_position = int((screen_height - 250 * scaling_factor) / 2)
-            window_geometry = f"{450}x{250}+{x_position + 150}+{y_position - 90}"
+            window_geometry = f"{450}x{250}+{x_position + 190}+{y_position - 65}"
             self.help.geometry(window_geometry)
             self.help.title("Help")
             self.help.after(256, lambda: self.help.iconbitmap("images/tera-term.ico"))
@@ -3384,7 +3386,7 @@ class TeraTermUI(customtkinter.CTk):
             scaling_factor = self.tk.call("tk", "scaling")
             x_position = int((screen_width - 450 * scaling_factor) / 2)
             y_position = int((screen_height - 250 * scaling_factor) / 2)
-            window_geometry = f"{450}x{250}+{x_position + 150}+{y_position - 90}"
+            window_geometry = f"{450}x{250}+{x_position + 190}+{y_position - 65}"
             self.help.geometry(window_geometry)
             self.help.title("Ayuda")
             self.help.after(256, lambda: self.help.iconbitmap("images/tera-term.ico"))
