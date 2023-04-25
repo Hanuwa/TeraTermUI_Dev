@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/23/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/24/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -25,13 +25,19 @@ from tkinter import filedialog
 import gc
 import pyautogui
 import win32gui
-import subprocess
 import pygetwindow as gw
 from collections import deque
 from CTkToolTip import CTkToolTip
 from CTkMessagebox import CTkMessagebox
 from pywinauto.application import Application
 from pywinauto.keyboard import send_keys
+from google.oauth2 import service_account
+from googleapiclient.errors import HttpError
+from googleapiclient.discovery import build
+import json
+import subprocess
+import pyzipper
+from datetime import datetime
 import pytesseract
 import sqlite3
 import ctypes
@@ -73,6 +79,11 @@ class TeraTermUI(customtkinter.CTk):
         self.cpu_load_history = deque(maxlen=60)
         self.stop_monitor = threading.Event()
         self.monitor_thread = threading.Thread(target=self.cpu_monitor)
+        self.SERVICE_ACCOUNT_FILE = "feedback.zip"
+        self.SPREADSHEET_ID = '1ffJLgp8p-goOlxC10OFEu0JefBgQDsgEo_suis4k0Pw'
+        self.RANGE_NAME = 'Sheet1!A:A'
+        self.PASSWORD = 'F_QL^B#O_/r9|Rl0i=x),;!@en|V5qR%W(9;2^+f=lRPcw!+4'
+        self.credentials = None
         # self.monitor_thread.start()
 
         # path for tesseract application
@@ -412,6 +423,8 @@ class TeraTermUI(customtkinter.CTk):
         # Database
         appdata_path = os.getenv("APPDATA")
         self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
+        self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
+        self.authenticate()
         self.connection = sqlite3.connect("database.db")
         self.cursor = self.connection.cursor()
         location = self.cursor.execute("SELECT location FROM user_data WHERE location IS NOT NULL").fetchall()
@@ -606,12 +619,14 @@ class TeraTermUI(customtkinter.CTk):
                                 self.show_error_message(300, 215, "Error! Invalid SSN or Code")
                             elif lang == "Español":
                                 self.show_error_message(300, 215, "¡Error! SSN o Código Incorrecto")
+                            self.screenshot_skip = True
                     except ValueError:
                         self.bind("<Return>", lambda event: self.tuition_event_handler())
                         if lang == "English":
                             self.show_error_message(300, 215, "Error! Invalid SSN or Code")
                         elif lang == "Español":
                             self.show_error_message(300, 215, "¡Error! SSN o Código Incorrecto")
+                        self.screenshot_skip = True
             else:
                 self.bind("<Return>", lambda event: self.tuition_event_handler())
                 if lang == "English":
@@ -2927,8 +2942,9 @@ class TeraTermUI(customtkinter.CTk):
         time.sleep(0.2)
         screenshot = pyautogui.screenshot(region=(x, y - 50, width + 150, height + 150))
         img = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2GRAY)
-        img = cv2.resize(img, None, fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
+        img = cv2.resize(img, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
         img = Image.fromarray(img)
+        img.save("img.png")
         custom_config = r'--oem 3 --psm 6'
         text = pytesseract.image_to_string(img, config=custom_config)
         return text
@@ -3191,9 +3207,15 @@ class TeraTermUI(customtkinter.CTk):
             text.pack()
             text2 = customtkinter.CTkLabel(scrollable_frame, text="\n\n 0.9.0 Version \n"
                                                                   "--Testing Phase-- \n\n"
-                                                                  "Any feedback is greatly appreciated!\n")
+                                                                  "Any feedback is greatly appreciated!")
             text2.pack()
-            text3 = customtkinter.CTkLabel(scrollable_frame, text="\nGitHub Repository:")
+            self.feedbackText = customtkinter.CTkTextbox(scrollable_frame, wrap="word", border_spacing=8, width=300)
+            self.feedbackText.pack(pady=10)
+            feedbackSend = customtkinter.CTkButton(scrollable_frame, border_width=2,
+                                                   text="Send Feedback",
+                                                   text_color=("gray10", "#DCE4EE"), command=self.submit_feedback)
+            feedbackSend.pack()
+            text3 = customtkinter.CTkLabel(scrollable_frame, text="\n\nGitHub Repository:")
             text3.pack()
             link = customtkinter.CTkButton(scrollable_frame, border_width=2,
                                            text="Link",
@@ -3235,6 +3257,12 @@ class TeraTermUI(customtkinter.CTk):
                                                                   "--Fase de Pruebas-- \n\n"
                                                                   "¡Cualquier comentario es muy apresiado!")
             text2.pack()
+            self.feedbackText = customtkinter.CTkTextbox(scrollable_frame, wrap="word", border_spacing=8, width=300)
+            self.feedbackText.pack(pady=10)
+            feedbackSend = customtkinter.CTkButton(scrollable_frame, border_width=2,
+                                                   text="Enviar Comentario",
+                                                   text_color=("gray10", "#DCE4EE"), command=self.submit_feedback)
+            feedbackSend.pack()
             text3 = customtkinter.CTkLabel(scrollable_frame, text="\nRepositorio de GitHub:")
             text3.pack()
             link = customtkinter.CTkButton(scrollable_frame, border_width=2,
@@ -3254,6 +3282,80 @@ class TeraTermUI(customtkinter.CTk):
                                                                   " llamado database.db\n y cosas como el ssn"
                                                                   " son encriptado usando una llave asimétrica.")
             faqA1.pack()
+
+    # Reads from the feedback.json file
+    def authenticate(self):
+        try:
+            with open(self.SERVICE_ACCOUNT_FILE, 'rb') as f:
+                archive = pyzipper.AESZipFile(self.SERVICE_ACCOUNT_FILE)
+                archive.setpassword(self.PASSWORD.encode())
+                file_contents = archive.read('feedback.json')
+                credentials_dict = json.loads(file_contents.decode())
+                self.credentials = service_account.Credentials.from_service_account_info(
+                    credentials_dict,
+                    scopes=['https://www.googleapis.com/auth/spreadsheets']
+                )
+        except Exception as e:
+            print(f"Failed to load credentials: {str(e)}")
+            self.credentials = None
+
+    # Function to call the Google Sheets API
+    def call_sheets_api(self, values):
+        try:
+            service = build('sheets', 'v4', credentials=self.credentials)
+        except:
+            DISCOVERY_SERVICE_URL = 'https://sheets.googleapis.com/$discovery/rest?version=v4'
+            service = build('sheets', 'v4', credentials=self.credentials, discoveryServiceUrl=DISCOVERY_SERVICE_URL)
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        body = {
+            'values': [[now, values[0][0]]]
+        }
+
+        try:
+            result = service.spreadsheets().values().append(
+                spreadsheetId=self.SPREADSHEET_ID, range=self.RANGE_NAME,
+                valueInputOption='RAW', insertDataOption='INSERT_ROWS',
+                body=body).execute()
+            return result
+        except HttpError as error:
+            print(f"An error occurred: {error}")
+            return None
+
+    def submit_feedback(self):
+        lang = self.language_menu.get()
+        if lang == "English":
+            msg = CTkMessagebox(master=self, title="Submit", message="Are you ready to submit your feedback?",
+                                icon="question",
+                                option_1="Cancel", option_2="No", option_3="Yes", icon_size=(75, 75),
+                                button_color=("#c30101", "#145DA0", "#145DA0"),
+                                hover_color=("darkred", "darkblue", "darkblue"))
+        elif lang == "Español":
+            msg = CTkMessagebox(master=self, title="Someter", message="¿Estás preparado para mandar to comentario?",
+                                icon="question",
+                                option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(75, 75),
+                                button_color=("#c30101", "#145DA0", "#145DA0"),
+                                hover_color=("darkred", "darkblue", "darkblue"))
+        response = msg.get()
+        if response == "Yes" or response == "Sí":
+            feedback = self.feedbackText.get("1.0", tk.END).strip()
+            if not feedback:
+                if lang == "English":
+                    self.show_error_message(300, 220, "Error! Feedback cannot be empty")
+                elif lang == "Español":
+                    self.show_error_message(325, 230, "¡Error! El comentario no puede\n estar vacio")
+                return
+            result = self.call_sheets_api([[feedback]])
+            if result:
+                if lang == "English":
+                    self.show_success_message(300, 230, "Feedback submitted successfully!")
+                elif lang == "Español":
+                    self.show_success_message(300, 230, "¡Comentario sometido éxitosamente!")
+                self.feedbackText.delete("1.0", tk.END)
+            else:
+                if lang == "English":
+                    self.show_error_message(300, 230, "Error! An error occurred while\n submitting feedback")
+                elif lang == "Español":
+                    self.show_error_message(300, 230, "¡Error! Un error ocurrio mientras\n se sometia comentario")
 
     # Function that lets user select where their Tera Term application is located
     def change_location_event(self):
