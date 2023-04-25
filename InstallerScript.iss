@@ -46,6 +46,7 @@ Name: "teraterm"; Description: "{cm:teraterm}"; GroupDescription: "Additional in
 Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\database.db"; DestDir: "{userappdata}\TeraTermUI"; Flags: ignoreversion comparetimestamp
+Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\feedback.zip"; DestDir: "{userappdata}\TeraTermUI"; Flags: ignoreversion comparetimestamp
 Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\teraterm-4.106.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
