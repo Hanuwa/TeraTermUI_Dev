@@ -2944,7 +2944,7 @@ class TeraTermUI(customtkinter.CTk):
         img = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2GRAY)
         img = cv2.resize(img, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
         img = Image.fromarray(img)
-        img.save("img.png")
+        # img.save("img.png")
         custom_config = r'--oem 3 --psm 6'
         text = pytesseract.image_to_string(img, config=custom_config)
         return text
