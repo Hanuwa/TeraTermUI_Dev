@@ -2505,6 +2505,7 @@ class TeraTermUI(customtkinter.CTk):
             self.show.deselect()
             self.screenshot_skip = False
             self.error_occurred = False
+            self.run_fix = False
 
     # function that goes back to Enrolling frame screen
     def go_back_event2(self):
