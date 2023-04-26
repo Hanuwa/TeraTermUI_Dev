@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/25/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/26/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -341,7 +341,8 @@ class TeraTermUI(customtkinter.CTk):
         self.back4 = customtkinter.CTkButton(master=self.m_button_frame, fg_color="transparent", border_width=2,
                                              text="Back", height=40, width=70,
                                              text_color=("gray10", "#DCE4EE"), command=self.go_back_event2)
-        self.back4_tooltip = CTkToolTip(self.back4, message="Go back to the previous screen")
+        self.back4_tooltip = CTkToolTip(self.back4, message="Go back to the previous "
+                                                            "\nscreen")
         self.submit_multiple = customtkinter.CTkButton(master=self.m_button_frame, border_width=2,
                                                        text="Submit", text_color=("gray10", "#DCE4EE"),
                                                        command=self.submit_multiple_event_handler, height=40, width=70)
@@ -441,14 +442,17 @@ class TeraTermUI(customtkinter.CTk):
         if location:
             self.location = location[0][0]
         if language:
-            self.language_menu.set(language[0][0])
-            self.change_language_event(lang=language[0][0])
+            if language[0][0] != "English":
+                self.language_menu.set(language[0][0])
+                self.change_language_event(lang=language[0][0])
         if appearance:
-            self.appearance_mode_optionemenu.set(appearance[0][0])
-            self.change_appearance_mode_event(appearance[0][0])
+            if appearance[0][0] != "System":
+                self.appearance_mode_optionemenu.set(appearance[0][0])
+                self.change_appearance_mode_event(appearance[0][0])
         if scaling:
-            self.scaling_optionemenu.set(scaling[0][0])
-            self.change_scaling_event(scaling[0][0])
+            if appearance[0][0] != "100%":
+                self.scaling_optionemenu.set(scaling[0][0])
+                self.change_scaling_event(scaling[0][0])
         if len(welcome) == 0:
             self.sidebar_button_2.configure(state="disabled")
 
@@ -467,31 +471,31 @@ class TeraTermUI(customtkinter.CTk):
                     self.cursor.execute("INSERT INTO user_data (welcome) VALUES (?)", ("Checked",))
                 elif len(welcome) == 1:
                     self.cursor.execute("UPDATE user_data SET welcome=?", ("Checked",))
-
             self.after(5000, show_message_box)
 
         def update_app():
+            lang = self.language_menu.get()
             try:
                 latest_version = self.get_latest_release()
                 if not self.compare_versions(latest_version, self.USER_APP_VERSION):
-                    if self.language_menu.get() == "English":
+                    if lang == "English":
                         msg = CTkMessagebox(master=self, title="Exit",
                                             message="A newer version of the application is available,"
                                                     "would you like to update?",
                                             icon="question",
-                                            option_1="Cancel", option_2="No", option_3="Yes", icon_size=(75, 75),
+                                            option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
                                             button_color=("#c30101", "#145DA0", "#145DA0"),
                                             hover_color=("darkred", "darkblue", "darkblue"))
-                    elif self.language_menu.get() == "Español":
+                    elif lang == "Español":
                         msg = CTkMessagebox(master=self, title="Salir",
                                             message="Una nueva de versión de la aplicación esta disponible,"
                                                     "¿desea actualizar?",
                                             icon="question",
-                                            option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(75, 75),
+                                            option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
                                             button_color=("#c30101", "#145DA0", "#145DA0"),
                                             hover_color=("darkred", "darkblue", "darkblue"))
                     response = msg.get()
-                    if response == "Yes" or response == "Sí":
+                    if response == "Yes" or response == "Sí" and self.test_connection(lang):
                         webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
             except requests.exceptions.RequestException as e:
                 print(f"Error occurred while fetching latest release information: {e}")
@@ -505,14 +509,14 @@ class TeraTermUI(customtkinter.CTk):
             msg = CTkMessagebox(master=self, title="Exit", message="Are you sure you want to exit the application?"
                                                                    " ""WARNING: (Tera Term will close)",
                                 icon="question",
-                                option_1="Cancel", option_2="No", option_3="Yes", icon_size=(75, 75),
+                                option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
                                 button_color=("#c30101", "#145DA0", "#145DA0"),
                                 hover_color=("darkred", "darkblue", "darkblue"))
         elif lang == "Español":
             msg = CTkMessagebox(master=self, title="Salir", message="¿Estás seguro que quieres salir de la aplicación?"
                                                                     " ""WARNING: (Tera Term va a cerrar)",
                                 icon="question",
-                                option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(75, 75),
+                                option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
                                 button_color=("#c30101", "#145DA0", "#145DA0"),
                                 hover_color=("darkred", "darkblue", "darkblue"))
         response = msg.get()
@@ -1302,7 +1306,7 @@ class TeraTermUI(customtkinter.CTk):
                                 message="Are you sure you are ready submit the data?"
                                         " WARNING: Make sure the information is correct", icon="images/submit.png",
                                 option_1="Cancel", option_2="No", option_3="Yes",
-                                icon_size=(75, 75), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
                                 hover_color=("darkred", "darkblue", "darkblue"))
         elif lang == "Español":
             msg = CTkMessagebox(master=self, title="Someter",
@@ -1310,7 +1314,7 @@ class TeraTermUI(customtkinter.CTk):
                                         " WARNING: Asegúrese de que la información está correcta",
                                 icon="images/submit.png",
                                 option_1="Cancelar", option_2="No", option_3="Sí",
-                                icon_size=(75, 75), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
                                 hover_color=("darkred", "darkblue", "darkblue"))
         response = msg.get()
         if response == "Yes" or response == "Sí":
@@ -2126,7 +2130,7 @@ class TeraTermUI(customtkinter.CTk):
                                                     message="Are you sure you want to sign out"
                                                             " and exit Tera Term?", icon="question",
                                                     option_1="Cancel", option_2="No", option_3="Yes",
-                                                    icon_size=(75, 75), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                                    icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
                                                     hover_color=("darkred", "darkblue", "darkblue"))
                             elif lang == "Español":
                                 msg = CTkMessagebox(master=self, title="Salir",
@@ -2134,7 +2138,7 @@ class TeraTermUI(customtkinter.CTk):
                                                             " la sesión de Tera Term?",
                                                     icon="question",
                                                     option_1="Cancelar", option_2="No", option_3="Sí",
-                                                    icon_size=(75, 75), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                                    icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
                                                     hover_color=("darkred", "darkblue", "darkblue"))
                             response = msg.get()
                             if self.checkIfProcessRunning("ttermpro") and response == "Yes" or response == "Sí":
@@ -2450,7 +2454,7 @@ class TeraTermUI(customtkinter.CTk):
                                         " ""WARNING: (Tera Term will close)",
                                 icon="question",
                                 option_1="Cancel", option_2="No", option_3="Yes",
-                                icon_size=(75, 75), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
                                 hover_color=("darkred", "darkblue", "darkblue"))
         elif lang == "Español":
             msg = CTkMessagebox(master=self, title="¿Ir atrás?",
@@ -2458,7 +2462,7 @@ class TeraTermUI(customtkinter.CTk):
                                         " ""WARNING: (Tera Term va a cerrar)",
                                 icon="question",
                                 option_1="Cancelar", option_2="No", option_3="Sí",
-                                icon_size=(75, 75), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
                                 hover_color=("darkred", "darkblue", "darkblue"))
         response = msg.get()
         if self.checkIfProcessRunning("ttermpro") and response == "Yes" or response == "Sí":
@@ -2688,7 +2692,8 @@ class TeraTermUI(customtkinter.CTk):
                                                  " de la aplicación")
             self.back3_tooltip.configure(message="Volver al menú principal\n"
                                                  " de la aplicación")
-            self.back4_tooltip.configure(message="Volver a la pantalla anterior")
+            self.back4_tooltip.configure(message="Volver a la pantalla "
+                                                 "\nanterior")
             self.show_all_tooltip.configure(message="Muestre todas las secciones\n"
                                                     "o solamente las que están\n"
                                                     "abiertas")
@@ -2817,7 +2822,8 @@ class TeraTermUI(customtkinter.CTk):
                                                  "of the application")
             self.back3_tooltip.configure(message="Go back to the main menu\n"
                                                  "of the application")
-            self.back4_tooltip.configure(message="Go back to the previous screen")
+            self.back4_tooltip.configure(message="Go back to the previous "
+                                                 "\nscreen")
             self.show_classes_tooltip.configure(message="Shows the classes you are\n "
                                                         "enrolled in for a \n"
                                                         "specific semester")
@@ -3090,6 +3096,36 @@ class TeraTermUI(customtkinter.CTk):
                         "asymmetric-cryptography#:~:text=Asymmetric%20cryptography%2C%20also%20known%20as,"
                         "from%20unauthorized%20access%20or%20use.")
 
+    def update_app(self):
+        lang = self.language_menu.get()
+        latest_version = self.get_latest_release()
+        if not self.compare_versions(latest_version, self.USER_APP_VERSION):
+            if lang == "English":
+                msg = CTkMessagebox(master=self, title="Exit",
+                                    message="A newer version of the application is available,"
+                                            "would you like to update?",
+                                    icon="question",
+                                    option_1="Cancel", option_2="No", option_3="Yes", icon_size=(75, 75),
+                                    button_color=("#c30101", "#145DA0", "#145DA0"),
+                                    hover_color=("darkred", "darkblue", "darkblue"))
+            elif lang == "Español":
+                msg = CTkMessagebox(master=self, title="Salir",
+                                    message="Una nueva de versión de la aplicación esta disponible,"
+                                            "¿desea actualizar?",
+                                    icon="question",
+                                    option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(75, 75),
+                                    button_color=("#c30101", "#145DA0", "#145DA0"),
+                                    hover_color=("darkred", "darkblue", "darkblue"))
+            response = msg.get()
+            if response == "Yes" or response == "Sí" and self.test_connection(lang):
+                webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
+        else:
+            winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+            if lang == "English":
+                CTkMessagebox(title="Info", message="Application is up to date")
+            elif lang == "Español":
+                CTkMessagebox(title="Info", message="La Aplicación está actualizada")
+
     # determines the hardware of the users' computer and change the time.sleep seconds respectively
     def get_sleep_time(self):
         cpu_count = psutil.cpu_count()
@@ -3236,21 +3272,28 @@ class TeraTermUI(customtkinter.CTk):
             self.status.attributes("-topmost", True)
             scrollable_frame = customtkinter.CTkScrollableFrame(self.status, width=450, height=250)
             scrollable_frame.pack()
-            text = customtkinter.CTkLabel(scrollable_frame, text="Status of the application",
-                                          font=customtkinter.CTkFont(size=15, weight="bold"))
-            text.pack()
-            text2 = customtkinter.CTkLabel(scrollable_frame, text="\n\n 0.9.0 Version \n"
-                                                                  "--Testing Phase-- \n\n"
-                                                                  "Any feedback is greatly appreciated!")
-            text2.pack()
+            title = customtkinter.CTkLabel(scrollable_frame, text="Status of the application",
+                                           font=customtkinter.CTkFont(size=15, weight="bold"))
+            title.pack()
+            version = customtkinter.CTkLabel(scrollable_frame, text="\n\n 0.9.0 Version \n"
+                                                                    "--Testing Phase-- \n\n"
+                                                                    "Any feedback is greatly appreciated!")
+            version.pack()
             self.feedbackText = customtkinter.CTkTextbox(scrollable_frame, wrap="word", border_spacing=8, width=300)
             self.feedbackText.pack(pady=10)
             feedbackSend = customtkinter.CTkButton(scrollable_frame, border_width=2,
                                                    text="Send Feedback",
                                                    text_color=("gray10", "#DCE4EE"), command=self.submit_feedback)
             feedbackSend.pack()
-            text3 = customtkinter.CTkLabel(scrollable_frame, text="\n\nGitHub Repository:")
-            text3.pack(pady=5)
+            checkUpdateText = customtkinter.CTkLabel(scrollable_frame, text="\n\n Check if application has a new update"
+                                                                            " available")
+            checkUpdateText.pack(pady=5)
+            checkUpdate = customtkinter.CTkButton(scrollable_frame, border_width=2,
+                                                  text="Update",
+                                                  text_color=("gray10", "#DCE4EE"), command=self.update_app)
+            checkUpdate.pack()
+            website = customtkinter.CTkLabel(scrollable_frame, text="\n\nGitHub Repository:")
+            website.pack(pady=5)
             link = customtkinter.CTkButton(scrollable_frame, border_width=2,
                                            text="Link",
                                            text_color=("gray10", "#DCE4EE"), command=self.github_event)
@@ -3284,21 +3327,28 @@ class TeraTermUI(customtkinter.CTk):
             self.status.attributes("-topmost", True)
             scrollable_frame = customtkinter.CTkScrollableFrame(self.status, width=450, height=250, corner_radius=10)
             scrollable_frame.pack()
-            text = customtkinter.CTkLabel(scrollable_frame, text="Estado de la aplicación",
-                                          font=customtkinter.CTkFont(size=15, weight="bold"))
-            text.pack()
-            text2 = customtkinter.CTkLabel(scrollable_frame, text="\n\n Versión 0.9.0 \n"
-                                                                  "--Fase de Pruebas-- \n\n"
-                                                                  "¡Cualquier comentario es muy apreciado!")
-            text2.pack()
+            title = customtkinter.CTkLabel(scrollable_frame, text="Estado de la aplicación",
+                                           font=customtkinter.CTkFont(size=15, weight="bold"))
+            title.pack()
+            version = customtkinter.CTkLabel(scrollable_frame, text="\n\n Versión 0.9.0 \n"
+                                                                    "--Fase de Pruebas-- \n\n"
+                                                                    "¡Cualquier comentario es muy apreciado!")
+            version.pack()
             self.feedbackText = customtkinter.CTkTextbox(scrollable_frame, wrap="word", border_spacing=8, width=300)
             self.feedbackText.pack(pady=10)
             feedbackSend = customtkinter.CTkButton(scrollable_frame, border_width=2,
                                                    text="Enviar Comentario",
                                                    text_color=("gray10", "#DCE4EE"), command=self.submit_feedback)
             feedbackSend.pack()
-            text3 = customtkinter.CTkLabel(scrollable_frame, text="\nRepositorio de GitHub:")
-            text3.pack(pady=5)
+            checkUpdateText = customtkinter.CTkLabel(scrollable_frame, text="\n\n Revisa sí la aplicación tiene una"
+                                                                            " actualización nueva")
+            checkUpdateText.pack(pady=5)
+            checkUpdate = customtkinter.CTkButton(scrollable_frame, border_width=2,
+                                                  text="Actualizar",
+                                                  text_color=("gray10", "#DCE4EE"), command=self.update_app)
+            checkUpdate.pack()
+            website = customtkinter.CTkLabel(scrollable_frame, text="\n\nRepositorio de GitHub:")
+            website.pack(pady=5)
             link = customtkinter.CTkButton(scrollable_frame, border_width=2,
                                            text="Enlace",
                                            text_color=("gray10", "#DCE4EE"), command=self.github_event)
@@ -3335,61 +3385,70 @@ class TeraTermUI(customtkinter.CTk):
 
     # Function to call the Google Sheets API
     def call_sheets_api(self, values):
-        try:
-            service = build('sheets', 'v4', credentials=self.credentials)
-        except:
-            DISCOVERY_SERVICE_URL = 'https://sheets.googleapis.com/$discovery/rest?version=v4'
-            service = build('sheets', 'v4', credentials=self.credentials, discoveryServiceUrl=DISCOVERY_SERVICE_URL)
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        body = {
-            'values': [[now, values[0][0]]]
-        }
+        lang = self.language_menu.get()
+        if self.test_connection(lang):
+            try:
+                service = build('sheets', 'v4', credentials=self.credentials)
+            except:
+                DISCOVERY_SERVICE_URL = 'https://sheets.googleapis.com/$discovery/rest?version=v4'
+                service = build('sheets', 'v4', credentials=self.credentials, discoveryServiceUrl=DISCOVERY_SERVICE_URL)
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            body = {
+                'values': [[now, values[0][0]]]
+            }
 
-        try:
-            result = service.spreadsheets().values().append(
-                spreadsheetId=self.SPREADSHEET_ID, range=self.RANGE_NAME,
-                valueInputOption='RAW', insertDataOption='INSERT_ROWS',
-                body=body).execute()
-            return result
-        except HttpError as error:
-            print(f"An error occurred: {error}")
-            return None
+            try:
+                result = service.spreadsheets().values().append(
+                    spreadsheetId=self.SPREADSHEET_ID, range=self.RANGE_NAME,
+                    valueInputOption='RAW', insertDataOption='INSERT_ROWS',
+                    body=body).execute()
+                return result
+            except HttpError as error:
+                print(f"An error occurred: {error}")
+                return None
 
     def submit_feedback(self):
         lang = self.language_menu.get()
         if lang == "English":
-            msg = CTkMessagebox(master=self, title="Submit", message="Are you ready to submit your feedback?",
+            msg = CTkMessagebox(master=self, title="Submit", message="Are you ready to submit your feedback?\n"
+                                                                     " (SUBMISSION IS COMPLETELY ANONYMOUS)",
                                 icon="question",
-                                option_1="Cancel", option_2="No", option_3="Yes", icon_size=(75, 75),
+                                option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
                                 button_color=("#c30101", "#145DA0", "#145DA0"),
                                 hover_color=("darkred", "darkblue", "darkblue"))
         elif lang == "Español":
-            msg = CTkMessagebox(master=self, title="Someter", message="¿Estás preparado para mandar to comentario?",
+            msg = CTkMessagebox(master=self, title="Someter", message="¿Estás preparado para mandar to comentario?\n"
+                                                                      " (EL ENVÍO ES COMPLETAMENTE ANÓNIMO)",
                                 icon="question",
-                                option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(75, 75),
+                                option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
                                 button_color=("#c30101", "#145DA0", "#145DA0"),
                                 hover_color=("darkred", "darkblue", "darkblue"))
         response = msg.get()
-        if response == "Yes" or response == "Sí":
+        if response == "Yes" or response == "Sí" and self.test_connection(lang):
             feedback = self.feedbackText.get("1.0", tk.END).strip()
             if not feedback:
+                winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                 if lang == "English":
-                    self.show_error_message(300, 220, "Error! Feedback cannot be empty")
+                    CTkMessagebox(title="Error", message="Error! Feedback cannot be empty", icon="cancel")
                 elif lang == "Español":
-                    self.show_error_message(325, 230, "¡Error! El comentario no puede\n estar vacio")
+                    CTkMessagebox(title="Error", message="¡Error! El comentario no puede estar vacio", icon="cancel")
                 return
             result = self.call_sheets_api([[feedback]])
             if result:
+                winsound.PlaySound("sounds/success.wav", winsound.SND_ASYNC)
                 if lang == "English":
-                    self.show_success_message(300, 230, "Feedback submitted successfully!")
+                    CTkMessagebox(title="Success", icon="check", message="Feedback submitted successfully!")
                 elif lang == "Español":
-                    self.show_success_message(300, 230, "¡Comentario sometido éxitosamente!")
+                    CTkMessagebox(title="Success", icon="check", message="¡Comentario sometido éxitosamente!")
                 self.feedbackText.delete("1.0", tk.END)
             else:
+                winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                 if lang == "English":
-                    self.show_error_message(300, 230, "Error! An error occurred while\n submitting feedback")
+                    CTkMessagebox(title="Error", message="Error! An error occurred while submitting feedback",
+                                  icon="cancel")
                 elif lang == "Español":
-                    self.show_error_message(300, 230, "¡Error! Un error ocurrio mientras\n se sometia comentario")
+                    CTkMessagebox(title="Error", message="¡Error! Un error ocurrio mientras se sometia comentario",
+                                  icon="cancel")
 
     # Function that lets user select where their Tera Term application is located
     def change_location_event(self):
@@ -3485,9 +3544,9 @@ class TeraTermUI(customtkinter.CTk):
             self.help.attributes("-topmost", True)
             scrollable_frame = customtkinter.CTkScrollableFrame(self.help, width=450, height=250)
             scrollable_frame.pack()
-            text = customtkinter.CTkLabel(scrollable_frame, text="Help",
-                                          font=customtkinter.CTkFont(size=15, weight="bold"))
-            text.pack()
+            title = customtkinter.CTkLabel(scrollable_frame, text="Help",
+                                           font=customtkinter.CTkFont(size=15, weight="bold"))
+            title.pack()
             notice = customtkinter.CTkLabel(scrollable_frame, text="*Don't interact/touch Tera Term \n"
                                                                    " while using this application*")
             notice.pack()
@@ -3530,9 +3589,9 @@ class TeraTermUI(customtkinter.CTk):
             self.help.attributes("-topmost", True)
             scrollable_frame = customtkinter.CTkScrollableFrame(self.help, width=450, height=250, corner_radius=10)
             scrollable_frame.pack()
-            text = customtkinter.CTkLabel(scrollable_frame, text="Ayuda",
-                                          font=customtkinter.CTkFont(size=15, weight="bold"))
-            text.pack()
+            title = customtkinter.CTkLabel(scrollable_frame, text="Ayuda",
+                                           font=customtkinter.CTkFont(size=15, weight="bold"))
+            title.pack()
             notice = customtkinter.CTkLabel(scrollable_frame, text="*No toque Tera Term\n"
                                                                    " mientras use esta aplicación*")
             notice.pack()
