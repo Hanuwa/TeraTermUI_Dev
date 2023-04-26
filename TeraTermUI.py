@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/24/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/25/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -24,6 +24,7 @@ from contextlib import closing
 from tkinter import filedialog
 import gc
 import pyautogui
+import requests
 import win32gui
 import pygetwindow as gw
 from collections import deque
@@ -84,6 +85,8 @@ class TeraTermUI(customtkinter.CTk):
         self.RANGE_NAME = 'Sheet1!A:A'
         self.PASSWORD = 'F_QL^B#O_/r9|Rl0i=x),;!@en|V5qR%W(9;2^+f=lRPcw!+4'
         self.credentials = None
+        self.GITHUB_REPO = "https://api.github.com/repos/Hanuwa/TeraTermUI"
+        self.USER_APP_VERSION = "0.9.0"
         # self.monitor_thread.start()
 
         # path for tesseract application
@@ -467,6 +470,34 @@ class TeraTermUI(customtkinter.CTk):
 
             self.after(5000, show_message_box)
 
+        def update_app():
+            try:
+                latest_version = self.get_latest_release()
+                if not self.compare_versions(latest_version, self.USER_APP_VERSION):
+                    if self.language_menu.get() == "English":
+                        msg = CTkMessagebox(master=self, title="Exit",
+                                            message="A newer version of the application is available,"
+                                                    "would you like to update?",
+                                            icon="question",
+                                            option_1="Cancel", option_2="No", option_3="Yes", icon_size=(75, 75),
+                                            button_color=("#c30101", "#145DA0", "#145DA0"),
+                                            hover_color=("darkred", "darkblue", "darkblue"))
+                    elif self.language_menu.get() == "Español":
+                        msg = CTkMessagebox(master=self, title="Salir",
+                                            message="Una nueva de versión de la aplicación esta disponible,"
+                                                    "¿desea actualizar?",
+                                            icon="question",
+                                            option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(75, 75),
+                                            button_color=("#c30101", "#145DA0", "#145DA0"),
+                                            hover_color=("darkred", "darkblue", "darkblue"))
+                    response = msg.get()
+                    if response == "Yes" or response == "Sí":
+                        webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
+            except requests.exceptions.RequestException as e:
+                print(f"Error occurred while fetching latest release information: {e}")
+                print("Please check your internet connection and try again.")
+        self.after(1500, update_app)
+
     # function that when the user tries to close the application a confirm dialog opens up
     def on_closing(self):
         lang = self.language_menu.get()
@@ -512,6 +543,7 @@ class TeraTermUI(customtkinter.CTk):
         block_window.attributes("-alpha", 0.0)
         block_window.grab_set()
         lang = self.language_menu.get()
+        self.error_occurred = False
         if self.test_connection(lang) and self.check_server():
             if self.checkIfProcessRunning("ttermpro"):
                 if not self.screenshot_skip:
@@ -519,17 +551,16 @@ class TeraTermUI(customtkinter.CTk):
                     screenshot_thread.start()
                     screenshot_thread.join()
                     text = self.capture_screenshot()
-                    if "ACCESO AL SISTEMA" not in text and "Press return to continue" in text:
+                    if "ACCESO AL SISTEMA" not in text and "Press return" in text:
                         send_keys("{ENTER 3}")
                         self.screenshot_skip = True
-                    if "ACCESO AL SISTEMA" not in text and "Press return to continue" not in text:
+                    if "ACCESO AL SISTEMA" not in text and "Press return" not in text:
                         self.error_occurred = True
                         if lang == "English":
                             self.show_error_message(300, 215, "Unknown Error! Please try again")
                         if lang == "Español":
                             self.show_error_message(310, 220, "¡Error Desconocido! Por favor \n"
                                                               "intente de nuevo")
-                    self.error_occurred = False
                 if not self.error_occurred:
                     try:
                         ssn = int(self.ssn_entry.get().replace(" ", ""))
@@ -550,16 +581,16 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread.start()
                             screenshot_thread.join()
                             text = self.capture_screenshot()
-                            if "ID NOT ON FILE" in text or "PASSWORD" in text:
+                            if "ID NOT ON FILE" in text or "PASS" in text:
                                 self.bind("<Return>", lambda event: self.tuition_event_handler())
-                                if "PASSWORD" in text:
+                                if "PASS" in text:
                                     send_keys("{TAB 2}")
                                 if lang == "English":
                                     self.show_error_message(300, 215, "Error! Invalid SSN or Code")
                                 if lang == "Español":
                                     self.show_error_message(300, 215, "¡Error! SSN o Código Incorrecto")
                                 self.screenshot_skip = True
-                            elif "ID NOT ON FILE" not in text or "PASSWORD" not in text:
+                            elif "ID NOT ON FILE" not in text or "PASS" not in text:
                                 self.set_focus_to_tkinter()
                                 self.bind("<Return>", lambda event: self.my_classes_event())
                                 self.reset_activity_timer(None)
@@ -2472,6 +2503,8 @@ class TeraTermUI(customtkinter.CTk):
             self.search.configure(state="normal")
             self.multiple.configure(state="normal")
             self.show.deselect()
+            self.screenshot_skip = False
+            self.error_occurred = False
 
     # function that goes back to Enrolling frame screen
     def go_back_event2(self):
@@ -2942,7 +2975,7 @@ class TeraTermUI(customtkinter.CTk):
         time.sleep(0.2)
         screenshot = pyautogui.screenshot(region=(x, y - 50, width + 150, height + 150))
         img = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2GRAY)
-        img = cv2.resize(img, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
+        img = cv2.resize(img, None, fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
         img = Image.fromarray(img)
         # img.save("img.png")
         custom_config = r'--oem 3 --psm 6'
@@ -3216,7 +3249,7 @@ class TeraTermUI(customtkinter.CTk):
                                                    text_color=("gray10", "#DCE4EE"), command=self.submit_feedback)
             feedbackSend.pack()
             text3 = customtkinter.CTkLabel(scrollable_frame, text="\n\nGitHub Repository:")
-            text3.pack()
+            text3.pack(pady=5)
             link = customtkinter.CTkButton(scrollable_frame, border_width=2,
                                            text="Link",
                                            text_color=("gray10", "#DCE4EE"), command=self.github_event)
@@ -3255,7 +3288,7 @@ class TeraTermUI(customtkinter.CTk):
             text.pack()
             text2 = customtkinter.CTkLabel(scrollable_frame, text="\n\n Versión 0.9.0 \n"
                                                                   "--Fase de Pruebas-- \n\n"
-                                                                  "¡Cualquier comentario es muy apresiado!")
+                                                                  "¡Cualquier comentario es muy apreciado!")
             text2.pack()
             self.feedbackText = customtkinter.CTkTextbox(scrollable_frame, wrap="word", border_spacing=8, width=300)
             self.feedbackText.pack(pady=10)
@@ -3264,7 +3297,7 @@ class TeraTermUI(customtkinter.CTk):
                                                    text_color=("gray10", "#DCE4EE"), command=self.submit_feedback)
             feedbackSend.pack()
             text3 = customtkinter.CTkLabel(scrollable_frame, text="\nRepositorio de GitHub:")
-            text3.pack()
+            text3.pack(pady=5)
             link = customtkinter.CTkButton(scrollable_frame, border_width=2,
                                            text="Enlace",
                                            text_color=("gray10", "#DCE4EE"), command=self.github_event)
@@ -3529,6 +3562,32 @@ class TeraTermUI(customtkinter.CTk):
         self.class_list.bind('<<ListboxSelect>>', self.show_class_code)
         self.class_list.bind("<MouseWheel>", self.disable_scroll)
         self.search_box.bind('<KeyRelease>', self.search_classes)
+
+    def get_latest_release(self):
+        url = f"{self.GITHUB_REPO}/releases/latest"
+        response = requests.get(url)
+
+        if response.status_code != 200:
+            print(f"Error fetching release information: {response.status_code}")
+
+        release_data = response.json()
+        latest_version = release_data["tag_name"]
+
+        if latest_version.startswith("v"):
+            latest_version = latest_version[1:]
+
+        return latest_version
+
+    def compare_versions(self, latest_version, user_version):
+        latest_version_parts = [int(part) for part in latest_version.split(".")]
+        user_version_parts = [int(part) for part in user_version.split(".")]
+
+        for latest, user in zip(latest_version_parts, user_version_parts):
+            if latest > user:
+                return False
+            elif latest < user:
+                return True
+        return len(latest_version_parts) <= len(user_version_parts)
 
 
 if __name__ == "__main__":
