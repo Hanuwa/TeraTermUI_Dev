@@ -113,6 +113,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
             self.fg_color = fg_color
 
         default_button_color = self._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkButton"]["fg_color"])
+        default_hover_color = self._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkButton"]["hover_color"])
         
         if button_color=="default":
             self.button_color = (default_button_color, default_button_color, default_button_color)
