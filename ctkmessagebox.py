@@ -23,7 +23,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                  option_3: str = None,
                  border_width: int = 1,
                  border_color: str = "default",
-                 button_color: str = "default",
+                 button_color: tuple = "default",
                  hover_color: tuple = "default",
                  bg_color: str = "default",
                  fg_color: str = "default",
