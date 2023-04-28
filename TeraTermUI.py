@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/27/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/28/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -35,10 +35,10 @@ from pywinauto.keyboard import send_keys
 from google.oauth2 import service_account
 from googleapiclient.errors import HttpError
 from googleapiclient.discovery import build
+from datetime import datetime
 import json
 import subprocess
 import pyzipper
-from datetime import datetime
 import pytesseract
 import sqlite3
 import ctypes
@@ -424,6 +424,8 @@ class TeraTermUI(customtkinter.CTk):
         self.bind("<Escape>", lambda event: self.on_closing())
         # default location of Tera Term
         self.location = "C:/Program Files (x86)/teraterm/ttermpro.exe"
+        self.teraterm_file = "C:/Program Files (x86)/teraterm/TERATERM.ini"
+        self.edit_teraterm_ini(self.teraterm_file)
         # Database
         appdata_path = os.getenv("APPDATA")
         self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
@@ -437,10 +439,16 @@ class TeraTermUI(customtkinter.CTk):
         appearance = self.cursor.execute("SELECT appearance FROM user_data WHERE appearance IS NOT NULL").fetchall()
         scaling = self.cursor.execute("SELECT scaling FROM user_data WHERE scaling IS NOT NULL").fetchall()
         welcome = self.cursor.execute("SELECT welcome FROM user_data WHERE welcome IS NOT NULL").fetchall()
+        teraterm_config = self.cursor.execute("SELECT config FROM user_data WHERE config IS NOT NULL").fetchall()
         if host:
             self.host_entry.insert(0, host)
         if location:
-            self.location = location[0][0]
+            if location[0][0] != self.location:
+                self.location = location[0][0]
+        if teraterm_config:
+            if teraterm_config[0][0] != self.teraterm_file:
+                self.teraterm_file = teraterm_config[0][0]
+                self.edit_teraterm_ini(self.teraterm_file)
         if language:
             if language[0][0] != "English":
                 self.language_menu.set(language[0][0])
@@ -507,14 +515,14 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         if lang == "English":
             msg = CTkMessagebox(master=self, title="Exit", message="Are you sure you want to exit the application?"
-                                                                   " ""WARNING: (Tera Term will close)",
+                                                                   " ""\n\nWARNING: (Tera Term will close)",
                                 icon="question",
                                 option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
                                 button_color=("#c30101", "#145DA0", "#145DA0"),
                                 hover_color=("darkred", "darkblue", "darkblue"))
         elif lang == "Español":
             msg = CTkMessagebox(master=self, title="Salir", message="¿Estás seguro que quieres salir de la aplicación?"
-                                                                    " ""WARNING: (Tera Term va a cerrar)",
+                                                                    " ""\n\nWARNING: (Tera Term va a cerrar)",
                                 icon="question",
                                 option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
                                 button_color=("#c30101", "#145DA0", "#145DA0"),
@@ -645,6 +653,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.code_entry.delete(0, "end")
                                 self.screenshot_skip = False
                                 self.run_fix = True
+                                self.unbind("<Return>")
                                 del ssn, code, publicKey1, privateKey1, publicKey2, privateKey2, ssnEnc, codeEnc
                                 gc.collect()
                         else:
@@ -1286,14 +1295,14 @@ class TeraTermUI(customtkinter.CTk):
         if lang == "English":
             msg = CTkMessagebox(master=self, title="Submit",
                                 message="Are you sure you are ready submit the data?"
-                                        " WARNING: Make sure the information is correct", icon="images/submit.png",
+                                        " \n\nWARNING: Make sure the information is correct", icon="images/submit.png",
                                 option_1="Cancel", option_2="No", option_3="Yes",
                                 icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
                                 hover_color=("darkred", "darkblue", "darkblue"))
         elif lang == "Español":
             msg = CTkMessagebox(master=self, title="Someter",
                                 message="¿Estás preparado para somester la data?"
-                                        " WARNING: Asegúrese de que la información está correcta",
+                                        " \n\nWARNING: Asegúrese de que la información está correcta",
                                 icon="images/submit.png",
                                 option_1="Cancelar", option_2="No", option_3="Sí",
                                 icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
@@ -2270,15 +2279,18 @@ class TeraTermUI(customtkinter.CTk):
                 if username == "students":
                     self.unfocus_tkinter()
                     ctypes.windll.user32.BlockInput(True)
+
                     uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                     uprb_window.wait('visible', timeout=100)
                     user = self.uprb.UprbayTeraTermVt.child_window(title="User name:",
                                                                    control_type="Edit").wrapper_object()
                     time.sleep(0.2)
                     user.type_keys('students', with_spaces=False)
+                    self.hide_loading_screen()
                     okConn2 = self.uprb.UprbayTeraTermVt.child_window(title="OK",
                                                                       control_type="Button").wrapper_object()
                     okConn2.click_input()
+                    self.show_loading_screen_again()
                     time.sleep(3)
                     send_keys("{ENTER 3}")
                     self.set_focus_to_tkinter()
@@ -2355,15 +2367,19 @@ class TeraTermUI(customtkinter.CTk):
                         hostText = self.uprb.TeraTermDisconnectedVt.child_window(title="Host:",
                                                                                  control_type="Edit").wrapper_object()
                         hostText.type_keys('uprbay.uprb.edu', with_spaces=False)
+                        self.hide_loading_screen()
                         okConn1 = self.uprb.TeraTermDisconnectedVt.child_window(title="OK",
                                                                                 control_type="Button").wrapper_object()
                         okConn1.click_input()
+                        self.show_loading_screen_again()
                         uprb_window_new = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                         uprb_window_new.wait('visible', timeout=100)
                         continue_button = uprb_window_new.child_window(title="Continue", control_type="Button")
                         if continue_button.exists():
+                            self.hide_loading_screen()
                             continue_button = continue_button.wrapper_object()
                             continue_button.click_input()
+                            self.show_loading_screen_again()
                         ctypes.windll.user32.BlockInput(False)
                         self.set_focus_to_tkinter()
                         self.authentication_frame.grid(row=0, column=1, columnspan=2, padx=(20, 20), pady=(20, 0))
@@ -2424,7 +2440,7 @@ class TeraTermUI(customtkinter.CTk):
         if lang == "English":
             msg = CTkMessagebox(master=self, title="Go back?",
                                 message="Are you sure you want to go back? "
-                                        " ""WARNING: (Tera Term will close)",
+                                        " \n\n""WARNING: (Tera Term will close)",
                                 icon="question",
                                 option_1="Cancel", option_2="No", option_3="Yes",
                                 icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
@@ -2432,7 +2448,7 @@ class TeraTermUI(customtkinter.CTk):
         elif lang == "Español":
             msg = CTkMessagebox(master=self, title="¿Ir atrás?",
                                 message="¿Estás seguro que quieres ir atrás?"
-                                        " ""WARNING: (Tera Term va a cerrar)",
+                                        " \n\n""WARNING: (Tera Term va a cerrar)",
                                 icon="question",
                                 option_1="Cancelar", option_2="No", option_3="Sí",
                                 icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
@@ -2486,6 +2502,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # function that goes back to Enrolling frame screen
     def go_back_event2(self):
+        self.unbind("<Return>")
         scaling = self.scaling_optionemenu.get()
         lang = self.language_menu.get()
         self.scaling_optionemenu.configure(state="normal")
@@ -2876,7 +2893,6 @@ class TeraTermUI(customtkinter.CTk):
                                                          height=15, width=230, indeterminate_speed=1.5)
         self.progress_bar.pack(pady=1)
         self.progress_bar.start()
-
         return self.loading_screen
 
     # hides the loading screen
@@ -2951,10 +2967,12 @@ class TeraTermUI(customtkinter.CTk):
         x, y = win32gui.ClientToScreen(hwnd, (left, top))
         width = right - left
         height = bottom - top
+        self.hide_loading_screen()
         time.sleep(0.2)
         screenshot = pyautogui.screenshot(region=(x, y - 50, width + 150, height + 150))
+        self.show_loading_screen_again()
         img = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2GRAY)
-        img = cv2.resize(img, None, fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
+        img = cv2.resize(img, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
         img = Image.fromarray(img)
         # img.save("img.png")
         custom_config = r'--oem 3 --psm 6'
@@ -3077,7 +3095,7 @@ class TeraTermUI(customtkinter.CTk):
                                     message="A newer version of the application is available,"
                                             "would you like to update?",
                                     icon="question",
-                                    option_1="Cancel", option_2="No", option_3="Yes", icon_size=(75, 75),
+                                    option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
                                     button_color=("#c30101", "#145DA0", "#145DA0"),
                                     hover_color=("darkred", "darkblue", "darkblue"))
             elif lang == "Español":
@@ -3085,7 +3103,7 @@ class TeraTermUI(customtkinter.CTk):
                                     message="Una nueva de versión de la aplicación esta disponible,"
                                             "¿desea actualizar?",
                                     icon="question",
-                                    option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(75, 75),
+                                    option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
                                     button_color=("#c30101", "#145DA0", "#145DA0"),
                                     hover_color=("darkred", "darkblue", "darkblue"))
             response = msg.get()
@@ -3094,9 +3112,9 @@ class TeraTermUI(customtkinter.CTk):
         else:
             winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
             if lang == "English":
-                CTkMessagebox(title="Info", message="Application is up to date")
+                CTkMessagebox(title="Info", message="Application is up to date", button_width=380)
             elif lang == "Español":
-                CTkMessagebox(title="Info", message="La Aplicación está actualizada")
+                CTkMessagebox(title="Info", message="La Aplicación está actualizada", button_width=380)
 
     # determines the hardware of the users' computer and change the time.sleep seconds respectively
     def get_sleep_time(self):
@@ -3136,7 +3154,7 @@ class TeraTermUI(customtkinter.CTk):
                 msg = CTkMessagebox(master=self, title="Exit", message="This button is only made to fix the issue "
                                                                        "mentioned, are you sure you want to do it?",
                                     icon="question",
-                                    option_1="Cancel", option_2="No", option_3="Yes", icon_size=(75, 75),
+                                    option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
                                     button_color=("#c30101", "#145DA0", "#145DA0"),
                                     hover_color=("darkred", "darkblue", "darkblue"))
             elif lang == "Español":
@@ -3144,7 +3162,7 @@ class TeraTermUI(customtkinter.CTk):
                                                                         "el problema mencionado"
                                                                         " ¿Estás seguro de que quieres hacerlo?",
                                     icon="question",
-                                    option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(75, 75),
+                                    option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
                                     button_color=("#c30101", "#145DA0", "#145DA0"),
                                     hover_color=("darkred", "darkblue", "darkblue"))
             response = msg.get()
@@ -3251,7 +3269,8 @@ class TeraTermUI(customtkinter.CTk):
                                                                     "--Testing Phase-- \n\n"
                                                                     "Any feedback is greatly appreciated!")
             version.pack()
-            self.feedbackText = customtkinter.CTkTextbox(scrollable_frame, wrap="word", border_spacing=8, width=300)
+            self.feedbackText = customtkinter.CTkTextbox(scrollable_frame, wrap="word", border_spacing=8, width=300,
+                                                         height=170)
             self.feedbackText.pack(pady=10)
             feedbackSend = customtkinter.CTkButton(scrollable_frame, border_width=2,
                                                    text="Send Feedback",
@@ -3306,7 +3325,8 @@ class TeraTermUI(customtkinter.CTk):
                                                                     "--Fase de Pruebas-- \n\n"
                                                                     "¡Cualquier comentario es muy apreciado!")
             version.pack()
-            self.feedbackText = customtkinter.CTkTextbox(scrollable_frame, wrap="word", border_spacing=8, width=300)
+            self.feedbackText = customtkinter.CTkTextbox(scrollable_frame, wrap="word", border_spacing=8, width=300,
+                                                         height=170)
             self.feedbackText.pack(pady=10)
             feedbackSend = customtkinter.CTkButton(scrollable_frame, border_width=2,
                                                    text="Enviar Comentario",
@@ -3382,15 +3402,15 @@ class TeraTermUI(customtkinter.CTk):
     def submit_feedback(self):
         lang = self.language_menu.get()
         if lang == "English":
-            msg = CTkMessagebox(master=self, title="Submit", message="Are you ready to submit your feedback?\n"
-                                                                     " (SUBMISSION IS COMPLETELY ANONYMOUS)",
+            msg = CTkMessagebox(master=self, title="Submit", message="Are you ready to submit your feedback?"
+                                                                     " \n\n(SUBMISSION IS COMPLETELY ANONYMOUS)",
                                 icon="question",
                                 option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
                                 button_color=("#c30101", "#145DA0", "#145DA0"),
                                 hover_color=("darkred", "darkblue", "darkblue"))
         elif lang == "Español":
-            msg = CTkMessagebox(master=self, title="Someter", message="¿Estás preparado para mandar to comentario?\n"
-                                                                      " (EL ENVÍO ES COMPLETAMENTE ANÓNIMO)",
+            msg = CTkMessagebox(master=self, title="Someter", message="¿Estás preparado para mandar to comentario?"
+                                                                      " \n\n(EL ENVÍO ES COMPLETAMENTE ANÓNIMO)",
                                 icon="question",
                                 option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
                                 button_color=("#c30101", "#145DA0", "#145DA0"),
@@ -3401,7 +3421,8 @@ class TeraTermUI(customtkinter.CTk):
             if not feedback:
                 winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                 if lang == "English":
-                    CTkMessagebox(title="Error", message="Error! Feedback cannot be empty", icon="cancel")
+                    CTkMessagebox(title="Error", message="Error! Feedback cannot be empty", icon="cancel",
+                                  button_width=380)
                 elif lang == "Español":
                     CTkMessagebox(title="Error", message="¡Error! El comentario no puede estar vacio", icon="cancel")
                 return
@@ -3409,18 +3430,20 @@ class TeraTermUI(customtkinter.CTk):
             if result:
                 winsound.PlaySound("sounds/success.wav", winsound.SND_ASYNC)
                 if lang == "English":
-                    CTkMessagebox(title="Success", icon="check", message="Feedback submitted successfully!")
+                    CTkMessagebox(title="Success", icon="check", message="Feedback submitted successfully!",
+                                  button_width=380)
                 elif lang == "Español":
-                    CTkMessagebox(title="Success", icon="check", message="¡Comentario sometido éxitosamente!")
+                    CTkMessagebox(title="Success", icon="check", message="¡Comentario sometido éxitosamente!",
+                                  button_width=380)
                 self.feedbackText.delete("1.0", tk.END)
             else:
                 winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                 if lang == "English":
                     CTkMessagebox(title="Error", message="Error! An error occurred while submitting feedback",
-                                  icon="cancel")
+                                  icon="cancel", button_width=380)
                 elif lang == "Español":
                     CTkMessagebox(title="Error", message="¡Error! Un error ocurrio mientras se sometia comentario",
-                                  icon="cancel")
+                                  icon="cancel", button_width=380)
 
     # Function that lets user select where their Tera Term application is located
     def change_location_event(self):
@@ -3431,24 +3454,40 @@ class TeraTermUI(customtkinter.CTk):
                                                   filetypes=(("Tera Term", "*ttermpro.exe"),))
             if re.search("ttermpro.exe", filename):
                 self.location = filename
-                rows = self.cursor.execute("SELECT location FROM user_data").fetchall()
-                if len(rows) == 0:
-                    self.cursor.execute("INSERT INTO user_data (location) VALUES (?)", (filename,))
-                elif len(rows) == 1:
-                    self.cursor.execute("UPDATE user_data SET location=?", (filename,))
+                directory, filename = os.path.split(filename)
+                self.teraterm_file = directory + "/TERATERM.ini"
+                location = self.cursor.execute("SELECT location FROM user_data").fetchall()
+                teraterm_config = self.cursor.execute("SELECT config FROM user_data").fetchall()
+                if len(location) == 0:
+                    self.cursor.execute("INSERT INTO user_data (location) VALUES (?)", (self.location,))
+                elif len(location) == 1:
+                    self.cursor.execute("UPDATE user_data SET location=?", (self.location,))
+                if len(teraterm_config) == 0:
+                    self.cursor.execute("INSERT INTO user_data (config) VALUES (?)", (self.teraterm_file,))
+                elif len(teraterm_config) == 1:
+                    self.cursor.execute("UPDATE user_data SET config=?", (self.teraterm_file,))
                 self.show_success_message(350, 265, "Tera Term has been located successfully")
+                self.edit_teraterm_ini(self.teraterm_file)
         if lang == "Español":
             filename = filedialog.askopenfilename(initialdir="C:/",
                                                   title="Escoge donde Tera Term esta localizado",
                                                   filetypes=(("Tera Term", "*ttermpro.exe"),))
             if re.search("ttermpro.exe", filename):
                 self.location = filename
-                rows = self.cursor.execute("SELECT location FROM user_data").fetchall()
-                if len(rows) == 0:
-                    self.cursor.execute("INSERT INTO user_data (location) VALUES (?)", (filename,))
-                elif len(rows) == 1:
-                    self.cursor.execute("UPDATE user_data SET location=?", (filename,))
+                directory, filename = os.path.split(filename)
+                self.teraterm_file = directory + "/TERATERM.ini"
+                location = self.cursor.execute("SELECT location FROM user_data").fetchall()
+                teraterm_config = self.cursor.execute("SELECT config FROM user_data").fetchall()
+                if len(location) == 0:
+                    self.cursor.execute("INSERT INTO user_data (location) VALUES (?)", (self.location,))
+                elif len(location) == 1:
+                    self.cursor.execute("UPDATE user_data SET location=?", (self.location,))
+                if len(teraterm_config) == 0:
+                    self.cursor.execute("INSERT INTO user_data (config) VALUES (?)", (self.teraterm_file,))
+                elif len(teraterm_config) == 1:
+                    self.cursor.execute("UPDATE user_data SET config=?", (self.teraterm_file,))
                 self.show_success_message(350, 265, "Tera Term localizado exitósamente")
+                self.edit_teraterm_ini(self.teraterm_file)
 
     # disables scrolling for the class list
     def disable_scroll(self, event):
@@ -3620,6 +3659,23 @@ class TeraTermUI(customtkinter.CTk):
             elif latest < user:
                 return True
         return len(latest_version_parts) <= len(user_version_parts)
+
+    def edit_teraterm_ini(self, file_path):
+        try:
+            with open(file_path, "r") as file:
+                lines = file.readlines()
+        except FileNotFoundError:
+            return
+
+        with open(file_path, "w") as file:
+            for line in lines:
+                if line.startswith("VTFont="):
+                    current_value = line.strip().split('=')[1]
+                    font_name = current_value.split(',')[0]
+                    if font_name.lower() != 'Terminal':
+                        updated_value = 'Terminal' + current_value[len(font_name):]
+                        line = f"VTFont={updated_value}\n"
+                file.write(line)
 
 
 if __name__ == "__main__":
