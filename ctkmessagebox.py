@@ -205,14 +205,10 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         self.title_label.bind("<B1-Motion>", self.move_window)
         self.title_label.bind("<ButtonPress-1>", self.oldxyset)
         
-        self.info = customtkinter.CTkButton(self.frame_top,  width=1, height=self.height/2, corner_radius=0, text=self.message, font=self.font,
+        self.info = customtkinter.CTkButton(self.frame_top,  width=1, height=100, corner_radius=0, text=self.message, font=self.font,
                                             fg_color=self.fg_color, hover=False, text_color=self.text_color, image=self.icon)
         self.info._text_label.configure(wraplength=self.width/2, justify="left")
         self.info.grid(row=1, column=0, columnspan=4, sticky="nwes", padx=self.border_width)
-        
-        if self.info._text_label.winfo_reqheight()>self.height/2:
-            height_offset = int((self.info._text_label.winfo_reqheight())-(self.height/2) + self.height)
-            self.geometry(f"{self.width}x{height_offset}")
             
         self.option_text_1 = option_1
         self.button_1 = customtkinter.CTkButton(self.frame_top, text=self.option_text_1, fg_color=self.button_color[0],
