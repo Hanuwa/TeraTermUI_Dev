@@ -16,7 +16,6 @@
 # when you search for classes it would be nice if they appear on this app
 
 import customtkinter
-import ctktable
 import tkinter as tk
 from tkinter import *
 import webbrowser
@@ -29,6 +28,7 @@ import requests
 import win32gui
 import pygetwindow as gw
 from collections import deque
+from customtkinter import ctktable
 from CTkToolTip import CTkToolTip
 from CTkMessagebox import CTkMessagebox
 from pywinauto.application import Application
@@ -503,7 +503,7 @@ class TeraTermUI(customtkinter.CTk):
                 if not self.compare_versions(latest_version, self.USER_APP_VERSION):
                     if lang == "English":
                         msg = CTkMessagebox(master=self, title="Exit",
-                                            message="A newer version of the application is available,"
+                                            message="A newer version of the application is available, "
                                                     "would you like to update?",
                                             icon="question",
                                             option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
@@ -511,7 +511,7 @@ class TeraTermUI(customtkinter.CTk):
                                             hover_color=("darkred", "darkblue", "darkblue"))
                     elif lang == "Español":
                         msg = CTkMessagebox(master=self, title="Salir",
-                                            message="Una nueva de versión de la aplicación esta disponible,"
+                                            message="Una nueva de versión de la aplicación esta disponible, "
                                                     "¿desea actualizar?",
                                             icon="question",
                                             option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
