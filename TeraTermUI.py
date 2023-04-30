@@ -139,7 +139,7 @@ class TeraTermUI(customtkinter.CTk):
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
         self.introduction.grid(row=0, column=1, columnspan=2, padx=(20, 0), pady=(20, 0))
         self.host = customtkinter.CTkLabel(self, text="Host: ")
-        self.host.grid(row=2, column=0, columnspan=2, padx=(40, 0), pady=(20, 20))
+        self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(20, 20))
         self.host_entry = customtkinter.CTkEntry(self, placeholder_text="myhost.example.edu")
         self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(20, 20))
         self.host_tooltip = CTkToolTip(self.host_entry, message="Enter the name of the server\n of the university")
@@ -629,11 +629,11 @@ class TeraTermUI(customtkinter.CTk):
                                 self.t_buttons_frame.grid_columnconfigure(2, weight=1)
                                 self.explanation4.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
                                 if lang == "English":
-                                    self.e_classes.grid(row=1, column=1, padx=(42, 0), pady=(0, 0), sticky="w")
+                                    self.e_classes.grid(row=1, column=1, padx=(43, 0), pady=(0, 0), sticky="w")
                                 elif lang == "Español":
                                     self.e_classes.grid(row=1, column=1, padx=(43, 0), pady=(0, 0), sticky="w")
                                 self.e_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-                                self.section.grid(row=2, column=1, padx=(30, 0), pady=(20, 0), sticky="w")
+                                self.section.grid(row=2, column=1, padx=(32, 0), pady=(20, 0), sticky="w")
                                 self.section_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
                                 self.e_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
                                 self.e_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
@@ -641,7 +641,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
                                 self.explanation5.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
                                 if lang == "English":
-                                    self.s_classes.grid(row=1, column=1, padx=(45, 0), pady=(0, 0), sticky="w")
+                                    self.s_classes.grid(row=1, column=1, padx=(43, 0), pady=(0, 0), sticky="w")
                                 elif lang == "Español":
                                     self.s_classes.grid(row=1, column=1, padx=(43, 0), pady=(0, 0), sticky="w")
                                 self.s_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
@@ -2316,7 +2316,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.explanation3.grid(row=0, column=1, padx=12, pady=(10, 20))
                     self.lock_grid.grid(row=1, column=1, padx=(0, 0), pady=(0, 20))
                     if lang == "English":
-                        self.ssn.grid(row=2, column=1, padx=(0, 130), pady=(0, 10))
+                        self.ssn.grid(row=2, column=1, padx=(0, 131), pady=(0, 10))
                         self.ssn_entry.grid(row=2, column=1, padx=(160, 0), pady=(0, 10))
                         self.code_entry.grid(row=3, column=1, padx=(160, 0), pady=(0, 10))
                     elif lang == "Español":
@@ -2481,7 +2481,7 @@ class TeraTermUI(customtkinter.CTk):
             if self.language_menu.get() == "Español":
                 self.host.grid(row=2, column=0, columnspan=2, padx=(0, 5), pady=(20, 20))
             elif self.language_menu.get() == "English":
-                self.host.grid(row=2, column=0, columnspan=2, padx=(40, 0), pady=(20, 20))
+                self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(20, 20))
             self.go_next_1VE.configure(state="disabled")
             self.go_next_1GP.configure(state="disabled")
             self.go_next_409.configure(state="disabled")
@@ -2751,7 +2751,7 @@ class TeraTermUI(customtkinter.CTk):
             self.appearance_mode_optionemenu.configure(values=["Light", "Dark", "System"])
             self.introduction.configure(text="UPRB Enrollment Process")
             self.host.configure(text="Host: ")
-            self.host.grid(row=2, column=0, columnspan=2, padx=(40, 0), pady=(20, 20))
+            self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(20, 20))
             self.log_in.configure(text="Log-In")
             self.explanation.configure(text="Connected to the server successfully")
             self.explanation2.configure(text="Authentication required")
@@ -3378,12 +3378,12 @@ class TeraTermUI(customtkinter.CTk):
             faqText.pack()
             qaTable = [["Pregunta", "Respuesta"],
                        ["¿Es seguro poner \nmi información aquí?", "Sí, la aplicación no almacena\n su "
-                                                                  "data personal pero, si\n todavía estás "
-                                                                  "escéptico,\n entonces puedes ver "
-                                                                  "que\n información sí almacenamos \naccediendo "
-                                                                  "al archivo llamado\n database.db y cosas como el "
-                                                                  "\nssn son encriptado usando\n una"
-                                                                  " llave asimétrica."]]
+                                                                   "data personal pero, si\n todavía estás "
+                                                                   "escéptico,\n entonces puedes ver "
+                                                                   "que\n información sí almacenamos \naccediendo "
+                                                                   "al archivo llamado\n database.db y cosas como el "
+                                                                   "\nssn son encriptado usando\n una"
+                                                                   " llave asimétrica."]]
             faq = ctktable.CTkTable(scrollable_frame, row=2, column=2, values=qaTable)
             faq.pack(expand=True, fill="both", padx=20, pady=20)
 
