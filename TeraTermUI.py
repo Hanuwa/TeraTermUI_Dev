@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/28/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/30/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -16,6 +16,7 @@
 # when you search for classes it would be nice if they appear on this app
 
 import customtkinter
+import ctktable
 import tkinter as tk
 from tkinter import *
 import webbrowser
@@ -106,11 +107,15 @@ class TeraTermUI(customtkinter.CTk):
         self.logo_label = customtkinter.CTkLabel(self.sidebar_frame, text="Tera Term UI",
                                                  font=customtkinter.CTkFont(size=20, weight="bold"))
         self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
-        self.sidebar_button_1 = customtkinter.CTkButton(self.sidebar_frame, text="Status",
-                                                        command=self.sidebar_button_event)
+        self.sidebar_button_1 = customtkinter.CTkButton(self.sidebar_frame, text="     Status",
+                                                        image=customtkinter.CTkImage(light_image=Image.open('images/home.png'),
+                                                                                     size=(20, 20)),
+                                                        command=self.sidebar_button_event, anchor="w")
         self.sidebar_button_1.grid(row=1, column=0, padx=20, pady=10)
-        self.sidebar_button_2 = customtkinter.CTkButton(self.sidebar_frame, text="Help",
-                                                        command=self.sidebar_button_event2)
+        self.sidebar_button_2 = customtkinter.CTkButton(self.sidebar_frame, text="       Help",
+                                                        image=customtkinter.CTkImage(light_image=Image.open('images/setting.png'),
+                                                                                     size=(18, 18)),
+                                                        command=self.sidebar_button_event2, anchor="w")
         self.sidebar_button_2.grid(row=2, column=0, padx=20, pady=10)
         self.scaling_label = customtkinter.CTkLabel(self.sidebar_frame, text="Language, Appearance and \n\n "
                                                                              "UI Scaling:", anchor="w")
@@ -134,9 +139,10 @@ class TeraTermUI(customtkinter.CTk):
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
         self.introduction.grid(row=0, column=1, columnspan=2, padx=(20, 0), pady=(20, 0))
         self.host = customtkinter.CTkLabel(self, text="Host: ")
-        self.host.grid(row=2, column=0, columnspan=2, padx=(20, 0), pady=(20, 20))
+        self.host.grid(row=2, column=0, columnspan=2, padx=(40, 0), pady=(20, 20))
         self.host_entry = customtkinter.CTkEntry(self, placeholder_text="myhost.example.edu")
         self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(20, 20))
+        self.host_tooltip = CTkToolTip(self.host_entry, message="Enter the name of the server\n of the university")
         self.log_in = customtkinter.CTkButton(self, border_width=2, text="Log-In",
                                               text_color=("gray10", "#DCE4EE"), command=self.login_event_handler)
         self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(20, 20))
@@ -183,6 +189,8 @@ class TeraTermUI(customtkinter.CTk):
         self.explanation2 = customtkinter.CTkLabel(master=self.authentication_frame, text="Authentication required")
         self.username = customtkinter.CTkLabel(master=self.authentication_frame, text="Username: ")
         self.username_entry = customtkinter.CTkEntry(master=self.authentication_frame)
+        self.username_tooltip = CTkToolTip(self.username_entry, message="The university requires this to\n"
+                                                                        " enter and access the system")
         self.student = customtkinter.CTkButton(master=self.a_buttons_frame, border_width=2,
                                                text="Next",
                                                text_color=("gray10", "#DCE4EE"), command=self.student_event_handler)
@@ -204,8 +212,12 @@ class TeraTermUI(customtkinter.CTk):
                                                  command=self.lock_event, fg_color="transparent", hover=False)
         self.ssn = customtkinter.CTkLabel(master=self.student_frame, text="Social Security Number: ")
         self.ssn_entry = customtkinter.CTkEntry(master=self.student_frame, placeholder_text="#########", show="*")
+        self.ssn_tooltip = CTkToolTip(self.ssn_entry, message="Required to log-in,\n"
+                                                              "information gets encrypted")
         self.code = customtkinter.CTkLabel(master=self.student_frame, text="Code of Personal Information: ")
         self.code_entry = customtkinter.CTkEntry(master=self.student_frame, placeholder_text="####", show="*")
+        self.code_tooltip = CTkToolTip(self.code_entry, message="4 digit code included in the\n"
+                                                                "pre-enrollment ticket email")
         self.show = customtkinter.CTkSwitch(master=self.student_frame, text="Show?", command=self.show_event,
                                             onvalue="on", offvalue="off")
         self.system = customtkinter.CTkButton(master=self.s_buttons_frame, border_width=2,
@@ -220,36 +232,39 @@ class TeraTermUI(customtkinter.CTk):
         # Classes
         self.tabview = customtkinter.CTkTabview(self, corner_radius=10)
         self.t_buttons_frame = customtkinter.CTkFrame(self, corner_radius=10)
-        self.tabview.add("Enroll/Matricular")
-        self.tabview.add("Search/Buscar")
-        self.tabview.add("Other/Otros")
+        self.enroll_tab = "Enroll/Matricular"
+        self.search_tab = "Search/Buscar"
+        self.other_tab = "Other/Otros"
+        self.tabview.add(self.enroll_tab)
+        self.tabview.add(self.search_tab)
+        self.tabview.add(self.other_tab)
         # First Tab
-        self.explanation4 = customtkinter.CTkLabel(master=self.tabview.tab("Enroll/Matricular"),
+        self.explanation4 = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab),
                                                    text="Enroll for Classes: ",
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
-        self.e_classes = customtkinter.CTkLabel(master=self.tabview.tab("Enroll/Matricular"), text="Class:")
-        self.e_classes_entry = customtkinter.CTkEntry(master=self.tabview.tab("Enroll/Matricular"))
-        self.section = customtkinter.CTkLabel(master=self.tabview.tab("Enroll/Matricular"), text="Section:")
-        self.section_entry = customtkinter.CTkEntry(master=self.tabview.tab("Enroll/Matricular"))
-        self.e_semester = customtkinter.CTkLabel(master=self.tabview.tab("Enroll/Matricular"), text="Semester:")
-        self.e_semester_entry = customtkinter.CTkComboBox(master=self.tabview.tab("Enroll/Matricular"),
+        self.e_classes = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab), text="Class:")
+        self.e_classes_entry = customtkinter.CTkEntry(master=self.tabview.tab(self.enroll_tab))
+        self.section = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab), text="Section:")
+        self.section_entry = customtkinter.CTkEntry(master=self.tabview.tab(self.enroll_tab))
+        self.e_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab), text="Semester:")
+        self.e_semester_entry = customtkinter.CTkComboBox(master=self.tabview.tab(self.enroll_tab),
                                                           values=["C23", "C31", "C32", "C33"])
         self.e_semester_entry.set("C31")
-        self.register_menu = customtkinter.CTkOptionMenu(master=self.tabview.tab("Enroll/Matricular"),
+        self.register_menu = customtkinter.CTkOptionMenu(master=self.tabview.tab(self.enroll_tab),
                                                          values=["Register", "Drop"])
         self.register_menu.set("Register")
         # Second Tab
-        self.explanation5 = customtkinter.CTkLabel(master=self.tabview.tab("Search/Buscar"),
+        self.explanation5 = customtkinter.CTkLabel(master=self.tabview.tab(self.search_tab),
                                                    text="Search for Classes: ",
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
-        self.s_classes = customtkinter.CTkLabel(master=self.tabview.tab("Search/Buscar"), text="Class:")
-        self.s_classes_entry = customtkinter.CTkEntry(master=self.tabview.tab("Search/Buscar"))
-        self.s_semester = customtkinter.CTkLabel(master=self.tabview.tab("Search/Buscar"), text="Semester:")
-        self.s_semester_entry = customtkinter.CTkComboBox(master=self.tabview.tab("Search/Buscar"),
+        self.s_classes = customtkinter.CTkLabel(master=self.tabview.tab(self.search_tab), text="Class:")
+        self.s_classes_entry = customtkinter.CTkEntry(master=self.tabview.tab(self.search_tab))
+        self.s_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.search_tab), text="Semester:")
+        self.s_semester_entry = customtkinter.CTkComboBox(master=self.tabview.tab(self.search_tab),
                                                           values=["B91", "B92", "B93", "C01", "C02", "C03", "C11",
                                                                   "C12", "C13", "C21", "C22", "C23", "C31"])
         self.s_semester_entry.set("C31")
-        self.show_all = customtkinter.CTkCheckBox(master=self.tabview.tab("Search/Buscar"), text="Show All?",
+        self.show_all = customtkinter.CTkCheckBox(master=self.tabview.tab(self.search_tab), text="Show All?",
                                                   onvalue="on", offvalue="off")
         self.show_all_tooltip = CTkToolTip(self.show_all, message="Display all sections or\n"
                                                                   "only ones with spaces")
@@ -258,10 +273,10 @@ class TeraTermUI(customtkinter.CTk):
                                              text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
         self.back3_tooltip = CTkToolTip(self.back3, message="Go back to the main menu\n"
                                                             "of the application")
-        self.submit = customtkinter.CTkButton(master=self.tabview.tab("Enroll/Matricular"), border_width=2,
+        self.submit = customtkinter.CTkButton(master=self.tabview.tab(self.enroll_tab), border_width=2,
                                               text="Submit",
                                               text_color=("gray10", "#DCE4EE"), command=self.submit_event_handler)
-        self.search = customtkinter.CTkButton(master=self.tabview.tab("Search/Buscar"), border_width=2,
+        self.search = customtkinter.CTkButton(master=self.tabview.tab(self.search_tab), border_width=2,
                                               text="Search",
                                               text_color=("gray10", "#DCE4EE"), command=self.search_event_handler)
         self.show_classes = customtkinter.CTkButton(master=self.t_buttons_frame, border_width=2,
@@ -278,40 +293,40 @@ class TeraTermUI(customtkinter.CTk):
         self.multiple_tooltip = CTkToolTip(self.multiple, message="Enroll Multiple Classes\nat once",
                                            bg_color="blue")
         # Third Tab
-        self.explanation6 = customtkinter.CTkLabel(master=self.tabview.tab("Other/Otros"),
+        self.explanation6 = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab),
                                                    text="Option Menu: ",
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
-        self.menu_intro = customtkinter.CTkLabel(master=self.tabview.tab("Other/Otros"),
+        self.menu_intro = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab),
                                                  text="Select code for the screen\n you want to go to: ")
-        self.menu = customtkinter.CTkLabel(master=self.tabview.tab("Other/Otros"), text="Code:")
-        self.menu_entry = customtkinter.CTkComboBox(master=self.tabview.tab("Other/Otros"),
+        self.menu = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab), text="Code:")
+        self.menu_entry = customtkinter.CTkComboBox(master=self.tabview.tab(self.other_tab),
                                                     values=["SRM (Main Menu)", "004 (Hold Flags)",
                                                             "1GP (Class Schedule)", "118 (Academic Staticstics)",
                                                             "1VE (Academic Record)", "3DD (Scholarship Payment Record)",
                                                             "409 (Account Balance)", "683 (Academic Evaluation)",
                                                             "1PL (Basic Personal Data)", "4CM (Tuition Calculation)",
                                                             "4SP (Apply for Extension)", "SO (Sign out)"])
-        self.menu_semester = customtkinter.CTkLabel(master=self.tabview.tab("Other/Otros"), text="Semester:")
-        self.menu_semester_entry = customtkinter.CTkComboBox(master=self.tabview.tab("Other/Otros"),
+        self.menu_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab), text="Semester:")
+        self.menu_semester_entry = customtkinter.CTkComboBox(master=self.tabview.tab(self.other_tab),
                                                              values=["B91", "B92", "B93", "C01", "C02", "C03", "C11",
                                                                      "C12", "C13", "C21", "C22", "C23", "C31"])
         self.menu_semester_entry.set("C31")
-        self.menu_submit = customtkinter.CTkButton(master=self.tabview.tab("Other/Otros"), border_width=2,
+        self.menu_submit = customtkinter.CTkButton(master=self.tabview.tab(self.other_tab), border_width=2,
                                                    text="Submit", text_color=("gray10", "#DCE4EE"),
                                                    command=self.option_menu_event_handler)
-        self.go_next_1VE = customtkinter.CTkButton(master=self.tabview.tab("Other/Otros"), fg_color="transparent",
+        self.go_next_1VE = customtkinter.CTkButton(master=self.tabview.tab(self.other_tab), fg_color="transparent",
                                                    border_width=2, text="Next Page", text_color=("gray10", "#DCE4EE"),
                                                    command=self.go_next_event_EV1, width=100)
-        self.go_next_1GP = customtkinter.CTkButton(master=self.tabview.tab("Other/Otros"), fg_color="transparent",
+        self.go_next_1GP = customtkinter.CTkButton(master=self.tabview.tab(self.other_tab), fg_color="transparent",
                                                    border_width=2, text="Next Page", text_color=("gray10", "#DCE4EE"),
                                                    command=self.go_next_event_1GP, width=100)
-        self.go_next_409 = customtkinter.CTkButton(master=self.tabview.tab("Other/Otros"), fg_color="transparent",
+        self.go_next_409 = customtkinter.CTkButton(master=self.tabview.tab(self.other_tab), fg_color="transparent",
                                                    border_width=2, text="Next Page", text_color=("gray10", "#DCE4EE"),
                                                    command=self.go_next_event_409, width=100)
-        self.go_next_683 = customtkinter.CTkButton(master=self.tabview.tab("Other/Otros"), fg_color="transparent",
+        self.go_next_683 = customtkinter.CTkButton(master=self.tabview.tab(self.other_tab), fg_color="transparent",
                                                    border_width=2, text="Next Page", text_color=("gray10", "#DCE4EE"),
                                                    command=self.go_next_event_683, width=100)
-        self.go_next_4CM = customtkinter.CTkButton(master=self.tabview.tab("Other/Otros"), fg_color="transparent",
+        self.go_next_4CM = customtkinter.CTkButton(master=self.tabview.tab(self.other_tab), fg_color="transparent",
                                                    border_width=2, text="Next Page", text_color=("gray10", "#DCE4EE"),
                                                    command=self.go_next_event_4CM, width=100)
 
@@ -607,9 +622,9 @@ class TeraTermUI(customtkinter.CTk):
                                 self.reset_activity_timer(None)
                                 self.start_check_idle_thread()
                                 self.tabview.grid(row=0, column=1, padx=(20, 20), pady=(20, 0), sticky="n")
-                                self.tabview.tab("Enroll/Matricular").grid_columnconfigure(1, weight=2)
-                                self.tabview.tab("Search/Buscar").grid_columnconfigure(1, weight=2)
-                                self.tabview.tab("Other/Otros").grid_columnconfigure(1, weight=2)
+                                self.tabview.tab(self.enroll_tab).grid_columnconfigure(1, weight=2)
+                                self.tabview.tab(self.search_tab).grid_columnconfigure(1, weight=2)
+                                self.tabview.tab(self.other_tab).grid_columnconfigure(1, weight=2)
                                 self.t_buttons_frame.grid(row=2, column=1, padx=(20, 20), pady=(20, 0), sticky="n")
                                 self.t_buttons_frame.grid_columnconfigure(2, weight=1)
                                 self.explanation4.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
@@ -626,7 +641,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
                                 self.explanation5.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
                                 if lang == "English":
-                                    self.s_classes.grid(row=1, column=1, padx=(43, 0), pady=(0, 0), sticky="w")
+                                    self.s_classes.grid(row=1, column=1, padx=(45, 0), pady=(0, 0), sticky="w")
                                 elif lang == "Español":
                                     self.s_classes.grid(row=1, column=1, padx=(43, 0), pady=(0, 0), sticky="w")
                                 self.s_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
@@ -2302,11 +2317,13 @@ class TeraTermUI(customtkinter.CTk):
                     self.lock_grid.grid(row=1, column=1, padx=(0, 0), pady=(0, 20))
                     if lang == "English":
                         self.ssn.grid(row=2, column=1, padx=(0, 130), pady=(0, 10))
+                        self.ssn_entry.grid(row=2, column=1, padx=(160, 0), pady=(0, 10))
+                        self.code_entry.grid(row=3, column=1, padx=(160, 0), pady=(0, 10))
                     elif lang == "Español":
-                        self.ssn.grid(row=2, column=1, padx=(0, 140), pady=(0, 10))
-                    self.ssn_entry.grid(row=2, column=1, padx=(160, 0), pady=(0, 10))
+                        self.ssn.grid(row=2, column=1, padx=(0, 135), pady=(0, 10))
+                        self.ssn_entry.grid(row=2, column=1, padx=(170, 0), pady=(0, 10))
+                        self.code_entry.grid(row=3, column=1, padx=(170, 0), pady=(0, 10))
                     self.code.grid(row=3, column=1, padx=(0, 165), pady=(0, 10))
-                    self.code_entry.grid(row=3, column=1, padx=(160, 0), pady=(0, 10))
                     self.show.grid(row=4, column=1, padx=(10, 0), pady=(0, 10))
                     self.back2.grid(row=5, column=0, padx=(0, 10), pady=(0, 0))
                     self.system.grid(row=5, column=1, padx=(10, 0), pady=(0, 0))
@@ -2462,9 +2479,9 @@ class TeraTermUI(customtkinter.CTk):
             self.reset_activity_timer(None)
             self.bind("<Return>", lambda event: self.login_event_handler())
             if self.language_menu.get() == "Español":
-                self.host.grid(row=2, column=0, columnspan=2, padx=(0, 20), pady=(20, 20))
+                self.host.grid(row=2, column=0, columnspan=2, padx=(0, 5), pady=(20, 20))
             elif self.language_menu.get() == "English":
-                self.host.grid(row=2, column=0, columnspan=2, padx=(20, 0), pady=(20, 20))
+                self.host.grid(row=2, column=0, columnspan=2, padx=(40, 0), pady=(20, 20))
             self.go_next_1VE.configure(state="disabled")
             self.go_next_1GP.configure(state="disabled")
             self.go_next_409.configure(state="disabled")
@@ -2509,9 +2526,9 @@ class TeraTermUI(customtkinter.CTk):
         if scaling not in ("90%", "95%", "100%"):
             self.change_scaling_event(scaling)
         self.tabview.grid(row=0, column=1, padx=(20, 20), pady=(20, 0), sticky="n")
-        self.tabview.tab("Enroll/Matricular").grid_columnconfigure(1, weight=2)
-        self.tabview.tab("Search/Buscar").grid_columnconfigure(1, weight=2)
-        self.tabview.tab("Other/Otros").grid_columnconfigure(1, weight=2)
+        self.tabview.tab(self.enroll_tab).grid_columnconfigure(1, weight=2)
+        self.tabview.tab(self.search_tab).grid_columnconfigure(1, weight=2)
+        self.tabview.tab(self.other_tab).grid_columnconfigure(1, weight=2)
         self.t_buttons_frame.grid(row=2, column=1, padx=(20, 20), pady=(20, 0), sticky="n")
         self.t_buttons_frame.grid_columnconfigure(2, weight=1)
         self.explanation4.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
@@ -2556,8 +2573,8 @@ class TeraTermUI(customtkinter.CTk):
     # function for changing language
     def change_language_event(self, lang):
         if lang == "Español":
-            self.sidebar_button_1.configure(text="Estado")
-            self.sidebar_button_2.configure(text="Ayuda")
+            self.sidebar_button_1.configure(text="     Estado")
+            self.sidebar_button_2.configure(text="      Ayuda")
             self.scaling_label.configure(text="Lenguaje, Apariencia y \n\n "
                                               "Ajuste de UI:")
             self.intro_box.configure(state="normal")
@@ -2599,7 +2616,7 @@ class TeraTermUI(customtkinter.CTk):
             self.intro_box.configure(state="disabled")
             self.introduction.configure(text="UPRB Proceso de Matrícula")
             self.host.configure(text="Servidor: ")
-            self.host.grid(row=2, column=0, columnspan=2, padx=(0, 10), pady=(20, 20))
+            self.host.grid(row=2, column=0, columnspan=2, padx=(0, 5), pady=(20, 20))
             self.log_in.configure(text="Iniciar Sesión")
             self.explanation.configure(text="Conectado al servidor éxitosamente")
             self.explanation2.configure(text="Autenticación requerida")
@@ -2613,8 +2630,6 @@ class TeraTermUI(customtkinter.CTk):
             self.system.configure(text="Entrar")
             self.back2.configure(text="Atrás")
             self.explanation4.configure(text="Matricular Clases: ")
-            self.tabview.configure("Matricular")
-            self.tabview.configure("Buscar")
             self.e_classes.configure(text="Clase: ")
             self.section.configure(text="Sección: ")
             self.e_semester.configure(text="Semestre: ")
@@ -2675,6 +2690,11 @@ class TeraTermUI(customtkinter.CTk):
             self.m_section_entry6.configure(placeholder_text="Sección")
             self.m_register_menu6.configure(values=["Registra", "Baja"])
             self.m_register_menu6.set("Escoge")
+            self.host_tooltip.configure(message="Ingrese el nombre del servidor\n de la universidad")
+            self.username_tooltip.configure(message="La universidad requiere esto \npara entrar y acceder \nel sistema")
+            self.ssn_tooltip.configure(message="Requerido para iniciar sesión,\n la información se encripta")
+            self.code_tooltip.configure(message="Código de 4 dígitos incluido en\n"
+                                                " el correo electrónico del \nticket de pre-matrícula")
             self.back_tooltip.configure(message="Volver al menú principal\n"
                                                 " de la aplicación")
             self.back2_tooltip.configure(message="Volver al menú principal\n"
@@ -2693,8 +2713,8 @@ class TeraTermUI(customtkinter.CTk):
             self.multiple_tooltip.configure(message="Matricula múltiples \nclases"
                                                     " a la misma vez")
         elif lang == "English":
-            self.sidebar_button_1.configure(text="Status")
-            self.sidebar_button_2.configure(text="Help")
+            self.sidebar_button_1.configure(text="     Status")
+            self.sidebar_button_2.configure(text="       Help")
             self.scaling_label.configure(text="Language, Appearance and \n\n "
                                               "UI Scaling ")
             self.intro_box.configure(state="normal")
@@ -2731,7 +2751,7 @@ class TeraTermUI(customtkinter.CTk):
             self.appearance_mode_optionemenu.configure(values=["Light", "Dark", "System"])
             self.introduction.configure(text="UPRB Enrollment Process")
             self.host.configure(text="Host: ")
-            self.host.grid(row=2, column=0, columnspan=2, padx=(20, 0), pady=(20, 20))
+            self.host.grid(row=2, column=0, columnspan=2, padx=(40, 0), pady=(20, 20))
             self.log_in.configure(text="Log-In")
             self.explanation.configure(text="Connected to the server successfully")
             self.explanation2.configure(text="Authentication required")
@@ -2805,6 +2825,13 @@ class TeraTermUI(customtkinter.CTk):
             self.m_section_entry6.configure(placeholder_text="Section")
             self.m_register_menu6.configure(values=["Register", "Drop"])
             self.m_register_menu6.set("Choose")
+            self.host_tooltip.configure(message="Enter the name of the server\n of the university")
+            self.username_tooltip.configure(message="The university requires this to\n"
+                                                    " enter and access the system")
+            self.ssn_tooltip.configure(message="Required to log-in,\n"
+                                               "information gets encrypted")
+            self.code_tooltip.configure(message="4 digit code included in the\n"
+                                                "pre-enrollment ticket email")
             self.back_tooltip.configure(message="Go back to the main menu\n"
                                                 "of the application")
             self.back2_tooltip.configure(message="Go back to the main menu\n"
@@ -3260,17 +3287,18 @@ class TeraTermUI(customtkinter.CTk):
             self.status.after(256, lambda: self.status.iconbitmap("images/tera-term.ico"))
             self.status.resizable(False, False)
             self.status.attributes("-topmost", True)
-            scrollable_frame = customtkinter.CTkScrollableFrame(self.status, width=450, height=250)
+            scrollable_frame = customtkinter.CTkScrollableFrame(self.status, width=450, height=250,
+                                                                fg_color=("#e6e6e6", "#222222"))
             scrollable_frame.pack()
             title = customtkinter.CTkLabel(scrollable_frame, text="Status of the application",
-                                           font=customtkinter.CTkFont(size=15, weight="bold"))
+                                           font=customtkinter.CTkFont(size=20, weight="bold"))
             title.pack()
-            version = customtkinter.CTkLabel(scrollable_frame, text="\n\n 0.9.0 Version \n"
+            version = customtkinter.CTkLabel(scrollable_frame, text="\n0.9.0 Version \n"
                                                                     "--Testing Phase-- \n\n"
                                                                     "Any feedback is greatly appreciated!")
             version.pack()
             self.feedbackText = customtkinter.CTkTextbox(scrollable_frame, wrap="word", border_spacing=8, width=300,
-                                                         height=170)
+                                                         height=170, fg_color=("#ffffff", "#111111"))
             self.feedbackText.pack(pady=10)
             feedbackSend = customtkinter.CTkButton(scrollable_frame, border_width=2,
                                                    text="Send Feedback",
@@ -3289,19 +3317,18 @@ class TeraTermUI(customtkinter.CTk):
                                            text="Link",
                                            text_color=("gray10", "#DCE4EE"), command=self.github_event)
             link.pack()
-            faq = customtkinter.CTkLabel(scrollable_frame, text="\n\nFAQ",
-                                         font=customtkinter.CTkFont(size=15, weight="bold"))
-            faq.pack()
-            faqQ1 = customtkinter.CTkLabel(scrollable_frame, text="\nQ1. Is putting information here safe?")
-            faqQ1.pack()
-            faqA1 = customtkinter.CTkLabel(scrollable_frame, text="\nA1. Yes, the application doesn't stored your "
-                                                                  "sensitive"
-                                                                  " data anywhere\nbut, if you are skeptical,"
-                                                                  " then you can see "
-                                                                  "which information\n we store by accessing the file "
-                                                                  "called database.db file and\n things like the ssn"
-                                                                  " are encrypted using a asymmetrical key.")
-            faqA1.pack()
+            faqText = customtkinter.CTkLabel(scrollable_frame, text="\n\nFrequently Asked Questions",
+                                             font=customtkinter.CTkFont(size=15, weight="bold"))
+            faqText.pack()
+            qaTable = [["Question", "Answer"],
+                       ["Is putting information \nhere safe?", "Yes, the application doesn't\n store your personal "
+                                                               "data\n anywhere but, if you are still\n skeptical then "
+                                                               "you can see\n which information we do store\n by "
+                                                               "accessing the file called\n database.db and things "
+                                                               "like the\n ssn are encrypted using\n an "
+                                                               "asymmetrical key."]]
+            faq = ctktable.CTkTable(scrollable_frame, row=2, column=2, values=qaTable)
+            faq.pack(expand=True, fill="both", padx=20, pady=20)
 
         elif lang == "Español":
             self.status = customtkinter.CTkToplevel(self)
@@ -3316,17 +3343,18 @@ class TeraTermUI(customtkinter.CTk):
             self.status.after(256, lambda: self.status.iconbitmap("images/tera-term.ico"))
             self.status.resizable(False, False)
             self.status.attributes("-topmost", True)
-            scrollable_frame = customtkinter.CTkScrollableFrame(self.status, width=450, height=250, corner_radius=10)
+            scrollable_frame = customtkinter.CTkScrollableFrame(self.status, width=450, height=250, corner_radius=10,
+                                                                fg_color=("#e6e6e6", "#222222"))
             scrollable_frame.pack()
             title = customtkinter.CTkLabel(scrollable_frame, text="Estado de la aplicación",
-                                           font=customtkinter.CTkFont(size=15, weight="bold"))
+                                           font=customtkinter.CTkFont(size=20, weight="bold"))
             title.pack()
-            version = customtkinter.CTkLabel(scrollable_frame, text="\n\n Versión 0.9.0 \n"
+            version = customtkinter.CTkLabel(scrollable_frame, text="\nVersión 0.9.0 \n"
                                                                     "--Fase de Pruebas-- \n\n"
                                                                     "¡Cualquier comentario es muy apreciado!")
             version.pack()
             self.feedbackText = customtkinter.CTkTextbox(scrollable_frame, wrap="word", border_spacing=8, width=300,
-                                                         height=170)
+                                                         height=170, fg_color=("#ffffff", "#111111"))
             self.feedbackText.pack(pady=10)
             feedbackSend = customtkinter.CTkButton(scrollable_frame, border_width=2,
                                                    text="Enviar Comentario",
@@ -3345,19 +3373,19 @@ class TeraTermUI(customtkinter.CTk):
                                            text="Enlace",
                                            text_color=("gray10", "#DCE4EE"), command=self.github_event)
             link.pack()
-            faq = customtkinter.CTkLabel(scrollable_frame, text="\n\nPreguntas y Respuestas",
-                                         font=customtkinter.CTkFont(size=15, weight="bold"))
-            faq.pack()
-            faqQ1 = customtkinter.CTkLabel(scrollable_frame, text="\nQ1. ¿Es seguro poner mi información aquí?")
-            faqQ1.pack()
-            faqA1 = customtkinter.CTkLabel(scrollable_frame, text="\nA1. Sí, la aplicación no almacena su "
-                                                                  "data sensible"
-                                                                  "\npero, si todavía estás "
-                                                                  "escéptico, \nentonces puedes ver"
-                                                                  "qué información\n almacenamos accediendo al archivo"
-                                                                  " llamado database.db\n y cosas como el ssn"
-                                                                  " son encriptado usando una llave asimétrica.")
-            faqA1.pack()
+            faqText = customtkinter.CTkLabel(scrollable_frame, text="\n\nPreguntas y Respuestas",
+                                             font=customtkinter.CTkFont(size=15, weight="bold"))
+            faqText.pack()
+            qaTable = [["Pregunta", "Respuesta"],
+                       ["¿Es seguro poner \nmi información aquí?", "Sí, la aplicación no almacena\n su "
+                                                                  "data personal pero, si\n todavía estás "
+                                                                  "escéptico,\n entonces puedes ver "
+                                                                  "que\n información sí almacenamos \naccediendo "
+                                                                  "al archivo llamado\n database.db y cosas como el "
+                                                                  "\nssn son encriptado usando\n una"
+                                                                  " llave asimétrica."]]
+            faq = ctktable.CTkTable(scrollable_frame, row=2, column=2, values=qaTable)
+            faq.pack(expand=True, fill="both", padx=20, pady=20)
 
     # Reads from the feedback.json file
     def authenticate(self):
@@ -3424,7 +3452,8 @@ class TeraTermUI(customtkinter.CTk):
                     CTkMessagebox(title="Error", message="Error! Feedback cannot be empty", icon="cancel",
                                   button_width=380)
                 elif lang == "Español":
-                    CTkMessagebox(title="Error", message="¡Error! El comentario no puede estar vacio", icon="cancel")
+                    CTkMessagebox(title="Error", message="¡Error! El comentario no puede estar vacio", icon="cancel",
+                                  button_width=380)
                 return
             result = self.call_sheets_api([[feedback]])
             if result:
@@ -3553,13 +3582,15 @@ class TeraTermUI(customtkinter.CTk):
             self.help.after(256, lambda: self.help.iconbitmap("images/tera-term.ico"))
             self.help.resizable(False, False)
             self.help.attributes("-topmost", True)
-            scrollable_frame = customtkinter.CTkScrollableFrame(self.help, width=450, height=250)
+            scrollable_frame = customtkinter.CTkScrollableFrame(self.help, width=450, height=250,
+                                                                fg_color=("#e6e6e6", "#222222"))
             scrollable_frame.pack()
             title = customtkinter.CTkLabel(scrollable_frame, text="Help",
-                                           font=customtkinter.CTkFont(size=15, weight="bold"))
+                                           font=customtkinter.CTkFont(size=20, weight="bold"))
             title.pack()
-            notice = customtkinter.CTkLabel(scrollable_frame, text="*Don't interact/touch Tera Term \n"
-                                                                   " while using this application*")
+            notice = customtkinter.CTkLabel(scrollable_frame, text="*Don't interact/touch Tera Term\n "
+                                                                   "while using this application*",
+                                            font=customtkinter.CTkFont(weight="bold", underline=True))
             notice.pack()
             searchboxText = customtkinter.CTkLabel(scrollable_frame, text="\n\nFind the code of the class you need:"
                                                                           "\n (Use arrow keys to scroll)")
@@ -3568,10 +3599,18 @@ class TeraTermUI(customtkinter.CTk):
             self.search_box.pack(pady=10)
             self.class_list = tk.Listbox(scrollable_frame, width=32, bg=bg_color, fg=fg_color, font=listbox_font)
             self.class_list.pack()
-            termsText = customtkinter.CTkLabel(scrollable_frame, text="\n Terms:  \n"
-                                                                      "B91, B92, B93, C01, C02, C03, "
-                                                                      "\n C11, C12, C13, C21, C22, C23, *C31")
+            termsText = customtkinter.CTkLabel(scrollable_frame, text="\n\nList of Terms:",
+                                               font=customtkinter.CTkFont(weight="bold", size=15))
             termsText.pack()
+            terms = [["Year", "Term"],
+                     ["2019", "B91, B92, B93"],
+                     ["2020", "C01, C02, C03"],
+                     ["2021", "C11, C12, C13"],
+                     ["2022", "C21, C22, C23"],
+                     ["2023", "C31, C32, C33"],
+                     ["Semester", "Fall, Spring, Summer"]]
+            termsTable = ctktable.CTkTable(scrollable_frame, column=2, row=7, values=terms)
+            termsTable.pack(expand=True, fill="both", padx=20, pady=20)
             filesText = customtkinter.CTkLabel(scrollable_frame, text="\nChoose your Tera Term's Location: ")
             filesText.pack()
             files = customtkinter.CTkButton(scrollable_frame, border_width=2,
@@ -3598,13 +3637,15 @@ class TeraTermUI(customtkinter.CTk):
             self.help.after(256, lambda: self.help.iconbitmap("images/tera-term.ico"))
             self.help.resizable(False, False)
             self.help.attributes("-topmost", True)
-            scrollable_frame = customtkinter.CTkScrollableFrame(self.help, width=450, height=250, corner_radius=10)
+            scrollable_frame = customtkinter.CTkScrollableFrame(self.help, width=450, height=250,
+                                                                fg_color=("#e6e6e6", "#222222"))
             scrollable_frame.pack()
             title = customtkinter.CTkLabel(scrollable_frame, text="Ayuda",
-                                           font=customtkinter.CTkFont(size=15, weight="bold"))
+                                           font=customtkinter.CTkFont(size=20, weight="bold"))
             title.pack()
-            notice = customtkinter.CTkLabel(scrollable_frame, text="*No toque Tera Term\n"
-                                                                   " mientras use esta aplicación*")
+            notice = customtkinter.CTkLabel(scrollable_frame, text="*No toque Tera Term\n "
+                                                                   "mientras use esta aplicación*",
+                                            font=customtkinter.CTkFont(weight="bold", underline=True))
             notice.pack()
             searchboxText = customtkinter.CTkLabel(scrollable_frame, text="\n\nEncuentra el código de tu clase:"
                                                                           "\n(Usa las teclas de flecha)")
@@ -3613,10 +3654,18 @@ class TeraTermUI(customtkinter.CTk):
             self.search_box.pack(pady=10)
             self.class_list = tk.Listbox(scrollable_frame, width=32, bg=bg_color, fg=fg_color, font=listbox_font)
             self.class_list.pack()
-            termsText = customtkinter.CTkLabel(scrollable_frame, text="\n Términos:  \n"
-                                                                      "B91, B92, B93, C01, C02, C03,"
-                                                                      " \n C11, C12, C13, C21, C22, C23, *C31")
+            termsText = customtkinter.CTkLabel(scrollable_frame, text="\n\nLista de Términos:",
+                                               font=customtkinter.CTkFont(weight="bold", size=15))
             termsText.pack()
+            terms = [["Año", "Términos"],
+                     ["2019", "B91, B92, B93"],
+                     ["2020", "C01, C02, C03"],
+                     ["2021", "C11, C12, C13"],
+                     ["2022", "C21, C22, C23"],
+                     ["2023", "C31, C32, C33"],
+                     ["Semestre", "Otoño, Primavera, Verano"]]
+            termsTable = ctktable.CTkTable(scrollable_frame, column=2, row=7, values=terms)
+            termsTable.pack(expand=True, fill="both", padx=20, pady=20)
             filesText = customtkinter.CTkLabel(scrollable_frame, text="\nEscoge donde esta localizado tu Tera Term: ")
             filesText.pack()
             files = customtkinter.CTkButton(scrollable_frame, border_width=2,
