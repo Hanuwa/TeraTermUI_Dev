@@ -650,7 +650,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
                                 self.explanation5.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
                                 if lang == "English":
-                                    self.s_classes.grid(row=1, column=1, padx=(43, 0), pady=(0, 0), sticky="w")
+                                    self.s_classes.grid(row=1, column=1, padx=(42, 0), pady=(0, 0), sticky="w")
                                 elif lang == "Español":
                                     self.s_classes.grid(row=1, column=1, padx=(43, 0), pady=(0, 0), sticky="w")
                                 self.s_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
@@ -661,7 +661,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
                                 self.menu_intro.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
                                 if lang == "English":
-                                    self.menu.grid(row=2, column=1, padx=(46, 0), pady=(10, 0), sticky="w")
+                                    self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
                                 elif lang == "Español":
                                     self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
                                 self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
@@ -1893,9 +1893,9 @@ class TeraTermUI(customtkinter.CTk):
                             self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
                             self.menu_intro.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
                             if lang == "English":
-                                self.menu.grid(row=2, column=1, padx=(46, 0), pady=(10, 0), sticky="w")
+                                self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
                             elif lang == "Español":
-                                self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
+                                self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
                             self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
                             self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
                             self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
@@ -1949,9 +1949,9 @@ class TeraTermUI(customtkinter.CTk):
                                 self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
                                 self.menu_intro.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
                                 if lang == "English":
-                                    self.menu.grid(row=2, column=1, padx=(46, 0), pady=(10, 0), sticky="w")
+                                    self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
                                 elif lang == "Español":
-                                    self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
+                                    self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
                                 self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
                                 self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
                                 self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
@@ -1991,9 +1991,9 @@ class TeraTermUI(customtkinter.CTk):
                             self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
                             self.menu_intro.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
                             if lang == "English":
-                                self.menu.grid(row=2, column=1, padx=(46, 0), pady=(10, 0), sticky="w")
+                                self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
                             elif lang == "Español":
-                                self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
+                                self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
                             self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
                             self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
                             self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
@@ -2032,9 +2032,9 @@ class TeraTermUI(customtkinter.CTk):
                                 self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
                                 self.menu_intro.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
                                 if lang == "English":
-                                    self.menu.grid(row=2, column=1, padx=(46, 0), pady=(10, 0), sticky="w")
+                                    self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
                                 elif lang == "Español":
-                                    self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
+                                    self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
                                 self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
                                 self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
                                 self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
@@ -2089,9 +2089,9 @@ class TeraTermUI(customtkinter.CTk):
                             self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
                             self.menu_intro.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
                             if lang == "English":
-                                self.menu.grid(row=2, column=1, padx=(46, 0), pady=(10, 0), sticky="w")
+                                self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
                             elif lang == "Español":
-                                self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
+                                self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
                             self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
                             self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
                             self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
@@ -2334,11 +2334,11 @@ class TeraTermUI(customtkinter.CTk):
                     self.explanation3.grid(row=0, column=1, padx=12, pady=(10, 20))
                     self.lock_grid.grid(row=1, column=1, padx=(0, 0), pady=(0, 20))
                     if lang == "English":
-                        self.ssn.grid(row=2, column=1, padx=(0, 132), pady=(0, 10))
+                        self.ssn.grid(row=2, column=1, padx=(0, 128), pady=(0, 10))
                         self.ssn_entry.grid(row=2, column=1, padx=(160, 0), pady=(0, 10))
                         self.code_entry.grid(row=3, column=1, padx=(160, 0), pady=(0, 10))
                     elif lang == "Español":
-                        self.ssn.grid(row=2, column=1, padx=(0, 135), pady=(0, 10))
+                        self.ssn.grid(row=2, column=1, padx=(0, 136), pady=(0, 10))
                         self.ssn_entry.grid(row=2, column=1, padx=(170, 0), pady=(0, 10))
                         self.code_entry.grid(row=3, column=1, padx=(170, 0), pady=(0, 10))
                     self.code.grid(row=3, column=1, padx=(0, 165), pady=(0, 10))
@@ -2566,7 +2566,7 @@ class TeraTermUI(customtkinter.CTk):
         self.submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
         self.explanation5.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
         if lang == "English":
-            self.s_classes.grid(row=1, column=1, padx=(43, 0), pady=(0, 0), sticky="w")
+            self.s_classes.grid(row=1, column=1, padx=(42, 0), pady=(0, 0), sticky="w")
         elif lang == "Español":
             self.s_classes.grid(row=1, column=1, padx=(43, 0), pady=(0, 0), sticky="w")
         self.s_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
@@ -2574,11 +2574,10 @@ class TeraTermUI(customtkinter.CTk):
         self.s_semester_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
         self.show_all.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
         self.search.grid(row=4, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
-        self.menu_submit.configure(width=140)
         self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
         self.menu_intro.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         if lang == "English":
-            self.menu.grid(row=2, column=1, padx=(46, 0), pady=(10, 0), sticky="w")
+            self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
         elif lang == "Español":
             self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
         self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
@@ -3811,7 +3810,8 @@ class TeraTermUI(customtkinter.CTk):
 
 if __name__ == "__main__":
     appdata_folder = os.path.join(os.getenv('APPDATA'), 'TeraTermUI')
-    lock_file = os.path.join(appdata_folder, "app_lock.lock")
+    lock_file = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])), "app_lock.lock")
+    lock_file_appdata = os.path.join(appdata_folder, "app_lock.lock")
     file_lock = FileLock(lock_file, timeout=0)
     try:
         with file_lock.acquire(poll_interval=0.1):
