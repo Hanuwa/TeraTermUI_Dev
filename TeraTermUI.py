@@ -737,7 +737,23 @@ class TeraTermUI(customtkinter.CTk):
                     self.uprb.UprbayTeraTermVt.type_keys("1S4")
                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                     send_keys("{ENTER}")
+                    screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                    screenshot_thread.start()
+                    screenshot_thread.join()
+                    text_output = self.capture_screenshot()
+                    if "INVALID ACTION" in text_output:
+                        if lang == "English":
+                            self.show_error_message(300, 210, "Error! Unable to enroll class")
+                            self.after(2500, self.show_enrollment_error_information)
+                        elif lang == "Español":
+                            self.show_error_message(320, 210, "¡Error! No se puede matricular la clase")
+                            self.after(2500, self.show_enrollment_error_information)
+                        return
+                    enrolled_classes = "ENROLLED"
+                    count_enroll = text_output.count(enrolled_classes)
                     send_keys("{TAB 2}")
+                    for i in range(count_enroll, 0, -1):
+                        send_keys("{TAB 2}")
                     if choice == "Register" or choice == "Registra":
                         self.uprb.UprbayTeraTermVt.type_keys("R")
                     elif choice == "Drop" or choice == "Baja":
@@ -745,19 +761,18 @@ class TeraTermUI(customtkinter.CTk):
                     self.uprb.UprbayTeraTermVt.type_keys(classes)
                     self.uprb.UprbayTeraTermVt.type_keys(section)
                     send_keys("{ENTER}")
-                    time.sleep(1.3)
-                    send_keys("{ENTER}")
+                    screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                    screenshot_thread.start()
+                    screenshot_thread.join()
+                    text = self.capture_screenshot()
                     self.reset_activity_timer(None)
                     self.go_next_1VE.configure(state="disabled")
                     self.go_next_1GP.configure(state="disabled")
                     self.go_next_409.configure(state="disabled")
                     self.go_next_683.configure(state="disabled")
                     self.go_next_4CM.configure(state="disabled")
-                    screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                    screenshot_thread.start()
-                    screenshot_thread.join()
-                    text = self.capture_screenshot()
-                    if "ACTION" not in text:
+                    if "CONFIRMED" in text:
+                        send_keys("{ENTER}")
                         self.submit.configure(command=self.submit2_event_handler)
                         self.e_classes_entry.delete(0, "end")
                         self.section_entry.delete(0, "end")
@@ -780,7 +795,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.show_success_message(350, 265, "Dropped class successfully")
                             elif lang == "Español":
                                 self.show_success_message(350, 265, "Clase abandonada exitósamente")
-                    elif "ACTION" in text:
+                    elif "CONFIRMED" not in text:
                         send_keys("{TAB}")
                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                         self.uprb.UprbayTeraTermVt.type_keys(semester)
@@ -847,9 +862,9 @@ class TeraTermUI(customtkinter.CTk):
                         self.uprb.UprbayTeraTermVt.type_keys(semester)
                         send_keys("{ENTER}")
                         send_keys("{TAB 2}")
-                        for i in range(self.m_counter, -1, -1):
+                        for i in range(self.m_counter, 0, -1):
                             send_keys("{TAB 2}")
-                        for i in range(self.e_counter, -1, -1):
+                        for i in range(self.e_counter, 0, -1):
                             send_keys("{TAB 2}")
                         if choice == "Register" or choice == "Registra":
                             self.uprb.UprbayTeraTermVt.type_keys("R")
@@ -1506,9 +1521,9 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys(semester)
                             send_keys("{ENTER}")
                             send_keys("{TAB 2}")
-                            for i in range(self.e_counter, -1, -1):
+                            for i in range(self.e_counter, 0, -1):
                                 send_keys("{TAB 2}")
-                            for i in range(self.m_counter, -1, -1):
+                            for i in range(self.m_counter, 0, -1):
                                 send_keys("{TAB 2}")
                             if choice == "Register" or choice == "Registra":
                                 self.uprb.UprbayTeraTermVt.type_keys("R")
@@ -3130,6 +3145,32 @@ class TeraTermUI(customtkinter.CTk):
         information_msg = customtkinter.CTkLabel(self.information, text=success_msg_text,
                                                  font=customtkinter.CTkFont(size=15, weight="bold"))
         information_msg.pack(side="top", fill="both", expand=True, padx=10, pady=20)
+
+    def total_classes_enrolled(self):
+        lang = self.language_menu.get()
+        if lang == "English":
+            while True:
+                classes_enrolled = customtkinter.CTkInputDialog(text="Type the number of classes you have enrolled for "
+                                                                     "this semester \n(Type 0 if you haven't enroll "
+                                                                     "any classes yet)",
+                                                                title="Test")
+                input_value = classes_enrolled.get_input()
+                try:
+                    return int(input_value)
+                except ValueError:
+                    # Show an error message and try again
+                    customtkinter.CTkMessageBox.showerror("Error", "Please enter a valid integer.")
+        if lang == "Español":
+            while True:
+                classes_enrolled = customtkinter.CTkInputDialog(text="Escriba el número de clases que ha inscrito para "
+                                                                     "este semestre \n(Escriba 0 si aún no se ha inscrito "
+                                                                     "en ninguna clase)", title="Test")
+                input_value = classes_enrolled.get_input()
+                try:
+                    return int(input_value)
+                except ValueError:
+                    # Show an error message and try again
+                    customtkinter.CTkMessageBox.showerror("Error", "Por favor, ingrese un número entero válido.")
 
     # function that changes the theme of the application
     def change_appearance_mode_event(self, new_appearance_mode: str):
