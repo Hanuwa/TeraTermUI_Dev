@@ -578,6 +578,8 @@ class TeraTermUI(customtkinter.CTk):
         block_window = customtkinter.CTkToplevel()
         block_window.attributes("-alpha", 0.0)
         block_window.grab_set()
+        self.destroy_windows()
+        self.hide_sidebar_windows()
         lang = self.language_menu.get()
         self.error_occurred = False
         if self.test_connection(lang) and self.check_server():
@@ -705,6 +707,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.show_error_message(300, 215, "¡Error! Tera Term no esta corriendo")
         ctypes.windll.user32.BlockInput(False)
         block_window.destroy()
+        self.show_sidebar_windows()
         task_done.set()
 
     def submit_event_handler(self):
@@ -747,6 +750,8 @@ class TeraTermUI(customtkinter.CTk):
         block_window = customtkinter.CTkToplevel()
         block_window.attributes("-alpha", 0.0)
         block_window.grab_set()
+        self.destroy_windows()
+        self.hide_sidebar_windows()
         classes = self.e_classes_entry.get().upper().replace(" ", "")
         section = self.section_entry.get().upper().replace(" ", "")
         semester = self.e_semester_entry.get().upper().replace(" ", "")
@@ -867,6 +872,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
         ctypes.windll.user32.BlockInput(False)
         block_window.destroy()
+        self.show_sidebar_windows()
         task_done.set()
 
     def submit2_event_handler(self):
@@ -910,6 +916,8 @@ class TeraTermUI(customtkinter.CTk):
         block_window = customtkinter.CTkToplevel()
         block_window.attributes("-alpha", 0.0)
         block_window.grab_set()
+        self.hide_sidebar_windows()
+        self.destroy_windows()
         choice = self.register_menu.get().replace(" ", "")
         classes = self.e_classes_entry.get().upper().replace(" ", "")
         section = self.section_entry.get().upper().replace(" ", "")
@@ -1051,9 +1059,8 @@ class TeraTermUI(customtkinter.CTk):
                     self.show_error_message(300, 215, "Error! Tera Term is disconnected")
                 elif lang == "Español":
                     self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
-        print(self.enrolled_classes_list)
-        print(self.dropped_classes_list)
         ctypes.windll.user32.BlockInput(False)
+        self.show_sidebar_windows()
         block_window.destroy()
         task_done.set()
 
@@ -1069,6 +1076,8 @@ class TeraTermUI(customtkinter.CTk):
         block_window = customtkinter.CTkToplevel()
         block_window.attributes("-alpha", 0.0)
         block_window.grab_set()
+        self.destroy_windows()
+        self.hide_sidebar_windows()
         classes2 = self.s_classes_entry.get().replace(" ", "")
         semester2 = self.s_semester_entry.get().upper().replace(" ", "")
         show_all = self.show_all.get()
@@ -1116,6 +1125,7 @@ class TeraTermUI(customtkinter.CTk):
                 elif lang == "Español":
                     self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
         block_window.destroy()
+        self.show_sidebar_windows()
         task_done.set()
 
     def search2_event_handler(self):
@@ -1130,6 +1140,8 @@ class TeraTermUI(customtkinter.CTk):
         block_window = customtkinter.CTkToplevel()
         block_window.attributes("-alpha", 0.0)
         block_window.grab_set()
+        self.destroy_windows()
+        self.hide_sidebar_windows()
         classes2 = self.s_classes_entry.get().replace(" ", "")
         semester2 = self.s_semester_entry.get().upper().replace(" ", "")
         show_all = self.show_all.get()
@@ -1177,10 +1189,13 @@ class TeraTermUI(customtkinter.CTk):
                 elif lang == "Español":
                     self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
         block_window.destroy()
+        self.show_sidebar_windows()
         task_done.set()
 
     # function for seeing the classes you are currently enrolled for
     def my_classes_event(self):
+        self.destroy_windows()
+        self.hide_sidebar_windows()
         lang = self.language_menu.get()
         if lang == "Español":
             dialog = customtkinter.CTkInputDialog(text="Escriba el semestre:", title="Enseñar Mis Classes")
@@ -1259,6 +1274,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.show_error_message(300, 215, "Error! Tera Term is disconnected")
                     elif self.language_menu.get() == "Español":
                         self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
+        self.show_sidebar_windows()
 
     # function that adds new entries
     def add_event(self):
@@ -1433,6 +1449,8 @@ class TeraTermUI(customtkinter.CTk):
         block_window = customtkinter.CTkToplevel()
         block_window.attributes("-alpha", 0.0)
         block_window.grab_set()
+        self.destroy_windows()
+        self.hide_sidebar_windows()
         counter = self.a_counter
         lang = self.language_menu.get()
         classes = self.m_classes_entry.get().upper().replace(" ", "")
@@ -1897,8 +1915,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
         ctypes.windll.user32.BlockInput(False)
         block_window.destroy()
-        print(self.enrolled_classes_list)
-        print(self.dropped_classes_list)
+        self.show_sidebar_windows()
         task_done.set()
 
     def option_menu_event_handler(self):
@@ -1913,6 +1930,8 @@ class TeraTermUI(customtkinter.CTk):
         block_window = customtkinter.CTkToplevel()
         block_window.attributes("-alpha", 0.0)
         block_window.grab_set()
+        self.destroy_windows()
+        self.hide_sidebar_windows()
         menu = self.menu_entry.get()
         lang = self.language_menu.get()
         semester = self.menu_semester_entry.get().upper().replace(" ", "")
@@ -2282,6 +2301,7 @@ class TeraTermUI(customtkinter.CTk):
                 elif lang == "Español":
                     self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
         ctypes.windll.user32.BlockInput(False)
+        self.show_sidebar_windows()
         block_window.destroy()
         task_done.set()
 
@@ -2290,6 +2310,8 @@ class TeraTermUI(customtkinter.CTk):
         block_window = customtkinter.CTkToplevel()
         block_window.attributes("-alpha", 0.0)
         block_window.grab_set()
+        self.destroy_windows()
+        self.hide_sidebar_windows()
         lang = self.language_menu.get()
         if self.test_connection(lang) and self.check_server():
             if self.checkIfProcessRunning("ttermpro"):
@@ -2302,6 +2324,7 @@ class TeraTermUI(customtkinter.CTk):
                 ctypes.windll.user32.BlockInput(False)
                 self.unfocus_tkinter()
                 self.reset_activity_timer(None)
+        self.show_sidebar_windows()
         block_window.destroy()
 
     # go through each page of the 1GP screen
@@ -2309,6 +2332,8 @@ class TeraTermUI(customtkinter.CTk):
         block_window = customtkinter.CTkToplevel()
         block_window.attributes("-alpha", 0.0)
         block_window.grab_set()
+        self.destroy_windows()
+        self.hide_sidebar_windows()
         lang = self.language_menu.get()
         if self.test_connection(lang) and self.check_server():
             if self.checkIfProcessRunning("ttermpro"):
@@ -2320,6 +2345,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.unfocus_tkinter()
                 ctypes.windll.user32.BlockInput(False)
                 self.reset_activity_timer(None)
+        self.show_sidebar_windows()
         block_window.destroy()
 
     # go through each page of the 409 screen
@@ -2327,6 +2353,8 @@ class TeraTermUI(customtkinter.CTk):
         block_window = customtkinter.CTkToplevel()
         block_window.attributes("-alpha", 0.0)
         block_window.grab_set()
+        self.destroy_windows()
+        self.hide_sidebar_windows()
         lang = self.language_menu.get()
         if self.test_connection(lang) and self.check_server():
             if self.checkIfProcessRunning("ttermpro"):
@@ -2339,6 +2367,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.unfocus_tkinter()
                 ctypes.windll.user32.BlockInput(False)
                 self.reset_activity_timer(None)
+        self.show_sidebar_windows()
         block_window.destroy()
 
     # go through each page of the 683 screen
@@ -2346,6 +2375,8 @@ class TeraTermUI(customtkinter.CTk):
         block_window = customtkinter.CTkToplevel()
         block_window.attributes("-alpha", 0.0)
         block_window.grab_set()
+        self.destroy_windows()
+        self.hide_sidebar_windows()
         self.submit.configure(state="disabled")
         self.search.configure(state="disabled")
         self.multiple.configure(state="disabled")
@@ -2363,6 +2394,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.unfocus_tkinter()
                 ctypes.windll.user32.BlockInput(False)
                 self.reset_activity_timer(None)
+        self.show_sidebar_windows()
         block_window.destroy()
 
     # go through each page of the 4CM screen
@@ -2370,6 +2402,8 @@ class TeraTermUI(customtkinter.CTk):
         block_window = customtkinter.CTkToplevel()
         block_window.attributes("-alpha", 0.0)
         block_window.grab_set()
+        self.destroy_windows()
+        self.hide_sidebar_windows()
         lang = self.language_menu.get()
         if self.test_connection(lang) and self.check_server():
             if self.checkIfProcessRunning("ttermpro"):
@@ -2392,6 +2426,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.show_error_message(310, 225, "¡Error Desconocido!")
                 else:
                     self.go_next_4CM.configure(state="disabled")
+        self.show_sidebar_windows()
         block_window.destroy()
 
     def student_event_handler(self):
@@ -2406,6 +2441,8 @@ class TeraTermUI(customtkinter.CTk):
         block_window = customtkinter.CTkToplevel()
         block_window.attributes("-alpha", 0.0)
         block_window.grab_set()
+        self.destroy_windows()
+        self.hide_sidebar_windows()
         username = self.username_entry.get().replace(" ", "").lower()
         lang = self.language_menu.get()
         self.bind("<Return>", lambda event: self.tuition_event_handler())
@@ -2462,6 +2499,7 @@ class TeraTermUI(customtkinter.CTk):
                 elif lang == "Español":
                     self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
         block_window.destroy()
+        self.show_sidebar_windows()
         task_done.set()
 
     def login_event_handler(self):
@@ -2476,9 +2514,8 @@ class TeraTermUI(customtkinter.CTk):
         block_window = customtkinter.CTkToplevel()
         block_window.attributes("-alpha", 0.0)
         block_window.grab_set()
-        if self.information and self.information.winfo_exists():
-            if self.information:
-                self.information.destroy()
+        self.destroy_windows()
+        self.hide_sidebar_windows()
         lang = self.language_menu.get()
         host = self.host_entry.get().replace(" ", "").lower()
         self.bind("<Return>", lambda event: self.student_event_handler())
@@ -2569,6 +2606,7 @@ class TeraTermUI(customtkinter.CTk):
                 elif lang == "Español":
                     self.show_error_message(300, 215, "¡Error! Servidor Incorrecto")
         block_window.destroy()
+        self.show_sidebar_windows()
         task_done.set()
 
     # function that lets user go back to the initial screen
@@ -3987,6 +4025,26 @@ class TeraTermUI(customtkinter.CTk):
                     file.write(line)
 
             self.original_font = None
+
+    def hide_sidebar_windows(self):
+        if self.status and self.status.winfo_exists():
+            self.status.withdraw()
+        if self.help and self.help.winfo_exists():
+            self.help.withdraw()
+
+    def show_sidebar_windows(self):
+        if self.status and self.status.winfo_exists():
+            self.status.deiconify()
+        if self.help and self.help.winfo_exists():
+            self.help.deiconify()
+
+    def destroy_windows(self):
+        if self.error and self.error.winfo_exists():
+            self.error.destroy()
+        if self.success and self.success.winfo_exists():
+            self.success.destroy()
+        if self.information and self.information.winfo_exists():
+            self.information.destroy()
 
 
 if __name__ == "__main__":
