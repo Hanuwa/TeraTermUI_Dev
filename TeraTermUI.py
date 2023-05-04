@@ -818,7 +818,7 @@ class TeraTermUI(customtkinter.CTk):
                                 if lang == "English":
                                     self.show_success_message(350, 265, "Enrolled class successfully")
                                 elif lang == "Español":
-                                    self.show_success_message(350, 265, "Clase registrada exitósamente")
+                                    self.show_success_message(350, 265, "Clase matriculada exitósamente")
                             elif choice == "Drop" or choice == "Baja":
                                 if classes not in self.dropped_classes_list:
                                     self.dropped_classes_list[section] = classes
@@ -988,7 +988,7 @@ class TeraTermUI(customtkinter.CTk):
                                     if lang == "English":
                                         self.show_success_message(350, 265, "Enrolled class successfully")
                                     elif lang == "Español":
-                                        self.show_success_message(350, 265, "Clase registrada exitósamente")
+                                        self.show_success_message(350, 265, "Clase matriculada exitósamente")
                                 elif choice == "Drop" or choice == "Baja":
                                     if section in self.enrolled_classes_list:
                                         del self.enrolled_classes_list[section]
@@ -1774,7 +1774,7 @@ class TeraTermUI(customtkinter.CTk):
                                     if lang == "English":
                                         self.show_success_message(350, 265, "Enrolled classes successfully")
                                     elif lang == "Español":
-                                        self.show_success_message(350, 265, "Clases registradas exitósamente")
+                                        self.show_success_message(350, 265, "Clases matriculada exitósamente")
                                 elif choice == "Drop":
                                     classes_list = [classes, classes2, classes3, classes4, classes5, classes6]
                                     section_list = [section, section2, section3, section4, section5, section6]
@@ -1796,9 +1796,8 @@ class TeraTermUI(customtkinter.CTk):
                                         self.show_success_message(350, 265, "Clases abandonadas exitósamente")
                                 if "INVALID COURSE ID" in text or "COURSE RESERVED" in text or "COURSE CLOSED" in text\
                                         or "CRS ALRDY TAKEN/PASSED" in text or "Closed by Spec-Prog" in text or \
-                                        "ILLEGAL DROP-NOT ENR" in text or \
-                                        "NEW COURSE,NO FUNCTION" in text or "PRESENTLY ENROLLED" in text\
-                                        or "R/TC" in text:
+                                        "ILLEGAL DROP-NOT ENR" in text or "NEW COURSE,NO FUNCTION" in text or \
+                                        "PRESENTLY ENROLLED" in text or "R/TC" in text:
                                     for i in range(counter+1, 0, -1):
                                         if self.enrolled_classes_list:
                                             self.enrolled_classes_list.popitem()
@@ -3366,9 +3365,9 @@ class TeraTermUI(customtkinter.CTk):
         else:
             winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
             if lang == "English":
-                CTkMessagebox(master=self, title="Info", message="Application is up to date", button_width=380)
+                CTkMessagebox(master=self, title="Info", message="Application is already up to date", button_width=380)
             elif lang == "Español":
-                CTkMessagebox(master=self, title="Info", message="La Aplicación está actualizada", button_width=380)
+                CTkMessagebox(master=self, title="Info", message="La aplicación ya está actualizada", button_width=380)
 
     # determines the hardware of the users' computer and change the time.sleep seconds respectively
     def get_sleep_time(self):
@@ -3916,7 +3915,7 @@ class TeraTermUI(customtkinter.CTk):
                                             font=customtkinter.CTkFont(weight="bold", underline=True))
             notice.pack()
             searchboxText = customtkinter.CTkLabel(scrollable_frame, text="\n\nEncuentra el código de tu clase:"
-                                                                          "\n(Usa las teclas de flecha)")
+                                                                          "\n(Usa las teclas de flecha para navegar)")
             searchboxText.pack()
             self.search_box = customtkinter.CTkEntry(scrollable_frame, placeholder_text="Clase")
             self.search_box.pack(pady=10)
