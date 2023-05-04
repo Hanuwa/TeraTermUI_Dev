@@ -246,9 +246,11 @@ class TeraTermUI(customtkinter.CTk):
                                                    text="Enroll for Classes: ",
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
         self.e_classes = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab), text="Class:")
-        self.e_classes_entry = customtkinter.CTkEntry(master=self.tabview.tab(self.enroll_tab))
+        self.e_classes_entry = customtkinter.CTkEntry(master=self.tabview.tab(self.enroll_tab),
+                                                      placeholder_text="MATE3032")
         self.section = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab), text="Section:")
-        self.section_entry = customtkinter.CTkEntry(master=self.tabview.tab(self.enroll_tab))
+        self.section_entry = customtkinter.CTkEntry(master=self.tabview.tab(self.enroll_tab),
+                                                    placeholder_text="LM1")
         self.e_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab), text="Semester:")
         self.e_semester_entry = customtkinter.CTkComboBox(master=self.tabview.tab(self.enroll_tab),
                                                           values=["C23", "C31", "C32", "C33"])
@@ -261,7 +263,8 @@ class TeraTermUI(customtkinter.CTk):
                                                    text="Search for Classes: ",
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
         self.s_classes = customtkinter.CTkLabel(master=self.tabview.tab(self.search_tab), text="Class:")
-        self.s_classes_entry = customtkinter.CTkEntry(master=self.tabview.tab(self.search_tab))
+        self.s_classes_entry = customtkinter.CTkEntry(master=self.tabview.tab(self.search_tab),
+                                                      placeholder_text="MATE3032")
         self.s_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.search_tab), text="Semester:")
         self.s_semester_entry = customtkinter.CTkComboBox(master=self.tabview.tab(self.search_tab),
                                                           values=["B91", "B92", "B93", "C01", "C02", "C03", "C11",
@@ -705,11 +708,39 @@ class TeraTermUI(customtkinter.CTk):
         task_done.set()
 
     def submit_event_handler(self):
-        task_done = threading.Event()
-        loading_screen = self.show_loading_screen()
-        self.update_loading_screen(loading_screen, task_done)
-        event_thread = threading.Thread(target=self.submit_event, args=(task_done,))
-        event_thread.start()
+        lang = self.language_menu.get()
+        choice = self.register_menu.get().lower()
+        if lang == "English":
+            msg = CTkMessagebox(master=self, title="Submit",
+                                message="Are you sure you are ready " + choice + " this class?"
+                                        " \n\nWARNING: Make sure the information is correct", icon="images/submit.png",
+                                option_1="Cancel", option_2="No", option_3="Yes",
+                                icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                hover_color=("darkred", "darkblue", "darkblue"))
+        elif lang == "Español":
+            if choice == "registra":
+                msg = CTkMessagebox(master=self, title="Someter",
+                                    message="¿Estás preparado para " + choice + "r esta clase?"
+                                            " \n\nWARNING: Asegúrese de que la información está correcta",
+                                    icon="images/submit.png",
+                                    option_1="Cancelar", option_2="No", option_3="Sí",
+                                    icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                    hover_color=("darkred", "darkblue", "darkblue"))
+            if choice == "baja":
+                msg = CTkMessagebox(master=self, title="Someter",
+                                    message="¿Estás preparado para darle de " + choice + " a esta clase?"
+                                            " \n\nWARNING: Asegúrese de que la información está correcta",
+                                    icon="images/submit.png",
+                                    option_1="Cancelar", option_2="No", option_3="Sí",
+                                    icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                    hover_color=("darkred", "darkblue", "darkblue"))
+        response = msg.get()
+        if response == "Yes" or response == "Sí":
+            task_done = threading.Event()
+            loading_screen = self.show_loading_screen()
+            self.update_loading_screen(loading_screen, task_done)
+            event_thread = threading.Thread(target=self.submit_event, args=(task_done,))
+            event_thread.start()
 
     # function for registering/dropping classes for the first time
     def submit_event(self, task_done):
@@ -839,11 +870,40 @@ class TeraTermUI(customtkinter.CTk):
         task_done.set()
 
     def submit2_event_handler(self):
-        task_done = threading.Event()
-        loading_screen = self.show_loading_screen()
-        self.update_loading_screen(loading_screen, task_done)
-        event_thread = threading.Thread(target=self.submit2_event, args=(task_done,))
-        event_thread.start()
+        lang = self.language_menu.get()
+        choice = self.register_menu.get().lower()
+        if lang == "English":
+            msg = CTkMessagebox(master=self, title="Submit",
+                                message="Are you sure you are ready " + choice + " this class?"
+                                        " \n\nWARNING: Make sure the information is correct",
+                                icon="images/submit.png",
+                                option_1="Cancel", option_2="No", option_3="Yes",
+                                icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                hover_color=("darkred", "darkblue", "darkblue"))
+        elif lang == "Español":
+            if choice == "registra":
+                msg = CTkMessagebox(master=self, title="Someter",
+                                    message="¿Estás preparado para " + choice + "r esta clase?"
+                                            " \n\nWARNING: Asegúrese de que la información está correcta",
+                                    icon="images/submit.png",
+                                    option_1="Cancelar", option_2="No", option_3="Sí",
+                                    icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                    hover_color=("darkred", "darkblue", "darkblue"))
+            if choice == "baja":
+                msg = CTkMessagebox(master=self, title="Someter",
+                                    message="¿Estás preparado para darle de " + choice + " a esta clase?"
+                                            " \n\nWARNING: Asegúrese de que la información está correcta",
+                                    icon="images/submit.png",
+                                    option_1="Cancelar", option_2="No", option_3="Sí",
+                                    icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                    hover_color=("darkred", "darkblue", "darkblue"))
+        response = msg.get()
+        if response == "Yes" or response == "Sí":
+            task_done = threading.Event()
+            loading_screen = self.show_loading_screen()
+            self.update_loading_screen(loading_screen, task_done)
+            event_thread = threading.Thread(target=self.submit2_event, args=(task_done,))
+            event_thread.start()
 
     # function for registering/dropping classes after the first time
     def submit2_event(self, task_done):
@@ -1354,7 +1414,7 @@ class TeraTermUI(customtkinter.CTk):
                                 hover_color=("darkred", "darkblue", "darkblue"))
         elif lang == "Español":
             msg = CTkMessagebox(master=self, title="Someter",
-                                message="¿Estás preparado para somester la data?"
+                                message="¿Estás preparado para someter la data?"
                                         " \n\nWARNING: Asegúrese de que la información está correcta",
                                 icon="images/submit.png",
                                 option_1="Cancelar", option_2="No", option_3="Sí",
@@ -1721,7 +1781,7 @@ class TeraTermUI(customtkinter.CTk):
                                         "ILLEGAL DROP-NOT ENR" in text or \
                                         "NEW COURSE,NO FUNCTION" in text or "PRESENTLY ENROLLED" in text\
                                         or "R/TC" in text:
-                                    for i in range(counter, -1, -1):
+                                    for i in range(counter+1, 0, -1):
                                         if self.enrolled_classes_list:
                                             self.enrolled_classes_list.popitem()
                                         if self.dropped_classes_list:
@@ -2376,7 +2436,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.explanation3.grid(row=0, column=1, padx=12, pady=(10, 20))
                     self.lock_grid.grid(row=1, column=1, padx=(0, 0), pady=(0, 20))
                     if lang == "English":
-                        self.ssn.grid(row=2, column=1, padx=(0, 128), pady=(0, 10))
+                        self.ssn.grid(row=2, column=1, padx=(0, 132), pady=(0, 10))
                         self.ssn_entry.grid(row=2, column=1, padx=(160, 0), pady=(0, 10))
                         self.code_entry.grid(row=3, column=1, padx=(160, 0), pady=(0, 10))
                     elif lang == "Español":
@@ -3193,6 +3253,54 @@ class TeraTermUI(customtkinter.CTk):
         webbrowser.open("https://www.techtarget.com/searchsecurity/definition/"
                         "asymmetric-cryptography#:~:text=Asymmetric%20cryptography%2C%20also%20known%20as,"
                         "from%20unauthorized%20access%20or%20use.")
+    def curriculums(self, choice):
+        if choice == "Departments" or choice == "Departamentos":
+            webbrowser.open("https://www.uprb.edu/sample-page/decanato-de-asuntos-academicos/"
+                            "departamentos-academicos-2/")
+        if choice == "Accounting" or choice == "Contabilidad":
+            webbrowser.open("https://drive.google.com/file/d/0BzdErxfu_JSCSDA0NHMyYVNhdXA3V1ZqX2c1aUlIT21Oc1RF/view?"
+                            "resourcekey=0-S2WGur2snYQ0UVIHABbdKg")
+        elif choice == "Finance" or choice == "Finanzas":
+            webbrowser.open("https://drive.google.com/file/d/0BzdErxfu_JSCR2gyNzJOeHA2c2EwTklRYmZYZ0Zfck9UT3E0/view?"
+                            "resourcekey=0-jizC_JvFrbYxmb9ZScl8RA")
+        elif choice == "Management" or choice == "Gerencia":
+            webbrowser.open("https://drive.google.com/file/d/0BzdErxfu_JSCVllhTWJGMzRYd3JoemtObDkzX3I5MHNqU3V3/view?"
+                            "resourcekey=0-368G697L5iz5EjZ_DCngHQ")
+        elif choice == "Marketing" or choice == "Mercadeo":
+            webbrowser.open("https://drive.google.com/file/d/0BzdErxfu_JSCa3BIWnZyQmlHa0hGcEVtSlV2d2gxN0dENVcw/view?"
+                            "resourcekey=0-hve5FwLHcBdt0K6Je5hMSg")
+        elif choice == "General Biology" or choice == "Biología General":
+            webbrowser.open("https://drive.google.com/file/d/11yfoYqXYPybDZmeEmgW8osgSCCmxzjQl/view")
+        elif choice == "Biology-Human Focus" or choice == "Biología-Enfoque Humano":
+            webbrowser.open("https://drive.google.com/file/d/1z-aphTwLLwAY5-G3O7_SXG3ZvvRSN6p9/view")
+        elif choice == "Computer Science" or choice == "Ciencias de Computadoras":
+            webbrowser.open("https://docs.uprb.edu/deptsici/CIENCIAS-DE-COMPUTADORAS-2016.pdf")
+        elif choice == "Information Systems" or choice == "Sistemas de Información":
+            webbrowser.open("https://docs.uprb.edu/deptsici/SISTEMAS-INFORMACION-2016.pdf")
+        elif choice == "Social Sciences" or choice == "Ciencias Sociales":
+            webbrowser.open("https://drive.google.com/file/d/1cZnD6EhBsu7u6U8IVZoeK0VHgQmYt3sf/view")
+        elif choice == "Physical Education" or choice == "Educación Física":
+            webbrowser.open("https://drive.google.com/file/d/0BzdErxfu_JSCQWFEWlpCSnRFMVFGQnZoTXRyZHJiMzBkc2dZ/view?"
+                            "resourcekey=0-zLsz0IP1Ajy853kM9I2PQg")
+        elif choice == "Electronics":
+            webbrowser.open("https://drive.google.com/file/d/1tfzaHKilu5iQccD2sBzD8O_6UlXtSREF/view")
+        elif choice == "Electrónica":
+            webbrowser.open("https://drive.google.com/file/d/1tfzaHKilu5iQccD2sBzD8O_6UlXtSREF/view")
+        elif choice == "Equipment Management" or choice == "Gerencia de Materiales":
+            webbrowser.open("https://drive.google.com/file/d/13ohtab5ns6qO2QIHouScKtrFHrM7X3zl/view")
+        elif choice == "Pedagogy" or choice == "Pedagogía":
+            webbrowser.open("https://www.upr.edu/bayamon/wp-content/uploads/sites/9/2015/06/"
+                            "Secuencia-curricular-aprobada-en-mayo-de-2013.pdf")
+        elif choice == "Chemistry" or choice == "Química":
+            webbrowser.open("https://drive.google.com/file/d/0BzdErxfu_JSCNHJENWNaY1JmZjNSSU5mR2U5SnVOc1gxUTVJ/view?"
+                            "resourcekey=0-CWkQQfEczPuV0Rx4KQnkBA")
+        elif choice == "Nursing" or choice == "Enfermería":
+            webbrowser.open("https://drive.google.com/file/d/0BzdErxfu_JSCaF9tMFc3Y0hnRGpsZ1dMTXFPRjRMUlVEQ1ZZ/view?"
+                            "resourcekey=0-JQUivKyxJQlXP-2K008d_Q")
+        elif choice == "Office Systems" or choice == "Sistemas de Oficina":
+            webbrowser.open("https://docs.uprb.edu/deptsofi/curriculo-BA-SOFI-agosto-2016.pdf")
+        elif choice == "Information Engineering" or choice == "Ingeniería de la Información":
+            webbrowser.open("https://drive.google.com/file/d/1mYCHmCy3Mb2fDyp9EiFEtR0j4-rsDdlN/view")
 
     def update_app(self):
         lang = self.language_menu.get()
@@ -3382,8 +3490,8 @@ class TeraTermUI(customtkinter.CTk):
                                                          height=170, fg_color=("#ffffff", "#111111"))
             self.feedbackText.pack(pady=10)
             feedbackSend = customtkinter.CTkButton(scrollable_frame, border_width=2,
-                                                        text="Send Feedback",
-                                                        text_color=("gray10", "#DCE4EE"), command=self.submit_feedback)
+                                                   text="Send Feedback",
+                                                   text_color=("gray10", "#DCE4EE"), command=self.submit_feedback)
             feedbackSend.pack()
             checkUpdateText = customtkinter.CTkLabel(scrollable_frame, text="\n\n Check if application has a new update"
                                                                             " available")
@@ -3407,8 +3515,12 @@ class TeraTermUI(customtkinter.CTk):
                                                                "you can see\n which information we do store\n by "
                                                                "accessing the file called\n database.db and things "
                                                                "like the\n ssn are encrypted using\n an "
-                                                               "asymmetrical key."]]
-            faq = ctktable.CTkTable(scrollable_frame, row=2, column=2, values=qaTable)
+                                                               "asymmetrical key."],
+                       ["What is a section?", "The section determines which days\n and at what hours you take your "
+                                              "classes\n, for example, \"LM1\" the L and the\n M tells you that the "
+                                              "classes are on \nMondays and Wednesdays and the 1\n tells you they start"
+                                              " at 1:00 PM."]]
+            faq = ctktable.CTkTable(scrollable_frame, row=3, column=2, values=qaTable)
             faq.pack(expand=True, fill="both", padx=20, pady=20)
 
         elif lang == "Español":
@@ -3464,8 +3576,12 @@ class TeraTermUI(customtkinter.CTk):
                                                                    "que\n información sí almacenamos \naccediendo "
                                                                    "al archivo llamado\n database.db y cosas como el "
                                                                    "\nssn son encriptado usando\n una"
-                                                                   " llave asimétrica."]]
-            faq = ctktable.CTkTable(scrollable_frame, row=2, column=2, values=qaTable)
+                                                                   " llave asimétrica."],
+                       ["¿Qué es una sección?", "La sección determina qué días\ny a qué horas tomas tus "
+                                                "clases\n, por ejemplo, \"LM1\" la L y la\n M te dice que las "
+                                                "clases son los \nlunes y miercoles y el 1\n te dice que empiezan"
+                                                "a las 1:00 PM."]]
+            faq = ctktable.CTkTable(scrollable_frame, row=3, column=2, values=qaTable)
             faq.pack(expand=True, fill="both", padx=20, pady=20)
 
     # Reads from the feedback.json file
@@ -3701,6 +3817,18 @@ class TeraTermUI(customtkinter.CTk):
             self.search_box.pack(pady=10)
             self.class_list = tk.Listbox(scrollable_frame, width=32, bg=bg_color, fg=fg_color, font=listbox_font)
             self.class_list.pack()
+            curriculumText = customtkinter.CTkLabel(scrollable_frame, text="\n\nCurriculums of Departments:")
+            curriculumText.pack()
+            curriculum = customtkinter.CTkOptionMenu(scrollable_frame,
+                                                     values=["Departments", "Accounting", "Finance", "Management",
+                                                             "Marketing" "General Biology", "Biology-Human Focus",
+                                                             "Computer Science", "Information Systems",
+                                                             "Social Sciences", "Physical Education",
+                                                             "Electronics", "Equipment Management", "Pedagogy",
+                                                             "Chemistry", "Nursing", "Office Systems",
+                                                             "Information Engineering"],
+                                                     command=self.curriculums, height=30, width=150)
+            curriculum.pack(pady=5)
             termsText = customtkinter.CTkLabel(scrollable_frame, text="\n\nList of Terms:",
                                                font=customtkinter.CTkFont(weight="bold", size=15))
             termsText.pack()
@@ -3756,6 +3884,19 @@ class TeraTermUI(customtkinter.CTk):
             self.search_box.pack(pady=10)
             self.class_list = tk.Listbox(scrollable_frame, width=32, bg=bg_color, fg=fg_color, font=listbox_font)
             self.class_list.pack()
+            curriculumText = customtkinter.CTkLabel(scrollable_frame, text="\n\nCurriculums of Departments:")
+            curriculumText.pack()
+            curriculum = customtkinter.CTkOptionMenu(scrollable_frame,
+                                                     values=["Departamentos", "Contabilidad", "Finanzas",
+                                                             "Gerencia", "Mercadeo", "Biología General",
+                                                             "Biología-Enfoque Humano", "Ciencias de Computadoras",
+                                                             "Sistemas de Información", "Ciencias Sociales",
+                                                             "Educación Física", "Electrónica",
+                                                             "Gerencia de Materiales", "Pedagogía", "Química",
+                                                             "Enfermería", "Sistemas de Oficina",
+                                                             "Ingeniería de la Información"],
+                                                     command=self.curriculums, height=30, width=150)
+            curriculum.pack(pady=5)
             termsText = customtkinter.CTkLabel(scrollable_frame, text="\n\nLista de Términos:",
                                                font=customtkinter.CTkFont(weight="bold", size=15))
             termsText.pack()
