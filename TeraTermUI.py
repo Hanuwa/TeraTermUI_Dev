@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 5/3/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 5/5/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -414,7 +414,6 @@ class TeraTermUI(customtkinter.CTk):
         self.m_register_menu6 = customtkinter.CTkOptionMenu(master=self.multiple_frame, values=["Register", "Drop"],
                                                             height=30)
         self.m_register_menu6.set("Choose")
-        # Get the current display settings
 
         # Top level window management, flags and counters
         self.default_semester = "C31"
@@ -432,10 +431,9 @@ class TeraTermUI(customtkinter.CTk):
         self.flag3 = False
         self.flag4 = False
         self.flag5 = False
-        self.screenshot_skip = False
-        self.error_occurred = False
+        # self.screenshot_skip = False
+        # self.error_occurred = False
         self.run_fix = False
-        self.submit_feedback_button = True
         self.a_counter = 0
         self.m_counter = 0
         self.e_counter = 0
@@ -486,18 +484,18 @@ class TeraTermUI(customtkinter.CTk):
                 self.change_scaling_event(scaling[0][0])
         if len(welcome) == 0:
             self.sidebar_button_2.configure(state="disabled")
+            self.sidebar_button_1.configure(state="disabled")
 
             def show_message_box():
                 if self.language_menu.get() == "English":
                     self.show_information_message(375, 250, "Make sure to not interact with Tera Term\n\n"
                                                             " while the application is performing tasks")
-                    self.sidebar_button_2.configure(state="normal")
-                    self.after(10000, lambda: self.information.destroy())
                 if self.language_menu.get() == "Español":
                     self.show_information_message(375, 250, "Asegúrese de no interactuar con Tera Term\n\n"
                                                             "mientras la aplicación está realizando tareas")
-                    self.sidebar_button_2.configure(state="normal")
-                    self.after(10000, lambda: self.information.destroy())
+                self.after(10000, lambda: self.information.destroy())
+                self.sidebar_button_1.configure(state="normal")
+                self.sidebar_button_2.configure(state="normal")
                 if len(welcome) == 0:
                     self.cursor.execute("INSERT INTO user_data (welcome) VALUES (?)", ("Checked",))
                 elif len(welcome) == 1:
@@ -794,9 +792,10 @@ class TeraTermUI(customtkinter.CTk):
                         screenshot_thread.start()
                         screenshot_thread.join()
                         text = self.capture_screenshot()
-                        text_output = self.capture_screenshot()
                         enrolled_classes = "ENROLLED"
-                        count_enroll = text_output.count(enrolled_classes)
+                        count_enroll = text.count(enrolled_classes)
+                        dropped_classes = "DROPPED"
+                        count_dropped = text.count(dropped_classes)
                         self.reset_activity_timer(None)
                         self.go_next_1VE.configure(state="disabled")
                         self.go_next_1GP.configure(state="disabled")
@@ -807,6 +806,8 @@ class TeraTermUI(customtkinter.CTk):
                             self.submit.configure(command=self.submit2_event_handler)
                             self.e_classes_entry.delete(0, "end")
                             self.section_entry.delete(0, "end")
+                            for i in range(count_dropped, 0, -1):
+                                self.e_counter -= 1
                             for i in range(count_enroll, 0, -1):
                                 self.e_counter += 1
                             if choice == "Register" or choice == "Registra":
@@ -818,7 +819,7 @@ class TeraTermUI(customtkinter.CTk):
                                 if lang == "English":
                                     self.show_success_message(350, 265, "Enrolled class successfully")
                                 elif lang == "Español":
-                                    self.show_success_message(350, 265, "Clase matriculada exitósamente")
+                                    self.show_success_message(350, 265, "Clase registrada exitósamente")
                             elif choice == "Drop" or choice == "Baja":
                                 if classes not in self.dropped_classes_list:
                                     self.dropped_classes_list[section] = classes
@@ -872,6 +873,9 @@ class TeraTermUI(customtkinter.CTk):
                     self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
         ctypes.windll.user32.BlockInput(False)
         block_window.destroy()
+        print(self.enrolled_classes_list)
+        print(self.dropped_classes_list)
+        print(self.e_counter)
         self.show_sidebar_windows()
         task_done.set()
 
@@ -950,6 +954,7 @@ class TeraTermUI(customtkinter.CTk):
                         enrolled_classes = "ENROLLED"
                         count_enroll = text_output.count(enrolled_classes)
                         if "OUTDATED" not in text_output and count_enroll != 15:
+                            self.e_counter = 0
                             send_keys("{TAB 2}")
                             for i in range(count_enroll, 0, -1):
                                 send_keys("{TAB 2}")
@@ -965,7 +970,9 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread.join()
                             text = self.capture_screenshot()
                             enrolled_classes = "ENROLLED"
-                            count_enroll = text_output.count(enrolled_classes)
+                            count_enroll = text.count(enrolled_classes)
+                            dropped_classes = "DROPPED"
+                            count_dropped = text.count(dropped_classes)
                             self.reset_activity_timer(None)
                             self.go_next_1VE.configure(state="disabled")
                             self.go_next_1GP.configure(state="disabled")
@@ -975,6 +982,8 @@ class TeraTermUI(customtkinter.CTk):
                             if "CONFIRMED" in text or "DROPPED" in text:
                                 self.e_classes_entry.delete(0, "end")
                                 self.section_entry.delete(0, "end")
+                                for i in range(count_dropped, 0, -1):
+                                    self.e_counter -= 1
                                 for i in range(count_enroll, 0, -1):
                                     self.e_counter += 1
                                 if choice == "Register" or choice == "Registra":
@@ -988,7 +997,7 @@ class TeraTermUI(customtkinter.CTk):
                                     if lang == "English":
                                         self.show_success_message(350, 265, "Enrolled class successfully")
                                     elif lang == "Español":
-                                        self.show_success_message(350, 265, "Clase matriculada exitósamente")
+                                        self.show_success_message(350, 265, "Clase registrada exitósamente")
                                 elif choice == "Drop" or choice == "Baja":
                                     if section in self.enrolled_classes_list:
                                         del self.enrolled_classes_list[section]
@@ -1061,6 +1070,9 @@ class TeraTermUI(customtkinter.CTk):
                     self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
         ctypes.windll.user32.BlockInput(False)
         self.show_sidebar_windows()
+        print(self.enrolled_classes_list)
+        print(self.dropped_classes_list)
+        print(self.e_counter)
         block_window.destroy()
         task_done.set()
 
@@ -1337,9 +1349,9 @@ class TeraTermUI(customtkinter.CTk):
     # function that removes existing entries
     def remove_event(self):
         self.m_add.configure(state="normal")
-        if self.a_counter == 1 or self.a_counter == 0:
+        if self.a_counter < 1:
             self.m_remove.configure(state="disabled")
-        elif self.a_counter != 1:
+        elif self.a_counter > 1:
             self.m_remove.configure(state="normal")
         if self.a_counter == 1:
             self.a_counter -= 1
@@ -1388,7 +1400,7 @@ class TeraTermUI(customtkinter.CTk):
         self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
         if scaling not in ("90%", "95%", "100%"):
             self.change_scaling_event("100%")
-        if self.a_counter == 1 or self.a_counter == 0:
+        if self.a_counter < 1:
             self.m_remove.configure(state="disabled")
         if self.a_counter == 5:
             self.m_add.configure(state="disabled")
@@ -1644,6 +1656,10 @@ class TeraTermUI(customtkinter.CTk):
                         enrolled_classes = "ENROLLED"
                         count_enroll = text_output.count(enrolled_classes)
                         if "OUTDATED" not in text_output or count_enroll != 15:
+                            self.e_counter = 0
+                            self.m_counter = 0
+                            for i in range(count_enroll, 0, -1):
+                                self.e_counter += 1
                             send_keys("{TAB 2}")
                             for i in range(count_enroll, 0, -1):
                                 send_keys("{TAB 2}")
@@ -1747,7 +1763,7 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread.join()
                             text = self.capture_screenshot()
                             dropped_classes = "DROPPED"
-                            count_dropped = text_output.count(dropped_classes)
+                            count_dropped = text.count(dropped_classes)
                             self.reset_activity_timer(None)
                             self.go_next_1VE.configure(state="disabled")
                             self.go_next_1GP.configure(state="disabled")
@@ -1757,47 +1773,51 @@ class TeraTermUI(customtkinter.CTk):
                             if "CONFIRMED" in text or "DROPPED" in text:
                                 for i in range(count_dropped, 0, -1):
                                     self.m_counter -= 1
-                                if choice == "Register":
+                                for i in range(count_dropped, 0, -1):
+                                    self.e_counter -= 1
+                                choices = [(choice, counter, section, classes),
+                                           (choice2, 1, section2, classes2),
+                                           (choice3, 2, section3, classes3),
+                                           (choice4, 3, section4, classes4),
+                                           (choice5, 4, section5, classes5),
+                                           (choice6, 5, section6, classes6)]
+                                for c, cnt, sec, cls in choices:
+                                    if cnt == choices.index((c, cnt, sec, cls)):
+                                        if sec:
+                                            if c == "Register":
+                                                if sec in self.dropped_classes_list:
+                                                    del self.dropped_classes_list[sec]
+                                                if sec not in self.enrolled_classes_list:
+                                                    self.enrolled_classes_list[sec] = cls
+                                            elif c == "Drop":
+                                                if sec in self.enrolled_classes_list:
+                                                    del self.enrolled_classes_list[sec]
+                                                if sec not in self.dropped_classes_list:
+                                                    self.dropped_classes_list[sec] = cls
+                                if "CONFIRMED" in text and "DROPPED" in text:
                                     send_keys("{ENTER}")
-                                    classes_list = [classes, classes2, classes3, classes4, classes5, classes6]
-                                    section_list = [section, section2, section3, section4, section5, section6]
-                                    for i in range(len(classes_list)):
-                                        current_classes = classes_list[i]
-                                        current_section = section_list[i]
-                                        if current_section:
-                                            if current_classes in self.dropped_classes_list:
-                                                del self.dropped_classes_list[current_section]
-                                            if current_classes not in self.enrolled_classes_list:
-                                                self.enrolled_classes_list[current_section] = current_classes
-                                            elif current_classes in self.enrolled_classes_list:
-                                                del self.enrolled_classes_list[current_section]
+                                    if lang == "English":
+                                        self.show_success_message(350, 265, "Enrolled and dropped classes\n"
+                                                                            " successfully")
+                                    elif lang == "Español":
+                                        self.show_success_message(350, 265, "Clases matriculadas y \n"
+                                                                            " abandonadas exitósamente")
+                                elif "CONFIRMED" in text and "DROPPED" not in text:
+                                    send_keys("{ENTER}")
                                     if lang == "English":
                                         self.show_success_message(350, 265, "Enrolled classes successfully")
                                     elif lang == "Español":
-                                        self.show_success_message(350, 265, "Clases matriculada exitósamente")
-                                elif choice == "Drop":
-                                    classes_list = [classes, classes2, classes3, classes4, classes5, classes6]
-                                    section_list = [section, section2, section3, section4, section5, section6]
-                                    for i in range(len(classes_list)):
-                                        current_classes = classes_list[i]
-                                        current_section = section_list[i]
-                                        if current_section:
-                                            if current_section in self.enrolled_classes_list and \
-                                                    self.enrolled_classes_list[current_section] == current_classes:
-                                                del self.enrolled_classes_list[current_section]
-                                            if current_section not in self.dropped_classes_list:
-                                                self.dropped_classes_list[current_section] = current_classes
-                                            elif current_section in self.dropped_classes_list and \
-                                                    self.dropped_classes_list[current_section] != current_classes:
-                                                del self.dropped_classes_list[current_section]
+                                        self.show_success_message(350, 265, "Clases matriculadas exitósamente")
+                                elif "DROPPED" in text and "CONFIRMED" not in text:
                                     if lang == "English":
                                         self.show_success_message(350, 265, "Dropped classes successfully")
                                     elif lang == "Español":
                                         self.show_success_message(350, 265, "Clases abandonadas exitósamente")
                                 if "INVALID COURSE ID" in text or "COURSE RESERVED" in text or "COURSE CLOSED" in text\
                                         or "CRS ALRDY TAKEN/PASSED" in text or "Closed by Spec-Prog" in text or \
-                                        "ILLEGAL DROP-NOT ENR" in text or "NEW COURSE,NO FUNCTION" in text or \
-                                        "PRESENTLY ENROLLED" in text or "R/TC" in text:
+                                        "ILLEGAL DROP-NOT ENR" in text or \
+                                        "NEW COURSE,NO FUNCTION" in text or "PRESENTLY ENROLLED" in text\
+                                        or "R/TC" in text:
                                     for i in range(counter+1, 0, -1):
                                         if self.enrolled_classes_list:
                                             self.enrolled_classes_list.popitem()
@@ -1915,6 +1935,11 @@ class TeraTermUI(customtkinter.CTk):
         ctypes.windll.user32.BlockInput(False)
         block_window.destroy()
         self.show_sidebar_windows()
+        print(self.enrolled_classes_list)
+        print(self.dropped_classes_list)
+        print(self.e_counter)
+        print(self.m_counter)
+        print(self.e_counter + self.m_counter)
         task_done.set()
 
     def option_menu_event_handler(self):
@@ -2668,7 +2693,6 @@ class TeraTermUI(customtkinter.CTk):
             self.submit.configure(state="normal")
             self.show_classes.configure(state="normal")
             self.search.configure(state="normal")
-            self.multiple.configure(state="normal")
             self.show.deselect()
             self.screenshot_skip = False
             self.error_occurred = False
@@ -3365,9 +3389,9 @@ class TeraTermUI(customtkinter.CTk):
         else:
             winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
             if lang == "English":
-                CTkMessagebox(master=self, title="Info", message="Application is already up to date", button_width=380)
+                CTkMessagebox(master=self, title="Info", message="Application is up to date", button_width=380)
             elif lang == "Español":
-                CTkMessagebox(master=self, title="Info", message="La aplicación ya está actualizada", button_width=380)
+                CTkMessagebox(master=self, title="Info", message="La Aplicación está actualizada", button_width=380)
 
     # determines the hardware of the users' computer and change the time.sleep seconds respectively
     def get_sleep_time(self):
@@ -3646,7 +3670,7 @@ class TeraTermUI(customtkinter.CTk):
             except:
                 DISCOVERY_SERVICE_URL = 'https://sheets.googleapis.com/$discovery/rest?version=v4'
                 service = build('sheets', 'v4', credentials=self.credentials, discoveryServiceUrl=DISCOVERY_SERVICE_URL)
-            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            now = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
             body = {
                 'values': [[now, values[0][0]]]
             }
@@ -3663,7 +3687,10 @@ class TeraTermUI(customtkinter.CTk):
 
     def submit_feedback(self):
         lang = self.language_menu.get()
-        if self.submit_feedback_button:
+        current_date = datetime.today().strftime('%Y-%m-%d')
+        date = self.cursor.execute("SELECT date FROM user_data WHERE date IS NOT NULL").fetchall()
+        dates_list = [record[0] for record in date]
+        if current_date not in dates_list:
             feedback = self.feedbackText.get("1.0", tk.END).strip()
             word_count = len(feedback.split())
             if word_count > 1000:
@@ -3711,8 +3738,13 @@ class TeraTermUI(customtkinter.CTk):
                     elif lang == "Español":
                         CTkMessagebox(title="Success", icon="check", message="¡Comentario sometido éxitosamente!",
                                       button_width=380)
+                    resultDate = self.cursor.execute("SELECT date FROM user_data").fetchall()
+                    if len(resultDate) == 0:
+                        self.cursor.execute("INSERT INTO user_data (date) VALUES (?)", (current_date,))
+                    elif len(resultDate) == 1:
+                        self.cursor.execute("UPDATE user_data SET date=?", (current_date,))
+                    self.connection.commit()
                     self.feedbackText.delete("1.0", tk.END)
-                    self.submit_feedback_button = False
                 else:
                     winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                     if lang == "English":
@@ -3722,6 +3754,7 @@ class TeraTermUI(customtkinter.CTk):
                         CTkMessagebox(title="Error", message="¡Error! Un error ocurrio mientras se sometia comentario",
                                       icon="cancel", button_width=380)
         else:
+            winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
             if lang == "English":
                 CTkMessagebox(title="Error", message="Error! Cannot submit more than one feedback", icon="cancel",
                               button_width=380)
@@ -3915,7 +3948,7 @@ class TeraTermUI(customtkinter.CTk):
                                             font=customtkinter.CTkFont(weight="bold", underline=True))
             notice.pack()
             searchboxText = customtkinter.CTkLabel(scrollable_frame, text="\n\nEncuentra el código de tu clase:"
-                                                                          "\n(Usa las teclas de flecha para navegar)")
+                                                                          "\n(Usa las teclas de flecha)")
             searchboxText.pack()
             self.search_box = customtkinter.CTkEntry(scrollable_frame, placeholder_text="Clase")
             self.search_box.pack(pady=10)
@@ -3962,7 +3995,6 @@ class TeraTermUI(customtkinter.CTk):
         self.class_list.bind('<<ListboxSelect>>', self.show_class_code)
         self.class_list.bind("<MouseWheel>", self.disable_scroll)
         self.search_box.bind('<KeyRelease>', self.search_classes)
-
     def get_latest_release(self):
         url = f"{self.GITHUB_REPO}/releases/latest"
         response = requests.get(url)
