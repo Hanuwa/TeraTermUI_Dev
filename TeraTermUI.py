@@ -4040,7 +4040,8 @@ class TeraTermUI(customtkinter.CTk):
                             self.original_font = current_value
                             updated_value = 'Terminal' + current_value[len(font_name):]
                             line = f"VTFont={updated_value}\n"
-
+                        else:
+                            self.original_font = None
                     file.write(line)
 
     # Restores the original font option the user had
@@ -4052,16 +4053,15 @@ class TeraTermUI(customtkinter.CTk):
             with open(file_path, "w") as file:
                 for line in lines:
                     if line.startswith("VTFont="):
-                        current_value = line.strip().split('=')[1]
-                        font_name = current_value.split(',')[0]
-                        if font_name.lower() != 'terminal':
+                        original_font_name = self.original_font.split(',')[0]
+                        if original_font_name.lower() != 'terminal':
                             line = f"VTFont={self.original_font}\n"
                     file.write(line)
 
             self.original_font = None
 
-    # When the user performs an action to do something in tera term it hides the sidebar windows, so they don't interfere
-    # with the execution on tera term
+    # When the user performs an action to do something in tera term it hides the sidebar windows, so they don't
+    # interfere with the execution on tera term
     def hide_sidebar_windows(self):
         if self.status and self.status.winfo_exists():
             self.status.withdraw()
