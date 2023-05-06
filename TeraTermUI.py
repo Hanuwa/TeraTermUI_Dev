@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 5/5/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 5/6/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -27,7 +27,7 @@ import pyautogui
 import requests
 import win32gui
 import pygetwindow as gw
-from collections import deque
+# from collections import deque
 from customtkinter import ctktable
 from CTkToolTip import CTkToolTip
 from CTkMessagebox import CTkMessagebox
@@ -79,9 +79,11 @@ class TeraTermUI(customtkinter.CTk):
         self.last_activity = time.time()
         self.is_running = True
         self.stop_check_idle = threading.Event()
-        self.cpu_load_history = deque(maxlen=60)
-        self.stop_monitor = threading.Event()
-        self.monitor_thread = threading.Thread(target=self.cpu_monitor)
+        # self.cpu_load_history = deque(maxlen=60)
+        # self.stop_monitor = threading.Event()
+        # self.monitor_thread = threading.Thread(target=self.cpu_monitor)
+        # self.monitor_thread.start()
+        # GitHub information for feedback
         self.SERVICE_ACCOUNT_FILE = "feedback.zip"
         self.SPREADSHEET_ID = '1ffJLgp8p-goOlxC10OFEu0JefBgQDsgEo_suis4k0Pw'
         self.RANGE_NAME = 'Sheet1!A:A'
@@ -89,7 +91,6 @@ class TeraTermUI(customtkinter.CTk):
         self.credentials = None
         self.GITHUB_REPO = "https://api.github.com/repos/Hanuwa/TeraTermUI"
         self.USER_APP_VERSION = "0.9.0"
-        # self.monitor_thread.start()
 
         # path for tesseract application
         tesseract_path = os.path.join(os.path.dirname(__file__), "Tesseract-OCR")
@@ -486,6 +487,7 @@ class TeraTermUI(customtkinter.CTk):
             self.sidebar_button_2.configure(state="disabled")
             self.sidebar_button_1.configure(state="disabled")
 
+            # Pop up message that appears only the first time the user uses the application
             def show_message_box():
                 if self.language_menu.get() == "English":
                     self.show_information_message(375, 250, "Make sure to not interact with Tera Term\n\n"
@@ -502,6 +504,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.cursor.execute("UPDATE user_data SET welcome=?", ("Checked",))
             self.after(5000, show_message_box)
 
+        # Asks the user if they want to update to the latest version of the application
         def update_app():
             lang = self.language_menu.get()
             try:
@@ -579,7 +582,7 @@ class TeraTermUI(customtkinter.CTk):
         self.destroy_windows()
         self.hide_sidebar_windows()
         lang = self.language_menu.get()
-        self.error_occurred = False
+        # self.error_occurred = False
         if self.test_connection(lang) and self.check_server():
             if self.checkIfProcessRunning("ttermpro"):
                 # if not self.screenshot_skip:
@@ -597,7 +600,7 @@ class TeraTermUI(customtkinter.CTk):
                         # if lang == "Español":
                             # self.show_error_message(310, 220, "¡Error Desconocido! Por favor \n"
                                                               # "intente de nuevo")
-                if not self.error_occurred:
+                # if not self.error_occurred:
                     try:
                         ssn = int(self.ssn_entry.get().replace(" ", ""))
                         code = int(self.code_entry.get().replace(" ", ""))
@@ -625,7 +628,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.show_error_message(300, 215, "Error! Invalid SSN or Code")
                                 if lang == "Español":
                                     self.show_error_message(300, 215, "¡Error! SSN o Código Incorrecto")
-                                self.screenshot_skip = True
+                                # self.screenshot_skip = True
                             elif "ID NOT ON FILE" not in text or "PASS" not in text:
                                 self.set_focus_to_tkinter()
                                 self.reset_activity_timer(None)
@@ -637,27 +640,21 @@ class TeraTermUI(customtkinter.CTk):
                                 self.t_buttons_frame.grid(row=2, column=1, padx=(20, 20), pady=(20, 0), sticky="n")
                                 self.t_buttons_frame.grid_columnconfigure(2, weight=1)
                                 self.explanation4.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-                                if lang == "English":
-                                    self.e_classes.grid(row=1, column=1, padx=(41, 0), pady=(0, 0), sticky="w")
-                                elif lang == "Español":
-                                    self.e_classes.grid(row=1, column=1, padx=(44, 0), pady=(0, 0), sticky="w")
+                                self.e_classes.grid(row=1, column=1, padx=(41, 0), pady=(0, 0), sticky="w")
                                 self.e_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-                                self.section.grid(row=2, column=1, padx=(30, 0), pady=(20, 0), sticky="w")
-                                self.section_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
                                 if lang == "English":
-                                    self.e_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
-                                elif lang == "Español":
-                                    self.e_semester.grid(row=3, column=1, padx=(21, 0), pady=(20, 0), sticky="w")
+                                    self.section.grid(row=2, column=1, padx=(30, 0), pady=(20, 0), sticky="w")
+                                if lang == "Español":
+                                    self.section.grid(row=2, column=1, padx=(27, 0), pady=(20, 0), sticky="w")
+                                self.section_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
+                                self.e_semester.grid(row=3, column=1, padx=(18, 0), pady=(20, 0), sticky="w")
                                 self.e_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
                                 self.register_menu.grid(row=4, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
                                 self.submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
                                 self.explanation5.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-                                if lang == "English":
-                                    self.s_classes.grid(row=1, column=1, padx=(42, 0), pady=(0, 0), sticky="w")
-                                elif lang == "Español":
-                                    self.s_classes.grid(row=1, column=1, padx=(43, 0), pady=(0, 0), sticky="w")
+                                self.s_classes.grid(row=1, column=1, padx=(41, 0), pady=(0, 0), sticky="w")
                                 self.s_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-                                self.s_semester.grid(row=2, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
+                                self.s_semester.grid(row=2, column=1, padx=(18, 0), pady=(20, 0), sticky="w")
                                 self.s_semester_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
                                 self.show_all.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
                                 self.search.grid(row=4, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
@@ -665,10 +662,10 @@ class TeraTermUI(customtkinter.CTk):
                                 self.menu_intro.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
                                 if lang == "English":
                                     self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
-                                elif lang == "Español":
-                                    self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
+                                if lang == "Español":
+                                    self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
                                 self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-                                self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
+                                self.menu_semester.grid(row=3, column=1, padx=(18, 0), pady=(20, 0), sticky="w")
                                 self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
                                 self.menu_submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
                                 self.back3.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
@@ -678,7 +675,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.s_buttons_frame.grid_forget()
                                 self.ssn_entry.delete(0, "end")
                                 self.code_entry.delete(0, "end")
-                                self.screenshot_skip = False
+                                # self.screenshot_skip = False
                                 self.run_fix = True
                                 self.unbind("<Return>")
                                 del ssn, code, publicKey1, privateKey1, publicKey2, privateKey2, ssnEnc, codeEnc
@@ -689,14 +686,14 @@ class TeraTermUI(customtkinter.CTk):
                                 self.show_error_message(300, 215, "Error! Invalid SSN or Code")
                             elif lang == "Español":
                                 self.show_error_message(300, 215, "¡Error! SSN o Código Incorrecto")
-                            self.screenshot_skip = True
+                            # self.screenshot_skip = True
                     except ValueError:
                         self.bind("<Return>", lambda event: self.tuition_event_handler())
                         if lang == "English":
                             self.show_error_message(300, 215, "Error! Invalid SSN or Code")
                         elif lang == "Español":
                             self.show_error_message(300, 215, "¡Error! SSN o Código Incorrecto")
-                        self.screenshot_skip = True
+                        # self.screenshot_skip = True
             else:
                 self.bind("<Return>", lambda event: self.tuition_event_handler())
                 if lang == "English":
@@ -777,7 +774,8 @@ class TeraTermUI(customtkinter.CTk):
                     text_output = self.capture_screenshot()
                     enrolled_classes = "ENROLLED"
                     count_enroll = text_output.count(enrolled_classes)
-                    if "OUTDATED" not in text_output and count_enroll != 15:
+                    if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output \
+                            and count_enroll != 15:
                         send_keys("{TAB 2}")
                         for i in range(count_enroll, 0, -1):
                             send_keys("{TAB 2}")
@@ -837,7 +835,7 @@ class TeraTermUI(customtkinter.CTk):
                             elif lang == "Español":
                                 self.show_error_message(320, 210, "¡Error! No se puede matricular la clase")
                     else:
-                        if "OUTDATED" in text_output:
+                        if "OUTDATED" in text_output or "INVALID TERM SELECTION" in text_output:
                             send_keys("{TAB}")
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             self.uprb.UprbayTeraTermVt.type_keys(semester.replace(" ", ""))
@@ -953,7 +951,8 @@ class TeraTermUI(customtkinter.CTk):
                         text_output = self.capture_screenshot()
                         enrolled_classes = "ENROLLED"
                         count_enroll = text_output.count(enrolled_classes)
-                        if "OUTDATED" not in text_output and count_enroll != 15:
+                        if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output \
+                                and count_enroll != 15:
                             self.e_counter = 0
                             send_keys("{TAB 2}")
                             for i in range(count_enroll, 0, -1):
@@ -1655,7 +1654,8 @@ class TeraTermUI(customtkinter.CTk):
                         text_output = self.capture_screenshot()
                         enrolled_classes = "ENROLLED"
                         count_enroll = text_output.count(enrolled_classes)
-                        if "OUTDATED" not in text_output or count_enroll != 15:
+                        if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output \
+                                and count_enroll != 15:
                             self.e_counter = 0
                             self.m_counter = 0
                             for i in range(count_enroll, 0, -1):
@@ -1883,7 +1883,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.m_counter = self.m_counter - counter - 1
                                 self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                         else:
-                            if "OUTDATED" in text_output:
+                            if "OUTDATED" in text_output or "INVALID TERM SELECTION" in text_output:
                                 self.uprb.UprbayTeraTermVt.type_keys(semester.replace(" ", ""))
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                 send_keys("{ENTER}")
@@ -2475,13 +2475,12 @@ class TeraTermUI(customtkinter.CTk):
                 if username == "students":
                     self.unfocus_tkinter()
                     ctypes.windll.user32.BlockInput(True)
-
                     uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                     uprb_window.wait('visible', timeout=100)
                     user = self.uprb.UprbayTeraTermVt.child_window(title="User name:",
                                                                    control_type="Edit").wrapper_object()
-                    time.sleep(0.2)
-                    user.type_keys('students', with_spaces=False)
+                    # time.sleep(0.2)
+                    user.type_keys('students', with_spaces=False, pause=0.02)
                     self.hide_loading_screen()
                     okConn2 = self.uprb.UprbayTeraTermVt.child_window(title="OK",
                                                                       control_type="Button").wrapper_object()
@@ -2497,7 +2496,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.explanation3.grid(row=0, column=1, padx=12, pady=(10, 20))
                     self.lock_grid.grid(row=1, column=1, padx=(0, 0), pady=(0, 20))
                     if lang == "English":
-                        self.ssn.grid(row=2, column=1, padx=(0, 132), pady=(0, 10))
+                        self.ssn.grid(row=2, column=1, padx=(0, 131), pady=(0, 10))
                         self.ssn_entry.grid(row=2, column=1, padx=(160, 0), pady=(0, 10))
                         self.code_entry.grid(row=3, column=1, padx=(160, 0), pady=(0, 10))
                     elif lang == "Español":
@@ -2564,7 +2563,7 @@ class TeraTermUI(customtkinter.CTk):
                         uprb_window.wait('visible', timeout=100)
                         hostText = self.uprb.TeraTermDisconnectedVt.child_window(title="Host:",
                                                                                  control_type="Edit").wrapper_object()
-                        hostText.type_keys('uprbay.uprb.edu', with_spaces=False)
+                        hostText.type_keys('uprbay.uprb.edu', with_spaces=False, pause=0.02)
                         self.hide_loading_screen()
                         okConn1 = self.uprb.TeraTermDisconnectedVt.child_window(title="OK",
                                                                                 control_type="Button").wrapper_object()
@@ -2694,8 +2693,8 @@ class TeraTermUI(customtkinter.CTk):
             self.show_classes.configure(state="normal")
             self.search.configure(state="normal")
             self.show.deselect()
-            self.screenshot_skip = False
-            self.error_occurred = False
+            # self.screenshot_skip = False
+            # self.error_occurred = False
             self.run_fix = False
 
     # function that goes back to Enrolling frame screen
@@ -2713,27 +2712,21 @@ class TeraTermUI(customtkinter.CTk):
         self.t_buttons_frame.grid(row=2, column=1, padx=(20, 20), pady=(20, 0), sticky="n")
         self.t_buttons_frame.grid_columnconfigure(2, weight=1)
         self.explanation4.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-        if lang == "English":
-            self.e_classes.grid(row=1, column=1, padx=(41, 0), pady=(0, 0), sticky="w")
-        elif lang == "Español":
-            self.e_classes.grid(row=1, column=1, padx=(44, 0), pady=(0, 0), sticky="w")
+        self.e_classes.grid(row=1, column=1, padx=(41, 0), pady=(0, 0), sticky="w")
         self.e_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-        self.section.grid(row=2, column=1, padx=(30, 0), pady=(20, 0), sticky="w")
-        self.section_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
         if lang == "English":
-            self.e_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
-        elif lang == "Español":
-            self.e_semester.grid(row=3, column=1, padx=(21, 0), pady=(20, 0), sticky="w")
+            self.section.grid(row=2, column=1, padx=(30, 0), pady=(20, 0), sticky="w")
+        if lang == "Español":
+            self.section.grid(row=2, column=1, padx=(27, 0), pady=(20, 0), sticky="w")
+        self.section_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
+        self.e_semester.grid(row=3, column=1, padx=(18, 0), pady=(20, 0), sticky="w")
         self.e_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
         self.register_menu.grid(row=4, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
         self.submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
         self.explanation5.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-        if lang == "English":
-            self.s_classes.grid(row=1, column=1, padx=(42, 0), pady=(0, 0), sticky="w")
-        elif lang == "Español":
-            self.s_classes.grid(row=1, column=1, padx=(43, 0), pady=(0, 0), sticky="w")
+        self.s_classes.grid(row=1, column=1, padx=(41, 0), pady=(0, 0), sticky="w")
         self.s_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-        self.s_semester.grid(row=2, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
+        self.s_semester.grid(row=2, column=1, padx=(18, 0), pady=(20, 0), sticky="w")
         self.s_semester_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
         self.show_all.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
         self.search.grid(row=4, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
@@ -2741,10 +2734,10 @@ class TeraTermUI(customtkinter.CTk):
         self.menu_intro.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         if lang == "English":
             self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
-        elif lang == "Español":
-            self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
+        if lang == "Español":
+            self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
         self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-        self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
+        self.menu_semester.grid(row=3, column=1, padx=(18, 0), pady=(20, 0), sticky="w")
         self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
         self.menu_submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
         self.back3.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
@@ -3251,6 +3244,7 @@ class TeraTermUI(customtkinter.CTk):
         success_msg.pack(side="top", fill="both", expand=True, padx=10, pady=20)
         self.success.after(3000, lambda: self.success.destroy())
 
+    # Pop window that shows the user more context on why they couldn't enroll their classes
     def show_enrollment_error_information(self):
         lang = self.language_menu.get()
         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
@@ -3314,6 +3308,8 @@ class TeraTermUI(customtkinter.CTk):
         webbrowser.open("https://www.techtarget.com/searchsecurity/definition/"
                         "asymmetric-cryptography#:~:text=Asymmetric%20cryptography%2C%20also%20known%20as,"
                         "from%20unauthorized%20access%20or%20use.")
+
+    # Links to each correspondant curriculum that the user chooses
     def curriculums(self, choice):
         if choice == "Departments" or choice == "Departamentos":
             webbrowser.open("https://www.uprb.edu/sample-page/decanato-de-asuntos-academicos/"
@@ -3393,35 +3389,35 @@ class TeraTermUI(customtkinter.CTk):
             elif lang == "Español":
                 CTkMessagebox(master=self, title="Info", message="La Aplicación está actualizada", button_width=380)
 
-    # determines the hardware of the users' computer and change the time.sleep seconds respectively
-    def get_sleep_time(self):
-        cpu_count = psutil.cpu_count()
-        self.avg_cpu_load = sum(self.cpu_load_history) / len(self.cpu_load_history)
-        if cpu_count >= 8 and self.avg_cpu_load <= 50:
-            sleep_time = 0.5
-        elif cpu_count >= 6 and self.avg_cpu_load <= 50:
-            sleep_time = 0.75
-        elif cpu_count >= 4 and self.avg_cpu_load <= 50:
-            sleep_time = 1
-        elif cpu_count >= 8 and self.avg_cpu_load >= 50:
-            sleep_time = 0.90
-        elif cpu_count >= 6 and self.avg_cpu_load >= 50:
-            sleep_time = 1.2
-        elif cpu_count >= 4 and self.avg_cpu_load >= 50:
-            sleep_time = 1.5
-        elif not self.cpu_load_history:
-            sleep_time = 2
-        else:
-            sleep_time = 2
+    # (Unused) determines the hardware of the users' computer and change the time.sleep seconds respectively
+    # def get_sleep_time(self):
+        # cpu_count = psutil.cpu_count()
+        # self.avg_cpu_load = sum(self.cpu_load_history) / len(self.cpu_load_history)
+        # if cpu_count >= 8 and self.avg_cpu_load <= 50:
+            # sleep_time = 0.5
+        # elif cpu_count >= 6 and self.avg_cpu_load <= 50:
+            # sleep_time = 0.75
+        # elif cpu_count >= 4 and self.avg_cpu_load <= 50:
+            # sleep_time = 1
+        # elif cpu_count >= 8 and self.avg_cpu_load >= 50:
+            # sleep_time = 0.90
+        # elif cpu_count >= 6 and self.avg_cpu_load >= 50:
+            # sleep_time = 1.2
+        # elif cpu_count >= 4 and self.avg_cpu_load >= 50:
+            # sleep_time = 1.5
+        # elif not self.cpu_load_history:
+            # sleep_time = 2
+        # else:
+            # sleep_time = 2
 
-        return sleep_time
+        # return sleep_time
 
     # (Unused) Monitors the usage of the CPU of the user to determine the time.sleep of how long should the function
     # take before executing something
-    def cpu_monitor(self, interval=1):
-        while not self.stop_monitor.is_set():
-            cpu_percent = psutil.cpu_percent(interval=interval)
-            self.cpu_load_history.append(cpu_percent)
+    # def cpu_monitor(self, interval=1):
+        # while not self.stop_monitor.is_set():
+            # cpu_percent = psutil.cpu_percent(interval=interval)
+            # self.cpu_load_history.append(cpu_percent)
 
     # If user messes up the execution of the program this can solve it and make program work as expected
     def fix_execution(self):
@@ -3536,7 +3532,7 @@ class TeraTermUI(customtkinter.CTk):
             self.status.title("Status")
             self.status.after(256, lambda: self.status.iconbitmap("images/tera-term.ico"))
             self.status.resizable(False, False)
-            self.status.attributes("-topmost", True)
+            # self.status.attributes("-topmost", True)
             scrollable_frame = customtkinter.CTkScrollableFrame(self.status, width=475, height=275,
                                                                 fg_color=("#e6e6e6", "#222222"))
             scrollable_frame.pack()
@@ -3596,7 +3592,7 @@ class TeraTermUI(customtkinter.CTk):
             self.status.title("Estado")
             self.status.after(256, lambda: self.status.iconbitmap("images/tera-term.ico"))
             self.status.resizable(False, False)
-            self.status.attributes("-topmost", True)
+            # self.status.attributes("-topmost", True)
             scrollable_frame = customtkinter.CTkScrollableFrame(self.status, width=475, height=275, corner_radius=10,
                                                                 fg_color=("#e6e6e6", "#222222"))
             scrollable_frame.pack()
@@ -3685,6 +3681,7 @@ class TeraTermUI(customtkinter.CTk):
                 print(f"An error occurred: {error}")
                 return None
 
+    # Submits feedback from the user to a Google sheet
     def submit_feedback(self):
         lang = self.language_menu.get()
         current_date = datetime.today().strftime('%Y-%m-%d')
@@ -3805,6 +3802,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.cursor.execute("UPDATE user_data SET config=?", (self.teraterm_file,))
                 self.show_success_message(350, 265, "Tera Term localizado exitósamente")
                 self.edit_teraterm_ini(self.teraterm_file)
+        self.help.lift()
 
     # disables scrolling for the class list
     def disable_scroll(self, event):
@@ -3869,7 +3867,7 @@ class TeraTermUI(customtkinter.CTk):
             self.help.title("Help")
             self.help.after(256, lambda: self.help.iconbitmap("images/tera-term.ico"))
             self.help.resizable(False, False)
-            self.help.attributes("-topmost", True)
+            # self.help.attributes("-topmost", True)
             scrollable_frame = customtkinter.CTkScrollableFrame(self.help, width=475, height=275,
                                                                 fg_color=("#e6e6e6", "#222222"))
             scrollable_frame.pack()
@@ -3936,7 +3934,7 @@ class TeraTermUI(customtkinter.CTk):
             self.help.title("Ayuda")
             self.help.after(256, lambda: self.help.iconbitmap("images/tera-term.ico"))
             self.help.resizable(False, False)
-            self.help.attributes("-topmost", True)
+            # self.help.attributes("-topmost", True)
             scrollable_frame = customtkinter.CTkScrollableFrame(self.help, width=450, height=250,
                                                                 fg_color=("#e6e6e6", "#222222"))
             scrollable_frame.pack()
@@ -3995,6 +3993,8 @@ class TeraTermUI(customtkinter.CTk):
         self.class_list.bind('<<ListboxSelect>>', self.show_class_code)
         self.class_list.bind("<MouseWheel>", self.disable_scroll)
         self.search_box.bind('<KeyRelease>', self.search_classes)
+
+    # Gets the latest release of the application on GitHub
     def get_latest_release(self):
         url = f"{self.GITHUB_REPO}/releases/latest"
         response = requests.get(url)
@@ -4010,6 +4010,7 @@ class TeraTermUI(customtkinter.CTk):
 
         return latest_version
 
+    # Compares the current version that user is using with the latest available
     def compare_versions(self, latest_version, user_version):
         latest_version_parts = [int(part) for part in latest_version.split(".")]
         user_version_parts = [int(part) for part in user_version.split(".")]
@@ -4021,6 +4022,7 @@ class TeraTermUI(customtkinter.CTk):
                 return True
         return len(latest_version_parts) <= len(user_version_parts)
 
+    # Edits the font that tera term uses to "Terminal" to mitigate the chance of the OCR mistaking words
     def edit_teraterm_ini(self, file_path):
         if self.original_font is None:
             try:
@@ -4041,6 +4043,7 @@ class TeraTermUI(customtkinter.CTk):
 
                     file.write(line)
 
+    # Restores the original font option the user had
     def restore_original_font(self, file_path):
         if self.original_font is not None:
             with open(file_path, "r") as file:
@@ -4057,18 +4060,22 @@ class TeraTermUI(customtkinter.CTk):
 
             self.original_font = None
 
+    # When the user performs an action to do something in tera term it hides the sidebar windows, so they don't interfere
+    # with the execution on tera term
     def hide_sidebar_windows(self):
         if self.status and self.status.winfo_exists():
             self.status.withdraw()
         if self.help and self.help.winfo_exists():
             self.help.withdraw()
 
+    # Makes the sidebar reappear again
     def show_sidebar_windows(self):
         if self.status and self.status.winfo_exists():
             self.status.deiconify()
         if self.help and self.help.winfo_exists():
             self.help.deiconify()
 
+    # When the user performs an action to do something in tera term it destroys windows that might get in the way
     def destroy_windows(self):
         if self.error and self.error.winfo_exists():
             self.error.destroy()
@@ -4094,4 +4101,4 @@ if __name__ == "__main__":
         try:
             sys.exit(0)
         except SystemExit:
-            os._exit(0)
+            sys.exit(0)
