@@ -1670,8 +1670,8 @@ class TeraTermUI(customtkinter.CTk):
                                 self.m_counter = self.m_counter - counter - 1
                                 self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                         else:
-                            if "OUTDATED" in text_output or "INVALID TERM SELECTION" in text_output or \
-                                "REGISTRATION DATA" not in text_output:
+                            if "OUTDATED" in text_output or "INVALID TERM SELECTION" in text_output \
+                                    or "REGISTRATION DATA" not in text_output:
                                 self.uprb.UprbayTeraTermVt.type_keys(semester.replace(" ", ""))
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                 send_keys("{ENTER}")
