@@ -3836,7 +3836,6 @@ class TeraTermUI(customtkinter.CTk):
                 return True
         return len(latest_version_parts) <= len(user_version_parts)
 
-    # Edits the font that tera term uses to "Terminal" to mitigate the chance of the OCR mistaking words
     def edit_teraterm_ini(self, file_path):
         if self.original_font is None:
             try:
@@ -3849,16 +3848,13 @@ class TeraTermUI(customtkinter.CTk):
                 for line in lines:
                     if line.startswith("VTFont="):
                         current_value = line.strip().split('=')[1]
+                        self.original_font = current_value
                         font_name = current_value.split(',')[0]
                         if font_name.lower() != 'lucida console':
-                            self.original_font = current_value
                             updated_value = 'Lucida Console' + current_value[len(font_name):]
                             line = f"VTFont={updated_value}\n"
-                        else:
-                            self.original_font = None
                     file.write(line)
 
-    # Restores the original font option the user had
     def restore_original_font(self, file_path):
         if self.original_font is not None:
             with open(file_path, "r") as file:
@@ -3867,9 +3863,7 @@ class TeraTermUI(customtkinter.CTk):
             with open(file_path, "w") as file:
                 for line in lines:
                     if line.startswith("VTFont="):
-                        original_font_name = self.original_font.split(',')[0]
-                        if original_font_name.lower() != 'lucida console':
-                            line = f"VTFont={self.original_font}\n"
+                        line = f"VTFont={self.original_font}\n"
                     file.write(line)
 
             self.original_font = None
