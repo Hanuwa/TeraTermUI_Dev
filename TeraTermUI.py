@@ -2289,14 +2289,15 @@ class TeraTermUI(customtkinter.CTk):
                     self.explanation3.grid(row=0, column=1, padx=12, pady=(10, 20))
                     self.lock_grid.grid(row=1, column=1, padx=(0, 0), pady=(0, 20))
                     if lang == "English":
-                        self.ssn.grid(row=2, column=1, padx=(0, 131), pady=(0, 10))
+                        self.ssn.grid(row=2, column=1, padx=(0, 130), pady=(0, 10))
                         self.ssn_entry.grid(row=2, column=1, padx=(160, 0), pady=(0, 10))
+                        self.code.grid(row=3, column=1, padx=(0, 163), pady=(0, 10))
                         self.code_entry.grid(row=3, column=1, padx=(160, 0), pady=(0, 10))
                     elif lang == "Español":
                         self.ssn.grid(row=2, column=1, padx=(0, 136), pady=(0, 10))
                         self.ssn_entry.grid(row=2, column=1, padx=(170, 0), pady=(0, 10))
+                        self.code.grid(row=3, column=1, padx=(0, 164), pady=(0, 10))
                         self.code_entry.grid(row=3, column=1, padx=(170, 0), pady=(0, 10))
-                    self.code.grid(row=3, column=1, padx=(0, 165), pady=(0, 10))
                     self.show.grid(row=4, column=1, padx=(10, 0), pady=(0, 10))
                     self.back2.grid(row=5, column=0, padx=(0, 10), pady=(0, 0))
                     self.system.grid(row=5, column=1, padx=(10, 0), pady=(0, 0))
