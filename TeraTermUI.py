@@ -143,7 +143,7 @@ class TeraTermUI(customtkinter.CTk):
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
         self.introduction.grid(row=0, column=1, columnspan=2, padx=(20, 0), pady=(20, 0))
         self.host = customtkinter.CTkLabel(self, text="Host: ")
-        self.host.grid(row=2, column=0, columnspan=2, padx=(42, 0), pady=(20, 20))
+        self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(20, 20))
         self.host_entry = customtkinter.CTkEntry(self, placeholder_text="myhost.example.edu")
         self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(20, 20))
         self.host_tooltip = CTkToolTip(self.host_entry, message="Enter the name of the server\n of the university")
@@ -2318,12 +2318,12 @@ class TeraTermUI(customtkinter.CTk):
                     self.explanation3.grid(row=0, column=1, padx=12, pady=(10, 20))
                     self.lock_grid.grid(row=1, column=1, padx=(0, 0), pady=(0, 20))
                     if lang == "English":
-                        self.ssn.grid(row=2, column=1, padx=(0, 127), pady=(0, 10))
+                        self.ssn.grid(row=2, column=1, padx=(0, 126), pady=(0, 10))
                         self.ssn_entry.grid(row=2, column=1, padx=(170, 0), pady=(0, 10))
-                        self.code.grid(row=3, column=1, padx=(0, 163), pady=(0, 10))
+                        self.code.grid(row=3, column=1, padx=(0, 159), pady=(0, 10))
                         self.code_entry.grid(row=3, column=1, padx=(170, 0), pady=(0, 10))
                     elif lang == "Español":
-                        self.ssn.grid(row=2, column=1, padx=(0, 136), pady=(0, 10))
+                        self.ssn.grid(row=2, column=1, padx=(0, 133), pady=(0, 10))
                         self.ssn_entry.grid(row=2, column=1, padx=(170, 0), pady=(0, 10))
                         self.code.grid(row=3, column=1, padx=(0, 164), pady=(0, 10))
                         self.code_entry.grid(row=3, column=1, padx=(170, 0), pady=(0, 10))
@@ -2759,7 +2759,7 @@ class TeraTermUI(customtkinter.CTk):
             self.appearance_mode_optionemenu.configure(values=["Light", "Dark", "System"])
             self.introduction.configure(text="UPRB Enrollment Process")
             self.host.configure(text="Host: ")
-            self.host.grid(row=2, column=0, columnspan=2, padx=(42, 0), pady=(20, 20))
+            self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(20, 20))
             self.log_in.configure(text="Log-In")
             self.explanation.configure(text="Connected to the server successfully")
             self.explanation2.configure(text="Authentication required")
@@ -3844,18 +3844,27 @@ class TeraTermUI(customtkinter.CTk):
     # Gets the latest release of the application on GitHub
     def get_latest_release(self):
         url = f"{self.GITHUB_REPO}/releases/latest"
-        response = requests.get(url)
+        try:
+            response = requests.get(url)
 
-        if response.status_code != 200:
-            print(f"Error fetching release information: {response.status_code}")
+            if response.status_code != 200:
+                print(f"Error fetching release information: {response.status_code}")
+                return None
 
-        release_data = response.json()
-        latest_version = release_data["tag_name"]
+            release_data = response.json()
+            latest_version = release_data.get("tag_name")
 
-        if latest_version.startswith("v"):
-            latest_version = latest_version[1:]
+            if latest_version and latest_version.startswith("v"):
+                latest_version = latest_version[1:]
 
-        return latest_version
+            return latest_version
+
+        except requests.exceptions.RequestException as e:
+            print(f"Request failed: {e}")
+            return None
+        except Exception as e:
+            print(f"An error occurred while fetching the latest release: {e}")
+            return None
 
     # Compares the current version that user is using with the latest available
     def compare_versions(self, latest_version, user_version):
