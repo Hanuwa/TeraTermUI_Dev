@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 5/10/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 5/11/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -143,7 +143,7 @@ class TeraTermUI(customtkinter.CTk):
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
         self.introduction.grid(row=0, column=1, columnspan=2, padx=(20, 0), pady=(20, 0))
         self.host = customtkinter.CTkLabel(self, text="Host: ")
-        self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(20, 20))
+        self.host.grid(row=2, column=0, columnspan=2, padx=(42, 0), pady=(20, 20))
         self.host_entry = customtkinter.CTkEntry(self, placeholder_text="myhost.example.edu")
         self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(20, 20))
         self.host_tooltip = CTkToolTip(self.host_entry, message="Enter the name of the server\n of the university")
@@ -625,6 +625,8 @@ class TeraTermUI(customtkinter.CTk):
                             ssnEnc = rsa.encrypt(str(ssn).encode(), publicKey1)
                             codeEnc = rsa.encrypt(str(code).encode(), publicKey2)
                             ctypes.windll.user32.BlockInput(True)
+                            term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                            term_window.restore()
                             uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                             uprb_window.wait('visible', timeout=100)
                             self.uprb.UprbayTeraTermVt.type_keys(rsa.decrypt(ssnEnc, privateKey1).decode())
@@ -784,6 +786,8 @@ class TeraTermUI(customtkinter.CTk):
                             and (semester == "C23" or semester == "C31" or semester == "C41"
                                  or semester == "C32" or semester == "C33")):
                         ctypes.windll.user32.BlockInput(True)
+                        term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                        term_window.restore()
                         uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                         uprb_window.wait('visible', timeout=100)
                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -947,6 +951,8 @@ class TeraTermUI(customtkinter.CTk):
                         and semester2 in ("B61", "B62", "B63", "B71", "B72", "B73", "B81", "B82", "B83", "B91", "B92",
                                           "B93", "C01", "C02", "C03", "C11", "C12", "C13", "C21", "C22", "C23", "C31")):
                     ctypes.windll.user32.BlockInput(True)
+                    term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                    term_window.restore()
                     uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                     uprb_window.wait('visible', timeout=100)
                     self.search_function += 1
@@ -1011,6 +1017,8 @@ class TeraTermUI(customtkinter.CTk):
                         block_window.attributes("-alpha", 0.0)
                         block_window.grab_set()
                         ctypes.windll.user32.BlockInput(True)
+                        term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                        term_window.restore()
                         uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                         uprb_window.wait('visible', timeout=100)
                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -1050,6 +1058,8 @@ class TeraTermUI(customtkinter.CTk):
                         block_window.attributes("-alpha", 0.0)
                         block_window.grab_set()
                         ctypes.windll.user32.BlockInput(True)
+                        term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                        term_window.restore()
                         uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                         uprb_window.wait('visible', timeout=100)
                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -1432,6 +1442,8 @@ class TeraTermUI(customtkinter.CTk):
                                                 or semester == "C32" or semester == "C33")):
                     if self.e_counter + self.m_counter + counter + 1 <= 15:
                         ctypes.windll.user32.BlockInput(True)
+                        term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                        term_window.restore()
                         uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                         uprb_window.wait('visible', timeout=100)
                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -1781,6 +1793,8 @@ class TeraTermUI(customtkinter.CTk):
                                                                 "B83", "B91", "B92", "B93", "C01", "C02", "C03", "C11",
                                                                 "C12", "C13", "C21", "C22", "C23", "C31")):
                     ctypes.windll.user32.BlockInput(True)
+                    term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                    term_window.restore()
                     uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                     uprb_window.wait('visible', timeout=100)
                     match menu.replace(" ", ""):
@@ -2136,6 +2150,8 @@ class TeraTermUI(customtkinter.CTk):
         if self.test_connection(lang) and self.check_server():
             if self.checkIfProcessRunning("ttermpro"):
                 ctypes.windll.user32.BlockInput(True)
+                term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                term_window.restore()
                 uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                 uprb_window.wait('visible', timeout=100)
                 self.unfocus_tkinter()
@@ -2158,6 +2174,8 @@ class TeraTermUI(customtkinter.CTk):
         if self.test_connection(lang) and self.check_server():
             if self.checkIfProcessRunning("ttermpro"):
                 ctypes.windll.user32.BlockInput(True)
+                term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                term_window.restore()
                 uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                 uprb_window.wait('visible', timeout=100)
                 self.unfocus_tkinter()
@@ -2181,6 +2199,8 @@ class TeraTermUI(customtkinter.CTk):
                 ctypes.windll.user32.BlockInput(True)
                 uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                 uprb_window.wait('visible', timeout=100)
+                term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                term_window.restore()
                 self.unfocus_tkinter()
                 send_keys("{TAB 4}")
                 send_keys("{ENTER}")
@@ -2207,6 +2227,8 @@ class TeraTermUI(customtkinter.CTk):
         if self.test_connection(lang) and self.check_server():
             if self.checkIfProcessRunning("ttermpro"):
                 ctypes.windll.user32.BlockInput(True)
+                term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                term_window.restore()
                 uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                 uprb_window.wait('visible', timeout=100)
                 self.unfocus_tkinter()
@@ -2228,6 +2250,8 @@ class TeraTermUI(customtkinter.CTk):
         if self.test_connection(lang) and self.check_server():
             if self.checkIfProcessRunning("ttermpro"):
                 ctypes.windll.user32.BlockInput(True)
+                term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                term_window.restore()
                 uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                 uprb_window.wait('visible', timeout=100)
                 self.unfocus_tkinter()
@@ -2271,6 +2295,8 @@ class TeraTermUI(customtkinter.CTk):
                 if username == "students":
                     self.unfocus_tkinter()
                     ctypes.windll.user32.BlockInput(True)
+                    term_window = gw.getWindowsWithTitle('SSH Authentication')[0]
+                    term_window.restore()
                     uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                     uprb_window.wait('visible', timeout=100)
                     user = self.uprb.UprbayTeraTermVt.child_window(title="User name:",
@@ -2285,17 +2311,17 @@ class TeraTermUI(customtkinter.CTk):
                     time.sleep(3)
                     send_keys("{ENTER 3}")
                     self.set_focus_to_tkinter()
-                    self.student_frame.grid(row=0, column=1, padx=(20, 20), pady=(20, 0))
+                    self.student_frame.grid(row=0, column=1, columnspan=2, padx=(20, 20), pady=(20, 0))
                     self.student_frame.grid_columnconfigure(2, weight=1)
                     self.s_buttons_frame.grid(row=2, column=1, padx=(20, 20), pady=(20, 0))
                     self.s_buttons_frame.grid_columnconfigure(2, weight=1)
                     self.explanation3.grid(row=0, column=1, padx=12, pady=(10, 20))
                     self.lock_grid.grid(row=1, column=1, padx=(0, 0), pady=(0, 20))
                     if lang == "English":
-                        self.ssn.grid(row=2, column=1, padx=(0, 130), pady=(0, 10))
-                        self.ssn_entry.grid(row=2, column=1, padx=(160, 0), pady=(0, 10))
+                        self.ssn.grid(row=2, column=1, padx=(0, 127), pady=(0, 10))
+                        self.ssn_entry.grid(row=2, column=1, padx=(170, 0), pady=(0, 10))
                         self.code.grid(row=3, column=1, padx=(0, 163), pady=(0, 10))
-                        self.code_entry.grid(row=3, column=1, padx=(160, 0), pady=(0, 10))
+                        self.code_entry.grid(row=3, column=1, padx=(170, 0), pady=(0, 10))
                     elif lang == "Español":
                         self.ssn.grid(row=2, column=1, padx=(0, 136), pady=(0, 10))
                         self.ssn_entry.grid(row=2, column=1, padx=(170, 0), pady=(0, 10))
@@ -2733,7 +2759,7 @@ class TeraTermUI(customtkinter.CTk):
             self.appearance_mode_optionemenu.configure(values=["Light", "Dark", "System"])
             self.introduction.configure(text="UPRB Enrollment Process")
             self.host.configure(text="Host: ")
-            self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(20, 20))
+            self.host.grid(row=2, column=0, columnspan=2, padx=(42, 0), pady=(20, 20))
             self.log_in.configure(text="Log-In")
             self.explanation.configure(text="Connected to the server successfully")
             self.explanation2.configure(text="Authentication required")
@@ -3253,6 +3279,8 @@ class TeraTermUI(customtkinter.CTk):
             response = msg.get()
             if response == "Yes" or response == "Sí":
                 self.reset_activity_timer(None)
+                term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                term_window.restore()
                 uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                 uprb_window.wait('visible', timeout=100)
                 self.unfocus_tkinter()
@@ -3280,6 +3308,8 @@ class TeraTermUI(customtkinter.CTk):
         while self.is_running and not self.stop_check_idle.is_set():
             if time.time() - self.last_activity >= 240:
                 if self.checkIfProcessRunning("ttermpro"):
+                    term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                    term_window.restore()
                     uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                     uprb_window.wait('visible', timeout=100)
                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -3769,7 +3799,7 @@ class TeraTermUI(customtkinter.CTk):
             self.search_box.pack(pady=10)
             self.class_list = tk.Listbox(scrollable_frame, width=32, bg=bg_color, fg=fg_color, font=listbox_font)
             self.class_list.pack()
-            curriculumText = customtkinter.CTkLabel(scrollable_frame, text="\n\nCurriculums of Departments:")
+            curriculumText = customtkinter.CTkLabel(scrollable_frame, text="\n\nCurrículos de Departamentos:")
             curriculumText.pack()
             curriculum = customtkinter.CTkOptionMenu(scrollable_frame,
                                                      values=["Departamentos", "Contabilidad", "Finanzas",
