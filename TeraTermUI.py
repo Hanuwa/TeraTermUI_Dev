@@ -355,11 +355,11 @@ class TeraTermUI(customtkinter.CTk):
         self.m_add = customtkinter.CTkButton(master=self.m_button_frame, border_width=2, text="+",
                                              text_color=("gray10", "#DCE4EE"), command=self.add_event, height=40,
                                              width=50, hover=True, fg_color="blue")
-        self.m_add_tooltip = CTkToolTip(self.m_add, message="Add more classes", resampling=True, bg_color="blue")
+        self.m_add_tooltip = CTkToolTip(self.m_add, message="Add more classes", bg_color="blue")
         self.m_remove = customtkinter.CTkButton(master=self.m_button_frame, border_width=2, text="-",
                                                 text_color=("gray10", "#DCE4EE"), command=self.remove_event,
                                                 height=40, width=50, fg_color="red", hover=True, hover_color="darkred")
-        self.m_remove_tooltip = CTkToolTip(self.m_remove, message="Remove classes", resampling=True, bg_color="red")
+        self.m_remove_tooltip = CTkToolTip(self.m_remove, message="Remove classes", bg_color="red")
         self.back4 = customtkinter.CTkButton(master=self.m_button_frame, fg_color="transparent", border_width=2,
                                              text="Back", height=40, width=70,
                                              text_color=("gray10", "#DCE4EE"), command=self.go_back_event2)
