@@ -132,11 +132,14 @@ class TeraTermUI(customtkinter.CTk):
                                                                        command=self.change_appearance_mode_event)
         self.appearance_mode_optionemenu.set("System")
         self.appearance_mode_optionemenu.grid(row=7, column=0, padx=20, pady=(10, 10))
-        self.scaling_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame,
-                                                               values=["90%", "95%", "100%", "105%", "110%"],
-                                                               command=self.change_scaling_event)
-        self.scaling_optionemenu.set("100%")
+        self.scaling_optionemenu = customtkinter.CTkSlider(self.sidebar_frame, from_=90, to=110, number_of_steps=4,
+                                                           width=150, command=self.change_scaling_event)
+        self.scaling_optionemenu.set(100)
+        self.scaling_tooltip = CTkToolTip(self.scaling_optionemenu, message=str(self.scaling_optionemenu.get()) + "%",
+                                          bg_color="#1E90FF")
         self.scaling_optionemenu.grid(row=8, column=0, padx=20, pady=(10, 20))
+        self.bind('<Left>', self.move_slider_left)
+        self.bind('<Right>', self.move_slider_right)
 
         # create main entry
         self.introduction = customtkinter.CTkLabel(self, text="UPRB Enrollment Process",
@@ -281,7 +284,7 @@ class TeraTermUI(customtkinter.CTk):
                                              text="Back",
                                              text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
         self.back3_tooltip = CTkToolTip(self.back3, message="Go back to the main menu\n"
-                                                            "of the application")
+                                                            "of the application", bg_color="#1E90FF")
         self.submit = customtkinter.CTkButton(master=self.tabview.tab(self.enroll_tab), border_width=2,
                                               text="Submit",
                                               text_color=("gray10", "#DCE4EE"), command=self.submit_event_handler)
@@ -480,9 +483,9 @@ class TeraTermUI(customtkinter.CTk):
                 self.appearance_mode_optionemenu.set(appearance[0][0])
                 self.change_appearance_mode_event(appearance[0][0])
         if scaling:
-            if appearance[0][0] != "100%":
-                self.scaling_optionemenu.set(scaling[0][0])
-                self.change_scaling_event(scaling[0][0])
+            if scaling[0][0] != 100:
+                self.scaling_optionemenu.set(float(scaling[0][0]))
+                self.change_scaling_event(float(scaling[0][0]))
         if len(welcome) == 0:
             self.log_in.configure(state="disabled")
             self.sidebar_button_2.configure(state="disabled")
@@ -1183,9 +1186,11 @@ class TeraTermUI(customtkinter.CTk):
     # multiple classes screen
     def multiple_classes_event(self):
         scaling = self.scaling_optionemenu.get()
+        self.current_scaling = scaling
         self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
-        if scaling not in ("90%", "95%", "100%"):
-            self.change_scaling_event("100%")
+        if scaling not in (90, 95, 100):
+            self.change_scaling_event(100)
+            self.scaling_optionemenu.set(100)
         if self.a_counter < 1:
             self.m_remove.configure(state="disabled")
         if self.a_counter == 5:
@@ -2507,8 +2512,9 @@ class TeraTermUI(customtkinter.CTk):
         scaling = self.scaling_optionemenu.get()
         lang = self.language_menu.get()
         self.scaling_optionemenu.configure(state="normal")
-        if scaling not in ("90%", "95%", "100%"):
+        if scaling not in (90, 95, 100):
             self.change_scaling_event(scaling)
+            self.scaling_optionemenu.set(self.current_scaling)
         self.tabview.grid(row=0, column=1, padx=(20, 20), pady=(20, 0), sticky="n")
         self.tabview.tab(self.enroll_tab).grid_columnconfigure(1, weight=2)
         self.tabview.tab(self.search_tab).grid_columnconfigure(1, weight=2)
@@ -3093,10 +3099,27 @@ class TeraTermUI(customtkinter.CTk):
     def change_appearance_mode_event(self, new_appearance_mode: str):
         customtkinter.set_appearance_mode(new_appearance_mode)
 
+    def move_slider_left(self, event):
+        # decrease the value of slider by 1 or any desired step size
+        value = self.scaling_optionemenu.get()
+        value -= 5
+        self.scaling_optionemenu.set(value)  # Adjust this to your desired step size
+        self.change_scaling_event(value)
+        self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
+
+    def move_slider_right(self, event):
+        # increase the value of slider by 1 or any desired step size
+        value = self.scaling_optionemenu.get()
+        value += 5
+        self.scaling_optionemenu.set(value)  # Adjust this to your desired step size
+        self.change_scaling_event(value)
+        self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
+
     # function that lets your increase/decrease the scaling of the GUI
-    def change_scaling_event(self, new_scaling: str):
-        new_scaling_float = int(new_scaling.replace("%", "")) / 100
+    def change_scaling_event(self, new_scaling: float):
+        new_scaling_float = new_scaling / 100
         customtkinter.set_widget_scaling(new_scaling_float)
+        self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
 
     # opens GitHub page
     def github_event(self):
