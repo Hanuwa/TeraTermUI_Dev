@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 5/11/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 5/12/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -146,7 +146,8 @@ class TeraTermUI(customtkinter.CTk):
         self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(20, 20))
         self.host_entry = customtkinter.CTkEntry(self, placeholder_text="myhost.example.edu")
         self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(20, 20))
-        self.host_tooltip = CTkToolTip(self.host_entry, message="Enter the name of the server\n of the university")
+        self.host_tooltip = CTkToolTip(self.host_entry, message="Enter the name of the server\n of the university",
+                                       bg_color="#1E90FF")
         self.log_in = customtkinter.CTkButton(self, border_width=2, text="Log-In",
                                               text_color=("gray10", "#DCE4EE"), command=self.login_event_handler)
         self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(20, 20))
@@ -194,7 +195,8 @@ class TeraTermUI(customtkinter.CTk):
         self.username = customtkinter.CTkLabel(master=self.authentication_frame, text="Username: ")
         self.username_entry = customtkinter.CTkEntry(master=self.authentication_frame)
         self.username_tooltip = CTkToolTip(self.username_entry, message="The university requires this to\n"
-                                                                        " enter and access the system")
+                                                                        " enter and access the system",
+                                           bg_color="#1E90FF")
         self.student = customtkinter.CTkButton(master=self.a_buttons_frame, border_width=2,
                                                text="Next",
                                                text_color=("gray10", "#DCE4EE"), command=self.student_event_handler)
@@ -202,7 +204,7 @@ class TeraTermUI(customtkinter.CTk):
                                             text="Back",
                                             text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
         self.back_tooltip = CTkToolTip(self.back, message="Go back to the main menu\n"
-                                                          "of the application")
+                                                          "of the application", bg_color="#1E90FF")
 
         # Student Information
         self.student_frame = customtkinter.CTkFrame(self, corner_radius=10)
@@ -217,11 +219,11 @@ class TeraTermUI(customtkinter.CTk):
         self.ssn = customtkinter.CTkLabel(master=self.student_frame, text="Social Security Number: ")
         self.ssn_entry = customtkinter.CTkEntry(master=self.student_frame, placeholder_text="#########", show="*")
         self.ssn_tooltip = CTkToolTip(self.ssn_entry, message="Required to log-in,\n"
-                                                              "information gets encrypted")
+                                                              "information gets encrypted", bg_color="#1E90FF")
         self.code = customtkinter.CTkLabel(master=self.student_frame, text="Code of Personal Information: ")
         self.code_entry = customtkinter.CTkEntry(master=self.student_frame, placeholder_text="####", show="*")
         self.code_tooltip = CTkToolTip(self.code_entry, message="4 digit code included in the\n"
-                                                                "pre-enrollment ticket email")
+                                                                "pre-enrollment ticket email", bg_color="#1E90FF")
         self.show = customtkinter.CTkSwitch(master=self.student_frame, text="Show?", command=self.show_event,
                                             onvalue="on", offvalue="off")
         self.system = customtkinter.CTkButton(master=self.s_buttons_frame, border_width=2,
@@ -231,7 +233,7 @@ class TeraTermUI(customtkinter.CTk):
                                              text="Back",
                                              text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
         self.back2_tooltip = CTkToolTip(self.back2, message="Go back to the main menu\n"
-                                                            "of the application")
+                                                            "of the application", bg_color="#1E90FF")
 
         # Classes
         self.tabview = customtkinter.CTkTabview(self, corner_radius=10)
@@ -274,7 +276,7 @@ class TeraTermUI(customtkinter.CTk):
         self.show_all = customtkinter.CTkCheckBox(master=self.tabview.tab(self.search_tab), text="Show All?",
                                                   onvalue="on", offvalue="off")
         self.show_all_tooltip = CTkToolTip(self.show_all, message="Display all sections or\n"
-                                                                  "only ones with spaces")
+                                                                  "only ones with spaces", bg_color="#1E90FF")
         self.back3 = customtkinter.CTkButton(master=self.t_buttons_frame, fg_color="transparent", border_width=2,
                                              text="Back",
                                              text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
@@ -292,7 +294,7 @@ class TeraTermUI(customtkinter.CTk):
                                                     command=self.my_classes_event)
         self.show_classes_tooltip = CTkToolTip(self.show_classes, message="Shows the classes you are\n "
                                                                           "enrolled in for a \n"
-                                                                          "specific semester")
+                                                                          "specific semester", bg_color="#1E90FF")
         self.multiple = customtkinter.CTkButton(master=self.t_buttons_frame, fg_color="transparent", border_width=2,
                                                 text="Multiple Classes",
                                                 text_color=("gray10", "#DCE4EE"),
@@ -364,7 +366,7 @@ class TeraTermUI(customtkinter.CTk):
                                              text="Back", height=40, width=70,
                                              text_color=("gray10", "#DCE4EE"), command=self.go_back_event2)
         self.back4_tooltip = CTkToolTip(self.back4, message="Go back to the previous "
-                                                            "\nscreen")
+                                                            "\nscreen", bg_color="#1E90FF")
         self.submit_multiple = customtkinter.CTkButton(master=self.m_button_frame, border_width=2,
                                                        text="Submit", text_color=("gray10", "#DCE4EE"),
                                                        command=self.submit_multiple_event_handler, height=40, width=70)
@@ -516,9 +518,6 @@ class TeraTermUI(customtkinter.CTk):
             try:
                 latest_version = self.get_latest_release()
                 if not self.compare_versions(latest_version, self.USER_APP_VERSION):
-                    block_window = customtkinter.CTkToplevel()
-                    block_window.attributes("-alpha", 0.0)
-                    block_window.grab_set()
                     if lang == "English":
                         msg = CTkMessagebox(master=self, title="Exit",
                                             message="A newer version of the application is available, "
@@ -538,7 +537,6 @@ class TeraTermUI(customtkinter.CTk):
                     response = msg.get()
                     if response == "Yes" or response == "Sí" and self.test_connection(lang):
                         webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
-                    block_window.destroy()
             except requests.exceptions.RequestException as e:
                 print(f"Error occurred while fetching latest release information: {e}")
                 print("Please check your internet connection and try again.")
@@ -546,9 +544,6 @@ class TeraTermUI(customtkinter.CTk):
 
     # function that when the user tries to close the application a confirm dialog opens up
     def on_closing(self):
-        block_window = customtkinter.CTkToplevel()
-        block_window.attributes("-alpha", 0.0)
-        block_window.grab_set()
         lang = self.language_menu.get()
         if lang == "English":
             msg = CTkMessagebox(master=self, title="Exit", message="Are you sure you want to exit the application?"
@@ -579,7 +574,6 @@ class TeraTermUI(customtkinter.CTk):
             self.save_user_data()
             self.destroy()
             exit(0)
-        block_window.destroy()
 
     def tuition_event_handler(self):
         task_done = threading.Event()
@@ -722,9 +716,6 @@ class TeraTermUI(customtkinter.CTk):
         task_done.set()
 
     def submit_event_handler(self):
-        block_window = customtkinter.CTkToplevel()
-        block_window.attributes("-alpha", 0.0)
-        block_window.grab_set()
         lang = self.language_menu.get()
         choice = self.register_menu.get().lower()
         if lang == "English":
@@ -759,7 +750,6 @@ class TeraTermUI(customtkinter.CTk):
             self.update_loading_screen(loading_screen, task_done)
             event_thread = threading.Thread(target=self.submit_event, args=(task_done,))
             event_thread.start()
-        block_window.destroy()
 
     # function for registering/dropping classes
     def submit_event(self, task_done):
@@ -1227,9 +1217,6 @@ class TeraTermUI(customtkinter.CTk):
         self.t_buttons_frame.grid_forget()
 
     def submit_multiple_event_handler(self):
-        block_window = customtkinter.CTkToplevel()
-        block_window.attributes("-alpha", 0.0)
-        block_window.grab_set()
         lang = self.language_menu.get()
 
         if lang == "English":
@@ -1254,7 +1241,6 @@ class TeraTermUI(customtkinter.CTk):
             self.update_loading_screen(loading_screen, task_done)
             event_thread = threading.Thread(target=self.submit_multiple_event, args=(task_done,))
             event_thread.start()
-        block_window.destroy()
 
     # function that enrolls multiple classes with one click
     def submit_multiple_event(self, task_done):
@@ -2091,9 +2077,6 @@ class TeraTermUI(customtkinter.CTk):
                                                                       "\n a la pantalla"
                                                             + self.menu_entry.get())
                         case "SO":
-                            block_window = customtkinter.CTkToplevel()
-                            block_window.attributes("-alpha", 0.0)
-                            block_window.grab_set()
                             lang = self.language_menu.get()
                             self.hide_loading_screen()
                             if lang == "English":
@@ -2122,8 +2105,6 @@ class TeraTermUI(customtkinter.CTk):
                                 elif lang == "Español":
                                     self.show_error_message(350, 265,
                                                             "¡Error! Tera Term no esta corriendo")
-                            self.bind("<Escape>", lambda event: self.on_closing())
-                            block_window.destroy()
                 else:
                     if lang == "English":
                         self.show_error_message(350, 265, "Error! Wrong Code or Semester Format")
@@ -2457,9 +2438,6 @@ class TeraTermUI(customtkinter.CTk):
 
     # function that lets user go back to the initial screen
     def go_back_event(self):
-        block_window = customtkinter.CTkToplevel()
-        block_window.attributes("-alpha", 0.0)
-        block_window.grab_set()
         lang = self.language_menu.get()
         if lang == "English":
             msg = CTkMessagebox(master=self, title="Go back?",
@@ -2522,7 +2500,6 @@ class TeraTermUI(customtkinter.CTk):
             # self.screenshot_skip = False
             # self.error_occurred = False
             self.run_fix = False
-        block_window.destroy()
 
     # function that goes back to Enrolling frame screen
     def go_back_event2(self):
@@ -2598,28 +2575,28 @@ class TeraTermUI(customtkinter.CTk):
                                   "y limpia que la mayoría de los usuarios conocen.\n\n" +
                                   "Hay algunas cosas que debes saber antes de usar esta app: \n\n" +
                                   "La aplicación se encuentra en una etapa muy temprana de desarrollo, "
-                                  "lo que significa que aún le faltan cosas que"
+                                  "lo que significa que aún le faltan cosas que "
                                   "arreglar e implementar. "
                                   "En este momento, las aplicaciones te permiten hacer "
-                                  "lo esencial como inscribirte y darte de baja"
+                                  "lo esencial como inscribirte y darle de baja a "
                                   "clases"
-                                  ", la búsqueda de clases y otras funciones se implementará más adelante en el camino"
+                                  ", la búsqueda de clases y otras funciones se implementará más adelante en el camino "
                                   "la prioridad en este momento es obtener la experiencia del usuario correcta, "
                                   "todo debe verse bien"
                                   " y fácil de entender. "
                                   + "Todo lo que se ingrese aquí se almacena localmente, "
                                     "lo que significa que solo usted puede acceder la "
-                                    "información"
-                                    "a sí que no tendrás que preocuparte"
-                                    "por información sensible ya que cosas"
+                                    "información "
+                                    "a sí que no tendrás que preocuparte "
+                                    "por información sensible ya que cosas "
                                     "como el Número de Seguro Social, está "
                                     "encriptado usando una clave asimétrica. \n\n" +
                                   "Gracias por usar nuestra aplicación, para más información, "
-                                  "ayuda y para personalizar tu"
-                                  "experiencia"
+                                  "ayuda y para personalizar tu "
+                                  "experiencia "
                                   "asegúrese de hacer clic en los botones de la barra lateral, "
-                                  "la aplicación también es de código abierto"
-                                  "para cualquiera que esté interesado en trabajar/ver el proyecto. \n\n" +
+                                  "la aplicación también es de código abierto "
+                                  "para cualquiera que esté interesado en trabajar/ver el proyecto. \n\n " +
                                   "IMPORTANTE: NO UTILIZAR MIENTRAS TENGA OTRA INSTANCIA DE LA APLICACIÓN ABIERTA. ")
             self.intro_box.configure(state="disabled")
             self.introduction.configure(text="UPRB Proceso de Matrícula")
@@ -3073,9 +3050,6 @@ class TeraTermUI(customtkinter.CTk):
 
     # Pop window that shows the user more context on why they couldn't enroll their classes
     def show_enrollment_error_information(self):
-        block_window = customtkinter.CTkToplevel()
-        block_window.attributes("-alpha", 0.0)
-        block_window.grab_set()
         lang = self.language_menu.get()
         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
         if lang == "English":
@@ -3088,8 +3062,6 @@ class TeraTermUI(customtkinter.CTk):
                           message="Este error generalmente se debe a que todavía "
                                   "no es su turno para inscribirse en clases o porque el "
                                   "término que seleccionó está desactualizado", icon="question", button_width=380)
-        block_window.destroy()
-
     # important information window pop up message
     def show_information_message(self, width, height, success_msg_text):
         if self.information and self.information.winfo_exists():
@@ -3191,9 +3163,6 @@ class TeraTermUI(customtkinter.CTk):
             webbrowser.open("https://drive.google.com/file/d/1mYCHmCy3Mb2fDyp9EiFEtR0j4-rsDdlN/view")
 
     def update_app(self):
-        block_window = customtkinter.CTkToplevel()
-        block_window.attributes("-alpha", 0.0)
-        block_window.grab_set()
         lang = self.language_menu.get()
         latest_version = self.get_latest_release()
         if not self.compare_versions(latest_version, self.USER_APP_VERSION):
@@ -3222,7 +3191,6 @@ class TeraTermUI(customtkinter.CTk):
                 CTkMessagebox(master=self, title="Info", message="Application is up to date", button_width=380)
             elif lang == "Español":
                 CTkMessagebox(master=self, title="Info", message="La Aplicación está actualizada", button_width=380)
-        block_window.destroy()
 
     # (Unused) determines the hardware of the users' computer and change the time.sleep seconds respectively
     # def get_sleep_time(self):
@@ -3257,9 +3225,6 @@ class TeraTermUI(customtkinter.CTk):
     # If user messes up the execution of the program this can solve it and make program work as expected
     def fix_execution(self):
         if self.checkIfProcessRunning("ttermpro") and self.run_fix:
-            block_window = customtkinter.CTkToplevel()
-            block_window.attributes("-alpha", 0.0)
-            block_window.grab_set()
             lang = self.language_menu.get()
             if lang == "English":
                 msg = CTkMessagebox(master=self, title="Exit", message="This button is only made to fix the issue "
@@ -3294,7 +3259,6 @@ class TeraTermUI(customtkinter.CTk):
                 if lang == "Español":
                     self.show_information_message(375, 250, "El problema suele ser causado porque"
                                                             "\n el usuario presiona botones en Tera Term")
-                block_window.destroy()
 
     # Starts the check for idle thread
     def start_check_idle_thread(self):
@@ -3526,9 +3490,6 @@ class TeraTermUI(customtkinter.CTk):
 
     # Submits feedback from the user to a Google sheet
     def submit_feedback(self):
-        block_window = customtkinter.CTkToplevel()
-        block_window.attributes("-alpha", 0.0)
-        block_window.grab_set()
         lang = self.language_menu.get()
         current_date = datetime.today().strftime('%Y-%m-%d')
         date = self.cursor.execute("SELECT date FROM user_data WHERE date IS NOT NULL").fetchall()
@@ -3604,7 +3565,6 @@ class TeraTermUI(customtkinter.CTk):
             elif lang == "Español":
                 CTkMessagebox(title="Error", message="¡Error! No se puede enviar más de un comentario",
                               icon="cancel", button_width=380)
-        block_window.destroy()
 
     # Function that lets user select where their Tera Term application is located
     def change_location_event(self):
