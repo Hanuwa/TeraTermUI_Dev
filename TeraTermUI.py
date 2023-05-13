@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 5/12/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 5/13/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -66,8 +66,8 @@ class TeraTermUI(customtkinter.CTk):
 
         self.title("Tera Term UI")
         # determines screen size to put application in the middle of the screen
-        width = 860
-        height = 480
+        width = 865
+        height = 485
         scaling_factor = self.tk.call("tk", "scaling")
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
@@ -626,6 +626,7 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread.start()
                             screenshot_thread.join()
                             text = self.capture_screenshot()
+                            self.set_focus_to_tkinter()
                             if "ID NOT ON FILE" in text or "PASS" in text:
                                 self.bind("<Return>", lambda event: self.tuition_event_handler())
                                 if "PASS" in text:
@@ -682,11 +683,11 @@ class TeraTermUI(customtkinter.CTk):
                                 self.ssn_entry.delete(0, "end")
                                 self.code_entry.delete(0, "end")
                                 # self.screenshot_skip = False
-                                self.set_focus_to_tkinter()
                                 self.run_fix = True
                                 self.unbind("<Return>")
                                 del ssn, code, publicKey1, privateKey1, publicKey2, privateKey2, ssnEnc, codeEnc
                                 gc.collect()
+                                self.set_focus_to_tkinter()
                         else:
                             self.bind("<Return>", lambda event: self.tuition_event_handler())
                             if lang == "English":
@@ -1202,7 +1203,8 @@ class TeraTermUI(customtkinter.CTk):
             self.m_remove.configure(state="disabled")
         if self.a_counter == 5:
             self.m_add.configure(state="disabled")
-        self.scaling_optionemenu.configure(state="disabled")
+        self.scaling_optionemenu.configure(from_=90, to=100, number_of_steps=2)
+        self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
         self.multiple_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 35))
         self.multiple_frame.grid_columnconfigure(2, weight=1)
         self.m_button_frame.grid(row=3, column=1, columnspan=4, rowspan=4, padx=(0, 0), pady=(0, 0))
@@ -2293,6 +2295,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.show_loading_screen_again()
                     time.sleep(3)
                     send_keys("{ENTER 3}")
+                    self.set_focus_to_tkinter()
                     self.student_frame.grid(row=0, column=1, columnspan=2, padx=(20, 20), pady=(20, 0))
                     self.student_frame.grid_columnconfigure(2, weight=1)
                     self.s_buttons_frame.grid(row=2, column=1, padx=(20, 20), pady=(20, 0))
@@ -2384,6 +2387,7 @@ class TeraTermUI(customtkinter.CTk):
                             continue_button.click_input()
                             self.show_loading_screen_again()
                         ctypes.windll.user32.BlockInput(False)
+                        self.set_focus_to_tkinter()
                         self.authentication_frame.grid(row=0, column=1, columnspan=2, padx=(20, 20), pady=(20, 0))
                         self.authentication_frame.grid_columnconfigure(2, weight=1)
                         self.a_buttons_frame.grid(row=2, column=1, columnspan=2, padx=(20, 20), pady=(20, 0))
@@ -2406,6 +2410,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.intro_box.grid_forget()
                         self.introduction.grid_forget()
                         self.set_focus_to_tkinter()
+
                     except Exception as e:
                         if e.__class__.__name__ == "AppStartError":
                             self.bind("<Return>", lambda event: self.login_event_handler())
@@ -2506,12 +2511,12 @@ class TeraTermUI(customtkinter.CTk):
     # function that goes back to Enrolling frame screen
     def go_back_event2(self):
         self.unbind("<Return>")
-        scaling = self.scaling_optionemenu.get()
         lang = self.language_menu.get()
-        self.scaling_optionemenu.configure(state="normal")
-        if scaling not in (90, 95, 100):
-            self.change_scaling_event(scaling)
+        self.scaling_optionemenu.configure(from_=90, to=110, number_of_steps=4)
+        if self.current_scaling not in (90, 95, 100):
+            self.change_scaling_event(self.current_scaling)
             self.scaling_optionemenu.set(self.current_scaling)
+        self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
         self.tabview.grid(row=0, column=1, padx=(20, 20), pady=(20, 0), sticky="n")
         self.tabview.tab(self.enroll_tab).grid_columnconfigure(1, weight=2)
         self.tabview.tab(self.search_tab).grid_columnconfigure(1, weight=2)
