@@ -66,8 +66,8 @@ class TeraTermUI(customtkinter.CTk):
 
         self.title("Tera Term UI")
         # determines screen size to put application in the middle of the screen
-        width = 865
-        height = 485
+        width = 870
+        height = 490
         scaling_factor = self.tk.call("tk", "scaling")
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
@@ -419,6 +419,7 @@ class TeraTermUI(customtkinter.CTk):
         self.enrolled_classes_list = {}
         self.dropped_classes_list = {}
         self.check = False
+        self.arrow = False
         self.status = None
         self.help = None
         self.error = None
@@ -449,7 +450,7 @@ class TeraTermUI(customtkinter.CTk):
         self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
         self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
         self.authenticate()
-        self.connection = sqlite3.connect("database.db")
+        self.connection = sqlite3.connect(self.db_path)
         self.cursor = self.connection.cursor()
         location = self.cursor.execute("SELECT location FROM user_data WHERE location IS NOT NULL").fetchall()
         host = self.cursor.execute("SELECT host FROM user_data WHERE host IS NOT NULL").fetchall()
@@ -1194,6 +1195,7 @@ class TeraTermUI(customtkinter.CTk):
     # multiple classes screen
     def multiple_classes_event(self):
         scaling = self.scaling_optionemenu.get()
+        self.arrow = True
         self.current_scaling = scaling
         self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
         if scaling not in (90, 95, 100):
@@ -1205,6 +1207,7 @@ class TeraTermUI(customtkinter.CTk):
             self.m_add.configure(state="disabled")
         self.scaling_optionemenu.configure(from_=90, to=100, number_of_steps=2)
         self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
+        self.scaling_optionemenu.set(100)
         self.multiple_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 35))
         self.multiple_frame.grid_columnconfigure(2, weight=1)
         self.m_button_frame.grid(row=3, column=1, columnspan=4, rowspan=4, padx=(0, 0), pady=(0, 0))
@@ -2511,12 +2514,14 @@ class TeraTermUI(customtkinter.CTk):
     # function that goes back to Enrolling frame screen
     def go_back_event2(self):
         self.unbind("<Return>")
+        self.arrow = False
         lang = self.language_menu.get()
         self.scaling_optionemenu.configure(from_=90, to=110, number_of_steps=4)
         if self.current_scaling not in (90, 95, 100):
             self.change_scaling_event(self.current_scaling)
             self.scaling_optionemenu.set(self.current_scaling)
         self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
+        self.scaling_optionemenu.set(self.current_scaling)
         self.tabview.grid(row=0, column=1, padx=(20, 20), pady=(20, 0), sticky="n")
         self.tabview.tab(self.enroll_tab).grid_columnconfigure(1, weight=2)
         self.tabview.tab(self.search_tab).grid_columnconfigure(1, weight=2)
@@ -2870,7 +2875,7 @@ class TeraTermUI(customtkinter.CTk):
                                 (self.scaling_optionemenu.get(),))
         elif len(resultScaling) == 1:
             self.cursor.execute("UPDATE user_data SET scaling=?", (self.scaling_optionemenu.get(),))
-        with closing(sqlite3.connect("database.db")) as connection:
+        with closing(sqlite3.connect(self.db_path)) as connection:
             with closing(connection.cursor()) as self.cursor:
                 self.connection.commit()
 
@@ -3117,11 +3122,18 @@ class TeraTermUI(customtkinter.CTk):
     # Moves the scaling slider to the right
     def move_slider_right(self, event):
         value = self.scaling_optionemenu.get()
-        if value != 110:
-            value += 5
-            self.scaling_optionemenu.set(value)
-            self.change_scaling_event(value)
-            self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
+        if not self.arrow:
+            if value != 110:
+                value += 5
+                self.scaling_optionemenu.set(value)
+                self.change_scaling_event(value)
+                self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
+        elif self.arrow:
+            if value != 100:
+                value += 5
+                self.scaling_optionemenu.set(value)
+                self.change_scaling_event(value)
+                self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
 
     # function that lets your increase/decrease the scaling of the GUI
     def change_scaling_event(self, new_scaling: float):
@@ -3482,8 +3494,8 @@ class TeraTermUI(customtkinter.CTk):
     # Reads from the feedback.json file
     def authenticate(self):
         try:
-            with open(self.SERVICE_ACCOUNT_FILE, 'rb') as f:
-                archive = pyzipper.AESZipFile(self.SERVICE_ACCOUNT_FILE)
+            with open(self.ath, 'rb') as f:
+                archive = pyzipper.AESZipFile(self.ath)
                 archive.setpassword(self.PASSWORD.encode())
                 file_contents = archive.read('feedback.json')
                 credentials_dict = json.loads(file_contents.decode())
@@ -3936,7 +3948,7 @@ if __name__ == "__main__":
     appdata_folder = os.path.join(os.getenv('APPDATA'), 'TeraTermUI')
     lock_file = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])), "app_lock.lock")
     lock_file_appdata = os.path.join(appdata_folder, "app_lock.lock")
-    file_lock = FileLock(lock_file, timeout=0)
+    file_lock = FileLock(lock_file_appdata, timeout=0)
     try:
         with file_lock.acquire(poll_interval=0.1):
             app = TeraTermUI()
