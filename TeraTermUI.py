@@ -3108,18 +3108,20 @@ class TeraTermUI(customtkinter.CTk):
     # Moves the scaling slider to the left
     def move_slider_left(self, event):
         value = self.scaling_optionemenu.get()
-        value -= 5
-        self.scaling_optionemenu.set(value)
-        self.change_scaling_event(value)
-        self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
+        if value != 90:
+            value -= 5
+            self.scaling_optionemenu.set(value)
+            self.change_scaling_event(value)
+            self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
 
     # Moves the scaling slider to the right
     def move_slider_right(self, event):
         value = self.scaling_optionemenu.get()
-        value += 5
-        self.scaling_optionemenu.set(value)
-        self.change_scaling_event(value)
-        self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
+        if value != 110:
+            value += 5
+            self.scaling_optionemenu.set(value)
+            self.change_scaling_event(value)
+            self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
 
     # function that lets your increase/decrease the scaling of the GUI
     def change_scaling_event(self, new_scaling: float):
