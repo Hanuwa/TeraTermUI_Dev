@@ -133,7 +133,7 @@ class TeraTermUI(customtkinter.CTk):
         self.appearance_mode_optionemenu.set("System")
         self.appearance_mode_optionemenu.grid(row=7, column=0, padx=20, pady=(10, 10))
         self.scaling_optionemenu = customtkinter.CTkSlider(self.sidebar_frame, from_=90, to=110, number_of_steps=4,
-                                                           width=150, command=self.change_scaling_event)
+                                                           width=150, height=20, command=self.change_scaling_event)
         self.scaling_optionemenu.set(100)
         self.scaling_tooltip = CTkToolTip(self.scaling_optionemenu, message=str(self.scaling_optionemenu.get()) + "%",
                                           bg_color="#1E90FF")
@@ -207,7 +207,7 @@ class TeraTermUI(customtkinter.CTk):
                                             text="Back",
                                             text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
         self.back_tooltip = CTkToolTip(self.back, message="Go back to the main menu\n"
-                                                          "of the application", bg_color="#1E90FF")
+                                                          "of the application", bg_color="#A9A9A9")
 
         # Student Information
         self.student_frame = customtkinter.CTkFrame(self, corner_radius=10)
@@ -236,7 +236,7 @@ class TeraTermUI(customtkinter.CTk):
                                              text="Back",
                                              text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
         self.back2_tooltip = CTkToolTip(self.back2, message="Go back to the main menu\n"
-                                                            "of the application", bg_color="#1E90FF")
+                                                            "of the application", bg_color="#A9A9A9")
 
         # Classes
         self.tabview = customtkinter.CTkTabview(self, corner_radius=10)
@@ -261,9 +261,14 @@ class TeraTermUI(customtkinter.CTk):
         self.e_semester_entry = customtkinter.CTkComboBox(master=self.tabview.tab(self.enroll_tab),
                                                           values=["C23", "C31", "C32", "C33"])
         self.e_semester_entry.set("C31")
-        self.register_menu = customtkinter.CTkOptionMenu(master=self.tabview.tab(self.enroll_tab),
-                                                         values=["Register", "Drop"])
-        self.register_menu.set("Register")
+        self.radio_var = tk.StringVar()
+        self.register = customtkinter.CTkRadioButton(master=self.tabview.tab(self.enroll_tab), text="Register",
+                                                     value="Register", variable=self.radio_var)
+        self.register_tooltip = CTkToolTip(self.register, message="Enroll class")
+        self.drop = customtkinter.CTkRadioButton(master=self.tabview.tab(self.enroll_tab), text="Drop", value="Drop",
+                                                 variable=self.radio_var)
+        self.drop_tooltip = CTkToolTip(self.drop, message="Drop class")
+        self.register.select()
         # Second Tab
         self.explanation5 = customtkinter.CTkLabel(master=self.tabview.tab(self.search_tab),
                                                    text="Search for Classes: ",
@@ -284,7 +289,7 @@ class TeraTermUI(customtkinter.CTk):
                                              text="Back",
                                              text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
         self.back3_tooltip = CTkToolTip(self.back3, message="Go back to the main menu\n"
-                                                            "of the application", bg_color="#1E90FF")
+                                                            "of the application", bg_color="#A9A9A9")
         self.submit = customtkinter.CTkButton(master=self.tabview.tab(self.enroll_tab), border_width=2,
                                               text="Submit",
                                               text_color=("gray10", "#DCE4EE"), command=self.submit_event_handler)
@@ -348,14 +353,17 @@ class TeraTermUI(customtkinter.CTk):
         self.explanation7 = customtkinter.CTkLabel(master=self.multiple_frame,
                                                    text="Enroll Multiple Classes at once:",
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
-        self.warning = customtkinter.CTkLabel(master=self.multiple_frame, text="*You can only submit once!*")
-        self.m_classes_entry = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Class", height=30)
-        self.m_section_entry = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Section", height=30)
+        self.m_class = customtkinter.CTkLabel(master=self.multiple_frame, text="Class")
+        self.m_section = customtkinter.CTkLabel(master=self.multiple_frame, text="Section")
+        self.m_semester = customtkinter.CTkLabel(master=self.multiple_frame, text="Semester")
+        self.m_choice = customtkinter.CTkLabel(master=self.multiple_frame, text="Register/Drop")
+        self.m_num_class_1 = customtkinter.CTkLabel(master=self.multiple_frame, text="1.")
+        self.m_classes_entry = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="ESPA3101")
+        self.m_section_entry = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="LM1")
         self.m_semester_entry = customtkinter.CTkComboBox(master=self.multiple_frame,
-                                                          values=["C23", "C31", "C32", "C33"], height=30)
+                                                          values=["C23", "C31", "C32", "C33"])
         self.m_semester_entry.set("C31")
-        self.m_register_menu = customtkinter.CTkOptionMenu(master=self.multiple_frame, values=["Register", "Drop"],
-                                                           height=30)
+        self.m_register_menu = customtkinter.CTkOptionMenu(master=self.multiple_frame, values=["Register", "Drop"])
         self.m_register_menu.set("Choose")
         self.m_add = customtkinter.CTkButton(master=self.m_button_frame, border_width=2, text="+",
                                              text_color=("gray10", "#DCE4EE"), command=self.add_event, height=40,
@@ -369,56 +377,41 @@ class TeraTermUI(customtkinter.CTk):
                                              text="Back", height=40, width=70,
                                              text_color=("gray10", "#DCE4EE"), command=self.go_back_event2)
         self.back4_tooltip = CTkToolTip(self.back4, message="Go back to the previous "
-                                                            "\nscreen", bg_color="#1E90FF")
+                                                            "\nscreen", bg_color="#A9A9A9")
         self.submit_multiple = customtkinter.CTkButton(master=self.m_button_frame, border_width=2,
                                                        text="Submit", text_color=("gray10", "#DCE4EE"),
                                                        command=self.submit_multiple_event_handler, height=40, width=70)
 
         # Extras
-        self.m_classes_entry2 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Class",
-                                                       height=30)
-        self.m_section_entry2 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Section",
-                                                       height=30)
-        self.m_semester_entry2 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Semester",
-                                                        height=30)
-        self.m_register_menu2 = customtkinter.CTkOptionMenu(master=self.multiple_frame, values=["Register", "Drop"],
-                                                            height=30)
+        self.m_num_class_2 = customtkinter.CTkLabel(master=self.multiple_frame, text="2.")
+        self.m_classes_entry2 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="INGL3101")
+        self.m_section_entry2 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="LM1")
+        self.m_semester_entry2 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Semester")
+        self.m_register_menu2 = customtkinter.CTkOptionMenu(master=self.multiple_frame, values=["Register", "Drop"])
         self.m_register_menu2.set("Choose")
-        self.m_classes_entry3 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Class",
-                                                       height=30)
-        self.m_section_entry3 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Section",
-                                                       height=30)
-        self.m_semester_entry3 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Semester",
-                                                        height=30)
-        self.m_register_menu3 = customtkinter.CTkOptionMenu(master=self.multiple_frame, values=["Register", "Drop"],
-                                                            height=30)
+        self.m_num_class_3 = customtkinter.CTkLabel(master=self.multiple_frame, text="3.")
+        self.m_classes_entry3 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="BIOL3011")
+        self.m_section_entry3 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="KH1")
+        self.m_semester_entry3 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Semester")
+        self.m_register_menu3 = customtkinter.CTkOptionMenu(master=self.multiple_frame, values=["Register", "Drop"])
         self.m_register_menu3.set("Choose")
-        self.m_classes_entry4 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Class",
-                                                       height=30)
-        self.m_section_entry4 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Section",
-                                                       height=30)
-        self.m_semester_entry4 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Semester",
-                                                        height=30)
-        self.m_register_menu4 = customtkinter.CTkOptionMenu(master=self.multiple_frame, values=["Register", "Drop"],
-                                                            height=30)
+        self.m_num_class_4 = customtkinter.CTkLabel(master=self.multiple_frame, text="4.")
+        self.m_classes_entry4 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="MATE3001")
+        self.m_section_entry4 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="LH1")
+        self.m_semester_entry4 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Semester")
+        self.m_register_menu4 = customtkinter.CTkOptionMenu(master=self.multiple_frame, values=["Register", "Drop"])
         self.m_register_menu4.set("Choose")
-        self.m_classes_entry5 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Class",
-                                                       height=30)
-        self.m_section_entry5 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Section",
-                                                       height=30)
-        self.m_semester_entry5 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Semester",
-                                                        height=30)
-        self.m_register_menu5 = customtkinter.CTkOptionMenu(master=self.multiple_frame, values=["Register", "Drop"],
-                                                            height=30)
+        self.m_num_class_5 = customtkinter.CTkLabel(master=self.multiple_frame, text="5.")
+        self.m_classes_entry5 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="CISO3121")
+        self.m_section_entry5 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="KN1")
+        self.m_semester_entry5 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Semester")
+        self.m_register_menu5 = customtkinter.CTkOptionMenu(master=self.multiple_frame, values=["Register", "Drop"])
         self.m_register_menu5.set("Choose")
-        self.m_classes_entry6 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Class",
-                                                       height=30)
-        self.m_section_entry6 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Section",
-                                                       height=30)
-        self.m_semester_entry6 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Semester",
-                                                        height=30)
-        self.m_register_menu6 = customtkinter.CTkOptionMenu(master=self.multiple_frame, values=["Register", "Drop"],
-                                                            height=30)
+        self.m_num_class_6 = customtkinter.CTkLabel(master=self.multiple_frame, text="6.")
+        self.m_classes_entry6 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="HUMA3101")
+        self.m_section_entry6 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="LN1")
+        self.m_semester_entry6 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Semester")
+        self.m_register_menu6 = customtkinter.CTkOptionMenu(master=self.multiple_frame, values=["Register", "Drop"])
         self.m_register_menu6.set("Choose")
 
         # Top level window management, flags and counters
@@ -643,7 +636,6 @@ class TeraTermUI(customtkinter.CTk):
                                     self.show_error_message(300, 215, "¡Error! SSN o Código Incorrecto")
                                 # self.screenshot_skip = True
                             elif "ID NOT ON FILE" not in text or "PASS" not in text:
-                                self.set_focus_to_tkinter()
                                 self.reset_activity_timer(None)
                                 self.start_check_idle_thread()
                                 self.tabview.grid(row=0, column=1, padx=(20, 20), pady=(20, 0), sticky="n")
@@ -662,7 +654,8 @@ class TeraTermUI(customtkinter.CTk):
                                 self.section_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
                                 self.e_semester.grid(row=3, column=1, padx=(18, 0), pady=(20, 0), sticky="w")
                                 self.e_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
-                                self.register_menu.grid(row=4, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
+                                self.register.grid(row=4, column=1, padx=(75, 0), pady=(20, 0), sticky="w")
+                                self.drop.grid(row=4, column=1, padx=(0, 35), pady=(20, 0), sticky="e")
                                 self.submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
                                 self.explanation5.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
                                 self.s_classes.grid(row=1, column=1, padx=(41, 0), pady=(0, 0), sticky="w")
@@ -689,6 +682,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.ssn_entry.delete(0, "end")
                                 self.code_entry.delete(0, "end")
                                 # self.screenshot_skip = False
+                                self.set_focus_to_tkinter()
                                 self.run_fix = True
                                 self.unbind("<Return>")
                                 del ssn, code, publicKey1, privateKey1, publicKey2, privateKey2, ssnEnc, codeEnc
@@ -720,7 +714,7 @@ class TeraTermUI(customtkinter.CTk):
 
     def submit_event_handler(self):
         lang = self.language_menu.get()
-        choice = self.register_menu.get().lower()
+        choice = self.radio_var.get().lower()
         if lang == "English":
             msg = CTkMessagebox(master=self, title="Submit",
                                 message="Are you sure you are ready " + choice + " this class?"
@@ -730,7 +724,8 @@ class TeraTermUI(customtkinter.CTk):
                                 icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
                                 hover_color=("darkred", "darkblue", "darkblue"))
         elif lang == "Español":
-            if choice == "registra":
+            if choice == "register":
+                choice = "registra"
                 msg = CTkMessagebox(master=self, title="Someter",
                                     message="¿Estás preparado para " + choice + "r esta clase?"
                                             " \n\nWARNING: Asegúrese de que la información está correcta",
@@ -738,7 +733,8 @@ class TeraTermUI(customtkinter.CTk):
                                     option_1="Cancelar", option_2="No", option_3="Sí",
                                     icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
                                     hover_color=("darkred", "darkblue", "darkblue"))
-            if choice == "baja":
+            if choice == "drop":
+                choice = "baja"
                 msg = CTkMessagebox(master=self, title="Someter",
                                     message="¿Estás preparado para darle de " + choice + " a esta clase?"
                                             " \n\nWARNING: Asegúrese de que la información está correcta",
@@ -761,7 +757,7 @@ class TeraTermUI(customtkinter.CTk):
         block_window.grab_set()
         self.hide_sidebar_windows()
         self.destroy_windows()
-        choice = self.register_menu.get().replace(" ", "")
+        choice = self.radio_var.get()
         classes = self.e_classes_entry.get().upper().replace(" ", "")
         section = self.section_entry.get().upper().replace(" ", "")
         semester = self.e_semester_entry.get().upper().replace(" ", "")
@@ -769,13 +765,14 @@ class TeraTermUI(customtkinter.CTk):
 
         if self.test_connection(lang) and self.check_server():
             if self.checkIfProcessRunning("ttermpro"):
-                if ((choice == "Register" or choice == "Registra") and classes not in
+                if (choice == "Register" and classes not in
                     self.enrolled_classes_list.values() and section not in self.enrolled_classes_list) \
-                        or ((choice == "Drop" or choice == "Baja") and classes
+                        or (choice == "Drop" and classes
                             not in self.dropped_classes_list.values() and section not in self.dropped_classes_list):
                     if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE)
                             and re.fullmatch("^[A-Z]{2}1$", section, flags=re.IGNORECASE)
                             and re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE)
+                            and (choice == "Register" or choice == "Drop")
                             and (semester == "C23" or semester == "C31" or semester == "C41"
                                  or semester == "C32" or semester == "C33")):
                         ctypes.windll.user32.BlockInput(True)
@@ -800,9 +797,9 @@ class TeraTermUI(customtkinter.CTk):
                             send_keys("{TAB 2}")
                             for i in range(count_enroll, 0, -1):
                                 send_keys("{TAB 2}")
-                            if choice == "Register" or choice == "Registra":
+                            if choice == "Register":
                                 self.uprb.UprbayTeraTermVt.type_keys("R")
-                            elif choice == "Drop" or choice == "Baja":
+                            elif choice == "Drop":
                                 self.uprb.UprbayTeraTermVt.type_keys("D")
                             self.uprb.UprbayTeraTermVt.type_keys(classes)
                             self.uprb.UprbayTeraTermVt.type_keys(section)
@@ -828,7 +825,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.e_counter -= 1
                                 for i in range(count_enroll, 0, -1):
                                     self.e_counter += 1
-                                if choice == "Register" or choice == "Registra":
+                                if choice == "Register":
                                     send_keys("{ENTER}")
                                     if section in self.dropped_classes_list:
                                         del self.dropped_classes_list[section]
@@ -840,7 +837,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.show_success_message(350, 265, "Enrolled class successfully")
                                     elif lang == "Español":
                                         self.show_success_message(350, 265, "Clase registrada exitósamente")
-                                elif choice == "Drop" or choice == "Baja":
+                                elif choice == "Drop":
                                     if section in self.enrolled_classes_list:
                                         del self.enrolled_classes_list[section]
                                     if section not in self.dropped_classes_list:
@@ -1090,6 +1087,7 @@ class TeraTermUI(customtkinter.CTk):
             elif self.a_counter != 5:
                 self.m_add.configure(state="normal")
             if self.a_counter == 1:
+                self.m_num_class_2.grid(row=2, column=0, padx=(0, 8), pady=(20, 0))
                 self.m_classes_entry2.grid(row=2, column=1, padx=(0, 500), pady=(20, 0))
                 self.m_section_entry2.grid(row=2, column=1, padx=(0, 165), pady=(20, 0))
                 self.m_semester_entry2.grid(row=2, column=1, padx=(165, 0), pady=(20, 0))
@@ -1098,6 +1096,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.m_semester_entry2.configure(state="disabled")
                 self.m_register_menu2.grid(row=2, column=1, padx=(500, 0), pady=(20, 0))
             elif self.a_counter == 2:
+                self.m_num_class_3.grid(row=3, column=0, padx=(0, 8), pady=(20, 0))
                 self.m_classes_entry3.grid(row=3, column=1, padx=(0, 500), pady=(20, 0))
                 self.m_section_entry3.grid(row=3, column=1, padx=(0, 165), pady=(20, 0))
                 self.m_semester_entry3.grid(row=3, column=1, padx=(165, 0), pady=(20, 0))
@@ -1106,6 +1105,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.m_semester_entry3.configure(state="disabled")
                 self.m_register_menu3.grid(row=3, column=1, padx=(500, 0), pady=(20, 0))
             elif self.a_counter == 3:
+                self.m_num_class_4.grid(row=4, column=0, padx=(0, 8), pady=(20, 0))
                 self.m_classes_entry4.grid(row=4, column=1, padx=(0, 500), pady=(20, 0))
                 self.m_section_entry4.grid(row=4, column=1, padx=(0, 165), pady=(20, 0))
                 self.m_semester_entry4.grid(row=4, column=1, padx=(165, 0), pady=(20, 0))
@@ -1114,6 +1114,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.m_semester_entry4.configure(state="disabled")
                 self.m_register_menu4.grid(row=4, column=1, padx=(500, 0), pady=(20, 0))
             elif self.a_counter == 4:
+                self.m_num_class_5.grid(row=5, column=0, padx=(0, 8), pady=(20, 0))
                 self.m_classes_entry5.grid(row=5, column=1, padx=(0, 500), pady=(20, 0))
                 self.m_section_entry5.grid(row=5, column=1, padx=(0, 165), pady=(20, 0))
                 self.m_semester_entry5.grid(row=5, column=1, padx=(165, 0), pady=(20, 0))
@@ -1122,6 +1123,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.m_semester_entry5.configure(state="disabled")
                 self.m_register_menu5.grid(row=5, column=1, padx=(500, 0), pady=(20, 0))
             elif self.a_counter == 5:
+                self.m_num_class_6.grid(row=6, column=0, padx=(0, 8), pady=(20, 0))
                 self.m_classes_entry6.grid(row=6, column=1, padx=(0, 500), pady=(20, 0))
                 self.m_section_entry6.grid(row=6, column=1, padx=(0, 165), pady=(20, 0))
                 self.m_semester_entry6.grid(row=6, column=1, padx=(165, 0), pady=(20, 0))
@@ -1144,6 +1146,7 @@ class TeraTermUI(customtkinter.CTk):
             self.m_remove.configure(state="normal")
         if self.a_counter == 1:
             self.a_counter -= 1
+            self.m_num_class_2.grid_forget()
             self.m_classes_entry2.grid_forget()
             self.m_section_entry2.grid_forget()
             self.m_semester_entry2.grid_forget()
@@ -1152,6 +1155,7 @@ class TeraTermUI(customtkinter.CTk):
             self.m_semester_entry2.delete(0, "end")
         elif self.a_counter == 2:
             self.a_counter -= 1
+            self.m_num_class_3.grid_forget()
             self.m_classes_entry3.grid_forget()
             self.m_section_entry3.grid_forget()
             self.m_semester_entry3.grid_forget()
@@ -1160,6 +1164,7 @@ class TeraTermUI(customtkinter.CTk):
             self.m_semester_entry3.delete(0, "end")
         elif self.a_counter == 3:
             self.a_counter -= 1
+            self.m_num_class_4.grid_forget()
             self.m_classes_entry4.grid_forget()
             self.m_section_entry4.grid_forget()
             self.m_semester_entry4.grid_forget()
@@ -1168,6 +1173,7 @@ class TeraTermUI(customtkinter.CTk):
             self.m_semester_entry4.delete(0, "end")
         elif self.a_counter == 4:
             self.a_counter -= 1
+            self.m_num_class_5.grid_forget()
             self.m_classes_entry5.grid_forget()
             self.m_section_entry5.grid_forget()
             self.m_semester_entry5.grid_forget()
@@ -1176,6 +1182,7 @@ class TeraTermUI(customtkinter.CTk):
             self.m_semester_entry5.delete(0, "end")
         elif self.a_counter == 5:
             self.a_counter -= 1
+            self.m_num_class_6.grid_forget()
             self.m_classes_entry6.grid_forget()
             self.m_section_entry6.grid_forget()
             self.m_semester_entry6.grid_forget()
@@ -1201,7 +1208,11 @@ class TeraTermUI(customtkinter.CTk):
         self.m_button_frame.grid(row=3, column=1, columnspan=4, rowspan=4, padx=(0, 0), pady=(0, 0))
         self.m_button_frame.grid_columnconfigure(2, weight=1)
         self.explanation7.grid(row=0, column=1, padx=(0, 0), pady=(0, 20))
-        self.warning.grid(row=0, column=1, padx=(0, 0), pady=(30, 0))
+        self.m_class.grid(row=0, column=1, padx=(0, 500), pady=(32, 0))
+        self.m_section.grid(row=0, column=1, padx=(0, 165), pady=(32, 0))
+        self.m_semester.grid(row=0, column=1, padx=(165, 0), pady=(32, 0))
+        self.m_choice.grid(row=0, column=1, padx=(500, 0), pady=(32, 0))
+        self.m_num_class_1.grid(row=1, column=0, padx=(0, 8), pady=(0, 0))
         self.m_classes_entry.grid(row=1, column=1, padx=(0, 500), pady=(0, 0))
         self.m_section_entry.grid(row=1, column=1, padx=(0, 165), pady=(0, 0))
         self.m_semester_entry.grid(row=1, column=1, padx=(165, 0), pady=(0, 0))
@@ -1638,32 +1649,18 @@ class TeraTermUI(customtkinter.CTk):
                                 self.m_section_entry5.delete(0, "end")
                                 self.m_classes_entry6.delete(0, "end")
                                 self.m_section_entry6.delete(0, "end")
-                                if lang == "English":
-                                    self.m_classes_entry.configure(placeholder_text="Class")
-                                    self.m_section_entry.configure(placeholder_text="Section")
-                                    self.m_classes_entry2.configure(placeholder_text="Class")
-                                    self.m_section_entry2.configure(placeholder_text="Section")
-                                    self.m_classes_entry3.configure(placeholder_text="Class")
-                                    self.m_section_entry3.configure(placeholder_text="Section")
-                                    self.m_classes_entry4.configure(placeholder_text="Class")
-                                    self.m_section_entry4.configure(placeholder_text="Section")
-                                    self.m_classes_entry5.configure(placeholder_text="Class")
-                                    self.m_section_entry5.configure(placeholder_text="Section")
-                                    self.m_classes_entry6.configure(placeholder_text="Class")
-                                    self.m_section_entry6.configure(placeholder_text="Section")
-                                if lang == "Español":
-                                    self.m_classes_entry.configure(placeholder_text="Clase")
-                                    self.m_section_entry.configure(placeholder_text="Sección")
-                                    self.m_classes_entry2.configure(placeholder_text="Clase")
-                                    self.m_section_entry2.configure(placeholder_text="Sección")
-                                    self.m_classes_entry3.configure(placeholder_text="Clase")
-                                    self.m_section_entry3.configure(placeholder_text="Sección")
-                                    self.m_classes_entry4.configure(placeholder_text="Clase")
-                                    self.m_section_entry4.configure(placeholder_text="Sección")
-                                    self.m_classes_entry5.configure(placeholder_text="Clase")
-                                    self.m_section_entry5.configure(placeholder_text="Sección")
-                                    self.m_classes_entry6.configure(placeholder_text="Clase")
-                                    self.m_section_entry6.configure(placeholder_text="Sección")
+                                self.m_classes_entry.configure(placeholder_text="ESPA3101")
+                                self.m_section_entry.configure(placeholder_text="KM1")
+                                self.m_classes_entry2.configure(placeholder_text="INGL3101")
+                                self.m_section_entry2.configure(placeholder_text="LM1")
+                                self.m_classes_entry3.configure(placeholder_text="BIOL3011")
+                                self.m_section_entry3.configure(placeholder_text="KH1")
+                                self.m_classes_entry4.configure(placeholder_text="MATE3001")
+                                self.m_section_entry4.configure(placeholder_text="LH1")
+                                self.m_classes_entry5.configure(placeholder_text="CISO3121")
+                                self.m_section_entry5.configure(placeholder_text="KN1")
+                                self.m_classes_entry6.configure(placeholder_text="HUMA3101")
+                                self.m_section_entry6.configure(placeholder_text="LN1")
                             else:
                                 self.reset_activity_timer(None)
                                 self.set_focus_to_tkinter()
@@ -2296,7 +2293,6 @@ class TeraTermUI(customtkinter.CTk):
                     self.show_loading_screen_again()
                     time.sleep(3)
                     send_keys("{ENTER 3}")
-                    self.set_focus_to_tkinter()
                     self.student_frame.grid(row=0, column=1, columnspan=2, padx=(20, 20), pady=(20, 0))
                     self.student_frame.grid_columnconfigure(2, weight=1)
                     self.s_buttons_frame.grid(row=2, column=1, padx=(20, 20), pady=(20, 0))
@@ -2304,20 +2300,21 @@ class TeraTermUI(customtkinter.CTk):
                     self.explanation3.grid(row=0, column=1, padx=12, pady=(10, 20))
                     self.lock_grid.grid(row=1, column=1, padx=(0, 0), pady=(0, 20))
                     if lang == "English":
-                        self.ssn.grid(row=2, column=1, padx=(0, 126), pady=(0, 10))
-                        self.ssn_entry.grid(row=2, column=1, padx=(170, 0), pady=(0, 10))
-                        self.code.grid(row=3, column=1, padx=(0, 159), pady=(0, 10))
-                        self.code_entry.grid(row=3, column=1, padx=(170, 0), pady=(0, 10))
+                        self.ssn.grid(row=2, column=1, padx=(0, 112), pady=(0, 10))
+                        self.ssn_entry.grid(row=2, column=1, padx=(175, 0), pady=(0, 10))
+                        self.code.grid(row=3, column=1, padx=(0, 146), pady=(0, 10))
+                        self.code_entry.grid(row=3, column=1, padx=(175, 0), pady=(0, 10))
                     elif lang == "Español":
-                        self.ssn.grid(row=2, column=1, padx=(0, 133), pady=(0, 10))
-                        self.ssn_entry.grid(row=2, column=1, padx=(170, 0), pady=(0, 10))
-                        self.code.grid(row=3, column=1, padx=(0, 164), pady=(0, 10))
-                        self.code_entry.grid(row=3, column=1, padx=(170, 0), pady=(0, 10))
+                        self.ssn.grid(row=2, column=1, padx=(0, 123), pady=(0, 10))
+                        self.ssn_entry.grid(row=2, column=1, padx=(175, 0), pady=(0, 10))
+                        self.code.grid(row=3, column=1, padx=(0, 153), pady=(0, 10))
+                        self.code_entry.grid(row=3, column=1, padx=(175, 0), pady=(0, 10))
                     self.show.grid(row=4, column=1, padx=(10, 0), pady=(0, 10))
                     self.back2.grid(row=5, column=0, padx=(0, 10), pady=(0, 0))
                     self.system.grid(row=5, column=1, padx=(10, 0), pady=(0, 0))
                     self.a_buttons_frame.grid_forget()
                     self.authentication_frame.grid_forget()
+                    self.set_focus_to_tkinter()
                 elif username != "students":
                     self.bind("<Return>", lambda event: self.student_event_handler())
                     if lang == "English":
@@ -2387,7 +2384,6 @@ class TeraTermUI(customtkinter.CTk):
                             continue_button.click_input()
                             self.show_loading_screen_again()
                         ctypes.windll.user32.BlockInput(False)
-                        self.set_focus_to_tkinter()
                         self.authentication_frame.grid(row=0, column=1, columnspan=2, padx=(20, 20), pady=(20, 0))
                         self.authentication_frame.grid_columnconfigure(2, weight=1)
                         self.a_buttons_frame.grid(row=2, column=1, columnspan=2, padx=(20, 20), pady=(20, 0))
@@ -2409,6 +2405,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.log_in.grid_forget()
                         self.intro_box.grid_forget()
                         self.introduction.grid_forget()
+                        self.set_focus_to_tkinter()
                     except Exception as e:
                         if e.__class__.__name__ == "AppStartError":
                             self.bind("<Return>", lambda event: self.login_event_handler())
@@ -2531,7 +2528,8 @@ class TeraTermUI(customtkinter.CTk):
         self.section_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
         self.e_semester.grid(row=3, column=1, padx=(18, 0), pady=(20, 0), sticky="w")
         self.e_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
-        self.register_menu.grid(row=4, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
+        self.register.grid(row=4, column=1, padx=(75, 0), pady=(20, 0), sticky="w")
+        self.drop.grid(row=4, column=1, padx=(0, 35), pady=(20, 0), sticky="e")
         self.submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
         self.explanation5.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
         self.s_classes.grid(row=1, column=1, padx=(41, 0), pady=(0, 0), sticky="w")
@@ -2605,9 +2603,16 @@ class TeraTermUI(customtkinter.CTk):
                                   "para cualquiera que esté interesado en trabajar/ver el proyecto. \n\n " +
                                   "IMPORTANTE: NO UTILIZAR MIENTRAS TENGA OTRA INSTANCIA DE LA APLICACIÓN ABIERTA. ")
             self.intro_box.configure(state="disabled")
+            self.appearance_mode_optionemenu.configure(values=["Claro", "Oscuro", "Sistema"])
+            if self.appearance_mode_optionemenu.get() == "Dark":
+                self.appearance_mode_optionemenu.set("Oscuro")
+            elif self.appearance_mode_optionemenu.get() == "Light":
+                self.appearance_mode_optionemenu.set("Claro")
+            elif self.appearance_mode_optionemenu.get() == "System":
+                self.appearance_mode_optionemenu.set("Sistema")
             self.introduction.configure(text="UPRB Proceso de Matrícula")
             self.host.configure(text="Servidor: ")
-            self.host.grid(row=2, column=0, columnspan=2, padx=(0, 5), pady=(20, 20))
+            self.host.grid(row=2, column=0, columnspan=2, padx=(5, 0), pady=(20, 20))
             self.log_in.configure(text="Iniciar Sesión")
             self.explanation.configure(text="Conectado al servidor éxitosamente")
             self.explanation2.configure(text="Autenticación requerida")
@@ -2624,8 +2629,10 @@ class TeraTermUI(customtkinter.CTk):
             self.e_classes.configure(text="Clase: ")
             self.section.configure(text="Sección: ")
             self.e_semester.configure(text="Semestre: ")
-            self.register_menu.configure(values=["Registra", "Baja"])
-            self.register_menu.set("Registra")
+            self.register.configure(text="Registra")
+            self.register_tooltip.configure(message="Matricula la clase")
+            self.drop.configure(text="Baja")
+            self.drop_tooltip.configure(message="Darle de baja a la clase")
             self.explanation5.configure(text="Buscar Clases: ")
             self.s_classes.configure(text="Clase: ")
             self.s_semester.configure(text="Semestre: ")
@@ -2654,31 +2661,22 @@ class TeraTermUI(customtkinter.CTk):
             self.back3.configure(text="Atrás")
             self.multiple.configure(text="Múltiples Clases")
             self.explanation7.configure(text="Matricular Múltiples Clases a la misma vez:")
-            self.warning.configure(text="*¡Solamente puedes someter una vez!*")
+            self.m_class.configure(text="Clase")
+            self.m_section.configure(text="Sección")
+            self.m_semester.configure(text="Semestre")
+            self.m_choice.configure(text="Registra/Baja")
             self.back4.configure(text="Atrás")
             self.submit_multiple.configure(text="Someter")
-            self.m_classes_entry.configure(placeholder_text="Clase")
-            self.m_section_entry.configure(placeholder_text="Sección")
             self.m_register_menu.configure(values=["Registra", "Baja"])
             self.m_register_menu.set("Escoge")
-            self.m_classes_entry2.configure(placeholder_text="Clase")
-            self.m_section_entry2.configure(placeholder_text="Sección")
             self.m_register_menu2.configure(values=["Registra", "Baja"])
             self.m_register_menu2.set("Escoge")
-            self.m_classes_entry3.configure(placeholder_text="Clase")
-            self.m_section_entry3.configure(placeholder_text="Sección")
             self.m_register_menu3.configure(values=["Registra", "Baja"])
             self.m_register_menu3.set("Escoge")
-            self.m_classes_entry4.configure(placeholder_text="Clase")
-            self.m_section_entry4.configure(placeholder_text="Sección")
             self.m_register_menu4.configure(values=["Registra", "Baja"])
             self.m_register_menu4.set("Escoge")
-            self.m_classes_entry5.configure(placeholder_text="Clase")
-            self.m_section_entry5.configure(placeholder_text="Sección")
             self.m_register_menu5.configure(values=["Registra", "Baja"])
             self.m_register_menu5.set("Escoge")
-            self.m_classes_entry6.configure(placeholder_text="Clase")
-            self.m_section_entry6.configure(placeholder_text="Sección")
             self.m_register_menu6.configure(values=["Registra", "Baja"])
             self.m_register_menu6.set("Escoge")
             self.host_tooltip.configure(message="Ingrese el nombre del servidor\n de la universidad")
@@ -2740,6 +2738,12 @@ class TeraTermUI(customtkinter.CTk):
                                   "IMPORTANT: DO NOT USE WHILE HAVING ANOTHER INSTANCE OF THE APPLICATION OPENED.")
             self.intro_box.configure(state="disabled")
             self.appearance_mode_optionemenu.configure(values=["Light", "Dark", "System"])
+            if self.appearance_mode_optionemenu.get() == "Oscuro":
+                self.appearance_mode_optionemenu.set("Dark")
+            elif self.appearance_mode_optionemenu.get() == "Claro":
+                self.appearance_mode_optionemenu.set("Light")
+            elif self.appearance_mode_optionemenu.get() == "Sistema":
+                self.appearance_mode_optionemenu.set("System")
             self.introduction.configure(text="UPRB Enrollment Process")
             self.host.configure(text="Host: ")
             self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(20, 20))
@@ -2759,8 +2763,8 @@ class TeraTermUI(customtkinter.CTk):
             self.e_classes.configure(text="Class: ")
             self.section.configure(text="Section: ")
             self.e_semester.configure(text="Semester: ")
-            self.register_menu.configure(values=["Register", "Drop"])
-            self.register_menu.set("Register")
+            self.register.configure(text="Register")
+            self.drop.configure(text="Drop")
             self.explanation5.configure(text="Search for Classes: ")
             self.s_classes.configure(text="Class: ")
             self.s_semester.configure(text="Semester: ")
@@ -2789,31 +2793,22 @@ class TeraTermUI(customtkinter.CTk):
             self.back3.configure(text="Back")
             self.multiple.configure(text="Multiple Classes")
             self.explanation7.configure(text="Enroll Multiple Classes at once:")
-            self.warning.configure(text="*You can only submit once!*")
+            self.m_class.configure(text="Class")
+            self.m_section.configure(text="Section")
+            self.m_semester.configure(text="Semester")
+            self.m_choice.configure(text="Register/Drop")
             self.back4.configure(text="Back")
             self.submit_multiple.configure(text="Submit")
-            self.m_classes_entry.configure(placeholder_text="Class")
-            self.m_section_entry.configure(placeholder_text="Section")
             self.m_register_menu.configure(values=["Register", "Drop"])
             self.m_register_menu.set("Choose")
-            self.m_classes_entry2.configure(placeholder_text="Class")
-            self.m_section_entry2.configure(placeholder_text="Section")
             self.m_register_menu2.configure(values=["Register", "Drop"])
             self.m_register_menu2.set("Choose")
-            self.m_classes_entry3.configure(placeholder_text="Class")
-            self.m_section_entry3.configure(placeholder_text="Section")
             self.m_register_menu3.configure(values=["Register", "Drop"])
             self.m_register_menu3.set("Choose")
-            self.m_classes_entry4.configure(placeholder_text="Class")
-            self.m_section_entry4.configure(placeholder_text="Section")
             self.m_register_menu4.configure(values=["Register", "Drop"])
             self.m_register_menu4.set("Choose")
-            self.m_classes_entry5.configure(placeholder_text="Class")
-            self.m_section_entry5.configure(placeholder_text="Section")
             self.m_register_menu5.configure(values=["Register", "Drop"])
             self.m_register_menu5.set("Choose")
-            self.m_classes_entry6.configure(placeholder_text="Class")
-            self.m_section_entry6.configure(placeholder_text="Section")
             self.m_register_menu6.configure(values=["Register", "Drop"])
             self.m_register_menu6.set("Choose")
             self.host_tooltip.configure(message="Enter the name of the server\n of the university")
@@ -3097,21 +3092,27 @@ class TeraTermUI(customtkinter.CTk):
 
     # function that changes the theme of the application
     def change_appearance_mode_event(self, new_appearance_mode: str):
+        if new_appearance_mode == "Oscuro":
+            new_appearance_mode = "Dark"
+        elif new_appearance_mode == "Claro":
+            new_appearance_mode = "Light"
+        elif new_appearance_mode == "Sistema":
+            new_appearance_mode = "System"
         customtkinter.set_appearance_mode(new_appearance_mode)
 
+    # Moves the scaling slider to the left
     def move_slider_left(self, event):
-        # decrease the value of slider by 1 or any desired step size
         value = self.scaling_optionemenu.get()
         value -= 5
-        self.scaling_optionemenu.set(value)  # Adjust this to your desired step size
+        self.scaling_optionemenu.set(value)
         self.change_scaling_event(value)
         self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
 
+    # Moves the scaling slider to the right
     def move_slider_right(self, event):
-        # increase the value of slider by 1 or any desired step size
         value = self.scaling_optionemenu.get()
         value += 5
-        self.scaling_optionemenu.set(value)  # Adjust this to your desired step size
+        self.scaling_optionemenu.set(value)
         self.change_scaling_event(value)
         self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
 
