@@ -3098,7 +3098,7 @@ class TeraTermUI(customtkinter.CTk):
         scaling_factor = self.tk.call("tk", "scaling")
         x_position = int((screen_width - width * scaling_factor) / 2)
         y_position = int((screen_height - height * scaling_factor) / 2)
-        window_geometry = f"{width}x{height}+{x_position + 175}+{y_position - 75}"
+        window_geometry = f"{width}x{height}+{x_position + 175}+{y_position - 40}"
         winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
         self.error = customtkinter.CTkToplevel(self)
         self.error.title("Error")
@@ -3127,7 +3127,7 @@ class TeraTermUI(customtkinter.CTk):
         scaling_factor = self.tk.call("tk", "scaling")
         x_position = int((screen_width - width * scaling_factor) / 2)
         y_position = int((screen_height - height * scaling_factor) / 2)
-        window_geometry = f"{width}x{height}+{x_position + 175}+{y_position - 75}"
+        window_geometry = f"{width}x{height}+{x_position + 175}+{y_position - 40}"
         winsound.PlaySound("sounds/success.wav", winsound.SND_ASYNC)
         self.success = customtkinter.CTkToplevel()
         self.success.geometry(window_geometry)
@@ -3170,7 +3170,7 @@ class TeraTermUI(customtkinter.CTk):
         scaling_factor = self.tk.call("tk", "scaling")
         x_position = int((screen_width - width * scaling_factor) / 2)
         y_position = int((screen_height - height * scaling_factor) / 2)
-        window_geometry = f"{width}x{height}+{x_position + 175}+{y_position - 75}"
+        window_geometry = f"{width}x{height}+{x_position + 175}+{y_position - 40}"
         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
         self.information = customtkinter.CTkToplevel()
         self.information.geometry(window_geometry)
