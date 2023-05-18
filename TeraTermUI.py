@@ -5,12 +5,13 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 5/13/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 5/18/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
 # Application sometimes feels sluggish/slow to use, could use some efficiency/performance improvements.
 # The grid of the UI interface and placement of widgets could use some work.
+# Option Menu of all tera terms screens requires more work
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term, like
 # when you search for classes it would be nice if they appear on this app
@@ -27,7 +28,10 @@ import pyautogui
 import requests
 import win32gui
 import pygetwindow as gw
+import math
+import secrets
 # from collections import deque
+# from memory_profiler import profile
 from customtkinter import ctktable
 from CTkToolTip import CTkToolTip
 from CTkMessagebox import CTkMessagebox
@@ -37,7 +41,10 @@ from google.oauth2 import service_account
 from googleapiclient.errors import HttpError
 from googleapiclient.discovery import build
 from filelock import FileLock, Timeout
-from datetime import datetime
+from datetime import datetime, timedelta
+from Cryptodome.Cipher import AES
+from Cryptodome.Util.Padding import pad, unpad
+import pytz
 import json
 import subprocess
 import pyzipper
@@ -50,7 +57,6 @@ from PIL import Image
 import sys
 import cv2
 import numpy as np
-import rsa
 import psutil
 import time
 import re
@@ -110,15 +116,14 @@ class TeraTermUI(customtkinter.CTk):
                                                  font=customtkinter.CTkFont(size=20, weight="bold"))
         self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
         self.sidebar_button_1 = customtkinter.CTkButton(self.sidebar_frame, text="     Status",
-                                                        image=customtkinter.CTkImage(light_image=
-                                                                                     Image.open('images/home.png'),
-                                                                                     size=(20, 20)),
+                                                        image=customtkinter.CTkImage(
+                                                            light_image=Image.open('images/home.png'), size=(20, 20)),
                                                         command=self.sidebar_button_event, anchor="w")
         self.sidebar_button_1.grid(row=1, column=0, padx=20, pady=10)
         self.sidebar_button_2 = customtkinter.CTkButton(self.sidebar_frame, text="       Help",
-                                                        image=customtkinter.CTkImage(light_image=
-                                                                                     Image.open('images/setting.png'),
-                                                                                     size=(18, 18)),
+                                                        image=customtkinter.CTkImage(
+                                                            light_image=Image.open('images/setting.png'),
+                                                            size=(18, 18)),
                                                         command=self.sidebar_button_event2, anchor="w")
         self.sidebar_button_2.grid(row=2, column=0, padx=20, pady=10)
         self.scaling_label = customtkinter.CTkLabel(self.sidebar_frame, text="Language, Appearance and \n\n "
@@ -372,6 +377,8 @@ class TeraTermUI(customtkinter.CTk):
         # Multiple Classes Enrollment
         self.multiple_frame = customtkinter.CTkFrame(self, corner_radius=10)
         self.m_button_frame = customtkinter.CTkFrame(self, corner_radius=10)
+        self.save_frame = customtkinter.CTkFrame(self, corner_radius=10)
+        self.auto_frame = customtkinter.CTkFrame(self, corner_radius=10)
         self.explanation7 = customtkinter.CTkLabel(master=self.multiple_frame,
                                                    text="Enroll Multiple Classes at once ",
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
@@ -409,6 +416,16 @@ class TeraTermUI(customtkinter.CTk):
         self.submit_multiple = customtkinter.CTkButton(master=self.m_button_frame, border_width=2,
                                                        text="Submit", text_color=("gray10", "#DCE4EE"),
                                                        command=self.submit_multiple_event_handler, height=40, width=70)
+        self.save_data = customtkinter.CTkCheckBox(master=self.save_frame, text="Save classes for later ",
+                                                   command=self.save_classes, onvalue="on", offvalue="off")
+        self.save_data_tooltip = CTkToolTip(self.save_data, message="Next time you log-in, the classes\n you saved will"
+                                                                    " already be there!", bg_color="#1E90FF")
+        self.auto_enroll = customtkinter.CTkSwitch(master=self.auto_frame, text="Auto-Enroll Classes ", onvalue="on",
+                                                   offvalue="off", command=self.auto_enroll_event_handler)
+        self.auto_enroll_tooltip = CTkToolTip(self.auto_enroll, message="Will Automatically enroll the classes\n"
+                                                                        " you selected at the exact time\n"
+                                                                        " the enrollment process becomes\n"
+                                                                        " available for you", bg_color="#1E90FF")
 
         # Extras
         self.m_num_class_2 = customtkinter.CTkLabel(master=self.multiple_frame, text="2.")
@@ -476,6 +493,8 @@ class TeraTermUI(customtkinter.CTk):
         self.default_semester = "C31"
         self.enrolled_classes_list = {}
         self.dropped_classes_list = {}
+        self.auto_enroll_bool = False
+        self.countdown_running = False
         self.check = False
         self.arrow = False
         self.status = None
@@ -508,13 +527,16 @@ class TeraTermUI(customtkinter.CTk):
         self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
         self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
         self.authenticate()
-        self.connection = sqlite3.connect(self.db_path)
+        self.connection = sqlite3.connect("database.db")
         self.cursor = self.connection.cursor()
         location = self.cursor.execute("SELECT location FROM user_data WHERE location IS NOT NULL").fetchall()
         host = self.cursor.execute("SELECT host FROM user_data WHERE host IS NOT NULL").fetchall()
         language = self.cursor.execute("SELECT language FROM user_data WHERE language IS NOT NULL").fetchall()
         appearance = self.cursor.execute("SELECT appearance FROM user_data WHERE appearance IS NOT NULL").fetchall()
         scaling = self.cursor.execute("SELECT scaling FROM user_data WHERE scaling IS NOT NULL").fetchall()
+        save = self.cursor.execute("SELECT class, section, semester, action FROM save_classes"
+                                   " WHERE class IS NOT NULL").fetchall()
+        saveCheck = self.cursor.execute('SELECT "check" FROM save_classes WHERE "check" IS NOT NULL').fetchall()
         welcome = self.cursor.execute("SELECT welcome FROM user_data WHERE welcome IS NOT NULL").fetchall()
         teraterm_config = self.cursor.execute("SELECT config FROM user_data WHERE config IS NOT NULL").fetchall()
         if host:
@@ -538,6 +560,61 @@ class TeraTermUI(customtkinter.CTk):
             if scaling[0][0] != 100:
                 self.scaling_optionemenu.set(float(scaling[0][0]))
                 self.change_scaling_event(float(scaling[0][0]))
+        if saveCheck:
+            if saveCheck[0][0] == "Yes":
+                self.save_data.select()
+        if save:
+            # Determine the number of rows
+            num_rows = len(save)
+            # Iterate over the selected rows
+            for index, row in enumerate(save, start=1):
+                # Retrieve the values from the row
+                class_value = row[0]
+                section_value = row[1]
+                semester_value = row[2]
+                register_value = row[3]
+                # Assign the values to the respective entry fields and register menus
+                entry_fields = [
+                    self.m_classes_entry,
+                    self.m_classes_entry2,
+                    self.m_classes_entry3,
+                    self.m_classes_entry4,
+                    self.m_classes_entry5,
+                    self.m_classes_entry6
+                ]
+                section_entries = [
+                    self.m_section_entry,
+                    self.m_section_entry2,
+                    self.m_section_entry3,
+                    self.m_section_entry4,
+                    self.m_section_entry5,
+                    self.m_section_entry6
+                ]
+                semester_entries = [
+                    self.m_semester_entry,
+                    self.m_semester_entry2,
+                    self.m_semester_entry3,
+                    self.m_semester_entry4,
+                    self.m_semester_entry5,
+                    self.m_semester_entry6
+                ]
+                register_menus = [
+                    self.m_register_menu,
+                    self.m_register_menu2,
+                    self.m_register_menu3,
+                    self.m_register_menu4,
+                    self.m_register_menu5,
+                    self.m_register_menu6
+                ]
+                # Assign values to entry fields and register menus based on the index
+                if index <= num_rows:
+                    entry_fields[index - 1].insert(0, class_value)
+                    section_entries[index - 1].insert(0, section_value)
+                    if index == 1:
+                        semester_entries[index - 1].set(semester_value)
+                    register_menus[index - 1].set(register_value)
+                else:
+                    break
         if len(welcome) == 0:
             self.log_in.configure(state="disabled")
             self.sidebar_button_2.configure(state="disabled")
@@ -561,6 +638,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.cursor.execute("INSERT INTO user_data (welcome) VALUES (?)", ("Checked",))
                 elif len(welcome) == 1:
                     self.cursor.execute("UPDATE user_data SET welcome=?", ("Checked",))
+
             self.after(5000, show_message_box)
         else:
             # enables keyboard input events
@@ -595,6 +673,7 @@ class TeraTermUI(customtkinter.CTk):
             except requests.exceptions.RequestException as e:
                 print(f"Error occurred while fetching latest release information: {e}")
                 print("Please check your internet connection and try again.")
+
         self.after(100, update_app)
 
     # function that when the user tries to close the application a confirm dialog opens up
@@ -647,121 +726,143 @@ class TeraTermUI(customtkinter.CTk):
         self.hide_sidebar_windows()
         lang = self.language_menu.get()
         # self.error_occurred = False
+        aes_key = secrets.token_bytes(32)  # 256-bit key
+
+        def secure_delete(variable):
+            if isinstance(variable, bytes):
+                variable_len = len(variable)
+                variable = secrets.token_bytes(variable_len)
+            elif isinstance(variable, int):
+                variable = secrets.randbits(variable.bit_length())
+            del variable
+
+        def aes_encrypt(plaintext):
+            cipher = AES.new(aes_key, AES.MODE_ECB)
+            ciphertext = cipher.encrypt(pad(plaintext.encode(), AES.block_size))
+            return ciphertext
+
+        def aes_decrypt(ciphertext):
+            cipher = AES.new(aes_key, AES.MODE_ECB)
+            plaintext = unpad(cipher.decrypt(ciphertext), AES.block_size).decode()
+            return plaintext
+
         if self.test_connection(lang) and self.check_server():
             if self.checkIfProcessRunning("ttermpro"):
                 # if not self.screenshot_skip:
-                    # screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                    # screenshot_thread.start()
-                    # screenshot_thread.join()
-                    # text = self.capture_screenshot()
-                    # if "ACCESO AL SISTEMA" not in text and "Press return" in text:
-                        # send_keys("{ENTER 3}")
-                        # self.screenshot_skip = True
-                    # if "ACCESO AL SISTEMA" not in text and "Press return" not in text:
-                        # self.error_occurred = True
-                        # if lang == "English":
-                            # self.show_error_message(300, 215, "Unknown Error! Please try again")
-                        # if lang == "Español":
-                            # self.show_error_message(310, 220, "¡Error Desconocido! Por favor \n"
-                                                              # "intente de nuevo")
+                # screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                # screenshot_thread.start()
+                # screenshot_thread.join()
+                # text = self.capture_screenshot()
+                # if "ACCESO AL SISTEMA" not in text and "Press return" in text:
+                # send_keys("{ENTER 3}")
+                # self.screenshot_skip = True
+                # if "ACCESO AL SISTEMA" not in text and "Press return" not in text:
+                # self.error_occurred = True
+                # if lang == "English":
+                # self.show_error_message(300, 215, "Unknown Error! Please try again")
+                # if lang == "Español":
+                # self.show_error_message(310, 220, "¡Error Desconocido! Por favor \n"
+                # "intente de nuevo")
                 # if not self.error_occurred:
-                    try:
-                        ssn = int(self.ssn_entry.get().replace(" ", ""))
-                        code = int(self.code_entry.get().replace(" ", ""))
-                        if re.match("^(?!666|000|9\\d{2})\\d{3}(?!00)\\d{2}(?!0{4})\\d{4}$", str(ssn)) \
-                                and len(str(code)) == 4:
-                            publicKey1, privateKey1 = rsa.newkeys(1024)
-                            publicKey2, privateKey2 = rsa.newkeys(1024)
-                            ssnEnc = rsa.encrypt(str(ssn).encode(), publicKey1)
-                            codeEnc = rsa.encrypt(str(code).encode(), publicKey2)
-                            ctypes.windll.user32.BlockInput(True)
-                            term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
-                            term_window.restore()
-                            uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                            uprb_window.wait('visible', timeout=100)
-                            self.uprb.UprbayTeraTermVt.type_keys(rsa.decrypt(ssnEnc, privateKey1).decode())
-                            self.uprb.UprbayTeraTermVt.type_keys(rsa.decrypt(codeEnc, privateKey2).decode())
-                            send_keys("{ENTER}")
-                            screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                            screenshot_thread.start()
-                            screenshot_thread.join()
-                            text = self.capture_screenshot()
-                            self.set_focus_to_tkinter()
-                            if "ID NOT ON FILE" in text or "PASS" in text:
-                                self.bind("<Return>", lambda event: self.tuition_event_handler())
-                                if "PASS" in text:
-                                    send_keys("{TAB 2}")
-                                if lang == "English":
-                                    self.show_error_message(300, 215, "Error! Invalid SSN or Code")
-                                if lang == "Español":
-                                    self.show_error_message(300, 215, "¡Error! SSN o Código Incorrecto")
-                                # self.screenshot_skip = True
-                            elif "ID NOT ON FILE" not in text or "PASS" not in text:
-                                self.reset_activity_timer(None)
-                                self.start_check_idle_thread()
-                                self.tabview.grid(row=0, column=1, padx=(20, 20), pady=(20, 0), sticky="n")
-                                self.tabview.tab(self.enroll_tab).grid_columnconfigure(1, weight=2)
-                                self.tabview.tab(self.search_tab).grid_columnconfigure(1, weight=2)
-                                self.tabview.tab(self.other_tab).grid_columnconfigure(1, weight=2)
-                                self.t_buttons_frame.grid(row=2, column=1, padx=(20, 20), pady=(20, 0), sticky="n")
-                                self.t_buttons_frame.grid_columnconfigure(2, weight=1)
-                                self.explanation4.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-                                self.e_classes.grid(row=1, column=1, padx=(44, 0), pady=(0, 0), sticky="w")
-                                self.e_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-                                if lang == "English":
-                                    self.section.grid(row=2, column=1, padx=(33, 0), pady=(20, 0), sticky="w")
-                                if lang == "Español":
-                                    self.section.grid(row=2, column=1, padx=(30, 0), pady=(20, 0), sticky="w")
-                                self.section_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
-                                self.e_semester.grid(row=3, column=1, padx=(21, 0), pady=(20, 0), sticky="w")
-                                self.e_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
-                                self.register.grid(row=4, column=1, padx=(75, 0), pady=(20, 0), sticky="w")
-                                self.drop.grid(row=4, column=1, padx=(0, 35), pady=(20, 0), sticky="e")
-                                self.submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
-                                self.explanation5.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-                                self.s_classes.grid(row=1, column=1, padx=(44, 0), pady=(0, 0), sticky="w")
-                                self.s_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-                                self.s_semester.grid(row=2, column=1, padx=(21, 0), pady=(20, 0), sticky="w")
-                                self.s_semester_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
-                                self.show_all.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
-                                self.search.grid(row=4, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
-                                self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-                                self.menu_intro.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-                                if lang == "English":
-                                    self.menu.grid(row=2, column=1, padx=(47, 0), pady=(10, 0), sticky="w")
-                                if lang == "Español":
-                                    self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
-                                self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-                                self.menu_semester.grid(row=3, column=1, padx=(21, 0), pady=(20, 0), sticky="w")
-                                self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
-                                self.menu_submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
-                                self.back3.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
-                                self.show_classes.grid(row=4, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-                                self.multiple.grid(row=4, column=2, padx=(10, 0), pady=(0, 0), sticky="e")
-                                self.student_frame.grid_forget()
-                                self.s_buttons_frame.grid_forget()
-                                self.ssn_entry.delete(0, "end")
-                                self.code_entry.delete(0, "end")
-                                # self.screenshot_skip = False
-                                self.run_fix = True
-                                self.unbind("<Return>")
-                                del ssn, code, publicKey1, privateKey1, publicKey2, privateKey2, ssnEnc, codeEnc
-                                gc.collect()
-                                self.set_focus_to_tkinter()
-                        else:
+                try:
+                    ssn = int(self.ssn_entry.get().replace(" ", ""))
+                    code = int(self.code_entry.get().replace(" ", ""))
+                    ssn_enc = aes_encrypt(str(ssn))
+                    code_enc = aes_encrypt(str(code))
+                    if re.match("^(?!666|000|9\\d{2})\\d{3}(?!00)\\d{2}(?!0{4})\\d{4}$", str(ssn)) \
+                            and len(str(code)) == 4:
+                        secure_delete(ssn)
+                        secure_delete(code)
+                        ctypes.windll.user32.BlockInput(True)
+                        term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                        term_window.restore()
+                        uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
+                        uprb_window.wait('visible', timeout=100)
+                        self.uprb.UprbayTeraTermVt.type_keys(aes_decrypt(ssn_enc))
+                        self.uprb.UprbayTeraTermVt.type_keys(aes_decrypt(code_enc))
+                        send_keys("{ENTER}")
+                        screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                        screenshot_thread.start()
+                        screenshot_thread.join()
+                        text = self.capture_screenshot()
+                        self.set_focus_to_tkinter()
+                        if "ID NOT ON FILE" in text or "PASS" in text:
                             self.bind("<Return>", lambda event: self.tuition_event_handler())
+                            if "PASS" in text:
+                                send_keys("{TAB 2}")
                             if lang == "English":
                                 self.show_error_message(300, 215, "Error! Invalid SSN or Code")
-                            elif lang == "Español":
+                            if lang == "Español":
                                 self.show_error_message(300, 215, "¡Error! SSN o Código Incorrecto")
                             # self.screenshot_skip = True
-                    except ValueError:
+                        elif "ID NOT ON FILE" not in text or "PASS" not in text:
+                            self.reset_activity_timer(None)
+                            self.start_check_idle_thread()
+                            self.tabview.grid(row=0, column=1, padx=(20, 20), pady=(20, 0), sticky="n")
+                            self.tabview.tab(self.enroll_tab).grid_columnconfigure(1, weight=2)
+                            self.tabview.tab(self.search_tab).grid_columnconfigure(1, weight=2)
+                            self.tabview.tab(self.other_tab).grid_columnconfigure(1, weight=2)
+                            self.t_buttons_frame.grid(row=2, column=1, padx=(20, 20), pady=(20, 0), sticky="n")
+                            self.t_buttons_frame.grid_columnconfigure(2, weight=1)
+                            self.explanation4.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
+                            self.e_classes.grid(row=1, column=1, padx=(44, 0), pady=(0, 0), sticky="w")
+                            self.e_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
+                            if lang == "English":
+                                self.section.grid(row=2, column=1, padx=(33, 0), pady=(20, 0), sticky="w")
+                            if lang == "Español":
+                                self.section.grid(row=2, column=1, padx=(30, 0), pady=(20, 0), sticky="w")
+                            self.section_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
+                            self.e_semester.grid(row=3, column=1, padx=(21, 0), pady=(20, 0), sticky="w")
+                            self.e_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
+                            self.register.grid(row=4, column=1, padx=(75, 0), pady=(20, 0), sticky="w")
+                            self.drop.grid(row=4, column=1, padx=(0, 35), pady=(20, 0), sticky="e")
+                            self.submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
+                            self.explanation5.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
+                            self.s_classes.grid(row=1, column=1, padx=(44, 0), pady=(0, 0), sticky="w")
+                            self.s_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
+                            self.s_semester.grid(row=2, column=1, padx=(21, 0), pady=(20, 0), sticky="w")
+                            self.s_semester_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
+                            self.show_all.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
+                            self.search.grid(row=4, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
+                            self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
+                            self.menu_intro.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
+                            if lang == "English":
+                                self.menu.grid(row=2, column=1, padx=(47, 0), pady=(10, 0), sticky="w")
+                            if lang == "Español":
+                                self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
+                            self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+                            self.menu_semester.grid(row=3, column=1, padx=(21, 0), pady=(20, 0), sticky="w")
+                            self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
+                            self.menu_submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
+                            self.back3.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
+                            self.show_classes.grid(row=4, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
+                            self.multiple.grid(row=4, column=2, padx=(10, 0), pady=(0, 0), sticky="e")
+                            self.student_frame.grid_forget()
+                            self.s_buttons_frame.grid_forget()
+                            self.ssn_entry.delete(0, "end")
+                            self.code_entry.delete(0, "end")
+                            # self.screenshot_skip = False
+                            self.run_fix = True
+                            self.unbind("<Return>")
+                            secure_delete(ssn_enc)
+                            secure_delete(code_enc)
+                            del ssn, code
+                            gc.collect()
+                            self.set_focus_to_tkinter()
+                    else:
                         self.bind("<Return>", lambda event: self.tuition_event_handler())
                         if lang == "English":
                             self.show_error_message(300, 215, "Error! Invalid SSN or Code")
                         elif lang == "Español":
                             self.show_error_message(300, 215, "¡Error! SSN o Código Incorrecto")
                         # self.screenshot_skip = True
+                except ValueError:
+                    self.bind("<Return>", lambda event: self.tuition_event_handler())
+                    if lang == "English":
+                        self.show_error_message(300, 215, "Error! Invalid SSN or Code")
+                    elif lang == "Español":
+                        self.show_error_message(300, 215, "¡Error! SSN o Código Incorrecto")
+                    # self.screenshot_skip = True
             else:
                 self.bind("<Return>", lambda event: self.tuition_event_handler())
                 if lang == "English":
@@ -1214,7 +1315,7 @@ class TeraTermUI(customtkinter.CTk):
     def remove_event(self):
         self.focus_set()
         self.m_add.configure(state="normal")
-        if self.a_counter < 1:
+        if self.a_counter <= 1:
             self.m_remove.configure(state="disabled")
         elif self.a_counter > 1:
             self.m_remove.configure(state="normal")
@@ -1285,6 +1386,10 @@ class TeraTermUI(customtkinter.CTk):
         self.multiple_frame.grid_columnconfigure(2, weight=1)
         self.m_button_frame.grid(row=3, column=1, columnspan=4, rowspan=4, padx=(0, 0), pady=(0, 0))
         self.m_button_frame.grid_columnconfigure(2, weight=1)
+        self.save_frame.grid(row=3, column=2, padx=(0, 10), pady=(0, 0))
+        self.save_frame.grid_columnconfigure(2, weight=1)
+        self.auto_frame.grid(row=3, column=1, padx=(0, 335), pady=(0, 0))
+        self.save_frame.grid_columnconfigure(2, weight=1)
         self.explanation7.grid(row=0, column=1, padx=(0, 0), pady=(0, 20))
         self.m_class.grid(row=0, column=1, padx=(0, 500), pady=(32, 0))
         self.m_section.grid(row=0, column=1, padx=(0, 165), pady=(32, 0))
@@ -1299,6 +1404,8 @@ class TeraTermUI(customtkinter.CTk):
         self.back4.grid(row=3, column=1, padx=(0, 20), pady=(0, 0))
         self.submit_multiple.grid(row=3, column=2, padx=(0, 0), pady=(0, 0))
         self.m_remove.grid(row=3, column=3, padx=(20, 0), pady=(0, 0))
+        self.save_data.grid(row=0, column=0, padx=(0, 0), pady=(0, 0))
+        self.auto_enroll.grid(row=0, column=0, padx=(0, 0), pady=(0, 0))
         self.go_next_1VE.grid_forget()
         self.go_next_1GP.grid_forget()
         self.go_next_683.grid_forget()
@@ -1313,29 +1420,31 @@ class TeraTermUI(customtkinter.CTk):
     def submit_multiple_event_handler(self):
         self.focus_set()
         lang = self.language_menu.get()
-
-        if lang == "English":
-            msg = CTkMessagebox(master=self, title="Submit",
-                                message="Are you sure you are ready submit the data?"
-                                        " \n\nWARNING: Make sure the information is correct", icon="images/submit.png",
-                                option_1="Cancel", option_2="No", option_3="Yes",
-                                icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                                hover_color=("darkred", "darkblue", "darkblue"))
-        elif lang == "Español":
-            msg = CTkMessagebox(master=self, title="Someter",
-                                message="¿Estás preparado para someter la data?"
-                                        " \n\nWARNING: Asegúrese de que la información está correcta",
-                                icon="images/submit.png",
-                                option_1="Cancelar", option_2="No", option_3="Sí",
-                                icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                                hover_color=("darkred", "darkblue", "darkblue"))
-        response = msg.get()
-        if response == "Yes" or response == "Sí":
-            task_done = threading.Event()
-            loading_screen = self.show_loading_screen()
-            self.update_loading_screen(loading_screen, task_done)
-            event_thread = threading.Thread(target=self.submit_multiple_event, args=(task_done,))
-            event_thread.start()
+        if not self.auto_enroll_bool:
+            if lang == "English":
+                msg = CTkMessagebox(master=self, title="Submit",
+                                    message="Are you sure you are ready submit the data?"
+                                            " \n\nWARNING: Make sure the information is correct",
+                                    icon="images/submit.png",
+                                    option_1="Cancel", option_2="No", option_3="Yes",
+                                    icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                    hover_color=("darkred", "darkblue", "darkblue"))
+            elif lang == "Español":
+                msg = CTkMessagebox(master=self, title="Someter",
+                                    message="¿Estás preparado para someter la data?"
+                                            " \n\nWARNING: Asegúrese de que la información está correcta",
+                                    icon="images/submit.png",
+                                    option_1="Cancelar", option_2="No", option_3="Sí",
+                                    icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                    hover_color=("darkred", "darkblue", "darkblue"))
+            response = msg.get()
+            if response != "Yes" and response != "Sí":
+                return
+        task_done = threading.Event()
+        loading_screen = self.show_loading_screen()
+        self.update_loading_screen(loading_screen, task_done)
+        event_thread = threading.Thread(target=self.submit_multiple_event, args=(task_done,))
+        event_thread.start()
 
     # function that enrolls multiple classes with one click
     def submit_multiple_event(self, task_done):
@@ -1366,443 +1475,292 @@ class TeraTermUI(customtkinter.CTk):
         classes6 = self.m_classes_entry6.get().upper().replace(" ", "")
         section6 = self.m_section_entry6.get().upper().replace(" ", "")
         choice6 = self.m_register_menu6.get()
-        if self.test_connection(lang) and self.check_server():
+        if self.test_connection(lang) and self.check_server() and self.check_format():
             if self.checkIfProcessRunning("ttermpro"):
-                if counter == 0:
-                    self.check = True
-                if counter == 1 and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes2, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{2}1$", section2, flags=re.IGNORECASE) \
-                        and (choice2 != "Choose" and choice2 != "Escoge") \
-                        and ((choice2 == "Register" or choice2 == "Registra") and classes2
-                             not in self.enrolled_classes_list.values() and section2
-                             not in self.enrolled_classes_list) \
-                        or ((choice2 == "Drop" or choice2 == "Baja") and classes2
-                            not in self.dropped_classes_list.values() and section2
-                            not in self.dropped_classes_list):
-                    self.check = True
-                elif counter == 2 and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes3, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{2}1$", section3, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes2, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{2}1$", section2, flags=re.IGNORECASE) \
-                        and (choice3 != "Choose" and choice3 != "Escoge"
-                             and choice2 != "Choose" and choice2 != "Escoge") \
-                        and ((choice3 == "Register" or choice3 == "Registra") and classes3
-                             not in self.enrolled_classes_list.values() and section3
-                             not in self.enrolled_classes_list) \
-                        or ((choice3 == "Drop" or choice3 == "Baja") and classes3
-                            not in self.dropped_classes_list.values() and section3
-                            not in self.dropped_classes_list) \
-                        and ((choice2 == "Register" or choice2 == "Registra") and classes2
-                             not in self.enrolled_classes_list.values() and section2
-                             not in self.enrolled_classes_list) \
-                        or ((choice2 == "Drop" or choice2 == "Baja") and classes2
-                            not in self.dropped_classes_list and section2
-                            not in self.dropped_classes_list):
-                    self.check = True
-                elif counter == 3 and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes4, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{2}1$", section4, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes3, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{2}1$", section3, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes2, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{2}1$", section2, flags=re.IGNORECASE) \
-                        and (choice4 != "Choose" and choice4 != "Escoge"
-                             and choice3 != "Choose" and choice3 != "Escoge"
-                             and choice2 != "Choose" and choice2 != "Escoge") \
-                        and ((choice4 == "Register" or choice4 == "Registra") and classes4 not in
-                             self.enrolled_classes_list.values() and section4
-                             not in self.enrolled_classes_list) \
-                        or ((choice4 == "Drop" or choice4 == "Baja") and classes4 not in
-                            self.dropped_classes_list.values() and section4
-                            not in self.dropped_classes_list) \
-                        and ((choice3 == "Register" or choice3 == "Registra") and classes3 not in
-                             self.enrolled_classes_list.values() and section3
-                             not in self.enrolled_classes_list) \
-                        or ((choice3 == "Drop" or choice3 == "Baja") and classes3 not in
-                            self.dropped_classes_list.values() and section3
-                            not in self.dropped_classes_list) \
-                        and ((choice2 == "Register" or choice2 == "Registra") and classes2 not in
-                             self.enrolled_classes_list.values() and section2
-                             not in self.enrolled_classes_list) \
-                        or ((choice2 == "Drop" or choice2 == "Baja") and classes2 not in
-                            self.dropped_classes_list.values() and section2
-                            not in self.dropped_classes_list):
-                    self.check = True
-                elif counter == 4 and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes5, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{2}1$", section5, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes4, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{2}1$", section4, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes3, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{2}1$", section3, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes2, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{2}1$", section2, flags=re.IGNORECASE) \
-                        and (choice5 != "Choose" and choice5 != "Escoge"
-                             and choice4 != "Choose" and choice4 != "Escoge"
-                             and choice3 != "Choose" and choice3 != "Escoge"
-                             and choice2 != "Choose" and choice2 != "Escoge") \
-                        and ((choice5 == "Register" or choice5 == "Registra") and classes5 not in
-                             self.enrolled_classes_list.values() and section5
-                             not in self.enrolled_classes_list) \
-                        or ((choice5 == "Drop" or choice5 == "Baja") and classes5 not in
-                            self.dropped_classes_list.values() and section5
-                            not in self.dropped_classes_list) \
-                        and ((choice4 == "Register" or choice4 == "Registra") and classes4 not in
-                             self.enrolled_classes_list.values() and section4
-                             not in self.enrolled_classes_list) \
-                        or ((choice4 == "Drop" or choice4 == "Baja") and classes4 not in
-                            self.dropped_classes_list.values() and section4
-                            not in self.dropped_classes_list) \
-                        and ((choice3 == "Register" or choice3 == "Registra") and classes3 not in
-                             self.enrolled_classes_list.values() and section3
-                             not in self.enrolled_classes_list) \
-                        or ((choice3 == "Drop" or choice3 == "Baja") and classes3 not in
-                            self.dropped_classes_list.values() and section3
-                            not in self.dropped_classes_list) \
-                        and ((choice2 == "Register" or choice2 == "Registra") and classes2 not in
-                             self.enrolled_classes_list.values() and section2
-                             not in self.enrolled_classes_list) \
-                        or ((choice2 == "Drop" or choice2 == "Baja") and classes2 not in
-                            self.dropped_classes_list.values() and section2
-                            not in self.dropped_classes_list):
-                    self.check = True
-                elif counter == 5 and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes6, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{2}1$", section6, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes5, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{2}1$", section5, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes4, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{2}1$", section4, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes3, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{2}1$", section3, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes2, flags=re.IGNORECASE) \
-                        and re.fullmatch("^[A-Z]{2}1$", section2, flags=re.IGNORECASE) \
-                        and (choice6 != "Choose" and choice6 != "Escoge"
-                             and choice5 != "Choose" and choice5 != "Escoge"
-                             and choice4 != "Choose" and choice4 != "Escoge"
-                             and choice3 != "Choose" and choice3 != "Escoge"
-                             and choice2 != "Choose" and choice2 != "Escoge") \
-                        and ((choice6 == "Register" or choice6 == "Registra") and classes6 not in
-                             self.enrolled_classes_list.values() and section6
-                             not in self.enrolled_classes_list) \
-                        or ((choice6 == "Drop" or choice6 == "Baja") and classes6 not in
-                            self.dropped_classes_list.values() and section6
-                            not in self.dropped_classes_list) \
-                        and ((choice5 == "Register" or choice5 == "Registra") and classes5 not in
-                             self.enrolled_classes_list.values() and section5
-                             not in self.enrolled_classes_list) \
-                        or ((choice5 == "Drop" or choice5 == "Baja") and classes5 not in
-                            self.dropped_classes_list.values() and section5
-                            not in self.dropped_classes_list) \
-                        and ((choice4 == "Register" or choice4 == "Registra") and classes4 not in
-                             self.enrolled_classes_list.values() and section4
-                             not in self.enrolled_classes_list) \
-                        or ((choice4 == "Drop" or choice4 == "Baja") and classes4 not in
-                            self.dropped_classes_list.values() and section4
-                            not in self.dropped_classes_list) \
-                        and ((choice3 == "Register" or choice3 == "Registra") and classes3 not in
-                             self.enrolled_classes_list.values() and section3
-                             not in self.enrolled_classes_list) \
-                        or ((choice3 == "Drop" or choice3 == "Baja") and classes3 not in
-                            self.dropped_classes_list.values() and section3
-                            not in self.dropped_classes_list) \
-                        and ((choice2 == "Register" or choice2 == "Registra") and classes2 not in
-                             self.enrolled_classes_list.values() and section2
-                             not in self.enrolled_classes_list) \
-                        or ((choice2 == "Drop" or choice2 == "Baja") and classes2 not in
-                            self.dropped_classes_list.values() and section2
-                            not in self.dropped_classes_list):
-                    self.check = True
-                if self.check is True and (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE)
-                                           and re.fullmatch("^[A-Z]{2}1$", section, flags=re.IGNORECASE)
-                                           and re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE)
-                                           and (choice != "Choose" and choice != "Escoge")
-                                           and ((choice == "Register" or choice == "Registra") and classes
-                                                not in self.enrolled_classes_list.values() and section
-                                                not in self.enrolled_classes_list)
-                                           or ((choice == "Drop" or choice == "Baja") and classes
-                                               not in self.dropped_classes_list.values() and section
-                                               not in self.dropped_classes_list)
-                                           and (semester == "C23" or semester == "C31" or semester == "C41"
-                                                or semester == "C32" or semester == "C33")):
-                    if self.e_counter + self.m_counter + counter + 1 <= 15:
-                        ctypes.windll.user32.BlockInput(True)
-                        term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
-                        term_window.restore()
-                        uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                        uprb_window.wait('visible', timeout=100)
-                        self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                        send_keys("{ENTER}")
-                        self.uprb.UprbayTeraTermVt.type_keys("1S4")
-                        self.uprb.UprbayTeraTermVt.type_keys(semester)
-                        send_keys("{ENTER}")
-                        screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                        screenshot_thread.start()
-                        screenshot_thread.join()
-                        text_output = self.capture_screenshot()
-                        enrolled_classes = "ENROLLED"
-                        count_enroll = text_output.count(enrolled_classes)
-                        if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output \
-                                and "REGISTRATION DATA " in text_output and count_enroll != 15:
-                            self.e_counter = 0
-                            self.m_counter = 0
-                            for i in range(count_enroll, 0, -1):
-                                self.e_counter += 1
+                if self.e_counter + self.m_counter + counter + 1 <= 15:
+                    ctypes.windll.user32.BlockInput(True)
+                    term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                    term_window.restore()
+                    uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
+                    uprb_window.wait('visible', timeout=100)
+                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                    send_keys("{ENTER}")
+                    self.uprb.UprbayTeraTermVt.type_keys("1S4")
+                    self.uprb.UprbayTeraTermVt.type_keys(semester)
+                    send_keys("{ENTER}")
+                    screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                    screenshot_thread.start()
+                    screenshot_thread.join()
+                    text_output = self.capture_screenshot()
+                    enrolled_classes = "ENROLLED"
+                    count_enroll = text_output.count(enrolled_classes)
+                    if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output \
+                            and "REGISTRATION DATA " in text_output and count_enroll != 15:
+                        self.e_counter = 0
+                        self.m_counter = 0
+                        for i in range(count_enroll, 0, -1):
+                            self.e_counter += 1
+                        send_keys("{TAB 2}")
+                        for i in range(count_enroll, 0, -1):
                             send_keys("{TAB 2}")
-                            for i in range(count_enroll, 0, -1):
-                                send_keys("{TAB 2}")
-                            if choice == "Register" or choice == "Registra":
-                                self.uprb.UprbayTeraTermVt.type_keys("R")
-                            elif choice == "Drop" or choice == "Baja":
-                                self.uprb.UprbayTeraTermVt.type_keys("D")
-                            self.uprb.UprbayTeraTermVt.type_keys(classes)
-                            self.uprb.UprbayTeraTermVt.type_keys(section)
+                        if choice == "Register" or choice == "Registra":
+                            self.uprb.UprbayTeraTermVt.type_keys("R")
+                        elif choice == "Drop" or choice == "Baja":
+                            self.uprb.UprbayTeraTermVt.type_keys("D")
+                        self.uprb.UprbayTeraTermVt.type_keys(classes)
+                        self.uprb.UprbayTeraTermVt.type_keys(section)
+                        self.m_counter += 1
+                        if counter == 0:
+                            send_keys("{ENTER}")
+                        elif counter >= 1:
+                            send_keys("{TAB}")
+                        if counter >= 1 and choice2 == "Register" or choice2 == "Registra":
+                            self.uprb.UprbayTeraTermVt.type_keys("R")
+                            self.uprb.UprbayTeraTermVt.type_keys(classes2)
+                            self.uprb.UprbayTeraTermVt.type_keys(section2)
+                            if counter == 1:
+                                send_keys("{ENTER}")
+                            if counter >= 1:
+                                send_keys("{TAB}")
                             self.m_counter += 1
-                            if counter == 0:
+                        elif counter >= 1 and choice2 == "Drop" or choice2 == "Baja":
+                            self.uprb.UprbayTeraTermVt.type_keys("D")
+                            self.uprb.UprbayTeraTermVt.type_keys(classes2)
+                            self.uprb.UprbayTeraTermVt.type_keys(section2)
+                            if counter == 1:
                                 send_keys("{ENTER}")
                             elif counter >= 1:
                                 send_keys("{TAB}")
-                            if counter >= 1 and choice2 == "Register" or choice2 == "Registra":
-                                self.uprb.UprbayTeraTermVt.type_keys("R")
-                                self.uprb.UprbayTeraTermVt.type_keys(classes2)
-                                self.uprb.UprbayTeraTermVt.type_keys(section2)
-                                if counter == 1:
-                                    send_keys("{ENTER}")
-                                if counter >= 1:
-                                    send_keys("{TAB}")
-                                self.m_counter += 1
-                            elif counter >= 1 and choice2 == "Drop" or choice2 == "Baja":
-                                self.uprb.UprbayTeraTermVt.type_keys("D")
-                                self.uprb.UprbayTeraTermVt.type_keys(classes2)
-                                self.uprb.UprbayTeraTermVt.type_keys(section2)
-                                if counter == 1:
-                                    send_keys("{ENTER}")
-                                elif counter >= 1:
-                                    send_keys("{TAB}")
-                                self.m_counter += 1
-                            if counter >= 2 and choice3 == "Register" or choice3 == "Registra":
-                                self.uprb.UprbayTeraTermVt.type_keys("R")
-                                self.uprb.UprbayTeraTermVt.type_keys(classes3)
-                                self.uprb.UprbayTeraTermVt.type_keys(section3)
-                                if counter == 2:
-                                    send_keys("{ENTER}")
-                                elif counter >= 2:
-                                    send_keys("{TAB}")
-                                self.m_counter += 1
-                            elif counter >= 2 and choice3 == "Drop" or choice3 == "Baja":
-                                self.uprb.UprbayTeraTermVt.type_keys("D")
-                                self.uprb.UprbayTeraTermVt.type_keys(classes3)
-                                self.uprb.UprbayTeraTermVt.type_keys(section3)
-                                if counter == 2:
-                                    send_keys("{ENTER}")
-                                elif counter >= 2:
-                                    send_keys("{TAB}")
-                                self.m_counter += 1
-                            if counter >= 3 and choice4 == "Register" or choice4 == "Registra":
-                                self.uprb.UprbayTeraTermVt.type_keys("R")
-                                self.uprb.UprbayTeraTermVt.type_keys(classes4)
-                                self.uprb.UprbayTeraTermVt.type_keys(section4)
-                                if counter == 3:
-                                    send_keys("{ENTER}")
-                                elif counter >= 3:
-                                    send_keys("{TAB}")
-                                self.m_counter += 1
-                            elif counter >= 3 and choice4 == "Drop" or choice4 == "Baja":
-                                self.uprb.UprbayTeraTermVt.type_keys("D")
-                                self.uprb.UprbayTeraTermVt.type_keys(classes4)
-                                self.uprb.UprbayTeraTermVt.type_keys(section4)
-                                if counter == 3:
-                                    send_keys("{ENTER}")
-                                elif counter >= 3:
-                                    send_keys("{TAB}")
-                                self.m_counter += 1
-                            if counter >= 4 and choice5 == "Register" or choice5 == "Registra":
-                                self.uprb.UprbayTeraTermVt.type_keys("R")
-                                self.uprb.UprbayTeraTermVt.type_keys(classes5)
-                                self.uprb.UprbayTeraTermVt.type_keys(section5)
-                                if counter == 4:
-                                    send_keys("{ENTER}")
-                                elif counter >= 4:
-                                    send_keys("{TAB}")
-                                self.m_counter += 1
-                            elif counter >= 4 and choice5 == "Drop" or choice5 == "Baja":
-                                self.uprb.UprbayTeraTermVt.type_keys("D")
-                                self.uprb.UprbayTeraTermVt.type_keys(classes5)
-                                self.uprb.UprbayTeraTermVt.type_keys(section5)
-                                if counter == 4:
-                                    send_keys("{ENTER}")
-                                elif counter >= 4:
-                                    send_keys("{TAB}")
-                                self.m_counter += 1
-                            if counter == 5 and choice6 == "Register" or choice6 == "Registra":
-                                self.uprb.UprbayTeraTermVt.type_keys("R")
-                                self.uprb.UprbayTeraTermVt.type_keys(classes6)
-                                self.uprb.UprbayTeraTermVt.type_keys(section6)
+                            self.m_counter += 1
+                        if counter >= 2 and choice3 == "Register" or choice3 == "Registra":
+                            self.uprb.UprbayTeraTermVt.type_keys("R")
+                            self.uprb.UprbayTeraTermVt.type_keys(classes3)
+                            self.uprb.UprbayTeraTermVt.type_keys(section3)
+                            if counter == 2:
                                 send_keys("{ENTER}")
+                            elif counter >= 2:
+                                send_keys("{TAB}")
                                 self.m_counter += 1
-                            elif counter == 5 and choice6 == "Drop" or choice6 == "Baja":
-                                self.uprb.UprbayTeraTermVt.type_keys("D")
-                                self.uprb.UprbayTeraTermVt.type_keys(classes6)
-                                self.uprb.UprbayTeraTermVt.type_keys(section6)
+                        elif counter >= 2 and choice3 == "Drop" or choice3 == "Baja":
+                            self.uprb.UprbayTeraTermVt.type_keys("D")
+                            self.uprb.UprbayTeraTermVt.type_keys(classes3)
+                            self.uprb.UprbayTeraTermVt.type_keys(section3)
+                            if counter == 2:
                                 send_keys("{ENTER}")
+                            elif counter >= 2:
+                                send_keys("{TAB}")
                                 self.m_counter += 1
-                            screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                            screenshot_thread.start()
-                            screenshot_thread.join()
-                            text = self.capture_screenshot()
-                            dropped_classes = "DROPPED"
-                            count_dropped = text.count(dropped_classes)
-                            self.reset_activity_timer(None)
-                            self.go_next_1VE.configure(state="disabled")
-                            self.go_next_1GP.configure(state="disabled")
-                            self.go_next_409.configure(state="disabled")
-                            self.go_next_683.configure(state="disabled")
-                            self.go_next_4CM.configure(state="disabled")
-                            if "CONFIRMED" in text or "DROPPED" in text:
-                                for i in range(count_dropped, 0, -1):
-                                    self.m_counter -= 1
-                                for i in range(count_dropped, 0, -1):
-                                    self.e_counter -= 1
-                                choices = [(choice, counter, section, classes),
-                                           (choice2, 1, section2, classes2),
-                                           (choice3, 2, section3, classes3),
-                                           (choice4, 3, section4, classes4),
-                                           (choice5, 4, section5, classes5),
-                                           (choice6, 5, section6, classes6)]
-                                for c, cnt, sec, cls in choices:
-                                    if cnt == choices.index((c, cnt, sec, cls)):
-                                        if sec:
-                                            if c == "Register":
-                                                if sec in self.dropped_classes_list:
-                                                    del self.dropped_classes_list[sec]
-                                                if sec not in self.enrolled_classes_list:
-                                                    self.enrolled_classes_list[sec] = cls
-                                            elif c == "Drop":
-                                                if sec in self.enrolled_classes_list:
-                                                    del self.enrolled_classes_list[sec]
-                                                if sec not in self.dropped_classes_list:
-                                                    self.dropped_classes_list[sec] = cls
-                                if "CONFIRMED" in text and "DROPPED" in text:
-                                    send_keys("{ENTER}")
-                                    if lang == "English":
-                                        self.show_success_message(350, 265, "Enrolled and dropped classes\n"
-                                                                            " successfully")
-                                    elif lang == "Español":
-                                        self.show_success_message(350, 265, "Clases matriculadas y \n"
-                                                                            " abandonadas exitósamente")
-                                elif "CONFIRMED" in text and "DROPPED" not in text:
-                                    send_keys("{ENTER}")
-                                    if lang == "English":
-                                        self.show_success_message(350, 265, "Enrolled classes successfully")
-                                    elif lang == "Español":
-                                        self.show_success_message(350, 265, "Clases matriculadas exitósamente")
-                                elif "DROPPED" in text and "CONFIRMED" not in text:
-                                    if lang == "English":
-                                        self.show_success_message(350, 265, "Dropped classes successfully")
-                                    elif lang == "Español":
-                                        self.show_success_message(350, 265, "Clases abandonadas exitósamente")
-                                if "INVALID COURSE ID" in text or "COURSE RESERVED" in text or "COURSE CLOSED" in text\
-                                        or "CRS ALRDY TAKEN/PASSED" in text or "Closed by Spec-Prog" in text or \
-                                        "ILLEGAL DROP-NOT ENR" in text or \
-                                        "NEW COURSE,NO FUNCTION" in text or "PRESENTLY ENROLLED" in text\
-                                        or "R/TC" in text:
-                                    for i in range(counter+1, 0, -1):
-                                        if self.enrolled_classes_list:
-                                            self.enrolled_classes_list.popitem()
-                                        if self.dropped_classes_list:
-                                            self.dropped_classes_list.popitem()
-                                if self.e_counter + self.m_counter == 15:
-                                    self.go_back_event2()
-                                    self.submit.configure(state="disabled")
-                                    self.multiple.configure(state="disabled")
-                                    time.sleep(3.2)
-                                    if lang == "English":
-                                        self.show_information_message(350, 265, "Reached Enrollment limit!")
-                                    elif lang == "Español":
-                                        self.show_information_message(350, 265, "Llegó al Límite de Matrícula")
-                                self.m_classes_entry.delete(0, "end")
-                                self.m_section_entry.delete(0, "end")
-                                self.m_classes_entry2.delete(0, "end")
-                                self.m_section_entry2.delete(0, "end")
-                                self.m_classes_entry3.delete(0, "end")
-                                self.m_section_entry3.delete(0, "end")
-                                self.m_classes_entry4.delete(0, "end")
-                                self.m_section_entry4.delete(0, "end")
-                                self.m_classes_entry5.delete(0, "end")
-                                self.m_section_entry5.delete(0, "end")
-                                self.m_classes_entry6.delete(0, "end")
-                                self.m_section_entry6.delete(0, "end")
-                                self.m_classes_entry.configure(placeholder_text="ESPA3101")
-                                self.m_section_entry.configure(placeholder_text="KM1")
-                                self.m_classes_entry2.configure(placeholder_text="INGL3101")
-                                self.m_section_entry2.configure(placeholder_text="LM1")
-                                self.m_classes_entry3.configure(placeholder_text="BIOL3011")
-                                self.m_section_entry3.configure(placeholder_text="KH1")
-                                self.m_classes_entry4.configure(placeholder_text="MATE3001")
-                                self.m_section_entry4.configure(placeholder_text="LH1")
-                                self.m_classes_entry5.configure(placeholder_text="CISO3121")
-                                self.m_section_entry5.configure(placeholder_text="KN1")
-                                self.m_classes_entry6.configure(placeholder_text="HUMA3101")
-                                self.m_section_entry6.configure(placeholder_text="LN1")
-                            else:
-                                self.reset_activity_timer(None)
-                                self.set_focus_to_tkinter()
+                        if counter >= 3 and choice4 == "Register" or choice4 == "Registra":
+                            self.uprb.UprbayTeraTermVt.type_keys("R")
+                            self.uprb.UprbayTeraTermVt.type_keys(classes4)
+                            self.uprb.UprbayTeraTermVt.type_keys(section4)
+                            if counter == 3:
+                                send_keys("{ENTER}")
+                            elif counter >= 3:
+                                send_keys("{TAB}")
+                            self.m_counter += 1
+                        elif counter >= 3 and choice4 == "Drop" or choice4 == "Baja":
+                            self.uprb.UprbayTeraTermVt.type_keys("D")
+                            self.uprb.UprbayTeraTermVt.type_keys(classes4)
+                            self.uprb.UprbayTeraTermVt.type_keys(section4)
+                            if counter == 3:
+                                send_keys("{ENTER}")
+                            elif counter >= 3:
+                                send_keys("{TAB}")
+                            self.m_counter += 1
+                        if counter >= 4 and choice5 == "Register" or choice5 == "Registra":
+                            self.uprb.UprbayTeraTermVt.type_keys("R")
+                            self.uprb.UprbayTeraTermVt.type_keys(classes5)
+                            self.uprb.UprbayTeraTermVt.type_keys(section5)
+                            if counter == 4:
+                                send_keys("{ENTER}")
+                            elif counter >= 4:
+                                send_keys("{TAB}")
+                                self.m_counter += 1
+                        elif counter >= 4 and choice5 == "Drop" or choice5 == "Baja":
+                            self.uprb.UprbayTeraTermVt.type_keys("D")
+                            self.uprb.UprbayTeraTermVt.type_keys(classes5)
+                            self.uprb.UprbayTeraTermVt.type_keys(section5)
+                            if counter == 4:
+                                send_keys("{ENTER}")
+                            elif counter >= 4:
+                                send_keys("{TAB}")
+                            self.m_counter += 1
+                        if counter == 5 and choice6 == "Register" or choice6 == "Registra":
+                            self.uprb.UprbayTeraTermVt.type_keys("R")
+                            self.uprb.UprbayTeraTermVt.type_keys(classes6)
+                            self.uprb.UprbayTeraTermVt.type_keys(section6)
+                            send_keys("{ENTER}")
+                            self.m_counter += 1
+                        elif counter == 5 and choice6 == "Drop" or choice6 == "Baja":
+                            self.uprb.UprbayTeraTermVt.type_keys("D")
+                            self.uprb.UprbayTeraTermVt.type_keys(classes6)
+                            self.uprb.UprbayTeraTermVt.type_keys(section6)
+                            send_keys("{ENTER}")
+                            self.m_counter += 1
+                        screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                        screenshot_thread.start()
+                        screenshot_thread.join()
+                        text = self.capture_screenshot()
+                        dropped_classes = "DROPPED"
+                        count_dropped = text.count(dropped_classes)
+                        self.reset_activity_timer(None)
+                        self.go_next_1VE.configure(state="disabled")
+                        self.go_next_1GP.configure(state="disabled")
+                        self.go_next_409.configure(state="disabled")
+                        self.go_next_683.configure(state="disabled")
+                        self.go_next_4CM.configure(state="disabled")
+                        if "CONFIRMED" in text or "DROPPED" in text:
+                            for i in range(count_dropped, 0, -1):
+                                self.m_counter -= 1
+                            for i in range(count_dropped, 0, -1):
+                                self.e_counter -= 1
+                            choices = [(choice, counter, section, classes),
+                                       (choice2, 1, section2, classes2),
+                                       (choice3, 2, section3, classes3),
+                                       (choice4, 3, section4, classes4),
+                                       (choice5, 4, section5, classes5),
+                                       (choice6, 5, section6, classes6)]
+                            for c, cnt, sec, cls in choices:
+                                if cnt == choices.index((c, cnt, sec, cls)):
+                                    if sec:
+                                        if c == "Register":
+                                            if sec in self.dropped_classes_list:
+                                                del self.dropped_classes_list[sec]
+                                            if sec not in self.enrolled_classes_list:
+                                                self.enrolled_classes_list[sec] = cls
+                                        elif c == "Drop":
+                                            if sec in self.enrolled_classes_list:
+                                                del self.enrolled_classes_list[sec]
+                                            if sec not in self.dropped_classes_list:
+                                                self.dropped_classes_list[sec] = cls
+                            if "CONFIRMED" in text and "DROPPED" in text:
+                                send_keys("{ENTER}")
                                 if lang == "English":
-                                    self.show_error_message(320, 235, "Error! Unable to enroll classes")
-                                if lang == "Español":
-                                    self.show_error_message(320, 235, "¡Error! No se pudo "
-                                                                      "matricular las clases")
-                                self.check = False
-                                self.m_counter = self.m_counter - counter - 1
-                                self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
-                        else:
-                            if "OUTDATED" in text_output or "INVALID TERM SELECTION" in text_output \
-                                    or "REGISTRATION DATA" not in text_output:
-                                self.uprb.UprbayTeraTermVt.type_keys(semester.replace(" ", ""))
-                                self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                send_keys("{ENTER}")
-                                send_keys("{TAB 2}")
-                                self.reset_activity_timer(None)
-                                self.set_focus_to_tkinter()
-                                if lang == "English":
-                                    self.show_error_message(300, 210, "Error! Unable to enroll class")
-                                    self.after(2500, self.show_enrollment_error_information)
+                                    self.show_success_message(350, 265, "Enrolled and dropped classes\n"
+                                                                        " successfully")
                                 elif lang == "Español":
-                                    self.show_error_message(320, 210, "¡Error! No se puede matricular la clase")
-                                    self.after(2500, self.show_enrollment_error_information)
-                            if count_enroll == 15:
+                                    self.show_success_message(350, 265, "Clases matriculadas y \n"
+                                                                        " abandonadas exitósamente")
+                            elif "CONFIRMED" in text and "DROPPED" not in text:
+                                send_keys("{ENTER}")
+                                if lang == "English":
+                                    self.show_success_message(350, 265, "Enrolled classes successfully")
+                                elif lang == "Español":
+                                    self.show_success_message(350, 265, "Clases matriculadas exitósamente")
+                            elif "DROPPED" in text and "CONFIRMED" not in text:
+                                if lang == "English":
+                                    self.show_success_message(350, 265, "Dropped classes successfully")
+                                elif lang == "Español":
+                                    self.show_success_message(350, 265, "Clases abandonadas exitósamente")
+                            if "INVALID COURSE ID" in text or "COURSE RESERVED" in text or "COURSE CLOSED" in text \
+                                    or "CRS ALRDY TAKEN/PASSED" in text or "Closed by Spec-Prog" in text or \
+                                    "ILLEGAL DROP-NOT ENR" in text or \
+                                    "NEW COURSE,NO FUNCTION" in text or "PRESENTLY ENROLLED" in text \
+                                    or "R/TC" in text:
+                                for i in range(counter + 1, 0, -1):
+                                    if self.enrolled_classes_list:
+                                        self.enrolled_classes_list.popitem()
+                                    if self.dropped_classes_list:
+                                        self.dropped_classes_list.popitem()
+                                self.check = False
+                            if self.e_counter + self.m_counter == 15:
                                 self.go_back_event2()
                                 self.submit.configure(state="disabled")
-                                self.submit_multiple.configure(sate="disabled")
+                                self.multiple.configure(state="disabled")
+                                time.sleep(3.2)
                                 if lang == "English":
                                     self.show_information_message(350, 265, "Reached Enrollment limit!")
                                 elif lang == "Español":
                                     self.show_information_message(350, 265, "Llegó al Límite de Matrícula")
+                            self.m_classes_entry.delete(0, "end")
+                            self.m_section_entry.delete(0, "end")
+                            self.m_classes_entry2.delete(0, "end")
+                            self.m_section_entry2.delete(0, "end")
+                            self.m_classes_entry3.delete(0, "end")
+                            self.m_section_entry3.delete(0, "end")
+                            self.m_classes_entry4.delete(0, "end")
+                            self.m_section_entry4.delete(0, "end")
+                            self.m_classes_entry5.delete(0, "end")
+                            self.m_section_entry5.delete(0, "end")
+                            self.m_classes_entry6.delete(0, "end")
+                            self.m_section_entry6.delete(0, "end")
+                            self.m_classes_entry.configure(placeholder_text="ESPA3101")
+                            self.m_section_entry.configure(placeholder_text="KM1")
+                            self.m_classes_entry2.configure(placeholder_text="INGL3101")
+                            self.m_section_entry2.configure(placeholder_text="LM1")
+                            self.m_classes_entry3.configure(placeholder_text="BIOL3011")
+                            self.m_section_entry3.configure(placeholder_text="KH1")
+                            self.m_classes_entry4.configure(placeholder_text="MATE3001")
+                            self.m_section_entry4.configure(placeholder_text="LH1")
+                            self.m_classes_entry5.configure(placeholder_text="CISO3121")
+                            self.m_section_entry5.configure(placeholder_text="KN1")
+                            self.m_classes_entry6.configure(placeholder_text="HUMA3101")
+                            self.m_section_entry6.configure(placeholder_text="LN1")
+                        else:
+                            self.reset_activity_timer(None)
+                            self.set_focus_to_tkinter()
+                            if lang == "English":
+                                self.show_error_message(320, 235, "Error! Unable to enroll classes")
+                            if lang == "Español":
+                                self.show_error_message(320, 235, "¡Error! No se pudo "
+                                                                  "matricular las clases")
+                            self.check = False
+                            self.m_counter = self.m_counter - counter - 1
+                            self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                     else:
-                        if lang == "English":
-                            self.show_error_message(320, 235, "Error! Can only enroll up to 15 classes")
-                        if lang == "Español":
-                            self.show_error_message(320, 235, "¡Error! Solamente puede matricular\n\n"
-                                                              " hasta 15 clases")
-                        self.check = False
-                        self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
+                        if "OUTDATED" in text_output or "INVALID TERM SELECTION" in text_output \
+                                or "REGISTRATION DATA" not in text_output:
+                            self.uprb.UprbayTeraTermVt.type_keys(semester.replace(" ", ""))
+                            self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                            send_keys("{ENTER}")
+                            send_keys("{TAB 2}")
+                            self.reset_activity_timer(None)
+                            self.set_focus_to_tkinter()
+                            if lang == "English":
+                                self.show_error_message(300, 210, "Error! Unable to enroll class")
+                                self.after(2500, self.show_enrollment_error_information)
+                            elif lang == "Español":
+                                self.show_error_message(320, 210, "¡Error! No se puede matricular la clase")
+                                self.after(2500, self.show_enrollment_error_information)
+                            self.check = False
+                        if count_enroll == 15:
+                            self.go_back_event2()
+                            self.submit.configure(state="disabled")
+                            self.submit_multiple.configure(sate="disabled")
+                            if lang == "English":
+                                self.show_information_message(350, 265, "Reached Enrollment limit!")
+                            elif lang == "Español":
+                                self.show_information_message(350, 265, "Llegó al Límite de Matrícula")
+                            self.check = False
                 else:
                     if lang == "English":
-                        self.show_error_message(400, 300, "Error! Wrong Format for Classes, Sections, \n\n "
-                                                          "Semester or you are trying to enroll \n\n"
-                                                          "a class or a section \n\n"
-                                                          " that has already been enrolled")
-                    elif lang == "Español":
-                        self.show_error_message(400, 300, "¡Error! Formato Incorrecto para Clases, "
-                                                          "\n\n Secciones, Semestre o estás intentando de"
-                                                          "\n\n matricular una clase o sección "
-                                                          "\n\n que ya ha sido matriculada")
+                        self.show_error_message(320, 235, "Error! Can only enroll up to 15 classes")
+                    if lang == "Español":
+                        self.show_error_message(320, 235, "¡Error! Solamente puede matricular\n\n"
+                                                          " hasta 15 clases")
                     self.check = False
                     self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
             else:
                 if lang == "English":
-                    self.show_error_message(300, 215, "Error! Tera Term is disconnected")
+                    self.show_error_message(400, 300, "Error! Wrong Format for Classes, Sections, \n\n "
+                                                      "Semester or you are trying to enroll \n\n"
+                                                      "a class or a section \n\n"
+                                                      " that has already been enrolled")
                 elif lang == "Español":
-                    self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
+                    self.show_error_message(400, 300, "¡Error! Formato Incorrecto para Clases, "
+                                                      "\n\n Secciones, Semestre o estás intentando de"
+                                                      "\n\n matricular una clase o sección "
+                                                      "\n\n que ya ha sido matriculada")
                 self.check = False
                 self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
+        else:
+            if lang == "English":
+                self.show_error_message(300, 215, "Error! Tera Term is disconnected")
+            elif lang == "Español":
+                self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
+            self.check = False
+            self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
         ctypes.windll.user32.BlockInput(False)
         block_window.destroy()
         self.show_sidebar_windows()
@@ -1833,27 +1791,27 @@ class TeraTermUI(customtkinter.CTk):
         semester = self.menu_semester_entry.get().upper().replace(" ", "")
         if menu == "SRM (Main Menu)" or menu == "SRM (Menú Principal)":
             menu = "SRM"
-        if menu == "004 (Hold Flags)":
+        elif menu == "004 (Hold Flags)":
             menu = "004"
-        if menu == "1GP (Class Schedule)" or menu == "1GP (Programa de Clases)":
+        elif menu == "1GP (Class Schedule)" or menu == "1GP (Programa de Clases)":
             menu = "1GP"
-        if menu == "118 (Academic Staticstics)" or menu == "118 (Estadísticas Académicas)":
+        elif menu == "118 (Academic Staticstics)" or menu == "118 (Estadísticas Académicas)":
             menu = "118"
-        if menu == "1VE (Academic Record)" or menu == "1VE (Expediente Académico)":
+        elif menu == "1VE (Academic Record)" or menu == "1VE (Expediente Académico)":
             menu = "1VE"
-        if menu == "3DD (Scholarship Payment Record)" or menu == "3DD (Historial de Pagos de Beca)":
+        elif menu == "3DD (Scholarship Payment Record)" or menu == "3DD (Historial de Pagos de Beca)":
             menu = "3DD"
-        if menu == "409 (Account Balance)" or menu == "409 (Balance de Cuenta)":
+        elif menu == "409 (Account Balance)" or menu == "409 (Balance de Cuenta)":
             menu = "409"
-        if menu == "683 (Academic Evaluation)" or menu == "683 (Evaluación Académica)":
+        elif menu == "683 (Academic Evaluation)" or menu == "683 (Evaluación Académica)":
             menu = "683"
-        if menu == "1PL (Basic Personal Data)" or menu == "1PL (Datos Básicos)":
+        elif menu == "1PL (Basic Personal Data)" or menu == "1PL (Datos Básicos)":
             menu = "1PL"
-        if menu == "4CM (Tuition Calculation)" or menu == "4CM (Cómputo de Matrícula)":
+        elif menu == "4CM (Tuition Calculation)" or menu == "4CM (Cómputo de Matrícula)":
             menu = "4CM"
-        if menu == "4SP (Apply for Extension)" or menu == "4SP (Solicitud de Prórroga)":
+        elif menu == "4SP (Apply for Extension)" or menu == "4SP (Solicitud de Prórroga)":
             menu = "4SP"
-        if menu == "SO (Sign out)" or menu == "SO (Cerrar Sesión)":
+        elif menu == "SO (Sign out)" or menu == "SO (Cerrar Sesión)":
             menu = "SO"
         if self.test_connection(lang) and self.check_server():
             if self.checkIfProcessRunning("ttermpro"):
@@ -1866,6 +1824,7 @@ class TeraTermUI(customtkinter.CTk):
                     term_window.restore()
                     uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                     uprb_window.wait('visible', timeout=100)
+                    self.unfocus_tkinter()
                     match menu.replace(" ", ""):
                         case "SRM":
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -1878,7 +1837,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.go_next_683.configure(state="disabled")
                             self.go_next_4CM.configure(state="disabled")
                         case "004":
-                            self.uprb.uprb.UprbayTeraTermVt.type_keys("SRM")
+                            self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             send_keys("{ENTER}")
                             self.uprb.UprbayTeraTermVt.type_keys("004")
                             self.uprb.UprbayTeraTermVt.type_keys(semester)
@@ -1906,7 +1865,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.go_next_409.configure(state="disabled")
                             self.go_next_683.configure(state="disabled")
                             self.go_next_4CM.configure(state="disabled")
-                            self.menu_submit.configure(width=95)
+                            self.menu_submit.configure(width=100)
                             self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
                             self.menu_intro.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
                             if lang == "English":
@@ -1962,7 +1921,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.go_next_409.grid_forget()
                                 self.go_next_683.grid_forget()
                                 self.go_next_4CM.grid_forget()
-                                self.menu_submit.configure(width=95)
+                                self.menu_submit.configure(width=100)
                                 self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
                                 self.menu_intro.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
                                 if lang == "English":
@@ -2004,7 +1963,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.go_next_683.configure(state="disabled")
                             self.go_next_1VE.configure(state="disabled")
                             self.go_next_4CM.configure(state="disabled")
-                            self.menu_submit.configure(width=95)
+                            self.menu_submit.configure(width=100)
                             self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
                             self.menu_intro.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
                             if lang == "English":
@@ -2102,7 +2061,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.go_next_1VE.configure(state="disabled")
                             self.go_next_1GP.configure(state="disabled")
                             self.go_next_409.configure(state="disabled")
-                            self.menu_submit.configure(width=95)
+                            self.menu_submit.configure(width=100)
                             self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
                             self.menu_intro.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
                             if lang == "English":
@@ -2614,38 +2573,39 @@ class TeraTermUI(customtkinter.CTk):
         self.t_buttons_frame.grid(row=2, column=1, padx=(20, 20), pady=(20, 0), sticky="n")
         self.t_buttons_frame.grid_columnconfigure(2, weight=1)
         self.explanation4.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-        self.e_classes.grid(row=1, column=1, padx=(41, 0), pady=(0, 0), sticky="w")
+        self.e_classes.grid(row=1, column=1, padx=(44, 0), pady=(0, 0), sticky="w")
         self.e_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         if lang == "English":
-            self.section.grid(row=2, column=1, padx=(30, 0), pady=(20, 0), sticky="w")
+            self.section.grid(row=2, column=1, padx=(33, 0), pady=(20, 0), sticky="w")
         if lang == "Español":
-            self.section.grid(row=2, column=1, padx=(27, 0), pady=(20, 0), sticky="w")
+            self.section.grid(row=2, column=1, padx=(30, 0), pady=(20, 0), sticky="w")
         self.section_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
-        self.e_semester.grid(row=3, column=1, padx=(18, 0), pady=(20, 0), sticky="w")
+        self.e_semester.grid(row=3, column=1, padx=(21, 0), pady=(20, 0), sticky="w")
         self.e_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
         self.register.grid(row=4, column=1, padx=(75, 0), pady=(20, 0), sticky="w")
         self.drop.grid(row=4, column=1, padx=(0, 35), pady=(20, 0), sticky="e")
         self.submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
         self.explanation5.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-        self.s_classes.grid(row=1, column=1, padx=(41, 0), pady=(0, 0), sticky="w")
+        self.s_classes.grid(row=1, column=1, padx=(44, 0), pady=(0, 0), sticky="w")
         self.s_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-        self.s_semester.grid(row=2, column=1, padx=(18, 0), pady=(20, 0), sticky="w")
+        self.s_semester.grid(row=2, column=1, padx=(21, 0), pady=(20, 0), sticky="w")
         self.s_semester_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
         self.show_all.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
         self.search.grid(row=4, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
         self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
         self.menu_intro.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         if lang == "English":
-            self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
+            self.menu.grid(row=2, column=1, padx=(47, 0), pady=(10, 0), sticky="w")
         if lang == "Español":
-            self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
+            self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
         self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-        self.menu_semester.grid(row=3, column=1, padx=(18, 0), pady=(20, 0), sticky="w")
+        self.menu_semester.grid(row=3, column=1, padx=(21, 0), pady=(20, 0), sticky="w")
         self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
+        self.menu_submit.configure(width=140)
         self.menu_submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
         self.back3.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
         self.show_classes.grid(row=4, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-        self.multiple.grid(row=4, column=2, padx=(10, 0), pady=(0, 0), sticky="s")
+        self.multiple.grid(row=4, column=2, padx=(10, 0), pady=(0, 0), sticky="e")
         self.go_next_409.grid_forget()
         self.go_next_683.grid_forget()
         self.go_next_1GP.grid_forget()
@@ -2653,6 +2613,8 @@ class TeraTermUI(customtkinter.CTk):
         self.go_next_4CM.grid_forget()
         self.multiple_frame.grid_forget()
         self.m_button_frame.grid_forget()
+        self.save_frame.grid_forget()
+        self.auto_frame.grid_forget()
 
     # function for changing language
     def change_language_event(self, lang):
@@ -2797,6 +2759,13 @@ class TeraTermUI(customtkinter.CTk):
             self.m_remove_tooltip.configure(message="Eliminar clases")
             self.multiple_tooltip.configure(message="Matricula múltiples \nclases"
                                                     " a la misma vez")
+            self.save_data.configure(text="Guardar clases \npara más tarde")
+            self.save_data_tooltip.configure(message="¡La próxima vez que inicies sesión,\n"
+                                                     " las clases que guardaste estarán ahí!")
+            self.auto_enroll.configure(text="Auto-Matrícula ")
+            self.auto_enroll_tooltip.configure(message="Matriculará automáticamente las clases\n"
+                                                       " que seleccionó, en el momento exacto\n"
+                                                       " en el que proceso de inscripción esté disponible")
         elif lang == "English":
             self.sidebar_button_1.configure(text="     Status")
             self.sidebar_button_2.configure(text="       Help")
@@ -2910,26 +2879,309 @@ class TeraTermUI(customtkinter.CTk):
             self.host_tooltip.configure(message="Enter the name of the server\n of the university")
             self.username_tooltip.configure(message="The university requires this to\n"
                                                     " enter and access the system")
-            self.ssn_tooltip.configure(message="Required to log-in,\n"
+            self.ssn_tooltip.configure(message="Required to log-in,\n "
                                                "information gets encrypted")
-            self.code_tooltip.configure(message="4 digit code included in the\n"
+            self.code_tooltip.configure(message="4 digit code included in the\n "
                                                 "pre-enrollment ticket email")
-            self.back_tooltip.configure(message="Go back to the main menu\n"
+            self.back_tooltip.configure(message="Go back to the main menu\n "
                                                 "of the application")
-            self.back2_tooltip.configure(message="Go back to the main menu\n"
+            self.back2_tooltip.configure(message="Go back to the main menu\n "
                                                  "of the application")
-            self.back3_tooltip.configure(message="Go back to the main menu\n"
+            self.back3_tooltip.configure(message="Go back to the main menu\n "
                                                  "of the application")
             self.back4_tooltip.configure(message="Go back to the previous "
                                                  "\nscreen")
             self.show_classes_tooltip.configure(message="Shows the classes you are\n "
-                                                        "enrolled in for a \n"
+                                                        "enrolled in for a \n "
                                                         "specific semester")
-            self.show_all_tooltip.configure(message="Display all sections or\n"
+            self.show_all_tooltip.configure(message="Display all sections or\n "
                                                     "only ones with spaces")
             self.m_add_tooltip.configure(message="Add more classes")
             self.m_remove_tooltip.configure(message="Remove classes")
-            self.multiple_tooltip.configure(message="Enroll multiple classes\nat once")
+            self.multiple_tooltip.configure(message="Enroll multiple classes\n at once")
+            self.save_data.configure(text="Save classes for later ")
+            self.save_data_tooltip.configure(message="Next time you log-in, the classes\n"
+                                                     " you saved will already be there!")
+            self.auto_enroll.configure(text="Auto-Enroll Classes ")
+            self.auto_enroll_tooltip.configure(message="Will Automatically enroll the classes\n"
+                                                       " you selected at the exact time\n"
+                                                       " the enrollment process becomes\n"
+                                                       " available for you")
+
+    def auto_enroll_event_handler(self):
+        task_done = threading.Event()
+        loading_screen = self.show_loading_screen()
+        self.update_loading_screen(loading_screen, task_done)
+        event_thread = threading.Thread(target=self.auto_enroll_event, args=(task_done,))
+        event_thread.start()
+
+    # Auto-Enroll classes
+    def auto_enroll_event(self, task_done):
+        block_window = customtkinter.CTkToplevel()
+        block_window.attributes("-alpha", 0.0)
+        block_window.grab_set()
+        lang = self.language_menu.get()
+        self.focus_set()
+        self.destroy_windows()
+        if self.auto_enroll.get() == "on":
+            self.auto_enroll_bool = True
+            if self.test_connection(lang) and self.check_server() and self.check_format():
+                if self.checkIfProcessRunning("ttermpro"):
+                    ctypes.windll.user32.BlockInput(True)
+                    term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                    term_window.restore()
+                    uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
+                    uprb_window.wait('visible', timeout=100)
+                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                    send_keys("{ENTER}")
+                    screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                    screenshot_thread.start()
+                    screenshot_thread.join()
+                    text = self.capture_screenshot()
+                    ctypes.windll.user32.BlockInput(False)
+                    self.set_focus_to_tkinter()
+                    turno_index = text.find("TURNO MATRICULA:")
+                    if turno_index != -1:
+                        sliced_text = text[turno_index:]
+                        parts = sliced_text.split(':', 1)
+                        if len(parts) > 1:
+                            # Look for date and time pattern in the string
+                            match = re.search(r'\d{2}/\d{2}/\d{4} \d{2}:\d{2}', parts[1])
+                            if match:
+                                date_time_string = match.group()
+                                date_time_string += " AM"
+                            else:
+                                if lang == "English":
+                                    self.show_error_message(300, 215, "Couldn't find enrollment date")
+                                elif lang == "Español":
+                                    self.show_error_message(320, 215, "No se pudo encontrar\n"
+                                                                      " la fecha de matricula")
+                                self.auto_enroll.deselect()
+                                self.auto_enroll_bool = False
+                        else:
+                            if lang == "English":
+                                self.show_error_message(300, 215, "Couldn't find enrollment date")
+                            elif lang == "Español":
+                                self.show_error_message(320, 215, "No se pudo encontrar\n"
+                                                                  " la fecha de matricula")
+                            self.auto_enroll.deselect()
+                            self.auto_enroll_bool = False
+                    date_time_string = re.sub(r'[^a-zA-Z0-9:/ ]', '', date_time_string)
+                    print(date_time_string)
+                    date_time_naive = datetime.strptime(date_time_string, '%m/%d/%Y %I:%M %p')
+                    puerto_rico_tz = pytz.timezone('America/Puerto_Rico')
+                    your_date = puerto_rico_tz.localize(date_time_naive, is_dst=None)
+                    # Get current datetime
+                    current_date = datetime.now(puerto_rico_tz)
+                    time_difference = your_date - current_date
+                    # Comparing Dates
+                    if ((current_date.date() == your_date.date()) and timedelta(
+                            hours=3) >= time_difference >= timedelta()) or \
+                            ((your_date.date() - current_date.date() == timedelta(days=1)) and timedelta(
+                                hours=3) >= time_difference >= timedelta()):
+                        self.submit_multiple.configure(state="disabled")
+                        self.submit.configure(state="disabled")
+                        self.back3.configure(state="disabled")
+                        self.m_add.configure(state="disabled")
+                        self.m_remove.configure(state="disabled")
+                        self.m_classes_entry.configure(state="disabled")
+                        self.m_section_entry.configure(state="disabled")
+                        self.m_semester_entry.configure(state="disabled")
+                        self.m_register_menu.configure(state="disabled")
+                        self.m_classes_entry2.configure(state="disabled")
+                        self.m_section_entry2.configure(state="disabled")
+                        self.m_register_menu2.configure(state="disabled")
+                        self.m_classes_entry3.configure(state="disabled")
+                        self.m_section_entry3.configure(state="disabled")
+                        self.m_register_menu3.configure(state="disabled")
+                        self.m_classes_entry4.configure(state="disabled")
+                        self.m_section_entry4.configure(state="disabled")
+                        self.m_register_menu4.configure(state="disabled")
+                        self.m_classes_entry5.configure(state="disabled")
+                        self.m_section_entry5.configure(state="disabled")
+                        self.m_register_menu5.configure(state="disabled")
+                        self.m_classes_entry6.configure(state="disabled")
+                        self.m_section_entry6.configure(state="disabled")
+                        self.m_register_menu6.configure(state="disabled")
+                        self.countdown_running = True
+                        self.hide_loading_screen()
+                        # Create a Toplevel window
+                        width = 300
+                        height = 140
+                        scaling_factor = self.tk.call("tk", "scaling")
+                        screen_width = self.winfo_screenwidth()
+                        screen_height = self.winfo_screenheight()
+                        x = (screen_width - width * scaling_factor) / 2
+                        y = (screen_height - height * scaling_factor) / 2
+                        self.timer_window = customtkinter.CTkToplevel(self)
+                        if lang == "English":
+                            self.timer_window.title("Auto-Enroll")
+                        elif lang == "Español":
+                            self.timer_window.title("Auto-Matrícula")
+                        self.timer_window.geometry(f"{width}x{height}+{int(x) + 175}+{int(y)}")
+                        self.timer_window.attributes("-alpha", 0.90)
+                        self.timer_window.resizable(False, False)
+                        self.timer_window.after(256, lambda: self.timer_window.iconbitmap("images/tera-term.ico"))
+                        # Create and pack a label with your message
+                        if lang == "English":
+                            self.message_label = customtkinter.CTkLabel(self.timer_window,
+                                                                        font=customtkinter.CTkFont(size=20,
+                                                                                                   weight="bold"),
+                                                                        text="\nAuto-Enrollment activated")
+                        elif lang == "Español":
+                            self.message_label = customtkinter.CTkLabel(self.timer_window,
+                                                                        font=customtkinter.CTkFont(size=20,
+                                                                                                   weight="bold"),
+                                                                        text="\nAuto-Matrícula ha sido activado")
+                        self.message_label.pack(pady=10)
+                        self.timer_label = customtkinter.CTkLabel(self.timer_window, text="",
+                                                                  font=customtkinter.CTkFont(size=15))
+                        self.timer_label.pack()
+                        # Create a BooleanVar to control the loop
+                        self.running = tk.BooleanVar()
+                        self.running.set(True)
+                        # Start the countdown
+                        self.countdown(your_date)
+                        self.timer_window.protocol("WM_DELETE_WINDOW", self.end_countdown)
+                    elif current_date > your_date or (current_date.date() == your_date.date()
+                                                      and current_date > your_date):
+                        if lang == "English":
+                            self.show_error_message(300, 215, "The enrollment date already passed")
+                        elif lang == "Español":
+                            self.show_error_message(320, 215, "La fecha de matricula ya pasó")
+                        self.auto_enroll.deselect()
+                    elif current_date < your_date or (your_date.date() - current_date.date() > timedelta(days=1)):
+                        if lang == "English":
+                            self.show_error_message(320, 215, "Auto-Enroll only available\n"
+                                                              " the same day of enrollment")
+                        elif lang == "Español":
+                            self.show_error_message(320, 215, "Auto-Matrícula solo disponible\n"
+                                                              "el mismo día de la matrícula")
+                        self.auto_enroll_bool = False
+                        self.auto_enroll.deselect()
+                    elif current_date.date() == your_date.date() and current_date > your_date:
+                        if lang == "English":
+                            self.show_error_message(320, 215, "Auto-Enroll only available\n"
+                                                              " before the time of enrollment")
+                        elif lang == "Español":
+                            self.show_error_message(320, 215, "Auto-Matrícula solo disponible\n"
+                                                              "antes del tiempo de matrícula")
+                        self.auto_enroll_bool = False
+                        self.auto_enroll.deselect()
+                    else:
+                        if lang == "English":
+                            self.show_error_message(320, 215, "Unknown error!")
+                        elif lang == "Español":
+                            self.show_error_message(320, 215, "¡Error desconocido!")
+                        self.auto_enroll_bool = False
+                        self.auto_enroll.deselect()
+                else:
+                    if lang == "English":
+                        self.show_error_message(300, 215, "Error! Tera Term is disconnected")
+                    elif lang == "Español":
+                        self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
+                    self.auto_enroll_bool = False
+                    self.auto_enroll.deselect()
+        elif self.auto_enroll.get() == "off":
+            self.countdown_running = False
+            self.auto_enroll_bool = False
+            self.submit_multiple.configure(state="normal")
+            self.submit.configure(state="normal")
+            self.back3.configure(state="normal")
+            self.m_add.configure(state="normal")
+            self.m_remove.configure(state="normal")
+            self.m_classes_entry.configure(state="normal")
+            self.m_section_entry.configure(state="normal")
+            self.m_semester_entry.configure(state="normal")
+            self.m_register_menu.configure(state="normal")
+            self.m_classes_entry2.configure(state="normal")
+            self.m_section_entry2.configure(state="normal")
+            self.m_register_menu2.configure(state="normal")
+            self.m_classes_entry3.configure(state="normal")
+            self.m_section_entry3.configure(state="normal")
+            self.m_register_menu3.configure(state="normal")
+            self.m_classes_entry4.configure(state="normal")
+            self.m_section_entry4.configure(state="normal")
+            self.m_register_menu4.configure(state="normal")
+            self.m_classes_entry5.configure(state="normal")
+            self.m_section_entry5.configure(state="normal")
+            self.m_register_menu5.configure(state="normal")
+            self.m_classes_entry6.configure(state="normal")
+            self.m_section_entry6.configure(state="normal")
+            self.m_register_menu6.configure(state="normal")
+            # If the countdown is running, stop it and destroy the timer window
+            if hasattr(self, 'running') and self.running.get():
+                self.running.set(False)
+                self.timer_window.destroy()
+        task_done.set()
+        block_window.destroy()
+
+    def end_countdown(self):
+        self.auto_enroll_bool = False
+        self.countdown_running = False
+        self.running.set(False)  # Stop the countdown
+        self.timer_window.destroy()  # Destroy the countdown window
+        self.auto_enroll.deselect()
+
+    # Starts the countdown on when the auto-enroll process will occur
+    def countdown(self, your_date):
+        lang = self.language_menu.get()
+        puerto_rico_tz = pytz.timezone('America/Puerto_Rico')
+        current_date = datetime.now(puerto_rico_tz)
+        print(current_date)
+        print(your_date)
+
+        time_difference = your_date - current_date
+        total_seconds = time_difference.total_seconds()
+        total_minutes = total_seconds / 60
+
+        if self.running.get():
+            if total_seconds <= 0:
+                # Call your enrollment function here
+                if lang == "English":
+                    self.timer_label.configure(text="performing auto-enrollment now...")
+                elif lang == "Español":
+                    self.timer_label.configure(text="ejecutando auto-matrícula ahora...")
+                time.sleep(3)
+                self.submit_multiple_event_handler()
+                self.timer_window.destroy()
+                self.auto_enroll.deselect()
+                return  # End the countdown function
+            else:
+                if total_minutes <= 10:
+                    total_minutes = math.ceil(total_minutes)
+                    if lang == "English":
+                        self.timer_label.configure(text=f"{int(total_minutes)} minutes remaining until enrollment.")
+                    elif lang == "Español":
+                        self.timer_label.configure(
+                            text=f"{int(total_minutes)} minutos restantes hasta la matrícula.")
+                    # If less than an hour remains, display the time in minutes
+
+                elif total_minutes <= 60:
+                    rounded_minutes = ((total_minutes + 9) // 10) * 10
+                    if lang == "English":
+                        self.timer_label.configure(
+                            text=f"{int(rounded_minutes)} minutes remaining until enrollment.")
+                    elif lang == "Español":
+                        self.timer_label.configure(
+                            text=f"{int(rounded_minutes)} minutos restantes hasta la matrícula.")
+                else:
+                    # If an hour or more remains, display the time in hours and minutes
+                    hours = total_minutes // 60
+                    rounded_minutes = ((total_minutes + 9) // 10) * 10
+                    if rounded_minutes == 60:
+                        hours += 1
+                        rounded_minutes = 0
+                    minutes = rounded_minutes % 60
+                    if lang == "English":
+                        self.timer_label.configure(
+                            text=f"{int(hours)}:{int(minutes):02} hours remaining until enrollment.")
+                    elif lang == "Español":
+                        self.timer_label.configure(text=f"{int(hours)}:{int(minutes):02}"
+                                                        f" horas restante hasta la matrícula.")
+                # Update at the start of every new minute
+                seconds_until_next_minute = 60 - datetime.now().second
+                self.timer_window.after(seconds_until_next_minute * 1000, self.countdown, your_date)
 
     # saves the information to the database when the app closes
     def save_user_data(self):
@@ -2961,9 +3213,60 @@ class TeraTermUI(customtkinter.CTk):
                                 (self.scaling_optionemenu.get(),))
         elif len(resultScaling) == 1:
             self.cursor.execute("UPDATE user_data SET scaling=?", (self.scaling_optionemenu.get(),))
-        with closing(sqlite3.connect(self.db_path)) as connection:
+        with closing(sqlite3.connect("database.db")) as connection:
             with closing(connection.cursor()) as self.cursor:
                 self.connection.commit()
+
+    def save_classes(self):
+        save = self.save_data.get()
+        lang = self.language_menu.get()
+        if save == "on":
+            # Clear existing data from the table
+            self.cursor.execute("DELETE FROM save_classes")
+            self.connection.commit()
+            # Create a dictionary to associate each group of entries with a key
+            entries_dict = {
+                1: [self.m_classes_entry, self.m_section_entry, self.m_semester_entry, self.m_register_menu],
+                2: [self.m_classes_entry2, self.m_section_entry2, self.m_semester_entry2, self.m_register_menu2],
+                3: [self.m_classes_entry3, self.m_section_entry3, self.m_semester_entry3, self.m_register_menu3],
+                4: [self.m_classes_entry4, self.m_section_entry4, self.m_semester_entry4, self.m_register_menu4],
+                5: [self.m_classes_entry5, self.m_section_entry5, self.m_semester_entry5, self.m_register_menu5],
+                6: [self.m_classes_entry6, self.m_section_entry6, self.m_semester_entry6, self.m_register_menu6]}
+
+            # Iterate over the entry fields using the keys of the dictionary
+            for index, entries in entries_dict.items():
+                # Get the values from the entry fields and option menus
+                class_value = entries[0].get()
+                section_value = entries[1].get()
+                semester_value = entries[2].get()
+                register_value = entries[3].get()
+
+                if not class_value or not section_value or not semester_value or register_value in ("Choose", "Escoge"):
+                    continue  # Skip inserting the row for this key
+                # Perform the insert operation
+                self.cursor.execute("INSERT INTO save_classes (class, section, semester, action, 'check')"
+                                    " VALUES (?, ?, ?, ?, ?)",
+                                    (class_value, section_value, semester_value, register_value, "Yes"))
+                self.connection.commit()
+            self.cursor.execute("SELECT COUNT(*) FROM save_classes")
+            row_count = self.cursor.fetchone()[0]
+            print(row_count)
+            if row_count == 0:  # Check the counter after the loop
+                if lang == "English":
+                    self.show_error_message(330, 255, "No classes were saved\n"
+                                                      " due to missing information")
+                elif lang == "Español":
+                    self.show_error_message(330, 255, "No se guardaron clases debido\n"
+                                                      " a que falta información ")
+                self.save_data.deselect()
+            else:
+                if lang == "English":
+                    self.show_success_message(350, 265, "Saved classes successfully")
+                elif lang == "Español":
+                    self.show_success_message(350, 265, "Clases guardadas con éxitosamente")
+        if save == "off":
+            self.cursor.execute("DELETE FROM save_classes")
+            self.connection.commit()
 
     # shows the important information window
     def show_loading_screen(self):
@@ -3119,6 +3422,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # success window pop up message
     def show_success_message(self, width, height, success_msg_text):
+        lang = self.language_menu.get()
         if self.success and self.success.winfo_exists():
             self.success.lift()
             return
@@ -3131,7 +3435,10 @@ class TeraTermUI(customtkinter.CTk):
         winsound.PlaySound("sounds/success.wav", winsound.SND_ASYNC)
         self.success = customtkinter.CTkToplevel()
         self.success.geometry(window_geometry)
-        self.success.title("Success")
+        if lang == "English":
+            self.success.title("Success")
+        elif lang == "Español":
+            self.success.title("Éxito")
         self.success.attributes("-topmost", True)
         self.success.resizable(False, False)
         self.success.after(256, lambda: self.success.iconbitmap("images/tera-term.ico"))
@@ -3162,6 +3469,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # important information window pop up message
     def show_information_message(self, width, height, success_msg_text):
+        lang = self.language_menu.get()
         if self.information and self.information.winfo_exists():
             self.information.lift()
             return
@@ -3174,7 +3482,10 @@ class TeraTermUI(customtkinter.CTk):
         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
         self.information = customtkinter.CTkToplevel()
         self.information.geometry(window_geometry)
-        self.information.title("Information")
+        if lang == "English":
+            self.information.title("Information")
+        elif lang == "Español":
+            self.success.title("Información")
         # self.information.attributes("-topmost", True)
         self.information.resizable(False, False)
         self.information.after(256, lambda: self.information.iconbitmap("images/tera-term.ico"))
@@ -3334,33 +3645,33 @@ class TeraTermUI(customtkinter.CTk):
 
     # (Unused) determines the hardware of the users' computer and change the time.sleep seconds respectively
     # def get_sleep_time(self):
-        # cpu_count = psutil.cpu_count()
-        # self.avg_cpu_load = sum(self.cpu_load_history) / len(self.cpu_load_history)
-        # if cpu_count >= 8 and self.avg_cpu_load <= 50:
-            # sleep_time = 0.5
-        # elif cpu_count >= 6 and self.avg_cpu_load <= 50:
-            # sleep_time = 0.75
-        # elif cpu_count >= 4 and self.avg_cpu_load <= 50:
-            # sleep_time = 1
-        # elif cpu_count >= 8 and self.avg_cpu_load >= 50:
-            # sleep_time = 0.90
-        # elif cpu_count >= 6 and self.avg_cpu_load >= 50:
-            # sleep_time = 1.2
-        # elif cpu_count >= 4 and self.avg_cpu_load >= 50:
-            # sleep_time = 1.5
-        # elif not self.cpu_load_history:
-            # sleep_time = 2
-        # else:
-            # sleep_time = 2
+    # cpu_count = psutil.cpu_count()
+    # self.avg_cpu_load = sum(self.cpu_load_history) / len(self.cpu_load_history)
+    # if cpu_count >= 8 and self.avg_cpu_load <= 50:
+    # sleep_time = 0.5
+    # elif cpu_count >= 6 and self.avg_cpu_load <= 50:
+    # sleep_time = 0.75
+    # elif cpu_count >= 4 and self.avg_cpu_load <= 50:
+    # sleep_time = 1
+    # elif cpu_count >= 8 and self.avg_cpu_load >= 50:
+    # sleep_time = 0.90
+    # elif cpu_count >= 6 and self.avg_cpu_load >= 50:
+    # sleep_time = 1.2
+    # elif cpu_count >= 4 and self.avg_cpu_load >= 50:
+    # sleep_time = 1.5
+    # elif not self.cpu_load_history:
+    # sleep_time = 2
+    # else:
+    # sleep_time = 2
 
-        # return sleep_time
+    # return sleep_time
 
     # (Unused) Monitors the usage of the CPU of the user to determine the time.sleep of how long should the function
     # take before executing something
     # def cpu_monitor(self, interval=1):
-        # while not self.stop_monitor.is_set():
-            # cpu_percent = psutil.cpu_percent(interval=interval)
-            # self.cpu_load_history.append(cpu_percent)
+    # while not self.stop_monitor.is_set():
+    # cpu_percent = psutil.cpu_percent(interval=interval)
+    # self.cpu_load_history.append(cpu_percent)
 
     # If user messes up the execution of the program this can solve it and make program work as expected
     def fix_execution(self):
@@ -3384,6 +3695,7 @@ class TeraTermUI(customtkinter.CTk):
             response = msg.get()
             if response == "Yes" or response == "Sí":
                 self.reset_activity_timer(None)
+                ctypes.windll.user32.BlockInput(True)
                 term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
                 term_window.restore()
                 uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
@@ -3393,6 +3705,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                 self.uprb.UprbayTeraTermVt.type_keys(self.default_semester)
                 send_keys("{ENTER}")
+                ctypes.windll.user32.BlockInput(False)
                 if lang == "English":
                     self.show_information_message(375, 250, "The problem is usually caused because"
                                                             "\n of user pressing buttons in Tera Term")
@@ -3412,17 +3725,18 @@ class TeraTermUI(customtkinter.CTk):
         while self.is_running and not self.stop_check_idle.is_set():
             if time.time() - self.last_activity >= 240:
                 if self.checkIfProcessRunning("ttermpro"):
+                    ctypes.windll.user32.BlockInput(True)
                     term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
                     term_window.restore()
                     uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                     uprb_window.wait('visible', timeout=100)
                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                     send_keys("{ENTER}")
+                    ctypes.windll.user32.BlockInput(False)
                     self.last_activity = time.time()
-                    self.num_checks += 1
-                else:
-                    pass
-            if self.num_checks == 8:
+                    if not self.countdown_running:
+                        self.num_checks += 1
+            if self.num_checks == 8 and not self.countdown_running:
                 break
             time.sleep(3)
 
@@ -3594,8 +3908,8 @@ class TeraTermUI(customtkinter.CTk):
     # Reads from the feedback.json file
     def authenticate(self):
         try:
-            with open(self.ath, 'rb') as f:
-                archive = pyzipper.AESZipFile(self.ath)
+            with open(self.SERVICE_ACCOUNT_FILE, 'rb') as f:
+                archive = pyzipper.AESZipFile(self.SERVICE_ACCOUNT_FILE)
                 archive.setpassword(self.PASSWORD.encode())
                 file_contents = archive.read('feedback.json')
                 credentials_dict = json.loads(file_contents.decode())
@@ -4044,12 +4358,214 @@ class TeraTermUI(customtkinter.CTk):
         if self.information and self.information.winfo_exists():
             self.information.destroy()
 
+    def check_format(self):
+        counter = self.a_counter
+        lang = self.language_menu.get()
+        classes = self.m_classes_entry.get().upper().replace(" ", "")
+        section = self.m_section_entry.get().upper().replace(" ", "")
+        semester = self.m_semester_entry.get().upper().replace(" ", "")
+        choice = self.m_register_menu.get()
+        classes2 = self.m_classes_entry2.get().upper().replace(" ", "")
+        section2 = self.m_section_entry2.get().upper().replace(" ", "")
+        choice2 = self.m_register_menu2.get()
+        classes3 = self.m_classes_entry3.get().upper().replace(" ", "")
+        section3 = self.m_section_entry3.get().upper().replace(" ", "")
+        choice3 = self.m_register_menu3.get()
+        classes4 = self.m_classes_entry4.get().upper().replace(" ", "")
+        section4 = self.m_section_entry4.get().upper().replace(" ", "")
+        choice4 = self.m_register_menu4.get()
+        classes5 = self.m_classes_entry5.get().upper().replace(" ", "")
+        section5 = self.m_section_entry5.get().upper().replace(" ", "")
+        choice5 = self.m_register_menu5.get()
+        classes6 = self.m_classes_entry6.get().upper().replace(" ", "")
+        section6 = self.m_section_entry6.get().upper().replace(" ", "")
+        choice6 = self.m_register_menu6.get()
+        if counter == 0:
+            self.check = True
+        if counter == 1 and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes2, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{2}1$", section2, flags=re.IGNORECASE) \
+                and (choice2 != "Choose" and choice2 != "Escoge") \
+                and ((choice2 == "Register" or choice2 == "Registra") and classes2
+                     not in self.enrolled_classes_list.values() and section2
+                     not in self.enrolled_classes_list) \
+                or ((choice2 == "Drop" or choice2 == "Baja") and classes2
+                    not in self.dropped_classes_list.values() and section2
+                    not in self.dropped_classes_list):
+            self.check = True
+        elif counter == 2 and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes3, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{2}1$", section3, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes2, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{2}1$", section2, flags=re.IGNORECASE) \
+                and (choice3 != "Choose" and choice3 != "Escoge"
+                     and choice2 != "Choose" and choice2 != "Escoge") \
+                and ((choice3 == "Register" or choice3 == "Registra") and classes3
+                     not in self.enrolled_classes_list.values() and section3
+                     not in self.enrolled_classes_list) \
+                or ((choice3 == "Drop" or choice3 == "Baja") and classes3
+                    not in self.dropped_classes_list.values() and section3
+                    not in self.dropped_classes_list) \
+                and ((choice2 == "Register" or choice2 == "Registra") and classes2
+                     not in self.enrolled_classes_list.values() and section2
+                     not in self.enrolled_classes_list) \
+                or ((choice2 == "Drop" or choice2 == "Baja") and classes2
+                    not in self.dropped_classes_list and section2
+                    not in self.dropped_classes_list):
+            self.check = True
+        elif counter == 3 and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes4, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{2}1$", section4, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes3, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{2}1$", section3, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes2, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{2}1$", section2, flags=re.IGNORECASE) \
+                and (choice4 != "Choose" and choice4 != "Escoge"
+                     and choice3 != "Choose" and choice3 != "Escoge"
+                     and choice2 != "Choose" and choice2 != "Escoge") \
+                and ((choice4 == "Register" or choice4 == "Registra") and classes4 not in
+                     self.enrolled_classes_list.values() and section4
+                     not in self.enrolled_classes_list) \
+                or ((choice4 == "Drop" or choice4 == "Baja") and classes4 not in
+                    self.dropped_classes_list.values() and section4
+                    not in self.dropped_classes_list) \
+                and ((choice3 == "Register" or choice3 == "Registra") and classes3 not in
+                     self.enrolled_classes_list.values() and section3
+                     not in self.enrolled_classes_list) \
+                or ((choice3 == "Drop" or choice3 == "Baja") and classes3 not in
+                    self.dropped_classes_list.values() and section3
+                    not in self.dropped_classes_list) \
+                and ((choice2 == "Register" or choice2 == "Registra") and classes2 not in
+                     self.enrolled_classes_list.values() and section2
+                     not in self.enrolled_classes_list) \
+                or ((choice2 == "Drop" or choice2 == "Baja") and classes2 not in
+                    self.dropped_classes_list.values() and section2
+                    not in self.dropped_classes_list):
+            self.check = True
+        elif counter == 4 and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes5, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{2}1$", section5, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes4, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{2}1$", section4, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes3, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{2}1$", section3, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes2, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{2}1$", section2, flags=re.IGNORECASE) \
+                and (choice5 != "Choose" and choice5 != "Escoge"
+                     and choice4 != "Choose" and choice4 != "Escoge"
+                     and choice3 != "Choose" and choice3 != "Escoge"
+                     and choice2 != "Choose" and choice2 != "Escoge") \
+                and ((choice5 == "Register" or choice5 == "Registra") and classes5 not in
+                     self.enrolled_classes_list.values() and section5
+                     not in self.enrolled_classes_list) \
+                or ((choice5 == "Drop" or choice5 == "Baja") and classes5 not in
+                    self.dropped_classes_list.values() and section5
+                    not in self.dropped_classes_list) \
+                and ((choice4 == "Register" or choice4 == "Registra") and classes4 not in
+                     self.enrolled_classes_list.values() and section4
+                     not in self.enrolled_classes_list) \
+                or ((choice4 == "Drop" or choice4 == "Baja") and classes4 not in
+                    self.dropped_classes_list.values() and section4
+                    not in self.dropped_classes_list) \
+                and ((choice3 == "Register" or choice3 == "Registra") and classes3 not in
+                     self.enrolled_classes_list.values() and section3
+                     not in self.enrolled_classes_list) \
+                or ((choice3 == "Drop" or choice3 == "Baja") and classes3 not in
+                    self.dropped_classes_list.values() and section3
+                    not in self.dropped_classes_list) \
+                and ((choice2 == "Register" or choice2 == "Registra") and classes2 not in
+                     self.enrolled_classes_list.values() and section2
+                     not in self.enrolled_classes_list) \
+                or ((choice2 == "Drop" or choice2 == "Baja") and classes2 not in
+                    self.dropped_classes_list.values() and section2
+                    not in self.dropped_classes_list):
+            self.check = True
+        elif counter == 5 and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes6, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{2}1$", section6, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes5, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{2}1$", section5, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes4, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{2}1$", section4, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes3, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{2}1$", section3, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes2, flags=re.IGNORECASE) \
+                and re.fullmatch("^[A-Z]{2}1$", section2, flags=re.IGNORECASE) \
+                and (choice6 != "Choose" and choice6 != "Escoge"
+                     and choice5 != "Choose" and choice5 != "Escoge"
+                     and choice4 != "Choose" and choice4 != "Escoge"
+                     and choice3 != "Choose" and choice3 != "Escoge"
+                     and choice2 != "Choose" and choice2 != "Escoge") \
+                and ((choice6 == "Register" or choice6 == "Registra") and classes6 not in
+                     self.enrolled_classes_list.values() and section6
+                     not in self.enrolled_classes_list) \
+                or ((choice6 == "Drop" or choice6 == "Baja") and classes6 not in
+                    self.dropped_classes_list.values() and section6
+                    not in self.dropped_classes_list) \
+                and ((choice5 == "Register" or choice5 == "Registra") and classes5 not in
+                     self.enrolled_classes_list.values() and section5
+                     not in self.enrolled_classes_list) \
+                or ((choice5 == "Drop" or choice5 == "Baja") and classes5 not in
+                    self.dropped_classes_list.values() and section5
+                    not in self.dropped_classes_list) \
+                and ((choice4 == "Register" or choice4 == "Registra") and classes4 not in
+                     self.enrolled_classes_list.values() and section4
+                     not in self.enrolled_classes_list) \
+                or ((choice4 == "Drop" or choice4 == "Baja") and classes4 not in
+                    self.dropped_classes_list.values() and section4
+                    not in self.dropped_classes_list) \
+                and ((choice3 == "Register" or choice3 == "Registra") and classes3 not in
+                     self.enrolled_classes_list.values() and section3
+                     not in self.enrolled_classes_list) \
+                or ((choice3 == "Drop" or choice3 == "Baja") and classes3 not in
+                    self.dropped_classes_list.values() and section3
+                    not in self.dropped_classes_list) \
+                and ((choice2 == "Register" or choice2 == "Registra") and classes2 not in
+                     self.enrolled_classes_list.values() and section2
+                     not in self.enrolled_classes_list) \
+                or ((choice2 == "Drop" or choice2 == "Baja") and classes2 not in
+                    self.dropped_classes_list.values() and section2
+                    not in self.dropped_classes_list):
+            self.check = True
+        if self.check is True and (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE)
+                                   and re.fullmatch("^[A-Z]{2}1$", section, flags=re.IGNORECASE)
+                                   and re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE)
+                                   and (choice != "Choose" and choice != "Escoge")
+                                   and ((choice == "Register" or choice == "Registra") and classes
+                                        not in self.enrolled_classes_list.values() and section
+                                        not in self.enrolled_classes_list)
+                                   or ((choice == "Drop" or choice == "Baja") and classes
+                                       not in self.dropped_classes_list.values() and section
+                                       not in self.dropped_classes_list)
+                                   and (semester == "C23" or semester == "C31" or semester == "C41"
+                                        or semester == "C32" or semester == "C33")):
+            return True
+        else:
+            if not self.auto_enroll_bool:
+                if lang == "English":
+                    self.show_error_message(400, 310, "Error! Wrong Format for Classes, Sections, \n\n "
+                                                      "Semester or you are trying to enroll \n\n"
+                                                      "a class or a section \n\n"
+                                                      " that has already been enrolled")
+                elif lang == "Español":
+                    self.show_error_message(400, 310, "¡Error! Formato Incorrecto para Clases, "
+                                                      "\n\n Secciones, Semestre o estás intentando de"
+                                                      "\n\n matricular una clase o sección "
+                                                      "\n\n que ya ha sido matriculada")
+            if self.auto_enroll_bool:
+                if lang == "English":
+                    self.show_error_message(350, 230, "Error! Must enter the classes\n"
+                                                      " you want to enroll")
+                elif lang == "Español":
+                    self.show_error_message(350, 230, "¡Error! Tiene que escribir la informacion\n"
+                                                      " de las clases que quieres matricular")
+                self.auto_enroll_bool = False
+                self.auto_enroll.deselect()
+            self.check = False
+            self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
+            return False
+
 
 if __name__ == "__main__":
     appdata_folder = os.path.join(os.getenv('APPDATA'), 'TeraTermUI')
     lock_file = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])), "app_lock.lock")
     lock_file_appdata = os.path.join(appdata_folder, "app_lock.lock")
-    file_lock = FileLock(lock_file_appdata, timeout=0)
+    file_lock = FileLock(lock_file, timeout=0)
     try:
         with file_lock.acquire(poll_interval=0.1):
             app = TeraTermUI()
