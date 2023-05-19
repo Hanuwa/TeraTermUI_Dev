@@ -21,9 +21,9 @@ class CTkTable(customtkinter.CTkFrame):
         self.padx = padx
         self.pady = pady
         self.values = values
-        self.fg_color = self._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkFrame"]["fg_color"])
-        self.fg_color2 = self._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkFrame"]["top_fg_color"])
-        self._text_color = self._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkLabel"]["text_color"])
+        self.fg_color = customtkinter.ThemeManager.theme["CTkFrame"]["fg_color"]
+        self.fg_color2 = customtkinter.ThemeManager.theme["CTkFrame"]["top_fg_color"]
+        self._text_color = customtkinter.ThemeManager.theme["CTkLabel"]["text_color"]
 
         self.frame = {}
         self.draw_table()
@@ -62,16 +62,103 @@ class CTkTable(customtkinter.CTkFrame):
                 self.rowconfigure(i, weight=1)
                 self.columnconfigure(j, weight=1)
 
-    def edit_rows(self, row, **kwargs):
+    def edit_row(self, row, **kwargs):
         """ edit all parameters of a single row """
         for i in range(self.columns):
             self.frame[row, i].configure(**kwargs)
 
-    def edit_columns(self, column, **kwargs):
+    def edit_column(self, column, **kwargs):
         """ edit all parameters of a single column """
         for i in range(self.rows):
             self.frame[i, column].configure(**kwargs)
 
+    def update_values(self, values, **kwargs):
+        """ update all values at once """
+        for i in self.frame.values():
+            i.destroy()
+        self.frame = {}
+        self.values = values
+        self.draw_table(**kwargs)
+
+    def add_row(self, values, index=None):
+        """ add a new row """
+        for i in self.frame.values():
+            i.destroy()
+        self.frame = {}
+        if index is None:
+            index = len(self.values)
+        self.values.insert(index, values)
+        self.rows = len(self.values)
+        self.columns = len(self.values[0])
+        self.draw_table()
+
+    def add_column(self, values, index=None):
+        """ add a new column """
+        for i in self.frame.values():
+            i.destroy()
+        self.frame = {}
+        if index is None:
+            index = len(self.values[0])
+        x = 0
+        for i in self.values:
+            i.insert(index, values[x])
+            x += 1
+        self.rows = len(self.values)
+        self.columns = len(self.values[0])
+        self.draw_table()
+
+    def delete_row(self, index=None):
+        """ delete a particular row """
+        if index is None or index > len(self.values):
+            index = len(self.values) - 1
+        self.values.pop(index)
+        for i in self.frame.values():
+            i.destroy()
+        self.rows = len(self.values)
+        self.frame = {}
+        self.draw_table()
+
+    def delete_column(self, index=None):
+        """ delete a particular column """
+        if index is None or index > len(self.values[0]):
+            index = len(self.values) - 1
+        for i in self.values:
+            i.pop(index)
+        for i in self.frame.values():
+            i.destroy()
+        self.columns = len(self.values[0])
+        self.frame = {}
+        self.draw_table()
+
     def insert(self, row, column, value, **kwargs):
-        """ insert value in the [row, colum] """
+        """ insert value in a specific block [row, column] """
         self.frame[row, column].configure(text=value, **kwargs)
+
+    def delete(self, row, column, **kwargs):
+        """ delete a value from a specific block [row, column] """
+        self.frame[row, column].configure(text="", **kwargs)
+
+    def get(self):
+        return self.values
+
+    def configure(self, **kwargs):
+        """ configure table widget attributes"""
+
+        if "colors" in kwargs:
+            self.colors = kwargs.pop("colors")
+            self.fg_color = self.colors[0]
+            self.fg_color2 = self.colors[1]
+        if "header_color" in kwargs:
+            self.header_color = kwargs.pop("header_color")
+        if "rows" in kwargs:
+            self.rows = kwargs.pop("rows")
+        if "columns" in kwargs:
+            self.columns = kwargs.pop("columns")
+        if "values" in kwargs:
+            self.values = values
+        if "padx" in kwargs:
+            self.padx = kwargs.pop("padx")
+        if "padx" in kwargs:
+            self.pady = kwargs.pop("pady")
+
+        self.update_values(self.values, **kwargs)
