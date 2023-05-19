@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 5/18/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 5/19/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -189,6 +189,7 @@ class TeraTermUI(customtkinter.CTk):
                               "for anyone who is interested in working/seeing the project. \n\n" +
                               "IMPORTANT: DO NOT USE WHILE HAVING ANOTHER INSTANCE OF THE APPLICATION OPENED.")
         self.intro_box.configure(state="disabled", wrap="word", border_spacing=8)
+        self.intro_box.grid(row=1, column=1, padx=(20, 0), pady=(0, 0))
 
         # (Log-in Screen)
         self.authentication_frame = customtkinter.CTkFrame(self, corner_radius=10)
@@ -262,7 +263,7 @@ class TeraTermUI(customtkinter.CTk):
         self.tabview.add(self.other_tab)
         # First Tab
         self.explanation4 = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab),
-                                                   text="Enroll for Classes ",
+                                                   text="Enroll Classes ",
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
         self.e_classes = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab), text="Class")
         self.e_classes_entry = customtkinter.CTkEntry(master=self.tabview.tab(self.enroll_tab),
@@ -290,7 +291,7 @@ class TeraTermUI(customtkinter.CTk):
         self.register.select()
         # Second Tab
         self.explanation5 = customtkinter.CTkLabel(master=self.tabview.tab(self.search_tab),
-                                                   text="Search for Classes ",
+                                                   text="Search Classes ",
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
         self.s_classes = customtkinter.CTkLabel(master=self.tabview.tab(self.search_tab), text="Class")
         self.s_classes_entry = customtkinter.CTkEntry(master=self.tabview.tab(self.search_tab),
@@ -495,6 +496,7 @@ class TeraTermUI(customtkinter.CTk):
         self.dropped_classes_list = {}
         self.auto_enroll_bool = False
         self.countdown_running = False
+        self.error_check = False
         self.check = False
         self.arrow = False
         self.status = None
@@ -955,8 +957,9 @@ class TeraTermUI(customtkinter.CTk):
                         text_output = self.capture_screenshot()
                         enrolled_classes = "ENROLLED"
                         count_enroll = text_output.count(enrolled_classes)
-                        if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output \
-                                and "REGISTRATION DATA" in text_output and count_enroll != 15:
+                        if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output and \
+                                "VUELVA LUEGO" not in text_output and "REGISTRATION DATA " in text_output and\
+                                count_enroll != 15:
                             self.e_counter = 0
                             send_keys("{TAB 2}")
                             for i in range(count_enroll, 0, -1):
@@ -1028,20 +1031,23 @@ class TeraTermUI(customtkinter.CTk):
                                 elif lang == "Español":
                                     self.show_error_message(320, 235, "¡Error! No se pudo matricular la clase")
                         else:
-                            if "OUTDATED" in text_output or "INVALID TERM SELECTION" in text_output or \
-                                    "REGISTRATION DATA" not in text_output:
+                            if "OUTDATED" in text_output or "INVALID TERM SELECTION" in text_output:
                                 send_keys("{TAB}")
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                 self.uprb.UprbayTeraTermVt.type_keys(semester.replace(" ", ""))
                                 send_keys("{ENTER}")
                                 self.reset_activity_timer(None)
                                 self.set_focus_to_tkinter()
-                                if lang == "English":
-                                    self.show_error_message(300, 210, "Error! Unable to enroll class")
+                            if lang == "English":
+                                self.show_error_message(300, 210, "Error! Unable to enroll class")
+                                if not self.error_check:
                                     self.after(2500, self.show_enrollment_error_information)
-                                elif lang == "Español":
-                                    self.show_error_message(320, 210, "¡Error! No se puede matricular la clase")
+                                    self.error_check = True
+                            elif lang == "Español":
+                                self.show_error_message(320, 210, "¡Error! No se puede matricular la clase")
+                                if not self.error_check:
                                     self.after(2500, self.show_enrollment_error_information)
+                                    self.error_check = True
                             if count_enroll == 15:
                                 self.submit.configure(state="disabled")
                                 self.submit_multiple.configure(sate="disabled")
@@ -1494,8 +1500,8 @@ class TeraTermUI(customtkinter.CTk):
                     text_output = self.capture_screenshot()
                     enrolled_classes = "ENROLLED"
                     count_enroll = text_output.count(enrolled_classes)
-                    if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output \
-                            and "REGISTRATION DATA " in text_output and count_enroll != 15:
+                    if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output and \
+                       "VUELVA LUEGO" not in text_output and "REGISTRATION DATA " in text_output and count_enroll != 15:
                         self.e_counter = 0
                         self.m_counter = 0
                         for i in range(count_enroll, 0, -1):
@@ -1709,21 +1715,24 @@ class TeraTermUI(customtkinter.CTk):
                             self.m_counter = self.m_counter - counter - 1
                             self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                     else:
-                        if "OUTDATED" in text_output or "INVALID TERM SELECTION" in text_output \
-                                or "REGISTRATION DATA" not in text_output:
+                        if "OUTDATED" in text_output or "INVALID TERM SELECTION" in text_output:
                             self.uprb.UprbayTeraTermVt.type_keys(semester.replace(" ", ""))
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             send_keys("{ENTER}")
                             send_keys("{TAB 2}")
                             self.reset_activity_timer(None)
                             self.set_focus_to_tkinter()
-                            if lang == "English":
-                                self.show_error_message(300, 210, "Error! Unable to enroll class")
+                        if lang == "English":
+                            self.show_error_message(300, 210, "Error! Unable to enroll class")
+                            if not self.error_check:
                                 self.after(2500, self.show_enrollment_error_information)
-                            elif lang == "Español":
-                                self.show_error_message(320, 210, "¡Error! No se puede matricular la clase")
+                                self.error_check = True
+                        elif lang == "Español":
+                            self.show_error_message(320, 210, "¡Error! No se puede matricular la clase")
+                            if not self.error_check:
                                 self.after(2500, self.show_enrollment_error_information)
-                            self.check = False
+                                self.error_check = True
+                        self.check = False
                         if count_enroll == 15:
                             self.go_back_event2()
                             self.submit.configure(state="disabled")
@@ -2824,13 +2833,13 @@ class TeraTermUI(customtkinter.CTk):
             self.show.configure(text="Show?")
             self.system.configure(text="Enter")
             self.back2.configure(text="Back")
-            self.explanation4.configure(text="Enroll for Classes ")
+            self.explanation4.configure(text="Enroll Classes ")
             self.e_classes.configure(text="Class ")
             self.section.configure(text="Section ")
             self.e_semester.configure(text="Semester ")
             self.register.configure(text="Register")
             self.drop.configure(text="Drop")
-            self.explanation5.configure(text="Search for Classes ")
+            self.explanation5.configure(text="Search Classes ")
             self.s_classes.configure(text="Class ")
             self.s_semester.configure(text="Semester ")
             self.show_all.configure(text="Show All?")
@@ -3049,6 +3058,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.show_error_message(300, 215, "The enrollment date already passed")
                         elif lang == "Español":
                             self.show_error_message(320, 215, "La fecha de matricula ya pasó")
+                        self.auto_enroll_bool = False
                         self.auto_enroll.deselect()
                     elif current_date < your_date or (your_date.date() - current_date.date() > timedelta(days=1)):
                         if lang == "English":
