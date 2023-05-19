@@ -517,8 +517,6 @@ class TeraTermUI(customtkinter.CTk):
         self.m_counter = 0
         self.e_counter = 0
         self.search_function = 0
-        # closing event dialog
-        self.protocol("WM_DELETE_WINDOW", self.on_closing)
         # default location of Tera Term
         self.location = "C:/Program Files (x86)/teraterm/ttermpro.exe"
         self.teraterm_file = "C:/Program Files (x86)/teraterm/TERATERM.ini"
@@ -555,11 +553,11 @@ class TeraTermUI(customtkinter.CTk):
                 self.language_menu.set(language[0][0])
                 self.change_language_event(lang=language[0][0])
         if appearance:
-            if appearance[0][0] != "System":
+            if appearance[0][0] != "System" or appearance[0][0] != "Sistema":
                 self.appearance_mode_optionemenu.set(appearance[0][0])
                 self.change_appearance_mode_event(appearance[0][0])
         if scaling:
-            if scaling[0][0] != 100:
+            if scaling[0][0] != 100.0:
                 self.scaling_optionemenu.set(float(scaling[0][0]))
                 self.change_scaling_event(float(scaling[0][0]))
         if saveCheck:
@@ -634,6 +632,9 @@ class TeraTermUI(customtkinter.CTk):
                 self.log_in.configure(state="normal")
                 self.sidebar_button_1.configure(state="normal")
                 self.sidebar_button_2.configure(state="normal")
+                # closing event dialog
+                self.protocol("WM_DELETE_WINDOW", self.on_closing)
+                # enables keyboard input events
                 self.bind("<Return>", lambda event: self.login_event_handler())
                 self.bind("<Escape>", lambda event: self.on_closing())
                 if len(welcome) == 0:
@@ -641,8 +642,10 @@ class TeraTermUI(customtkinter.CTk):
                 elif len(welcome) == 1:
                     self.cursor.execute("UPDATE user_data SET welcome=?", ("Checked",))
 
-            self.after(5000, show_message_box)
+            self.after(3500, show_message_box)
         else:
+            # closing event dialog
+            self.protocol("WM_DELETE_WINDOW", self.on_closing)
             # enables keyboard input events
             self.bind("<Return>", lambda event: self.login_event_handler())
             self.bind("<Escape>", lambda event: self.on_closing())
