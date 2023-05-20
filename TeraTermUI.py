@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 5/19/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 5/20/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -535,6 +535,7 @@ class TeraTermUI(customtkinter.CTk):
         language = self.cursor.execute("SELECT language FROM user_data WHERE language IS NOT NULL").fetchall()
         appearance = self.cursor.execute("SELECT appearance FROM user_data WHERE appearance IS NOT NULL").fetchall()
         scaling = self.cursor.execute("SELECT scaling FROM user_data WHERE scaling IS NOT NULL").fetchall()
+        self.idle = self.cursor.execute("SELECT idle FROM user_data").fetchall()
         save = self.cursor.execute("SELECT class, section, semester, action FROM save_classes"
                                    " WHERE class IS NOT NULL").fetchall()
         saveCheck = self.cursor.execute('SELECT "check" FROM save_classes WHERE "check" IS NOT NULL').fetchall()
@@ -623,13 +624,17 @@ class TeraTermUI(customtkinter.CTk):
 
             # Pop up message that appears only the first time the user uses the application
             def show_message_box():
+                winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
                 if self.language_menu.get() == "English":
-                    self.show_information_message(375, 250, "Make sure to not interact with Tera Term\n\n"
-                                                            " while the application is performing tasks")
-                if self.language_menu.get() == "Español":
-                    self.show_information_message(375, 250, "Asegúrese de no interactuar con Tera Term\n\n"
-                                                            "mientras la aplicación está realizando tareas")
-                self.after(10000, lambda: self.information.destroy())
+                    CTkMessagebox(master=self, title="Info", message="Welcome to Tera Term UI!\n\n"
+                                                                     " Make sure to not interact with Tera Term"
+                                                                     " while the application is performing tasks\n\n",
+                                  button_width=380)
+                elif self.language_menu.get() == "Español":
+                    CTkMessagebox(master=self, title="Info", message="¡Bienvenido a Tera Term UI!\n\n"
+                                                                     " Asegúrese de no interactuar con Tera Term"
+                                                                     " mientras la aplicación está realizando tareas",
+                                  button_width=380)
                 self.log_in.configure(state="normal")
                 self.sidebar_button_1.configure(state="normal")
                 self.sidebar_button_2.configure(state="normal")
@@ -656,7 +661,7 @@ class TeraTermUI(customtkinter.CTk):
             lang = self.language_menu.get()
             try:
                 latest_version = self.get_latest_release()
-                if not self.compare_versions(latest_version, self.USER_APP_VERSION):
+                if not self.compare_versions(latest_version, self.USER_APP_VERSION) and welcome[0][0] == "Checked":
                     if lang == "English":
                         msg = CTkMessagebox(master=self, title="Exit",
                                             message="A newer version of the application is available, "
@@ -3752,9 +3757,11 @@ class TeraTermUI(customtkinter.CTk):
 
     # Starts the check for idle thread
     def start_check_idle_thread(self):
-        self.is_running = True
-        self.thread = threading.Thread(target=self.check_idle)
-        self.thread.start()
+        if self.idle:
+            if self.idle[0][0] != "Disabled":
+                self.is_running = True
+                self.thread = threading.Thread(target=self.check_idle)
+                self.thread.start()
 
     # Checks if the user is idle for 4 minutes so that Tera Term doesn't close by itself
     def check_idle(self):
@@ -3780,6 +3787,22 @@ class TeraTermUI(customtkinter.CTk):
     # Stops the check for idle thread
     def stop_thread(self):
         self.is_running = False
+
+    def disable_idle(self):
+        if self.disableIdle.get() == "on":
+            idle = self.cursor.execute("SELECT idle FROM user_data").fetchall()
+            if len(idle) == 0:
+                self.cursor.execute("INSERT INTO user_data (idle) VALUES (?)", ("Disabled",))
+            elif len(idle) == 1:
+                self.cursor.execute("UPDATE user_data SET idle=?", ("Disabled",))
+            self.stop_thread()
+        if self.disableIdle.get() == "off":
+            idle = self.cursor.execute("SELECT idle FROM user_data").fetchall()
+            if len(idle) == 0:
+                self.cursor.execute("INSERT INTO user_data (idle) VALUES (?)", ("Enabled",))
+            elif len(idle) == 1:
+                self.cursor.execute("UPDATE user_data SET idle=?", ("Enabled",))
+        self.connection.commit()
 
     # resets the idle timer when user interacts with something within the application
     def reset_activity_timer(self, _):
@@ -4217,6 +4240,13 @@ class TeraTermUI(customtkinter.CTk):
                                             text="Choose",
                                             text_color=("gray10", "#DCE4EE"), command=self.change_location_event)
             files.pack(pady=5)
+            disableIdleText = customtkinter.CTkLabel(scrollable_frame, text="\nDisables the functionality that prevents"
+                                                                            " Tera Term\n from closing automatically"
+                                                                            " because of inactivity")
+            disableIdleText.pack()
+            self.disableIdle = customtkinter.CTkSwitch(scrollable_frame, text="Disable Anti-Idle", onvalue="on",
+                                                       offvalue="off", command=self.disable_idle)
+            self.disableIdle.pack()
             fixText = customtkinter.CTkLabel(scrollable_frame, text="\nFix the program not executing things properly")
             fixText.pack()
             fix = customtkinter.CTkButton(scrollable_frame, border_width=2,
@@ -4285,6 +4315,13 @@ class TeraTermUI(customtkinter.CTk):
                                             text="Escoge",
                                             text_color=("gray10", "#DCE4EE"), command=self.change_location_event)
             files.pack(pady=5)
+            disableIdleText = customtkinter.CTkLabel(scrollable_frame, text="\nDesactiva la funcionalidad que previene"
+                                                                            " que Tera Term\n se cierre automáticamente"
+                                                                            " por inactividad")
+            disableIdleText.pack()
+            self.disableIdle = customtkinter.CTkSwitch(scrollable_frame, text="Desactiva Anti-Inactivo", onvalue="on",
+                                                       offvalue="off", command=self.disable_idle)
+            self.disableIdle.pack()
             fixText = customtkinter.CTkLabel(scrollable_frame, text="\nArreglar el programa que no ejecuta"
                                                                     "\n las cosas correctamente")
             fixText.pack()
@@ -4292,6 +4329,10 @@ class TeraTermUI(customtkinter.CTk):
                                           text="Arreglalo",
                                           text_color=("gray10", "#DCE4EE"), command=self.fix_execution)
             fix.pack(pady=5)
+        idle = self.cursor.execute("SELECT idle FROM user_data").fetchall()
+        if idle:
+            if idle[0][0] == "Disabled":
+                self.disableIdle.select()
         self.class_list.bind('<<ListboxSelect>>', self.show_class_code)
         self.class_list.bind("<MouseWheel>", self.disable_scroll)
         self.search_box.bind('<KeyRelease>', self.search_classes)
