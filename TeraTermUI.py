@@ -497,6 +497,7 @@ class TeraTermUI(customtkinter.CTk):
         self.auto_enroll_bool = False
         self.countdown_running = False
         self.error_check = False
+        self.download = False
         self.check = False
         self.arrow = False
         self.status = None
@@ -2467,23 +2468,25 @@ class TeraTermUI(customtkinter.CTk):
                         self.intro_box.grid_forget()
                         self.introduction.grid_forget()
                         self.set_focus_to_tkinter()
-
                     except Exception as e:
                         if e.__class__.__name__ == "AppStartError":
                             self.bind("<Return>", lambda event: self.login_event_handler())
                             if lang == "English":
-                                self.show_error_message(450, 330, "Error! Cannot start application.\n\n "
+                                self.show_error_message(425, 330, "Error! Cannot start application.\n\n "
                                                                   "The location of your Tera Term \n\n"
                                                                   " might be different from the default,\n\n "
                                                                   "click the \"Help\" button "
-                                                                  "to find it the location")
+                                                                  "to set it's location")
                             elif lang == "Español":
-                                self.show_error_message(450, 330, "¡Error! No se pudo iniciar la aplicación."
+                                self.show_error_message(425, 330, "¡Error! No se pudo iniciar la aplicación."
                                                                   "\n\n La localización de tu "
                                                                   "Tera Term\n\n"
                                                                   " es diferente de la normal, \n\n "
                                                                   "presiona el botón de \"Ayuda\""
                                                                   "para encontrarlo")
+                            if not self.download:
+                                self.after(3500, self.download_teraterm)
+                                self.download = True
                     except Application.timings.TimeoutError:
                         self.bind("<Return>", lambda event: self.login_event_handler())
                         if lang == "English":
@@ -3414,7 +3417,7 @@ class TeraTermUI(customtkinter.CTk):
         scaling_factor = self.tk.call("tk", "scaling")
         x_position = int((screen_width - width * scaling_factor) / 2)
         y_position = int((screen_height - height * scaling_factor) / 2)
-        window_geometry = f"{width}x{height}+{x_position + 175}+{y_position - 40}"
+        window_geometry = f"{width}x{height}+{x_position + 175}+{y_position - 20}"
         winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
         self.error = customtkinter.CTkToplevel(self)
         self.error.title("Error")
@@ -3444,7 +3447,7 @@ class TeraTermUI(customtkinter.CTk):
         scaling_factor = self.tk.call("tk", "scaling")
         x_position = int((screen_width - width * scaling_factor) / 2)
         y_position = int((screen_height - height * scaling_factor) / 2)
-        window_geometry = f"{width}x{height}+{x_position + 175}+{y_position - 40}"
+        window_geometry = f"{width}x{height}+{x_position + 175}+{y_position - 20}"
         winsound.PlaySound("sounds/success.wav", winsound.SND_ASYNC)
         self.success = customtkinter.CTkToplevel()
         self.success.geometry(window_geometry)
@@ -3491,7 +3494,7 @@ class TeraTermUI(customtkinter.CTk):
         scaling_factor = self.tk.call("tk", "scaling")
         x_position = int((screen_width - width * scaling_factor) / 2)
         y_position = int((screen_height - height * scaling_factor) / 2)
-        window_geometry = f"{width}x{height}+{x_position + 175}+{y_position - 40}"
+        window_geometry = f"{width}x{height}+{x_position + 175}+{y_position - 20}"
         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
         self.information = customtkinter.CTkToplevel()
         self.information.geometry(window_geometry)
@@ -3499,7 +3502,6 @@ class TeraTermUI(customtkinter.CTk):
             self.information.title("Information")
         elif lang == "Español":
             self.success.title("Información")
-        # self.information.attributes("-topmost", True)
         self.information.resizable(False, False)
         self.information.after(256, lambda: self.information.iconbitmap("images/tera-term.ico"))
         my_image = customtkinter.CTkImage(light_image=Image.open("images/info.png"),
@@ -3575,6 +3577,28 @@ class TeraTermUI(customtkinter.CTk):
         webbrowser.open("https://www.techtarget.com/searchsecurity/definition/"
                         "asymmetric-cryptography#:~:text=Asymmetric%20cryptography%2C%20also%20known%20as,"
                         "from%20unauthorized%20access%20or%20use.")
+
+    def download_teraterm(self):
+        lang = self.language_menu.get()
+        if lang == "English":
+            msg = CTkMessagebox(master=self, title="Exit",
+                                message="Tera Term must be installed in your computer in order to use this application"
+                                        " do you wish to download it?",
+                                icon="question",
+                                option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
+                                button_color=("#c30101", "#145DA0", "#145DA0"),
+                                hover_color=("darkred", "darkblue", "darkblue"))
+        elif lang == "Español":
+            msg = CTkMessagebox(master=self, title="Salir",
+                                message="Tera Term tiene que estar instalado en su computadora para poder usar esta"
+                                        " aplicación, ¿desea instalarlo?",
+                                icon="question",
+                                option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
+                                button_color=("#c30101", "#145DA0", "#145DA0"),
+                                hover_color=("darkred", "darkblue", "darkblue"))
+        response = msg.get()
+        if response == "Yes" or response == "Sí":
+            webbrowser.open("https://osdn.net/projects/ttssh2/releases/")
 
     # Links to each correspondant curriculum that the user chooses
     def curriculums(self, choice):
