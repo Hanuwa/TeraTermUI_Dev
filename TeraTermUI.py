@@ -182,11 +182,11 @@ class TeraTermUI(customtkinter.CTk):
                               + "Everything you input here is stored locally, meaning only you can access the "
                                 "information"
                                 " so you will not have to worry about securities issues plus for sensitive information "
-                                "like the Social Security Number it's encrypted using a asymmetric-key. \n\n" +
+                                "like the Social Security Number, they get encrypted using AES. \n\n" +
                               "Thanks for using our application, for more information, help and to customize your "
                               "experience"
-                              " make sure to click the buttons on the sidebar, the application is also open source "
-                              "for anyone who is interested in working/seeing the project. \n\n" +
+                              " make sure to click the buttons on the sidebar, the application is also planned to be"
+                              " open source for anyone who is interested in working/seeing the project. \n\n" +
                               "IMPORTANT: DO NOT USE WHILE HAVING ANOTHER INSTANCE OF THE APPLICATION OPENED.")
         self.intro_box.configure(state="disabled", wrap="word", border_spacing=8)
         self.intro_box.grid(row=1, column=1, padx=(20, 0), pady=(0, 0))
@@ -627,12 +627,12 @@ class TeraTermUI(customtkinter.CTk):
                 winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
                 if self.language_menu.get() == "English":
                     CTkMessagebox(master=self, title="Info", message="Welcome to Tera Term UI!\n\n"
-                                                                     " Make sure to not interact with Tera Term"
+                                                                     "Make sure to not interact with Tera Term"
                                                                      " while the application is performing tasks\n\n",
                                   button_width=380)
                 elif self.language_menu.get() == "Español":
                     CTkMessagebox(master=self, title="Info", message="¡Bienvenido a Tera Term UI!\n\n"
-                                                                     " Asegúrese de no interactuar con Tera Term"
+                                                                     "Asegúrese de no interactuar con Tera Term"
                                                                      " mientras la aplicación está realizando tareas",
                                   button_width=380)
                 self.log_in.configure(state="normal")
@@ -2671,13 +2671,13 @@ class TeraTermUI(customtkinter.CTk):
                                     "información "
                                     "a sí que no tendrás que preocuparte "
                                     "por información sensible ya que cosas "
-                                    "como el Número de Seguro Social, está "
-                                    "encriptado usando una clave asimétrica. \n\n" +
+                                    "como el Número de Seguro Social, se "
+                                    "encriptan usando AES. \n\n" +
                                   "Gracias por usar nuestra aplicación, para más información, "
                                   "ayuda y para personalizar tu "
                                   "experiencia "
                                   "asegúrese de hacer clic en los botones de la barra lateral, "
-                                  "la aplicación también es de código abierto "
+                                  "la aplicación también esta planiado hacerlo código abierto "
                                   "para cualquiera que esté interesado en trabajar/ver el proyecto. \n\n " +
                                   "IMPORTANTE: NO UTILIZAR MIENTRAS TENGA OTRA INSTANCIA DE LA APLICACIÓN ABIERTA. ")
             self.intro_box.configure(state="disabled")
@@ -2815,11 +2815,11 @@ class TeraTermUI(customtkinter.CTk):
                                     "information"
                                     " so you will not have to worry about securities issues "
                                     "plus for sensitive information "
-                                    "like the Social Security Number it's encrypted using a asymmetric-key. \n\n" +
+                                    "like the Social Security Number, they get encrypted using AES. \n\n" +
                                   "Thanks for using our application, for more information, help and to customize your "
                                   "experience"
-                                  " make sure to click the buttons on the sidebar, the application is also open source"
-                                  " for anyone who is interested in working/seeing the project. \n\n" +
+                                  " make sure to click the buttons on the sidebar, the application is also planned to "
+                                  "be open source for anyone who is interested in working/seeing the project. \n\n" +
                                   "IMPORTANT: DO NOT USE WHILE HAVING ANOTHER INSTANCE OF THE APPLICATION OPENED.")
             self.intro_box.configure(state="disabled")
             self.appearance_mode_optionemenu.configure(values=["Light", "Dark", "System"])
@@ -3579,9 +3579,7 @@ class TeraTermUI(customtkinter.CTk):
     # opens a web page containing information about security information
     def lock_event(self):
         self.focus_set()
-        webbrowser.open("https://www.techtarget.com/searchsecurity/definition/"
-                        "asymmetric-cryptography#:~:text=Asymmetric%20cryptography%2C%20also%20known%20as,"
-                        "from%20unauthorized%20access%20or%20use.")
+        webbrowser.open("https://www.techtarget.com/searchsecurity/definition/Advanced-Encryption-Standard")
 
     def download_teraterm(self):
         lang = self.language_menu.get()
@@ -3788,6 +3786,7 @@ class TeraTermUI(customtkinter.CTk):
     def stop_thread(self):
         self.is_running = False
 
+    # Disables check_idle functionality
     def disable_idle(self):
         if self.disableIdle.get() == "on":
             idle = self.cursor.execute("SELECT idle FROM user_data").fetchall()
