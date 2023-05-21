@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 5/20/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 5/21/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -277,7 +277,7 @@ class TeraTermUI(customtkinter.CTk):
         self.section_entry.bind('<FocusOut>', self.add_key_bindings)
         self.e_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab), text="Semester")
         self.e_semester_entry = customtkinter.CTkComboBox(master=self.tabview.tab(self.enroll_tab),
-                                                          values=["C23", "C31", "C32", "C33"])
+                                                          values=["C31", "C32", "C33", "C41", "C42", "C43"])
         self.e_semester_entry.bind('<FocusIn>', self.remove_key_bindings)
         self.e_semester_entry.bind('<FocusOut>', self.add_key_bindings)
         self.e_semester_entry.set("C31")
@@ -395,7 +395,7 @@ class TeraTermUI(customtkinter.CTk):
         self.m_section_entry.bind('<FocusIn>', self.remove_key_bindings)
         self.m_section_entry.bind('<FocusOut>', self.add_key_bindings)
         self.m_semester_entry = customtkinter.CTkComboBox(master=self.multiple_frame,
-                                                          values=["C23", "C31", "C32", "C33"])
+                                                          values=["C31", "C32", "C33", "C41", "C42", "C43"])
         self.m_semester_entry.set("C31")
         self.m_semester_entry.bind('<FocusIn>', self.remove_key_bindings)
         self.m_semester_entry.bind('<FocusOut>', self.add_key_bindings)
@@ -628,7 +628,7 @@ class TeraTermUI(customtkinter.CTk):
                 if self.language_menu.get() == "English":
                     CTkMessagebox(master=self, title="Info", message="Welcome to Tera Term UI!\n\n"
                                                                      "Make sure to not interact with Tera Term"
-                                                                     " while the application is performing tasks\n\n",
+                                                                     " while the application is performing tasks",
                                   button_width=380)
                 elif self.language_menu.get() == "Español":
                     CTkMessagebox(master=self, title="Info", message="¡Bienvenido a Tera Term UI!\n\n"
@@ -947,8 +947,8 @@ class TeraTermUI(customtkinter.CTk):
                             and re.fullmatch("^[A-Z]{2}1$", section, flags=re.IGNORECASE)
                             and re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE)
                             and (choice == "Register" or choice == "Drop")
-                            and (semester == "C23" or semester == "C31" or semester == "C41"
-                                 or semester == "C32" or semester == "C33")):
+                            and (semester == "C31" or semester == "C32" or semester == "C33", semester =="C41", 
+                                 semester == "C42", semester == "C43")):
                         ctypes.windll.user32.BlockInput(True)
                         term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
                         term_window.restore()
@@ -4628,8 +4628,8 @@ class TeraTermUI(customtkinter.CTk):
                                    or ((choice == "Drop" or choice == "Baja") and classes
                                        not in self.dropped_classes_list.values() and section
                                        not in self.dropped_classes_list)
-                                   and (semester == "C23" or semester == "C31" or semester == "C41"
-                                        or semester == "C32" or semester == "C33")):
+                                   and (semester == "C31" or semester == "C32" or semester == "C33",
+                                        semester == "C41", semester == "C42", semester == "C43")):
             return True
         else:
             if not self.auto_enroll_bool:
