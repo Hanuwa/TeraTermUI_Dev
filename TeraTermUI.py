@@ -661,10 +661,10 @@ class TeraTermUI(customtkinter.CTk):
             lang = self.language_menu.get()
             try:
                 latest_version = self.get_latest_release()
-                if not self.compare_versions(latest_version, self.USER_APP_VERSION) and welcome[0][0] == "Checked":
+                if not self.compare_versions(latest_version, self.USER_APP_VERSION) and welcome:
                     if lang == "English":
                         msg = CTkMessagebox(master=self, title="Exit",
-                                            message="A newer version of the application is available, "
+                                            message="A newer version of the application is available,\n\n"
                                                     "would you like to update?",
                                             icon="question",
                                             option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
@@ -672,7 +672,7 @@ class TeraTermUI(customtkinter.CTk):
                                             hover_color=("darkred", "darkblue", "darkblue"))
                     elif lang == "Español":
                         msg = CTkMessagebox(master=self, title="Salir",
-                                            message="Una nueva de versión de la aplicación esta disponible, "
+                                            message="Una nueva de versión de la aplicación esta disponible,\n\n "
                                                     "¿desea actualizar?",
                                             icon="question",
                                             option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
@@ -2942,6 +2942,7 @@ class TeraTermUI(customtkinter.CTk):
         block_window.grab_set()
         lang = self.language_menu.get()
         self.focus_set()
+        self.hide_sidebar_windows()
         self.destroy_windows()
         if self.auto_enroll.get() == "on":
             self.auto_enroll_bool = True
@@ -2954,6 +2955,7 @@ class TeraTermUI(customtkinter.CTk):
                     uprb_window.wait('visible', timeout=100)
                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                     send_keys("{ENTER}")
+                    self.reset_activity_timer(None)
                     screenshot_thread = threading.Thread(target=self.capture_screenshot)
                     screenshot_thread.start()
                     screenshot_thread.join()
@@ -3134,6 +3136,7 @@ class TeraTermUI(customtkinter.CTk):
             if hasattr(self, 'running') and self.running.get():
                 self.running.set(False)
                 self.timer_window.destroy()
+        self.show_sidebar_windows()
         task_done.set()
         block_window.destroy()
 
@@ -3787,13 +3790,14 @@ class TeraTermUI(customtkinter.CTk):
         self.is_running = False
 
     # Disables check_idle functionality
-    def disable_idle(self):
+    def disable_enable_idle(self):
         if self.disableIdle.get() == "on":
             idle = self.cursor.execute("SELECT idle FROM user_data").fetchall()
             if len(idle) == 0:
                 self.cursor.execute("INSERT INTO user_data (idle) VALUES (?)", ("Disabled",))
             elif len(idle) == 1:
                 self.cursor.execute("UPDATE user_data SET idle=?", ("Disabled",))
+            self.reset_activity_timer(None)
             self.stop_thread()
         if self.disableIdle.get() == "off":
             idle = self.cursor.execute("SELECT idle FROM user_data").fetchall()
@@ -3801,6 +3805,20 @@ class TeraTermUI(customtkinter.CTk):
                 self.cursor.execute("INSERT INTO user_data (idle) VALUES (?)", ("Enabled",))
             elif len(idle) == 1:
                 self.cursor.execute("UPDATE user_data SET idle=?", ("Enabled",))
+            if self.run_fix:
+                self.hide_sidebar_windows()
+                self.destroy_windows()
+                ctypes.windll.user32.BlockInput(True)
+                term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                term_window.restore()
+                uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
+                uprb_window.wait('visible', timeout=100)
+                self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                send_keys("{ENTER}")
+                ctypes.windll.user32.BlockInput(False)
+                self.reset_activity_timer(None)
+                self.start_check_idle_thread()
+                self.show_sidebar_windows()
         self.connection.commit()
 
     # resets the idle timer when user interacts with something within the application
@@ -4244,7 +4262,7 @@ class TeraTermUI(customtkinter.CTk):
                                                                             " because of inactivity")
             disableIdleText.pack()
             self.disableIdle = customtkinter.CTkSwitch(scrollable_frame, text="Disable Anti-Idle", onvalue="on",
-                                                       offvalue="off", command=self.disable_idle)
+                                                       offvalue="off", command=self.disable_enable_idle)
             self.disableIdle.pack()
             fixText = customtkinter.CTkLabel(scrollable_frame, text="\nFix the program not executing things properly")
             fixText.pack()
@@ -4319,7 +4337,7 @@ class TeraTermUI(customtkinter.CTk):
                                                                             " por inactividad")
             disableIdleText.pack()
             self.disableIdle = customtkinter.CTkSwitch(scrollable_frame, text="Desactiva Anti-Inactivo", onvalue="on",
-                                                       offvalue="off", command=self.disable_idle)
+                                                       offvalue="off", command=self.disable_enable_idle)
             self.disableIdle.pack()
             fixText = customtkinter.CTkLabel(scrollable_frame, text="\nArreglar el programa que no ejecuta"
                                                                     "\n las cosas correctamente")
