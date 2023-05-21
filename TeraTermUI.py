@@ -796,7 +796,6 @@ class TeraTermUI(customtkinter.CTk):
                         screenshot_thread.start()
                         screenshot_thread.join()
                         text = self.capture_screenshot()
-                        self.set_focus_to_tkinter()
                         if "ID NOT ON FILE" in text or "PASS" in text:
                             self.bind("<Return>", lambda event: self.tuition_event_handler())
                             if "PASS" in text:
@@ -1032,13 +1031,13 @@ class TeraTermUI(customtkinter.CTk):
                                         self.show_information_message(350, 265, "Reached Enrollment limit!")
                                     elif lang == "Español":
                                         self.show_information_message(350, 265, "Llegó al Límite de Matrícula")
-                            else:
-                                self.reset_activity_timer(None)
                                 self.set_focus_to_tkinter()
+                            else:
                                 if lang == "English":
                                     self.show_error_message(320, 235, "Error! Unable to enroll class")
                                 elif lang == "Español":
                                     self.show_error_message(320, 235, "¡Error! No se pudo matricular la clase")
+                                self.set_focus_to_tkinter()
                         else:
                             if "OUTDATED" in text_output or "INVALID TERM SELECTION" in text_output:
                                 send_keys("{TAB}")
@@ -1046,7 +1045,6 @@ class TeraTermUI(customtkinter.CTk):
                                 self.uprb.UprbayTeraTermVt.type_keys(semester.replace(" ", ""))
                                 send_keys("{ENTER}")
                                 self.reset_activity_timer(None)
-                                self.set_focus_to_tkinter()
                             if lang == "English":
                                 self.show_error_message(300, 210, "Error! Unable to enroll class")
                                 if not self.error_check:
@@ -1064,6 +1062,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.show_information_message(350, 265, "Reached Enrollment limit!")
                                 elif lang == "Español":
                                     self.show_information_message(350, 265, "Llegó al Límite de Matrícula")
+                            self.set_focus_to_tkinter()
                     else:
                         if lang == "English":
                             self.show_error_message(350, 265, "Error! Wrong Class or Section \n\n"
@@ -1688,6 +1687,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.show_information_message(350, 265, "Reached Enrollment limit!")
                                 elif lang == "Español":
                                     self.show_information_message(350, 265, "Llegó al Límite de Matrícula")
+                            self.set_focus_to_tkinter()
                             self.m_classes_entry.delete(0, "end")
                             self.m_section_entry.delete(0, "end")
                             self.m_classes_entry2.delete(0, "end")
@@ -1713,8 +1713,6 @@ class TeraTermUI(customtkinter.CTk):
                             self.m_classes_entry6.configure(placeholder_text="HUMA3101")
                             self.m_section_entry6.configure(placeholder_text="LN1")
                         else:
-                            self.reset_activity_timer(None)
-                            self.set_focus_to_tkinter()
                             if lang == "English":
                                 self.show_error_message(320, 235, "Error! Unable to enroll classes")
                             if lang == "Español":
@@ -1723,6 +1721,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.check = False
                             self.m_counter = self.m_counter - counter - 1
                             self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
+                            self.set_focus_to_tkinter()
                     else:
                         if "OUTDATED" in text_output or "INVALID TERM SELECTION" in text_output:
                             self.uprb.UprbayTeraTermVt.type_keys(semester.replace(" ", ""))
@@ -1730,7 +1729,6 @@ class TeraTermUI(customtkinter.CTk):
                             send_keys("{ENTER}")
                             send_keys("{TAB 2}")
                             self.reset_activity_timer(None)
-                            self.set_focus_to_tkinter()
                         if lang == "English":
                             self.show_error_message(300, 210, "Error! Unable to enroll class")
                             if not self.error_check:
@@ -1751,6 +1749,7 @@ class TeraTermUI(customtkinter.CTk):
                             elif lang == "Español":
                                 self.show_information_message(350, 265, "Llegó al Límite de Matrícula")
                             self.check = False
+                        self.set_focus_to_tkinter()
                 else:
                     if lang == "English":
                         self.show_error_message(320, 235, "Error! Can only enroll up to 15 classes")
@@ -2357,7 +2356,6 @@ class TeraTermUI(customtkinter.CTk):
                     self.show_loading_screen_again()
                     time.sleep(3)
                     send_keys("{ENTER 3}")
-                    self.set_focus_to_tkinter()
                     self.student_frame.grid(row=0, column=1, columnspan=2, padx=(20, 20), pady=(20, 0))
                     self.student_frame.grid_columnconfigure(2, weight=1)
                     self.s_buttons_frame.grid(row=2, column=1, padx=(20, 20), pady=(20, 0))
@@ -2450,7 +2448,6 @@ class TeraTermUI(customtkinter.CTk):
                             continue_button.click_input()
                             self.show_loading_screen_again()
                         ctypes.windll.user32.BlockInput(False)
-                        self.set_focus_to_tkinter()
                         self.authentication_frame.grid(row=0, column=1, columnspan=2, padx=(20, 20), pady=(20, 0))
                         self.authentication_frame.grid_columnconfigure(2, weight=1)
                         self.a_buttons_frame.grid(row=2, column=1, columnspan=2, padx=(20, 20), pady=(20, 0))
@@ -3846,6 +3843,10 @@ class TeraTermUI(customtkinter.CTk):
     def set_focus_to_tkinter(self):
         tk_handle = win32gui.FindWindow(None, "Tera Term UI")
         win32gui.SetForegroundWindow(tk_handle)
+        self.focus_force()
+        self.lift()
+        self.attributes('-topmost', 1)
+        self.after_idle(self.attributes, '-topmost', 0)
 
     # Set focus on Tera Term window
     def unfocus_tkinter(self):
