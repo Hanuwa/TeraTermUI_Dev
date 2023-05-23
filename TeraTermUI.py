@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 5/21/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 5/23/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -24,12 +24,15 @@ import socket
 from contextlib import closing
 from tkinter import filedialog
 import gc
+import shutil
+import tempfile
 import pyautogui
 import requests
 import win32gui
 import pygetwindow as gw
 import math
 import secrets
+from pathlib import Path
 # from collections import deque
 # from memory_profiler import profile
 from customtkinter import ctktable
@@ -99,9 +102,12 @@ class TeraTermUI(customtkinter.CTk):
         self.USER_APP_VERSION = "0.9.0"
 
         # path for tesseract application
-        tesseract_path = os.path.join(os.path.dirname(__file__), "Tesseract-OCR")
-        pytesseract.pytesseract.tesseract_cmd = os.path.join(tesseract_path, "tesseract.exe")
-        self.tessdata_dir_config = f"--tessdata-dir {os.path.join(tesseract_path, 'tessdata')}"
+        self.zip_path = os.path.join(os.path.dirname(__file__), 'Tesseract-OCR.zip')
+        self.temp_dir = tempfile.mkdtemp()
+        self.tesseract_dir = None
+        self.tessdata_dir_config = None
+        thread = threading.Thread(target=self.setup_tesseract())
+        thread.start()
 
         # configure grid layout (4x4)
         self.grid_columnconfigure(1, weight=1)
@@ -659,31 +665,41 @@ class TeraTermUI(customtkinter.CTk):
         # Asks the user if they want to update to the latest version of the application
         def update_app():
             lang = self.language_menu.get()
-            try:
-                latest_version = self.get_latest_release()
-                if not self.compare_versions(latest_version, self.USER_APP_VERSION) and welcome:
-                    if lang == "English":
-                        msg = CTkMessagebox(master=self, title="Exit",
-                                            message="A newer version of the application is available,\n\n"
-                                                    "would you like to update?",
-                                            icon="question",
-                                            option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
-                                            button_color=("#c30101", "#145DA0", "#145DA0"),
-                                            hover_color=("darkred", "darkblue", "darkblue"))
-                    elif lang == "Español":
-                        msg = CTkMessagebox(master=self, title="Salir",
-                                            message="Una nueva de versión de la aplicación esta disponible,\n\n "
-                                                    "¿desea actualizar?",
-                                            icon="question",
-                                            option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
-                                            button_color=("#c30101", "#145DA0", "#145DA0"),
-                                            hover_color=("darkred", "darkblue", "darkblue"))
-                    response = msg.get()
-                    if response == "Yes" or response == "Sí" and self.test_connection(lang):
-                        webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
-            except requests.exceptions.RequestException as e:
-                print(f"Error occurred while fetching latest release information: {e}")
-                print("Please check your internet connection and try again.")
+            current_date = datetime.today().strftime('%Y-%m-%d')
+            date = self.cursor.execute("SELECT date FROM user_data WHERE date IS NOT NULL").fetchall()
+            dates_list = [record[0] for record in date]
+            if current_date not in dates_list:
+                try:
+                    latest_version = self.get_latest_release()
+                    if not self.compare_versions(latest_version, self.USER_APP_VERSION) and welcome:
+                        if lang == "English":
+                            msg = CTkMessagebox(master=self, title="Exit",
+                                                message="A newer version of the application is available,\n\n"
+                                                        "would you like to update?",
+                                                icon="question",
+                                                option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
+                                                button_color=("#c30101", "#145DA0", "#145DA0"),
+                                                hover_color=("darkred", "darkblue", "darkblue"))
+                        elif lang == "Español":
+                            msg = CTkMessagebox(master=self, title="Salir",
+                                                message="Una nueva de versión de la aplicación esta disponible,\n\n "
+                                                        "¿desea actualizar?",
+                                                icon="question",
+                                                option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
+                                                button_color=("#c30101", "#145DA0", "#145DA0"),
+                                                hover_color=("darkred", "darkblue", "darkblue"))
+                        response = msg.get()
+                        if response == "Yes" or response == "Sí" and self.test_connection(lang):
+                            webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
+                        resultDate = self.cursor.execute("SELECT date FROM user_data").fetchall()
+                        if len(resultDate) == 0:
+                            self.cursor.execute("INSERT INTO user_data (date) VALUES (?)", (current_date,))
+                        elif len(resultDate) == 1:
+                            self.cursor.execute("UPDATE user_data SET date=?", (current_date,))
+                        self.connection.commit()
+                except requests.exceptions.RequestException as e:
+                    print(f"Error occurred while fetching latest release information: {e}")
+                    print("Please check your internet connection and try again.")
 
         self.after(100, update_app)
 
@@ -715,6 +731,7 @@ class TeraTermUI(customtkinter.CTk):
             if self.checkIfProcessRunning("ttermpro") and self.window_exists("Tera Term - [disconnected] VT"):
                 subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
                                check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            self.cleanup_tesseract()
             self.restore_original_font(self.teraterm_file)
             self.save_user_data()
             self.destroy()
@@ -947,7 +964,7 @@ class TeraTermUI(customtkinter.CTk):
                             and re.fullmatch("^[A-Z]{2}1$", section, flags=re.IGNORECASE)
                             and re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE)
                             and (choice == "Register" or choice == "Drop")
-                            and (semester == "C31" or semester == "C32" or semester == "C33", semester =="C41", 
+                            and (semester == "C31" or semester == "C32" or semester == "C33", semester == "C41",
                                  semester == "C42", semester == "C43")):
                         ctypes.windll.user32.BlockInput(True)
                         term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
@@ -1063,6 +1080,14 @@ class TeraTermUI(customtkinter.CTk):
                                 elif lang == "Español":
                                     self.show_information_message(350, 265, "Llegó al Límite de Matrícula")
                             self.set_focus_to_tkinter()
+                    if not self.e_classes_entry.get() or not self.section_entry.get() or \
+                            (choice == "Choose" and choice == "Escoge"):
+                        if lang == "English":
+                            self.show_error_message(350, 230, "Error! Must enter the information\n"
+                                                              " about the classes you want to enroll")
+                        elif lang == "Español":
+                            self.show_error_message(350, 230, "¡Error! Tiene que escribir la informacion\n"
+                                                              " de las clases que quieres matricular")
                     else:
                         if lang == "English":
                             self.show_error_message(350, 265, "Error! Wrong Class or Section \n\n"
@@ -2375,6 +2400,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.show.grid(row=4, column=1, padx=(10, 0), pady=(0, 10))
                     self.back2.grid(row=5, column=0, padx=(0, 10), pady=(0, 0))
                     self.system.grid(row=5, column=1, padx=(10, 0), pady=(0, 0))
+                    self.username_entry.delete(0, "end")
                     self.a_buttons_frame.grid_forget()
                     self.authentication_frame.grid_forget()
                     self.set_focus_to_tkinter()
@@ -2554,9 +2580,6 @@ class TeraTermUI(customtkinter.CTk):
             self.t_buttons_frame.grid_forget()
             self.multiple_frame.grid_forget()
             self.m_button_frame.grid_forget()
-            self.username_entry.delete(0, "end")
-            self.ssn_entry.delete(0, "end")
-            self.code_entry.delete(0, "end")
             self.ssn_entry.configure(placeholder_text="#########")
             self.code_entry.configure(placeholder_text="####")
             self.ssn_entry.configure(show="*")
@@ -3412,6 +3435,17 @@ class TeraTermUI(customtkinter.CTk):
         text = pytesseract.image_to_string(img, config=custom_config)
         return text
 
+    def setup_tesseract(self):
+        with pyzipper.AESZipFile(self.zip_path) as zf:
+            zf.extractall(self.temp_dir)
+
+        self.tesseract_dir = Path(self.temp_dir) / "Tesseract-OCR"
+        pytesseract.pytesseract.tesseract_cmd = str(self.tesseract_dir / "tesseract.exe")
+        self.tessdata_dir_config = f"--tessdata-dir {self.tesseract_dir / 'tessdata'}"
+
+    def cleanup_tesseract(self):
+        shutil.rmtree(self.temp_dir)
+
     # error window pop up message
     def show_error_message(self, width, height, error_msg_text):
         if self.error and self.error.winfo_exists():
@@ -3748,10 +3782,10 @@ class TeraTermUI(customtkinter.CTk):
                 ctypes.windll.user32.BlockInput(False)
                 if lang == "English":
                     self.show_information_message(375, 250, "The problem is usually caused because"
-                                                            "\n of user pressing buttons in Tera Term")
+                                                            "\n of user interacting directly with Tera Term")
                 if lang == "Español":
                     self.show_information_message(375, 250, "El problema suele ser causado porque"
-                                                            "\n el usuario presiona botones en Tera Term")
+                                                            "\n el usuario interactuo directamente con Tera Term")
 
     # Starts the check for idle thread
     def start_check_idle_thread(self):
@@ -3998,6 +4032,7 @@ class TeraTermUI(customtkinter.CTk):
         except Exception as e:
             print(f"Failed to load credentials: {str(e)}")
             self.credentials = None
+            self.disable_feedback = True
 
     # Function to call the Google Sheets API
     def call_sheets_api(self, values):
@@ -4026,79 +4061,91 @@ class TeraTermUI(customtkinter.CTk):
     # Submits feedback from the user to a Google sheet
     def submit_feedback(self):
         lang = self.language_menu.get()
-        current_date = datetime.today().strftime('%Y-%m-%d')
-        date = self.cursor.execute("SELECT date FROM user_data WHERE date IS NOT NULL").fetchall()
-        dates_list = [record[0] for record in date]
-        if current_date not in dates_list:
-            feedback = self.feedbackText.get("1.0", tk.END).strip()
-            word_count = len(feedback.split())
-            if word_count > 1000:
+        if not self.disable_feedback:
+            current_date = datetime.today().strftime('%Y-%m-%d')
+            date = self.cursor.execute("SELECT date FROM user_data WHERE date IS NOT NULL").fetchall()
+            dates_list = [record[0] for record in date]
+            if current_date not in dates_list:
+                feedback = self.feedbackText.get("1.0", tk.END).strip()
+                word_count = len(feedback.split())
+                if word_count > 1000:
+                    winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                    if lang == "English":
+                        CTkMessagebox(title="Error", message="Error! Feedback cannot exceed 1000 words", icon="cancel",
+                                      button_width=380)
+                    elif lang == "Español":
+                        CTkMessagebox(title="Error", message="¡Error! El comentario no puede exceder 1000 palabras",
+                                      icon="cancel",
+                                      button_width=380)
+                    return
+                if lang == "English":
+                    msg = CTkMessagebox(master=self, title="Submit",
+                                        message="Are you ready to submit your feedback?"
+                                                " \n\n(SUBMISSION IS COMPLETELY ANONYMOUS)",
+                                        icon="question",
+                                        option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
+                                        button_color=("#c30101", "#145DA0", "#145DA0"),
+                                        hover_color=("darkred", "darkblue", "darkblue"))
+                elif lang == "Español":
+                    msg = CTkMessagebox(master=self, title="Someter",
+                                        message="¿Estás preparado para mandar to comentario?"
+                                        " \n\n(EL ENVÍO ES COMPLETAMENTE ANÓNIMO)",
+                                        icon="question",
+                                        option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
+                                        button_color=("#c30101", "#145DA0", "#145DA0"),
+                                        hover_color=("darkred", "darkblue", "darkblue"))
+                response = msg.get()
+                if response == "Yes" or response == "Sí" and self.test_connection(lang):
+                    feedback = self.feedbackText.get("1.0", tk.END).strip()
+                    if not feedback:
+                        winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                        if lang == "English":
+                            CTkMessagebox(title="Error", message="Error! Feedback cannot be empty", icon="cancel",
+                                          button_width=380)
+                        elif lang == "Español":
+                            CTkMessagebox(title="Error", message="¡Error! El comentario no puede estar vacio",
+                                          icon="cancel", button_width=380)
+                        return
+                    result = self.call_sheets_api([[feedback]])
+                    if result:
+                        winsound.PlaySound("sounds/success.wav", winsound.SND_ASYNC)
+                        if lang == "English":
+                            CTkMessagebox(title="Success", icon="check", message="Feedback submitted successfully!",
+                                          button_width=380)
+                        elif lang == "Español":
+                            CTkMessagebox(title="Success", icon="check", message="¡Comentario sometido éxitosamente!",
+                                          button_width=380)
+                        resultDate = self.cursor.execute("SELECT date FROM user_data").fetchall()
+                        if len(resultDate) == 0:
+                            self.cursor.execute("INSERT INTO user_data (date) VALUES (?)", (current_date,))
+                        elif len(resultDate) == 1:
+                            self.cursor.execute("UPDATE user_data SET date=?", (current_date,))
+                        self.connection.commit()
+                        self.feedbackText.delete("1.0", tk.END)
+                    else:
+                        winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                        if lang == "English":
+                            CTkMessagebox(title="Error", message="Error! An error occurred while submitting feedback",
+                                          icon="cancel", button_width=380)
+                        elif lang == "Español":
+                            CTkMessagebox(title="Error",
+                                          message="¡Error! Un error ocurrio mientras se sometia comentario",
+                                          icon="cancel", button_width=380)
+            else:
                 winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                 if lang == "English":
-                    CTkMessagebox(title="Error", message="Error! Feedback cannot exceed 1000 words", icon="cancel",
+                    CTkMessagebox(title="Error", message="Error! Cannot submit more than one feedback", icon="cancel",
                                   button_width=380)
                 elif lang == "Español":
-                    CTkMessagebox(title="Error", message="¡Error! El comentario no puede exceder 1000 palabras",
-                                  icon="cancel",
-                                  button_width=380)
-                return
-            if lang == "English":
-                msg = CTkMessagebox(master=self, title="Submit", message="Are you ready to submit your feedback?"
-                                                                         " \n\n(SUBMISSION IS COMPLETELY ANONYMOUS)",
-                                    icon="question",
-                                    option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
-                                    button_color=("#c30101", "#145DA0", "#145DA0"),
-                                    hover_color=("darkred", "darkblue", "darkblue"))
-            elif lang == "Español":
-                msg = CTkMessagebox(master=self, title="Someter", message="¿Estás preparado para mandar to comentario?"
-                                                                          " \n\n(EL ENVÍO ES COMPLETAMENTE ANÓNIMO)",
-                                    icon="question",
-                                    option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
-                                    button_color=("#c30101", "#145DA0", "#145DA0"),
-                                    hover_color=("darkred", "darkblue", "darkblue"))
-            response = msg.get()
-            if response == "Yes" or response == "Sí" and self.test_connection(lang):
-                feedback = self.feedbackText.get("1.0", tk.END).strip()
-                if not feedback:
-                    winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                    if lang == "English":
-                        CTkMessagebox(title="Error", message="Error! Feedback cannot be empty", icon="cancel",
-                                      button_width=380)
-                    elif lang == "Español":
-                        CTkMessagebox(title="Error", message="¡Error! El comentario no puede estar vacio",
-                                      icon="cancel", button_width=380)
-                    return
-                result = self.call_sheets_api([[feedback]])
-                if result:
-                    winsound.PlaySound("sounds/success.wav", winsound.SND_ASYNC)
-                    if lang == "English":
-                        CTkMessagebox(title="Success", icon="check", message="Feedback submitted successfully!",
-                                      button_width=380)
-                    elif lang == "Español":
-                        CTkMessagebox(title="Success", icon="check", message="¡Comentario sometido éxitosamente!",
-                                      button_width=380)
-                    resultDate = self.cursor.execute("SELECT date FROM user_data").fetchall()
-                    if len(resultDate) == 0:
-                        self.cursor.execute("INSERT INTO user_data (date) VALUES (?)", (current_date,))
-                    elif len(resultDate) == 1:
-                        self.cursor.execute("UPDATE user_data SET date=?", (current_date,))
-                    self.connection.commit()
-                    self.feedbackText.delete("1.0", tk.END)
-                else:
-                    winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                    if lang == "English":
-                        CTkMessagebox(title="Error", message="Error! An error occurred while submitting feedback",
-                                      icon="cancel", button_width=380)
-                    elif lang == "Español":
-                        CTkMessagebox(title="Error", message="¡Error! Un error ocurrio mientras se sometia comentario",
-                                      icon="cancel", button_width=380)
+                    CTkMessagebox(title="Error", message="¡Error! No se puede enviar más de un comentario",
+                                  icon="cancel", button_width=380)
         else:
             winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
             if lang == "English":
-                CTkMessagebox(title="Error", message="Error! Cannot submit more than one feedback", icon="cancel",
-                              button_width=380)
+                CTkMessagebox(title="Error", message="Error! Feedback submission not currently available",
+                              icon="cancel", button_width=380)
             elif lang == "Español":
-                CTkMessagebox(title="Error", message="¡Error! No se puede enviar más de un comentario",
+                CTkMessagebox(title="Error", message="¡Error! Mandar comentarios no esta disponible ahora mismo",
                               icon="cancel", button_width=380)
 
     # Function that lets user select where their Tera Term application is located
@@ -4633,20 +4680,29 @@ class TeraTermUI(customtkinter.CTk):
             return True
         else:
             if not self.auto_enroll_bool:
-                if lang == "English":
-                    self.show_error_message(400, 310, "Error! Wrong Format for Classes, Sections, \n\n "
-                                                      "Semester or you are trying to enroll \n\n"
-                                                      "a class or a section \n\n"
-                                                      " that has already been enrolled")
-                elif lang == "Español":
-                    self.show_error_message(400, 310, "¡Error! Formato Incorrecto para Clases, "
-                                                      "\n\n Secciones, Semestre o estás intentando de"
-                                                      "\n\n matricular una clase o sección "
-                                                      "\n\n que ya ha sido matriculada")
+                if not self.m_classes_entry.get() or not self.m_section_entry.get() or \
+                        (choice == "Choose" and choice == "Escoge"):
+                    if lang == "English":
+                        self.show_error_message(350, 230, "Error! Must enter the information\n"
+                                                          " about the classes you want to enroll")
+                    elif lang == "Español":
+                        self.show_error_message(350, 230, "¡Error! Tiene que escribir la informacion\n"
+                                                          " de las clases que quieres matricular")
+                else:
+                    if lang == "English":
+                        self.show_error_message(400, 310, "Error! Wrong Format for Classes, Sections, \n\n "
+                                                          "Semester or you are trying to enroll \n\n"
+                                                          "a class or a section \n\n"
+                                                          " that has already been enrolled")
+                    elif lang == "Español":
+                        self.show_error_message(400, 310, "¡Error! Formato Incorrecto para Clases, "
+                                                          "\n\n Secciones, Semestre o estás intentando de"
+                                                          "\n\n matricular una clase o sección "
+                                                          "\n\n que ya ha sido matriculada")
             if self.auto_enroll_bool:
                 if lang == "English":
-                    self.show_error_message(350, 230, "Error! Must enter the classes\n"
-                                                      " you want to enroll")
+                    self.show_error_message(350, 230, "Error! Must enter the information\n"
+                                                      " about the classes you want to enroll")
                 elif lang == "Español":
                     self.show_error_message(350, 230, "¡Error! Tiene que escribir la informacion\n"
                                                       " de las clases que quieres matricular")
