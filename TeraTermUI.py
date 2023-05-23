@@ -500,6 +500,7 @@ class TeraTermUI(customtkinter.CTk):
         self.default_semester = "C31"
         self.enrolled_classes_list = {}
         self.dropped_classes_list = {}
+        self.disable_feedback = False
         self.auto_enroll_bool = False
         self.countdown_running = False
         self.error_check = False
