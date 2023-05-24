@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 5/23/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 5/24/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -4526,7 +4526,7 @@ class TeraTermUI(customtkinter.CTk):
         choice6 = self.m_register_menu6.get()
         if counter == 0:
             self.check = True
-        if counter == 1 and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes2, flags=re.IGNORECASE) \
+        elif counter == 1 and re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes2, flags=re.IGNORECASE) \
                 and re.fullmatch("^[A-Z]{2}1$", section2, flags=re.IGNORECASE) \
                 and (choice2 != "Choose" and choice2 != "Escoge") \
                 and ((choice2 == "Register" or choice2 == "Registra") and classes2
@@ -4678,6 +4678,8 @@ class TeraTermUI(customtkinter.CTk):
                                        not in self.dropped_classes_list)
                                    and (semester == "C31" or semester == "C32" or semester == "C33",
                                         semester == "C41", semester == "C42", semester == "C43")):
+            self.check = False
+            self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
             return True
         else:
             if not self.auto_enroll_bool:
@@ -4709,9 +4711,9 @@ class TeraTermUI(customtkinter.CTk):
                                                       " de las clases que quieres matricular")
                 self.auto_enroll_bool = False
                 self.auto_enroll.deselect()
+                return False
             self.check = False
             self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
-            return False
 
 
 if __name__ == "__main__":
