@@ -387,7 +387,7 @@ class TeraTermUI(customtkinter.CTk):
         self.save_frame = customtkinter.CTkFrame(self, corner_radius=10)
         self.auto_frame = customtkinter.CTkFrame(self, corner_radius=10)
         self.explanation7 = customtkinter.CTkLabel(master=self.multiple_frame,
-                                                   text="Enroll Multiple Classes at once ",
+                                                   text="Enroll Multiple Classes ",
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
         self.m_class = customtkinter.CTkLabel(master=self.multiple_frame, text="Class")
         self.m_section = customtkinter.CTkLabel(master=self.multiple_frame, text="Section")
@@ -427,7 +427,7 @@ class TeraTermUI(customtkinter.CTk):
                                                    command=self.save_classes, onvalue="on", offvalue="off")
         self.save_data_tooltip = CTkToolTip(self.save_data, message="Next time you log-in, the classes\n you saved will"
                                                                     " already be there!", bg_color="#1E90FF")
-        self.auto_enroll = customtkinter.CTkSwitch(master=self.auto_frame, text="Auto-Enroll Classes ", onvalue="on",
+        self.auto_enroll = customtkinter.CTkSwitch(master=self.auto_frame, text="Auto-Enroll ", onvalue="on",
                                                    offvalue="off", command=self.auto_enroll_event_handler)
         self.auto_enroll_tooltip = CTkToolTip(self.auto_enroll, message="Will Automatically enroll the classes\n"
                                                                         " you selected at the exact time\n"
@@ -1408,6 +1408,7 @@ class TeraTermUI(customtkinter.CTk):
     # multiple classes screen
     def multiple_classes_event(self):
         self.focus_set()
+        lang = self.language_menu.get()
         scaling = self.scaling_optionemenu.get()
         self.arrow = True
         self.current_scaling = scaling
@@ -1426,9 +1427,15 @@ class TeraTermUI(customtkinter.CTk):
         self.multiple_frame.grid_columnconfigure(2, weight=1)
         self.m_button_frame.grid(row=3, column=1, columnspan=4, rowspan=4, padx=(0, 0), pady=(0, 0))
         self.m_button_frame.grid_columnconfigure(2, weight=1)
-        self.save_frame.grid(row=3, column=2, padx=(0, 10), pady=(0, 0))
+        if lang == "English":
+            self.save_frame.grid(row=3, column=2, padx=(0, 9), pady=(0, 0))
+        elif lang == "Español":
+            self.save_frame.grid(row=3, column=2, padx=(0, 11), pady=(0, 0))
         self.save_frame.grid_columnconfigure(2, weight=1)
-        self.auto_frame.grid(row=3, column=1, padx=(0, 335), pady=(0, 0))
+        if lang == "English":
+            self.auto_frame.grid(row=3, column=1, padx=(0, 387), pady=(0, 0))
+        elif lang == "Español":
+            self.auto_frame.grid(row=3, column=1, padx=(0, 399), pady=(0, 0))
         self.save_frame.grid_columnconfigure(2, weight=1)
         self.explanation7.grid(row=0, column=1, padx=(0, 0), pady=(0, 20))
         self.m_class.grid(row=0, column=1, padx=(0, 500), pady=(32, 0))
@@ -2760,7 +2767,7 @@ class TeraTermUI(customtkinter.CTk):
             self.show_classes.configure(text="Enseñar Mis Clases")
             self.back3.configure(text="Atrás")
             self.multiple.configure(text="Múltiples Clases")
-            self.explanation7.configure(text="Matricular Múltiples Clases a la misma vez")
+            self.explanation7.configure(text="Matricular Múltiples Clases ")
             self.m_class.configure(text="Clase")
             self.m_section.configure(text="Sección")
             self.m_semester.configure(text="Semestre")
@@ -2801,7 +2808,7 @@ class TeraTermUI(customtkinter.CTk):
             self.m_remove_tooltip.configure(message="Eliminar clases")
             self.multiple_tooltip.configure(message="Matricula múltiples \nclases"
                                                     " a la misma vez")
-            self.save_data.configure(text="Guardar clases \npara más tarde")
+            self.save_data.configure(text="Guardar clases \npara más tarde ")
             self.save_data_tooltip.configure(message="¡La próxima vez que inicies sesión,\n"
                                                      " las clases que guardaste estarán ahí!")
             self.auto_enroll.configure(text="Auto-Matrícula ")
@@ -2899,7 +2906,7 @@ class TeraTermUI(customtkinter.CTk):
             self.show_classes.configure(text="Show My Classes")
             self.back3.configure(text="Back")
             self.multiple.configure(text="Multiple Classes")
-            self.explanation7.configure(text="Enroll Multiple Classes at once")
+            self.explanation7.configure(text="Enroll Multiple Classes ")
             self.m_class.configure(text="Class")
             self.m_section.configure(text="Section")
             self.m_semester.configure(text="Semester")
@@ -2944,7 +2951,7 @@ class TeraTermUI(customtkinter.CTk):
             self.save_data.configure(text="Save classes for later ")
             self.save_data_tooltip.configure(message="Next time you log-in, the classes\n"
                                                      " you saved will already be there!")
-            self.auto_enroll.configure(text="Auto-Enroll Classes ")
+            self.auto_enroll.configure(text="Auto-Enroll ")
             self.auto_enroll_tooltip.configure(message="Will Automatically enroll the classes\n"
                                                        " you selected at the exact time\n"
                                                        " the enrollment process becomes\n"
@@ -3322,7 +3329,7 @@ class TeraTermUI(customtkinter.CTk):
         if lang == "English":
             self.loading_screen.title("Loading...")
         if lang == "Español":
-            self.loading_screen.title("Cargando...")
+            self.loading_screen.title("Procesando...")
         self.loading_screen.overrideredirect(True)
         width = 275
         height = 150
@@ -3342,11 +3349,11 @@ class TeraTermUI(customtkinter.CTk):
         if lang == "English":
             loading = customtkinter.CTkLabel(self.loading_screen, text="Loading...",
                                              font=customtkinter.CTkFont(size=20, weight="bold"))
-            loading.pack(pady=30)
+            loading.pack(pady=(48, 12))
         if lang == "Español":
-            loading = customtkinter.CTkLabel(self.loading_screen, text="Cargando...",
+            loading = customtkinter.CTkLabel(self.loading_screen, text="Procesando...",
                                              font=customtkinter.CTkFont(size=20, weight="bold"))
-            loading.pack(pady=30)
+            loading.pack(pady=(48, 12))
         self.progress_bar = customtkinter.CTkProgressBar(self.loading_screen, mode="indeterminate",
                                                          height=15, width=230, indeterminate_speed=1.5)
         self.progress_bar.pack(pady=1)
@@ -3912,7 +3919,7 @@ class TeraTermUI(customtkinter.CTk):
             scrollable_frame = customtkinter.CTkScrollableFrame(self.status, width=475, height=275,
                                                                 fg_color=("#e6e6e6", "#222222"))
             scrollable_frame.pack()
-            title = customtkinter.CTkLabel(scrollable_frame, text="Status of the application",
+            title = customtkinter.CTkLabel(scrollable_frame, text="Status of the Application",
                                            font=customtkinter.CTkFont(size=20, weight="bold"))
             title.pack()
             version = customtkinter.CTkLabel(scrollable_frame, text="\n0.9.0 Version \n"
@@ -3972,7 +3979,7 @@ class TeraTermUI(customtkinter.CTk):
             scrollable_frame = customtkinter.CTkScrollableFrame(self.status, width=475, height=275, corner_radius=10,
                                                                 fg_color=("#e6e6e6", "#222222"))
             scrollable_frame.pack()
-            title = customtkinter.CTkLabel(scrollable_frame, text="Estado de la aplicación",
+            title = customtkinter.CTkLabel(scrollable_frame, text="Estado de la Aplicación",
                                            font=customtkinter.CTkFont(size=20, weight="bold"))
             title.pack()
             version = customtkinter.CTkLabel(scrollable_frame, text="\nVersión 0.9.0 \n"
@@ -4224,7 +4231,7 @@ class TeraTermUI(customtkinter.CTk):
         if len(results) == 0:
             if lang == "English":
                 self.class_list.insert(tk.END, "NO RESULTS FOUND")
-            if lang == "Español":
+            elif lang == "Español":
                 self.class_list.insert(tk.END, "NO SE ENCONTRARON RESULTADOS")
         else:
             for row in results:
@@ -4243,7 +4250,7 @@ class TeraTermUI(customtkinter.CTk):
             self.class_list.delete(0, tk.END)
             if lang == "English":
                 self.class_list.insert(tk.END, "NO RESULTS FOUND")
-            if lang == "Español":
+            elif lang == "Español":
                 self.class_list.insert(tk.END, "NO SE ENCONTRARON RESULTADOS")
         else:
             self.search_box.delete(0, tk.END)
