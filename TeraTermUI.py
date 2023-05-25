@@ -3104,11 +3104,13 @@ class TeraTermUI(customtkinter.CTk):
                             (is_same_date and not is_time_difference_within_3_hours) or \
                             (is_next_date and not is_time_difference_within_3_hours):
                         if lang == "English":
-                            self.show_error_message(320, 215, "Auto-Enroll only available\n"
-                                                              " the same day of enrollment")
+                            self.show_error_message(320, 235, "Auto-Enroll only available\n"
+                                                              " the same day of enrollment\n"
+                                                              " and within a 3 hour margin")
                         elif lang == "Español":
-                            self.show_error_message(320, 215, "Auto-Matrícula solo disponible\n"
-                                                              "el mismo día de la matrícula")
+                            self.show_error_message(320, 235, "Auto-Matrícula solo disponible\n"
+                                                              " el mismo día de la matrícula\n"
+                                                              " y dentro de un margen de 3 horas")
                         self.auto_enroll_bool = False
                         self.auto_enroll.deselect()
                     else:
