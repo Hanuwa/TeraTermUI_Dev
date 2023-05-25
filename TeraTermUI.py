@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 5/24/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 5/25/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1515,9 +1515,10 @@ class TeraTermUI(customtkinter.CTk):
         classes6 = self.m_classes_entry6.get().upper().replace(" ", "")
         section6 = self.m_section_entry6.get().upper().replace(" ", "")
         choice6 = self.m_register_menu6.get()
+        can_enroll_classes = self.e_counter + self.m_counter + counter + 1 <= 15
         if self.test_connection(lang) and self.check_server() and self.check_format():
             if self.checkIfProcessRunning("ttermpro"):
-                if self.e_counter + self.m_counter + counter + 1 <= 15:
+                if can_enroll_classes:
                     ctypes.windll.user32.BlockInput(True)
                     term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
                     term_window.restore()
@@ -3017,11 +3018,17 @@ class TeraTermUI(customtkinter.CTk):
                     # Get current datetime
                     current_date = datetime.now(puerto_rico_tz)
                     time_difference = your_date - current_date
+                    # Dates
+                    is_same_date = (current_date.date() == your_date.date())
+                    is_past_date = current_date > your_date
+                    is_future_date = current_date < your_date
+                    is_next_date = (your_date.date() - current_date.date() == timedelta(days=1))
+                    is_time_difference_within_3_hours = timedelta(hours=3) >= time_difference >= timedelta()
+                    is_more_than_one_day = (your_date.date() - current_date.date() > timedelta(days=1))
+                    is_current_time_ahead = current_date.time() > your_date.time()
                     # Comparing Dates
-                    if ((current_date.date() == your_date.date()) and timedelta(
-                            hours=3) >= time_difference >= timedelta()) or \
-                            ((your_date.date() - current_date.date() == timedelta(days=1)) and timedelta(
-                                hours=3) >= time_difference >= timedelta()):
+                    if (is_same_date and is_time_difference_within_3_hours) or \
+                            (is_next_date and is_time_difference_within_3_hours):
                         self.submit_multiple.configure(state="disabled")
                         self.submit.configure(state="disabled")
                         self.back3.configure(state="disabled")
@@ -3086,30 +3093,22 @@ class TeraTermUI(customtkinter.CTk):
                         # Start the countdown
                         self.countdown(your_date)
                         self.timer_window.protocol("WM_DELETE_WINDOW", self.end_countdown)
-                    elif current_date > your_date or (current_date.date() == your_date.date()
-                                                      and current_date > your_date):
+                    elif is_past_date or (is_same_date and is_current_time_ahead):
                         if lang == "English":
                             self.show_error_message(300, 215, "The enrollment date already passed")
                         elif lang == "Español":
                             self.show_error_message(320, 215, "La fecha de matricula ya pasó")
                         self.auto_enroll_bool = False
                         self.auto_enroll.deselect()
-                    elif current_date < your_date or (your_date.date() - current_date.date() > timedelta(days=1)):
+                    elif (is_future_date or is_more_than_one_day) or \
+                            (is_same_date and not is_time_difference_within_3_hours) or \
+                            (is_next_date and not is_time_difference_within_3_hours):
                         if lang == "English":
                             self.show_error_message(320, 215, "Auto-Enroll only available\n"
                                                               " the same day of enrollment")
                         elif lang == "Español":
                             self.show_error_message(320, 215, "Auto-Matrícula solo disponible\n"
                                                               "el mismo día de la matrícula")
-                        self.auto_enroll_bool = False
-                        self.auto_enroll.deselect()
-                    elif current_date.date() == your_date.date() and current_date > your_date:
-                        if lang == "English":
-                            self.show_error_message(320, 215, "Auto-Enroll only available\n"
-                                                              " before the time of enrollment")
-                        elif lang == "Español":
-                            self.show_error_message(320, 215, "Auto-Matrícula solo disponible\n"
-                                                              "antes del tiempo de matrícula")
                         self.auto_enroll_bool = False
                         self.auto_enroll.deselect()
                     else:
@@ -4204,6 +4203,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # list of classes available for all departments in the university
     def search_classes(self, event):
+        lang = self.language_menu.get()
         self.class_list.delete(0, tk.END)
         search_term = self.search_box.get().strip().lower()
         if search_term == "":
@@ -4219,20 +4219,31 @@ class TeraTermUI(customtkinter.CTk):
             query_conditions_str = " OR ".join(query_conditions)
             query = f"SELECT name, code FROM courses WHERE {query_conditions_str}"
         results = self.cursor.execute(query).fetchall()
-        for row in results:
-            self.class_list.insert(tk.END, row[0])
+        if len(results) == 0:
+            if lang == "English":
+                self.class_list.insert(tk.END, "NO RESULTS FOUND")
+            if lang == "Español":
+                self.class_list.insert(tk.END, "NO SE ENCONTRARON RESULTADOS")
+        else:
+            for row in results:
+                self.class_list.insert(tk.END, row[0])
 
     # query for searching for either class code or name
     def show_class_code(self, event):
+        lang = self.language_menu.get()
         selection = self.class_list.curselection()
         if len(selection) == 0:
             return
         selected_class = self.class_list.get(self.class_list.curselection())
-
         query = "SELECT code FROM courses WHERE name = ? OR code = ?"
         result = self.cursor.execute(query, (selected_class, selected_class)).fetchone()
-
-        if result is not None:
+        if result is None:
+            self.class_list.delete(0, tk.END)
+            if lang == "English":
+                self.class_list.insert(tk.END, "NO RESULTS FOUND")
+            if lang == "Español":
+                self.class_list.insert(tk.END, "NO SE ENCONTRARON RESULTADOS")
+        else:
             self.search_box.delete(0, tk.END)
             self.search_box.insert(0, result[0])
 
