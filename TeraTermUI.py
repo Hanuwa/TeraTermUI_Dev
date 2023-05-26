@@ -25,6 +25,7 @@ from contextlib import closing
 from tkinter import filedialog
 import gc
 import shutil
+import atexit
 import tempfile
 import pyautogui
 import requests
@@ -106,8 +107,6 @@ class TeraTermUI(customtkinter.CTk):
         self.temp_dir = tempfile.mkdtemp()
         self.tesseract_dir = None
         self.tessdata_dir_config = None
-        thread = threading.Thread(target=self.setup_tesseract())
-        thread.start()
 
         # configure grid layout (4x4)
         self.grid_columnconfigure(1, weight=1)
@@ -529,12 +528,14 @@ class TeraTermUI(customtkinter.CTk):
         self.location = "C:/Program Files (x86)/teraterm/ttermpro.exe"
         self.teraterm_file = "C:/Program Files (x86)/teraterm/TERATERM.ini"
         self.original_font = None
-        self.edit_teraterm_ini(self.teraterm_file)
         # Database
         appdata_path = os.getenv("APPDATA")
         self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
         self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
-        self.authenticate()
+        atexit.register(self.cleanup_tesseract)
+        atexit.register(self.restore_original_font, self.teraterm_file)
+        thread = threading.Thread(target=self.boot_up, args=(self.teraterm_file,))
+        thread.start()
         self.connection = sqlite3.connect("database.db")
         self.cursor = self.connection.cursor()
         location = self.cursor.execute("SELECT location FROM user_data WHERE location IS NOT NULL").fetchall()
@@ -732,8 +733,6 @@ class TeraTermUI(customtkinter.CTk):
             if self.checkIfProcessRunning("ttermpro") and self.window_exists("Tera Term - [disconnected] VT"):
                 subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
                                check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            self.cleanup_tesseract()
-            self.restore_original_font(self.teraterm_file)
             self.save_user_data()
             self.destroy()
             exit(0)
@@ -3444,7 +3443,9 @@ class TeraTermUI(customtkinter.CTk):
         text = pytesseract.image_to_string(img, config=custom_config)
         return text
 
-    def setup_tesseract(self):
+    # Necessary things to do while the application is booting, gets done on a separate thread
+    def boot_up(self, file_path):
+        # Unzips Teserract OCR
         with pyzipper.AESZipFile(self.zip_path) as zf:
             zf.extractall(self.temp_dir)
 
@@ -3452,8 +3453,47 @@ class TeraTermUI(customtkinter.CTk):
         pytesseract.pytesseract.tesseract_cmd = str(self.tesseract_dir / "tesseract.exe")
         self.tessdata_dir_config = f"--tessdata-dir {self.tesseract_dir / 'tessdata'}"
 
+        # Edits the font that tera term uses to "Terminal" to mitigate the chance of the OCR mistaking words
+        if self.original_font is None:
+            try:
+                with open(file_path, "r") as file:
+                    lines = file.readlines()
+            except FileNotFoundError:
+                return
+
+            with open(file_path, "w") as file:
+                for line in lines:
+                    if line.startswith("VTFont="):
+                        current_value = line.strip().split('=')[1]
+                        font_name = current_value.split(',')[0]
+                        if font_name.lower() != 'lucida console':
+                            self.original_font = current_value
+                            updated_value = 'Lucida Console' + current_value[len(font_name):]
+                            line = f"VTFont={updated_value}\n"
+                        else:
+                            self.original_font = None
+                    file.write(line)
+
+            # Reads from the feedback.json file to connect to Google's Sheets Api for user feedback
+            try:
+                with open(self.SERVICE_ACCOUNT_FILE, 'rb') as f:
+                    archive = pyzipper.AESZipFile(self.SERVICE_ACCOUNT_FILE)
+                    archive.setpassword(self.PASSWORD.encode())
+                    file_contents = archive.read('feedback.json')
+                    credentials_dict = json.loads(file_contents.decode())
+                    self.credentials = service_account.Credentials.from_service_account_info(
+                        credentials_dict,
+                        scopes=['https://www.googleapis.com/auth/spreadsheets']
+                    )
+            except Exception as e:
+                print(f"Failed to load credentials: {str(e)}")
+                self.credentials = None
+                self.disable_feedback = True
+
+    # Deletes Tesseract OCR from the temp folder
     def cleanup_tesseract(self):
-        shutil.rmtree(self.temp_dir)
+        if self.tesseract_dir == Path(self.temp_dir) / "Tesseract-OCR" and self.tesseract_dir.exists():
+            shutil.rmtree(self.temp_dir)
 
     # error window pop up message
     def show_error_message(self, width, height, error_msg_text):
@@ -4025,23 +4065,6 @@ class TeraTermUI(customtkinter.CTk):
                                                 "a las 1:00 PM."]]
             faq = ctktable.CTkTable(scrollable_frame, row=3, column=2, values=qaTable)
             faq.pack(expand=True, fill="both", padx=20, pady=20)
-
-    # Reads from the feedback.json file
-    def authenticate(self):
-        try:
-            with open(self.SERVICE_ACCOUNT_FILE, 'rb') as f:
-                archive = pyzipper.AESZipFile(self.SERVICE_ACCOUNT_FILE)
-                archive.setpassword(self.PASSWORD.encode())
-                file_contents = archive.read('feedback.json')
-                credentials_dict = json.loads(file_contents.decode())
-                self.credentials = service_account.Credentials.from_service_account_info(
-                    credentials_dict,
-                    scopes=['https://www.googleapis.com/auth/spreadsheets']
-                )
-        except Exception as e:
-            print(f"Failed to load credentials: {str(e)}")
-            self.credentials = None
-            self.disable_feedback = True
 
     # Function to call the Google Sheets API
     def call_sheets_api(self, values):
