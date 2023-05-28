@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 5/25/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 5/28/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -400,7 +400,8 @@ class TeraTermUI(customtkinter.CTk):
         self.m_section_entry.bind('<FocusIn>', self.remove_key_bindings)
         self.m_section_entry.bind('<FocusOut>', self.add_key_bindings)
         self.m_semester_entry = customtkinter.CTkComboBox(master=self.multiple_frame,
-                                                          values=["C31", "C32", "C33", "C41", "C42", "C43"])
+                                                          values=["C31", "C32", "C33", "C41", "C42", "C43"],
+                                                          command=lambda value: self.change_semester())
         self.m_semester_entry.set("C31")
         self.m_semester_entry.bind('<FocusIn>', self.remove_key_bindings)
         self.m_semester_entry.bind('<FocusOut>', self.add_key_bindings)
@@ -422,7 +423,7 @@ class TeraTermUI(customtkinter.CTk):
         self.submit_multiple = customtkinter.CTkButton(master=self.m_button_frame, border_width=2,
                                                        text="Submit", text_color=("gray10", "#DCE4EE"),
                                                        command=self.submit_multiple_event_handler, height=40, width=70)
-        self.save_data = customtkinter.CTkCheckBox(master=self.save_frame, text="Save classes for later ",
+        self.save_data = customtkinter.CTkCheckBox(master=self.save_frame, text="Save Classes ",
                                                    command=self.save_classes, onvalue="on", offvalue="off")
         self.save_data_tooltip = CTkToolTip(self.save_data, message="Next time you log-in, the classes\n you saved will"
                                                                     " already be there!", bg_color="#1E90FF")
@@ -438,7 +439,7 @@ class TeraTermUI(customtkinter.CTk):
         self.m_classes_entry2 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="INGL3101")
         self.m_classes_entry2.bind('<FocusIn>', self.remove_key_bindings)
         self.m_classes_entry2.bind('<FocusOut>', self.add_key_bindings)
-        self.m_section_entry2 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="LM1")
+        self.m_section_entry2 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="KM1")
         self.m_section_entry2.bind('<FocusIn>', self.remove_key_bindings)
         self.m_section_entry2.bind('<FocusOut>', self.add_key_bindings)
         self.m_semester_entry2 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Semester")
@@ -1432,10 +1433,10 @@ class TeraTermUI(customtkinter.CTk):
             self.save_frame.grid(row=3, column=2, padx=(0, 11), pady=(0, 0))
         self.save_frame.grid_columnconfigure(2, weight=1)
         if lang == "English":
-            self.auto_frame.grid(row=3, column=1, padx=(0, 387), pady=(0, 0))
+            self.auto_frame.grid(row=3, column=1, padx=(0, 433), pady=(0, 0))
         elif lang == "Español":
             self.auto_frame.grid(row=3, column=1, padx=(0, 399), pady=(0, 0))
-        self.save_frame.grid_columnconfigure(2, weight=1)
+        self.auto_frame.grid_columnconfigure(2, weight=1)
         self.explanation7.grid(row=0, column=1, padx=(0, 0), pady=(0, 20))
         self.m_class.grid(row=0, column=1, padx=(0, 500), pady=(32, 0))
         self.m_section.grid(row=0, column=1, padx=(0, 165), pady=(32, 0))
@@ -2807,13 +2808,13 @@ class TeraTermUI(customtkinter.CTk):
             self.m_remove_tooltip.configure(message="Eliminar clases")
             self.multiple_tooltip.configure(message="Matricula múltiples \nclases"
                                                     " a la misma vez")
-            self.save_data.configure(text="Guardar clases \npara más tarde ")
+            self.save_data.configure(text="Guardar Clases ")
             self.save_data_tooltip.configure(message="¡La próxima vez que inicies sesión,\n"
                                                      " las clases que guardaste estarán ahí!")
             self.auto_enroll.configure(text="Auto-Matrícula ")
             self.auto_enroll_tooltip.configure(message="Matriculará automáticamente las clases\n"
                                                        " que seleccionó, en el momento exacto\n"
-                                                       " en el que proceso de inscripción esté disponible")
+                                                       " en el que el proceso de inscripción esté disponible")
         elif lang == "English":
             self.sidebar_button_1.configure(text="     Status")
             self.sidebar_button_2.configure(text="       Help")
@@ -2947,7 +2948,7 @@ class TeraTermUI(customtkinter.CTk):
             self.m_add_tooltip.configure(message="Add more classes")
             self.m_remove_tooltip.configure(message="Remove classes")
             self.multiple_tooltip.configure(message="Enroll multiple classes\n at once")
-            self.save_data.configure(text="Save classes for later ")
+            self.save_data.configure(text="Save Classes ")
             self.save_data_tooltip.configure(message="Next time you log-in, the classes\n"
                                                      " you saved will already be there!")
             self.auto_enroll.configure(text="Auto-Enroll ")
@@ -2955,6 +2956,28 @@ class TeraTermUI(customtkinter.CTk):
                                                        " you selected at the exact time\n"
                                                        " the enrollment process becomes\n"
                                                        " available for you")
+
+    def change_semester(self):
+        self.m_semester_entry2.configure(state="normal")
+        self.m_semester_entry3.configure(state="normal")
+        self.m_semester_entry4.configure(state="normal")
+        self.m_semester_entry5.configure(state="normal")
+        self.m_semester_entry6.configure(state="normal")
+        self.m_semester_entry2.delete(0, "end")
+        self.m_semester_entry3.delete(0, "end")
+        self.m_semester_entry4.delete(0, "end")
+        self.m_semester_entry5.delete(0, "end")
+        self.m_semester_entry6.delete(0, "end")
+        self.m_semester_entry2.insert(0, self.m_semester_entry.get())
+        self.m_semester_entry3.insert(0, self.m_semester_entry.get())
+        self.m_semester_entry4.insert(0, self.m_semester_entry.get())
+        self.m_semester_entry5.insert(0, self.m_semester_entry.get())
+        self.m_semester_entry6.insert(0, self.m_semester_entry.get())
+        self.m_semester_entry2.configure(state="disabled")
+        self.m_semester_entry3.configure(state="disabled")
+        self.m_semester_entry4.configure(state="disabled")
+        self.m_semester_entry5.configure(state="disabled")
+        self.m_semester_entry6.configure(state="disabled")
 
     def auto_enroll_event_handler(self):
         task_done = threading.Event()
