@@ -376,6 +376,7 @@ class TeraTermUI(customtkinter.CTk):
         # self.screenshot_skip = False
         # self.error_occurred = False
         self.run_fix = False
+        self.tuition_window = False
         self.a_counter = 0
         self.m_counter = 0
         self.e_counter = 0
@@ -656,6 +657,20 @@ class TeraTermUI(customtkinter.CTk):
                     self.show_error_message(300, 215, "Error! Tera Term isn't running")
                 elif lang == "Español":
                     self.show_error_message(300, 215, "¡Error! Tera Term no esta corriendo")
+
+                def server_maintenance():
+                    winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                    if lang == "English":
+                        CTkMessagebox(title="info", message="If Tera Term closed itself, then it probably"
+                                                            " means that the server of the university is on"
+                                                            " maintenance, try again later",
+                                      icon="cancel", button_width=380)
+                    elif lang == "Español":
+                        CTkMessagebox(title="info", message="Si Tera Term se cerró solo, entonces probablemente"
+                                                            " significa que el servidor de la universidad está en"
+                                                            " mantenimiento, intente más tarde",
+                                      icon="cancel", button_width=380)
+                self.after(2500, server_maintenance)
         ctypes.windll.user32.BlockInput(False)
         self.show_sidebar_windows()
         task_done.set()
@@ -3170,8 +3185,9 @@ class TeraTermUI(customtkinter.CTk):
             self.menu_entry.bind("<FocusOut>", self.add_key_bindings)
             self.menu_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab), text="Semester")
             self.menu_semester_entry = customtkinter.CTkComboBox(master=self.tabview.tab(self.other_tab),
-                                                                 values=["B91", "B92", "B93", "C01", "C02", "C03", "C11",
-                                                                         "C12", "C13", "C21", "C22", "C23", "C31"])
+                                                                 values=["B91", "B92", "B93", "C01", "C02", "C03",
+                                                                         "C11", "C12", "C13", "C21", "C22", "C23",
+                                                                         "C31"])
             self.menu_semester_entry.set("C31")
             self.menu_semester.bind("<FocusIn>", self.remove_key_bindings)
             self.menu_semester.bind("<FocusOut>", self.add_key_bindings)
@@ -3448,7 +3464,7 @@ class TeraTermUI(customtkinter.CTk):
                 if not class_value or not section_value or not semester_value or register_value in ("Choose", "Escoge"):
                     continue  # Skip inserting the row for this key
                 # Perform the insert operation
-                self.cursor.execute("INSERT INTO save_classes (class, section, semester, action, check')"
+                self.cursor.execute("INSERT INTO save_classes (class, section, semester, action, 'check')"
                                     " VALUES (?, ?, ?, ?, ?)",
                                     (class_value, section_value, semester_value, register_value, "Yes"))
                 self.connection.commit()
@@ -3991,8 +4007,8 @@ class TeraTermUI(customtkinter.CTk):
 
     # Starts the check for idle thread
     def start_check_idle_thread(self):
-        if self.idle:
-            if self.idle[0][0] != "Disabled":
+        if self.results["idle"]:
+            if self.results["idle"] != "Disabled":
                 self.is_running = True
                 self.thread = threading.Thread(target=self.check_idle)
                 self.thread.start()
