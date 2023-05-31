@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 5/30/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 5/31/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -94,15 +94,15 @@ class TeraTermUI(customtkinter.CTk):
         # self.monitor_thread.start()
         # GitHub information for feedback
         self.SERVICE_ACCOUNT_FILE = "feedback.zip"
-        self.SPREADSHEET_ID = '1ffJLgp8p-goOlxC10OFEu0JefBgQDsgEo_suis4k0Pw'
-        self.RANGE_NAME = 'Sheet1!A:A'
-        self.PASSWORD = 'F_QL^B#O_/r9|Rl0i=x),;!@en|V5qR%W(9;2^+f=lRPcw!+4'
+        self.SPREADSHEET_ID = "1ffJLgp8p-goOlxC10OFEu0JefBgQDsgEo_suis4k0Pw"
+        self.RANGE_NAME = "Sheet1!A:A"
+        self.PASSWORD = "F_QL^B#O_/r9|Rl0i=x),;!@en|V5qR%W(9;2^+f=lRPcw!+4"
         self.credentials = None
         self.GITHUB_REPO = "https://api.github.com/repos/Hanuwa/TeraTermUI"
         self.USER_APP_VERSION = "0.9.0"
 
         # path for tesseract application
-        self.zip_path = os.path.join(os.path.dirname(__file__), 'Tesseract-OCR.zip')
+        self.zip_path = os.path.join(os.path.dirname(__file__), "Tesseract-OCR.zip")
         self.temp_dir = tempfile.mkdtemp()
         self.tesseract_dir = None
         self.tessdata_dir_config = None
@@ -121,12 +121,12 @@ class TeraTermUI(customtkinter.CTk):
         self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
         self.sidebar_button_1 = customtkinter.CTkButton(self.sidebar_frame, text="     Status",
                                                         image=customtkinter.CTkImage(
-                                                            light_image=Image.open('images/home.png'), size=(20, 20)),
+                                                            light_image=Image.open("images/home.png"), size=(20, 20)),
                                                         command=self.sidebar_button_event, anchor="w")
         self.sidebar_button_1.grid(row=1, column=0, padx=20, pady=10)
         self.sidebar_button_2 = customtkinter.CTkButton(self.sidebar_frame, text="       Help",
                                                         image=customtkinter.CTkImage(
-                                                            light_image=Image.open('images/setting.png'),
+                                                            light_image=Image.open("images/setting.png"),
                                                             size=(18, 18)),
                                                         command=self.sidebar_button_event2, anchor="w")
         self.sidebar_button_2.grid(row=2, column=0, padx=20, pady=10)
@@ -147,8 +147,8 @@ class TeraTermUI(customtkinter.CTk):
         self.scaling_tooltip = CTkToolTip(self.scaling_optionemenu, message=str(self.scaling_optionemenu.get()) + "%",
                                           bg_color="#1E90FF")
         self.scaling_optionemenu.grid(row=8, column=0, padx=20, pady=(10, 20))
-        self.bind('<Left>', self.move_slider_left)
-        self.bind('<Right>', self.move_slider_right)
+        self.bind("<Left>", self.move_slider_left)
+        self.bind("<Right>", self.move_slider_right)
 
         # create main entry
         self.introduction = customtkinter.CTkLabel(self, text="UPRB Enrollment Process",
@@ -157,8 +157,8 @@ class TeraTermUI(customtkinter.CTk):
         self.host = customtkinter.CTkLabel(self, text="Host ")
         self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(20, 20))
         self.host_entry = customtkinter.CTkEntry(self, placeholder_text="myhost.example.edu")
-        self.host_entry.bind('<FocusIn>', self.remove_key_bindings)
-        self.host_entry.bind('<FocusOut>', self.add_key_bindings)
+        self.host_entry.bind("<FocusIn>", self.remove_key_bindings)
+        self.host_entry.bind("<FocusOut>", self.add_key_bindings)
         self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(20, 20))
         self.host_tooltip = CTkToolTip(self.host_entry, message="Enter the name of the server\n of the university",
                                        bg_color="#1E90FF")
@@ -209,8 +209,8 @@ class TeraTermUI(customtkinter.CTk):
         self.explanation2 = customtkinter.CTkLabel(master=self.authentication_frame, text="Authentication required")
         self.username = customtkinter.CTkLabel(master=self.authentication_frame, text="Username ")
         self.username_entry = customtkinter.CTkEntry(master=self.authentication_frame)
-        self.username_entry.bind('<FocusIn>', self.remove_key_bindings)
-        self.username_entry.bind('<FocusOut>', self.add_key_bindings)
+        self.username_entry.bind("<FocusIn>", self.remove_key_bindings)
+        self.username_entry.bind("<FocusOut>", self.add_key_bindings)
         self.username_tooltip = CTkToolTip(self.username_entry, message="The university requires this to\n"
                                                                         " enter and access the system",
                                            bg_color="#1E90FF")
@@ -388,45 +388,41 @@ class TeraTermUI(customtkinter.CTk):
         appdata_path = os.getenv("APPDATA")
         self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
         self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
-        self.boot_up_thread = threading.Thread(target=self.boot_up, args=(self.teraterm_file,))
-        self.boot_up_thread.start()
         atexit.register(self.cleanup_tesseract)
         atexit.register(self.restore_original_font, self.teraterm_file)
         self.connection = sqlite3.connect("database.db")
         self.cursor = self.connection.cursor()
-        location = self.cursor.execute("SELECT location FROM user_data WHERE location IS NOT NULL").fetchall()
-        host = self.cursor.execute("SELECT host FROM user_data WHERE host IS NOT NULL").fetchall()
-        language = self.cursor.execute("SELECT language FROM user_data WHERE language IS NOT NULL").fetchall()
-        appearance = self.cursor.execute("SELECT appearance FROM user_data WHERE appearance IS NOT NULL").fetchall()
-        scaling = self.cursor.execute("SELECT scaling FROM user_data WHERE scaling IS NOT NULL").fetchall()
-        self.idle = self.cursor.execute("SELECT idle FROM user_data").fetchall()
         self.save = self.cursor.execute("SELECT class, section, semester, action FROM save_classes"
                                         " WHERE class IS NOT NULL").fetchall()
         self.saveCheck = self.cursor.execute('SELECT "check" FROM save_classes WHERE "check" IS NOT NULL').fetchall()
-        welcome = self.cursor.execute("SELECT welcome FROM user_data WHERE welcome IS NOT NULL").fetchall()
-        teraterm_config = self.cursor.execute("SELECT config FROM user_data WHERE config IS NOT NULL").fetchall()
-        if host:
-            self.host_entry.insert(0, host)
-        if location:
-            if location[0][0] != self.location:
-                self.location = location[0][0]
-        if teraterm_config:
-            if teraterm_config[0][0] != self.teraterm_file:
-                self.teraterm_file = teraterm_config[0][0]
+        user_data_fields = ["location", "host", "language", "appearance", "scaling", "idle", "welcome", "config"]
+        self.results = {}
+        for field in user_data_fields:
+            query_user = f"SELECT {field} FROM user_data WHERE {field} IS NOT NULL"
+            result = self.cursor.execute(query_user).fetchone()
+            self.results[field] = result[0] if result else None
+        if self.results["host"]:
+            self.host_entry.insert(0, self.results["host"])
+        if self.results["location"]:
+            if self.results["location"] != self.location:
+                self.location = self.results["location"]
+        if self.results["config"]:
+            if self.results["config"] != self.teraterm_file:
+                self.teraterm_file = self.results["config"]
                 self.edit_teraterm_ini(self.teraterm_file)
-        if language:
-            if language[0][0] != "English":
-                self.language_menu.set(language[0][0])
-                self.change_language_event(lang=language[0][0])
-        if appearance:
-            if appearance[0][0] != "System" or appearance[0][0] != "Sistema":
-                self.appearance_mode_optionemenu.set(appearance[0][0])
-                self.change_appearance_mode_event(appearance[0][0])
-        if scaling:
-            if scaling[0][0] != 100.0:
-                self.scaling_optionemenu.set(float(scaling[0][0]))
-                self.change_scaling_event(float(scaling[0][0]))
-        if len(welcome) == 0:
+        if self.results["language"]:
+            if self.results["language"] != "English":
+                self.language_menu.set(self.results["language"])
+                self.change_language_event(lang=self.results["language"])
+        if self.results["appearance"]:
+            if self.results["appearance"] != "System" or self.results["appearance"] != "Sistema":
+                self.appearance_mode_optionemenu.set(self.results["appearance"])
+                self.change_appearance_mode_event(self.results["appearance"])
+        if self.results["scaling"]:
+            if self.results["scaling"] != 100.0:
+                self.scaling_optionemenu.set(float(self.results["scaling"]))
+                self.change_scaling_event(float(self.results["scaling"]))
+        if not self.results["welcome"]:
             self.log_in.configure(state="disabled")
             self.sidebar_button_2.configure(state="disabled")
             self.sidebar_button_1.configure(state="disabled")
@@ -447,18 +443,24 @@ class TeraTermUI(customtkinter.CTk):
                 self.log_in.configure(state="normal")
                 self.sidebar_button_1.configure(state="normal")
                 self.sidebar_button_2.configure(state="normal")
+                # performs some operations in a separate thread
+                self.boot_up_thread = threading.Thread(target=self.boot_up, args=(self.teraterm_file,))
+                self.boot_up_thread.start()
                 # closing event dialog
                 self.protocol("WM_DELETE_WINDOW", self.on_closing)
                 # enables keyboard input events
                 self.bind("<Return>", lambda event: self.login_event_handler())
                 self.bind("<Escape>", lambda event: self.on_closing())
-                if len(welcome) == 0:
+                if not self.results["welcome"]:
                     self.cursor.execute("INSERT INTO user_data (welcome) VALUES (?)", ("Checked",))
-                elif len(welcome) == 1:
+                elif self.results["welcome"]:
                     self.cursor.execute("UPDATE user_data SET welcome=?", ("Checked",))
 
             self.after(3500, show_message_box)
         else:
+            # performs some operations in a separate thread
+            self.boot_up_thread = threading.Thread(target=self.boot_up, args=(self.teraterm_file,))
+            self.boot_up_thread.start()
             # closing event dialog
             self.protocol("WM_DELETE_WINDOW", self.on_closing)
             # enables keyboard input events
@@ -468,13 +470,13 @@ class TeraTermUI(customtkinter.CTk):
         # Asks the user if they want to update to the latest version of the application
         def update_app():
             lang = self.language_menu.get()
-            current_date = datetime.today().strftime('%Y-%m-%d')
+            current_date = datetime.today().strftime("%Y-%m-%d")
             date = self.cursor.execute("SELECT date FROM user_data WHERE date IS NOT NULL").fetchall()
             dates_list = [record[0] for record in date]
             if current_date not in dates_list:
                 try:
                     latest_version = self.get_latest_release()
-                    if not self.compare_versions(latest_version, self.USER_APP_VERSION) and welcome:
+                    if not self.compare_versions(latest_version, self.USER_APP_VERSION) and self.results["welcome"]:
                         if lang == "English":
                             msg = CTkMessagebox(master=self, title="Exit",
                                                 message="A newer version of the application is available,\n\n"
@@ -525,13 +527,13 @@ class TeraTermUI(customtkinter.CTk):
                                 hover_color=("darkred", "darkblue", "darkblue"))
         response = msg.get()
         if response == "Yes" or response == "Sí":
-            if hasattr(self, 'boot_up_thread') and self.boot_up_thread.is_alive():
+            if hasattr(self, "boot_up_thread") and self.boot_up_thread.is_alive():
                 self.boot_up_thread.join()
-            if hasattr(self, 'thread') and self.thread.is_alive():
+            if hasattr(self, "thread") and self.thread.is_alive():
                 self.stop_check_idle.set()
                 self.thread.join()
             if self.checkIfProcessRunning("ttermpro") and self.window_exists("uprbay.uprb.edu - Tera Term VT"):
-                uprb = Application(backend='uia').connect(title="uprbay.uprb.edu - Tera Term VT", timeout=100)
+                uprb = Application(backend="uia").connect(title="uprbay.uprb.edu - Tera Term VT", timeout=100)
                 uprb.kill(soft=False)
             if self.checkIfProcessRunning("ttermpro") and self.window_exists("Tera Term - [disconnected] VT"):
                 subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
@@ -603,10 +605,10 @@ class TeraTermUI(customtkinter.CTk):
                         secure_delete(ssn)
                         secure_delete(code)
                         ctypes.windll.user32.BlockInput(True)
-                        term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                        term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                         term_window.restore()
                         uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                        uprb_window.wait('visible', timeout=100)
+                        uprb_window.wait("visible", timeout=100)
                         self.uprb.UprbayTeraTermVt.type_keys(aes_decrypt(ssn_enc))
                         self.uprb.UprbayTeraTermVt.type_keys(aes_decrypt(code_enc))
                         send_keys("{ENTER}")
@@ -768,10 +770,10 @@ class TeraTermUI(customtkinter.CTk):
                             and (semester == "C31" or semester == "C32" or semester == "C33", semester == "C41",
                                  semester == "C42", semester == "C43")):
                         ctypes.windll.user32.BlockInput(True)
-                        term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                        term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                         term_window.restore()
                         uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                        uprb_window.wait('visible', timeout=100)
+                        uprb_window.wait("visible", timeout=100)
                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                         send_keys("{ENTER}")
                         self.uprb.UprbayTeraTermVt.type_keys("1S4")
@@ -942,10 +944,10 @@ class TeraTermUI(customtkinter.CTk):
                         and semester2 in ("B61", "B62", "B63", "B71", "B72", "B73", "B81", "B82", "B83", "B91", "B92",
                                           "B93", "C01", "C02", "C03", "C11", "C12", "C13", "C21", "C22", "C23", "C31")):
                     ctypes.windll.user32.BlockInput(True)
-                    term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                    term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                     term_window.restore()
                     uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                    uprb_window.wait('visible', timeout=100)
+                    uprb_window.wait("visible", timeout=100)
                     self.search_function += 1
                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                     send_keys("{ENTER}")
@@ -1015,10 +1017,10 @@ class TeraTermUI(customtkinter.CTk):
                         block_window.attributes("-alpha", 0.0)
                         block_window.grab_set()
                         ctypes.windll.user32.BlockInput(True)
-                        term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                        term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                         term_window.restore()
                         uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                        uprb_window.wait('visible', timeout=100)
+                        uprb_window.wait("visible", timeout=100)
                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                         send_keys("{ENTER}")
                         self.uprb.UprbayTeraTermVt.type_keys("1CP")
@@ -1056,10 +1058,10 @@ class TeraTermUI(customtkinter.CTk):
                         block_window.attributes("-alpha", 0.0)
                         block_window.grab_set()
                         ctypes.windll.user32.BlockInput(True)
-                        term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                        term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                         term_window.restore()
                         uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                        uprb_window.wait('visible', timeout=100)
+                        uprb_window.wait("visible", timeout=100)
                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                         send_keys("{ENTER}")
                         self.uprb.UprbayTeraTermVt.type_keys("1CP")
@@ -1320,10 +1322,10 @@ class TeraTermUI(customtkinter.CTk):
             if self.checkIfProcessRunning("ttermpro"):
                 if can_enroll_classes:
                     ctypes.windll.user32.BlockInput(True)
-                    term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                    term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                     term_window.restore()
                     uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                    uprb_window.wait('visible', timeout=100)
+                    uprb_window.wait("visible", timeout=100)
                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                     send_keys("{ENTER}")
                     self.uprb.UprbayTeraTermVt.type_keys("1S4")
@@ -1661,10 +1663,10 @@ class TeraTermUI(customtkinter.CTk):
                                                                 "B83", "B91", "B92", "B93", "C01", "C02", "C03", "C11",
                                                                 "C12", "C13", "C21", "C22", "C23", "C31")):
                     ctypes.windll.user32.BlockInput(True)
-                    term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                    term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                     term_window.restore()
                     uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                    uprb_window.wait('visible', timeout=100)
+                    uprb_window.wait("visible", timeout=100)
                     self.unfocus_tkinter()
                     match menu.replace(" ", ""):
                         case "SRM":
@@ -2014,10 +2016,10 @@ class TeraTermUI(customtkinter.CTk):
         if self.test_connection(lang) and self.check_server():
             if self.checkIfProcessRunning("ttermpro"):
                 ctypes.windll.user32.BlockInput(True)
-                term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                 term_window.restore()
                 uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                uprb_window.wait('visible', timeout=100)
+                uprb_window.wait("visible", timeout=100)
                 self.unfocus_tkinter()
                 send_keys("{TAB 3}")
                 send_keys("{ENTER}")
@@ -2039,10 +2041,10 @@ class TeraTermUI(customtkinter.CTk):
         if self.test_connection(lang) and self.check_server():
             if self.checkIfProcessRunning("ttermpro"):
                 ctypes.windll.user32.BlockInput(True)
-                term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                 term_window.restore()
                 uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                uprb_window.wait('visible', timeout=100)
+                uprb_window.wait("visible", timeout=100)
                 self.unfocus_tkinter()
                 send_keys("{ENTER}")
                 self.unfocus_tkinter()
@@ -2064,8 +2066,8 @@ class TeraTermUI(customtkinter.CTk):
             if self.checkIfProcessRunning("ttermpro"):
                 ctypes.windll.user32.BlockInput(True)
                 uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                uprb_window.wait('visible', timeout=100)
-                term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                uprb_window.wait("visible", timeout=100)
+                term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                 term_window.restore()
                 self.unfocus_tkinter()
                 send_keys("{TAB 4}")
@@ -2094,10 +2096,10 @@ class TeraTermUI(customtkinter.CTk):
         if self.test_connection(lang) and self.check_server():
             if self.checkIfProcessRunning("ttermpro"):
                 ctypes.windll.user32.BlockInput(True)
-                term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                 term_window.restore()
                 uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                uprb_window.wait('visible', timeout=100)
+                uprb_window.wait("visible", timeout=100)
                 self.unfocus_tkinter()
                 send_keys("{ENTER}")
                 self.unfocus_tkinter()
@@ -2118,10 +2120,10 @@ class TeraTermUI(customtkinter.CTk):
         if self.test_connection(lang) and self.check_server():
             if self.checkIfProcessRunning("ttermpro"):
                 ctypes.windll.user32.BlockInput(True)
-                term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                 term_window.restore()
                 uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                uprb_window.wait('visible', timeout=100)
+                uprb_window.wait("visible", timeout=100)
                 self.unfocus_tkinter()
                 send_keys("{ENTER}")
                 self.unfocus_tkinter()
@@ -2161,14 +2163,14 @@ class TeraTermUI(customtkinter.CTk):
                 if username == "students":
                     self.unfocus_tkinter()
                     ctypes.windll.user32.BlockInput(True)
-                    term_window = gw.getWindowsWithTitle('SSH Authentication')[0]
+                    term_window = gw.getWindowsWithTitle("SSH Authentication")[0]
                     term_window.restore()
                     uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                    uprb_window.wait('visible', timeout=100)
+                    uprb_window.wait("visible", timeout=100)
                     user = self.uprb.UprbayTeraTermVt.child_window(title="User name:",
                                                                    control_type="Edit").wrapper_object()
                     # time.sleep(0.2)
-                    user.type_keys('students', with_spaces=False, pause=0.02)
+                    user.type_keys("students", with_spaces=False, pause=0.02)
                     self.hide_loading_screen()
                     okConn2 = self.uprb.UprbayTeraTermVt.child_window(title="OK",
                                                                       control_type="Button").wrapper_object()
@@ -2253,17 +2255,17 @@ class TeraTermUI(customtkinter.CTk):
                         self.uprb = Application(backend="uia").start(self.location) \
                             .connect(title="Tera Term - [disconnected] VT", timeout=100)
                         uprb_window = self.uprb.window(title="Tera Term - [disconnected] VT")
-                        uprb_window.wait('visible', timeout=100)
+                        uprb_window.wait("visible", timeout=100)
                         hostText = self.uprb.TeraTermDisconnectedVt.child_window(title="Host:",
                                                                                  control_type="Edit").wrapper_object()
-                        hostText.type_keys('uprbay.uprb.edu', with_spaces=False, pause=0.02)
+                        hostText.type_keys("uprbay.uprb.edu", with_spaces=False, pause=0.02)
                         self.hide_loading_screen()
                         okConn1 = self.uprb.TeraTermDisconnectedVt.child_window(title="OK",
                                                                                 control_type="Button").wrapper_object()
                         okConn1.click_input()
                         self.show_loading_screen_again()
                         uprb_window_new = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                        uprb_window_new.wait('visible', timeout=100)
+                        uprb_window_new.wait("visible", timeout=100)
                         continue_button = uprb_window_new.child_window(title="Continue", control_type="Button")
                         if continue_button.exists():
                             self.hide_loading_screen()
@@ -2355,7 +2357,7 @@ class TeraTermUI(customtkinter.CTk):
                                 hover_color=("darkred", "darkblue", "darkblue"))
         response = msg.get()
         if self.checkIfProcessRunning("ttermpro") and response == "Yes" or response == "Sí":
-            uprb = Application(backend='uia').connect(title="uprbay.uprb.edu - Tera Term VT", timeout=100)
+            uprb = Application(backend="uia").connect(title="uprbay.uprb.edu - Tera Term VT", timeout=100)
             uprb.kill(soft=False)
         if response == "Yes" or response == "Sí":
             self.stop_thread()
@@ -2463,6 +2465,9 @@ class TeraTermUI(customtkinter.CTk):
     # function for changing language
     def change_language_event(self, lang):
         self.focus_set()
+        self.initialization_student()
+        self.initialization_class()
+        self.initialization_multiple()
         if lang == "Español":
             self.sidebar_button_1.configure(text="     Estado")
             self.sidebar_button_2.configure(text="      Ayuda")
@@ -2792,10 +2797,10 @@ class TeraTermUI(customtkinter.CTk):
             if self.test_connection(lang) and self.check_server() and self.check_format():
                 if self.checkIfProcessRunning("ttermpro"):
                     ctypes.windll.user32.BlockInput(True)
-                    term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                    term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                     term_window.restore()
                     uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                    uprb_window.wait('visible', timeout=100)
+                    uprb_window.wait("visible", timeout=100)
                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                     send_keys("{ENTER}")
                     self.reset_activity_timer(None)
@@ -2808,10 +2813,10 @@ class TeraTermUI(customtkinter.CTk):
                     turno_index = text.find("TURNO MATRICULA:")
                     if turno_index != -1:
                         sliced_text = text[turno_index:]
-                        parts = sliced_text.split(':', 1)
+                        parts = sliced_text.split(":", 1)
                         if len(parts) > 1:
                             # Look for date and time pattern in the string
-                            match = re.search(r'\d{2}/\d{2}/\d{4} \d{2}:\d{2}', parts[1])
+                            match = re.search(r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}", parts[1])
                             if match:
                                 date_time_string = match.group()
                                 date_time_string += " AM"
@@ -2831,10 +2836,10 @@ class TeraTermUI(customtkinter.CTk):
                                                                   " la fecha de matricula")
                             self.auto_enroll.deselect()
                             self.auto_enroll_bool = False
-                    date_time_string = re.sub(r'[^a-zA-Z0-9:/ ]', '', date_time_string)
+                    date_time_string = re.sub(r"[^a-zA-Z0-9:/ ]", "", date_time_string)
                     print(date_time_string)
-                    date_time_naive = datetime.strptime(date_time_string, '%m/%d/%Y %I:%M %p')
-                    puerto_rico_tz = pytz.timezone('America/Puerto_Rico')
+                    date_time_naive = datetime.strptime(date_time_string, "%m/%d/%Y %I:%M %p")
+                    puerto_rico_tz = pytz.timezone("America/Puerto_Rico")
                     your_date = puerto_rico_tz.localize(date_time_naive, is_dst=None)
                     # Get current datetime
                     current_date = datetime.now(puerto_rico_tz)
@@ -2976,7 +2981,7 @@ class TeraTermUI(customtkinter.CTk):
             self.m_section_entry6.configure(state="normal")
             self.m_register_menu6.configure(state="normal")
             # If the countdown is running, stop it and destroy the timer window
-            if hasattr(self, 'running') and self.running.get():
+            if hasattr(self, "running") and self.running.get():
                 self.running.set(False)
                 self.timer_window.destroy()
         self.show_sidebar_windows()
@@ -2992,7 +2997,7 @@ class TeraTermUI(customtkinter.CTk):
     # Starts the countdown on when the auto-enroll process will occur
     def countdown(self, your_date):
         lang = self.language_menu.get()
-        puerto_rico_tz = pytz.timezone('America/Puerto_Rico')
+        puerto_rico_tz = pytz.timezone("America/Puerto_Rico")
         current_date = datetime.now(puerto_rico_tz)
         print(current_date)
         print(your_date)
@@ -3063,14 +3068,14 @@ class TeraTermUI(customtkinter.CTk):
                                                      command=self.lock_event, fg_color="transparent", hover=False)
             self.ssn = customtkinter.CTkLabel(master=self.student_frame, text="Social Security Number ")
             self.ssn_entry = customtkinter.CTkEntry(master=self.student_frame, placeholder_text="#########", show="*")
-            self.ssn_entry.bind('<FocusIn>', self.remove_key_bindings)
-            self.ssn_entry.bind('<FocusOut>', self.add_key_bindings)
+            self.ssn_entry.bind("<FocusIn>", self.remove_key_bindings)
+            self.ssn_entry.bind("<FocusOut>", self.add_key_bindings)
             self.ssn_tooltip = CTkToolTip(self.ssn_entry, message="Required to log-in,\n"
                                                                   "information gets encrypted", bg_color="#1E90FF")
             self.code = customtkinter.CTkLabel(master=self.student_frame, text="Code of Personal Information ")
             self.code_entry = customtkinter.CTkEntry(master=self.student_frame, placeholder_text="####", show="*")
-            self.code_entry.bind('<FocusIn>', self.remove_key_bindings)
-            self.code_entry.bind('<FocusOut>', self.add_key_bindings)
+            self.code_entry.bind("<FocusIn>", self.remove_key_bindings)
+            self.code_entry.bind("<FocusOut>", self.add_key_bindings)
             self.code_tooltip = CTkToolTip(self.code_entry, message="4 digit code included in the\n"
                                                                     "pre-enrollment ticket email", bg_color="#1E90FF")
             self.show = customtkinter.CTkSwitch(master=self.student_frame, text="Show?", command=self.show_event,
@@ -3102,18 +3107,18 @@ class TeraTermUI(customtkinter.CTk):
             self.e_classes = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab), text="Class")
             self.e_classes_entry = customtkinter.CTkEntry(master=self.tabview.tab(self.enroll_tab),
                                                           placeholder_text="MATE3032")
-            self.e_classes_entry.bind('<FocusIn>', self.remove_key_bindings)
-            self.e_classes_entry.bind('<FocusOut>', self.add_key_bindings)
+            self.e_classes_entry.bind("<FocusIn>", self.remove_key_bindings)
+            self.e_classes_entry.bind("<FocusOut>", self.add_key_bindings)
             self.section = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab), text="Section")
             self.section_entry = customtkinter.CTkEntry(master=self.tabview.tab(self.enroll_tab),
                                                         placeholder_text="LM1")
-            self.section_entry.bind('<FocusIn>', self.remove_key_bindings)
-            self.section_entry.bind('<FocusOut>', self.add_key_bindings)
+            self.section_entry.bind("<FocusIn>", self.remove_key_bindings)
+            self.section_entry.bind("<FocusOut>", self.add_key_bindings)
             self.e_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab), text="Semester")
             self.e_semester_entry = customtkinter.CTkComboBox(master=self.tabview.tab(self.enroll_tab),
                                                               values=["C31", "C32", "C33", "C41", "C42", "C43"])
-            self.e_semester_entry.bind('<FocusIn>', self.remove_key_bindings)
-            self.e_semester_entry.bind('<FocusOut>', self.add_key_bindings)
+            self.e_semester_entry.bind("<FocusIn>", self.remove_key_bindings)
+            self.e_semester_entry.bind("<FocusOut>", self.add_key_bindings)
             self.e_semester_entry.set("C31")
             self.radio_var = tk.StringVar()
             self.register = customtkinter.CTkRadioButton(master=self.tabview.tab(self.enroll_tab), text="Register",
@@ -3131,15 +3136,15 @@ class TeraTermUI(customtkinter.CTk):
             self.s_classes = customtkinter.CTkLabel(master=self.tabview.tab(self.search_tab), text="Class")
             self.s_classes_entry = customtkinter.CTkEntry(master=self.tabview.tab(self.search_tab),
                                                           placeholder_text="MATE3032")
-            self.s_classes_entry.bind('<FocusIn>', self.remove_key_bindings)
-            self.s_classes_entry.bind('<FocusOut>', self.add_key_bindings)
+            self.s_classes_entry.bind("<FocusIn>", self.remove_key_bindings)
+            self.s_classes_entry.bind("<FocusOut>", self.add_key_bindings)
             self.s_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.search_tab), text="Semester")
             self.s_semester_entry = customtkinter.CTkComboBox(master=self.tabview.tab(self.search_tab),
                                                               values=["B91", "B92", "B93", "C01", "C02", "C03", "C11",
                                                                       "C12", "C13", "C21", "C22", "C23", "C31"])
             self.s_semester_entry.set("C31")
-            self.s_semester_entry.bind('<FocusIn>', self.remove_key_bindings)
-            self.s_semester_entry.bind('<FocusOut>', self.add_key_bindings)
+            self.s_semester_entry.bind("<FocusIn>", self.remove_key_bindings)
+            self.s_semester_entry.bind("<FocusOut>", self.add_key_bindings)
             self.show_all = customtkinter.CTkCheckBox(master=self.tabview.tab(self.search_tab), text="Show All?",
                                                       onvalue="on", offvalue="off")
             self.show_all_tooltip = CTkToolTip(self.show_all, message="Display all sections or\n"
@@ -3161,15 +3166,15 @@ class TeraTermUI(customtkinter.CTk):
                                                                 "1PL (Basic Personal Data)",
                                                                 "4CM (Tuition Calculation)",
                                                                 "4SP (Apply for Extension)", "SO (Sign out)"])
-            self.menu_entry.bind('<FocusIn>', self.remove_key_bindings)
-            self.menu_entry.bind('<FocusOut>', self.add_key_bindings)
+            self.menu_entry.bind("<FocusIn>", self.remove_key_bindings)
+            self.menu_entry.bind("<FocusOut>", self.add_key_bindings)
             self.menu_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab), text="Semester")
             self.menu_semester_entry = customtkinter.CTkComboBox(master=self.tabview.tab(self.other_tab),
                                                                  values=["B91", "B92", "B93", "C01", "C02", "C03", "C11",
                                                                          "C12", "C13", "C21", "C22", "C23", "C31"])
             self.menu_semester_entry.set("C31")
-            self.menu_semester.bind('<FocusIn>', self.remove_key_bindings)
-            self.menu_semester.bind('<FocusOut>', self.add_key_bindings)
+            self.menu_semester.bind("<FocusIn>", self.remove_key_bindings)
+            self.menu_semester.bind("<FocusOut>", self.add_key_bindings)
             self.menu_submit = customtkinter.CTkButton(master=self.tabview.tab(self.other_tab), border_width=2,
                                                        text="Submit", text_color=("gray10", "#DCE4EE"),
                                                        command=self.option_menu_event_handler)
@@ -3232,17 +3237,17 @@ class TeraTermUI(customtkinter.CTk):
             self.m_choice = customtkinter.CTkLabel(master=self.multiple_frame, text="Register/Drop")
             self.m_num_class_1 = customtkinter.CTkLabel(master=self.multiple_frame, text="1.")
             self.m_classes_entry = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="ESPA3101")
-            self.m_classes_entry.bind('<FocusIn>', self.remove_key_bindings)
-            self.m_classes_entry.bind('<FocusOut>', self.add_key_bindings)
+            self.m_classes_entry.bind("<FocusIn>", self.remove_key_bindings)
+            self.m_classes_entry.bind("<FocusOut>", self.add_key_bindings)
             self.m_section_entry = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="LM1")
-            self.m_section_entry.bind('<FocusIn>', self.remove_key_bindings)
-            self.m_section_entry.bind('<FocusOut>', self.add_key_bindings)
+            self.m_section_entry.bind("<FocusIn>", self.remove_key_bindings)
+            self.m_section_entry.bind("<FocusOut>", self.add_key_bindings)
             self.m_semester_entry = customtkinter.CTkComboBox(master=self.multiple_frame,
                                                               values=["C31", "C32", "C33", "C41", "C42", "C43"],
                                                               command=lambda value: self.change_semester())
             self.m_semester_entry.set("C31")
-            self.m_semester_entry.bind('<FocusIn>', self.remove_key_bindings)
-            self.m_semester_entry.bind('<FocusOut>', self.add_key_bindings)
+            self.m_semester_entry.bind("<FocusIn>", self.remove_key_bindings)
+            self.m_semester_entry.bind("<FocusOut>", self.add_key_bindings)
             self.m_register_menu = customtkinter.CTkOptionMenu(master=self.multiple_frame, values=["Register", "Drop"])
             self.m_register_menu.set("Choose")
             self.m_add = customtkinter.CTkButton(master=self.m_button_frame, border_width=2, text="+",
@@ -3278,62 +3283,62 @@ class TeraTermUI(customtkinter.CTk):
             # Extras
             self.m_num_class_2 = customtkinter.CTkLabel(master=self.multiple_frame, text="2.")
             self.m_classes_entry2 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="INGL3101")
-            self.m_classes_entry2.bind('<FocusIn>', self.remove_key_bindings)
-            self.m_classes_entry2.bind('<FocusOut>', self.add_key_bindings)
+            self.m_classes_entry2.bind("<FocusIn>", self.remove_key_bindings)
+            self.m_classes_entry2.bind("<FocusOut>", self.add_key_bindings)
             self.m_section_entry2 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="KM1")
-            self.m_section_entry2.bind('<FocusIn>', self.remove_key_bindings)
-            self.m_section_entry2.bind('<FocusOut>', self.add_key_bindings)
+            self.m_section_entry2.bind("<FocusIn>", self.remove_key_bindings)
+            self.m_section_entry2.bind("<FocusOut>", self.add_key_bindings)
             self.m_semester_entry2 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Semester")
-            self.m_semester_entry2.bind('<FocusIn>', self.remove_key_bindings)
-            self.m_semester_entry2.bind('<FocusOut>', self.add_key_bindings)
+            self.m_semester_entry2.bind("<FocusIn>", self.remove_key_bindings)
+            self.m_semester_entry2.bind("<FocusOut>", self.add_key_bindings)
             self.m_register_menu2 = customtkinter.CTkOptionMenu(master=self.multiple_frame, values=["Register", "Drop"])
             self.m_register_menu2.set("Choose")
             self.m_num_class_3 = customtkinter.CTkLabel(master=self.multiple_frame, text="3.")
             self.m_classes_entry3 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="BIOL3011")
-            self.m_classes_entry3.bind('<FocusIn>', self.remove_key_bindings)
-            self.m_classes_entry3.bind('<FocusOut>', self.add_key_bindings)
+            self.m_classes_entry3.bind("<FocusIn>", self.remove_key_bindings)
+            self.m_classes_entry3.bind("<FocusOut>", self.add_key_bindings)
             self.m_section_entry3 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="KH1")
-            self.m_section_entry3.bind('<FocusIn>', self.remove_key_bindings)
-            self.m_section_entry3.bind('<FocusOut>', self.add_key_bindings)
+            self.m_section_entry3.bind("<FocusIn>", self.remove_key_bindings)
+            self.m_section_entry3.bind("<FocusOut>", self.add_key_bindings)
             self.m_semester_entry3 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Semester")
-            self.m_semester_entry3.bind('<FocusIn>', self.remove_key_bindings)
-            self.m_semester_entry3.bind('<FocusOut>', self.add_key_bindings)
+            self.m_semester_entry3.bind("<FocusIn>", self.remove_key_bindings)
+            self.m_semester_entry3.bind("<FocusOut>", self.add_key_bindings)
             self.m_register_menu3 = customtkinter.CTkOptionMenu(master=self.multiple_frame, values=["Register", "Drop"])
             self.m_register_menu3.set("Choose")
             self.m_num_class_4 = customtkinter.CTkLabel(master=self.multiple_frame, text="4.")
             self.m_classes_entry4 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="MATE3001")
-            self.m_classes_entry4.bind('<FocusIn>', self.remove_key_bindings)
-            self.m_classes_entry4.bind('<FocusOut>', self.add_key_bindings)
+            self.m_classes_entry4.bind("<FocusIn>", self.remove_key_bindings)
+            self.m_classes_entry4.bind("<FocusOut>", self.add_key_bindings)
             self.m_section_entry4 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="LH1")
-            self.m_section_entry4.bind('<FocusIn>', self.remove_key_bindings)
-            self.m_section_entry4.bind('<FocusOut>', self.add_key_bindings)
+            self.m_section_entry4.bind("<FocusIn>", self.remove_key_bindings)
+            self.m_section_entry4.bind("<FocusOut>", self.add_key_bindings)
             self.m_semester_entry4 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Semester")
-            self.m_semester_entry4.bind('<FocusIn>', self.remove_key_bindings)
-            self.m_semester_entry4.bind('<FocusOut>', self.add_key_bindings)
+            self.m_semester_entry4.bind("<FocusIn>", self.remove_key_bindings)
+            self.m_semester_entry4.bind("<FocusOut>", self.add_key_bindings)
             self.m_register_menu4 = customtkinter.CTkOptionMenu(master=self.multiple_frame, values=["Register", "Drop"])
             self.m_register_menu4.set("Choose")
             self.m_num_class_5 = customtkinter.CTkLabel(master=self.multiple_frame, text="5.")
             self.m_classes_entry5 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="CISO3121")
-            self.m_classes_entry5.bind('<FocusIn>', self.remove_key_bindings)
-            self.m_classes_entry5.bind('<FocusOut>', self.add_key_bindings)
+            self.m_classes_entry5.bind("<FocusIn>", self.remove_key_bindings)
+            self.m_classes_entry5.bind("<FocusOut>", self.add_key_bindings)
             self.m_section_entry5 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="KN1")
-            self.m_section_entry5.bind('<FocusIn>', self.remove_key_bindings)
-            self.m_section_entry5.bind('<FocusOut>', self.add_key_bindings)
+            self.m_section_entry5.bind("<FocusIn>", self.remove_key_bindings)
+            self.m_section_entry5.bind("<FocusOut>", self.add_key_bindings)
             self.m_semester_entry5 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Semester")
-            self.m_semester_entry5.bind('<FocusIn>', self.remove_key_bindings)
-            self.m_semester_entry5.bind('<FocusOut>', self.add_key_bindings)
+            self.m_semester_entry5.bind("<FocusIn>", self.remove_key_bindings)
+            self.m_semester_entry5.bind("<FocusOut>", self.add_key_bindings)
             self.m_register_menu5 = customtkinter.CTkOptionMenu(master=self.multiple_frame, values=["Register", "Drop"])
             self.m_register_menu5.set("Choose")
             self.m_num_class_6 = customtkinter.CTkLabel(master=self.multiple_frame, text="6.")
             self.m_classes_entry6 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="HUMA3101")
-            self.m_classes_entry6.bind('<FocusIn>', self.remove_key_bindings)
-            self.m_classes_entry6.bind('<FocusOut>', self.add_key_bindings)
+            self.m_classes_entry6.bind("<FocusIn>", self.remove_key_bindings)
+            self.m_classes_entry6.bind("<FocusOut>", self.add_key_bindings)
             self.m_section_entry6 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="LN1")
-            self.m_section_entry6.bind('<FocusIn>', self.remove_key_bindings)
-            self.m_section_entry6.bind('<FocusOut>', self.add_key_bindings)
+            self.m_section_entry6.bind("<FocusIn>", self.remove_key_bindings)
+            self.m_section_entry6.bind("<FocusOut>", self.add_key_bindings)
             self.m_semester_entry6 = customtkinter.CTkEntry(master=self.multiple_frame, placeholder_text="Semester")
-            self.m_semester_entry6.bind('<FocusIn>', self.remove_key_bindings)
-            self.m_semester_entry6.bind('<FocusOut>', self.add_key_bindings)
+            self.m_semester_entry6.bind("<FocusIn>", self.remove_key_bindings)
+            self.m_semester_entry6.bind("<FocusOut>", self.add_key_bindings)
             self.m_register_menu6 = customtkinter.CTkOptionMenu(master=self.multiple_frame, values=["Register", "Drop"])
             self.m_register_menu6.set("Choose")
             if self.saveCheck:
@@ -3394,34 +3399,24 @@ class TeraTermUI(customtkinter.CTk):
 
     # saves the information to the database when the app closes
     def save_user_data(self):
-        host = self.host_entry.get()
-        resultWelcome = self.cursor.execute("SELECT welcome FROM user_data").fetchall()
-        if len(resultWelcome) == 0:
-            self.cursor.execute("INSERT INTO user_data (welcome) VALUES (?)", ("Checked",))
-        elif len(resultWelcome) == 1:
-            self.cursor.execute("UPDATE user_data SET welcome=?", ("Checked",))
-        resultHost = self.cursor.execute("SELECT host FROM user_data").fetchall()
-        if len(resultHost) == 0 and host == "uprbay.uprb.edu":
-            self.cursor.execute("INSERT INTO user_data (host) VALUES (?) ", (host,))
-        elif len(resultHost) == 1 and host == "uprbay.uprb.edu":
-            self.cursor.execute("UPDATE user_data SET host=?", (host,))
-        resultLang = self.cursor.execute("SELECT language FROM user_data").fetchall()
-        if len(resultLang) == 0:
-            self.cursor.execute("INSERT INTO user_data (language) VALUES (?) ", (self.language_menu.get(),))
-        elif len(resultLang) == 1:
-            self.cursor.execute("UPDATE user_data SET language=?", (self.language_menu.get(),))
-        resultAppearance = self.cursor.execute("SELECT appearance FROM user_data").fetchall()
-        if len(resultAppearance) == 0:
-            self.cursor.execute("INSERT INTO user_data (appearance) VALUES (?) ",
-                                (self.appearance_mode_optionemenu.get(),))
-        elif len(resultAppearance) == 1:
-            self.cursor.execute("UPDATE user_data SET appearance=?", (self.appearance_mode_optionemenu.get(),))
-        resultScaling = self.cursor.execute("SELECT scaling FROM user_data").fetchall()
-        if len(resultScaling) == 0:
-            self.cursor.execute("INSERT INTO user_data (scaling) VALUES (?) ",
-                                (self.scaling_optionemenu.get(),))
-        elif len(resultScaling) == 1:
-            self.cursor.execute("UPDATE user_data SET scaling=?", (self.scaling_optionemenu.get(),))
+        field_values = {
+            "welcome": "Checked",
+            "host": self.host_entry.get(),
+            "language": self.language_menu.get(),
+            "appearance": self.appearance_mode_optionemenu.get(),
+            "scaling": self.scaling_optionemenu.get(),
+        }
+
+        for field, value in field_values.items():
+            # for 'host' field, only update or insert when host is "uprbay.uprb.edu"
+            if field == "host" and value != "uprbay.uprb.edu":
+                continue
+
+            result = self.cursor.execute(f"SELECT {field} FROM user_data").fetchone()
+            if result is None:
+                self.cursor.execute(f"INSERT INTO user_data ({field}) VALUES (?)", (value,))
+            elif result[0] != value:
+                self.cursor.execute(f"UPDATE user_data SET {field} = ? ", (value,))
         with closing(sqlite3.connect("database.db")) as connection:
             with closing(connection.cursor()) as self.cursor:
                 self.connection.commit()
@@ -3453,7 +3448,7 @@ class TeraTermUI(customtkinter.CTk):
                 if not class_value or not section_value or not semester_value or register_value in ("Choose", "Escoge"):
                     continue  # Skip inserting the row for this key
                 # Perform the insert operation
-                self.cursor.execute("INSERT INTO save_classes (class, section, semester, action, 'check')"
+                self.cursor.execute("INSERT INTO save_classes (class, section, semester, action, check')"
                                     " VALUES (?, ?, ?, ?, ?)",
                                     (class_value, section_value, semester_value, register_value, "Yes"))
                 self.connection.commit()
@@ -3597,7 +3592,7 @@ class TeraTermUI(customtkinter.CTk):
         img = cv2.resize(img, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
         img = Image.fromarray(img)
         # img.save("img.png")
-        custom_config = r'--oem 3 --psm 6'
+        custom_config = r"--oem 3 --psm 6"
         text = pytesseract.image_to_string(img, config=custom_config)
         return text
 
@@ -3622,11 +3617,11 @@ class TeraTermUI(customtkinter.CTk):
             with open(file_path, "w") as file:
                 for line in lines:
                     if line.startswith("VTFont="):
-                        current_value = line.strip().split('=')[1]
-                        font_name = current_value.split(',')[0]
-                        if font_name.lower() != 'lucida console':
+                        current_value = line.strip().split("=")[1]
+                        font_name = current_value.split(",")[0]
+                        if font_name.lower() != "lucida console":
                             self.original_font = current_value
-                            updated_value = 'Lucida Console' + current_value[len(font_name):]
+                            updated_value = "Lucida Console" + current_value[len(font_name):]
                             line = f"VTFont={updated_value}\n"
                         else:
                             self.original_font = None
@@ -3634,14 +3629,14 @@ class TeraTermUI(customtkinter.CTk):
 
             # Reads from the feedback.json file to connect to Google's Sheets Api for user feedback
             try:
-                with open(self.SERVICE_ACCOUNT_FILE, 'rb') as f:
+                with open(self.SERVICE_ACCOUNT_FILE, "rb") as f:
                     archive = pyzipper.AESZipFile(self.SERVICE_ACCOUNT_FILE)
                     archive.setpassword(self.PASSWORD.encode())
-                    file_contents = archive.read('feedback.json')
+                    file_contents = archive.read("feedback.json")
                     credentials_dict = json.loads(file_contents.decode())
                     self.credentials = service_account.Credentials.from_service_account_info(
                         credentials_dict,
-                        scopes=['https://www.googleapis.com/auth/spreadsheets']
+                        scopes=["https://www.googleapis.com/auth/spreadsheets"]
                     )
             except Exception as e:
                 print(f"Failed to load credentials: {str(e)}")
@@ -3770,12 +3765,12 @@ class TeraTermUI(customtkinter.CTk):
         customtkinter.set_appearance_mode(new_appearance_mode)
 
     def add_key_bindings(self, event):
-        self.bind('<Left>', self.move_slider_left)
-        self.bind('<Right>', self.move_slider_right)
+        self.bind("<Left>", self.move_slider_left)
+        self.bind("<Right>", self.move_slider_right)
 
     def remove_key_bindings(self, event):
-        self.unbind('<Left>')
-        self.unbind('<Right>')
+        self.unbind("<Left>")
+        self.unbind("<Right>")
 
     # Moves the scaling slider to the left
     def move_slider_left(self, event):
@@ -3977,10 +3972,10 @@ class TeraTermUI(customtkinter.CTk):
             if response == "Yes" or response == "Sí":
                 self.reset_activity_timer(None)
                 ctypes.windll.user32.BlockInput(True)
-                term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                 term_window.restore()
                 uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                uprb_window.wait('visible', timeout=100)
+                uprb_window.wait("visible", timeout=100)
                 self.unfocus_tkinter()
                 send_keys("{TAB}")
                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -4009,10 +4004,10 @@ class TeraTermUI(customtkinter.CTk):
             if time.time() - self.last_activity >= 240:
                 if self.checkIfProcessRunning("ttermpro"):
                     ctypes.windll.user32.BlockInput(True)
-                    term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                    term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                     term_window.restore()
                     uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                    uprb_window.wait('visible', timeout=100)
+                    uprb_window.wait("visible", timeout=100)
                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                     send_keys("{ENTER}")
                     ctypes.windll.user32.BlockInput(False)
@@ -4047,10 +4042,10 @@ class TeraTermUI(customtkinter.CTk):
                 self.hide_sidebar_windows()
                 self.destroy_windows()
                 ctypes.windll.user32.BlockInput(True)
-                term_window = gw.getWindowsWithTitle('uprbay.uprb.edu - Tera Term VT')[0]
+                term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                 term_window.restore()
                 uprb_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                uprb_window.wait('visible', timeout=100)
+                uprb_window.wait("visible", timeout=100)
                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                 send_keys("{ENTER}")
                 ctypes.windll.user32.BlockInput(False)
@@ -4086,8 +4081,8 @@ class TeraTermUI(customtkinter.CTk):
         win32gui.SetForegroundWindow(tk_handle)
         self.focus_force()
         self.lift()
-        self.attributes('-topmost', 1)
-        self.after_idle(self.attributes, '-topmost', 0)
+        self.attributes("-topmost", 1)
+        self.after_idle(self.attributes, "-topmost", 0)
 
     # Set focus on Tera Term window
     def unfocus_tkinter(self):
@@ -4187,8 +4182,8 @@ class TeraTermUI(customtkinter.CTk):
             self.feedbackText = customtkinter.CTkTextbox(scrollable_frame, wrap="word", border_spacing=8, width=300,
                                                          height=170, fg_color=("#ffffff", "#111111"))
             self.feedbackText.pack(pady=10)
-            self.feedbackText.bind('<FocusIn>', self.remove_key_bindings)
-            self.feedbackText.bind('<FocusOut>', self.add_key_bindings)
+            self.feedbackText.bind("<FocusIn>", self.remove_key_bindings)
+            self.feedbackText.bind("<FocusOut>", self.add_key_bindings)
             feedbackSend = customtkinter.CTkButton(scrollable_frame, border_width=2,
                                                    text="Enviar Comentario",
                                                    text_color=("gray10", "#DCE4EE"), command=self.submit_feedback)
@@ -4229,19 +4224,19 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         if self.test_connection(lang):
             try:
-                service = build('sheets', 'v4', credentials=self.credentials)
+                service = build("sheets", "v4", credentials=self.credentials)
             except:
-                DISCOVERY_SERVICE_URL = 'https://sheets.googleapis.com/$discovery/rest?version=v4'
-                service = build('sheets', 'v4', credentials=self.credentials, discoveryServiceUrl=DISCOVERY_SERVICE_URL)
+                DISCOVERY_SERVICE_URL = "https://sheets.googleapis.com/$discovery/rest?version=v4"
+                service = build("sheets", "v4", credentials=self.credentials, discoveryServiceUrl=DISCOVERY_SERVICE_URL)
             now = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
             body = {
-                'values': [[now, values[0][0]]]
+                "values": [[now, values[0][0]]]
             }
 
             try:
                 result = service.spreadsheets().values().append(
                     spreadsheetId=self.SPREADSHEET_ID, range=self.RANGE_NAME,
-                    valueInputOption='RAW', insertDataOption='INSERT_ROWS',
+                    valueInputOption="RAW", insertDataOption="INSERT_ROWS",
                     body=body).execute()
                 return result
             except HttpError as error:
@@ -4252,7 +4247,7 @@ class TeraTermUI(customtkinter.CTk):
     def submit_feedback(self):
         lang = self.language_menu.get()
         if not self.disable_feedback:
-            current_date = datetime.today().strftime('%Y-%m-%d')
+            current_date = datetime.today().strftime("%Y-%m-%d")
             date = self.cursor.execute("SELECT date FROM user_data WHERE date IS NOT NULL").fetchall()
             dates_list = [record[0] for record in date]
             if current_date not in dates_list:
@@ -4600,9 +4595,9 @@ class TeraTermUI(customtkinter.CTk):
         if idle:
             if idle[0][0] == "Disabled":
                 self.disableIdle.select()
-        self.class_list.bind('<<ListboxSelect>>', self.show_class_code)
+        self.class_list.bind("<<ListboxSelect>>", self.show_class_code)
         self.class_list.bind("<MouseWheel>", self.disable_scroll)
-        self.search_box.bind('<KeyRelease>', self.search_classes)
+        self.search_box.bind("<KeyRelease>", self.search_classes)
 
     # Gets the latest release of the application on GitHub
     def get_latest_release(self):
@@ -4653,11 +4648,11 @@ class TeraTermUI(customtkinter.CTk):
             with open(file_path, "w") as file:
                 for line in lines:
                     if line.startswith("VTFont="):
-                        current_value = line.strip().split('=')[1]
-                        font_name = current_value.split(',')[0]
-                        if font_name.lower() != 'lucida console':
+                        current_value = line.strip().split("=")[1]
+                        font_name = current_value.split(",")[0]
+                        if font_name.lower() != "lucida console":
                             self.original_font = current_value
-                            updated_value = 'Lucida Console' + current_value[len(font_name):]
+                            updated_value = "Lucida Console" + current_value[len(font_name):]
                             line = f"VTFont={updated_value}\n"
                         else:
                             self.original_font = None
@@ -4672,8 +4667,8 @@ class TeraTermUI(customtkinter.CTk):
             with open(file_path, "w") as file:
                 for line in lines:
                     if line.startswith("VTFont="):
-                        original_font_name = self.original_font.split(',')[0]
-                        if original_font_name.lower() != 'lucida console':
+                        original_font_name = self.original_font.split(",")[0]
+                        if original_font_name.lower() != "lucida console":
                             line = f"VTFont={self.original_font}\n"
                     file.write(line)
 
@@ -4914,11 +4909,10 @@ class TeraTermUI(customtkinter.CTk):
                 self.auto_enroll.deselect()
                 return False
             self.check = False
-            self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
 
 
 if __name__ == "__main__":
-    appdata_folder = os.path.join(os.getenv('APPDATA'), 'TeraTermUI')
+    appdata_folder = os.path.join(os.getenv("APPDATA"), "TeraTermUI")
     lock_file = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])), "app_lock.lock")
     lock_file_appdata = os.path.join(appdata_folder, "app_lock.lock")
     file_lock = FileLock(lock_file, timeout=0)
