@@ -376,7 +376,6 @@ class TeraTermUI(customtkinter.CTk):
         # self.screenshot_skip = False
         # self.error_occurred = False
         self.run_fix = False
-        self.tuition_window = False
         self.a_counter = 0
         self.m_counter = 0
         self.e_counter = 0
