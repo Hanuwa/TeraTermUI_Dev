@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 5/29/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 5/30/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -552,6 +552,7 @@ class TeraTermUI(customtkinter.CTk):
         self.focus_set()
         self.destroy_windows()
         self.hide_sidebar_windows()
+        self.unbind("<Return>")
         lang = self.language_menu.get()
         # self.error_occurred = False
         aes_key = secrets.token_bytes(32)  # 256-bit key
@@ -628,7 +629,6 @@ class TeraTermUI(customtkinter.CTk):
                             self.after(0, self.tuition_frame)
                             # self.screenshot_skip = False
                             self.run_fix = True
-                            self.unbind("<Return>")
                             secure_delete(ssn_enc)
                             secure_delete(code_enc)
                             del ssn, code
@@ -1293,6 +1293,7 @@ class TeraTermUI(customtkinter.CTk):
         self.focus_set()
         self.destroy_windows()
         self.hide_sidebar_windows()
+        self.unbind("<Return>")
         counter = self.a_counter
         lang = self.language_menu.get()
         classes = self.m_classes_entry.get().upper().replace(" ", "")
@@ -1606,6 +1607,7 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
         ctypes.windll.user32.BlockInput(False)
         self.show_sidebar_windows()
+        self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
         print(self.enrolled_classes_list)
         print(self.dropped_classes_list)
         print(self.e_counter)
@@ -2151,9 +2153,9 @@ class TeraTermUI(customtkinter.CTk):
         self.focus_set()
         self.destroy_windows()
         self.hide_sidebar_windows()
+        self.unbind("<Return>")
         username = self.username_entry.get().replace(" ", "").lower()
         lang = self.language_menu.get()
-        self.bind("<Return>", lambda event: self.tuition_event_handler())
         if self.test_connection(lang) and self.check_server():
             if self.checkIfProcessRunning("ttermpro"):
                 if username == "students":
@@ -2174,6 +2176,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.show_loading_screen_again()
                     time.sleep(3)
                     send_keys("{ENTER 3}")
+                    self.bind("<Return>", lambda event: self.tuition_event_handler())
                     self.after(0, self.student_info_frame)
                     self.set_focus_to_tkinter()
                 elif username != "students":
@@ -2229,9 +2232,9 @@ class TeraTermUI(customtkinter.CTk):
         self.focus_set()
         self.destroy_windows()
         self.hide_sidebar_windows()
+        self.unbind("<Return>")
         lang = self.language_menu.get()
         host = self.host_entry.get().replace(" ", "").lower()
-        self.bind("<Return>", lambda event: self.student_event_handler())
         if self.test_connection(lang) and self.check_server():
             if host == "uprbay.uprb.edu" or host == "uprbayuprbedu":
                 if self.checkIfProcessRunning("ttermpro"):
@@ -2268,6 +2271,7 @@ class TeraTermUI(customtkinter.CTk):
                             continue_button.click_input()
                             self.show_loading_screen_again()
                         ctypes.windll.user32.BlockInput(False)
+                        self.bind("<Return>", lambda event: self.student_event_handler())
                         self.after(0, self.login_frame)
                         self.set_focus_to_tkinter()
                     except Exception as e:
