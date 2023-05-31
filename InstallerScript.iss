@@ -18,13 +18,13 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
-DefaultDirName={autopf}\TeraTermUI
+DefaultDirName={pf64}\TeraTermUI
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 LicenseFile=C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\LICENSE.txt
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
 ;PrivilegesRequired=lowest
-OutputBaseFilename=TeraTermUI_32-bit_Installer
+OutputBaseFilename=TeraTermUI_64-bit_Installer
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
