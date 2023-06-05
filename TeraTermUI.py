@@ -2986,6 +2986,10 @@ class TeraTermUI(customtkinter.CTk):
                                                                     "pre-enrollment ticket email", bg_color="#1E90FF")
             self.show = customtkinter.CTkSwitch(master=self.student_frame, text="Show?", command=self.show_event,
                                                 onvalue="on", offvalue="off")
+            self.ssn_entry.bind("<Command-c>", lambda e: "break")
+            self.ssn_entry.bind("<Control-c>", lambda e: "break")
+            self.code_entry.bind("<Command-c>", lambda e: "break")
+            self.code_entry.bind("<Control-c>", lambda e: "break")
             self.system = customtkinter.CTkButton(master=self.s_buttons_frame, border_width=2,
                                                   text="Enter",
                                                   text_color=("gray10", "#DCE4EE"), command=self.tuition_event_handler)
@@ -3348,9 +3352,17 @@ class TeraTermUI(customtkinter.CTk):
     def show_event(self):
         show = self.show.get()
         if show == "on":
+            self.ssn_entry.unbind("<Command-c>")
+            self.ssn_entry.unbind("<Control-c>")
+            self.code_entry.unbind("<Command-c>")
+            self.code_entry.unbind("<Control-c>")
             self.ssn_entry.configure(show="")
             self.code_entry.configure(show="")
         elif show == "off":
+            self.ssn_entry.bind("<Command-c>", lambda e: "break")
+            self.ssn_entry.bind("<Control-c>", lambda e: "break")
+            self.code_entry.bind("<Command-c>", lambda e: "break")
+            self.code_entry.bind("<Control-c>", lambda e: "break")
             self.ssn_entry.configure(show="*")
             self.code_entry.configure(show="*")
 
