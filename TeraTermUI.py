@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 6/1/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 6/5/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -48,6 +48,7 @@ from filelock import FileLock, Timeout
 from datetime import datetime, timedelta
 from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import pad, unpad
+from Crypto.Random import get_random_bytes
 import pytz
 import json
 import subprocess
@@ -104,6 +105,7 @@ class TeraTermUI(customtkinter.CTk):
         # path for tesseract application
         self.zip_path = os.path.join(os.path.dirname(__file__), "Tesseract-OCR.zip")
         self.temp_dir = tempfile.mkdtemp()
+        self.backup_dir = tempfile.mkdtemp()
         self.tesseract_dir = None
         self.tessdata_dir_config = None
 
@@ -366,6 +368,7 @@ class TeraTermUI(customtkinter.CTk):
         self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
         atexit.register(self.cleanup_tesseract)
         atexit.register(self.restore_original_font, self.teraterm_file)
+        atexit.register(self.cleanup_backup, self.backup_dir)
         self.connection = sqlite3.connect("database.db")
         self.cursor = self.connection.cursor()
         self.save = self.cursor.execute("SELECT class, section, semester, action FROM save_classes"
@@ -490,14 +493,14 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         if lang == "English":
             msg = CTkMessagebox(master=self, title="Exit", message="Are you sure you want to exit the application?"
-                                                                   " ""\n\nWARNING: (Tera Term will close)",
+                                                                   " ""\n\nWARNING: Tera Term will close",
                                 icon="question",
                                 option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
                                 button_color=("#c30101", "#145DA0", "#145DA0"),
                                 hover_color=("darkred", "darkblue", "darkblue"))
         elif lang == "Español":
             msg = CTkMessagebox(master=self, title="Salir", message="¿Estás seguro que quieres salir de la aplicación?"
-                                                                    " ""\n\nWARNING: (Tera Term va a cerrar)",
+                                                                    " ""\n\nWARNING: Tera Term va a cerrar",
                                 icon="question",
                                 option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
                                 button_color=("#c30101", "#145DA0", "#145DA0"),
@@ -535,7 +538,9 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         # self.error_occurred = False
         aes_key = secrets.token_bytes(32)  # 256-bit key
+        iv = get_random_bytes(16)  # for AES CBC mode
 
+        # Deletes these encrypted variables from memory
         def secure_delete(variable):
             if isinstance(variable, bytes):
                 variable_len = len(variable)
@@ -544,13 +549,15 @@ class TeraTermUI(customtkinter.CTk):
                 variable = secrets.randbits(variable.bit_length())
             del variable
 
+        # Encrypts the ssn and code variables
         def aes_encrypt(plaintext):
-            cipher = AES.new(aes_key, AES.MODE_ECB)
+            cipher = AES.new(aes_key, AES.MODE_CBC, iv=iv)
             ciphertext = cipher.encrypt(pad(plaintext.encode(), AES.block_size))
             return ciphertext
 
+        # Decrypts the ssn and code variables
         def aes_decrypt(ciphertext):
-            cipher = AES.new(aes_key, AES.MODE_ECB)
+            cipher = AES.new(aes_key, AES.MODE_CBC, iv=iv)
             plaintext = unpad(cipher.decrypt(ciphertext), AES.block_size).decode()
             return plaintext
 
@@ -573,12 +580,13 @@ class TeraTermUI(customtkinter.CTk):
                 # "intente de nuevo")
                 # if not self.error_occurred:
                 try:
-                    ssn = int(self.ssn_entry.get().replace(" ", ""))
-                    code = int(self.code_entry.get().replace(" ", ""))
+                    ssn = self.ssn_entry.get().replace(" ", "")
+                    ssn = ssn.replace("-", "")
+                    code = self.code_entry.get().replace(" ", "")
                     ssn_enc = aes_encrypt(str(ssn))
                     code_enc = aes_encrypt(str(code))
-                    if re.match("^(?!666|000|9\\d{2})\\d{3}(?!00)\\d{2}(?!0{4})\\d{4}$", str(ssn)) \
-                            and len(str(code)) == 4:
+                    if re.match("^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", ssn) and code.isdigit() \
+                            and len(code) == 4:
                         secure_delete(ssn)
                         secure_delete(code)
                         ctypes.windll.user32.BlockInput(True)
@@ -610,6 +618,8 @@ class TeraTermUI(customtkinter.CTk):
                             self.run_fix = True
                             secure_delete(ssn_enc)
                             secure_delete(code_enc)
+                            secure_delete(aes_key)
+                            secure_delete(iv)
                             del ssn, code
                             gc.collect()
                             self.set_focus_to_tkinter()
@@ -1210,7 +1220,7 @@ class TeraTermUI(customtkinter.CTk):
         if not self.auto_enroll_bool:
             if lang == "English":
                 msg = CTkMessagebox(master=self, title="Submit",
-                                    message="Are you sure you are ready submit the data?"
+                                    message="Are you sure you are ready to submit the classes?"
                                             " \n\nWARNING: Make sure the information is correct",
                                     icon="images/submit.png",
                                     option_1="Cancel", option_2="No", option_3="Yes",
@@ -1218,7 +1228,7 @@ class TeraTermUI(customtkinter.CTk):
                                     hover_color=("darkred", "darkblue", "darkblue"))
             elif lang == "Español":
                 msg = CTkMessagebox(master=self, title="Someter",
-                                    message="¿Estás preparado para someter la data?"
+                                    message="¿Estás preparado para someter las clases?"
                                             " \n\nWARNING: Asegúrese de que la información está correcta",
                                     icon="images/submit.png",
                                     option_1="Cancelar", option_2="No", option_3="Sí",
@@ -2234,7 +2244,7 @@ class TeraTermUI(customtkinter.CTk):
         if lang == "English":
             msg = CTkMessagebox(master=self, title="Go back?",
                                 message="Are you sure you want to go back? "
-                                        " \n\n""WARNING: (Tera Term will close)",
+                                        " \n\n""WARNING: Tera Term will close",
                                 icon="question",
                                 option_1="Cancel", option_2="No", option_3="Yes",
                                 icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
@@ -2242,7 +2252,7 @@ class TeraTermUI(customtkinter.CTk):
         elif lang == "Español":
             msg = CTkMessagebox(master=self, title="¿Ir atrás?",
                                 message="¿Estás seguro que quieres ir atrás?"
-                                        " \n\n""WARNING: (Tera Term va a cerrar)",
+                                        " \n\n""WARNING: Tera Term va a cerrar",
                                 icon="question",
                                 option_1="Cancelar", option_2="No", option_3="Sí",
                                 icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
@@ -2660,6 +2670,28 @@ class TeraTermUI(customtkinter.CTk):
             self.m_semester_entry[i].configure(state="disabled")
 
     def auto_enroll_event_handler(self):
+        lang = self.language_menu.get()
+        self.focus_set()
+        if self.auto_enroll.get() == "on":
+            if lang == "English":
+                msg = CTkMessagebox(master=self, title="Submit",
+                                    message="Are you sure you are ready to submit the classes?"
+                                            " \n\nWARNING: Make sure the information is correct",
+                                    icon="images/submit.png",
+                                    option_1="Cancel", option_2="No", option_3="Yes",
+                                    icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                    hover_color=("darkred", "darkblue", "darkblue"))
+            elif lang == "Español":
+                msg = CTkMessagebox(master=self, title="Someter",
+                                    message="¿Estás preparado para someter la clases?"
+                                            " \n\nWARNING: Asegúrese de que la información está correcta",
+                                    icon="images/submit.png",
+                                    option_1="Cancelar", option_2="No", option_3="Sí",
+                                    icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                    hover_color=("darkred", "darkblue", "darkblue"))
+            response = msg.get()
+            if response != "Yes" and response != "Sí":
+                return
         task_done = threading.Event()
         loading_screen = self.show_loading_screen()
         self.update_loading_screen(loading_screen, task_done)
@@ -2759,7 +2791,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.hide_loading_screen()
                         # Create a Toplevel window
                         width = 300
-                        height = 140
+                        height = 160
                         scaling_factor = self.tk.call("tk", "scaling")
                         screen_width = self.winfo_screenwidth()
                         screen_height = self.winfo_screenheight()
@@ -2785,10 +2817,19 @@ class TeraTermUI(customtkinter.CTk):
                                                                         font=customtkinter.CTkFont(size=20,
                                                                                                    weight="bold"),
                                                                         text="\nAuto-Matrícula ha sido activado")
-                        self.message_label.pack(pady=10)
+                        self.message_label.pack()
                         self.timer_label = customtkinter.CTkLabel(self.timer_window, text="",
                                                                   font=customtkinter.CTkFont(size=15))
                         self.timer_label.pack()
+                        if lang == "English":
+                            self.cancel_button = customtkinter.CTkButton(self.timer_window, text="Cancel", width=250,
+                                                                         height=32, hover_color="darkred",
+                                                                         fg_color="red", command=self.end_countdown)
+                        elif lang == "Español":
+                            self.cancel_button = customtkinter.CTkButton(self.timer_window, text="Cancelar", width=250,
+                                                                         height=32, hover_color="darkred",
+                                                                         fg_color="red", command=self.end_countdown)
+                        self.cancel_button.pack(pady=25)
                         # Create a BooleanVar to control the loop
                         self.running = tk.BooleanVar()
                         self.running.set(True)
@@ -2835,8 +2876,10 @@ class TeraTermUI(customtkinter.CTk):
             self.submit_multiple.configure(state="normal")
             self.submit.configure(state="normal")
             self.back3.configure(state="normal")
-            self.m_add.configure(state="normal")
-            self.m_remove.configure(state="normal")
+            if self.a_counter > 0:
+                self.m_remove.configure(state="normal")
+            if self.a_counter < 5:
+                self.m_add.configure(state="normal")
             for i in range(6):
                 self.m_classes_entry[i].configure(state="normal")
                 self.m_section_entry[i].configure(state="normal")
@@ -2855,6 +2898,7 @@ class TeraTermUI(customtkinter.CTk):
         self.running.set(False)  # Stop the countdown
         self.timer_window.destroy()  # Destroy the countdown window
         self.auto_enroll.deselect()
+        self.auto_enroll_event_handler()
 
     # Starts the countdown on when the auto-enroll process will occur
     def countdown(self, your_date):
@@ -3380,6 +3424,9 @@ class TeraTermUI(customtkinter.CTk):
 
         # Edits the font that tera term uses to "Terminal" to mitigate the chance of the OCR mistaking words
         if self.original_font is None:
+            # Create a backup before modifying the original file
+            backup_path = os.path.join(self.backup_dir, os.path.basename(file_path) + ".bak")
+            shutil.copyfile(file_path, backup_path)
             try:
                 with open(file_path, "r") as file:
                     lines = file.readlines()
@@ -3418,7 +3465,17 @@ class TeraTermUI(customtkinter.CTk):
     # Deletes Tesseract OCR from the temp folder
     def cleanup_tesseract(self):
         if self.tesseract_dir == Path(self.temp_dir) / "Tesseract-OCR" and self.tesseract_dir.exists():
-            shutil.rmtree(self.temp_dir)
+            for _ in range(10):  # Retry up to 10 times
+                try:
+                    shutil.rmtree(self.temp_dir)
+                    break  # If the directory was deleted successfully, exit the loop
+                except PermissionError:
+                    time.sleep(1)  # Wait for 1 second before the next attempt
+
+    # deleltes tera term config file from temp directory
+    def cleanup_backup(self, backup_dir):
+        if os.path.isdir(backup_dir):
+            shutil.rmtree(backup_dir)
 
     # error window pop up message
     def show_error_message(self, width, height, error_msg_text):
@@ -4420,6 +4477,9 @@ class TeraTermUI(customtkinter.CTk):
     # Edits the font that tera term uses to "Terminal" to mitigate the chance of the OCR mistaking words
     def edit_teraterm_ini(self, file_path):
         if self.original_font is None:
+            # Create a backup before modifying the original file
+            backup_path = os.path.join(self.backup_dir, os.path.basename(file_path) + ".bak")
+            shutil.copyfile(file_path, backup_path)
             try:
                 with open(file_path, "r") as file:
                     lines = file.readlines()
@@ -4441,19 +4501,26 @@ class TeraTermUI(customtkinter.CTk):
 
     # Restores the original font option the user had
     def restore_original_font(self, file_path):
-        if self.original_font is not None:
-            with open(file_path, "r") as file:
-                lines = file.readlines()
+        backup_path = os.path.join(self.backup_dir, os.path.basename(file_path) + ".bak")
+        try:
+            if self.original_font is not None:
+                with open(file_path, "r") as file:
+                    lines = file.readlines()
 
-            with open(file_path, "w") as file:
-                for line in lines:
-                    if line.startswith("VTFont="):
-                        original_font_name = self.original_font.split(",")[0]
-                        if original_font_name.lower() != "lucida console":
-                            line = f"VTFont={self.original_font}\n"
-                    file.write(line)
+                with open(file_path, "w") as file:
+                    for line in lines:
+                        if line.startswith("VTFont="):
+                            original_font_name = self.original_font.split(",")[0]
+                            if original_font_name.lower() != "lucida console":
+                                line = f"VTFont={self.original_font}\n"
+                        file.write(line)
 
-            self.original_font = None
+                self.original_font = None
+        # If something goes wrong, restore the backup
+        except Exception as e:
+            print(f"Error occurred: {e}")
+            print("Restoring from backup...")
+            shutil.copyfile(backup_path, file_path)
 
     # When the user performs an action to do something in tera term it hides the sidebar windows, so they don't
     # interfere with the execution on tera term
