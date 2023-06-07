@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 6/5/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 6/6/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -104,10 +104,8 @@ class TeraTermUI(customtkinter.CTk):
 
         # path for tesseract application
         self.zip_path = os.path.join(os.path.dirname(__file__), "Tesseract-OCR.zip")
-        self.temp_dir = tempfile.mkdtemp()
-        self.backup_dir = tempfile.mkdtemp()
-        self.tesseract_dir = None
-        self.tessdata_dir_config = None
+        self.app_temp_dir = Path(tempfile.gettempdir()) / "TeraTermUI"
+        self.app_temp_dir.mkdir(parents=True, exist_ok=True)
 
         # configure grid layout (4x4)
         self.grid_columnconfigure(1, weight=1)
@@ -366,9 +364,8 @@ class TeraTermUI(customtkinter.CTk):
         appdata_path = os.getenv("APPDATA")
         self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
         self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
-        atexit.register(self.cleanup_tesseract)
+        atexit.register(self.cleanup_temp, self.app_temp_dir)
         atexit.register(self.restore_original_font, self.teraterm_file)
-        atexit.register(self.cleanup_backup, self.backup_dir)
         self.connection = sqlite3.connect("database.db")
         self.cursor = self.connection.cursor()
         self.save = self.cursor.execute("SELECT class, section, semester, action FROM save_classes"
@@ -3426,37 +3423,45 @@ class TeraTermUI(customtkinter.CTk):
 
     # Necessary things to do while the application is booting, gets done on a separate thread
     def boot_up(self, file_path):
+        # Cleanup any leftover files/directories if they exist in any directory under temp_dir
+        tesseract_dir_path = self.app_temp_dir / "Tesseract-OCR"
+        if tesseract_dir_path.is_dir():
+            shutil.rmtree(tesseract_dir_path)
+
+        backup_path = self.app_temp_dir / "TERATERM.ini.bak"
+        if not os.path.exists(backup_path):
+            backup_path = os.path.join(self.app_temp_dir, os.path.basename(file_path) + ".bak")
+            shutil.copyfile(file_path, backup_path)
+
         # Unzips Teserract OCR
         with pyzipper.AESZipFile(self.zip_path) as zf:
-            zf.extractall(self.temp_dir)
+            zf.extractall(self.app_temp_dir)
 
-        self.tesseract_dir = Path(self.temp_dir) / "Tesseract-OCR"
-        pytesseract.pytesseract.tesseract_cmd = str(self.tesseract_dir / "tesseract.exe")
-        self.tessdata_dir_config = f"--tessdata-dir {self.tesseract_dir / 'tessdata'}"
+        tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
+        pytesseract.pytesseract.tesseract_cmd = str(tesseract_dir / "tesseract.exe")
+        tessdata_dir_config = f"--tessdata-dir {tesseract_dir / 'tessdata'}"
 
         # Edits the font that tera term uses to "Terminal" to mitigate the chance of the OCR mistaking words
-        if self.original_font is None:
-            # Create a backup before modifying the original file
-            backup_path = os.path.join(self.backup_dir, os.path.basename(file_path) + ".bak")
-            shutil.copyfile(file_path, backup_path)
-            try:
-                with open(file_path, "r") as file:
-                    lines = file.readlines()
-            except FileNotFoundError:
-                return
-
+        try:
+            with open(file_path, "r") as file:
+                lines = file.readlines()
+        except FileNotFoundError:
+            return
+        try:
             with open(file_path, "w") as file:
                 for line in lines:
                     if line.startswith("VTFont="):
                         current_value = line.strip().split("=")[1]
                         font_name = current_value.split(",")[0]
-                        if font_name.lower() != "lucida console":
-                            self.original_font = current_value
-                            updated_value = "Lucida Console" + current_value[len(font_name):]
-                            line = f"VTFont={updated_value}\n"
-                        else:
-                            self.original_font = None
+                        self.original_font = current_value
+                        updated_value = "Lucida Console" + current_value[len(font_name):]
+                        line = f"VTFont={updated_value}\n"
                     file.write(line)
+        # If something goes wrong, restore the backup
+        except Exception as e:
+            print(f"Error occurred: {e}")
+            print("Restoring from backup...")
+            shutil.copyfile(backup_path, file_path)
 
             # Reads from the feedback.json file to connect to Google's Sheets Api for user feedback
             try:
@@ -3474,20 +3479,17 @@ class TeraTermUI(customtkinter.CTk):
                 self.credentials = None
                 self.disable_feedback = True
 
-    # Deletes Tesseract OCR from the temp folder
-    def cleanup_tesseract(self):
-        if self.tesseract_dir == Path(self.temp_dir) / "Tesseract-OCR" and self.tesseract_dir.exists():
+    # Deletes Tesseract OCR and tera term config file from the temp folder
+    def cleanup_temp(self):
+        tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
+        if tesseract_dir == Path(self.app_temp_dir) / "Tesseract-OCR" and tesseract_dir.exists():
             for _ in range(10):  # Retry up to 10 times
                 try:
-                    shutil.rmtree(self.temp_dir)
+                    shutil.rmtree(tesseract_dir)
                     break  # If the directory was deleted successfully, exit the loop
                 except PermissionError:
                     time.sleep(1)  # Wait for 1 second before the next attempt
-
-    # deleltes tera term config file from temp directory
-    def cleanup_backup(self, backup_dir):
-        if os.path.isdir(backup_dir):
-            shutil.rmtree(backup_dir)
+        shutil.rmtree(self.app_temp_dir)
 
     # error window pop up message
     def show_error_message(self, width, height, error_msg_text):
@@ -4488,46 +4490,59 @@ class TeraTermUI(customtkinter.CTk):
 
     # Edits the font that tera term uses to "Terminal" to mitigate the chance of the OCR mistaking words
     def edit_teraterm_ini(self, file_path):
-        if self.original_font is None:
-            # Create a backup before modifying the original file
-            backup_path = os.path.join(self.backup_dir, os.path.basename(file_path) + ".bak")
-            shutil.copyfile(file_path, backup_path)
-            try:
-                with open(file_path, "r") as file:
-                    lines = file.readlines()
-            except FileNotFoundError:
-                return
-
+        backup_path = self.app_temp_dir / "TERATERM.ini.bak"
+        try:
+            with open(file_path, "r") as file:
+                lines = file.readlines()
+        except FileNotFoundError:
+            return
+        try:
             with open(file_path, "w") as file:
                 for line in lines:
                     if line.startswith("VTFont="):
                         current_value = line.strip().split("=")[1]
                         font_name = current_value.split(",")[0]
-                        if font_name.lower() != "lucida console":
-                            self.original_font = current_value
-                            updated_value = "Lucida Console" + current_value[len(font_name):]
-                            line = f"VTFont={updated_value}\n"
-                        else:
-                            self.original_font = None
+                        self.original_font = current_value
+                        updated_value = "Lucida Console" + current_value[len(font_name):]
+                        line = f"VTFont={updated_value}\n"
                     file.write(line)
+        # If something goes wrong, restore the backup
+        except Exception as e:
+            print(f"Error occurred: {e}")
+            print("Restoring from backup...")
+            shutil.copyfile(backup_path, file_path)
 
     # Restores the original font option the user had
     def restore_original_font(self, file_path):
-        backup_path = os.path.join(self.backup_dir, os.path.basename(file_path) + ".bak")
+        backup_path = self.app_temp_dir / "TERATERM.ini.bak"
         try:
-            if self.original_font is not None:
-                with open(file_path, "r") as file:
-                    lines = file.readlines()
+            with open(file_path, "r") as file:
+                lines = file.readlines()
 
-                with open(file_path, "w") as file:
-                    for line in lines:
-                        if line.startswith("VTFont="):
-                            original_font_name = self.original_font.split(",")[0]
-                            if original_font_name.lower() != "lucida console":
-                                line = f"VTFont={self.original_font}\n"
-                        file.write(line)
+            with open(file_path, "w") as file:
+                for line in lines:
+                    if line.startswith("VTFont="):
+                        line = f"VTFont={self.original_font}\n"
+                    file.write(line)
 
-                self.original_font = None
+            with open(backup_path, "r") as backup_file:
+                backup_lines = backup_file.readlines()
+
+            backup_font = None
+            backup_font_name = None
+            for line in backup_lines:
+                if line.startswith("VTFont="):
+                    backup_font = line.strip().split("=")[1]
+                    backup_font_name = backup_font.split(",")[0]
+                    break
+            if backup_font_name and self.original_font.split(",")[0]:
+                if backup_font_name.lower() != self.original_font.split(",")[0].lower():
+                    with open(file_path, "w") as file:
+                        for line in lines:
+                            if line.startswith("VTFont="):
+                                line = f"VTFont={backup_font}\n"
+                            file.write(line)
+
         # If something goes wrong, restore the backup
         except Exception as e:
             print(f"Error occurred: {e}")
