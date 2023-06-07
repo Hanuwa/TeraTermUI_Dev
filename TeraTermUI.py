@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 6/6/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 6/7/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -191,7 +191,8 @@ class TeraTermUI(customtkinter.CTk):
                               "experience"
                               " make sure to click the buttons on the sidebar, the application is also planned to be"
                               " open source for anyone who is interested in working/seeing the project. \n\n" +
-                              "IMPORTANT: DO NOT USE WHILE HAVING ANOTHER INSTANCE OF THE APPLICATION OPENED.")
+                              "IMPORTANT: DO NOT USE WHILE HAVING ANOTHER INSTANCE OF THE APPLICATION OPENED.  "
+                              "")
         self.intro_box.configure(state="disabled", wrap="word", border_spacing=8)
         self.intro_box.grid(row=1, column=1, padx=(20, 0), pady=(0, 0))
 
@@ -364,7 +365,7 @@ class TeraTermUI(customtkinter.CTk):
         appdata_path = os.getenv("APPDATA")
         self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
         self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
-        atexit.register(self.cleanup_temp, self.app_temp_dir)
+        atexit.register(self.cleanup_temp)
         atexit.register(self.restore_original_font, self.teraterm_file)
         self.connection = sqlite3.connect("database.db")
         self.cursor = self.connection.cursor()
@@ -2428,7 +2429,8 @@ class TeraTermUI(customtkinter.CTk):
                                   "asegúrese de hacer clic en los botones de la barra lateral, "
                                   "la aplicación también esta planiado hacerlo código abierto "
                                   "para cualquiera que esté interesado en trabajar/ver el proyecto. \n\n " +
-                                  "IMPORTANTE: NO UTILIZAR MIENTRAS TENGA OTRA INSTANCIA DE LA APLICACIÓN ABIERTA. ")
+                                  "IMPORTANTE: NO UTILIZAR MIENTRAS TENGA OTRA  INSTANCIA DE LA APLICACIÓN ABIERTA. "
+                                  "")
             self.intro_box.configure(state="disabled")
             self.appearance_mode_optionemenu.configure(values=["Claro", "Oscuro", "Sistema"])
             if self.appearance_mode_optionemenu.get() == "Dark":
@@ -2560,7 +2562,8 @@ class TeraTermUI(customtkinter.CTk):
                                   "experience"
                                   " make sure to click the buttons on the sidebar, the application is also planned to "
                                   "be open source for anyone who is interested in working/seeing the project. \n\n" +
-                                  "IMPORTANT: DO NOT USE WHILE HAVING ANOTHER INSTANCE OF THE APPLICATION OPENED.")
+                                  "IMPORTANT: DO NOT USE WHILE HAVING ANOTHER INSTANCE OF THE APPLICATION OPENED."
+                                  "")
             self.intro_box.configure(state="disabled")
             self.appearance_mode_optionemenu.configure(values=["Light", "Dark", "System"])
             if self.appearance_mode_optionemenu.get() == "Oscuro":
@@ -4542,12 +4545,16 @@ class TeraTermUI(customtkinter.CTk):
                             if line.startswith("VTFont="):
                                 line = f"VTFont={backup_font}\n"
                             file.write(line)
-
         # If something goes wrong, restore the backup
+        except FileNotFoundError:
+            print(f"Backup file at {backup_path} not found.")
         except Exception as e:
             print(f"Error occurred: {e}")
             print("Restoring from backup...")
-            shutil.copyfile(backup_path, file_path)
+            try:
+                shutil.copyfile(backup_path, file_path)
+            except FileNotFoundError:
+                print(f"The backup file at {backup_path} was not found.")
 
     # When the user performs an action to do something in tera term it hides the sidebar windows, so they don't
     # interfere with the execution on tera term
