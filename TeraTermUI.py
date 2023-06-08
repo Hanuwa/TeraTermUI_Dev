@@ -2156,7 +2156,6 @@ class TeraTermUI(customtkinter.CTk):
                         term_window = gw.getWindowsWithTitle("SSH Authentication")[0]
                         if term_window.isMinimized:
                             term_window.restore()
-                        self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                         self.uprbay_window.wait("visible", timeout=30)
                         user = self.uprb.UprbayTeraTermVt.child_window(title="User name:",
                                                                        control_type="Edit").wrapper_object()
@@ -2264,9 +2263,9 @@ class TeraTermUI(customtkinter.CTk):
                                                                               control_type="Button").wrapper_object()
                             okConn1.click()
                             self.show_loading_screen_again()
-                            uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                            uprbay_window.wait("visible", timeout=30)
-                            continue_button = uprbay_window.child_window(title="Continue", control_type="Button")
+                            self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
+                            self.uprbay_window.wait("visible", timeout=30)
+                            continue_button = self.uprbay_window.child_window(title="Continue", control_type="Button")
                             if continue_button.exists():
                                 self.hide_loading_screen()
                                 continue_button = continue_button.wrapper_object()
