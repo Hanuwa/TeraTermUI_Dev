@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 6/7/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 6/8/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -352,7 +352,7 @@ class TeraTermUI(customtkinter.CTk):
         self.information = None
         self.flag = [False] * 6
         # self.screenshot_skip = False
-        # self.error_occurred = False
+        # self.delay_occurred = False
         self.run_fix = False
         self.a_counter = 0
         self.m_counter = 0
@@ -536,7 +536,7 @@ class TeraTermUI(customtkinter.CTk):
             self.hide_sidebar_windows()
             self.unbind("<Return>")
             lang = self.language_menu.get()
-            # self.error_occurred = False
+            # self.delay_occurred = False
             aes_key = secrets.token_bytes(32)  # 256-bit key
             iv = get_random_bytes(16)  # for AES CBC mode
 
@@ -572,13 +572,13 @@ class TeraTermUI(customtkinter.CTk):
                     # send_keys("{ENTER 3}")
                     # self.screenshot_skip = True
                     # if "ACCESO AL SISTEMA" not in text and "Press return" not in text:
-                    # self.error_occurred = True
+                    # self.delay_occurred = True
                     # if lang == "English":
                     # self.show_error_message(300, 215, "Unknown Error! Please try again")
                     # if lang == "Español":
                     # self.show_error_message(310, 220, "¡Error Desconocido! Por favor \n"
                     # "intente de nuevo")
-                    # if not self.error_occurred:
+                    # if not self.delay_occurred:
                     try:
                         ssn = self.ssn_entry.get().replace(" ", "")
                         ssn = ssn.replace("-", "")
@@ -665,8 +665,23 @@ class TeraTermUI(customtkinter.CTk):
             self.error_occurred = True
         finally:
             task_done.set()
+            lang = self.language_menu.get()
             if self.error_occurred:
-                self.go_back_event()
+                self.destroy_windows()
+                winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                if lang == "English":
+                    CTkMessagebox(master=self, title="Error Information",
+                                  message="Error while performing and automating tasks! "
+                                          "Please make sure not to interrupt the execution of the applications\n\n "
+                                          "Might need to restart Tera Term UI",
+                                  icon="question", button_width=380)
+                if lang == "Español":
+                    CTkMessagebox(master=self, title="Información del Error",
+                                  message="¡Error mientras se realizaban y automatizaban tareas!"
+                                          "Por favor trate de no interrumpir la ejecución de las aplicaciones\n\n "
+                                          "Tal vez necesite reiniciar Tera Term UI",
+                                  icon="question", button_width=380)
+                self.error_occurred = False
 
     def tuition_frame(self):
         lang = self.language_menu.get()
@@ -765,7 +780,6 @@ class TeraTermUI(customtkinter.CTk):
             section = self.section_entry.get().upper().replace(" ", "")
             semester = self.e_semester_entry.get().upper().replace(" ", "")
             lang = self.language_menu.get()
-
             if self.test_connection(lang) and self.check_server():
                 if self.checkIfProcessRunning("ttermpro"):
                     if (choice == "Register" and classes not in
@@ -939,8 +953,23 @@ class TeraTermUI(customtkinter.CTk):
             self.error_occurred = True
         finally:
             task_done.set()
+            lang = self.language_menu.get()
             if self.error_occurred:
-                self.go_back_event()
+                self.destroy_windows()
+                winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                if lang == "English":
+                    CTkMessagebox(master=self, title="Error Information",
+                                  message="Error while performing and automating tasks! "
+                                          "Please make sure not to interrupt the execution of the applications\n\n "
+                                          "Might need to restart Tera Term UI",
+                                  icon="question", button_width=380)
+                if lang == "Español":
+                    CTkMessagebox(master=self, title="Información del Error",
+                                  message="¡Error mientras se realizaban y automatizaban tareas!"
+                                          "Por favor trate de no interrumpir la ejecución de las aplicaciones\n\n "
+                                          "Tal vez necesite reiniciar Tera Term UI",
+                                  icon="question", button_width=380)
+                self.error_occurred = False
 
     def search_event_handler(self):
         task_done = threading.Event()
@@ -1019,8 +1048,23 @@ class TeraTermUI(customtkinter.CTk):
             self.error_occurred = True
         finally:
             task_done.set()
+            lang = self.language_menu.get()
             if self.error_occurred:
-                self.go_back_event()
+                self.destroy_windows()
+                winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                if lang == "English":
+                    CTkMessagebox(master=self, title="Error Information",
+                                  message="Error while performing and automating tasks! "
+                                          "Please make sure not to interrupt the execution of the applications\n\n "
+                                          "Might need to restart Tera Term UI",
+                                  icon="question", button_width=380)
+                if lang == "Español":
+                    CTkMessagebox(master=self, title="Información del Error",
+                                  message="¡Error mientras se realizaban y automatizaban tareas!"
+                                          "Por favor trate de no interrumpir la ejecución de las aplicaciones\n\n "
+                                          "Tal vez necesite reiniciar Tera Term UI",
+                                  icon="question", button_width=380)
+                self.error_occurred = False
 
     # function for seeing the classes you are currently enrolled for
     def my_classes_event(self):
@@ -1489,8 +1533,23 @@ class TeraTermUI(customtkinter.CTk):
             self.error_occurred = True
         finally:
             task_done.set()
+            lang = self.language_menu.get()
             if self.error_occurred:
-                self.go_back_event()
+                self.destroy_windows()
+                winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                if lang == "English":
+                    CTkMessagebox(master=self, title="Error Information",
+                                  message="Error while performing and automating tasks! "
+                                          "Please make sure not to interrupt the execution of the applications\n\n "
+                                          "Might need to restart Tera Term UI",
+                                  icon="question", button_width=380)
+                if lang == "Español":
+                    CTkMessagebox(master=self, title="Información del Error",
+                                  message="¡Error mientras se realizaban y automatizaban tareas!"
+                                          "Por favor trate de no interrumpir la ejecución de las aplicaciones\n\n "
+                                          "Tal vez necesite reiniciar Tera Term UI",
+                                  icon="question", button_width=380)
+                self.error_occurred = False
 
     def option_menu_event_handler(self):
         task_done = threading.Event()
@@ -1946,8 +2005,23 @@ class TeraTermUI(customtkinter.CTk):
             self.error_occurred = True
         finally:
             task_done.set()
+            lang = self.language_menu.get()
             if self.error_occurred:
-                self.go_back_event()
+                self.destroy_windows()
+                winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                if lang == "English":
+                    CTkMessagebox(master=self, title="Error Information",
+                                  message="Error while performing and automating tasks! "
+                                          "Please make sure not to interrupt the execution of the applications\n\n "
+                                          "Might need to restart Tera Term UI",
+                                  icon="question", button_width=380)
+                if lang == "Español":
+                    CTkMessagebox(master=self, title="Información del Error",
+                                  message="¡Error mientras se realizaban y automatizaban tareas!"
+                                          "Por favor trate de no interrumpir la ejecución de las aplicaciones\n\n "
+                                          "Tal vez necesite reiniciar Tera Term UI",
+                                  icon="question", button_width=380)
+                self.error_occurred = False
 
     def go_next_page_handler(self):
         task_done = threading.Event()
@@ -2040,8 +2114,23 @@ class TeraTermUI(customtkinter.CTk):
             self.error_occurred = True
         finally:
             task_done.set()
+            lang = self.language_menu.get()
             if self.error_occurred:
-                self.go_back_event()
+                self.destroy_windows()
+                winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                if lang == "English":
+                    CTkMessagebox(master=self, title="Error Information",
+                                  message="Error while performing and automating tasks! "
+                                          "Please make sure not to interrupt the execution of the applications\n\n "
+                                          "Might need to restart Tera Term UI",
+                                  icon="question", button_width=380)
+                if lang == "Español":
+                    CTkMessagebox(master=self, title="Información del Error",
+                                  message="¡Error mientras se realizaban y automatizaban tareas!"
+                                          "Por favor trate de no interrumpir la ejecución de las aplicaciones\n\n "
+                                          "Tal vez necesite reiniciar Tera Term UI",
+                                  icon="question", button_width=380)
+                self.error_occurred = False
 
     def student_event_handler(self):
         task_done = threading.Event()
@@ -2224,10 +2313,13 @@ class TeraTermUI(customtkinter.CTk):
             print("An error occurred: ", e)
             self.error_occurred = True
         finally:
+            lang = self.language_menu.get()
             task_done.set()
             if self.error_occurred:
-                lang = self.language_menu.get()
+                self.destroy_windows()
                 winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
+                               check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 if lang == "English":
                     CTkMessagebox(master=self, title="Error Information",
                                   message="Error while performing and automating tasks! "
@@ -2237,7 +2329,7 @@ class TeraTermUI(customtkinter.CTk):
                 if lang == "Español":
                     CTkMessagebox(master=self, title="Información del Error",
                                   message="¡Error mientras se realizaban y automatizaban tareas!"
-                                          "Por favor trate de no interrumpir la ejecución de las aplicaciones\n "
+                                          "Por favor trate de no interrumpir la ejecución de las aplicaciones\n\n "
                                           "Tera Term fue forzado a cerrar",
                                   icon="question", button_width=380)
                 self.error_occurred = False
@@ -2339,6 +2431,7 @@ class TeraTermUI(customtkinter.CTk):
             # self.error_occurred = False
             self.run_fix = False
             if self.error_occurred:
+                self.destroy_windows()
                 winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                 if lang == "English":
                     CTkMessagebox(master=self, title="Error Information",
@@ -2349,7 +2442,7 @@ class TeraTermUI(customtkinter.CTk):
                 if lang == "Español":
                     CTkMessagebox(master=self, title="Información del Error",
                                   message="¡Error mientras se realizaban y automatizaban tareas!"
-                                          "Por favor trate de no interrumpir la ejecución de las aplicaciones\n "
+                                          "Por favor trate de no interrumpir la ejecución de las aplicaciones\n\n "
                                           "Tera Term fue forzado a cerrar",
                                   icon="question", button_width=380)
                 self.error_occurred = False
@@ -2872,13 +2965,15 @@ class TeraTermUI(customtkinter.CTk):
                                                                       font=customtkinter.CTkFont(size=15))
                             self.timer_label.pack()
                             if lang == "English":
-                                self.cancel_button = customtkinter.CTkButton(self.timer_window, text="Cancel", width=250,
-                                                                             height=32, hover_color="darkred",
-                                                                             fg_color="red", command=self.end_countdown)
+                                self.cancel_button = customtkinter.CTkButton(self.timer_window, text="Cancel",
+                                                                             width=250, height=32,
+                                                                             hover_color="darkred", fg_color="red",
+                                                                             command=self.end_countdown)
                             elif lang == "Español":
-                                self.cancel_button = customtkinter.CTkButton(self.timer_window, text="Cancelar", width=250,
-                                                                             height=32, hover_color="darkred",
-                                                                             fg_color="red", command=self.end_countdown)
+                                self.cancel_button = customtkinter.CTkButton(self.timer_window, text="Cancelar",
+                                                                             width=250, height=32,
+                                                                             hover_color="darkred", fg_color="red",
+                                                                             command=self.end_countdown)
                             self.cancel_button.pack(pady=25)
                             # Create a BooleanVar to control the loop
                             self.running = tk.BooleanVar()
@@ -2945,8 +3040,23 @@ class TeraTermUI(customtkinter.CTk):
             self.error_occurred = True
         finally:
             task_done.set()
+            lang = self.language_menu.get()
             if self.error_occurred:
-                self.go_back_event()
+                self.destroy_windows()
+                winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                if lang == "English":
+                    CTkMessagebox(master=self, title="Error Information",
+                                  message="Error while performing and automating tasks! "
+                                          "Please make sure not to interrupt the execution of the applications\n\n "
+                                          "Might need to restart Tera Term UI",
+                                  icon="question", button_width=380)
+                if lang == "Español":
+                    CTkMessagebox(master=self, title="Información del Error",
+                                  message="¡Error mientras se realizaban y automatizaban tareas!"
+                                          "Por favor trate de no interrumpir la ejecución de las aplicaciones\n\n "
+                                          "Tal vez necesite reiniciar Tera Term UI",
+                                  icon="question", button_width=380)
+                self.error_occurred = False
 
     def end_countdown(self):
         self.auto_enroll_bool = False
@@ -3251,7 +3361,6 @@ class TeraTermUI(customtkinter.CTk):
                                                                             " you selected at the exact time\n"
                                                                             " the enrollment process becomes\n"
                                                                             " available for you", bg_color="#1E90FF")
-
             if self.saveCheck:
                 if self.saveCheck[0][0] == "Yes":
                     self.save_data.select()
