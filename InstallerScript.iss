@@ -13,6 +13,7 @@
 AppId={{E93AB9D4-A46D-467F-A63C-4CF6B57A37C3}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
+ArchitecturesInstallIn64BitMode=x64
 AppVerName={#MyAppName}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
@@ -45,6 +46,7 @@ Name: "teraterm"; Description: "{cm:teraterm}"; GroupDescription: "Additional in
 [Files]
 Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\VERSION.txt"; DestDir: "{app}"; Flags: ignoreversion comparetimestamp
 Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\database.db"; DestDir: "{userappdata}\TeraTermUI"; Flags: ignoreversion comparetimestamp
 Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\feedback.zip"; DestDir: "{userappdata}\TeraTermUI"; Flags: ignoreversion comparetimestamp
 Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\teraterm-4.106.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
