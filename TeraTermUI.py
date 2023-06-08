@@ -2258,10 +2258,10 @@ class TeraTermUI(customtkinter.CTk):
                                                                               control_type="Edit").wrapper_object()
                             hostText.type_keys("uprbay.uprb.edu", with_spaces=False, pause=0.02)
                             self.hide_loading_screen()
-                            okConn1 = \
+                            okConn = \
                                 self.uprb.TeraTermDisconnectedVt.child_window(title="OK",
                                                                               control_type="Button").wrapper_object()
-                            okConn1.click()
+                            okConn.click()
                             self.show_loading_screen_again()
                             self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                             self.uprbay_window.wait("visible", timeout=30)
