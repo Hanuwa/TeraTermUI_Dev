@@ -2265,6 +2265,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.show_loading_screen_again()
                             self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                             self.uprbay_window.wait("visible", timeout=30)
+                            time.sleep(0.2)
                             continue_button = self.uprbay_window.child_window(title="Continue", control_type="Button")
                             if continue_button.exists():
                                 self.hide_loading_screen()
