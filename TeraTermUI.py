@@ -414,10 +414,10 @@ class TeraTermUI(customtkinter.CTk):
                                                                         " while the application is performing tasks",
                                   button_width=380)
                 elif self.language_menu.get() == "Español":
-                    CTkMessagebox(master=self, title="Welcome", message="¡Bienvenido a Tera Term UI!\n\n"
-                                                                        "Asegúrese de no interactuar con Tera Term"
-                                                                        " mientras la aplicación está "
-                                                                        "realizando tareas",
+                    CTkMessagebox(master=self, title="Bienvenido", message="¡Bienvenido a Tera Term UI!\n\n"
+                                                                           "Asegúrese de no interactuar con Tera Term"
+                                                                           " mientras la aplicación está "
+                                                                           "realizando tareas",
                                   button_width=380)
                 self.log_in.configure(state="normal")
                 self.sidebar_button_1.configure(state="normal")
