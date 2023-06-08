@@ -19,12 +19,11 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
-DefaultDirName={pf64}\TeraTermUI
+DefaultDirName={commonpf64}\TeraTermUI
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 LicenseFile=C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\LICENSE.txt
-; Uncomment the following line to run in non administrative install mode (install for current user only.)
-;PrivilegesRequired=lowest
+PrivilegesRequired=admin
 OutputBaseFilename=TeraTermUI_64-bit_Installer
 Compression=lzma
 SolidCompression=yes
@@ -44,11 +43,13 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "teraterm"; Description: "{cm:teraterm}"; GroupDescription: "Additional installations"; Flags: unchecked
 
 [Files]
-Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\VERSION.txt"; DestDir: "{app}"; Flags: ignoreversion comparetimestamp
-Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\database.db"; DestDir: "{userappdata}\TeraTermUI"; Flags: ignoreversion comparetimestamp
-Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\feedback.zip"; DestDir: "{userappdata}\TeraTermUI"; Flags: ignoreversion comparetimestamp
+Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion comparetimestamp
+Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\Tesseract-OCR.zip"; DestDir: "{app}"; Flags: onlyifdoesntexist comparetimestamp
+Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\VERSION.txt"; DestDir: "{app}"; Flags: ignoreversion comparetimestamp
+Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\database.db"; DestDir: "{userappdata}\TeraTermUI"; Flags: onlyifdoesntexist comparetimestamp
+Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\feedback.zip"; DestDir: "{userappdata}\TeraTermUI"; Flags: onlyifdoesntexist comparetimestamp
+Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\cv2\*"; DestDir: "{app}"; Flags: onlyifdoesntexist comparetimestamp
+Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\*"; DestDir: "{app}"; Flags: comparetimestamp recursesubdirs createallsubdirs
 Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\teraterm-4.106.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
@@ -67,7 +68,7 @@ var
 begin
   if CurStep = ssPostInstall then
   begin
-    if IsTaskSelected('teraterm') then
+    if WizardIsTaskSelected('teraterm') then
     begin
       // Run the teraterm installer without any prompt
       Exec(ExpandConstant('{tmp}\teraterm-4.106.exe'), '/SILENT', '', SW_SHOW, ewWaitUntilTerminated, ResultCode);
