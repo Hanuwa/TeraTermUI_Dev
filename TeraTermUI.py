@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 6/8/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 6/9/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -60,8 +60,6 @@ import winsound
 import threading
 from PIL import Image
 import sys
-import cv2
-import numpy as np
 import psutil
 import time
 import re
@@ -335,6 +333,7 @@ class TeraTermUI(customtkinter.CTk):
         # Top level window management, flags and counters
         self.DEFAULT_SEMESTER = "C31"
         self.error_occurred = False
+        self.can_edit = False
         self.enrolled_classes_list = {}
         self.dropped_classes_list = {}
         self.disable_feedback = False
@@ -3581,12 +3580,10 @@ class TeraTermUI(customtkinter.CTk):
         time.sleep(0.3)
         screenshot = pyautogui.screenshot(region=(x, y - 50, width + 150, height + 150))
         self.show_loading_screen_again()
-        img = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2GRAY)
-        img = cv2.resize(img, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
-        img = Image.fromarray(img)
-        # img.save("img.png")
+        screenshot = screenshot.resize((screenshot.width * 2, screenshot.height * 2), Image.BICUBIC)
+        # screenshot.save("screenshot.png")
         custom_config = r"--oem 3 --psm 6"
-        text = pytesseract.image_to_string(img, config=custom_config)
+        text = pytesseract.image_to_string(screenshot, config=custom_config)
         return text
 
     # Necessary things to do while the application is booting, gets done on a separate thread
@@ -3625,6 +3622,7 @@ class TeraTermUI(customtkinter.CTk):
                         updated_value = "Lucida Console" + current_value[len(font_name):]
                         line = f"VTFont={updated_value}\n"
                     file.write(line)
+                    self.can_edit = True
         # If something goes wrong, restore the backup
         except Exception as e:
             print(f"Error occurred: {e}")
@@ -4674,6 +4672,7 @@ class TeraTermUI(customtkinter.CTk):
                         updated_value = "Lucida Console" + current_value[len(font_name):]
                         line = f"VTFont={updated_value}\n"
                     file.write(line)
+                    self.can_edit = True
         # If something goes wrong, restore the backup
         except Exception as e:
             print(f"Error occurred: {e}")
@@ -4682,44 +4681,45 @@ class TeraTermUI(customtkinter.CTk):
 
     # Restores the original font option the user had
     def restore_original_font(self, file_path):
-        backup_path = self.app_temp_dir / "TERATERM.ini.bak"
-        try:
-            with open(file_path, "r") as file:
-                lines = file.readlines()
-
-            with open(file_path, "w") as file:
-                for line in lines:
-                    if line.startswith("VTFont="):
-                        line = f"VTFont={self.original_font}\n"
-                    file.write(line)
-
-            with open(backup_path, "r") as backup_file:
-                backup_lines = backup_file.readlines()
-
-            backup_font = None
-            backup_font_name = None
-            for line in backup_lines:
-                if line.startswith("VTFont="):
-                    backup_font = line.strip().split("=")[1]
-                    backup_font_name = backup_font.split(",")[0]
-                    break
-            if backup_font_name and self.original_font.split(",")[0]:
-                if backup_font_name.lower() != self.original_font.split(",")[0].lower():
-                    with open(file_path, "w") as file:
-                        for line in lines:
-                            if line.startswith("VTFont="):
-                                line = f"VTFont={backup_font}\n"
-                            file.write(line)
-        # If something goes wrong, restore the backup
-        except FileNotFoundError:
-            print(f"Backup file at {backup_path} not found.")
-        except Exception as e:
-            print(f"Error occurred: {e}")
-            print("Restoring from backup...")
+        if self.can_edit:
+            backup_path = self.app_temp_dir / "TERATERM.ini.bak"
             try:
-                shutil.copyfile(backup_path, file_path)
+                with open(file_path, "r") as file:
+                    lines = file.readlines()
+
+                with open(file_path, "w") as file:
+                    for line in lines:
+                        if line.startswith("VTFont="):
+                            line = f"VTFont={self.original_font}\n"
+                        file.write(line)
+
+                with open(backup_path, "r") as backup_file:
+                    backup_lines = backup_file.readlines()
+
+                backup_font = None
+                backup_font_name = None
+                for line in backup_lines:
+                    if line.startswith("VTFont="):
+                        backup_font = line.strip().split("=")[1]
+                        backup_font_name = backup_font.split(",")[0]
+                        break
+                if backup_font_name and self.original_font.split(",")[0]:
+                    if backup_font_name.lower() != self.original_font.split(",")[0].lower():
+                        with open(file_path, "w") as file:
+                            for line in lines:
+                                if line.startswith("VTFont="):
+                                    line = f"VTFont={backup_font}\n"
+                                file.write(line)
+            # If something goes wrong, restore the backup
             except FileNotFoundError:
-                print(f"The backup file at {backup_path} was not found.")
+                print(f"Backup file at {backup_path} not found.")
+            except Exception as e:
+                print(f"Error occurred: {e}")
+                print("Restoring from backup...")
+                try:
+                    shutil.copyfile(backup_path, file_path)
+                except FileNotFoundError:
+                    print(f"The backup file at {backup_path} was not found.")
 
     # When the user performs an action to do something in tera term it hides the sidebar windows, so they don't
     # interfere with the execution on tera term
