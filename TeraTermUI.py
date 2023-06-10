@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 6/9/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 6/10/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -164,6 +164,7 @@ class TeraTermUI(customtkinter.CTk):
         self.log_in = customtkinter.CTkButton(self, border_width=2, text="Log-In", text_color=("gray10", "#DCE4EE"),
                                               command=self.login_event_handler)
         self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(20, 20))
+        self.log_in.configure(state="disabled")
         self.intro_box = customtkinter.CTkTextbox(self, height=245, width=400)
         self.intro_box.grid(row=1, column=1, padx=(20, 0), pady=(0, 0))
         # set default values
@@ -333,6 +334,7 @@ class TeraTermUI(customtkinter.CTk):
 
         # Top level window management, flags and counters
         self.DEFAULT_SEMESTER = "C31"
+        self.welcome = False
         self.error_occurred = False
         self.can_edit = False
         self.enrolled_classes_list = {}
@@ -402,9 +404,9 @@ class TeraTermUI(customtkinter.CTk):
                 self.scaling_optionemenu.set(float(self.results["scaling"]))
                 self.change_scaling_event(float(self.results["scaling"]))
         if not self.results["welcome"]:
-            self.log_in.configure(state="disabled")
             self.sidebar_button_2.configure(state="disabled")
             self.sidebar_button_1.configure(state="disabled")
+            self.welcome = True
 
             # Pop up message that appears only the first time the user uses the application
             def show_message_box():
@@ -420,17 +422,14 @@ class TeraTermUI(customtkinter.CTk):
                                                                            " mientras la aplicación está "
                                                                            "realizando tareas",
                                   button_width=380)
-                self.log_in.configure(state="normal")
                 self.sidebar_button_1.configure(state="normal")
                 self.sidebar_button_2.configure(state="normal")
-                # performs some operations in a separate thread
-                self.boot_up_thread = threading.Thread(target=self.boot_up, args=(self.teraterm_file,))
-                self.boot_up_thread.start()
+                self.log_in.configure(state="normal")
                 # closing event dialog
                 self.protocol("WM_DELETE_WINDOW", self.on_closing)
                 # enables keyboard input events
-                self.bind("<Return>", lambda event: self.login_event_handler())
                 self.bind("<Escape>", lambda event: self.on_closing())
+                self.bind("<Return>", lambda event: self.login_event_handler())
                 if not self.results["welcome"]:
                     self.cursor.execute("INSERT INTO user_data (welcome) VALUES (?)", ("Checked",))
                 elif self.results["welcome"]:
@@ -438,14 +437,14 @@ class TeraTermUI(customtkinter.CTk):
 
             self.after(3500, show_message_box)
         else:
-            # performs some operations in a separate thread
-            self.boot_up_thread = threading.Thread(target=self.boot_up, args=(self.teraterm_file,))
-            self.boot_up_thread.start()
             # closing event dialog
             self.protocol("WM_DELETE_WINDOW", self.on_closing)
-            # enables keyboard input events
-            self.bind("<Return>", lambda event: self.login_event_handler())
+            # enables closing app keyboard input event
             self.bind("<Escape>", lambda event: self.on_closing())
+
+        # performs some operations in a separate thread when application starts up
+        self.boot_up_thread = threading.Thread(target=self.boot_up, args=(self.teraterm_file,))
+        self.boot_up_thread.start()
 
         # Asks the user if they want to update to the latest version of the application
         def update_app():
@@ -513,7 +512,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.stop_check_idle.set()
                 self.thread.join()
             if self.checkIfProcessRunning("ttermpro") and self.window_exists("uprbay.uprb.edu - Tera Term VT"):
-                uprb = Application(backend="uia").connect(title="uprbay.uprb.edu - Tera Term VT", timeout=30)
+                uprb = Application(backend="uia").connect(title="uprbay.uprb.edu - Tera Term VT", timeout=10)
                 uprb.kill(soft=False)
             if self.checkIfProcessRunning("ttermpro") and self.window_exists("Tera Term - [disconnected] VT"):
                 subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
@@ -594,7 +593,7 @@ class TeraTermUI(customtkinter.CTk):
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=30)
+                            self.uprbay_window.wait("visible", timeout=10)
                             self.uprb.UprbayTeraTermVt.type_keys(aes_decrypt(ssn_enc))
                             self.uprb.UprbayTeraTermVt.type_keys(aes_decrypt(code_enc))
                             send_keys("{ENTER}")
@@ -797,7 +796,7 @@ class TeraTermUI(customtkinter.CTk):
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=30)
+                            self.uprbay_window.wait("visible", timeout=10)
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             send_keys("{ENTER}")
                             self.uprb.UprbayTeraTermVt.type_keys("1S4")
@@ -1000,7 +999,7 @@ class TeraTermUI(customtkinter.CTk):
                         term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                         if term_window.isMinimized:
                             term_window.restore()
-                        self.uprbay_window.wait("visible", timeout=30)
+                        self.uprbay_window.wait("visible", timeout=10)
                         self.search_function += 1
                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                         send_keys("{ENTER}")
@@ -1099,7 +1098,7 @@ class TeraTermUI(customtkinter.CTk):
                         term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                         if term_window.isMinimized:
                             term_window.restore()
-                        self.uprbay_window.wait("visible", timeout=30)
+                        self.uprbay_window.wait("visible", timeout=10)
                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                         send_keys("{ENTER}")
                         self.uprb.UprbayTeraTermVt.type_keys("1CP")
@@ -1145,7 +1144,7 @@ class TeraTermUI(customtkinter.CTk):
                         term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                         if term_window.isMinimized:
                             term_window.restore()
-                        self.uprbay_window.wait("visible", timeout=30)
+                        self.uprbay_window.wait("visible", timeout=10)
                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                         send_keys("{ENTER}")
                         self.uprb.UprbayTeraTermVt.type_keys("1CP")
@@ -1334,7 +1333,7 @@ class TeraTermUI(customtkinter.CTk):
                         term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                         if term_window.isMinimized:
                             term_window.restore()
-                        self.uprbay_window.wait("visible", timeout=30)
+                        self.uprbay_window.wait("visible", timeout=10)
                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                         send_keys("{ENTER}")
                         self.uprb.UprbayTeraTermVt.type_keys("1S4")
@@ -1605,7 +1604,7 @@ class TeraTermUI(customtkinter.CTk):
                         term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                         if term_window.isMinimized:
                             term_window.restore()
-                        self.uprbay_window.wait("visible", timeout=30)
+                        self.uprbay_window.wait("visible", timeout=10)
                         self.unfocus_tkinter()
                         match menu.replace(" ", ""):
                             case "SRM":
@@ -2045,7 +2044,7 @@ class TeraTermUI(customtkinter.CTk):
                         term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                         if term_window.isMinimized:
                             term_window.restore()
-                        self.uprbay_window.wait("visible", timeout=30)
+                        self.uprbay_window.wait("visible", timeout=10)
                         self.unfocus_tkinter()
                         send_keys("{TAB 3}")
                         send_keys("{ENTER}")
@@ -2056,7 +2055,7 @@ class TeraTermUI(customtkinter.CTk):
                         term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                         if term_window.isMinimized:
                             term_window.restore()
-                        self.uprbay_window.wait("visible", timeout=30)
+                        self.uprbay_window.wait("visible", timeout=10)
                         self.unfocus_tkinter()
                         send_keys("{ENTER}")
                         self.unfocus_tkinter()
@@ -2066,7 +2065,7 @@ class TeraTermUI(customtkinter.CTk):
                         term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                         if term_window.isMinimized:
                             term_window.restore()
-                        self.uprbay_window.wait("visible", timeout=30)
+                        self.uprbay_window.wait("visible", timeout=10)
                         self.unfocus_tkinter()
                         send_keys("{TAB 4}")
                         send_keys("{ENTER}")
@@ -2082,7 +2081,7 @@ class TeraTermUI(customtkinter.CTk):
                         term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                         if term_window.isMinimized:
                             term_window.restore()
-                        self.uprbay_window.wait("visible", timeout=30)
+                        self.uprbay_window.wait("visible", timeout=10)
                         self.unfocus_tkinter()
                         send_keys("{ENTER}")
                         self.unfocus_tkinter()
@@ -2092,7 +2091,7 @@ class TeraTermUI(customtkinter.CTk):
                         term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                         if term_window.isMinimized:
                             term_window.restore()
-                        self.uprbay_window.wait("visible", timeout=30)
+                        self.uprbay_window.wait("visible", timeout=10)
                         self.unfocus_tkinter()
                         send_keys("{ENTER}")
                         self.unfocus_tkinter()
@@ -2157,7 +2156,7 @@ class TeraTermUI(customtkinter.CTk):
                         term_window = gw.getWindowsWithTitle("SSH Authentication")[0]
                         if term_window.isMinimized:
                             term_window.restore()
-                        self.uprbay_window.wait("visible", timeout=30)
+                        self.uprbay_window.wait("visible", timeout=10)
                         user = self.uprb.UprbayTeraTermVt.child_window(title="User name:",
                                                                        control_type="Edit").wrapper_object()
                         # time.sleep(0.2)
@@ -2251,9 +2250,9 @@ class TeraTermUI(customtkinter.CTk):
                         try:
                             ctypes.windll.user32.BlockInput(True)
                             self.uprb = Application(backend="uia").start(self.location) \
-                                .connect(title="Tera Term - [disconnected] VT", timeout=30)
+                                .connect(title="Tera Term - [disconnected] VT", timeout=10)
                             disconnected = self.uprb.window(title="Tera Term - [disconnected] VT")
-                            disconnected.wait("visible", timeout=100)
+                            disconnected.wait("visible", timeout=10)
                             hostText = \
                                 self.uprb.TeraTermDisconnectedVt.child_window(title="Host:",
                                                                               control_type="Edit").wrapper_object()
@@ -2265,7 +2264,7 @@ class TeraTermUI(customtkinter.CTk):
                             okConn.click()
                             self.show_loading_screen_again()
                             self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                            self.uprbay_window.wait("visible", timeout=30)
+                            self.uprbay_window.wait("visible", timeout=10)
                             time.sleep(0.2)
                             continue_button = self.uprbay_window.child_window(title="Continue", control_type="Button")
                             if continue_button.exists():
@@ -2384,7 +2383,7 @@ class TeraTermUI(customtkinter.CTk):
                                     hover_color=("darkred", "darkblue", "darkblue"))
             response = msg.get()
         if self.checkIfProcessRunning("ttermpro") and (response == "Yes" or response == "Sí" or self.error_occurred):
-            uprb = Application(backend="uia").connect(title="uprbay.uprb.edu - Tera Term VT", timeout=30)
+            uprb = Application(backend="uia").connect(title="uprbay.uprb.edu - Tera Term VT", timeout=10)
             uprb.kill(soft=True)
         if response == "Yes" or response == "Sí" or self.error_occurred:
             self.stop_thread()
@@ -2856,7 +2855,7 @@ class TeraTermUI(customtkinter.CTk):
                         term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                         if term_window.isMinimized:
                             term_window.restore()
-                        self.uprbay_window.wait("visible", timeout=30)
+                        self.uprbay_window.wait("visible", timeout=10)
                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                         send_keys("{ENTER}")
                         self.go_next_1VE.configure(state="disabled")
@@ -3600,14 +3599,6 @@ class TeraTermUI(customtkinter.CTk):
             backup_path = os.path.join(self.app_temp_dir, os.path.basename(file_path) + ".bak")
             shutil.copyfile(file_path, backup_path)
 
-        # Unzips Teserract OCR
-        with py7zr.SevenZipFile(self.zip_path, mode='r') as z:
-            z.extractall(self.app_temp_dir)
-
-        tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
-        pytesseract.pytesseract.tesseract_cmd = str(tesseract_dir / "tesseract.exe")
-        tessdata_dir_config = f"--tessdata-dir {tesseract_dir / 'tessdata'}"
-
         # Edits the font that tera term uses to "Lucida Console" to mitigate the chance of the OCR mistaking words
         if not self.can_edit:
             try:
@@ -3624,29 +3615,40 @@ class TeraTermUI(customtkinter.CTk):
                             self.original_font = current_value
                             updated_value = "Lucida Console" + current_value[len(font_name):]
                             line = f"VTFont={updated_value}\n"
+                            if not self.welcome:
+                                self.log_in.configure(state="normal")
+                                self.bind("<Return>", lambda event: self.login_event_handler())
+                            self.can_edit = True
                         file.write(line)
-                        self.can_edit = True
             # If something goes wrong, restore the backup
             except Exception as e:
                 print(f"Error occurred: {e}")
                 print("Restoring from backup...")
                 shutil.copyfile(backup_path, file_path)
 
-            # Reads from the feedback.json file to connect to Google's Sheets Api for user feedback
-            try:
-                with open(self.SERVICE_ACCOUNT_FILE, "rb") as f:
-                    archive = pyzipper.AESZipFile(self.SERVICE_ACCOUNT_FILE)
-                    archive.setpassword(self.PASSWORD.encode())
-                    file_contents = archive.read("feedback.json")
-                    credentials_dict = json.loads(file_contents.decode())
-                    self.credentials = service_account.Credentials.from_service_account_info(
-                        credentials_dict,
-                        scopes=["https://www.googleapis.com/auth/spreadsheets"]
-                    )
-            except Exception as e:
-                print(f"Failed to load credentials: {str(e)}")
-                self.credentials = None
-                self.disable_feedback = True
+        # Unzips Teserract OCR
+        with py7zr.SevenZipFile(self.zip_path, mode='r') as z:
+            z.extractall(self.app_temp_dir)
+
+        tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
+        pytesseract.pytesseract.tesseract_cmd = str(tesseract_dir / "tesseract.exe")
+        tessdata_dir_config = f"--tessdata-dir {tesseract_dir / 'tessdata'}"
+
+        # Reads from the feedback.json file to connect to Google's Sheets Api for user feedback
+        try:
+            with open(self.SERVICE_ACCOUNT_FILE, "rb") as f:
+                archive = pyzipper.AESZipFile(self.SERVICE_ACCOUNT_FILE)
+                archive.setpassword(self.PASSWORD.encode())
+                file_contents = archive.read("feedback.json")
+                credentials_dict = json.loads(file_contents.decode())
+                self.credentials = service_account.Credentials.from_service_account_info(
+                    credentials_dict,
+                    scopes=["https://www.googleapis.com/auth/spreadsheets"]
+                )
+        except Exception as e:
+            print(f"Failed to load credentials: {str(e)}")
+            self.credentials = None
+            self.disable_feedback = True
         del tesseract_dir_path, backup_path, tesseract_dir, z, line, lines
         gc.collect()
 
@@ -3990,7 +3992,7 @@ class TeraTermUI(customtkinter.CTk):
                 term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                 if term_window.isMinimized:
                     term_window.restore()
-                self.uprbay_window.wait("visible", timeout=30)
+                self.uprbay_window.wait("visible", timeout=10)
                 self.unfocus_tkinter()
                 send_keys("{TAB}")
                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -4022,7 +4024,7 @@ class TeraTermUI(customtkinter.CTk):
                     term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                     if term_window.isMinimized:
                         term_window.restore()
-                    self.uprbay_window.wait("visible", timeout=30)
+                    self.uprbay_window.wait("visible", timeout=10)
                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                     send_keys("{ENTER}")
                     ctypes.windll.user32.BlockInput(False)
