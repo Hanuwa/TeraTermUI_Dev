@@ -388,6 +388,7 @@ class TeraTermUI(customtkinter.CTk):
             if self.results["config"] != self.teraterm_file:
                 self.teraterm_file = self.results["config"]
                 self.edit_teraterm_ini(self.teraterm_file)
+                self.can_edit = True
         if self.results["language"]:
             if self.results["language"] != "English":
                 self.language_menu.set(self.results["language"])
@@ -3607,28 +3608,29 @@ class TeraTermUI(customtkinter.CTk):
         pytesseract.pytesseract.tesseract_cmd = str(tesseract_dir / "tesseract.exe")
         tessdata_dir_config = f"--tessdata-dir {tesseract_dir / 'tessdata'}"
 
-        # Edits the font that tera term uses to "Terminal" to mitigate the chance of the OCR mistaking words
-        try:
-            with open(file_path, "r") as file:
-                lines = file.readlines()
-        except FileNotFoundError:
-            return
-        try:
-            with open(file_path, "w") as file:
-                for line in lines:
-                    if line.startswith("VTFont="):
-                        current_value = line.strip().split("=")[1]
-                        font_name = current_value.split(",")[0]
-                        self.original_font = current_value
-                        updated_value = "Lucida Console" + current_value[len(font_name):]
-                        line = f"VTFont={updated_value}\n"
-                    file.write(line)
-                    self.can_edit = True
-        # If something goes wrong, restore the backup
-        except Exception as e:
-            print(f"Error occurred: {e}")
-            print("Restoring from backup...")
-            shutil.copyfile(backup_path, file_path)
+        # Edits the font that tera term uses to "Lucida Console" to mitigate the chance of the OCR mistaking words
+        if not self.can_edit:
+            try:
+                with open(file_path, "r") as file:
+                    lines = file.readlines()
+            except FileNotFoundError:
+                return
+            try:
+                with open(file_path, "w") as file:
+                    for line in lines:
+                        if line.startswith("VTFont="):
+                            current_value = line.strip().split("=")[1]
+                            font_name = current_value.split(",")[0]
+                            self.original_font = current_value
+                            updated_value = "Lucida Console" + current_value[len(font_name):]
+                            line = f"VTFont={updated_value}\n"
+                        file.write(line)
+                        self.can_edit = True
+            # If something goes wrong, restore the backup
+            except Exception as e:
+                print(f"Error occurred: {e}")
+                print("Restoring from backup...")
+                shutil.copyfile(backup_path, file_path)
 
             # Reads from the feedback.json file to connect to Google's Sheets Api for user feedback
             try:
@@ -3645,6 +3647,8 @@ class TeraTermUI(customtkinter.CTk):
                 print(f"Failed to load credentials: {str(e)}")
                 self.credentials = None
                 self.disable_feedback = True
+        del tesseract_dir_path, backup_path, tesseract_dir, z, line, lines
+        gc.collect()
 
     # Deletes Tesseract OCR and tera term config file from the temp folder
     def cleanup_temp(self):
@@ -4369,6 +4373,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.cursor.execute("INSERT INTO user_data (config) VALUES (?)", (self.teraterm_file,))
                 elif len(teraterm_config) == 1:
                     self.cursor.execute("UPDATE user_data SET config=?", (self.teraterm_file,))
+                self.connection.commit()
                 self.show_success_message(350, 265, "Tera Term has been located successfully")
                 self.edit_teraterm_ini(self.teraterm_file)
         if lang == "Español":
@@ -4389,6 +4394,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.cursor.execute("INSERT INTO user_data (config) VALUES (?)", (self.teraterm_file,))
                 elif len(teraterm_config) == 1:
                     self.cursor.execute("UPDATE user_data SET config=?", (self.teraterm_file,))
+                self.connection.commit()
                 self.show_success_message(350, 265, "Tera Term localizado exitósamente")
                 self.edit_teraterm_ini(self.teraterm_file)
         self.help.lift()
@@ -4679,6 +4685,8 @@ class TeraTermUI(customtkinter.CTk):
             print(f"Error occurred: {e}")
             print("Restoring from backup...")
             shutil.copyfile(backup_path, file_path)
+        del line, lines
+        gc.collect()
 
     # Restores the original font option the user had
     def restore_original_font(self, file_path):
