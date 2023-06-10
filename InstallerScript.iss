@@ -43,13 +43,12 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "teraterm"; Description: "{cm:teraterm}"; GroupDescription: "Additional installations"; Flags: unchecked
 
 [Files]
-Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion comparetimestamp
-Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\Tesseract-OCR.zip"; DestDir: "{app}"; Flags: onlyifdoesntexist comparetimestamp
-Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\VERSION.txt"; DestDir: "{app}"; Flags: ignoreversion comparetimestamp
-Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\database.db"; DestDir: "{userappdata}\TeraTermUI"; Flags: onlyifdoesntexist comparetimestamp
-Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\feedback.zip"; DestDir: "{userappdata}\TeraTermUI"; Flags: onlyifdoesntexist comparetimestamp
-Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\cv2\*"; DestDir: "{app}"; Flags: onlyifdoesntexist comparetimestamp
-Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\*"; DestDir: "{app}"; Flags: comparetimestamp recursesubdirs createallsubdirs
+Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion 
+Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\Tesseract-OCR.zip"; DestDir: "{app}"; Flags: onlyifdoesntexist 
+Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\VERSION.txt"; DestDir: "{app}"; Flags: ignoreversion 
+Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\database.db"; DestDir: "{userappdata}\TeraTermUI"; Flags: onlyifdoesntexist 
+Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\feedback.zip"; DestDir: "{userappdata}\TeraTermUI"; Flags: onlyifdoesntexist
+Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\TeraTermUI_installer\*"; DestDir: "{app}"; Flags: onlyifdoesntexist recursesubdirs createallsubdirs
 Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.90\teraterm-4.106.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
