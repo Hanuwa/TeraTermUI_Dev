@@ -53,6 +53,7 @@ import pytz
 import json
 import subprocess
 import pyzipper
+import py7zr
 import pytesseract
 import sqlite3
 import ctypes
@@ -101,7 +102,7 @@ class TeraTermUI(customtkinter.CTk):
         self.USER_APP_VERSION = "0.9.0"
 
         # path for tesseract application
-        self.zip_path = os.path.join(os.path.dirname(__file__), "Tesseract-OCR.zip")
+        self.zip_path = os.path.join(os.path.dirname(__file__), "Tesseract-OCR.7z")
         self.app_temp_dir = Path(tempfile.gettempdir()) / "TeraTermUI"
         self.app_temp_dir.mkdir(parents=True, exist_ok=True)
 
@@ -3599,8 +3600,8 @@ class TeraTermUI(customtkinter.CTk):
             shutil.copyfile(file_path, backup_path)
 
         # Unzips Teserract OCR
-        with pyzipper.AESZipFile(self.zip_path) as zf:
-            zf.extractall(self.app_temp_dir)
+        with py7zr.SevenZipFile(self.zip_path, mode='r') as z:
+            z.extractall(self.app_temp_dir)
 
         tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
         pytesseract.pytesseract.tesseract_cmd = str(tesseract_dir / "tesseract.exe")
