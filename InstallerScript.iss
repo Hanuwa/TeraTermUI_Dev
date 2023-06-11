@@ -44,7 +44,7 @@ Name: "teraterm"; Description: "{cm:teraterm}"; GroupDescription: "Additional in
 
 [Files]
 Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0\TeraTermUI_installer\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion 
-Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0\TeraTermUI_installer\Tesseract-OCR.zip"; DestDir: "{app}"; Flags: onlyifdoesntexist 
+Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0\TeraTermUI_installer\Tesseract-OCR.7z"; DestDir: "{app}"; Flags: onlyifdoesntexist 
 Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0\database.db"; DestDir: "{userappdata}\TeraTermUI"; Flags: onlyifdoesntexist 
 Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0\feedback.zip"; DestDir: "{userappdata}\TeraTermUI"; Flags: onlyifdoesntexist
 Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0\TeraTermUI_installer\*"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist recursesubdirs createallsubdirs
