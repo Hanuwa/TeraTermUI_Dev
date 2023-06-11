@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 6/10/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 6/11/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -244,7 +244,7 @@ class TeraTermUI(customtkinter.CTk):
 
         # Classes
         self.init_class = False
-        self.tabview = customtkinter.CTkTabview(self, corner_radius=10)
+        self.tabview = customtkinter.CTkTabview(self, corner_radius=10, command=self.change_bind)
         self.t_buttons_frame = customtkinter.CTkFrame(self, corner_radius=10)
         self.enroll_tab = None
         self.search_tab = None
@@ -622,6 +622,7 @@ class TeraTermUI(customtkinter.CTk):
                                 secure_delete(iv)
                                 del ssn, code
                                 gc.collect()
+                                self.bind("<Return>", lambda event: self.submit_event_handler())
                                 self.set_focus_to_tkinter()
                         else:
                             self.bind("<Return>", lambda event: self.tuition_event_handler())
@@ -772,6 +773,7 @@ class TeraTermUI(customtkinter.CTk):
     # function for registering/dropping classes
     def submit_event(self, task_done):
         try:
+            self.unbind("<Return>")
             self.focus_set()
             self.hide_sidebar_windows()
             self.destroy_windows()
@@ -970,6 +972,7 @@ class TeraTermUI(customtkinter.CTk):
                                           "Tal vez necesite reiniciar Tera Term UI",
                                   icon="question", button_width=380)
                 self.error_occurred = False
+        self.bind("<Return>", lambda event: self.submit_event_handler())
 
     def search_event_handler(self):
         task_done = threading.Event()
@@ -981,20 +984,21 @@ class TeraTermUI(customtkinter.CTk):
     # function for searching for classes
     def search_event(self, task_done):
         try:
+            self.unbind("<Return>")
             self.focus_set()
             self.destroy_windows()
             self.hide_sidebar_windows()
-            classes2 = self.s_classes_entry.get().replace(" ", "")
-            semester2 = self.s_semester_entry.get().upper().replace(" ", "")
+            classes = self.s_classes_entry.get().replace(" ", "")
+            semester = self.s_semester_entry.get().upper().replace(" ", "")
             show_all = self.show_all.get()
             lang = self.language_menu.get()
             if self.test_connection(lang) and self.check_server():
                 if self.checkIfProcessRunning("ttermpro"):
-                    if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes2, flags=re.IGNORECASE)
-                            and re.fullmatch("^[A-Z][0-9]{2}$", semester2, flags=re.IGNORECASE)
-                            and semester2 in ("B61", "B62", "B63", "B71", "B72", "B73", "B81", "B82", "B83", "B91",
-                                              "B92", "B93", "C01", "C02", "C03", "C11",
-                                              "C12", "C13", "C21", "C22", "C23", "C31")):
+                    if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE)
+                            and re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE)
+                            and semester in ("B61", "B62", "B63", "B71", "B72", "B73", "B81", "B82", "B83", "B91",
+                                             "B92", "B93", "C01", "C02", "C03", "C11",
+                                             "C12", "C13", "C21", "C22", "C23", "C31")):
                         ctypes.windll.user32.BlockInput(True)
                         term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                         if term_window.isMinimized:
@@ -1004,13 +1008,13 @@ class TeraTermUI(customtkinter.CTk):
                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                         send_keys("{ENTER}")
                         self.uprb.UprbayTeraTermVt.type_keys("1CS")
-                        self.uprb.UprbayTeraTermVt.type_keys(semester2)
+                        self.uprb.UprbayTeraTermVt.type_keys(semester)
                         send_keys("{ENTER}")
                         if self.search_function == 1:
-                            self.uprb.UprbayTeraTermVt.type_keys(classes2)
+                            self.uprb.UprbayTeraTermVt.type_keys(classes)
                         if self.search_function > 1:
                             self.uprb.UprbayTeraTermVt.type_keys("1CS")
-                            self.uprb.UprbayTeraTermVt.type_keys(classes2)
+                            self.uprb.UprbayTeraTermVt.type_keys(classes)
                         send_keys("{TAB}")
                         if show_all == "on":
                             self.uprb.UprbayTeraTermVt.type_keys("Y")
@@ -1065,12 +1069,14 @@ class TeraTermUI(customtkinter.CTk):
                                           "Tal vez necesite reiniciar Tera Term UI",
                                   icon="question", button_width=380)
                 self.error_occurred = False
+        self.bind("<Return>", lambda event: self.search_event_handler())
 
     # function for seeing the classes you are currently enrolled for
     def my_classes_event(self):
         self.destroy_windows()
         self.hide_sidebar_windows()
         self.focus_set()
+        self.unbind("<Return>")
         lang = self.language_menu.get()
         width = 870
         height = 490
@@ -1085,92 +1091,104 @@ class TeraTermUI(customtkinter.CTk):
             dialog.attributes("-topmost", True)
             dialog.after(201, lambda: dialog.iconbitmap("images/tera-term.ico"))
             dialog_input = dialog.get_input()
-            if self.test_connection(lang) and self.check_server():
-                if self.checkIfProcessRunning("ttermpro"):
-                    if (re.fullmatch("^[A-Z][0-9]{2}$", dialog_input, flags=re.IGNORECASE)
-                            and dialog_input in ("B61", "B62", "B63", "B71", "B72", "B73", "B81", "B82", "B83",
-                                                 "B91", "B92", "B93", "C01", "C02", "C03", "C11", "C12", "C13",
-                                                 "C21", "C22", "C23", "C31")):
-                        block_window = customtkinter.CTkToplevel()
-                        block_window.attributes("-alpha", 0.0)
-                        block_window.grab_set()
-                        ctypes.windll.user32.BlockInput(True)
-                        term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
-                        if term_window.isMinimized:
-                            term_window.restore()
-                        self.uprbay_window.wait("visible", timeout=10)
-                        self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                        send_keys("{ENTER}")
-                        self.uprb.UprbayTeraTermVt.type_keys("1CP")
-                        self.uprb.UprbayTeraTermVt.type_keys(dialog_input.replace(" ", "").upper())
-                        send_keys("{ENTER}")
-                        ctypes.windll.user32.BlockInput(False)
-                        self.reset_activity_timer(None)
-                        self.go_next_1VE.configure(state="disabled")
-                        self.go_next_1GP.configure(state="disabled")
-                        self.go_next_409.configure(state="disabled")
-                        self.go_next_683.configure(state="disabled")
-                        self.go_next_4CM.configure(state="disabled")
-                        self._1VE_screen = False
-                        self._1GP_screen = False
-                        self._409_screen = False
-                        self._683_screen = False
-                        self._4CM_screen = False
-                        block_window.destroy()
+            if dialog_input is not None:
+                dialog_input = dialog_input.replace(" ", "").upper()
+                if self.test_connection(lang) and self.check_server():
+                    if self.checkIfProcessRunning("ttermpro"):
+                        if (re.fullmatch("^[A-Z][0-9]{2}$", dialog_input, flags=re.IGNORECASE)
+                                and dialog_input in ("B61", "B62", "B63", "B71", "B72", "B73", "B81", "B82", "B83",
+                                                     "B91", "B92", "B93", "C01", "C02", "C03", "C11", "C12", "C13",
+                                                     "C21", "C22", "C23", "C31")):
+                            block_window = customtkinter.CTkToplevel()
+                            block_window.attributes("-alpha", 0.0)
+                            block_window.grab_set()
+                            ctypes.windll.user32.BlockInput(True)
+                            term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
+                            if term_window.isMinimized:
+                                term_window.restore()
+                            self.uprbay_window.wait("visible", timeout=10)
+                            self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                            send_keys("{ENTER}")
+                            self.uprb.UprbayTeraTermVt.type_keys("1CP")
+                            self.uprb.UprbayTeraTermVt.type_keys(dialog_input.replace(" ", "").upper())
+                            send_keys("{ENTER}")
+                            ctypes.windll.user32.BlockInput(False)
+                            self.reset_activity_timer(None)
+                            self.go_next_1VE.configure(state="disabled")
+                            self.go_next_1GP.configure(state="disabled")
+                            self.go_next_409.configure(state="disabled")
+                            self.go_next_683.configure(state="disabled")
+                            self.go_next_4CM.configure(state="disabled")
+                            self._1VE_screen = False
+                            self._1GP_screen = False
+                            self._409_screen = False
+                            self._683_screen = False
+                            self._4CM_screen = False
+                            block_window.destroy()
+                        else:
+                            self.show_error_message(300, 215, "¡Error! Semestre Incorrecto")
                     else:
-                        self.show_error_message(300, 215, "¡Error! Semestre Incorrecto")
-                else:
-                    if self.language_menu.get() == "English":
-                        self.show_error_message(300, 215, "Error! Tera Term is disconnected")
-                    elif self.language_menu.get() == "Español":
-                        self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
+                        if self.language_menu.get() == "English":
+                            self.show_error_message(300, 215, "Error! Tera Term is disconnected")
+                        elif self.language_menu.get() == "Español":
+                            self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
+            else:
+                self.change_bind()
+                dialog.destroy()
 
         elif lang == "English":
             dialog = customtkinter.CTkInputDialog(text="Enter the semester:", title="Show My Classes")
             dialog.geometry(dialog.geometry(f"{int(x) + 500}+{int(y + 200)}"))
             dialog.attributes("-topmost", True)
             dialog.after(201, lambda: dialog.iconbitmap("images/tera-term.ico"))
-            dialog_input = dialog.get_input().replace(" ", "").upper()
-            if self.test_connection(lang) and self.check_server():
-                if self.checkIfProcessRunning("ttermpro"):
-                    if (re.match("^[A-Z][0-9]{2}$", dialog_input, flags=re.IGNORECASE)
-                            and dialog_input in ("B61", "B62", "B63", "B71", "B72", "B73", "B81", "B82", "B83",
-                                                 "B91", "B92", "B93", "C01", "C02", "C03", "C11", "C12", "C13",
-                                                 "C21", "C22", "C23", "C31")):
-                        block_window = customtkinter.CTkToplevel()
-                        block_window.attributes("-alpha", 0.0)
-                        block_window.grab_set()
-                        ctypes.windll.user32.BlockInput(True)
-                        term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
-                        if term_window.isMinimized:
-                            term_window.restore()
-                        self.uprbay_window.wait("visible", timeout=10)
-                        self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                        send_keys("{ENTER}")
-                        self.uprb.UprbayTeraTermVt.type_keys("1CP")
-                        self.uprb.UprbayTeraTermVt.type_keys(dialog_input)
-                        send_keys("{ENTER}")
-                        ctypes.windll.user32.BlockInput(False)
-                        self.reset_activity_timer(None)
-                        self.go_next_1VE.configure(state="disabled")
-                        self.go_next_1GP.configure(state="disabled")
-                        self.go_next_409.configure(state="disabled")
-                        self.go_next_683.configure(state="disabled")
-                        self.go_next_4CM.configure(state="disabled")
-                        self._1VE_screen = False
-                        self._1GP_screen = False
-                        self._409_screen = False
-                        self._683_screen = False
-                        self._4CM_screen = False
-                        block_window.destroy()
+            dialog_input = dialog.get_input()
+            if dialog_input is not None:
+                dialog_input = dialog_input.replace(" ", "").upper()
+                if self.test_connection(lang) and self.check_server():
+                    if self.checkIfProcessRunning("ttermpro"):
+                        if (re.match("^[A-Z][0-9]{2}$", dialog_input, flags=re.IGNORECASE)
+                                and dialog_input in ("B61", "B62", "B63", "B71", "B72", "B73", "B81", "B82", "B83",
+                                                     "B91", "B92", "B93", "C01", "C02", "C03", "C11", "C12", "C13",
+                                                     "C21", "C22", "C23", "C31")):
+                            block_window = customtkinter.CTkToplevel()
+                            block_window.attributes("-alpha", 0.0)
+                            block_window.grab_set()
+                            ctypes.windll.user32.BlockInput(True)
+                            term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
+                            if term_window.isMinimized:
+                                term_window.restore()
+                            self.uprbay_window.wait("visible", timeout=10)
+                            self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                            send_keys("{ENTER}")
+                            self.uprb.UprbayTeraTermVt.type_keys("1CP")
+                            self.uprb.UprbayTeraTermVt.type_keys(dialog_input)
+                            send_keys("{ENTER}")
+                            ctypes.windll.user32.BlockInput(False)
+                            self.reset_activity_timer(None)
+                            self.go_next_1VE.configure(state="disabled")
+                            self.go_next_1GP.configure(state="disabled")
+                            self.go_next_409.configure(state="disabled")
+                            self.go_next_683.configure(state="disabled")
+                            self.go_next_4CM.configure(state="disabled")
+                            self._1VE_screen = False
+                            self._1GP_screen = False
+                            self._409_screen = False
+                            self._683_screen = False
+                            self._4CM_screen = False
+                            block_window.destroy()
+                        else:
+                            self.show_error_message(300, 215, "Error! Wrong Semester")
                     else:
-                        self.show_error_message(300, 215, "Error! Wrong Semester")
-                else:
-                    if self.language_menu.get() == "English":
-                        self.show_error_message(300, 215, "Error! Tera Term is disconnected")
-                    elif self.language_menu.get() == "Español":
-                        self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
+                        if self.language_menu.get() == "English":
+                            self.show_error_message(300, 215, "Error! Tera Term is disconnected")
+                        elif self.language_menu.get() == "Español":
+                            self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
+            else:
+                self.change_bind()
+                dialog.destroy()
+
         self.show_sidebar_windows()
+        self.change_bind()
 
     # function that adds new entries
     def add_event(self):
@@ -1561,6 +1579,7 @@ class TeraTermUI(customtkinter.CTk):
     # changes to the respective screen the user chooses
     def option_menu_event(self, task_done):
         try:
+            self.unbind("<Return>")
             self.focus_set()
             self.destroy_windows()
             self.hide_sidebar_windows()
@@ -2022,6 +2041,7 @@ class TeraTermUI(customtkinter.CTk):
                                           "Tal vez necesite reiniciar Tera Term UI",
                                   icon="question", button_width=380)
                 self.error_occurred = False
+        self.bind("<Return>", lambda event: self.option_menu_event_handler())
 
     def go_next_page_handler(self):
         task_done = threading.Event()
@@ -3275,6 +3295,7 @@ class TeraTermUI(customtkinter.CTk):
                                                        border_width=2, text="Next Page",
                                                        text_color=("gray10", "#DCE4EE"),
                                                        command=self.go_next_page_handler, width=100)
+
             # Bottom Buttons
             self.back3 = customtkinter.CTkButton(master=self.t_buttons_frame, fg_color="transparent", border_width=2,
                                                  text="Back",
@@ -4110,6 +4131,15 @@ class TeraTermUI(customtkinter.CTk):
     def unfocus_tkinter(self):
         pywinauto_handle = self.uprb.top_window().handle
         win32gui.SetForegroundWindow(pywinauto_handle)
+
+    # Changes keybind depending on the tab the user is currently on
+    def change_bind(self):
+        if self.tabview.get() == self.enroll_tab:
+            self.bind("<Return>", lambda event: self.submit_event_handler())
+        elif self.tabview.get() == self.search_tab:
+            self.bind("<Return>", lambda event: self.search_event_handler())
+        elif self.tabview.get() == self.other_tab:
+            self.bind("<Return>", lambda event: self.option_menu_event_handler())
 
     # Creates the status window
     def sidebar_button_event(self):
