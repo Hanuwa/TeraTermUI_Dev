@@ -3597,7 +3597,11 @@ class TeraTermUI(customtkinter.CTk):
         backup_path = self.app_temp_dir / "TERATERM.ini.bak"
         if not os.path.exists(backup_path):
             backup_path = os.path.join(self.app_temp_dir, os.path.basename(file_path) + ".bak")
-            shutil.copyfile(file_path, backup_path)
+            try:
+                shutil.copyfile(file_path, backup_path)
+            except FileNotFoundError:
+                print("Tera Term Probably not installed\n"
+                      "or installed in a different location from the default")
 
         # Edits the font that tera term uses to "Lucida Console" to mitigate the chance of the OCR mistaking words
         if not self.can_edit:
@@ -3615,9 +3619,6 @@ class TeraTermUI(customtkinter.CTk):
                             self.original_font = current_value
                             updated_value = "Lucida Console" + current_value[len(font_name):]
                             line = f"VTFont={updated_value}\n"
-                            if not self.welcome:
-                                self.log_in.configure(state="normal")
-                                self.bind("<Return>", lambda event: self.login_event_handler())
                             self.can_edit = True
                         file.write(line)
             # If something goes wrong, restore the backup
@@ -3625,6 +3626,10 @@ class TeraTermUI(customtkinter.CTk):
                 print(f"Error occurred: {e}")
                 print("Restoring from backup...")
                 shutil.copyfile(backup_path, file_path)
+
+        if not self.welcome:
+            self.log_in.configure(state="normal")
+            self.bind("<Return>", lambda event: self.login_event_handler())
 
         # Unzips Teserract OCR
         with py7zr.SevenZipFile(self.zip_path, mode='r') as z:
