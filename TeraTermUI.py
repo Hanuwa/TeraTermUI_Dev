@@ -49,6 +49,7 @@ from datetime import datetime, timedelta
 from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import pad, unpad
 from Crypto.Random import get_random_bytes
+import uuid
 import pytz
 import json
 import subprocess
@@ -95,6 +96,7 @@ class TeraTermUI(customtkinter.CTk):
         # GitHub information for feedback
         self.SERVICE_ACCOUNT_FILE = "feedback.zip"
         self.SPREADSHEET_ID = "1ffJLgp8p-goOlxC10OFEu0JefBgQDsgEo_suis4k0Pw"
+        self.SPREADSHEET_BANNED_ID = "1JGDSyB-tE7gH5ozZ1MBlr9uMGcAWRgN7CyqK-QDQRxg"
         self.RANGE_NAME = "Sheet1!A:A"
         self.PASSWORD = "F_QL^B#O_/r9|Rl0i=x),;!@en|V5qR%W(9;2^+f=lRPcw!+4"
         self.credentials = None
@@ -445,6 +447,8 @@ class TeraTermUI(customtkinter.CTk):
         # performs some operations in a separate thread when application starts up
         self.boot_up_thread = threading.Thread(target=self.boot_up, args=(self.teraterm_file,))
         self.boot_up_thread.start()
+        del user_data_fields, height, width, x, y, screen_height, screen_width, scaling_factor
+        gc.collect()
 
         # Asks the user if they want to update to the latest version of the application
         def update_app():
@@ -3653,12 +3657,28 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Return>", lambda event: self.login_event_handler())
 
         # Unzips Teserract OCR
-        with py7zr.SevenZipFile(self.zip_path, mode='r') as z:
+        with py7zr.SevenZipFile(self.zip_path, mode="r") as z:
             z.extractall(self.app_temp_dir)
 
         tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
         pytesseract.pytesseract.tesseract_cmd = str(tesseract_dir / "tesseract.exe")
         tessdata_dir_config = f"--tessdata-dir {tesseract_dir / 'tessdata'}"
+
+        # Generating user_id to ban user from sending feedback if needed
+        # If the file doesn't already exist, generate a new UUID and write it to the file
+        user_path = Path(self.app_temp_dir) / "user_id.zip"
+        if not user_path.is_file():
+            user_id = str(uuid.uuid4())
+            # Create a new password-protected zip archive and add the text file to it
+            with pyzipper.AESZipFile(user_path, "w", encryption=pyzipper.WZ_AES) as zf:
+                zf.setpassword(self.PASSWORD.encode())
+                zf.writestr("user_id.txt", user_id)
+
+        # Read the user_id from the text file in the password-protected zip archive
+        with pyzipper.AESZipFile(user_path, "r") as zf:
+            zf.setpassword(self.PASSWORD.encode())
+            with zf.open("user_id.txt") as f:
+                self.user_id = f.read().decode().strip()
 
         # Reads from the feedback.json file to connect to Google's Sheets Api for user feedback
         try:
@@ -3681,6 +3701,7 @@ class TeraTermUI(customtkinter.CTk):
     # Deletes Tesseract OCR and tera term config file from the temp folder
     def cleanup_temp(self):
         tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
+        backup_file_path = Path(self.app_temp_dir) / "TERATERM.ini.bak"
         if tesseract_dir == Path(self.app_temp_dir) / "Tesseract-OCR" and tesseract_dir.exists():
             for _ in range(10):  # Retry up to 10 times
                 try:
@@ -3688,7 +3709,9 @@ class TeraTermUI(customtkinter.CTk):
                     break  # If the directory was deleted successfully, exit the loop
                 except PermissionError:
                     time.sleep(1)  # Wait for 1 second before the next attempt
-        shutil.rmtree(self.app_temp_dir)
+            # Delete the 'TERATERM.ini.bak' file
+            if backup_file_path.exists():
+                os.remove(backup_file_path)
 
     # error window pop up message
     def show_error_message(self, width, height, error_msg_text):
@@ -4286,7 +4309,7 @@ class TeraTermUI(customtkinter.CTk):
                 service = build("sheets", "v4", credentials=self.credentials, discoveryServiceUrl=DISCOVERY_SERVICE_URL)
             now = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
             body = {
-                "values": [[now, values[0][0]]]
+                "values": [[now, self.user_id, values[0][0]]]
             }
 
             try:
@@ -4299,10 +4322,38 @@ class TeraTermUI(customtkinter.CTk):
                 print(f"An error occurred: {error}")
                 return None
 
+    def is_user_banned(self, user_id):
+        try:
+            service = build("sheets", "v4", credentials=self.credentials)
+        except:
+            DISCOVERY_SERVICE_URL = "https://sheets.googleapis.com/$discovery/rest?version=v4"
+            service = build("sheets", "v4", credentials=self.credentials, discoveryServiceUrl=DISCOVERY_SERVICE_URL)
+        try:
+            # Get all values in column A from the banned users spreadsheet
+            result = service.spreadsheets().values().get(
+                spreadsheetId=self.SPREADSHEET_BANNED_ID, range=self.RANGE_NAME).execute()
+            values = result.get("values", [])
+            # Check if the user_id is in the values
+            flat_values = [item for sublist in values for item in sublist]
+            if user_id in flat_values:
+                return True
+            else:
+                return False
+
+        except HttpError as error:
+            print(f"An error occurred: {error}")
+            return False
+
     # Submits feedback from the user to a Google sheet
     def submit_feedback(self):
         lang = self.language_menu.get()
-        if not self.disable_feedback:
+        # Read the UUID from the file
+        user_path = Path(self.app_temp_dir) / "user_id.zip"
+        with pyzipper.AESZipFile(user_path, "r") as zf:
+            zf.setpassword(self.PASSWORD.encode())
+            with zf.open("user_id.txt") as f:
+                user_id = f.read().decode().strip()
+        if not self.disable_feedback and not self.is_user_banned(user_id):
             current_date = datetime.today().strftime("%Y-%m-%d")
             date = self.cursor.execute("SELECT date FROM user_data WHERE date IS NOT NULL").fetchall()
             dates_list = [record[0] for record in date]
@@ -4375,10 +4426,10 @@ class TeraTermUI(customtkinter.CTk):
             else:
                 winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                 if lang == "English":
-                    CTkMessagebox(title="Error", message="Error! Cannot submit more than one feedback", icon="cancel",
-                                  button_width=380)
+                    CTkMessagebox(title="Error", message="Error! Cannot submit more than one feedback per day",
+                                  icon="cancel", button_width=380)
                 elif lang == "Español":
-                    CTkMessagebox(title="Error", message="¡Error! No se puede enviar más de un comentario",
+                    CTkMessagebox(title="Error", message="¡Error! No se puede enviar más de un comentario por día",
                                   icon="cancel", button_width=380)
         else:
             winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
