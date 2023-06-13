@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 6/11/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 6/13/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -221,8 +221,8 @@ class TeraTermUI(customtkinter.CTk):
                                                text="Next",
                                                text_color=("gray10", "#DCE4EE"), command=self.student_event_handler)
         self.back = customtkinter.CTkButton(master=self.a_buttons_frame, fg_color="transparent", border_width=2,
-                                            text="Back",
-                                            text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
+                                            text="Back", hover_color="#4E4F50", text_color=("gray10", "#DCE4EE"),
+                                            command=self.go_back_event)
         self.back_tooltip = CTkToolTip(self.back, message="Go back to the main menu\n"
                                                           "of the application", bg_color="#A9A9A9")
 
@@ -3184,8 +3184,8 @@ class TeraTermUI(customtkinter.CTk):
                                                   text="Enter",
                                                   text_color=("gray10", "#DCE4EE"), command=self.tuition_event_handler)
             self.back2 = customtkinter.CTkButton(master=self.s_buttons_frame, fg_color="transparent", border_width=2,
-                                                 text="Back",
-                                                 text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
+                                                 text="Back", hover_color="#4E4F50", text_color=("gray10", "#DCE4EE"),
+                                                 command=self.go_back_event)
             self.back2_tooltip = CTkToolTip(self.back2, message="Go back to the main menu\n"
                                                                 "of the application", bg_color="#A9A9A9")
 
@@ -3302,8 +3302,8 @@ class TeraTermUI(customtkinter.CTk):
 
             # Bottom Buttons
             self.back3 = customtkinter.CTkButton(master=self.t_buttons_frame, fg_color="transparent", border_width=2,
-                                                 text="Back",
-                                                 text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
+                                                 text="Back", hover_color="#4E4F50", text_color=("gray10", "#DCE4EE"),
+                                                 command=self.go_back_event)
             self.back3_tooltip = CTkToolTip(self.back3, message="Go back to the main menu\n"
                                                                 "of the application", bg_color="#A9A9A9")
             self.submit = customtkinter.CTkButton(master=self.tabview.tab(self.enroll_tab), border_width=2,
@@ -3320,7 +3320,7 @@ class TeraTermUI(customtkinter.CTk):
                                                                               "enrolled in for a \n"
                                                                               "specific semester", bg_color="#1E90FF")
             self.multiple = customtkinter.CTkButton(master=self.t_buttons_frame, fg_color="transparent", border_width=2,
-                                                    text="Multiple Classes",
+                                                    text="Multiple Classes", hover_color="#4E4F50",
                                                     text_color=("gray10", "#DCE4EE"),
                                                     command=self.multiple_classes_event)
             self.multiple_tooltip = CTkToolTip(self.multiple, message="Enroll Multiple Classes\nat once",
@@ -3367,7 +3367,7 @@ class TeraTermUI(customtkinter.CTk):
                                                     hover_color="darkred")
             self.m_remove_tooltip = CTkToolTip(self.m_remove, message="Remove classes", bg_color="red")
             self.back4 = customtkinter.CTkButton(master=self.m_button_frame, fg_color="transparent", border_width=2,
-                                                 text="Back", height=40, width=70,
+                                                 text="Back", height=40, width=70, hover_color="#4E4F50",
                                                  text_color=("gray10", "#DCE4EE"), command=self.go_back_event2)
             self.back4_tooltip = CTkToolTip(self.back4, message="Go back to the previous "
                                                                 "\nscreen", bg_color="#A9A9A9")
