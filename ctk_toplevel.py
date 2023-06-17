@@ -273,8 +273,8 @@ class CTkToplevel(tkinter.Toplevel, CTkAppearanceModeBaseClass, CTkScalingBaseCl
             self.after(5, self._revert_withdraw_after_windows_set_titlebar_color)
 
             # if self.focused_widget_before_widthdraw is not None:
-               # self.after(10, self.focused_widget_before_widthdraw.focus)
-               # self.focused_widget_before_widthdraw = None
+            # self.after(10, self.focused_widget_before_widthdraw.focus)
+            # self.focused_widget_before_widthdraw = None
 
     def _revert_withdraw_after_windows_set_titlebar_color(self):
         """ if in a short time (5ms) after """
