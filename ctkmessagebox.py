@@ -24,7 +24,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                  options: list = [],
                  border_width: int = 1,
                  border_color: str = "default",
-                 button_color: str = "default",
+                 button_color: tuple = "default",
                  bg_color: str = "default",
                  fg_color: str = "default",
                  text_color: str = "default",
@@ -135,6 +135,8 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                     self.button_color = button_color
             else:
                 self.button_color = (button_color, button_color, button_color)
+
+        default_hover_color = self._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkButton"]["hover_color"])
 
         if hover_color == "default":
             self.hover_color = (default_hover_color, default_hover_color, default_hover_color)
