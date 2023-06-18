@@ -1,6 +1,7 @@
 import subprocess
 import shutil
 import os
+import sys
 
 project_directory = r"C:\Users\arman\PycharmProjects\TeraTermUI\TeraTermUI.py"
 nuitka_command = (
@@ -59,33 +60,40 @@ for version in versions:
             file.write(data)
     except Exception as e:
         print(f"Error modifying script: {e}")
+        sys.exit(1)
 
     try:
         subprocess.run(nuitka_command, shell=True, check=True)
     except Exception as e:
         print(f"Failed to create executable with Nuitka: {e}")
+        sys.exit(1)
 
     try:
         subprocess.run(upx_command, shell=True, check=True)
     except Exception as e:
         print(f"Failed to compress executable with UPX: {e}")
+        sys.exit(1)
+
     if script == "installer":
         try:
             os.rename(output_directory + r"\TeraTermUI.dist",
                       output_directory + r"\TeraTermUI_installer")
         except Exception as e:
             print(f"Error renaming folder: {e}")
+            sys.exit(1)
 
         try:
             subprocess.run([inno_directory, output_directory + r"\InstallerScript.iss"], check=True)
         except Exception as e:
             print(f"Error compiling Inno Setup script: {e}")
+            sys.exit(1)
 
         try:
             shutil.move(output_directory + r"\output\TeraTermUI_64-bit_Installer-v0.9.0.exe", output_directory)
             shutil.rmtree(output_directory + r"\output")
         except Exception as e:
             print(f"Error moving or removing folder: {e}")
+            sys.exit(1)
 
     elif script == "portable":
         try:
@@ -93,9 +101,6 @@ for version in versions:
             shutil.make_archive(output_directory + r"\TeraTermUI-v0.9.0", 'zip', output_directory, "TeraTermUI")
         except Exception as e:
             print(f"Error creating zip file: {e}")
+            sys.exit(1)
 
 print("Both versions (installer and portable) have been created successfully.")
-
-
-
-
