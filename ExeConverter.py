@@ -31,6 +31,7 @@ connection = sqlite3.connect(r"C:\Users\arman\PycharmProjects\TeraTermUI\databas
 cursor = connection.cursor()
 # Execute the DELETE SQL command
 cursor.execute("DELETE FROM user_data")
+connection.commit()
 
 for version in versions:
     script = None
