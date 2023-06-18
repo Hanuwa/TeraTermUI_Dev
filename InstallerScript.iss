@@ -47,8 +47,8 @@ Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0\TeraTermUI_install
 Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0\TeraTermUI_installer\Tesseract-OCR.7z"; DestDir: "{app}"; Flags: onlyifdoesntexist 
 Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0\database.db"; DestDir: "{userappdata}\TeraTermUI"; Flags: onlyifdoesntexist 
 Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0\feedback.zip"; DestDir: "{userappdata}\TeraTermUI"; Flags: onlyifdoesntexist
-Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0\TeraTermUI_installer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0\teraterm-4.106.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
+Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0\TeraTermUI_installer\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs
+Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0\teraterm-4.106.exe"; DestDir: "{tmp}"; Flags: onlyifdoesntexist ignoreversion; Tasks: teraterm
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
