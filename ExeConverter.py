@@ -1,4 +1,5 @@
 import subprocess
+import sqlite3
 import shutil
 import os
 import sys
@@ -24,6 +25,12 @@ output_directory = r"C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0"
 upx_command = r"upx --best " + output_directory + r"\TeraTermUI.dist\TeraTermUI.exe"
 inno_directory = r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 versions = ['installer', 'portable']
+
+
+connection = sqlite3.connect(r"C:\Users\arman\PycharmProjects\TeraTermUI\database.db")
+cursor = connection.cursor()
+# Execute the DELETE SQL command
+cursor.execute("DELETE FROM user_data")
 
 for version in versions:
     script = None
@@ -104,3 +111,8 @@ for version in versions:
             sys.exit(1)
 
 print("Both versions (installer and portable) have been created successfully.")
+sys.exit(0)
+
+
+
+
