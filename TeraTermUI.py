@@ -375,7 +375,7 @@ class TeraTermUI(customtkinter.CTk):
         self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
         atexit.register(self.cleanup_temp)
         atexit.register(self.restore_original_font, self.teraterm_file)
-        self.connection = sqlite3.connect(self.db_path)
+        self.connection = sqlite3.connect("database.db")
         self.cursor = self.connection.cursor()
         self.save = self.cursor.execute("SELECT class, section, semester, action FROM save_classes"
                                         " WHERE class IS NOT NULL").fetchall()
@@ -2983,7 +2983,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.countdown_running = True
                                 self.hide_loading_screen()
                                 # Create a Toplevel window
-                                width = 310
+                                width = 320
                                 height = 160
                                 scaling_factor = self.tk.call("tk", "scaling")
                                 screen_width = self.winfo_screenwidth()
@@ -3439,7 +3439,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.cursor.execute(f"INSERT INTO user_data ({field}) VALUES (?)", (value,))
             elif result[0] != value:
                 self.cursor.execute(f"UPDATE user_data SET {field} = ? ", (value,))
-        with closing(sqlite3.connect(self.db_path)) as connection:
+        with closing(sqlite3.connect("database.db")) as connection:
             with closing(connection.cursor()) as self.cursor:
                 self.connection.commit()
 
@@ -3698,8 +3698,8 @@ class TeraTermUI(customtkinter.CTk):
 
         # Reads from the feedback.json file to connect to Google's Sheets Api for user feedback
         try:
-            with open(self.ath, "rb") as f:
-                archive = pyzipper.AESZipFile(self.ath)
+            with open(self.SERVICE_ACCOUNT_FILE, "rb") as f:
+                archive = pyzipper.AESZipFile(self.SERVICE_ACCOUNT_FILE)
                 archive.setpassword(self.PASSWORD.encode())
                 file_contents = archive.read("feedback.json")
                 credentials_dict = json.loads(file_contents.decode())
@@ -5168,7 +5168,7 @@ if __name__ == "__main__":
     appdata_folder = os.path.join(os.getenv("APPDATA"), "TeraTermUI")
     lock_file = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])), "app_lock.lock")
     lock_file_appdata = os.path.join(appdata_folder, "app_lock.lock")
-    file_lock = FileLock(lock_file_appdata, timeout=10)
+    file_lock = FileLock(lock_file, timeout=10)
     try:
         with file_lock.acquire(poll_interval=0.1):
             app = TeraTermUI()
