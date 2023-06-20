@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 6/18/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 6/20/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -375,40 +375,40 @@ class TeraTermUI(customtkinter.CTk):
         self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
         atexit.register(self.cleanup_temp)
         atexit.register(self.restore_original_font, self.teraterm_file)
-        self.connection = sqlite3.connect("database.db")
+        self.connection = sqlite3.connect(self.db_path)
         self.cursor = self.connection.cursor()
         self.save = self.cursor.execute("SELECT class, section, semester, action FROM save_classes"
                                         " WHERE class IS NOT NULL").fetchall()
         self.saveCheck = self.cursor.execute('SELECT "check" FROM save_classes WHERE "check" IS NOT NULL').fetchall()
         user_data_fields = ["location", "host", "language", "appearance", "scaling", "idle", "welcome", "config"]
-        self.results = {}
+        results = {}
         for field in user_data_fields:
             query_user = f"SELECT {field} FROM user_data WHERE {field} IS NOT NULL"
             result = self.cursor.execute(query_user).fetchone()
-            self.results[field] = result[0] if result else None
-        if self.results["host"]:
-            self.host_entry.insert(0, self.results["host"])
-        if self.results["location"]:
-            if self.results["location"] != self.location:
-                self.location = self.results["location"]
-        if self.results["config"]:
-            if self.results["config"] != self.teraterm_file:
-                self.teraterm_file = self.results["config"]
+            results[field] = result[0] if result else None
+        if results["host"]:
+            self.host_entry.insert(0, results["host"])
+        if results["location"]:
+            if results["location"] != self.location:
+                self.location = results["location"]
+        if results["config"]:
+            if results["config"] != self.teraterm_file:
+                self.teraterm_file = results["config"]
                 self.edit_teraterm_ini(self.teraterm_file)
                 self.can_edit = True
-        if self.results["language"]:
-            if self.results["language"] != "English":
-                self.language_menu.set(self.results["language"])
-                self.change_language_event(lang=self.results["language"])
-        if self.results["appearance"]:
-            if self.results["appearance"] != "System" or self.results["appearance"] != "Sistema":
-                self.appearance_mode_optionemenu.set(self.results["appearance"])
-                self.change_appearance_mode_event(self.results["appearance"])
-        if self.results["scaling"]:
-            if self.results["scaling"] != 100.0:
-                self.scaling_optionemenu.set(float(self.results["scaling"]))
-                self.change_scaling_event(float(self.results["scaling"]))
-        if not self.results["welcome"]:
+        if results["language"]:
+            if results["language"] != "English":
+                self.language_menu.set(results["language"])
+                self.change_language_event(lang=results["language"])
+        if results["appearance"]:
+            if results["appearance"] != "System" or results["appearance"] != "Sistema":
+                self.appearance_mode_optionemenu.set(results["appearance"])
+                self.change_appearance_mode_event(results["appearance"])
+        if results["scaling"]:
+            if results["scaling"] != 100.0:
+                self.scaling_optionemenu.set(float(results["scaling"]))
+                self.change_scaling_event(float(results["scaling"]))
+        if not results["welcome"]:
             self.sidebar_button_2.configure(state="disabled")
             self.sidebar_button_1.configure(state="disabled")
             self.welcome = True
@@ -434,9 +434,9 @@ class TeraTermUI(customtkinter.CTk):
                 # enables keyboard input events
                 self.bind("<Escape>", lambda event: self.on_closing())
                 self.bind("<Return>", lambda event: self.login_event_handler())
-                if not self.results["welcome"]:
+                if not results["welcome"]:
                     self.cursor.execute("INSERT INTO user_data (welcome) VALUES (?)", ("Checked",))
-                elif self.results["welcome"]:
+                elif results["welcome"]:
                     self.cursor.execute("UPDATE user_data SET welcome=?", ("Checked",))
 
             self.after(3500, show_message_box)
@@ -459,7 +459,7 @@ class TeraTermUI(customtkinter.CTk):
             if current_date not in dates_list:
                 try:
                     latest_version = self.get_latest_release()
-                    if not self.compare_versions(latest_version, self.USER_APP_VERSION) and self.results["welcome"]:
+                    if not self.compare_versions(latest_version, self.USER_APP_VERSION) and results["welcome"]:
                         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
                         if lang == "English":
                             msg = CTkMessagebox(master=self, title="Update",
@@ -529,6 +529,7 @@ class TeraTermUI(customtkinter.CTk):
             exit(0)
 
     def tuition_event_handler(self):
+        self.idle = self.cursor.execute("SELECT idle FROM user_data").fetchall()
         task_done = threading.Event()
         loading_screen = self.show_loading_screen()
         self.update_loading_screen(loading_screen, task_done)
@@ -703,7 +704,7 @@ class TeraTermUI(customtkinter.CTk):
         self.tabview.tab(self.enroll_tab).grid_columnconfigure(1, weight=2)
         self.tabview.tab(self.search_tab).grid_columnconfigure(1, weight=2)
         self.tabview.tab(self.other_tab).grid_columnconfigure(1, weight=2)
-        self.t_buttons_frame.grid(row=2, column=1, padx=(20, 20), pady=(20, 0), sticky="n")
+        self.t_buttons_frame.grid(row=2, column=1, padx=(20, 20), pady=(0, 0), sticky="n")
         self.t_buttons_frame.grid_columnconfigure(2, weight=1)
         self.explanation4.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
         self.e_classes.grid(row=1, column=1, padx=(44, 0), pady=(0, 0), sticky="w")
@@ -1297,17 +1298,17 @@ class TeraTermUI(customtkinter.CTk):
         self.scaling_optionemenu.set(100)
         self.multiple_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 35))
         self.multiple_frame.grid_columnconfigure(2, weight=1)
-        self.m_button_frame.grid(row=3, column=1, columnspan=4, rowspan=4, padx=(0, 0), pady=(0, 0))
+        self.m_button_frame.grid(row=3, column=1, columnspan=4, rowspan=4, padx=(0, 0), pady=(0, 10))
         self.m_button_frame.grid_columnconfigure(2, weight=1)
         if lang == "English":
-            self.save_frame.grid(row=3, column=2, padx=(0, 9), pady=(0, 0))
+            self.save_frame.grid(row=3, column=2, padx=(0, 9), pady=(0, 8))
         elif lang == "Español":
-            self.save_frame.grid(row=3, column=2, padx=(0, 11), pady=(0, 0))
+            self.save_frame.grid(row=3, column=2, padx=(0, 11), pady=(0, 8))
         self.save_frame.grid_columnconfigure(2, weight=1)
         if lang == "English":
-            self.auto_frame.grid(row=3, column=1, padx=(0, 433), pady=(0, 0))
+            self.auto_frame.grid(row=3, column=1, padx=(0, 433), pady=(0, 8))
         elif lang == "Español":
-            self.auto_frame.grid(row=3, column=1, padx=(0, 399), pady=(0, 0))
+            self.auto_frame.grid(row=3, column=1, padx=(0, 399), pady=(0, 8))
         self.auto_frame.grid_columnconfigure(2, weight=1)
         self.explanation7.grid(row=0, column=1, padx=(0, 0), pady=(0, 20))
         self.m_class.grid(row=0, column=1, padx=(0, 500), pady=(32, 0))
@@ -2198,8 +2199,13 @@ class TeraTermUI(customtkinter.CTk):
                         self.uprbay_window.wait("visible", timeout=10)
                         user = self.uprb.UprbayTeraTermVt.child_window(title="User name:",
                                                                        control_type="Edit").wrapper_object()
-                        # time.sleep(0.2)
                         user.type_keys("students", with_spaces=False, pause=0.02)
+                        check = self.uprb.UprbayTeraTermVt.child_window(title="Remember password in memory",
+                                                                        control_type="CheckBox")
+                        if check.get_toggle_state() == 0:
+                            check.click()
+                        self.uprb.UprbayTeraTermVt.child_window(title="Use plain password to log in",
+                                                                control_type="RadioButton").click()
                         self.hide_loading_screen()
                         okConn2 = self.uprb.UprbayTeraTermVt.child_window(title="OK",
                                                                           control_type="Button").wrapper_object()
@@ -2476,6 +2482,7 @@ class TeraTermUI(customtkinter.CTk):
             self.in_student_frame = False
             self.in_enroll_frame = False
             self.in_search_frame = False
+            self.idle = None
             if self.error_occurred:
                 self.destroy_windows()
                 winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
@@ -2868,31 +2875,44 @@ class TeraTermUI(customtkinter.CTk):
     def auto_enroll_event_handler(self):
         lang = self.language_menu.get()
         self.focus_set()
-        if self.auto_enroll.get() == "on":
+        idle = self.cursor.execute("SELECT idle FROM user_data").fetchall()
+        if idle[0][0] != "Disabled":
+            if self.auto_enroll.get() == "on":
+                if lang == "English":
+                    msg = CTkMessagebox(master=self, title="Submit",
+                                        message="Are you sure you are ready to submit the classes?"
+                                                " \n\nWARNING: Make sure the information is correct",
+                                        icon="images/submit.png",
+                                        option_1="Cancel", option_2="No", option_3="Yes",
+                                        icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                        hover_color=("darkred", "darkblue", "darkblue"))
+                elif lang == "Español":
+                    msg = CTkMessagebox(master=self, title="Someter",
+                                        message="¿Estás preparado para someter la clases?"
+                                                " \n\nWARNING: Asegúrese de que la información está correcta",
+                                        icon="images/submit.png",
+                                        option_1="Cancelar", option_2="No", option_3="Sí",
+                                        icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                        hover_color=("darkred", "darkblue", "darkblue"))
+                response = msg.get()
+                if response != "Yes" and response != "Sí":
+                    self.auto_enroll.deselect()
+                    return
+            task_done = threading.Event()
+            loading_screen = self.show_loading_screen()
+            self.update_loading_screen(loading_screen, task_done)
+            event_thread = threading.Thread(target=self.auto_enroll_event, args=(task_done,))
+            event_thread.start()
+        else:
+            winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
             if lang == "English":
-                msg = CTkMessagebox(master=self, title="Submit",
-                                    message="Are you sure you are ready to submit the classes?"
-                                            " \n\nWARNING: Make sure the information is correct",
-                                    icon="images/submit.png",
-                                    option_1="Cancel", option_2="No", option_3="Yes",
-                                    icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                                    hover_color=("darkred", "darkblue", "darkblue"))
+                CTkMessagebox(master=self, title="Auto-Enroll", icon="cancel", button_width=380,
+                              message="Anti-Idle must be enabled in order for you to use Auto-Enroll")
             elif lang == "Español":
-                msg = CTkMessagebox(master=self, title="Someter",
-                                    message="¿Estás preparado para someter la clases?"
-                                            " \n\nWARNING: Asegúrese de que la información está correcta",
-                                    icon="images/submit.png",
-                                    option_1="Cancelar", option_2="No", option_3="Sí",
-                                    icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                                    hover_color=("darkred", "darkblue", "darkblue"))
-            response = msg.get()
-            if response != "Yes" and response != "Sí":
-                return
-        task_done = threading.Event()
-        loading_screen = self.show_loading_screen()
-        self.update_loading_screen(loading_screen, task_done)
-        event_thread = threading.Thread(target=self.auto_enroll_event, args=(task_done,))
-        event_thread.start()
+                CTkMessagebox(master=self, title="Auto-Matrícula", icon="cancel", button_width=380,
+                              message="Anti-Inactivo tiene que estar activado para usar la Auto-Matrícula")
+            self.auto_enroll.deselect()
+            self.auto_enroll.configure(state="disabled")
 
     # Auto-Enroll classes
     def auto_enroll_event(self, task_done):
@@ -3255,10 +3275,11 @@ class TeraTermUI(customtkinter.CTk):
             self.e_semester_entry.set(self.DEFAULT_SEMESTER)
             self.radio_var = tk.StringVar()
             self.register = customtkinter.CTkRadioButton(master=self.tabview.tab(self.enroll_tab), text="Register",
-                                                         value="Register", variable=self.radio_var)
+                                                         value="Register", variable=self.radio_var,
+                                                         command=self.set_focus)
             self.register_tooltip = CTkToolTip(self.register, message="Enroll class")
             self.drop = customtkinter.CTkRadioButton(master=self.tabview.tab(self.enroll_tab), text="Drop",
-                                                     value="Drop", variable=self.radio_var)
+                                                     value="Drop", variable=self.radio_var, command=self.set_focus)
             self.drop_tooltip = CTkToolTip(self.drop, message="Drop class")
             self.register.select()
 
@@ -3274,7 +3295,7 @@ class TeraTermUI(customtkinter.CTk):
                                                            "C12", "C13", "C21", "C22", "C23", "C31"])
             self.s_semester_entry.set(self.DEFAULT_SEMESTER)
             self.show_all = customtkinter.CTkCheckBox(master=self.tabview.tab(self.search_tab), text="Show All?",
-                                                      onvalue="on", offvalue="off")
+                                                      onvalue="on", offvalue="off", command=self.set_focus)
             self.show_all_tooltip = CTkToolTip(self.show_all, message="Display all sections or\n"
                                                                       "only ones with spaces", bg_color="#1E90FF")
 
@@ -3439,7 +3460,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.cursor.execute(f"INSERT INTO user_data ({field}) VALUES (?)", (value,))
             elif result[0] != value:
                 self.cursor.execute(f"UPDATE user_data SET {field} = ? ", (value,))
-        with closing(sqlite3.connect("database.db")) as connection:
+        with closing(sqlite3.connect(self.db_path)) as connection:
             with closing(connection.cursor()) as self.cursor:
                 self.connection.commit()
 
@@ -3554,6 +3575,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # function that lets user see/hide their input (hidden by default)
     def show_event(self):
+        self.focus_set()
         show = self.show.get()
         if show == "on":
             self.ssn_entry.unbind("<Command-c>")
@@ -3698,8 +3720,8 @@ class TeraTermUI(customtkinter.CTk):
 
         # Reads from the feedback.json file to connect to Google's Sheets Api for user feedback
         try:
-            with open(self.SERVICE_ACCOUNT_FILE, "rb") as f:
-                archive = pyzipper.AESZipFile(self.SERVICE_ACCOUNT_FILE)
+            with open(self.ath, "rb") as f:
+                archive = pyzipper.AESZipFile(self.ath)
                 archive.setpassword(self.PASSWORD.encode())
                 file_contents = archive.read("feedback.json")
                 credentials_dict = json.loads(file_contents.decode())
@@ -3841,6 +3863,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # function that changes the theme of the application
     def change_appearance_mode_event(self, new_appearance_mode: str):
+        self.focus_set()
         if new_appearance_mode == "Oscuro":
             new_appearance_mode = "Dark"
         elif new_appearance_mode == "Claro":
@@ -3885,6 +3908,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
 
     def spacebar_event(self):
+        self.focus_set()
         if self.spacebar_enabled:
             if self.in_student_frame:
                 show = self.show.get()
@@ -3905,6 +3929,9 @@ class TeraTermUI(customtkinter.CTk):
                     self.show_all.deselect()
                 elif check == "off":
                     self.show_all.select()
+
+    def set_focus(self):
+        self.focus_set()
 
     # function that lets your increase/decrease the scaling of the GUI
     def change_scaling_event(self, new_scaling: float):
@@ -4147,7 +4174,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # Starts the check for idle thread
     def start_check_idle_thread(self):
-        if self.results["idle"] != "Disabled":
+        if self.idle[0][0] != "Disabled":
             self.is_running = True
             self.thread = threading.Thread(target=self.check_idle)
             self.thread.start()
@@ -4194,6 +4221,11 @@ class TeraTermUI(customtkinter.CTk):
     def stop_thread(self):
         self.is_running = False
 
+    # resets the idle timer when user interacts with something within the application
+    def reset_activity_timer(self, _):
+        self.last_activity = time.time()
+        self.idle_num_check = 0
+
     # Disables check_idle functionality
     def disable_enable_idle(self):
         if self.disableIdle.get() == "on":
@@ -4210,7 +4242,9 @@ class TeraTermUI(customtkinter.CTk):
                 self.cursor.execute("INSERT INTO user_data (idle) VALUES (?)", ("Enabled",))
             elif len(idle) == 1:
                 self.cursor.execute("UPDATE user_data SET idle=?", ("Enabled",))
-            if self.run_fix:
+            if self.auto_enroll != None:
+                self.auto_enroll.configure(state="normal")
+            if self.run_fix and self.checkIfProcessRunning("ttermpro"):
                 self.hide_sidebar_windows()
                 self.destroy_windows()
                 ctypes.windll.user32.BlockInput(True)
@@ -4225,11 +4259,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.start_check_idle_thread()
                 self.show_sidebar_windows()
         self.connection.commit()
-
-    # resets the idle timer when user interacts with something within the application
-    def reset_activity_timer(self, _):
-        self.last_activity = time.time()
-        self.idle_num_check = 0
 
     # Check if user has an internet connection
     def test_connection(self, lang):
@@ -4295,7 +4324,6 @@ class TeraTermUI(customtkinter.CTk):
             y_position = int((screen_height - 275 * scaling_factor) / 2)
             window_geometry = f"{475}x{275}+{x_position + 190}+{y_position - 30}"
             self.status.geometry(window_geometry)
-            self.status.title("Status")
             self.status.after(256, lambda: self.status.iconbitmap("images/tera-term.ico"))
             self.status.resizable(False, False)
             scrollable_frame = customtkinter.CTkScrollableFrame(self.status, width=475, height=275,
@@ -4937,17 +4965,30 @@ class TeraTermUI(customtkinter.CTk):
     # When the user performs an action to do something in tera term it hides the sidebar windows, so they don't
     # interfere with the execution on tera term
     def hide_sidebar_windows(self):
-        if self.status and self.status.winfo_exists():
+        if gw.getWindowsWithTitle("Status") or gw.getWindowsWithTitle("Estado"):
+            windows_status = gw.getWindowsWithTitle("Status") + gw.getWindowsWithTitle("Estado")
+            if windows_status:
+                self.status_minimized = windows_status[0].isMinimized
+            else:
+                self.status_minimized = False
+        if gw.getWindowsWithTitle("Help") or gw.getWindowsWithTitle("Ayuda"):
+            windows_help = gw.getWindowsWithTitle("Help") + gw.getWindowsWithTitle("Ayuda")
+            if windows_help:
+                self.help_minimized = windows_help[0].isMinimized
+            else:
+                self.help_minimized = False
+        if self.status and self.status.winfo_exists() and not self.status_minimized:
             self.status.withdraw()
-        if self.help and self.help.winfo_exists():
+        if self.help and self.help.winfo_exists() and not self.help_minimized:
             self.help.withdraw()
 
     # Makes the sidebar reappear again
     def show_sidebar_windows(self):
-        if self.status is not None and self.status.winfo_exists():
+        if self.status is not None and self.status.winfo_exists() and not self.status_minimized:
             self.status.deiconify()
-        if self.help is not None and self.help.winfo_exists():
+        if self.help is not None and self.help.winfo_exists() and not self.help_minimized:
             self.help.deiconify()
+        self.set_focus_to_tkinter()
 
     # When the user performs an action to do something in tera term it destroys windows that might get in the way
     def destroy_windows(self):
@@ -5168,7 +5209,7 @@ if __name__ == "__main__":
     appdata_folder = os.path.join(os.getenv("APPDATA"), "TeraTermUI")
     lock_file = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])), "app_lock.lock")
     lock_file_appdata = os.path.join(appdata_folder, "app_lock.lock")
-    file_lock = FileLock(lock_file, timeout=10)
+    file_lock = FileLock(lock_file_appdata, timeout=10)
     try:
         with file_lock.acquire(poll_interval=0.1):
             app = TeraTermUI()
