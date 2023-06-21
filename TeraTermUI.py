@@ -2211,12 +2211,46 @@ class TeraTermUI(customtkinter.CTk):
                                                                           control_type="Button").wrapper_object()
                         okConn2.click()
                         self.show_loading_screen_again()
-                        time.sleep(3)
-                        send_keys("{ENTER 3}")
-                        self.bind("<Return>", lambda event: self.tuition_event_handler())
-                        self.after(0, self.student_info_frame)
-                        self.in_student_frame = True
-                        self.set_focus_to_tkinter()
+                        self.server_status = self.wait_for_prompt("Press return", "REGRESE PRONTO")
+                        if self.server_status == "Maintenance message found":
+                            winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                            if lang == "English":
+                                CTkMessagebox(title="Maintenance", message="Error! The university's server is currently"
+                                                                           " on maintenance, please try again later."
+                                                                           "\n\nClosing Tera Term and returning to"
+                                                                           " main menu",
+                                              icon="cancel",
+                                              button_width=380)
+                            elif lang == "Español":
+                                CTkMessagebox(title="Mantenimiento",
+                                              message="¡Error! El servidor de la universidad está en mantenimiento"
+                                                      " , trate de nuevo más tarde. \n\nCerrando Tera Term y"
+                                                      " volviendo a menú principal",
+                                              icon="cancel",
+                                              button_width=380)
+                            self.error_occurred = True
+                        elif self.server_status == "Prompt found":
+                            send_keys("{ENTER 3}")
+                            self.bind("<Return>", lambda event: self.tuition_event_handler())
+                            self.after(0, self.student_info_frame)
+                            self.in_student_frame = True
+                            self.set_focus_to_tkinter()
+                        elif self.server_status == "Timeout":
+                            winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                            if lang == "English":
+                                CTkMessagebox(title="Error", message="Error! Failed to connect to the universities"
+                                                                     " server, this could be because there's a lot"
+                                                                     " of traffic and the server is overloaded",
+                                              icon="cancel",
+                                              button_width=380)
+                            elif lang == "Español":
+                                CTkMessagebox(title="Error",
+                                              message="¡Error! No se pudo conectar al servidor de la universidad, esto"
+                                                      " puede ser porque hay mucho tráfico y el servidor"
+                                                      " está  en su capacidad máxima",
+                                              icon="cancel",
+                                              button_width=380)
+                            self.error_occurred = True
                     elif username != "students":
                         self.bind("<Return>", lambda event: self.student_event_handler())
                         if lang == "English":
@@ -2235,8 +2269,10 @@ class TeraTermUI(customtkinter.CTk):
             self.error_occurred = True
         finally:
             task_done.set()
-            if self.error_occurred:
-                self.go_back_event()
+            if self.server_status == "Maintenance message found" or self.server_status == "Timeout":
+                self.after(3500, self.go_back_event)
+            elif self.error_occurred:
+                self.after(0, self.go_back_event)
 
     def student_info_frame(self):
         lang = self.language_menu.get()
@@ -2314,11 +2350,12 @@ class TeraTermUI(customtkinter.CTk):
                             self.show_loading_screen_again()
                             self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                             self.uprbay_window.wait("visible", timeout=10)
-                            time.sleep(0.2)
-                            continue_button = self.uprbay_window.child_window(title="Continue", control_type="Button")
-                            if continue_button.exists():
+                            if self.uprbay_window.child_window(title="Continue", control_type="Button").exists(
+                                    timeout=0.2):
                                 self.hide_loading_screen()
-                                continue_button = continue_button.wrapper_object()
+                                continue_button = \
+                                    self.uprbay_window.child_window(title="Continue",
+                                                                    control_type="Button").wrapper_object()
                                 continue_button.click()
                                 self.show_loading_screen_again()
                             ctypes.windll.user32.BlockInput(False)
@@ -2477,13 +2514,14 @@ class TeraTermUI(customtkinter.CTk):
             self.enrolled_classes_list.clear()
             self.dropped_classes_list.clear()
             # self.screenshot_skip = False
-            # self.error_occurred = False
+            # self.delay_occurred = False
             self.run_fix = False
             self.in_student_frame = False
             self.in_enroll_frame = False
             self.in_search_frame = False
             self.idle = None
-            if self.error_occurred:
+            if self.error_occurred and \
+                    (self.server_status != "Maintenance message found" and self.server_status != "Timeout"):
                 self.destroy_windows()
                 winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                 if lang == "English":
@@ -2498,7 +2536,7 @@ class TeraTermUI(customtkinter.CTk):
                                           "Por favor trate de no interrumpir la ejecución de las aplicaciones\n\n "
                                           "Tera Term fue forzado a cerrar",
                                   icon="warning", button_width=380)
-                self.error_occurred = False
+            self.error_occurred = False
 
     # function that goes back to Enrolling frame screen
     def go_back_event2(self):
@@ -3649,6 +3687,18 @@ class TeraTermUI(customtkinter.CTk):
         custom_config = r"--oem 3 --psm 6"
         text = pytesseract.image_to_string(screenshot, config=custom_config)
         return text
+
+    def wait_for_prompt(self, prompt_text, maintenance_text, timeout=30):
+        start_time = time.time()
+        while True:
+            text = self.capture_screenshot()
+            if maintenance_text in text:  # Prioritize the maintenance message
+                return "Maintenance message found"
+            elif prompt_text in text:
+                return "Prompt found"
+            elif time.time() - start_time > timeout:
+                return "Timeout"
+            time.sleep(1)  # Adjust the delay between screenshots as needed
 
     # Necessary things to do while the application is booting, gets done on a separate thread
     def boot_up(self, file_path):
