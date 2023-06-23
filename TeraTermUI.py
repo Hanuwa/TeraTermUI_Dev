@@ -1059,7 +1059,6 @@ class TeraTermUI(customtkinter.CTk):
                             send_keys("{ENTER}")
                             ctypes.windll.user32.BlockInput(False)
                             self.disable_go_next_buttons()
-                            self.s_classes_entry.delete(0, "end")
                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
                             screenshot_thread.start()
                             screenshot_thread.join()
@@ -1180,9 +1179,6 @@ class TeraTermUI(customtkinter.CTk):
                                 self.uprb.UprbayTeraTermVt.type_keys("1CP")
                                 self.uprb.UprbayTeraTermVt.type_keys(dialog_input.replace(" ", "").upper())
                                 send_keys("{ENTER}")
-                                screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                screenshot_thread.start()
-                                screenshot_thread.join()
                                 text_output = self.capture_screenshot()
                                 if "INVALID TERM SELECTION" in text_output:
                                     self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
@@ -1194,6 +1190,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.reset_activity_timer(None)
                                 self.disable_go_next_buttons()
                                 block_window.destroy()
+                                self.after(100, self.unfocus_tkinter)
                             else:
                                 self.show_error_message(300, 215, "¡Error! Semestre Inválido")
                         else:
@@ -1202,7 +1199,6 @@ class TeraTermUI(customtkinter.CTk):
                             elif self.language_menu.get() == "Español":
                                 self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
                 else:
-                    self.change_bind()
                     dialog.destroy()
             elif lang == "English":
                 dialog = customtkinter.CTkInputDialog(text="Enter the semester:", title="Show My Classes")
@@ -1228,9 +1224,6 @@ class TeraTermUI(customtkinter.CTk):
                                 self.uprb.UprbayTeraTermVt.type_keys("1CP")
                                 self.uprb.UprbayTeraTermVt.type_keys(dialog_input)
                                 send_keys("{ENTER}")
-                                screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                screenshot_thread.start()
-                                screenshot_thread.join()
                                 text_output = self.capture_screenshot()
                                 if "INVALID TERM SELECTION" in text_output:
                                     self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
@@ -1242,6 +1235,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.reset_activity_timer(None)
                                 self.disable_go_next_buttons()
                                 block_window.destroy()
+                                self.after(100, self.unfocus_tkinter)
                             else:
                                 self.show_error_message(300, 215, "Error! Invalid Semester")
                         else:
@@ -1250,11 +1244,9 @@ class TeraTermUI(customtkinter.CTk):
                             elif self.language_menu.get() == "Español":
                                 self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
                 else:
-                    self.change_bind()
                     dialog.destroy()
-            self.show_sidebar_windows()
-            self.change_bind()
-            self.unfocus_tkinter()
+        self.show_sidebar_windows()
+        self.change_bind()
 
     # function that adds new entries
     def add_event(self):
@@ -2834,9 +2826,9 @@ class TeraTermUI(customtkinter.CTk):
             self.back_tooltip.configure(message="Volver al menú principal\n"
                                                 " de la aplicación")
             self.back_student_tooltip.configure(message="Volver al menú principal\n"
-                                                 " de la aplicación")
+                                                        " de la aplicación")
             self.back_classes_tooltip.configure(message="Volver al menú principal\n"
-                                                 " de la aplicación")
+                                                        " de la aplicación")
             self.back_multiple_tooltip.configure(message="Volver a la pantalla "
                                                  "\nanterior")
             self.show_all_tooltip.configure(message="Muestre todas las secciones\n"
@@ -2919,7 +2911,9 @@ class TeraTermUI(customtkinter.CTk):
             self.e_section.configure(text="Section ")
             self.e_semester.configure(text="Semester ")
             self.register.configure(text="Register")
+            self.register_tooltip.configure(message="Enroll class")
             self.drop.configure(text="Drop")
+            self.drop_tooltip.configure(message="Drop class")
             self.title_search.configure(text="Search Classes ")
             self.s_classes.configure(text="Class ")
             self.s_semester.configure(text="Semester ")
@@ -2967,9 +2961,9 @@ class TeraTermUI(customtkinter.CTk):
             self.back_tooltip.configure(message="Go back to the main menu\n "
                                                 "of the application")
             self.back_student_tooltip.configure(message="Go back to the main menu\n "
-                                                 "of the application")
+                                                        "of the application")
             self.back_classes_tooltip.configure(message="Go back to the main menu\n "
-                                                 "of the application")
+                                                        "of the application")
             self.back_multiple_tooltip.configure(message="Go back to the previous "
                                                  "\nscreen")
             self.show_classes_tooltip.configure(message="Shows the classes you are\n "
