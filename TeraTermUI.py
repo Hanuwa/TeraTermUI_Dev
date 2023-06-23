@@ -119,6 +119,7 @@ class TeraTermUI(customtkinter.CTk):
 
         # create sidebar frame with widgets
         self.sidebar_frame = customtkinter.CTkFrame(self, width=140, corner_radius=0)
+        self.sidebar_frame.bind("<Button-1>", lambda event: self.focus_set())
         self.sidebar_frame.grid(row=0, column=0, rowspan=4, sticky="nsew")
         self.sidebar_frame.grid_rowconfigure(4, weight=1)
         self.logo_label = customtkinter.CTkLabel(self.sidebar_frame, text="Tera Term UI",
@@ -202,7 +203,9 @@ class TeraTermUI(customtkinter.CTk):
 
         # (Log-in Screen)
         self.authentication_frame = customtkinter.CTkFrame(self, corner_radius=10)
+        self.authentication_frame.bind("<Button-1>", lambda event: self.focus_set())
         self.a_buttons_frame = customtkinter.CTkFrame(self, corner_radius=10)
+        self.a_buttons_frame.bind("<Button-1>", lambda event: self.focus_set())
         self.title_login = customtkinter.CTkLabel(master=self.authentication_frame,
                                                   text="Connected to the server successfully",
                                                   font=customtkinter.CTkFont(size=20, weight="bold"))
@@ -230,7 +233,9 @@ class TeraTermUI(customtkinter.CTk):
         self.init_student = False
         self.in_student_frame = False
         self.student_frame = customtkinter.CTkFrame(self, corner_radius=10)
+        self.student_frame.bind("<Button-1>", lambda event: self.focus_set())
         self.s_buttons_frame = customtkinter.CTkFrame(self, corner_radius=10)
+        self.s_buttons_frame.bind("<Button-1>", lambda event: self.focus_set())
         self.title_student = None
         self.lock = None
         self.lock_grid = None
@@ -249,6 +254,7 @@ class TeraTermUI(customtkinter.CTk):
         self.init_class = False
         self.tabview = customtkinter.CTkTabview(self, corner_radius=10, command=self.change_bind)
         self.t_buttons_frame = customtkinter.CTkFrame(self, corner_radius=10)
+        self.t_buttons_frame.bind("<Button-1>", lambda event: self.focus_set())
         self.enroll_tab = None
         self.search_tab = None
         self.other_tab = None
@@ -310,9 +316,13 @@ class TeraTermUI(customtkinter.CTk):
         # Multiple Classes Enrollment
         self.init_multiple = False
         self.multiple_frame = customtkinter.CTkFrame(self, corner_radius=10)
+        self.multiple_frame.bind("<Button-1>", lambda event: self.focus_set())
         self.m_button_frame = customtkinter.CTkFrame(self, corner_radius=10)
+        self.m_button_frame.bind("<Button-1>", lambda event: self.focus_set())
         self.save_frame = customtkinter.CTkFrame(self, corner_radius=10)
+        self.save_frame.bind("<Button-1>", lambda event: self.focus_set())
         self.auto_frame = customtkinter.CTkFrame(self, corner_radius=10)
+        self.auto_frame.bind("<Button-1>", lambda event: self.focus_set())
         self.explanation7 = None
         self.m_class = None
         self.m_section = None
@@ -3360,11 +3370,11 @@ class TeraTermUI(customtkinter.CTk):
             self.system = customtkinter.CTkButton(master=self.s_buttons_frame, border_width=2,
                                                   text="Enter",
                                                   text_color=("gray10", "#DCE4EE"), command=self.tuition_event_handler)
-            self.back_student = customtkinter.CTkButton(master=self.s_buttons_frame, fg_color="transparent", border_width=2,
-                                                        text="Back", hover_color="#4E4F50", text_color=("gray10", "#DCE4EE"),
-                                                        command=self.go_back_event)
+            self.back_student = customtkinter.CTkButton(master=self.s_buttons_frame, fg_color="transparent",
+                                                        border_width=2, text="Back", hover_color="#4E4F50",
+                                                        text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
             self.back_student_tooltip = CTkToolTip(self.back_student, message="Go back to the main menu\n"
-                                                                "of the application", bg_color="#A9A9A9")
+                                                                              "of the application", bg_color="#A9A9A9")
 
     def initialization_class(self):
         # Classes
@@ -4064,6 +4074,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # function that lets your increase/decrease the scaling of the GUI
     def change_scaling_event(self, new_scaling: float):
+        self.focus_set()
         new_scaling_float = new_scaling / 100
         customtkinter.set_widget_scaling(new_scaling_float)
         self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
