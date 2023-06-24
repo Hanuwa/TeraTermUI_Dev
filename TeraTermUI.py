@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 6/22/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 6/23/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -227,7 +227,7 @@ class TeraTermUI(customtkinter.CTk):
                                             text="Back", hover_color="#4E4F50", text_color=("gray10", "#DCE4EE"),
                                             command=self.go_back_event)
         self.back_tooltip = CTkToolTip(self.back, message="Go back to the main menu\n"
-                                                          "of the application", bg_color="#A9A9A9")
+                                                          "of the application", bg_color="#A9A9A9", alpha=0.90)
 
         # Student Information
         self.init_student = False
@@ -3368,7 +3368,8 @@ class TeraTermUI(customtkinter.CTk):
                                                         border_width=2, text="Back", hover_color="#4E4F50",
                                                         text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
             self.back_student_tooltip = CTkToolTip(self.back_student, message="Go back to the main menu\n"
-                                                                              "of the application", bg_color="#A9A9A9")
+                                                                              "of the application", bg_color="#A9A9A9",
+                                                   alpha=0.90)
 
     def initialization_class(self):
         # Classes
@@ -3466,8 +3467,9 @@ class TeraTermUI(customtkinter.CTk):
             self.back_classes = customtkinter.CTkButton(master=self.t_buttons_frame, fg_color="transparent",
                                                         border_width=2, text="Back", hover_color="#4E4F50",
                                                         text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
-            self.back_classes_tooltip = CTkToolTip(self.back_classes, message="Go back to the main menu\n"
-                                                                              "of the application", bg_color="#A9A9A9")
+            self.back_classes_tooltip = CTkToolTip(self.back_classes,  alpha=0.90,
+                                                   message="Go back to the main menu\n of the application",
+                                                   bg_color="#A9A9A9")
             self.submit = customtkinter.CTkButton(master=self.tabview.tab(self.enroll_tab), border_width=2,
                                                   text="Submit",
                                                   text_color=("gray10", "#DCE4EE"), command=self.submit_event_handler)
@@ -3525,8 +3527,8 @@ class TeraTermUI(customtkinter.CTk):
                                                          border_width=2, text="Back", height=40, width=70,
                                                          hover_color="#4E4F50", text_color=("gray10", "#DCE4EE"),
                                                          command=self.go_back_event2)
-            self.back_multiple_tooltip = CTkToolTip(self.back_multiple, message="Go back to the previous "
-                                                                                "\nscreen", bg_color="#A9A9A9")
+            self.back_multiple_tooltip = CTkToolTip(self.back_multiple, alpha=0.90,
+                                                    message="Go back to the previous \nscreen", bg_color="#A9A9A9")
             self.submit_multiple = customtkinter.CTkButton(master=self.m_button_frame, border_width=2,
                                                            text="Submit", text_color=("gray10", "#DCE4EE"),
                                                            command=self.submit_multiple_event_handler, height=40,
@@ -4467,7 +4469,7 @@ class TeraTermUI(customtkinter.CTk):
             scaling_factor = self.tk.call("tk", "scaling")
             x_position = int((screen_width - 475 * scaling_factor) / 2)
             y_position = int((screen_height - 275 * scaling_factor) / 2)
-            window_geometry = f"{475}x{275}+{x_position + 190}+{y_position - 30}"
+            window_geometry = f"{475}x{280}+{x_position + 190}+{y_position + 18}"
             self.status.geometry(window_geometry)
             self.status.title("Status")
             self.status.after(256, lambda: self.status.iconbitmap("images/tera-term.ico"))
@@ -4528,7 +4530,7 @@ class TeraTermUI(customtkinter.CTk):
             scaling_factor = self.tk.call("tk", "scaling")
             x_position = int((screen_width - 475 * scaling_factor) / 2)
             y_position = int((screen_height - 275 * scaling_factor) / 2)
-            window_geometry = f"{475}x{275}+{x_position + 190}+{y_position - 30}"
+            window_geometry = f"{475}x{280}+{x_position + 190}+{y_position + 18}"
             self.status.geometry(window_geometry)
             self.status.title("Estado")
             self.status.after(256, lambda: self.status.iconbitmap("images/tera-term.ico"))
@@ -4847,7 +4849,7 @@ class TeraTermUI(customtkinter.CTk):
             scaling_factor = self.tk.call("tk", "scaling")
             x_position = int((screen_width - 475 * scaling_factor) / 2)
             y_position = int((screen_height - 275 * scaling_factor) / 2)
-            window_geometry = f"{475}x{275}+{x_position + 190}+{y_position - 30}"
+            window_geometry = f"{475}x{280}+{x_position + 190}+{y_position + 18}"
             self.help.geometry(window_geometry)
             self.help.title("Help")
             self.help.after(256, lambda: self.help.iconbitmap("images/tera-term.ico"))
@@ -4923,7 +4925,7 @@ class TeraTermUI(customtkinter.CTk):
             scaling_factor = self.tk.call("tk", "scaling")
             x_position = int((screen_width - 475 * scaling_factor) / 2)
             y_position = int((screen_height - 275 * scaling_factor) / 2)
-            window_geometry = f"{475}x{275}+{x_position + 190}+{y_position - 30}"
+            window_geometry = f"{475}x{280}+{x_position + 190}+{y_position + 18}"
             self.help.geometry(window_geometry)
             self.help.title("Ayuda")
             self.help.after(256, lambda: self.help.iconbitmap("images/tera-term.ico"))
