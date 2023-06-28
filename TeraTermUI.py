@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 6/23/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 6/28/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -48,6 +48,7 @@ from datetime import datetime, timedelta
 from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import pad, unpad
 from Crypto.Random import get_random_bytes
+from PIL import Image, ImageOps
 import uuid
 import pytz
 import json
@@ -59,7 +60,6 @@ import sqlite3
 import ctypes
 import winsound
 import threading
-from PIL import Image
 import sys
 import psutil
 import time
@@ -3763,13 +3763,14 @@ class TeraTermUI(customtkinter.CTk):
         height = bottom - top
         if self.loading_screen.winfo_exists():
             self.hide_loading_screen()
-        time.sleep(0.3)
         screenshot = pyautogui.screenshot(region=(x, y - 50, width + 150, height + 150))
         if self.loading_screen.winfo_exists():
             self.show_loading_screen_again()
         screenshot = screenshot.resize((screenshot.width * 2, screenshot.height * 2), Image.BICUBIC)
+        screenshot = screenshot.convert('L')
+        screenshot = ImageOps.autocontrast(screenshot, cutoff=5)
         # screenshot.save("screenshot.png")
-        custom_config = r"--oem 3 --psm 6"
+        custom_config = r"--oem 3 --psm 11"
         text = pytesseract.image_to_string(screenshot, config=custom_config)
         return text
 
