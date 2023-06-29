@@ -47,7 +47,7 @@ from filelock import FileLock, Timeout
 from datetime import datetime, timedelta
 from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import pad, unpad
-from Crypto.Random import get_random_bytes
+from Cryptodome.Random import get_random_bytes
 from PIL import Image, ImageOps
 import uuid
 import pytz
