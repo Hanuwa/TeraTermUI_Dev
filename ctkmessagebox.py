@@ -266,14 +266,12 @@ class CTkMessagebox(customtkinter.CTkToplevel):
 
         self.focus_set()
 
-
     def return_key_handler(self, event):
         if not hasattr(self, 'option_text_3') and not hasattr(self, 'option_text_2') \
                 and hasattr(self, 'option_text_1') and self.option_text_1:
             self.button_event(self.option_text_1)
         elif hasattr(self, 'option_text_3') and self.option_text_3:
             self.button_event(self.option_text_3)
-
 
     def escape_key_handler(self, event):
         if hasattr(self, 'option_text_1') and self.option_text_1:
