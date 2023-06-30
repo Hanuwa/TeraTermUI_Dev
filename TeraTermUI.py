@@ -48,8 +48,8 @@ from datetime import datetime, timedelta
 from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import pad, unpad
 from Cryptodome.Random import get_random_bytes
-from PIL import Image, ImageOps
 from spellchecker import SpellChecker
+from PIL import Image, ImageOps
 import uuid
 import pytz
 import json
@@ -4478,7 +4478,7 @@ class TeraTermUI(customtkinter.CTk):
             self.status.title("Status")
             self.status.after(256, lambda: self.status.iconbitmap("images/tera-term.ico"))
             self.status.resizable(False, False)
-            scrollable_frame = customtkinter.CTkScrollableFrame(self.status, width=475, height=275,
+            scrollable_frame = customtkinter.CTkScrollableFrame(self.status, width=475, height=280,
                                                                 fg_color=("#e6e6e6", "#222222"))
             scrollable_frame.pack()
             title = customtkinter.CTkLabel(scrollable_frame, text="Status of the Application",
@@ -4539,8 +4539,7 @@ class TeraTermUI(customtkinter.CTk):
             self.status.title("Estado")
             self.status.after(256, lambda: self.status.iconbitmap("images/tera-term.ico"))
             self.status.resizable(False, False)
-            # self.status.attributes("-topmost", True)
-            scrollable_frame = customtkinter.CTkScrollableFrame(self.status, width=475, height=275, corner_radius=10,
+            scrollable_frame = customtkinter.CTkScrollableFrame(self.status, width=475, height=280, corner_radius=10,
                                                                 fg_color=("#e6e6e6", "#222222"))
             scrollable_frame.pack()
             title = customtkinter.CTkLabel(scrollable_frame, text="Estado de la Aplicación",
@@ -4863,8 +4862,7 @@ class TeraTermUI(customtkinter.CTk):
             self.help.title("Help")
             self.help.after(256, lambda: self.help.iconbitmap("images/tera-term.ico"))
             self.help.resizable(False, False)
-            # self.help.attributes("-topmost", True)
-            scrollable_frame = customtkinter.CTkScrollableFrame(self.help, width=475, height=275,
+            scrollable_frame = customtkinter.CTkScrollableFrame(self.help, width=475, height=280,
                                                                 fg_color=("#e6e6e6", "#222222"))
             scrollable_frame.pack()
             title = customtkinter.CTkLabel(scrollable_frame, text="Help",
@@ -4940,7 +4938,7 @@ class TeraTermUI(customtkinter.CTk):
             self.help.after(256, lambda: self.help.iconbitmap("images/tera-term.ico"))
             self.help.resizable(False, False)
             # self.help.attributes("-topmost", True)
-            scrollable_frame = customtkinter.CTkScrollableFrame(self.help, width=450, height=250,
+            scrollable_frame = customtkinter.CTkScrollableFrame(self.help, width=475, height=280,
                                                                 fg_color=("#e6e6e6", "#222222"))
             scrollable_frame.pack()
             title = customtkinter.CTkLabel(scrollable_frame, text="Ayuda",
