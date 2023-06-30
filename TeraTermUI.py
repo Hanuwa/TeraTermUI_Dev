@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 6/28/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 6/30/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -49,6 +49,7 @@ from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import pad, unpad
 from Cryptodome.Random import get_random_bytes
 from PIL import Image, ImageOps
+from spellchecker import SpellChecker
 import uuid
 import pytz
 import json
@@ -106,6 +107,8 @@ class TeraTermUI(customtkinter.CTk):
         self.move_slider_left_enabled = True
         self.move_slider_right_enabled = True
         self.spacebar_enabled = True
+        self.spell_en = SpellChecker(language="en")
+        self.spell_es = SpellChecker(language="es")
 
         # path for tesseract application
         self.zip_path = os.path.join(os.path.dirname(__file__), "Tesseract-OCR.7z")
@@ -4792,12 +4795,17 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         self.class_list.delete(0, tk.END)
         search_term = self.search_box.get().strip().lower()
-        if search_term == "":
+        if lang == "English":
+            spell = self.spell_en
+        elif lang == "Español":
+            spell = self.spell_es
+        corrected_search_term = ' '.join(spell.correction(word) for word in search_term.split())
+        if corrected_search_term == "":
             return
-        if search_term == "all":
+        if corrected_search_term == "all":
             query = "SELECT name, code FROM courses"
         else:
-            search_words = search_term.split()
+            search_words = corrected_search_term.split()
             query_conditions = []
             for word in search_words:
                 query_conditions.append(f"LOWER(name) LIKE '%{word}%'")
