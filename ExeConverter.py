@@ -18,9 +18,10 @@ nuitka_command = (
     r'--include-data-file=C:\Users\arman\PycharmProjects\TeraTermUI\feedback.zip=feedback.zip '
     r'--include-data-file=C:\Users\arman\PycharmProjects\TeraTermUI\VERSION.txt=VERSION.txt '
     r'--include-data-file=C:\Users\arman\PycharmProjects\TeraTermUI\LICENSE.txt=LICENSE.txt '
-    r'--include-data-dir=C:\Users\arman\PycharmProjects\TeraTermUI\venv\Lib\site-packages\spellchecker=spellchecker '
     r'--output-dir=C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0 --disable-console '
-    r'--windows-icon-from-ico=C:\Users\arman\PycharmProjects\TeraTermUI\images\tera-term.ico'
+    r'--windows-icon-from-ico=C:\Users\arman\PycharmProjects\TeraTermUI\images\tera-term.ico '
+    r'--include-package=spellchecker '
+    r'--include-data-dir=C:\Users\arman\PycharmProjects\TeraTermUI\venv\Lib\site-packages\spellchecker=spellchecker'
 )
 output_directory = r"C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0"
 upx_command = r"upx --best " + output_directory + r"\TeraTermUI.dist\TeraTermUI.exe"
