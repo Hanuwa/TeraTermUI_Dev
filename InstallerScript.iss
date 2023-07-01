@@ -6,6 +6,7 @@
 #define MyAppPublisher "Armando Del Valle Tejada"
 #define MyAppURL "github.com/Hanuwa/TeraTermUI"
 #define MyAppExeName "TeraTermUI.exe"
+#define MyAppPath "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
@@ -22,7 +23,7 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={commonpf64}\TeraTermUI
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
-LicenseFile=C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0\TeraTermUI_installer\LICENSE.txt
+LicenseFile={#MyAppPath}\TeraTermUI_installer\LICENSE.txt
 PrivilegesRequired=admin
 OutputBaseFilename=TeraTermUI_64-bit_Installer-v0.9.0
 Compression=lzma
@@ -43,12 +44,12 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "teraterm"; Description: "{cm:teraterm}"; GroupDescription: "Additional installations"; Flags: unchecked
 
 [Files]
-Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0\TeraTermUI_installer\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion 
-Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0\TeraTermUI_installer\Tesseract-OCR.7z"; DestDir: "{app}"; Flags: onlyifdoesntexist 
-Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0\database.db"; DestDir: "{userappdata}\TeraTermUI"; Flags: onlyifdoesntexist 
-Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0\feedback.zip"; DestDir: "{userappdata}\TeraTermUI"; Flags: onlyifdoesntexist
-Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0\TeraTermUI_installer\*"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist recursesubdirs createallsubdirs
-Source: "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0\teraterm-4.106.exe"; DestDir: "{tmp}"; Flags: onlyifdoesntexist ignoreversion; Tasks: teraterm
+Source: "{#MyAppPath}\TeraTermUI_installer\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion 
+Source: "{#MyAppPath}\TeraTermUI_installer\Tesseract-OCR.7z"; DestDir: "{app}"; Flags: onlyifdoesntexist 
+Source: "{#MyAppPath}\database.db"; DestDir: "{userappdata}\TeraTermUI"; Flags: onlyifdoesntexist 
+Source: "{#MyAppPath}\feedback.zip"; DestDir: "{userappdata}\TeraTermUI"; Flags: onlyifdoesntexist
+Source: "{#MyAppPath}\TeraTermUI_installer\*"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist recursesubdirs createallsubdirs
+Source: "{#MyAppPath}\teraterm-4.106.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
