@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 6/30/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 7/1/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -50,6 +50,7 @@ from Cryptodome.Util.Padding import pad, unpad
 from Cryptodome.Random import get_random_bytes
 from spellchecker import SpellChecker
 from PIL import Image, ImageOps
+from threading import Timer
 import uuid
 import pytz
 import json
@@ -107,8 +108,7 @@ class TeraTermUI(customtkinter.CTk):
         self.move_slider_left_enabled = True
         self.move_slider_right_enabled = True
         self.spacebar_enabled = True
-        self.spell_en = SpellChecker(language="en")
-        self.spell_es = SpellChecker(language="es")
+        self.debounce_timer = None
 
         # path for tesseract application
         self.zip_path = os.path.join(os.path.dirname(__file__), "Tesseract-OCR.7z")
@@ -460,6 +460,8 @@ class TeraTermUI(customtkinter.CTk):
         # performs some operations in a separate thread when application starts up
         self.boot_up_thread = threading.Thread(target=self.boot_up, args=(self.teraterm_file,))
         self.boot_up_thread.start()
+        spell_en = SpellChecker(language="en")
+        spell_es = SpellChecker(language="es")
 
         # Asks the user if they want to update to the latest version of the application
         def update_app():
@@ -4789,20 +4791,43 @@ class TeraTermUI(customtkinter.CTk):
         else:
             return None
 
+    def handle_spellchecker(self, event):
+        if self.debounce_timer is not None:
+            self.debounce_timer.cancel()
+        self.debounce_timer = Timer(3, self.search_classes, args=[event])
+        self.debounce_timer.start()
+
     # list of classes available for all departments in the university
     def search_classes(self, event):
+        spell_en = SpellChecker(language="en")
+        spell_es = SpellChecker(language="es")
         lang = self.language_menu.get()
         self.class_list.delete(0, tk.END)
         search_term = self.search_box.get().strip().lower()
-        if lang == "English":
-            spell = self.spell_en
-        elif lang == "Español":
-            spell = self.spell_es
-        corrected_search_term = ' '.join(spell.correction(word) for word in search_term.split())
-        if corrected_search_term == "":
-            return
-        if corrected_search_term == "all":
+
+        if len(search_term) > 10:  # If input length exceeds 10, bypass spell checking
+            corrected_search_term = search_term
+        else:
+            if lang == "English":
+                spell = spell_en
+            elif lang == "Español":
+                spell = spell_es
+            corrected_words = []
+            for word in search_term.split():
+                correction = spell.correction(word)
+                if correction is None:
+                    correction = word
+                corrected_words.append(correction)
+            corrected_search_term = ' '.join(corrected_words)
+        if corrected_search_term == "" or corrected_search_term == "all":
             query = "SELECT name, code FROM courses"
+            results = self.cursor.execute(query).fetchall()
+            if not results:
+                if lang == "English":
+                    self.class_list.insert(tk.END, "NO RESULTS FOUND")
+                elif lang == "Español":
+                    self.class_list.insert(tk.END, "NO SE ENCONTRARON RESULTADOS")
+            return
         else:
             search_words = corrected_search_term.split()
             query_conditions = []
