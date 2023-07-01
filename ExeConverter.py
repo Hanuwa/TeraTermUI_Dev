@@ -117,7 +117,7 @@ for version in versions:
     elif script == "portable":
         try:
             os.rename(output_directory + r"\TeraTermUI.dist", output_directory + r"\TeraTermUI")
-            zip_file_path = output_directory + fr"\{app_folder}-v0.9.0.zip"
+            zip_file_path = output_directory + fr"\{app_folder}-v0.9.0"
             shutil.make_archive(zip_file_path, 'zip', output_directory, app_folder)
             print(Fore.GREEN + "Successfully completed portable version" + Style.RESET_ALL)
         except Exception as e:
