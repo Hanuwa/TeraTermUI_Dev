@@ -3602,7 +3602,7 @@ class TeraTermUI(customtkinter.CTk):
             self.connection.commit()
             is_empty = False  # Variable to track if any entry is empty
             # Iterate over the added entries based on self.a_counter
-            for index in range(1, self.a_counter + 1):
+            for index in range(self.a_counter + 1):
                 # Get the values from the entry fields and option menus
                 class_value = self.m_classes_entry[index].get()
                 section_value = self.m_section_entry[index].get()
@@ -3627,7 +3627,6 @@ class TeraTermUI(customtkinter.CTk):
             else:
                 self.cursor.execute("SELECT COUNT(*) FROM save_classes")
                 row_count = self.cursor.fetchone()[0]
-                print(row_count)
                 if row_count == 0:  # Check the counter after the loop
                     if lang == "English":
                         self.show_error_message(330, 255, "No classes were saved\n"
