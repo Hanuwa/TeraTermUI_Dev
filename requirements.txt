@@ -43,7 +43,6 @@ pyppmd==1.0.0
 PyRect==0.2.0
 pyscreenshot==3.1
 PyScreeze==0.1.29
-pyspellchecker==0.7.2
 pytesseract==0.3.10
 pytweening==1.0.7
 pytz==2023.3
