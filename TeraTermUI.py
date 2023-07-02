@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 7/1/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 7/2/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -48,9 +48,7 @@ from datetime import datetime, timedelta
 from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import pad, unpad
 from Cryptodome.Random import get_random_bytes
-from spellchecker import SpellChecker
 from PIL import Image, ImageOps
-from threading import Timer
 import uuid
 import pytz
 import json
@@ -108,7 +106,6 @@ class TeraTermUI(customtkinter.CTk):
         self.move_slider_left_enabled = True
         self.move_slider_right_enabled = True
         self.spacebar_enabled = True
-        self.debounce_timer = None
 
         # path for tesseract application
         self.zip_path = os.path.join(os.path.dirname(__file__), "Tesseract-OCR.7z")
@@ -460,8 +457,6 @@ class TeraTermUI(customtkinter.CTk):
         # performs some operations in a separate thread when application starts up
         self.boot_up_thread = threading.Thread(target=self.boot_up, args=(self.teraterm_file,))
         self.boot_up_thread.start()
-        spell_en = SpellChecker(language="en")
-        spell_es = SpellChecker(language="es")
 
         # Asks the user if they want to update to the latest version of the application
         def update_app():
@@ -4793,55 +4788,22 @@ class TeraTermUI(customtkinter.CTk):
 
     # disables scrolling for the class list
     def disable_scroll(self, event):
-        if self.class_list.focus_get() == self.class_list:
+        widget = self.help.winfo_containing(event.x_root, event.y_root)
+        if widget is self.class_list:
             self.class_list.yview_scroll(int(-1 * (event.delta / 120)), "units")
             return "break"
         else:
             return None
 
-    def handle_spellchecker(self, event):
-        if self.debounce_timer is not None:
-            self.debounce_timer.cancel()
-        self.debounce_timer = Timer(3, self.search_classes, args=[event])
-        self.debounce_timer.start()
-
     # list of classes available for all departments in the university
     def search_classes(self, event):
-        spell_en = SpellChecker(language="en")
-        spell_es = SpellChecker(language="es")
         lang = self.language_menu.get()
         self.class_list.delete(0, tk.END)
         search_term = self.search_box.get().strip().lower()
-
-        if len(search_term) > 10:  # If input length exceeds 10, bypass spell checking
-            corrected_search_term = search_term
-        else:
-            if lang == "English":
-                spell = spell_en
-            elif lang == "Español":
-                spell = spell_es
-            corrected_words = []
-            for word in search_term.split():
-                correction = spell.correction(word)
-                if correction is None:
-                    correction = word
-                corrected_words.append(correction)
-            corrected_search_term = ' '.join(corrected_words)
-        if corrected_search_term == "" or corrected_search_term == "all":
+        if search_term == "" or search_term == "all":
             query = "SELECT name, code FROM courses"
-            results = self.cursor.execute(query).fetchall()
-            if not results:
-                if lang == "English":
-                    self.class_list.insert(tk.END, "NO RESULTS FOUND")
-                elif lang == "Español":
-                    self.class_list.insert(tk.END, "NO SE ENCONTRARON RESULTADOS")
-            return
         else:
-            search_words = corrected_search_term.split()
-            query_conditions = []
-            for word in search_words:
-                query_conditions.append(f"LOWER(name) LIKE '%{word}%'")
-                query_conditions.append(f"LOWER(code) LIKE '%{word}%'")
+            query_conditions = [f"LOWER(name) LIKE '%{search_term}%'", f"LOWER(code) LIKE '%{search_term}%'"]
             query_conditions_str = " OR ".join(query_conditions)
             query = f"SELECT name, code FROM courses WHERE {query_conditions_str}"
         results = self.cursor.execute(query).fetchall()
@@ -4905,12 +4867,11 @@ class TeraTermUI(customtkinter.CTk):
                                                                    "while using this application*",
                                             font=customtkinter.CTkFont(weight="bold", underline=True))
             notice.pack()
-            searchboxText = customtkinter.CTkLabel(scrollable_frame, text="\n\nFind the code of the class you need:"
-                                                                          "\n (Use arrow keys to scroll)")
+            searchboxText = customtkinter.CTkLabel(scrollable_frame, text="\n\nFind the code of the class you need:")
             searchboxText.pack()
             self.search_box = CustomEntry(scrollable_frame, self, placeholder_text="Class")
             self.search_box.pack(pady=10)
-            self.class_list = tk.Listbox(scrollable_frame, width=32, bg=bg_color, fg=fg_color, font=listbox_font)
+            self.class_list = tk.Listbox(scrollable_frame, width=35, bg=bg_color, fg=fg_color, font=listbox_font)
             self.class_list.pack()
             curriculumText = customtkinter.CTkLabel(scrollable_frame, text="\n\nCurriculums of Departments:")
             curriculumText.pack()
@@ -4970,7 +4931,6 @@ class TeraTermUI(customtkinter.CTk):
             self.help.title("Ayuda")
             self.help.after(256, lambda: self.help.iconbitmap("images/tera-term.ico"))
             self.help.resizable(False, False)
-            # self.help.attributes("-topmost", True)
             scrollable_frame = customtkinter.CTkScrollableFrame(self.help, width=475, height=280,
                                                                 fg_color=("#e6e6e6", "#222222"))
             scrollable_frame.pack()
@@ -4981,12 +4941,11 @@ class TeraTermUI(customtkinter.CTk):
                                                                    "mientras use esta aplicación*",
                                             font=customtkinter.CTkFont(weight="bold", underline=True))
             notice.pack()
-            searchboxText = customtkinter.CTkLabel(scrollable_frame, text="\n\nEncuentra el código de tu clase:"
-                                                                          "\n(Usa las teclas de flecha)")
+            searchboxText = customtkinter.CTkLabel(scrollable_frame, text="\n\nEncuentra el código de tu clase:")
             searchboxText.pack()
             self.search_box = CustomEntry(scrollable_frame, self, placeholder_text="Clase")
             self.search_box.pack(pady=10)
-            self.class_list = tk.Listbox(scrollable_frame, width=32, bg=bg_color, fg=fg_color, font=listbox_font)
+            self.class_list = tk.Listbox(scrollable_frame, width=35, bg=bg_color, fg=fg_color, font=listbox_font)
             self.class_list.pack()
             curriculumText = customtkinter.CTkLabel(scrollable_frame, text="\n\nCurrículos de Departamentos:")
             curriculumText.pack()
