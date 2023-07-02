@@ -4790,24 +4790,32 @@ class TeraTermUI(customtkinter.CTk):
     def disable_scroll(self, event):
         widget = self.help.winfo_containing(event.x_root, event.y_root)
         if widget is self.class_list:
-            self.class_list.yview_scroll(int(-1 * (event.delta / 120)), "units")
-            return "break"
+            # if Listbox is empty, allow scrolling of the main frame
+            if self.class_list.size() == 0:
+                return None
+            else:
+                self.class_list.yview_scroll(int(-1 * (event.delta / 120)), "units")
+                return "break"
         else:
             return None
 
     # list of classes available for all departments in the university
     def search_classes(self, event):
         lang = self.language_menu.get()
-        self.class_list.delete(0, tk.END)
+        self.class_list.delete(0, tk.END)  # always clear the list box first
         search_term = self.search_box.get().strip().lower()
-        if search_term == "" or search_term == "all":
+        if search_term == "" or len(search_term) == 0:  # if the search term is empty, do not return any records
+            return
+        if search_term in ["all", "todo", "todos"]:
             query = "SELECT name, code FROM courses"
         else:
             query_conditions = [f"LOWER(name) LIKE '%{search_term}%'", f"LOWER(code) LIKE '%{search_term}%'"]
             query_conditions_str = " OR ".join(query_conditions)
             query = f"SELECT name, code FROM courses WHERE {query_conditions_str}"
+
         results = self.cursor.execute(query).fetchall()
-        if len(results) == 0:
+        if not results:  # if there are no results, display a message
+            self.class_list.delete(0, tk.END)
             if lang == "English":
                 self.class_list.insert(tk.END, "NO RESULTS FOUND")
             elif lang == "Español":
@@ -4867,9 +4875,9 @@ class TeraTermUI(customtkinter.CTk):
                                                                    "while using this application*",
                                             font=customtkinter.CTkFont(weight="bold", underline=True))
             notice.pack()
-            searchboxText = customtkinter.CTkLabel(scrollable_frame, text="\n\nFind the code of the class you need:")
+            searchboxText = customtkinter.CTkLabel(scrollable_frame, text="\n\nFind the code of your class:")
             searchboxText.pack()
-            self.search_box = CustomEntry(scrollable_frame, self, placeholder_text="Class")
+            self.search_box = CustomEntry(scrollable_frame, self, placeholder_text="Class Name")
             self.search_box.pack(pady=10)
             self.class_list = tk.Listbox(scrollable_frame, width=35, bg=bg_color, fg=fg_color, font=listbox_font)
             self.class_list.pack()
@@ -4943,7 +4951,7 @@ class TeraTermUI(customtkinter.CTk):
             notice.pack()
             searchboxText = customtkinter.CTkLabel(scrollable_frame, text="\n\nEncuentra el código de tu clase:")
             searchboxText.pack()
-            self.search_box = CustomEntry(scrollable_frame, self, placeholder_text="Clase")
+            self.search_box = CustomEntry(scrollable_frame, self, placeholder_text="Nombre de la Clase")
             self.search_box.pack(pady=10)
             self.class_list = tk.Listbox(scrollable_frame, width=35, bg=bg_color, fg=fg_color, font=listbox_font)
             self.class_list.pack()
