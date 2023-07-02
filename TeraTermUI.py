@@ -4233,71 +4233,72 @@ class TeraTermUI(customtkinter.CTk):
     # self.cpu_load_history.append(cpu_percent)
 
     def fix_execution_event_handler(self):
-        task_done = threading.Event()
-        loading_screen = self.show_loading_screen()
-        self.update_loading_screen(loading_screen, task_done)
-        event_thread = threading.Thread(target=self.fix_execution, args=(task_done,))
-        event_thread.start()
+        lang = self.language_menu.get()
+        if self.checkIfProcessRunning("ttermpro") and self.run_fix:
+            if lang == "English":
+                msg = CTkMessagebox(master=self, title="Fix", message="This button is only made to fix "
+                                                                      "the issue mentioned, are you sure you "
+                                                                      "want to do it?",
+                                    icon="warning",
+                                    option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
+                                    button_color=("#c30101", "#145DA0", "#145DA0"),
+                                    hover_color=("darkred", "darkblue", "darkblue"))
+            elif lang == "Español":
+                msg = CTkMessagebox(master=self, title="Arreglar", message="Este botón solo se creó para "
+                                                                           "solucionar el problema mencionado "
+                                                                           "¿Estás seguro de que quieres "
+                                                                           "hacerlo?",
+                                    icon="question",
+                                    option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
+                                    button_color=("#c30101", "#145DA0", "#145DA0"),
+                                    hover_color=("darkred", "darkblue", "darkblue"))
+            response = msg.get()
+            if response == "Yes" or response == "Sí":
+                task_done = threading.Event()
+                loading_screen = self.show_loading_screen()
+                self.update_loading_screen(loading_screen, task_done)
+                event_thread = threading.Thread(target=self.fix_execution, args=(task_done,))
+                event_thread.start()
 
     # If user messes up the execution of the program this can solve it and make program work as expected
     def fix_execution(self, task_done):
         with self.lock_thread:
             try:
+                lang = self.language_menu.get()
                 self.unbind("<Return>")
                 self.focus_set()
                 self.hide_sidebar_windows()
                 self.destroy_windows()
-                if self.checkIfProcessRunning("ttermpro") and self.run_fix:
-                    lang = self.language_menu.get()
-                    if lang == "English":
-                        msg = CTkMessagebox(master=self, title="Fix", message="This button is only made to fix "
-                                                                              "the issue mentioned, are you sure you "
-                                                                              "want to do it?",
-                                            icon="warning",
-                                            option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
-                                            button_color=("#c30101", "#145DA0", "#145DA0"),
-                                            hover_color=("darkred", "darkblue", "darkblue"))
-                    elif lang == "Español":
-                        msg = CTkMessagebox(master=self, title="Arreglar", message="Este botón solo se creó para "
-                                                                                   "solucionar el problema mencionado "
-                                                                                   "¿Estás seguro de que quieres "
-                                                                                   "hacerlo?",
-                                            icon="question",
-                                            option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
-                                            button_color=("#c30101", "#145DA0", "#145DA0"),
-                                            hover_color=("darkred", "darkblue", "darkblue"))
-                    response = msg.get()
-                    if response == "Yes" or response == "Sí":
-                        self.reset_activity_timer(None)
-                        ctypes.windll.user32.BlockInput(True)
-                        term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
-                        if term_window.isMinimized:
-                            term_window.restore()
-                        self.uprbay_window.wait("visible", timeout=10)
-                        send_keys("{TAB}")
-                        self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                        self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                        send_keys("{ENTER}")
-                        screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                        screenshot_thread.start()
-                        screenshot_thread.join()
-                        text_output = self.capture_screenshot()
-                        if "INVALID ACTION" in text_output:
-                            send_keys("{TAB}")
-                            self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                            self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                            send_keys("{ENTER}")
-                        ctypes.windll.user32.BlockInput(False)
-                        if lang == "English":
-                            self.after(0, lambda: self.show_information_message(
-                                375, 250, "The problem is usually caused because "
-                                          "\n of user interacting directly\n with Tera Term "))
-                        elif lang == "Español":
-                            self.after(0, lambda: self.show_information_message(
-                                375, 250, "El problema suele ser causado porque "
-                                          "\n el usuario interactuo directamente\n "
-                                          "con Tera Term"))
-                        self.show_sidebar_windows()
+                self.reset_activity_timer(None)
+                ctypes.windll.user32.BlockInput(True)
+                term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
+                if term_window.isMinimized:
+                    term_window.restore()
+                self.uprbay_window.wait("visible", timeout=10)
+                send_keys("{TAB}")
+                self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
+                send_keys("{ENTER}")
+                screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                screenshot_thread.start()
+                screenshot_thread.join()
+                text_output = self.capture_screenshot()
+                if "INVALID ACTION" in text_output:
+                    send_keys("{TAB}")
+                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
+                    send_keys("{ENTER}")
+                ctypes.windll.user32.BlockInput(False)
+                if lang == "English":
+                    self.after(0, lambda: self.show_information_message(
+                        375, 250, "The problem is usually caused because "
+                                  "\n of user interacting directly\n with Tera Term "))
+                elif lang == "Español":
+                    self.after(0, lambda: self.show_information_message(
+                        375, 250, "El problema suele ser causado porque "
+                                  "\n el usuario interactuo directamente\n "
+                                  "con Tera Term"))
+                self.show_sidebar_windows()
             except Exception as e:
                 print("An error occurred: ", e)
                 self.error_occurred = True
