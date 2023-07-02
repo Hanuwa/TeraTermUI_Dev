@@ -4744,7 +4744,7 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         if lang == "English":
             filename = filedialog.askopenfilename(initialdir="C:/",
-                                                  title="Choose where Tera Term is located",
+                                                  title="Select where your Tera Term is located (The executable)",
                                                   filetypes=(("Tera Term", "*ttermpro.exe"),))
             if re.search("ttermpro.exe", filename):
                 self.location = filename
@@ -4765,7 +4765,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.edit_teraterm_ini(self.teraterm_file)
         if lang == "Español":
             filename = filedialog.askopenfilename(initialdir="C:/",
-                                                  title="Escoge donde Tera Term esta localizado",
+                                                  title="Selecciona donde tu Tera Term está localizado (El ejecutable)",
                                                   filetypes=(("Tera Term", "*ttermpro.exe"),))
             if re.search("ttermpro.exe", filename):
                 self.location = filename
@@ -4905,11 +4905,11 @@ class TeraTermUI(customtkinter.CTk):
                      ["Semester", "Fall, Spring, Summer"]]
             termsTable = ctktable.CTkTable(scrollable_frame, column=2, row=7, values=terms)
             termsTable.pack(expand=True, fill="both", padx=20, pady=20)
-            filesText = customtkinter.CTkLabel(scrollable_frame, text="\nChoose your Tera Term's Location: ")
+            filesText = customtkinter.CTkLabel(scrollable_frame, text="\nSelect the location of your Tera Term: (.exe)")
             filesText.pack()
             files = customtkinter.CTkButton(scrollable_frame, border_width=2, image=customtkinter.CTkImage(
                 light_image=Image.open("images/folder.png"), size=(18, 18)),
-                                            text="     Choose", anchor="w",
+                                            text="       Find", anchor="w",
                                             text_color=("gray10", "#DCE4EE"), command=self.change_location_event)
             files.pack(pady=5)
             disableIdleText = customtkinter.CTkLabel(scrollable_frame, text="\nDisables the functionality that prevents"
@@ -4980,11 +4980,12 @@ class TeraTermUI(customtkinter.CTk):
                      ["Semestre", "Otoño, Primavera, Verano"]]
             termsTable = ctktable.CTkTable(scrollable_frame, column=2, row=7, values=terms)
             termsTable.pack(expand=True, fill="both", padx=20, pady=20)
-            filesText = customtkinter.CTkLabel(scrollable_frame, text="\nEscoge donde esta localizado tu Tera Term: ")
+            filesText = customtkinter.CTkLabel(scrollable_frame, text="\nSelecciona donde está localizado tu"
+                                                                      " Tera Term: (.exe)")
             filesText.pack()
             files = customtkinter.CTkButton(scrollable_frame, border_width=2, image=customtkinter.CTkImage(
                 light_image=Image.open("images/folder.png"), size=(18, 18)),
-                                            text="     Escoge", anchor="w",
+                                            text="     Buscar", anchor="w",
                                             text_color=("gray10", "#DCE4EE"), command=self.change_location_event)
             files.pack(pady=5)
             disableIdleText = customtkinter.CTkLabel(scrollable_frame, text="\nDesactiva la funcionalidad que previene"
