@@ -106,6 +106,9 @@ class TeraTermUI(customtkinter.CTk):
         self.move_slider_left_enabled = True
         self.move_slider_right_enabled = True
         self.spacebar_enabled = True
+        self.user_id = None
+        self.uprbay_window = None
+        self.uprb = None
 
         # path for tesseract application
         self.zip_path = os.path.join(os.path.dirname(__file__), "Tesseract-OCR.7z")
@@ -366,10 +369,11 @@ class TeraTermUI(customtkinter.CTk):
         self.success = None
         self.loading_screen = None
         self.information = None
-        # self.screenshot_skip = False
-        # self.delay_occurred = False
         self.run_fix = False
         self.teraterm_not_found = False
+        self.idle = None
+        self.passed = False
+        self.tesseract_unzipped = False
         self.a_counter = 0
         self.m_counter = 0
         self.e_counter = 0
@@ -553,7 +557,6 @@ class TeraTermUI(customtkinter.CTk):
             self.hide_sidebar_windows()
             self.unbind("<Return>")
             lang = self.language_menu.get()
-            # self.delay_occurred = False
             aes_key = secrets.token_bytes(32)  # 256-bit key
             iv = get_random_bytes(16)  # for AES CBC mode
 
@@ -580,22 +583,6 @@ class TeraTermUI(customtkinter.CTk):
 
             if self.test_connection(lang) and self.check_server():
                 if self.checkIfProcessRunning("ttermpro"):
-                    # if not self.screenshot_skip:
-                    # screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                    # screenshot_thread.start()
-                    # screenshot_thread.join()
-                    # text = self.capture_screenshot()
-                    # if "ACCESO AL SISTEMA" not in text and "Press return" in text:
-                    # send_keys("{ENTER 3}")
-                    # self.screenshot_skip = True
-                    # if "ACCESO AL SISTEMA" not in text and "Press return" not in text:
-                    # self.delay_occurred = True
-                    # if lang == "English":
-                    # self.show_error_message(300, 215, "Unknown Error! Please try again")
-                    # if lang == "Español":
-                    # self.show_error_message(310, 220, "¡Error Desconocido! Por favor \n"
-                    # "intente de nuevo")
-                    # if not self.delay_occurred:
                     try:
                         ssn = self.ssn_entry.get().replace(" ", "")
                         ssn = ssn.replace("-", "")
@@ -617,10 +604,10 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
                             screenshot_thread.start()
                             screenshot_thread.join()
-                            text = self.capture_screenshot()
-                            if "ID NOT ON FILE" in text or "PASS" in text:
+                            text_output = self.capture_screenshot()
+                            if "ID NOT ON FILE" in text_output or "PASS" in text_output:
                                 self.bind("<Return>", lambda event: self.tuition_event_handler())
-                                if "PASS" in text:
+                                if "PASS" in text_output:
                                     send_keys("{TAB 2}")
                                 if lang == "English":
                                     self.after(0, lambda: self.show_error_message(300, 215,
@@ -628,12 +615,10 @@ class TeraTermUI(customtkinter.CTk):
                                 if lang == "Español":
                                     self.after(0, lambda: self.show_error_message(300, 215,
                                                                                   "¡Error! SSN o Código Incorrecto"))
-                                # self.screenshot_skip = True
-                            elif "ID NOT ON FILE" not in text or "PASS" not in text:
+                            elif "ID NOT ON FILE" not in text_output or "PASS" not in text_output:
                                 self.reset_activity_timer(None)
                                 self.start_check_idle_thread()
                                 self.after(0, self.tuition_frame)
-                                # self.screenshot_skip = False
                                 self.run_fix = True
                                 self.in_student_frame = False
                                 secure_delete(ssn_enc)
@@ -748,10 +733,14 @@ class TeraTermUI(customtkinter.CTk):
         self.back_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
         self.show_classes.grid(row=4, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         self.multiple.grid(row=4, column=2, padx=(10, 0), pady=(0, 0), sticky="e")
-        self.student_frame.grid_forget()
-        self.s_buttons_frame.grid_forget()
         self.ssn_entry.delete(0, "end")
         self.code_entry.delete(0, "end")
+        self.ssn_entry.configure(placeholder_text="#########")
+        self.code_entry.configure(placeholder_text="####")
+        self.ssn_entry.configure(show="*")
+        self.code_entry.configure(show="*")
+        self.student_frame.grid_forget()
+        self.s_buttons_frame.grid_forget()
 
     def submit_event_handler(self):
         lang = self.language_menu.get()
@@ -806,7 +795,7 @@ class TeraTermUI(customtkinter.CTk):
                 semester = self.e_semester_entry.get().upper().replace(" ", "")
                 lang = self.language_menu.get()
                 if self.test_connection(lang) and self.check_server():
-                    if self.checkIfProcessRunning("ttermpro"):
+                    if self.checkIfProcessRunning("ttermpro") or self.passed:
                         if (choice == "Register" and classes not in
                             self.enrolled_classes_list.values() and section not in self.enrolled_classes_list) \
                                 or (choice == "Drop" and classes
@@ -1033,7 +1022,7 @@ class TeraTermUI(customtkinter.CTk):
                 show_all = self.show_all.get()
                 lang = self.language_menu.get()
                 if self.test_connection(lang) and self.check_server():
-                    if self.checkIfProcessRunning("ttermpro"):
+                    if self.checkIfProcessRunning("ttermpro") or self.passed:
                         if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE)
                                 and re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE)):
                             ctypes.windll.user32.BlockInput(True)
@@ -1165,7 +1154,7 @@ class TeraTermUI(customtkinter.CTk):
                 if dialog_input is not None:
                     dialog_input = dialog_input.replace(" ", "").upper()
                     if self.test_connection(lang) and self.check_server():
-                        if self.checkIfProcessRunning("ttermpro"):
+                        if self.checkIfProcessRunning("ttermpro") or self.passed:
                             if re.fullmatch("^[A-Z][0-9]{2}$", dialog_input, flags=re.IGNORECASE):
                                 block_window = customtkinter.CTkToplevel()
                                 block_window.attributes("-alpha", 0.0)
@@ -1210,7 +1199,7 @@ class TeraTermUI(customtkinter.CTk):
                 if dialog_input is not None:
                     dialog_input = dialog_input.replace(" ", "").upper()
                     if self.test_connection(lang) and self.check_server():
-                        if self.checkIfProcessRunning("ttermpro"):
+                        if self.checkIfProcessRunning("ttermpro") or self.passed:
                             if re.match("^[A-Z][0-9]{2}$", dialog_input, flags=re.IGNORECASE):
                                 block_window = customtkinter.CTkToplevel()
                                 block_window.attributes("-alpha", 0.0)
@@ -1416,7 +1405,7 @@ class TeraTermUI(customtkinter.CTk):
                     choices.append(self.m_register_menu[i].get())
                 can_enroll_classes = self.e_counter + self.m_counter + counter + 1 <= 15
                 if self.test_connection(lang) and self.check_server() and self.check_format():
-                    if self.checkIfProcessRunning("ttermpro"):
+                    if self.checkIfProcessRunning("ttermpro") or self.passed:
                         if can_enroll_classes:
                             ctypes.windll.user32.BlockInput(True)
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
@@ -1683,7 +1672,7 @@ class TeraTermUI(customtkinter.CTk):
                 }
                 menu = menu_dict.get(menu, menu)
                 if self.test_connection(lang) and self.check_server():
-                    if self.checkIfProcessRunning("ttermpro"):
+                    if self.checkIfProcessRunning("ttermpro") or self.passed:
                         if re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE):
                             ctypes.windll.user32.BlockInput(True)
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
@@ -1925,8 +1914,8 @@ class TeraTermUI(customtkinter.CTk):
                                     screenshot_thread = threading.Thread(target=self.capture_screenshot)
                                     screenshot_thread.start()
                                     screenshot_thread.join()
-                                    text = self.capture_screenshot()
-                                    if "CONFLICT" in text:
+                                    text_output = self.capture_screenshot()
+                                    if "CONFLICT" in text_output:
                                         if lang == "English":
                                             self.after(0, lambda: self.show_information_message(
                                                 310, 225, "Student has a hold flag"))
@@ -1935,7 +1924,7 @@ class TeraTermUI(customtkinter.CTk):
                                                 310, 225, "Estudiante tine un hold flag"))
                                         self.uprb.UprbayTeraTermVt.type_keys("004")
                                         send_keys("{ENTER}")
-                                    if "CONFLICT" not in text:
+                                    if "CONFLICT" not in text_output:
                                         self.go_next_683.configure(state="normal")
                                         self.submit.configure(width=100)
                                         self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
@@ -2149,7 +2138,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.hide_sidebar_windows()
                 lang = self.language_menu.get()
                 if self.test_connection(lang) and self.check_server():
-                    if self.checkIfProcessRunning("ttermpro"):
+                    if self.checkIfProcessRunning("ttermpro") or self.passed:
                         if self._1VE_screen:
                             ctypes.windll.user32.BlockInput(True)
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
@@ -2205,8 +2194,8 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
                             screenshot_thread.start()
                             screenshot_thread.join()
-                            text = self.capture_screenshot()
-                            if "RATE NOT ON ARFILE" in text:
+                            text_output = self.capture_screenshot()
+                            if "RATE NOT ON ARFILE" in text_output:
                                 if lang == "English":
                                     self.after(0, lambda: self.show_error_message(310, 225, "Unknown Error!"))
                                 elif lang == "Español":
@@ -2380,6 +2369,7 @@ class TeraTermUI(customtkinter.CTk):
         self.authentication_frame.grid_forget()
 
     def login_event_handler(self):
+        self.idle = self.cursor.execute("SELECT idle FROM user_data").fetchall()
         task_done = threading.Event()
         loading_screen = self.show_loading_screen()
         self.update_loading_screen(loading_screen, task_done)
@@ -2398,18 +2388,61 @@ class TeraTermUI(customtkinter.CTk):
             if self.test_connection(lang) and self.check_server():
                 if host == "uprbay.uprb.edu" or host == "uprbayuprbedu":
                     if self.checkIfProcessRunning("ttermpro"):
-                        self.bind("<Return>", lambda event: self.login_event_handler())
-                        if lang == "English":
-                            self.after(0, lambda: self.show_error_message(450, 265,
-                                                                          "Error! Cannot connect to server \n\n"
-                                                                          " if another instance of Tera Term"
-                                                                          " is already running"))
-                        elif lang == "Español":
-                            self.after(0, lambda: self.show_error_message(450, 265,
-                                                                          "¡Error! No es posible"
-                                                                          " conectarse al servidor \n\n"
-                                                                          " si otra instancia de Tera Term"
-                                                                          " ya esta corriendo"))
+                        while not self.tesseract_unzipped:
+                            time.sleep(1)
+                        if self.window_exists("uprbay.uprb.edu - Tera Term VT"):
+                            screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                            screenshot_thread.start()
+                            screenshot_thread.join()
+                            text_output = self.capture_screenshot()
+                            if "MENU DE OPCIONES" in text_output:
+                                self.uprb = Application(backend="uia").connect(title="uprbay.uprb.edu - Tera Term VT",
+                                                                               timeout=10)
+                                self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
+                                self.uprbay_window.wait("visible", timeout=10)
+                                self.after(0, self.initialization_student)
+                                self.after(0, self.initialization_class)
+                                self.after(0, self.initialization_multiple)
+                                self.after(0, self.tuition_frame)
+                                self.passed = True
+                                self.reset_activity_timer(None)
+                                self.start_check_idle_thread()
+                                self.in_student_frame = False
+                                self.run_fix = True
+                                self.language_menu.configure(state="disabled")
+                                self.host.grid_forget()
+                                self.host_entry.grid_forget()
+                                self.log_in.grid_forget()
+                                self.intro_box.grid_forget()
+                                self.introduction.grid_forget()
+                                self.change_bind()
+                                self.set_focus_to_tkinter()
+                            else:
+                                self.bind("<Return>", lambda event: self.login_event_handler())
+                                if lang == "English":
+                                    self.after(0, lambda: self.show_error_message(450, 265,
+                                                                                  "Error! Cannot connect to server \n\n"
+                                                                                  " if another instance of Tera Term"
+                                                                                  " is already running"))
+                                elif lang == "Español":
+                                    self.after(0, lambda: self.show_error_message(450, 265,
+                                                                                  "¡Error! No es posible"
+                                                                                  " conectarse al servidor \n\n"
+                                                                                  " si otra instancia de Tera Term"
+                                                                                  " ya está corriendo"))
+                        else:
+                            self.bind("<Return>", lambda event: self.login_event_handler())
+                            if lang == "English":
+                                self.after(0, lambda: self.show_error_message(450, 265,
+                                                                              "Error! Cannot connect to server \n\n"
+                                                                              " if another instance of Tera Term"
+                                                                              " is already running"))
+                            elif lang == "Español":
+                                self.after(0, lambda: self.show_error_message(450, 265,
+                                                                              "¡Error! No es posible"
+                                                                              " conectarse al servidor \n\n"
+                                                                              " si otra instancia de Tera Term"
+                                                                              " ya está corriendo"))
                     else:
                         try:
                             ctypes.windll.user32.BlockInput(True)
@@ -2551,8 +2584,7 @@ class TeraTermUI(customtkinter.CTk):
                                     hover_color=("darkred", "darkblue", "darkblue"))
             response = msg.get()
         if self.checkIfProcessRunning("ttermpro") and (response == "Yes" or response == "Sí" or self.error_occurred):
-            uprb = Application(backend="uia").connect(title="uprbay.uprb.edu - Tera Term VT", timeout=10)
-            uprb.kill(soft=True)
+            self.uprb.kill(soft=True)
         if response == "Yes" or response == "Sí" or self.error_occurred:
             self.stop_thread()
             self.reset_activity_timer(None)
@@ -2579,10 +2611,6 @@ class TeraTermUI(customtkinter.CTk):
             self.t_buttons_frame.grid_forget()
             self.multiple_frame.grid_forget()
             self.m_button_frame.grid_forget()
-            self.ssn_entry.configure(placeholder_text="#########")
-            self.code_entry.configure(placeholder_text="####")
-            self.ssn_entry.configure(show="*")
-            self.code_entry.configure(show="*")
             self.language_menu.configure(state="normal")
             self.multiple.configure(state="normal")
             self.submit.configure(state="normal")
@@ -2594,8 +2622,6 @@ class TeraTermUI(customtkinter.CTk):
             self.m_counter = 0
             self.enrolled_classes_list.clear()
             self.dropped_classes_list.clear()
-            # self.screenshot_skip = False
-            # self.delay_occurred = False
             self.run_fix = False
             self.in_student_frame = False
             self.in_enroll_frame = False
@@ -3047,7 +3073,7 @@ class TeraTermUI(customtkinter.CTk):
                 if self.auto_enroll.get() == "on":
                     self.auto_enroll_bool = True
                     if self.test_connection(lang) and self.check_server() and self.check_format():
-                        if self.checkIfProcessRunning("ttermpro"):
+                        if self.checkIfProcessRunning("ttermpro") or self.passed:
                             ctypes.windll.user32.BlockInput(True)
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
@@ -3060,12 +3086,12 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
                             screenshot_thread.start()
                             screenshot_thread.join()
-                            text = self.capture_screenshot()
+                            text_output = self.capture_screenshot()
                             ctypes.windll.user32.BlockInput(False)
                             self.set_focus_to_tkinter()
-                            turno_index = text.find("TURNO MATRICULA:")
+                            turno_index = text_output.find("TURNO MATRICULA:")
                             if turno_index != -1:
-                                sliced_text = text[turno_index:]
+                                sliced_text = text_output[turno_index:]
                                 parts = sliced_text.split(":", 1)
                                 if len(parts) > 1:
                                     # Look for date and time pattern in the string
@@ -3779,10 +3805,10 @@ class TeraTermUI(customtkinter.CTk):
     def wait_for_prompt(self, prompt_text, maintenance_text, timeout=30):
         start_time = time.time()
         while True:
-            text = self.capture_screenshot()
-            if maintenance_text in text:  # Prioritize the maintenance message
+            text_output = self.capture_screenshot()
+            if maintenance_text in text_output:  # Prioritize the maintenance message
                 return "Maintenance message found"
-            elif prompt_text in text:
+            elif prompt_text in text_output:
                 return "Prompt found"
             elif time.time() - start_time > timeout:
                 return "Timeout"
@@ -3847,6 +3873,7 @@ class TeraTermUI(customtkinter.CTk):
         tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
         pytesseract.pytesseract.tesseract_cmd = str(tesseract_dir / "tesseract.exe")
         tessdata_dir_config = f"--tessdata-dir {tesseract_dir / 'tessdata'}"
+        self.tesseract_unzipped = True
 
         # Generating user_id to ban user from sending feedback if needed
         # If the file doesn't already exist, generate a new UUID and write it to the file
@@ -4302,11 +4329,11 @@ class TeraTermUI(customtkinter.CTk):
                 ctypes.windll.user32.BlockInput(False)
                 if lang == "English":
                     self.after(0, lambda: self.show_information_message(
-                        375, 250, "The problem is usually caused because "
+                        370, 250, "The problem is usually caused because "
                                   "\n of user interacting directly\n with Tera Term "))
                 elif lang == "Español":
                     self.after(0, lambda: self.show_information_message(
-                        375, 250, "El problema suele ser causado porque "
+                        370, 250, "El problema suele ser causado porque "
                                   "\n el usuario interactuo directamente\n "
                                   "con Tera Term"))
                 self.show_sidebar_windows()
@@ -4658,13 +4685,9 @@ class TeraTermUI(customtkinter.CTk):
     # Submits feedback from the user to a Google sheet
     def submit_feedback(self):
         lang = self.language_menu.get()
-        # Read the UUID from the file
-        user_path = Path(self.app_temp_dir) / "user_id.zip"
-        with pyzipper.AESZipFile(user_path, "r") as zf:
-            zf.setpassword(self.PASSWORD.encode())
-            with zf.open("user_id.txt") as f:
-                user_id = f.read().decode().strip()
-        if not self.disable_feedback and not self.is_user_banned(user_id):
+        while self.user_id is None:
+            time.sleep(1)
+        if not self.disable_feedback and not self.is_user_banned(self.user_id):
             current_date = datetime.today().strftime("%Y-%m-%d")
             date = self.cursor.execute("SELECT date FROM user_data WHERE date IS NOT NULL").fetchall()
             dates_list = [record[0] for record in date]
