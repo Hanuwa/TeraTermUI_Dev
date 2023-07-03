@@ -2412,6 +2412,8 @@ class TeraTermUI(customtkinter.CTk):
                     else:
                         try:
                             ctypes.windll.user32.BlockInput(True)
+                            if self.download or self.teraterm_not_found:
+                                self.edit_teraterm_ini(self.teraterm_file)
                             self.uprb = Application(backend="uia").start(self.location) \
                                 .connect(title="Tera Term - [disconnected] VT", timeout=10)
                             disconnected = self.uprb.window(title="Tera Term - [disconnected] VT")
@@ -2429,7 +2431,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                             self.uprbay_window.wait("visible", timeout=10)
                             if self.uprbay_window.child_window(title="Continue", control_type="Button").exists(
-                                    timeout=0.2):
+                                    timeout=1):
                                 self.hide_loading_screen()
                                 continue_button = \
                                     self.uprbay_window.child_window(title="Continue",
@@ -3785,6 +3787,12 @@ class TeraTermUI(customtkinter.CTk):
                 return "Timeout"
             time.sleep(1)  # Adjust the delay between screenshots as needed
 
+    def is_file_in_directory(self, file_name, directory):
+        # Join the directory path and file name
+        full_path = os.path.join(directory, file_name)
+        # Check if the file exists
+        return os.path.isfile(full_path)
+
     # Necessary things to do while the application is booting, gets done on a separate thread
     def boot_up(self, file_path):
         # Cleanup any leftover files/directories if they exist in any directory under temp_dir
@@ -3792,38 +3800,40 @@ class TeraTermUI(customtkinter.CTk):
         if tesseract_dir_path.is_dir():
             shutil.rmtree(tesseract_dir_path)
 
-        backup_path = self.app_temp_dir / "TERATERM.ini.bak"
-        if not os.path.exists(backup_path):
-            backup_path = os.path.join(self.app_temp_dir, os.path.basename(file_path) + ".bak")
-            try:
-                shutil.copyfile(file_path, backup_path)
-            except FileNotFoundError:
-                print("Tera Term Probably not installed\n"
-                      "or installed in a different location from the default")
-
-        # Edits the font that tera term uses to "Lucida Console" to mitigate the chance of the OCR mistaking words
-        if not self.can_edit:
-            try:
-                with open(file_path, "r") as file:
-                    lines = file.readlines()
-            except FileNotFoundError:
-                return
-            try:
-                with open(file_path, "w") as file:
-                    for line in lines:
-                        if line.startswith("VTFont="):
-                            current_value = line.strip().split("=")[1]
-                            font_name = current_value.split(",")[0]
-                            self.original_font = current_value
-                            updated_value = "Lucida Console" + current_value[len(font_name):]
-                            line = f"VTFont={updated_value}\n"
-                            self.can_edit = True
-                        file.write(line)
-            # If something goes wrong, restore the backup
-            except Exception as e:
-                print(f"Error occurred: {e}")
-                print("Restoring from backup...")
-                shutil.copyfile(backup_path, file_path)
+        if self.is_file_in_directory(self.location, "ttermpro.exe"):
+            backup_path = self.app_temp_dir / "TERATERM.ini.bak"
+            if not os.path.exists(backup_path):
+                backup_path = os.path.join(self.app_temp_dir, os.path.basename(file_path) + ".bak")
+                try:
+                    shutil.copyfile(file_path, backup_path)
+                except FileNotFoundError:
+                    print("Tera Term Probably not installed\n"
+                          "or installed in a different location from the default")
+            # Edits the font that tera term uses to "Lucida Console" to mitigate the chance of the OCR mistaking words
+            if not self.can_edit:
+                try:
+                    with open(file_path, "r") as file:
+                        lines = file.readlines()
+                except FileNotFoundError:
+                    return
+                try:
+                    with open(file_path, "w") as file:
+                        for line in lines:
+                            if line.startswith("VTFont="):
+                                current_value = line.strip().split("=")[1]
+                                font_name = current_value.split(",")[0]
+                                self.original_font = current_value
+                                updated_value = "Lucida Console" + current_value[len(font_name):]
+                                line = f"VTFont={updated_value}\n"
+                                self.can_edit = True
+                            file.write(line)
+                # If something goes wrong, restore the backup
+                except Exception as e:
+                    print(f"Error occurred: {e}")
+                    print("Restoring from backup...")
+                    shutil.copyfile(backup_path, file_path)
+        else:
+            self.teraterm_not_found = True
 
         if not self.welcome:
             self.log_in.configure(state="normal")
@@ -5052,30 +5062,38 @@ class TeraTermUI(customtkinter.CTk):
 
     # Edits the font that tera term uses to "Terminal" to mitigate the chance of the OCR mistaking words
     def edit_teraterm_ini(self, file_path):
-        backup_path = self.app_temp_dir / "TERATERM.ini.bak"
-        try:
-            with open(file_path, "r") as file:
-                lines = file.readlines()
-        except FileNotFoundError:
-            return
-        try:
-            with open(file_path, "w") as file:
-                for line in lines:
-                    if line.startswith("VTFont="):
-                        current_value = line.strip().split("=")[1]
-                        font_name = current_value.split(",")[0]
-                        self.original_font = current_value
-                        updated_value = "Lucida Console" + current_value[len(font_name):]
-                        line = f"VTFont={updated_value}\n"
-                    file.write(line)
-                    self.can_edit = True
-        # If something goes wrong, restore the backup
-        except Exception as e:
-            print(f"Error occurred: {e}")
-            print("Restoring from backup...")
-            shutil.copyfile(backup_path, file_path)
-        del line, lines
-        gc.collect()
+        if self.is_file_in_directory(self.location, "ttermpro.exe"):
+            backup_path = self.app_temp_dir / "TERATERM.ini.bak"
+            if not os.path.exists(backup_path):
+                backup_path = os.path.join(self.app_temp_dir, os.path.basename(file_path) + ".bak")
+                try:
+                    shutil.copyfile(file_path, backup_path)
+                except FileNotFoundError:
+                    print("Tera Term Probably not installed\n"
+                          "or installed in a different location from the default")
+            try:
+                with open(file_path, "r") as file:
+                    lines = file.readlines()
+            except FileNotFoundError:
+                return
+            try:
+                with open(file_path, "w") as file:
+                    for line in lines:
+                        if line.startswith("VTFont="):
+                            current_value = line.strip().split("=")[1]
+                            font_name = current_value.split(",")[0]
+                            self.original_font = current_value
+                            updated_value = "Lucida Console" + current_value[len(font_name):]
+                            line = f"VTFont={updated_value}\n"
+                        file.write(line)
+                        self.can_edit = True
+            # If something goes wrong, restore the backup
+            except Exception as e:
+                print(f"Error occurred: {e}")
+                print("Restoring from backup...")
+                shutil.copyfile(backup_path, file_path)
+            del line, lines
+            gc.collect()
 
     # Restores the original font option the user had
     def restore_original_font(self, file_path):
