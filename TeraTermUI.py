@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 7/2/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 7/3/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -369,6 +369,7 @@ class TeraTermUI(customtkinter.CTk):
         # self.screenshot_skip = False
         # self.delay_occurred = False
         self.run_fix = False
+        self.teraterm_not_found = False
         self.a_counter = 0
         self.m_counter = 0
         self.e_counter = 0
@@ -3800,7 +3801,7 @@ class TeraTermUI(customtkinter.CTk):
         if tesseract_dir_path.is_dir():
             shutil.rmtree(tesseract_dir_path)
 
-        if self.is_file_in_directory(self.location, "ttermpro.exe"):
+        if self.is_file_in_directory("ttermpro.exe", r"C:/Program Files (x86)/teraterm"):
             backup_path = self.app_temp_dir / "TERATERM.ini.bak"
             if not os.path.exists(backup_path):
                 backup_path = os.path.join(self.app_temp_dir, os.path.basename(file_path) + ".bak")
@@ -5062,7 +5063,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # Edits the font that tera term uses to "Terminal" to mitigate the chance of the OCR mistaking words
     def edit_teraterm_ini(self, file_path):
-        if self.is_file_in_directory(self.location, "ttermpro.exe"):
+        if self.is_file_in_directory("ttermpro.exe", r"C:/Program Files (x86)/teraterm"):
             backup_path = self.app_temp_dir / "TERATERM.ini.bak"
             if not os.path.exists(backup_path):
                 backup_path = os.path.join(self.app_temp_dir, os.path.basename(file_path) + ".bak")
