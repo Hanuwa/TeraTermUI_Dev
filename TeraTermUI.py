@@ -3802,6 +3802,7 @@ class TeraTermUI(customtkinter.CTk):
         custom_config = r"--oem 3 --psm 11"
         text = pytesseract.image_to_string(screenshot, config=custom_config)
         return text
+    
     def wait_for_prompt(self, prompt_text, maintenance_text, timeout=30):
         start_time = time.time()
         while True:
