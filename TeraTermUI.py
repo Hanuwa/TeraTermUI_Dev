@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 7/3/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 7/4/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1047,6 +1047,7 @@ class TeraTermUI(customtkinter.CTk):
                             elif show_all == "off":
                                 self.uprb.UprbayTeraTermVt.type_keys("N")
                             send_keys("{ENTER}")
+                            self.reset_activity_timer(None)
                             ctypes.windll.user32.BlockInput(False)
                             self.disable_go_next_buttons()
                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
@@ -3801,7 +3802,6 @@ class TeraTermUI(customtkinter.CTk):
         custom_config = r"--oem 3 --psm 11"
         text = pytesseract.image_to_string(screenshot, config=custom_config)
         return text
-
     def wait_for_prompt(self, prompt_text, maintenance_text, timeout=30):
         start_time = time.time()
         while True:
