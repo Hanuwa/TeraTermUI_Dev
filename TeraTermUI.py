@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 7/5/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 7/6/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -13,8 +13,7 @@
 # The grid of the UI interface and placement of widgets could use some work.
 # Option Menu of all tera terms screens requires more work
 
-# FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term, like
-# when you search for classes it would be nice if they appear on this app
+# FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term
 
 import customtkinter
 import tkinter as tk
@@ -188,9 +187,9 @@ class TeraTermUI(customtkinter.CTk):
                               "The application is very early in development, which means it still got things to work, "
                               "fix and implement. "
                               "Right now, the applications lets you do the essentials like enrolling and dropping "
-                              " classes"
+                              "classes"
                               ", searching for classes and other functionally will be implemented later down the road "
-                              " the priority right now is getting the user experience right, everything must looks nice"
+                              "the priority right now is getting the user experience right, everything must looks nice"
                               " and be easy to understand. "
                               + "Everything you input here is stored locally, meaning only you can access the "
                                 "information"
@@ -2889,7 +2888,7 @@ class TeraTermUI(customtkinter.CTk):
                                   "experiencia "
                                   "asegúrese de hacer clic en los botones de la barra lateral, "
                                   "la aplicación también esta planiado hacerlo código abierto "
-                                  "para cualquiera que esté interesado en trabajar/ver el proyecto. \n\n " +
+                                  "para cualquiera que esté interesado en trabajar/ver el proyecto. \n\n" +
                                   "IMPORTANTE: NO UTILIZAR MIENTRAS TENGA OTRA  INSTANCIA DE LA APLICACIÓN ABIERTA. "
                                   "")
             self.intro_box.configure(state="disabled")
@@ -3013,9 +3012,9 @@ class TeraTermUI(customtkinter.CTk):
                                   "which means it still got things to work, "
                                   "fix and implement. "
                                   "Right now, the applications lets you do the essentials like enrolling and dropping "
-                                  " classes"
+                                  "classes"
                                   ", searching for classes other functionally will be implemented later down the road "
-                                  " the priority right now is getting the user experience right, "
+                                  "the priority right now is getting the user experience right, "
                                   "everything must looks nice"
                                   " and be easy to understand. "
                                   + "Everything you input here is stored locally meaning only you can access the "
