@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 7/6/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 7/7/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -495,7 +495,7 @@ class TeraTermUI(customtkinter.CTk):
                                                 button_color=("#c30101", "#145DA0", "#145DA0"),
                                                 hover_color=("darkred", "darkblue", "darkblue"))
                         response = msg.get()
-                        if response == "Yes" or response == "Sí" and self.test_connection(lang):
+                        if response[0] == "Yes" or response[0] == "Sí" and self.test_connection(lang):
                             webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
                         resultDate = self.cursor.execute("SELECT date FROM user_data").fetchall()
                         if len(resultDate) == 0:
@@ -536,11 +536,11 @@ class TeraTermUI(customtkinter.CTk):
             if hasattr(self, "thread") and self.thread.is_alive():
                 self.stop_check_idle.set()
                 self.thread.join()
-            if self.checkIfProcessRunning("ttermpro") and self.window_exists("uprbay.uprb.edu - Tera Term VT")\
+            if self.checkIfProcessRunning("ttermpro") and self.window_exists("uprbay.uprb.edu - Tera Term VT") \
                     and self.checkbox_state:
                 uprb = Application(backend="uia").connect(title="uprbay.uprb.edu - Tera Term VT", timeout=10)
                 uprb.kill(soft=False)
-            if self.checkIfProcessRunning("ttermpro") and self.window_exists("Tera Term - [disconnected] VT") \
+            elif self.checkIfProcessRunning("ttermpro") and self.window_exists("Tera Term - [disconnected] VT") \
                     and self.checkbox_state:
                 subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
                                check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -786,7 +786,7 @@ class TeraTermUI(customtkinter.CTk):
                                     icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
                                     hover_color=("darkred", "darkblue", "darkblue"))
         response = msg.get()
-        if response == "Yes" or response == "Sí":
+        if response[0] == "Yes" or response[0] == "Sí":
             task_done = threading.Event()
             loading_screen = self.show_loading_screen()
             self.update_loading_screen(loading_screen, task_done)
@@ -1403,7 +1403,7 @@ class TeraTermUI(customtkinter.CTk):
                                     icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
                                     hover_color=("darkred", "darkblue", "darkblue"))
             response = msg.get()
-            if response != "Yes" and response != "Sí":
+            if response[0] != "Yes" and response[0] != "Sí":
                 return
         task_done = threading.Event()
         loading_screen = self.show_loading_screen()
@@ -2096,12 +2096,12 @@ class TeraTermUI(customtkinter.CTk):
                                                             hover_color=("darkred", "darkblue", "darkblue"))
                                     response = msg.get()
                                     self.show_loading_screen_again()
-                                    if self.checkIfProcessRunning("ttermpro") and response == "Yes" \
-                                            or response == "Sí":
+                                    if self.checkIfProcessRunning("ttermpro") and response[0] == "Yes" \
+                                            or response[0] == "Sí":
                                         self.uprb.UprbayTeraTermVt.type_keys("SO")
                                         send_keys("{ENTER}")
-                                    if not self.checkIfProcessRunning("ttermpro") and response == "Yes" \
-                                            or response == "Sí":
+                                    if not self.checkIfProcessRunning("ttermpro") and response[0] == "Yes" \
+                                            or response[0] == "Sí":
                                         if lang == "English":
                                             self.show_error_message(350, 265, "Error! Tera Term isn't running")
                                         elif lang == "Español":
@@ -2685,9 +2685,13 @@ class TeraTermUI(customtkinter.CTk):
                                     icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
                                     hover_color=("darkred", "darkblue", "darkblue"))
             response = msg.get()
-        if self.checkIfProcessRunning("ttermpro") and (response == "Yes" or response == "Sí" or self.error_occurred):
+        if self.checkIfProcessRunning("ttermpro") and (response[0] == "Yes" or response[0] == "Sí" or
+                                                       self.error_occurred):
             self.uprb.kill(soft=True)
-        if response == "Yes" or response == "Sí" or self.error_occurred:
+        elif self.checkIfProcessRunning("ttermpro") and (response[0] == "Yes" or response[0] == "Sí" or
+                                                         self.error_occurred):
+            subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"])
+        if response[0] == "Yes" or response[0] == "Sí" or self.error_occurred:
             self.stop_thread()
             self.reset_activity_timer(None)
             self.unbind("<space>")
@@ -3161,7 +3165,7 @@ class TeraTermUI(customtkinter.CTk):
                                         icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
                                         hover_color=("darkred", "darkblue", "darkblue"))
                 response = msg.get()
-                if response != "Yes" and response != "Sí":
+                if response[0] != "Yes" and response[0] != "Sí":
                     self.auto_enroll.deselect()
                     return
             task_done = threading.Event()
@@ -3734,8 +3738,8 @@ class TeraTermUI(customtkinter.CTk):
         }
         for field, value in field_values.items():
             # for 'host' field, only update or insert when host is "uprbay.uprb.edu"
-            if field == "host" and (self.host_entry.get() != "uprbay.uprb.edu" and
-                                    self.host_entry.get() != "uprbayuprbedu"):
+            if field == "host" and (self.host_entry.get().replace(" ", "").lower() != "uprbay.uprb.edu" and
+                                    self.host_entry.get().replace(" ", "").lower() != "uprbayuprbedu"):
                 continue
             result = self.cursor.execute(f"SELECT {field} FROM user_data").fetchone()
             if result is None:
@@ -4353,7 +4357,7 @@ class TeraTermUI(customtkinter.CTk):
                                 button_color=("#c30101", "#145DA0", "#145DA0"),
                                 hover_color=("darkred", "darkblue", "darkblue"))
         response = msg.get()
-        if response == "Yes" or response == "Sí":
+        if response[0] == "Yes" or response[0] == "Sí":
             webbrowser.open("https://osdn.net/projects/ttssh2/releases/")
 
     # Links to each correspondant curriculum that the user chooses
@@ -4428,7 +4432,7 @@ class TeraTermUI(customtkinter.CTk):
                                     button_color=("#c30101", "#145DA0", "#145DA0"),
                                     hover_color=("darkred", "darkblue", "darkblue"))
             response = msg.get()
-            if response == "Yes" or response == "Sí" and self.test_connection(lang):
+            if response[0] == "Yes" or response[0] == "Sí" and self.test_connection(lang):
                 webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
         else:
             winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
@@ -4488,7 +4492,7 @@ class TeraTermUI(customtkinter.CTk):
                                     button_color=("#c30101", "#145DA0", "#145DA0"),
                                     hover_color=("darkred", "darkblue", "darkblue"))
             response = msg.get()
-            if response == "Yes" or response == "Sí":
+            if response[0] == "Yes" or response[0] == "Sí":
                 task_done = threading.Event()
                 loading_screen = self.show_loading_screen()
                 self.update_loading_screen(loading_screen, task_done)
@@ -4918,7 +4922,7 @@ class TeraTermUI(customtkinter.CTk):
                                         button_color=("#c30101", "#145DA0", "#145DA0"),
                                         hover_color=("darkred", "darkblue", "darkblue"))
                 response = msg.get()
-                if response == "Yes" or response == "Sí" and self.test_connection(lang):
+                if response[0] == "Yes" or response[0] == "Sí" and self.test_connection(lang):
                     feedback = self.feedbackText.get("1.0", tk.END).strip()
                     if not feedback:
                         winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
