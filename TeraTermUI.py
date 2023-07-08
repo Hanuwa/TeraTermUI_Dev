@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 7/7/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 7/8/23
 
 # BUGS - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -4736,10 +4736,10 @@ class TeraTermUI(customtkinter.CTk):
             self.feedbackText = customtkinter.CTkTextbox(scrollable_frame, wrap="word", border_spacing=8, width=300,
                                                          height=170, fg_color=("#ffffff", "#111111"))
             self.feedbackText.pack(pady=10)
-            feedbackSend = customtkinter.CTkButton(scrollable_frame, border_width=2,
-                                                   text="Send Feedback",
-                                                   text_color=("gray10", "#DCE4EE"), command=self.submit_feedback)
-            feedbackSend.pack()
+            self.feedbackSend = customtkinter.CTkButton(scrollable_frame, border_width=2,
+                                                        text="Send Feedback",
+                                                        text_color=("gray10", "#DCE4EE"), command=self.submit_feedback)
+            self.feedbackSend.pack()
             checkUpdateText = customtkinter.CTkLabel(scrollable_frame, text="\n\n Check if application has a new update"
                                                                             " available")
             checkUpdateText.pack(pady=5)
@@ -4797,12 +4797,10 @@ class TeraTermUI(customtkinter.CTk):
             self.feedbackText = customtkinter.CTkTextbox(scrollable_frame, wrap="word", border_spacing=8, width=300,
                                                          height=170, fg_color=("#ffffff", "#111111"))
             self.feedbackText.pack(pady=10)
-            self.feedbackText.bind("<FocusIn>", self.remove_key_bindings)
-            self.feedbackText.bind("<FocusOut>", self.add_key_bindings)
-            feedbackSend = customtkinter.CTkButton(scrollable_frame, border_width=2,
-                                                   text="Enviar Comentario",
-                                                   text_color=("gray10", "#DCE4EE"), command=self.submit_feedback)
-            feedbackSend.pack()
+            self.feedbackSend = customtkinter.CTkButton(scrollable_frame, border_width=2,
+                                                        text="Enviar Comentario",
+                                                        text_color=("gray10", "#DCE4EE"), command=self.submit_feedback)
+            self.feedbackSend.pack()
             checkUpdateText = customtkinter.CTkLabel(scrollable_frame, text="\n\n Revisa sí la aplicación tiene una"
                                                                             " actualización nueva")
             checkUpdateText.pack(pady=5)
@@ -4886,6 +4884,7 @@ class TeraTermUI(customtkinter.CTk):
     # Submits feedback from the user to a Google sheet
     def submit_feedback(self):
         lang = self.language_menu.get()
+        self.feedbackSend.configure(state="disabled")
         while self.user_id is None:
             time.sleep(1)
         if not self.disable_feedback and not self.is_user_banned(self.user_id):
@@ -4974,6 +4973,7 @@ class TeraTermUI(customtkinter.CTk):
             elif lang == "Español":
                 CTkMessagebox(title="Error", message="¡Error! Mandar comentarios no esta disponible ahora mismo",
                               icon="cancel", button_width=380)
+        self.feedbackSend.configure(state="normal")
 
     # Function that lets user select where their Tera Term application is located
     def change_location_event(self):
