@@ -241,7 +241,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
             elif option_1_type == "checkbox":
                 self.button1_var = tk.BooleanVar()  # variable to hold checkbox value
                 self.button1 = customtkinter.CTkCheckBox(self.frame_top, width=self.button_width, font=self.font,
-                                                         height=self.button_height, text_color=self.bt_text_color,
+                                                         height=self.button_height,
                                                          text=self.option_text_1,
                                                          variable=self.button1_var)
                 self.button1.grid(row=2, column=3, sticky="news", padx=(0,10), pady=10)
