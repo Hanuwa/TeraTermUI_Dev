@@ -48,6 +48,11 @@ from datetime import datetime, timedelta
 from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import pad, unpad
 from Cryptodome.Random import get_random_bytes
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table,\
+    TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
 from PIL import Image, ImageOps
 import uuid
 import pytz
@@ -520,13 +525,13 @@ class TeraTermUI(customtkinter.CTk):
                                 icon="question",
                                 option_1="Close Tera Term?", option_2="No", option_3="Yes", icon_size=(65, 65),
                                 button_color=("#c30101", "#c30101", "#145DA0"), option_1_type="checkbox",
-                                hover_color=("darkred", "darkblue", "darkblue"))
+                                hover_color=("darkred", "darkred", "darkblue"))
         elif lang == "Español":
             msg = CTkMessagebox(master=self, title="Salir", message="¿Estás seguro que quieres salir de la aplicación?",
                                 icon="question",
                                 option_1="¿Cerrar Tera Term?", option_2="No", option_3="Sí", icon_size=(65, 65),
                                 button_color=("#c30101", "#c30101", "#145DA0"), option_1_type="checkbox",
-                                hover_color=("darkred", "darkblue", "darkblue"))
+                                hover_color=("darkred", "darkred", "darkblue"))
         if on_exit[0][0] == "1":
             msg.check_checkbox()
         response, self.checkbox_state = msg.get()
@@ -723,14 +728,18 @@ class TeraTermUI(customtkinter.CTk):
         self.submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
         self.search_scrollbar.grid(row=0, column=1, padx=(0, 0), pady=(0, 0), sticky="nsew")
         self.title_search.grid(row=0, column=1, padx=(0, 0), pady=(0, 20), sticky="n")
-        self.s_classes.grid(row=1, column=1, padx=(0, 550), pady=(0, 0), sticky="n")
-        self.s_classes_entry.grid(row=1, column=1, padx=(0, 425), pady=(0, 0), sticky="n")
-        self.s_semester.grid(row=1, column=1, padx=(0, 270), pady=(0, 0), sticky="n")
-        self.s_semester_entry.grid(row=1, column=1, padx=(0, 120), pady=(0, 0), sticky="n")
         if lang == "English":
-            self.show_all.grid(row=1, column=1, padx=(90, 0), pady=(1, 0), sticky="n")
+            self.s_classes.grid(row=1, column=1, padx=(0, 550), pady=(0, 0), sticky="n")
+            self.s_classes_entry.grid(row=1, column=1, padx=(0, 425), pady=(0, 0), sticky="n")
+            self.s_semester.grid(row=1, column=1, padx=(0, 270), pady=(0, 0), sticky="n")
+            self.s_semester_entry.grid(row=1, column=1, padx=(0, 120), pady=(0, 0), sticky="n")
+            self.show_all.grid(row=1, column=1, padx=(80, 0), pady=(1, 0), sticky="n")
         elif lang == "Español":
-            self.show_all.grid(row=1, column=1, padx=(110, 0), pady=(1, 0), sticky="n")
+            self.s_classes.grid(row=1, column=1, padx=(0, 560), pady=(0, 0), sticky="n")
+            self.s_classes_entry.grid(row=1, column=1, padx=(0, 435), pady=(0, 0), sticky="n")
+            self.s_semester.grid(row=1, column=1, padx=(0, 280), pady=(0, 0), sticky="n")
+            self.s_semester_entry.grid(row=1, column=1, padx=(0, 130), pady=(0, 0), sticky="n")
+            self.show_all.grid(row=1, column=1, padx=(70, 0), pady=(0, 5), sticky="n")
         self.search.grid(row=1, column=1, padx=(430, 0), pady=(0, 5), sticky="n")
         self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
         self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
@@ -1047,6 +1056,14 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys("1CS")
                             self.uprb.UprbayTeraTermVt.type_keys(semester)
                             send_keys("{ENTER}")
+                            if self.passed and self.search_function_counter == 0:
+                                self.uprb.window().menu_select("Edit->Select screen")
+                                self.uprb.UprbayTeraTermVt.type_keys("%c")
+                                self.uprbay_window.click_input(button="left")
+                                data = clipboard.paste()
+                                text = self.extract_class_data(data)
+                                if text:
+                                    self.search_function_counter = 1
                             if self.search_function_counter == 0:
                                 self.uprb.UprbayTeraTermVt.type_keys(classes)
                             if self.search_function_counter >= 1:
@@ -1066,11 +1083,7 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread.join()
                             text_output = self.capture_screenshot()
                             if "MORE SECTIONS" in text_output:
-                                self.search_next_page_status = True
-                                self.search_next_page.configure(state="normal")
-                                self.search.configure(width=75)
-                                self.search.grid(row=1, column=1, padx=(310, 0), pady=(0, 5), sticky="n")
-                                self.search_next_page.grid(row=1, column=1, padx=(470, 0), pady=(0, 5), sticky="n")
+                                self.after(0, self.search_next_page_layout)
                             if "COURSE NOT IN COURSE TERM FILE" in text_output:
                                 if lang == "English":
                                     self.after(0, lambda: self.show_error_message(
@@ -1155,6 +1168,18 @@ class TeraTermUI(customtkinter.CTk):
                                       icon="warning", button_width=380)
                     self.error_occurred = False
                 self.bind("<Return>", lambda event: self.search_event_handler())
+
+    def search_next_page_layout(self):
+        lang = self.language_menu.get()
+        self.search_next_page_status = True
+        self.search_next_page.configure(state="normal")
+        self.search.configure(width=85)
+        if lang == "English":
+            self.search.grid(row=1, column=1, padx=(290, 0), pady=(0, 5), sticky="n")
+            self.search_next_page.grid(row=1, column=1, padx=(470, 0), pady=(0, 5), sticky="n")
+        elif lang == "Español":
+            self.search.grid(row=1, column=1, padx=(285, 0), pady=(0, 5), sticky="n")
+            self.search_next_page.grid(row=1, column=1, padx=(465, 0), pady=(0, 5), sticky="n")
 
     # function for seeing the classes you are currently enrolled for
     def my_classes_event(self):
@@ -2787,18 +2812,27 @@ class TeraTermUI(customtkinter.CTk):
         self.submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
         self.search_scrollbar.grid(row=0, column=1, padx=(0, 0), pady=(0, 0), sticky="nsew")
         self.title_search.grid(row=0, column=1, padx=(0, 0), pady=(0, 20), sticky="n")
-        self.s_classes.grid(row=1, column=1, padx=(0, 550), pady=(0, 0), sticky="n")
-        self.s_classes_entry.grid(row=1, column=1, padx=(0, 425), pady=(0, 0), sticky="n")
-        self.s_semester.grid(row=1, column=1, padx=(0, 270), pady=(0, 0), sticky="n")
-        self.s_semester_entry.grid(row=1, column=1, padx=(0, 120), pady=(0, 0), sticky="n")
         if lang == "English":
-            self.show_all.grid(row=1, column=1, padx=(90, 0), pady=(1, 0), sticky="n")
+            self.s_classes.grid(row=1, column=1, padx=(0, 550), pady=(0, 0), sticky="n")
+            self.s_classes_entry.grid(row=1, column=1, padx=(0, 425), pady=(0, 0), sticky="n")
+            self.s_semester.grid(row=1, column=1, padx=(0, 270), pady=(0, 0), sticky="n")
+            self.s_semester_entry.grid(row=1, column=1, padx=(0, 120), pady=(0, 0), sticky="n")
+            self.show_all.grid(row=1, column=1, padx=(80, 0), pady=(1, 0), sticky="n")
         elif lang == "Español":
-            self.show_all.grid(row=1, column=1, padx=(110, 0), pady=(1, 0), sticky="n")
+            self.s_classes.grid(row=1, column=1, padx=(0, 560), pady=(0, 0), sticky="n")
+            self.s_classes_entry.grid(row=1, column=1, padx=(0, 435), pady=(0, 0), sticky="n")
+            self.s_semester.grid(row=1, column=1, padx=(0, 280), pady=(0, 0), sticky="n")
+            self.s_semester_entry.grid(row=1, column=1, padx=(0, 130), pady=(0, 0), sticky="n")
+            self.show_all.grid(row=1, column=1, padx=(70, 0), pady=(0, 5), sticky="n")
+        self.search.grid(row=1, column=1, padx=(430, 0), pady=(0, 5), sticky="n")
         if self.search_next_page_status:
-            self.search.configure(width=75)
-            self.search.grid(row=1, column=1, padx=(310, 0), pady=(0, 5), sticky="n")
-            self.search_next_page.grid(row=1, column=1, padx=(470, 0), pady=(0, 5), sticky="n")
+            self.search.configure(width=85)
+            if lang == "English":
+                self.search.grid(row=1, column=1, padx=(290, 0), pady=(0, 5), sticky="n")
+                self.search_next_page.grid(row=1, column=1, padx=(470, 0), pady=(0, 5), sticky="n")
+            elif lang == "Español":
+                self.search.grid(row=1, column=1, padx=(285, 0), pady=(0, 5), sticky="n")
+                self.search_next_page.grid(row=1, column=1, padx=(465, 0), pady=(0, 5), sticky="n")
         else:
             self.search.configure(width=140)
             self.search.grid(row=1, column=1, padx=(430, 0), pady=(0, 5), sticky="n")
@@ -2929,7 +2963,7 @@ class TeraTermUI(customtkinter.CTk):
             self.title_search.configure(text="Buscar Clases ")
             self.s_classes.configure(text="Clase ")
             self.s_semester.configure(text="Semestre ")
-            self.show_all.configure(text="¿Enseñar Todas?")
+            self.show_all.configure(text="¿Enseñar \n Todas?")
             self.explanation6.configure(text="Menú de Opciones ")
             self.title_menu.configure(text="Selecciona el Código de la pantalla \n"
                                            "A la que quieres acceder: ")
@@ -2948,7 +2982,7 @@ class TeraTermUI(customtkinter.CTk):
             self.go_next_409.configure(text="Próxima Página")
             self.go_next_683.configure(text="Próxima Página")
             self.go_next_4CM.configure(text="Próxima Página")
-            self.search_next_page.configure(text="Próxima Página")
+            self.search_next_page.configure(text="Próxima")
             self.submit.configure(text="Someter")
             self.search.configure(text="Buscar")
             self.show_classes.configure(text="Enseñar Mis Clases")
@@ -3133,7 +3167,7 @@ class TeraTermUI(customtkinter.CTk):
                                                        " the enrollment process becomes\n"
                                                        " available for you")
             self.search_next_page_tooltip.configure(message="There's more sections\n"
-                                                             "available")
+                                                            "available")
 
     def change_semester(self):
         for i in range(1, self.a_counter + 1):
@@ -3578,7 +3612,7 @@ class TeraTermUI(customtkinter.CTk):
             self.search_next_page = customtkinter.CTkButton(master=self.search_scrollbar, fg_color="transparent",
                                                             border_width=2, text="Next Page",
                                                             text_color=("gray10", "#DCE4EE"), hover_color="#4E4F50",
-                                                            command=self.go_next_search_handler, width=75)
+                                                            command=self.go_next_search_handler, width=85)
             self.search_next_page_tooltip = CTkToolTip(self.search_next_page, message="There's more sections\n"
                                                                                       "available")
 
@@ -3936,7 +3970,77 @@ class TeraTermUI(customtkinter.CTk):
         text = pytesseract.image_to_string(screenshot, config=custom_config)
         return text
 
+    def create_pdf(self, data, filename, class_name):
+        lang = self.language_menu.get()
+        pdf = SimpleDocTemplate(
+            filename,
+            pagesize=letter
+        )
+        table = Table(data)
+        # Custom Colors
+        blue = colors.Color(0, 0.5, 0.75)  # Lighter blue
+        gray = colors.Color(0.7, 0.7, 0.7)  # Lighter gray
+        # Define the table style
+        style = TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), blue),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 14),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), gray),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ])
+        table.setStyle(style)
+        # Add a header paragraph with the class name
+        styles = getSampleStyleSheet()
+        header_style = styles["Heading1"]
+        header_style.alignment = 1  # Center alignment
+        if lang == "English":
+            header = Paragraph(f"Class: {class_name}", header_style)
+        elif lang == "Español":
+            header = Paragraph(f"Clase: {class_name}", header_style)
+        # Add some space between the header and the table
+        space = Spacer(1, 20)
+        # Add the header, space, and table to the elements to be added to the PDF
+        elems = [header, space, table]
+        # Create the PDF
+        pdf.build(elems)
+
+    def download_as_pdf(self):
+        lang = self.language_menu.get()
+        # Get the class name from the user input
+        class_name = self.s_classes_entry.get().upper().replace(' ', '')
+        # Gather the table data
+        data = self.table.get()
+        # Get the path to the user's home directory
+        home = os.path.expanduser("~")
+        # Append "Downloads" to the home directory path
+        downloads = os.path.join(home, "Downloads")
+        # Open a dialog for the user to choose the save location and filename
+        if lang == "English":
+            filepath = filedialog.asksaveasfilename(title="Select where do you want to save your PDF file",
+                                                    defaultextension=".pdf", initialdir=downloads,
+                                                    filetypes=[('PDF Files', '*.pdf')],
+                                                    initialfile=f"{class_name}_class_data.pdf")
+        elif lang == "Español":
+            filepath = filedialog.asksaveasfilename(title="Selecciona donde deseas guardar tu archivo PDF",
+                                                    defaultextension=".pdf", initialdir=downloads,
+                                                    filetypes=[('PDF Files', '*.pdf')],
+                                                    initialfile=f"{class_name}_data_de_clase.pdf")
+        if not filepath:
+            # User cancelled the dialog, stop the function
+            return
+        else:
+            if lang == "English":
+                self.show_success_message(350, 265, "PDF has been saved successfully")
+            elif lang == "Español":
+                self.show_success_message(350, 265, "El PDF ha sido guardado éxitosamente")
+        # Call create_pdf with the chosen filepath
+        self.create_pdf(data, filepath, class_name)
+
     def display_data(self, data):
+        lang = self.language_menu.get()
         if hasattr(self, 'table'):
             self.table.grid_forget()
             del self.table
@@ -3983,6 +4087,13 @@ class TeraTermUI(customtkinter.CTk):
         self.table.edit_column(2, width=60)
         self.table.edit_column(3, width=60)
         self.table.edit_column(5, width=60)
+        if lang == "English":
+            download_pdf = customtkinter.CTkButton(self.search_scrollbar, text="Save as PDF",
+                                                   command=self.download_as_pdf)
+        elif lang == "Español":
+            download_pdf = customtkinter.CTkButton(self.search_scrollbar, text="Guardar como PDF",
+                                                   command=self.download_as_pdf)
+        download_pdf.grid(row=3, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
 
     def extract_class_data(self, text):
         lines = text.split("\n")
@@ -4000,6 +4111,9 @@ class TeraTermUI(customtkinter.CTk):
                              "TIMES": match.group(5),
                              "AV": match.group(6).strip() if match.group(6) else "0",
                              "INSTRUCTOR": match.group(7).strip() if match.group(7) not in ['N', 'RSTR'] else ""})
+
+        if not data:
+            return False
 
         return data
 
