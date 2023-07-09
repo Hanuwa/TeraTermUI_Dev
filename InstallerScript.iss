@@ -2,11 +2,11 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Tera Term UI"
-#define MyAppVersion "0.9.0"
+#define MyAppVersion 
 #define MyAppPublisher "Armando Del Valle Tejada"
 #define MyAppURL "github.com/Hanuwa/TeraTermUI"
 #define MyAppExeName "TeraTermUI.exe"
-#define MyAppPath "C:\Users\arman\OneDrive\Documentos\TeraTermUI_v0.9.0"
+#define MyAppPath 
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
@@ -25,7 +25,7 @@ DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 LicenseFile={#MyAppPath}\TeraTermUI_installer\LICENSE.txt
 PrivilegesRequired=admin
-OutputBaseFilename=TeraTermUI_64-bit_Installer-v0.9.0
+OutputBaseFilename=TeraTermUI_64-bit_Installer-
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
