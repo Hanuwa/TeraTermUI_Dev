@@ -276,8 +276,12 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         self.focus_set()
 
     def load_icon(self, icon, icon_size):
-        if icon not in self.ICONS or self.ICONS[icon] is None:
+        image_path = None
+        if os.path.isfile(icon):
+            image_path = icon
+        elif icon not in self.ICONS or self.ICONS[icon] is None:
             image_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'icons', icon + '.png')
+        if image_path:
             if icon_size:
                 size_height = icon_size[1] if icon_size[1] <= self.height - 100 else self.height - 100
                 size = (icon_size[0], size_height)
