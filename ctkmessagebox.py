@@ -3,6 +3,7 @@ CustomTkinter Messagebox
 Author: Akash Bora
 Version: 2.0
 """
+import gc
 
 import customtkinter
 from PIL import Image
@@ -12,7 +13,13 @@ import sys
 import time
 
 class CTkMessagebox(customtkinter.CTkToplevel):
-    
+    ICONS = {
+        "check": None,
+        "cancel": None,
+        "info": None,
+        "question": None,
+        "warning": None
+    }
     def __init__(self,
                  master: any = None,
                  width: int = 400,
@@ -173,17 +180,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         else:
             self.border_color = border_color
 
-        if icon_size:
-            self.size_height = icon_size[1] if icon_size[1]<=self.height-100 else self.height-100
-            self.size = (icon_size[0], self.size_height)
-        else:
-            self.size = (self.height/4, self.height/4)
-
-        if icon in ["check", "cancel", "info", "question", "warning"]:
-            self.icon = customtkinter.CTkImage(Image.open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'icons', icon+'.png')),
-                                               size=self.size)
-        else:
-            self.icon = customtkinter.CTkImage(Image.open(icon), size=self.size) if icon else None
+        self.icon = self.load_icon(icon, icon_size) if icon else None
 
         self.frame_top = customtkinter.CTkFrame(self, corner_radius=self.round_corners, width=self.width, border_width=self.border_width,
                                                 bg_color=self.transparent_color, fg_color=self.bg_color, border_color=self.border_color)
@@ -278,6 +275,17 @@ class CTkMessagebox(customtkinter.CTkToplevel):
 
         self.focus_set()
 
+    def load_icon(self, icon, icon_size):
+        if icon not in self.ICONS or self.ICONS[icon] is None:
+            image_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'icons', icon + '.png')
+            if icon_size:
+                size_height = icon_size[1] if icon_size[1] <= self.height - 100 else self.height - 100
+                size = (icon_size[0], size_height)
+            else:
+                size = (self.height / 4, self.height / 4)
+            self.ICONS[icon] = customtkinter.CTkImage(Image.open(image_path), size=size)
+        return self.ICONS[icon]
+
     def return_key_handler(self, event):
         if not hasattr(self, 'option_text_3') and not hasattr(self, 'option_text_2') \
                 and hasattr(self, 'option_text_1') and self.option_text_1:
@@ -359,6 +367,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                 self.fade_out()
             self.grab_release()
             self.destroy()
+        gc.collect()
 
 if __name__ == "__main__":
     app = CTkMessagebox()
