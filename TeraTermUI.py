@@ -420,6 +420,7 @@ class TeraTermUI(customtkinter.CTk):
         self.idle = None
         self.passed = False
         self.tesseract_unzipped = False
+        self.keep_track_scaling = False
         self.a_counter = 0
         self.m_counter = 0
         self.e_counter = 0
@@ -1446,9 +1447,10 @@ class TeraTermUI(customtkinter.CTk):
             self.m_remove.configure(state="disabled")
         if self.a_counter == 5:
             self.m_add.configure(state="disabled")
+        self.scaling_optionemenu.configure(state="normal")
         self.scaling_optionemenu.configure(from_=90, to=100, number_of_steps=2)
-        self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
-        self.scaling_optionemenu.set(100)
+        self.scaling_tooltip.configure(message=str(scaling) + "%")
+        self.scaling_optionemenu.set(scaling)
         self.multiple_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 35))
         self.multiple_frame.grid_columnconfigure(2, weight=1)
         self.m_button_frame.grid(row=3, column=1, columnspan=4, rowspan=4, padx=(0, 0), pady=(0, 10))
@@ -2772,6 +2774,7 @@ class TeraTermUI(customtkinter.CTk):
         msg = None
         response = None
         lang = self.language_menu.get()
+        scaling = self.scaling_optionemenu.get()
         if not self.error_occurred:
             if lang == "English":
                 msg = CTkMessagebox(master=self, title="Go back?",
@@ -2814,6 +2817,10 @@ class TeraTermUI(customtkinter.CTk):
             self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(20, 20))
             self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(20, 20))
             self.intro_box.grid(row=1, column=1, padx=(20, 0), pady=(0, 0))
+            if self.current_scaling != scaling:
+                self.change_scaling_event(self.current_scaling)
+                self.scaling_optionemenu.set(self.current_scaling)
+                self.scaling_tooltip.configure(message=str(self.current_scaling) + "%")
             self.authentication_frame.grid_forget()
             self.student_frame.grid_forget()
             self.a_buttons_frame.grid_forget()
@@ -2822,6 +2829,7 @@ class TeraTermUI(customtkinter.CTk):
             self.t_buttons_frame.grid_forget()
             self.multiple_frame.grid_forget()
             self.m_button_frame.grid_forget()
+            self.scaling_optionemenu.configure(state="normal")
             self.language_menu.configure(state="normal")
             self.multiple.configure(state="normal")
             self.submit.configure(state="normal")
@@ -2870,11 +2878,17 @@ class TeraTermUI(customtkinter.CTk):
         if self.current_scaling not in (90, 95, 100):
             self.change_scaling_event(self.current_scaling)
             self.scaling_optionemenu.set(self.current_scaling)
-        if self.current_scaling in (90, 95, 100) and self.current_scaling != multiple_scaling:
-            self.change_scaling_event(self.current_scaling)
+            self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
             self.scaling_optionemenu.set(self.current_scaling)
-        self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
-        self.scaling_optionemenu.set(self.current_scaling)
+        elif self.current_scaling in (90, 95, 100) and multiple_scaling == self.current_scaling:
+            self.scaling_optionemenu.set(self.current_scaling)
+            self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
+            self.scaling_optionemenu.set(self.current_scaling)
+        else:
+            self.change_scaling_event(multiple_scaling)
+            self.scaling_optionemenu.set(multiple_scaling)
+            self.scaling_tooltip.configure(message=str(multiple_scaling) + "%")
+            self.scaling_optionemenu.set(multiple_scaling)
         self.tabview.grid(row=0, column=1, padx=(20, 20), pady=(20, 0), sticky="n")
         self.tabview.tab(self.enroll_tab).grid_columnconfigure(1, weight=2)
         self.tabview.tab(self.search_tab).grid_columnconfigure(1, weight=2)
@@ -4925,18 +4939,39 @@ class TeraTermUI(customtkinter.CTk):
     # Changes keybind depending on the tab the user is currently on
     def change_bind(self):
         self.focus_set()
+        scaling = self.scaling_optionemenu.get()
+        if not self.keep_track_scaling:
+            self.current_scaling = scaling
         if self.tabview.get() == self.enroll_tab:
             self.in_search_frame = False
             self.in_enroll_frame = True
+            self.keep_track_scaling = False
+            self.scaling_optionemenu.configure(state="normal")
+            if self.current_scaling != scaling:
+                self.change_scaling_event(self.current_scaling)
+                self.scaling_optionemenu.set(self.current_scaling)
+                self.scaling_tooltip.configure(message=str(self.current_scaling) + "%")
             self.bind("<Return>", lambda event: self.submit_event_handler())
             self.bind("<space>", lambda event: self.spacebar_event())
         elif self.tabview.get() == self.search_tab:
             self.in_enroll_frame = False
             self.in_search_frame = True
+            self.keep_track_scaling = True
+            if scaling != 100:
+                self.change_scaling_event(100)
+                self.scaling_optionemenu.set(100)
+                self.scaling_tooltip.configure(message=str(100) + "%")
+            self.scaling_optionemenu.configure(state="disabled")
             self.bind("<Return>", lambda event: self.search_event_handler())
         elif self.tabview.get() == self.other_tab:
             self.in_enroll_frame = False
             self.in_search_frame = False
+            self.keep_track_scaling = False
+            self.scaling_optionemenu.configure(state="normal")
+            if self.current_scaling != scaling:
+                self.change_scaling_event(self.current_scaling)
+                self.scaling_optionemenu.set(self.current_scaling)
+                self.scaling_tooltip.configure(message=str(self.current_scaling) + "%")
             self.bind("<Return>", lambda event: self.option_menu_event_handler())
             self.bind("<space>", lambda event: self.spacebar_event())
 
