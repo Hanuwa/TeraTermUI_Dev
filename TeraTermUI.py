@@ -52,6 +52,7 @@ from Cryptodome.Util.Padding import pad, unpad
 from Cryptodome.Random import get_random_bytes
 from CTkToolTip import CTkToolTip
 from CTkMessagebox import CTkMessagebox
+from ctypes import wintypes
 from customtkinter import ctktable
 from datetime import datetime, timedelta
 from filelock import FileLock, Timeout
@@ -74,6 +75,23 @@ from PIL import Image, ImageOps
 
 customtkinter.set_appearance_mode("System")
 customtkinter.set_default_color_theme("blue")
+
+
+DWMWA_EXTENDED_FRAME_BOUNDS = 9
+
+class RECT(ctypes.Structure):
+    _fields_ = [("left", wintypes.LONG),
+                ("top", wintypes.LONG),
+                ("right", wintypes.LONG),
+                ("bottom", wintypes.LONG)]
+
+def get_window_rect(hwnd):
+    rect = RECT()
+    DwmGetWindowAttribute = ctypes.windll.dwmapi.DwmGetWindowAttribute
+    DwmGetWindowAttribute.restype = wintypes.LONG
+    DwmGetWindowAttribute.argtypes = [wintypes.HWND, wintypes.DWORD, ctypes.POINTER(RECT), wintypes.DWORD]
+    DwmGetWindowAttribute(hwnd, DWMWA_EXTENDED_FRAME_BOUNDS, ctypes.byref(rect), ctypes.sizeof(rect))
+    return rect.left, rect.top, rect.right, rect.bottom
 
 
 class TeraTermUI(customtkinter.CTk):
@@ -2793,13 +2811,13 @@ class TeraTermUI(customtkinter.CTk):
                                     icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
                                     hover_color=("darkred", "darkblue", "darkblue"))
             response = msg.get()
-        if TeraTermUI.checkIfProcessRunning("ttermpro") and (response[0] == "Yes" or response[0] == "Sí" or
-                                                             self.error_occurred):
+        if TeraTermUI.checkIfProcessRunning("ttermpro") and (
+                self.error_occurred or (response and (response[0] == "Yes" or response[0] == "Sí"))):
             self.uprb.kill(soft=True)
-        elif TeraTermUI.checkIfProcessRunning("ttermpro") and (response[0] == "Yes" or response[0] == "Sí" or
-                                                               self.error_occurred):
+        elif TeraTermUI.checkIfProcessRunning("ttermpro") and (
+                self.error_occurred or (response and (response[0] == "Yes" or response[0] == "Sí"))):
             subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"])
-        if response[0] == "Yes" or response[0] == "Sí" or self.error_occurred:
+        if self.error_occurred or (response and (response[0] == "Yes" or response[0] == "Sí")):
             self.stop_thread()
             self.reset_activity_timer(None)
             self.unbind("<space>")
@@ -2817,10 +2835,11 @@ class TeraTermUI(customtkinter.CTk):
             self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(20, 20))
             self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(20, 20))
             self.intro_box.grid(row=1, column=1, padx=(20, 0), pady=(0, 0))
-            if self.current_scaling != scaling:
-                self.change_scaling_event(self.current_scaling)
-                self.scaling_optionemenu.set(self.current_scaling)
-                self.scaling_tooltip.configure(message=str(self.current_scaling) + "%")
+            if self.run_fix:
+                if self.current_scaling != scaling:
+                    self.change_scaling_event(self.current_scaling)
+                    self.scaling_optionemenu.set(self.current_scaling)
+                    self.scaling_tooltip.configure(message=str(self.current_scaling) + "%")
             self.authentication_frame.grid_forget()
             self.student_frame.grid_forget()
             self.a_buttons_frame.grid_forget()
@@ -4054,16 +4073,14 @@ class TeraTermUI(customtkinter.CTk):
         window_title = "uprbay.uprb.edu - Tera Term VT"
         hwnd = win32gui.FindWindow(None, window_title)
         win32gui.SetForegroundWindow(hwnd)
-        left, top, right, bottom = win32gui.GetClientRect(hwnd)
-        x, y = win32gui.ClientToScreen(hwnd, (left, top))
-        width = right - left
-        height = bottom - top
+        x, y, right, bottom = get_window_rect(hwnd)
+        width = right - x
+        height = bottom - y
         if self.loading_screen.winfo_exists():
             self.hide_loading_screen()
-        screenshot = pyautogui.screenshot(region=(x, y - 50, width + 150, height + 150))
+        screenshot = pyautogui.screenshot(region=(x, y, width, height))
         if self.loading_screen.winfo_exists():
             self.show_loading_screen_again()
-        screenshot = screenshot.resize((screenshot.width * 2, screenshot.height * 2), Image.BICUBIC)
         screenshot = screenshot.convert('L')
         screenshot = ImageOps.autocontrast(screenshot, cutoff=5)
         # screenshot.save("screenshot.png")
@@ -4253,7 +4270,7 @@ class TeraTermUI(customtkinter.CTk):
         return data, course_found, invalid_action
 
     # checks whether the program can continue it's normal execution or if the server is on maintenance
-    def wait_for_prompt(self, prompt_text, maintenance_text, timeout=30):
+    def wait_for_prompt(self, prompt_text, maintenance_text, timeout=15):
         start_time = time.time()
         while True:
             text_output = self.capture_screenshot()
@@ -4827,7 +4844,7 @@ class TeraTermUI(customtkinter.CTk):
         self.idle_num_check = 0
         while self.is_running and not self.stop_check_idle.is_set():
             with self.lock_thread:
-                if time.time() - self.last_activity >= 240:
+                if time.time() - self.last_activity >= 375:
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         self.unbind("<Return>")
                         self.focus_set()
@@ -4862,7 +4879,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.idle_num_check = 1
                         self.show_sidebar_windows()
                         self.change_bind()
-            if self.idle_num_check == 8:
+            if self.idle_num_check == 5:
                 break
             time.sleep(3)
 
