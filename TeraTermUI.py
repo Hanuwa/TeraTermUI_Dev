@@ -70,28 +70,12 @@ from reportlab.platypus import SimpleDocTemplate, Table, \
 from tkinter import *
 from tkinter import filedialog
 from PIL import Image, ImageOps
+
 # from collections import deque
 # from memory_profiler import profile
 
 customtkinter.set_appearance_mode("System")
 customtkinter.set_default_color_theme("blue")
-
-
-DWMWA_EXTENDED_FRAME_BOUNDS = 9
-
-class RECT(ctypes.Structure):
-    _fields_ = [("left", wintypes.LONG),
-                ("top", wintypes.LONG),
-                ("right", wintypes.LONG),
-                ("bottom", wintypes.LONG)]
-
-def get_window_rect(hwnd):
-    rect = RECT()
-    DwmGetWindowAttribute = ctypes.windll.dwmapi.DwmGetWindowAttribute
-    DwmGetWindowAttribute.restype = wintypes.LONG
-    DwmGetWindowAttribute.argtypes = [wintypes.HWND, wintypes.DWORD, ctypes.POINTER(RECT), wintypes.DWORD]
-    DwmGetWindowAttribute(hwnd, DWMWA_EXTENDED_FRAME_BOUNDS, ctypes.byref(rect), ctypes.sizeof(rect))
-    return rect.left, rect.top, rect.right, rect.bottom
 
 
 class TeraTermUI(customtkinter.CTk):
@@ -5891,6 +5875,25 @@ class SmoothFadeToplevel(customtkinter.CTkToplevel):
     def button_event(self, event=None):
         self.fade_direction = -1
         self._fade()
+
+
+DWMWA_EXTENDED_FRAME_BOUNDS = 9
+
+
+class RECT(ctypes.Structure):
+    _fields_ = [("left", wintypes.LONG),
+                ("top", wintypes.LONG),
+                ("right", wintypes.LONG),
+                ("bottom", wintypes.LONG)]
+
+
+def get_window_rect(hwnd):
+    rect = RECT()
+    DwmGetWindowAttribute = ctypes.windll.dwmapi.DwmGetWindowAttribute
+    DwmGetWindowAttribute.restype = wintypes.LONG
+    DwmGetWindowAttribute.argtypes = [wintypes.HWND, wintypes.DWORD, ctypes.POINTER(RECT), wintypes.DWORD]
+    DwmGetWindowAttribute(hwnd, DWMWA_EXTENDED_FRAME_BOUNDS, ctypes.byref(rect), ctypes.sizeof(rect))
+    return rect.left, rect.top, rect.right, rect.bottom
 
 
 def main():
