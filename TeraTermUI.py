@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 7/10/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 7/11/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -70,7 +70,6 @@ from reportlab.platypus import SimpleDocTemplate, Table, \
 from tkinter import *
 from tkinter import filedialog
 from PIL import Image, ImageOps
-
 # from collections import deque
 # from memory_profiler import profile
 
@@ -83,8 +82,8 @@ class TeraTermUI(customtkinter.CTk):
         super().__init__()
         self.title("Tera Term UI")
         # determines screen size to put application in the middle of the screen
-        width = 870
-        height = 490
+        width = 910
+        height = 485
         scaling_factor = self.tk.call("tk", "scaling")
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
@@ -121,7 +120,6 @@ class TeraTermUI(customtkinter.CTk):
         self.uprbay_window = None
         self.uprb = None
         self.table = None
-        self.current_scaling = None
         self.server_status = None
         self.timer_window = None
         self.timer_label = None
@@ -195,7 +193,7 @@ class TeraTermUI(customtkinter.CTk):
                                                                        command=self.change_appearance_mode_event)
         self.appearance_mode_optionemenu.set("System")
         self.appearance_mode_optionemenu.grid(row=7, column=0, padx=20, pady=(10, 10))
-        self.scaling_optionemenu = customtkinter.CTkSlider(self.sidebar_frame, from_=90, to=110, number_of_steps=4,
+        self.scaling_optionemenu = customtkinter.CTkSlider(self.sidebar_frame, from_=97, to=103, number_of_steps=2,
                                                            width=150, height=20, command=self.change_scaling_event)
         self.scaling_optionemenu.set(100)
         self.scaling_tooltip = CTkToolTip(self.scaling_optionemenu, message=str(self.scaling_optionemenu.get()) + "%",
@@ -247,7 +245,7 @@ class TeraTermUI(customtkinter.CTk):
                               " open source for anyone who is interested in working/seeing the project. \n\n" +
                               "IMPORTANT: DO NOT USE WHILE HAVING ANOTHER INSTANCE OF THE APPLICATION OPENED.  "
                               "")
-        self.intro_box.configure(state="disabled", wrap="word", border_spacing=8)
+        self.intro_box.configure(state="disabled", wrap="word", border_spacing=7)
         self.intro_box.grid(row=1, column=1, padx=(20, 0), pady=(0, 0))
 
         # (Log-in Screen)
@@ -422,7 +420,6 @@ class TeraTermUI(customtkinter.CTk):
         self.idle = None
         self.passed = False
         self.tesseract_unzipped = False
-        self.keep_track_scaling = False
         self.a_counter = 0
         self.m_counter = 0
         self.e_counter = 0
@@ -802,18 +799,18 @@ class TeraTermUI(customtkinter.CTk):
         self.search_scrollbar.grid(row=0, column=1, padx=(0, 0), pady=(0, 0), sticky="nsew")
         self.title_search.grid(row=0, column=1, padx=(0, 0), pady=(0, 20), sticky="n")
         if lang == "English":
+            self.s_classes.grid(row=1, column=1, padx=(0, 535), pady=(0, 0), sticky="n")
+            self.s_classes_entry.grid(row=1, column=1, padx=(0, 410), pady=(0, 0), sticky="n")
+            self.s_semester.grid(row=1, column=1, padx=(0, 255), pady=(0, 0), sticky="n")
+            self.s_semester_entry.grid(row=1, column=1, padx=(0, 105), pady=(0, 0), sticky="n")
+            self.show_all.grid(row=1, column=1, padx=(90, 0), pady=(1, 0), sticky="n")
+        elif lang == "Español":
             self.s_classes.grid(row=1, column=1, padx=(0, 550), pady=(0, 0), sticky="n")
             self.s_classes_entry.grid(row=1, column=1, padx=(0, 425), pady=(0, 0), sticky="n")
             self.s_semester.grid(row=1, column=1, padx=(0, 270), pady=(0, 0), sticky="n")
             self.s_semester_entry.grid(row=1, column=1, padx=(0, 120), pady=(0, 0), sticky="n")
-            self.show_all.grid(row=1, column=1, padx=(80, 0), pady=(1, 0), sticky="n")
-        elif lang == "Español":
-            self.s_classes.grid(row=1, column=1, padx=(0, 560), pady=(0, 0), sticky="n")
-            self.s_classes_entry.grid(row=1, column=1, padx=(0, 435), pady=(0, 0), sticky="n")
-            self.s_semester.grid(row=1, column=1, padx=(0, 280), pady=(0, 0), sticky="n")
-            self.s_semester_entry.grid(row=1, column=1, padx=(0, 130), pady=(0, 0), sticky="n")
-            self.show_all.grid(row=1, column=1, padx=(70, 0), pady=(0, 5), sticky="n")
-        self.search.grid(row=1, column=1, padx=(420, 0), pady=(0, 5), sticky="n")
+            self.show_all.grid(row=1, column=1, padx=(85, 0), pady=(0, 5), sticky="n")
+        self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
         self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
         self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         if lang == "English":
@@ -1432,40 +1429,20 @@ class TeraTermUI(customtkinter.CTk):
     # multiple classes screen
     def multiple_classes_event(self):
         self.focus_set()
-        lang = self.language_menu.get()
-        scaling = self.scaling_optionemenu.get()
         self.in_enroll_frame = False
         self.in_search_frame = False
         self.arrow_keys = True
-        self.current_scaling = scaling
         self.unbind("<space>")
         self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
         self.bind("<Up>", lambda event: self.add_event())
         self.bind("<Down>", lambda event: self.remove_event())
-        if scaling not in (90, 95, 100):
-            self.change_scaling_event(100)
-            self.scaling_optionemenu.set(100)
-        if self.a_counter < 1:
-            self.m_remove.configure(state="disabled")
-        if self.a_counter == 5:
-            self.m_add.configure(state="disabled")
-        self.scaling_optionemenu.configure(state="normal")
-        self.scaling_optionemenu.configure(from_=90, to=100, number_of_steps=2)
-        self.scaling_tooltip.configure(message=str(scaling) + "%")
-        self.scaling_optionemenu.set(scaling)
-        self.multiple_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 35))
+        self.multiple_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 30))
         self.multiple_frame.grid_columnconfigure(2, weight=1)
         self.m_button_frame.grid(row=3, column=1, columnspan=4, rowspan=4, padx=(0, 0), pady=(0, 10))
         self.m_button_frame.grid_columnconfigure(2, weight=1)
-        if lang == "English":
-            self.save_frame.grid(row=3, column=2, padx=(0, 9), pady=(0, 8))
-        elif lang == "Español":
-            self.save_frame.grid(row=3, column=2, padx=(0, 11), pady=(0, 8))
+        self.save_frame.grid(row=3, column=2, padx=(0, 50), pady=(0, 8), sticky="e")
         self.save_frame.grid_columnconfigure(2, weight=1)
-        if lang == "English":
-            self.auto_frame.grid(row=3, column=1, padx=(0, 433), pady=(0, 8))
-        elif lang == "Español":
-            self.auto_frame.grid(row=3, column=1, padx=(0, 399), pady=(0, 8))
+        self.auto_frame.grid(row=3, column=1, padx=(50, 0), pady=(0, 8), sticky="w")
         self.auto_frame.grid_columnconfigure(2, weight=1)
         self.explanation7.grid(row=0, column=1, padx=(0, 0), pady=(0, 20))
         self.m_class.grid(row=0, column=1, padx=(0, 500), pady=(32, 0))
@@ -2776,7 +2753,6 @@ class TeraTermUI(customtkinter.CTk):
         msg = None
         response = None
         lang = self.language_menu.get()
-        scaling = self.scaling_optionemenu.get()
         if not self.error_occurred:
             if lang == "English":
                 msg = CTkMessagebox(master=self, title="Go back?",
@@ -2811,7 +2787,7 @@ class TeraTermUI(customtkinter.CTk):
             self.initialization_class()
             self.initialization_multiple()
             if self.language_menu.get() == "Español":
-                self.host.grid(row=2, column=0, columnspan=2, padx=(0, 5), pady=(20, 20))
+                self.host.grid(row=2, column=0, columnspan=2, padx=(5, 0), pady=(20, 20))
             elif self.language_menu.get() == "English":
                 self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(20, 20))
             self.disable_go_next_buttons()
@@ -2819,11 +2795,6 @@ class TeraTermUI(customtkinter.CTk):
             self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(20, 20))
             self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(20, 20))
             self.intro_box.grid(row=1, column=1, padx=(20, 0), pady=(0, 0))
-            if self.run_fix:
-                if self.current_scaling != scaling:
-                    self.change_scaling_event(self.current_scaling)
-                    self.scaling_optionemenu.set(self.current_scaling)
-                    self.scaling_tooltip.configure(message=str(self.current_scaling) + "%")
             self.authentication_frame.grid_forget()
             self.student_frame.grid_forget()
             self.a_buttons_frame.grid_forget()
@@ -2832,7 +2803,6 @@ class TeraTermUI(customtkinter.CTk):
             self.t_buttons_frame.grid_forget()
             self.multiple_frame.grid_forget()
             self.m_button_frame.grid_forget()
-            self.scaling_optionemenu.configure(state="normal")
             self.language_menu.configure(state="normal")
             self.multiple.configure(state="normal")
             self.submit.configure(state="normal")
@@ -2874,24 +2844,7 @@ class TeraTermUI(customtkinter.CTk):
         self.unbind("<Up>")
         self.unbind("<Down>")
         self.change_bind()
-        self.arrow_keys = False
         lang = self.language_menu.get()
-        multiple_scaling = self.scaling_optionemenu.get()
-        self.scaling_optionemenu.configure(from_=90, to=110, number_of_steps=4)
-        if self.current_scaling not in (90, 95, 100):
-            self.change_scaling_event(self.current_scaling)
-            self.scaling_optionemenu.set(self.current_scaling)
-            self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
-            self.scaling_optionemenu.set(self.current_scaling)
-        elif self.current_scaling in (90, 95, 100) and multiple_scaling == self.current_scaling:
-            self.scaling_optionemenu.set(self.current_scaling)
-            self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
-            self.scaling_optionemenu.set(self.current_scaling)
-        else:
-            self.change_scaling_event(multiple_scaling)
-            self.scaling_optionemenu.set(multiple_scaling)
-            self.scaling_tooltip.configure(message=str(multiple_scaling) + "%")
-            self.scaling_optionemenu.set(multiple_scaling)
         self.tabview.grid(row=0, column=1, padx=(20, 20), pady=(20, 0), sticky="n")
         self.tabview.tab(self.enroll_tab).grid_columnconfigure(1, weight=2)
         self.tabview.tab(self.search_tab).grid_columnconfigure(1, weight=2)
@@ -2914,18 +2867,18 @@ class TeraTermUI(customtkinter.CTk):
         self.search_scrollbar.grid(row=0, column=1, padx=(0, 0), pady=(0, 0), sticky="nsew")
         self.title_search.grid(row=0, column=1, padx=(0, 0), pady=(0, 20), sticky="n")
         if lang == "English":
-            self.s_classes.grid(row=1, column=1, padx=(0, 550), pady=(0, 0), sticky="n")
-            self.s_classes_entry.grid(row=1, column=1, padx=(0, 425), pady=(0, 0), sticky="n")
+            self.s_classes.grid(row=1, column=1, padx=(0, 580), pady=(0, 0), sticky="e")
+            self.s_classes_entry.grid(row=1, column=1, padx=(0, 430), pady=(0, 0), sticky="n")
             self.s_semester.grid(row=1, column=1, padx=(0, 270), pady=(0, 0), sticky="n")
             self.s_semester_entry.grid(row=1, column=1, padx=(0, 120), pady=(0, 0), sticky="n")
             self.show_all.grid(row=1, column=1, padx=(80, 0), pady=(1, 0), sticky="n")
         elif lang == "Español":
-            self.s_classes.grid(row=1, column=1, padx=(0, 560), pady=(0, 0), sticky="n")
-            self.s_classes_entry.grid(row=1, column=1, padx=(0, 435), pady=(0, 0), sticky="n")
-            self.s_semester.grid(row=1, column=1, padx=(0, 280), pady=(0, 0), sticky="n")
-            self.s_semester_entry.grid(row=1, column=1, padx=(0, 130), pady=(0, 0), sticky="n")
-            self.show_all.grid(row=1, column=1, padx=(70, 0), pady=(0, 5), sticky="n")
-        self.search.grid(row=1, column=1, padx=(430, 0), pady=(0, 5), sticky="n")
+            self.s_classes.grid(row=1, column=1, padx=(0, 545), pady=(0, 0), sticky="n")
+            self.s_classes_entry.grid(row=1, column=1, padx=(0, 420), pady=(0, 0), sticky="n")
+            self.s_semester.grid(row=1, column=1, padx=(0, 265), pady=(0, 0), sticky="n")
+            self.s_semester_entry.grid(row=1, column=1, padx=(0, 115), pady=(0, 0), sticky="n")
+            self.show_all.grid(row=1, column=1, padx=(80, 0), pady=(0, 5), sticky="n")
+        self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
         if self.search_next_page_status:
             self.search.configure(width=85)
             if lang == "English":
@@ -2935,7 +2888,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.search.grid(row=1, column=1, padx=(285, 0), pady=(0, 5), sticky="n")
                 self.search_next_page.grid(row=1, column=1, padx=(465, 0), pady=(0, 5), sticky="n")
         else:
-            self.search.configure(width=140)
+            self.search.configure(width=141)
             self.search.grid(row=1, column=1, padx=(430, 0), pady=(0, 5), sticky="n")
         self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
         self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
@@ -3729,15 +3682,16 @@ class TeraTermUI(customtkinter.CTk):
                                                      "1VE (Academic Record)", "3DD (Scholarship Payment Record)",
                                                      "409 (Account Balance)", "683 (Academic Evaluation)",
                                                      "1PL (Basic Personal Data)", "4CM (Tuition Calculation)",
-                                                     "4SP (Apply for Extension)", "SO (Sign out)"])
+                                                     "4SP (Apply for Extension)", "SO (Sign out)"], width=141)
             self.menu_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab), text="Semester")
             self.menu_semester_entry = CustomComboBox(self.tabview.tab(self.other_tab), self,
                                                       values=["B91", "B92", "B93", "C01", "C02", "C03",
-                                                              "C11", "C12", "C13", "C21", "C22", "C23", "C31"])
+                                                              "C11", "C12", "C13", "C21", "C22", "C23", "C31"],
+                                                      width=141)
             self.menu_semester_entry.set(self.DEFAULT_SEMESTER)
             self.menu_submit = customtkinter.CTkButton(master=self.tabview.tab(self.other_tab), border_width=2,
                                                        text="Submit", text_color=("gray10", "#DCE4EE"),
-                                                       command=self.option_menu_event_handler)
+                                                       command=self.option_menu_event_handler, width=141)
             self.go_next_1VE = customtkinter.CTkButton(master=self.tabview.tab(self.other_tab), fg_color="transparent",
                                                        border_width=2, text="Next Page",
                                                        text_color=("gray10", "#DCE4EE"), hover_color="#4E4F50",
@@ -4148,6 +4102,7 @@ class TeraTermUI(customtkinter.CTk):
     # dipslays the extracted data into a table
     def display_data(self, data):
         download_pdf = None
+        tooltip_message = None
         lang = self.language_menu.get()
         modified_data = []
         for item in data:
@@ -4198,6 +4153,31 @@ class TeraTermUI(customtkinter.CTk):
             self.table.grid(row=2, column=1, padx=(0, 0), pady=(20, 20), sticky="n")
             for i in range(5):
                 self.table.edit_column(i, width=60)
+            tooltip_messages_en = {
+                'SEC': "Section",
+                'M': "Modality",
+                'CRED': "Amount of Credits",
+                'DAYS': "The days you take the class",
+                'TIMES': "The time frame you take the class",
+                'AV': "Available spaces",
+                'INSTRUCTOR': "The professor who will \ngive the class",
+            }
+            tooltip_messages_es = {
+                'SEC': "Sección",
+                'M': "Modalidad",
+                'CRED': "Cantidad de Créditos",
+                'DAYS': "Los días en el que tomarás la clase",
+                'TIMES': "El marco de tiempo \nen el que tomarás clase",
+                'AV': "Espacios disponibles",
+                'INSTRUCTOR': "El profésor que dara la clase",
+            }
+            for i, header in enumerate(headers):
+                cell = self.table.get_cell(0, i)  # Assuming 0 is the index of the header row
+                if lang == "English":
+                    tooltip_message = tooltip_messages_en[header]
+                elif lang == "Español":
+                    tooltip_message = tooltip_messages_es[header]
+                tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#A9A9A9", alpha=0.90)
             # Store the current table values and dimensions for the next update
             self.previous_table_values = table_values
             self.table_rows = num_rows
@@ -4232,11 +4212,9 @@ class TeraTermUI(customtkinter.CTk):
                 invalid_action = True
 
             if "COURSE NOT IN COURSE TERM FILE" in line:
-                next_line = lines[i + 1].strip() if i + 1 < len(lines) else ""
-                if next_line:
-                    text_next_to_course = next_line.split(",")[0].strip()
-                    if text_next_to_course:
-                        course_found = True
+                text_next_to_course = line.split("COURSE NOT IN COURSE TERM FILE")[-1].strip()
+                if text_next_to_course:
+                    course_found = True
 
         for line in lines:
             match = re.search(
@@ -4513,8 +4491,8 @@ class TeraTermUI(customtkinter.CTk):
     def move_slider_left(self, event):
         if self.move_slider_left_enabled:
             value = self.scaling_optionemenu.get()
-            if value != 90:
-                value -= 5
+            if value != 97:
+                value -= 3
                 self.scaling_optionemenu.set(value)
                 self.change_scaling_event(value)
                 self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
@@ -4523,18 +4501,11 @@ class TeraTermUI(customtkinter.CTk):
     def move_slider_right(self, event):
         if self.move_slider_right_enabled:
             value = self.scaling_optionemenu.get()
-            if not self.arrow_keys:
-                if value != 110:
-                    value += 5
-                    self.scaling_optionemenu.set(value)
-                    self.change_scaling_event(value)
-                    self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
-            elif self.arrow_keys:
-                if value != 100:
-                    value += 5
-                    self.scaling_optionemenu.set(value)
-                    self.change_scaling_event(value)
-                    self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
+            if value != 103:
+                value += 3
+                self.scaling_optionemenu.set(value)
+                self.change_scaling_event(value)
+                self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
 
     # Keybindings for different widgets
     def spacebar_event(self):
@@ -4940,39 +4911,18 @@ class TeraTermUI(customtkinter.CTk):
     # Changes keybind depending on the tab the user is currently on
     def change_bind(self):
         self.focus_set()
-        scaling = self.scaling_optionemenu.get()
-        if not self.keep_track_scaling:
-            self.current_scaling = scaling
         if self.tabview.get() == self.enroll_tab:
             self.in_search_frame = False
             self.in_enroll_frame = True
-            self.keep_track_scaling = False
-            self.scaling_optionemenu.configure(state="normal")
-            if self.current_scaling != scaling:
-                self.change_scaling_event(self.current_scaling)
-                self.scaling_optionemenu.set(self.current_scaling)
-                self.scaling_tooltip.configure(message=str(self.current_scaling) + "%")
             self.bind("<Return>", lambda event: self.submit_event_handler())
             self.bind("<space>", lambda event: self.spacebar_event())
         elif self.tabview.get() == self.search_tab:
             self.in_enroll_frame = False
             self.in_search_frame = True
-            self.keep_track_scaling = True
-            if scaling != 100:
-                self.change_scaling_event(100)
-                self.scaling_optionemenu.set(100)
-                self.scaling_tooltip.configure(message=str(100) + "%")
-            self.scaling_optionemenu.configure(state="disabled")
             self.bind("<Return>", lambda event: self.search_event_handler())
         elif self.tabview.get() == self.other_tab:
             self.in_enroll_frame = False
             self.in_search_frame = False
-            self.keep_track_scaling = False
-            self.scaling_optionemenu.configure(state="normal")
-            if self.current_scaling != scaling:
-                self.change_scaling_event(self.current_scaling)
-                self.scaling_optionemenu.set(self.current_scaling)
-                self.scaling_tooltip.configure(message=str(self.current_scaling) + "%")
             self.bind("<Return>", lambda event: self.option_menu_event_handler())
             self.bind("<space>", lambda event: self.spacebar_event())
 
@@ -5915,3 +5865,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
