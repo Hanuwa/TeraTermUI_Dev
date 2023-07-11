@@ -413,6 +413,12 @@ class CTkTable(customtkinter.CTkFrame):
         else:
             return self.values
 
+    def get_cell(self, row, column):
+        """
+        Returns a cell in the table at the specified row and column.
+        """
+        return self.frame[row, column]
+
     def configure(self, **kwargs):
         """ configure table widget attributes"""
 
