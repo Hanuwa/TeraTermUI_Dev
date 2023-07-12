@@ -16,6 +16,8 @@ versions = ['installer', 'portable']
 output_directory = os.path.join(r"C:/Users/" + username + "/OneDrive/Documentos", "TeraTermUI_" + update)
 upx_command = r"upx --best " + output_directory + r"\TeraTermUI.dist\TeraTermUI.exe"
 try:
+    if os.path.exists(output_directory):
+        shutil.rmtree(output_directory)
     os.makedirs(output_directory, exist_ok=True)
     for filename in os.listdir(project_directory+"\dist"):
         src = os.path.join(project_directory+"\dist", filename)
@@ -57,7 +59,6 @@ nuitka_command = (
     r'--windows-icon-from-ico="'+project_directory+r'\images\tera-term.ico" '
     r'--lto=yes '
 )
-
 
 # Execute the DELETE SQL command
 connection = sqlite3.connect(r"C:\Users" + "\\" + username + r"\PycharmProjects\TeraTermUI\database.db")
