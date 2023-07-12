@@ -68,7 +68,7 @@ connection.commit()
 # Check current state of the script to decide the order of versions
 with open(project_directory+r"\TeraTermUI.py", 'r', encoding='utf-8') as file:
     data = file.read()
-if 'self.connection = sqlite3.connect("database.db")' in data:
+if 'self.connection = sqlite3.connect("database.db", check_same_thread=False)' in data:
     versions = ['installer', 'portable']
 else:
     versions = ['portable', 'installer']
@@ -81,8 +81,8 @@ for version in versions:
         # Replace old text with new text for portable and installer versions
         if version == 'installer':
             script = "installer"
-            data = data.replace('self.connection = sqlite3.connect("database.db")',
-                                'self.connection = sqlite3.connect(self.db_path)')
+            data = data.replace('self.connection = sqlite3.connect("database.db", check_same_thread=False)',
+                                'self.connection = sqlite3.connect(self.db_path, check_same_thread=False)')
             data = data.replace('closing(sqlite3.connect("database.db")) as connection',
                                 'closing(sqlite3.connect(self.db_path)) as connection')
             data = data.replace('with open(self.SERVICE_ACCOUNT_FILE, "rb"):',
@@ -94,8 +94,8 @@ for version in versions:
             print(Fore.GREEN + "Successfully started installer version\n" + Style.RESET_ALL)
         else:
             script = "portable"
-            data = data.replace('self.connection = sqlite3.connect(self.db_path)',
-                                'self.connection = sqlite3.connect("database.db")')
+            data = data.replace('self.connection = sqlite3.connect(self.db_path, check_same_thread=False)',
+                                'self.connection = sqlite3.connect("database.db, check_same_thread=False")')
             data = data.replace('closing(sqlite3.connect(self.db_path)) as connection',
                                 'closing(sqlite3.connect("database.db")) as connection')
             data = data.replace('with open(self.ath, "rb"):',
