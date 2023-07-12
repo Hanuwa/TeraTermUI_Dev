@@ -142,6 +142,7 @@ class TeraTermUI(customtkinter.CTk):
         self.get_class_for_pdf = None
         self.previous_table_values = None
         self.table_rows = None
+        self.is_banned = None
 
         self.images = {
             "folder": customtkinter.CTkImage(light_image=Image.open("images/folder.png"), size=(18, 18)),
@@ -2568,6 +2569,8 @@ class TeraTermUI(customtkinter.CTk):
             self.destroy_windows()
             self.hide_sidebar_windows()
             self.unbind("<Return>")
+            timeout_counter = 0
+            skip = False
             lang = self.language_menu.get()
             host = self.host_entry.get().replace(" ", "").lower()
             if self.test_connection(lang) and self.check_server():
@@ -2575,7 +2578,11 @@ class TeraTermUI(customtkinter.CTk):
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         while not self.tesseract_unzipped:
                             time.sleep(1)
-                        if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
+                            timeout_counter += 1
+                            if timeout_counter > 4.5:
+                                skip = True
+                                break
+                        if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT") and not skip:
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
@@ -4011,23 +4018,32 @@ class TeraTermUI(customtkinter.CTk):
 
     # captures a screenshot of tera term and performs OCR
     def capture_screenshot(self):
-        window_title = "uprbay.uprb.edu - Tera Term VT"
-        hwnd = win32gui.FindWindow(None, window_title)
-        win32gui.SetForegroundWindow(hwnd)
-        x, y, right, bottom = get_window_rect(hwnd)
-        width = right - x
-        height = bottom - y
-        if self.loading_screen.winfo_exists():
-            self.hide_loading_screen()
-        screenshot = pyautogui.screenshot(region=(x, y, width, height))
-        if self.loading_screen.winfo_exists():
-            self.show_loading_screen_again()
-        screenshot = screenshot.convert('L')
-        screenshot = ImageOps.autocontrast(screenshot, cutoff=5)
-        # screenshot.save("screenshot.png")
-        custom_config = r"--oem 3 --psm 11"
-        text = pytesseract.image_to_string(screenshot, config=custom_config)
-        return text
+        lang = self.language_menu.get()
+        if self.tesseract_unzipped:
+            window_title = "uprbay.uprb.edu - Tera Term VT"
+            hwnd = win32gui.FindWindow(None, window_title)
+            win32gui.SetForegroundWindow(hwnd)
+            x, y, right, bottom = get_window_rect(hwnd)
+            width = right - x
+            height = bottom - y
+            if self.loading_screen.winfo_exists():
+                self.hide_loading_screen()
+            screenshot = pyautogui.screenshot(region=(x, y, width, height))
+            if self.loading_screen.winfo_exists():
+                self.show_loading_screen_again()
+            screenshot = screenshot.convert('L')
+            screenshot = ImageOps.autocontrast(screenshot, cutoff=5)
+            # screenshot.save("screenshot.png")
+            custom_config = r"--oem 3 --psm 11"
+            text = pytesseract.image_to_string(screenshot, config=custom_config)
+            return text
+        else:
+            if lang == "English":
+                self.after(0, lambda: self.show_error_message(320, 225, "Fatal Error! Might need to\n"
+                                                                        "reinstall application"))
+            elif lang == "Español":
+                self.after(0, lambda: self.show_error_message(320, 225, "¡Error fatal! Es posible que necesite\n"
+                                                                        " reinstalar la aplicación"))
 
     # creates pdf of the table containing for the searched class
     def create_pdf(self, data, filename, class_name):
@@ -4302,13 +4318,16 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Return>", lambda event: self.login_event_handler())
 
         # Unzips Teserract OCR
-        with py7zr.SevenZipFile(self.zip_path, mode="r") as z:
-            z.extractall(self.app_temp_dir)
-
-        tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
-        pytesseract.pytesseract.tesseract_cmd = str(tesseract_dir / "tesseract.exe")
-        # tessdata_dir_config = f"--tessdata-dir {tesseract_dir / 'tessdata'}"
-        self.tesseract_unzipped = True
+        try:
+            with py7zr.SevenZipFile(self.zip_path, mode="r") as z:
+                z.extractall(self.app_temp_dir)
+            tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
+            pytesseract.pytesseract.tesseract_cmd = str(tesseract_dir / "tesseract.exe")
+            # tessdata_dir_config = f"--tessdata-dir {tesseract_dir / 'tessdata'}"
+            self.tesseract_unzipped = True
+        except Exception as e:
+            print(f"Error occurred during unzipping: {str(e)}")
+            self.tesseract_unzipped = False
 
         # Generating user_id to ban user from sending feedback if needed
         # If the file doesn't already exist, generate a new UUID and write it to the file
@@ -4337,11 +4356,12 @@ class TeraTermUI(customtkinter.CTk):
                     credentials_dict,
                     scopes=["https://www.googleapis.com/auth/spreadsheets"]
                 )
+                self.is_banned = self.is_user_banned(self.user_id)
         except Exception as e:
             print(f"Failed to load credentials: {str(e)}")
             self.credentials = None
             self.disable_feedback = True
-        del tesseract_dir_path, tesseract_dir, backup_path, z, line, lines
+        del tesseract_dir_path, tesseract_dir, backup_path, z, line, lines, credentials_dict, user_path
         gc.collect()
 
     # Deletes Tesseract OCR and tera term config file from the temp folder
@@ -5111,89 +5131,15 @@ class TeraTermUI(customtkinter.CTk):
     # Submits feedback from the user to a Google sheet
     def submit_feedback(self):
         msg = None
+        timeout_counter = 0
         lang = self.language_menu.get()
         self.feedbackSend.configure(state="disabled")
-        while self.user_id is None:
+        while self.user_id is None or self.is_banned is None:
             time.sleep(1)
-        if not self.disable_feedback and not self.is_user_banned(self.user_id):
-            current_date = datetime.today().strftime("%Y-%m-%d")
-            date = self.cursor.execute("SELECT date FROM user_data WHERE date IS NOT NULL").fetchall()
-            dates_list = [record[0] for record in date]
-            if current_date not in dates_list:
-                feedback = self.feedbackText.get("1.0", tk.END).strip()
-                word_count = len(feedback.split())
-                if word_count > 1000:
-                    winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                    if lang == "English":
-                        CTkMessagebox(title="Error", message="Error! Feedback cannot exceed 1000 words", icon="cancel",
-                                      button_width=380)
-                    elif lang == "Español":
-                        CTkMessagebox(title="Error", message="¡Error! El comentario no puede exceder 1000 palabras",
-                                      icon="cancel",
-                                      button_width=380)
-                    return
-                if lang == "English":
-                    msg = CTkMessagebox(master=self, title="Submit",
-                                        message="Are you ready to submit your feedback?"
-                                                " \n\n(SUBMISSION IS COMPLETELY ANONYMOUS)",
-                                        icon="question",
-                                        option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
-                                        button_color=("#c30101", "#145DA0", "#145DA0"),
-                                        hover_color=("darkred", "darkblue", "darkblue"))
-                elif lang == "Español":
-                    msg = CTkMessagebox(master=self, title="Someter",
-                                        message="¿Estás preparado para mandar to comentario?"
-                                                " \n\n(EL ENVÍO ES COMPLETAMENTE ANÓNIMO)",
-                                        icon="question",
-                                        option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
-                                        button_color=("#c30101", "#145DA0", "#145DA0"),
-                                        hover_color=("darkred", "darkblue", "darkblue"))
-                response = msg.get()
-                if response[0] == "Yes" or response[0] == "Sí" and self.test_connection(lang):
-                    feedback = self.feedbackText.get("1.0", tk.END).strip()
-                    if not feedback:
-                        winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                        if lang == "English":
-                            CTkMessagebox(title="Error", message="Error! Feedback cannot be empty", icon="cancel",
-                                          button_width=380)
-                        elif lang == "Español":
-                            CTkMessagebox(title="Error", message="¡Error! El comentario no puede estar vacio",
-                                          icon="cancel", button_width=380)
-                        return
-                    result = self.call_sheets_api([[feedback]])
-                    if result:
-                        winsound.PlaySound("sounds/success.wav", winsound.SND_ASYNC)
-                        if lang == "English":
-                            CTkMessagebox(title="Success", icon="check", message="Feedback submitted successfully!",
-                                          button_width=380)
-                        elif lang == "Español":
-                            CTkMessagebox(title="Success", icon="check", message="¡Comentario sometido éxitosamente!",
-                                          button_width=380)
-                        resultDate = self.cursor.execute("SELECT date FROM user_data").fetchall()
-                        if len(resultDate) == 0:
-                            self.cursor.execute("INSERT INTO user_data (date) VALUES (?)", (current_date,))
-                        elif len(resultDate) == 1:
-                            self.cursor.execute("UPDATE user_data SET date=?", (current_date,))
-                        self.connection.commit()
-                        self.feedbackText.delete("1.0", tk.END)
-                    else:
-                        winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                        if lang == "English":
-                            CTkMessagebox(title="Error", message="Error! An error occurred while submitting feedback",
-                                          icon="cancel", button_width=380)
-                        elif lang == "Español":
-                            CTkMessagebox(title="Error",
-                                          message="¡Error! Un error ocurrio mientras se sometia comentario",
-                                          icon="cancel", button_width=380)
-            else:
-                winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                if lang == "English":
-                    CTkMessagebox(title="Error", message="Error! Cannot submit more than one feedback per day",
-                                  icon="cancel", button_width=380)
-                elif lang == "Español":
-                    CTkMessagebox(title="Error", message="¡Error! No se puede enviar más de un comentario por día",
-                                  icon="cancel", button_width=380)
-        else:
+            timeout_counter += 1
+            if timeout_counter > 4.5:
+                break
+        if self.user_id is None or self.is_banned is None:  # If break was due to timeout
             winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
             if lang == "English":
                 CTkMessagebox(title="Error", message="Error! Feedback submission not currently available",
@@ -5201,6 +5147,94 @@ class TeraTermUI(customtkinter.CTk):
             elif lang == "Español":
                 CTkMessagebox(title="Error", message="¡Error! Mandar comentarios no esta disponible ahora mismo",
                               icon="cancel", button_width=380)
+        else:
+            if not self.disable_feedback and not self.is_banned:
+                current_date = datetime.today().strftime("%Y-%m-%d")
+                date = self.cursor.execute("SELECT date FROM user_data WHERE date IS NOT NULL").fetchall()
+                dates_list = [record[0] for record in date]
+                if current_date not in dates_list:
+                    feedback = self.feedbackText.get("1.0", tk.END).strip()
+                    word_count = len(feedback.split())
+                    if word_count > 1000:
+                        winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                        if lang == "English":
+                            CTkMessagebox(title="Error", message="Error! Feedback cannot exceed 1000 words",
+                                          icon="cancel", button_width=380)
+                        elif lang == "Español":
+                            CTkMessagebox(title="Error", message="¡Error! El comentario no puede exceder 1000 palabras",
+                                          icon="cancel",
+                                          button_width=380)
+                        return
+                    if lang == "English":
+                        msg = CTkMessagebox(master=self, title="Submit",
+                                            message="Are you ready to submit your feedback?"
+                                                    " \n\n(SUBMISSION IS COMPLETELY ANONYMOUS)",
+                                            icon="question",
+                                            option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
+                                            button_color=("#c30101", "#145DA0", "#145DA0"),
+                                            hover_color=("darkred", "darkblue", "darkblue"))
+                    elif lang == "Español":
+                        msg = CTkMessagebox(master=self, title="Someter",
+                                            message="¿Estás preparado para mandar to comentario?"
+                                                    " \n\n(EL ENVÍO ES COMPLETAMENTE ANÓNIMO)",
+                                            icon="question",
+                                            option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
+                                            button_color=("#c30101", "#145DA0", "#145DA0"),
+                                            hover_color=("darkred", "darkblue", "darkblue"))
+                    response = msg.get()
+                    if response[0] == "Yes" or response[0] == "Sí" and self.test_connection(lang):
+                        feedback = self.feedbackText.get("1.0", tk.END).strip()
+                        if not feedback:
+                            winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                            if lang == "English":
+                                CTkMessagebox(title="Error", message="Error! Feedback cannot be empty", icon="cancel",
+                                              button_width=380)
+                            elif lang == "Español":
+                                CTkMessagebox(title="Error", message="¡Error! El comentario no puede estar vacio",
+                                              icon="cancel", button_width=380)
+                            return
+                        result = self.call_sheets_api([[feedback]])
+                        if result:
+                            winsound.PlaySound("sounds/success.wav", winsound.SND_ASYNC)
+                            if lang == "English":
+                                CTkMessagebox(title="Success", icon="check", message="Feedback submitted successfully!",
+                                              button_width=380)
+                            elif lang == "Español":
+                                CTkMessagebox(title="Success", icon="check",
+                                              message="¡Comentario sometido éxitosamente!", button_width=380)
+                            resultDate = self.cursor.execute("SELECT date FROM user_data").fetchall()
+                            if len(resultDate) == 0:
+                                self.cursor.execute("INSERT INTO user_data (date) VALUES (?)", (current_date,))
+                            elif len(resultDate) == 1:
+                                self.cursor.execute("UPDATE user_data SET date=?", (current_date,))
+                            self.connection.commit()
+                            self.feedbackText.delete("1.0", tk.END)
+                        else:
+                            winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                            if lang == "English":
+                                CTkMessagebox(title="Error",
+                                              message="Error! An error occurred while submitting feedback",
+                                              icon="cancel", button_width=380)
+                            elif lang == "Español":
+                                CTkMessagebox(title="Error",
+                                              message="¡Error! Un error ocurrio mientras se sometia comentario",
+                                              icon="cancel", button_width=380)
+                else:
+                    winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                    if lang == "English":
+                        CTkMessagebox(title="Error", message="Error! Cannot submit more than one feedback per day",
+                                      icon="cancel", button_width=380)
+                    elif lang == "Español":
+                        CTkMessagebox(title="Error", message="¡Error! No se puede enviar más de un comentario por día",
+                                      icon="cancel", button_width=380)
+            else:
+                winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                if lang == "English":
+                    CTkMessagebox(title="Error", message="Error! Feedback submission not currently available",
+                                  icon="cancel", button_width=380)
+                elif lang == "Español":
+                    CTkMessagebox(title="Error", message="¡Error! Mandar comentarios no esta disponible ahora mismo",
+                                  icon="cancel", button_width=380)
         self.feedbackSend.configure(state="normal")
 
     # Function that lets user select where their Tera Term application is located
