@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 7/11/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 7/12/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -70,6 +70,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, \
 from tkinter import *
 from tkinter import filedialog
 from PIL import Image, ImageOps
+
 # from collections import deque
 # from memory_profiler import profile
 
@@ -1507,11 +1508,11 @@ class TeraTermUI(customtkinter.CTk):
                 sections = []
                 semester = self.m_semester_entry[0].get().upper().replace(" ", "")
                 choices = []
-                for i in range(counter):
+                for i in range(self.a_counter):
                     classes.append(self.m_classes_entry[i].get().upper().replace(" ", ""))
                     sections.append(self.m_section_entry[i].get().upper().replace(" ", ""))
                     choices.append(self.m_register_menu[i].get())
-                can_enroll_classes = self.e_counter + self.m_counter + counter + 1 <= 15
+                can_enroll_classes = self.e_counter + self.m_counter + self.a_counter + 1 <= 15
                 if self.test_connection(lang) and self.check_server() and self.check_format():
                     if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
                         if can_enroll_classes:
@@ -1542,7 +1543,7 @@ class TeraTermUI(customtkinter.CTk):
                                 send_keys("{TAB 2}")
                                 for i in range(count_enroll, 0, -1):
                                     send_keys("{TAB 2}")
-                                for i in range(counter + 1):
+                                for i in range(self.a_counter + 1):
                                     if choices[i] in ["Register", "Registra"]:
                                         self.uprb.UprbayTeraTermVt.type_keys("R")
                                     elif choices[i] in ["Drop", "Baja"]:
@@ -1550,7 +1551,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(classes[i])
                                     self.uprb.UprbayTeraTermVt.type_keys(sections[i])
                                     self.m_counter += 1
-                                    if i == counter:
+                                    if i == self.a_counter:
                                         send_keys("{ENTER}")
                                     else:
                                         send_keys("{TAB}")
@@ -1569,7 +1570,7 @@ class TeraTermUI(customtkinter.CTk):
                                         (self.m_register_menu[i].get(), i,
                                          self.m_section_entry[i].get().upper().replace(" ", ""),
                                          self.m_classes_entry[i].get().upper().replace(" ", ""))
-                                        for i in range(counter)
+                                        for i in range(self.a_counter)
                                     ]
                                     for c, cnt, sec, cls in choice:
                                         if sec:
@@ -1611,7 +1612,7 @@ class TeraTermUI(customtkinter.CTk):
                                             text or "CRS ALRDY TAKEN/PASSED" in text or "Closed by Spec-Prog" in text \
                                             or "ILLEGAL DROP-NOT ENR" in text or "NEW COURSE,NO FUNCTION" in text or \
                                             "PRESENTLY ENROLLED" in text or "R/TC" in text:
-                                        for i in range(counter + 1, 0, -1):
+                                        for i in range(self.a_counter + 1, 0, -1):
                                             if self.enrolled_classes_list:
                                                 self.enrolled_classes_list.popitem()
                                             if self.dropped_classes_list:
@@ -1628,7 +1629,7 @@ class TeraTermUI(customtkinter.CTk):
                                             self.after(0, lambda: self.show_information_message(
                                                 350, 265, "Llegó al Límite de Matrícula"))
                                     self.set_focus_to_tkinter()
-                                    for i in range(counter):
+                                    for i in range(self.a_counter):
                                         self.m_classes_entry[i].delete(0, "end")
                                         self.m_section_entry[i].delete(0, "end")
                                     for i in range(6):
@@ -1642,7 +1643,7 @@ class TeraTermUI(customtkinter.CTk):
                                     elif lang == "Español":
                                         self.show_error_message(320, 235, "¡Error! No se pudo "
                                                                           "matricular las clases")
-                                    self.m_counter = self.m_counter - counter - 1
+                                    self.m_counter = self.m_counter - self.a_counter - 1
                                     self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                                     self.set_focus_to_tkinter()
                             else:
@@ -4733,7 +4734,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.focus_set()
                 self.hide_sidebar_windows()
                 self.destroy_windows()
-                self.reset_activity_timer(None)
                 ctypes.windll.user32.BlockInput(True)
                 term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                 if term_window.isMinimized:
@@ -4743,6 +4743,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                 self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                 send_keys("{ENTER}")
+                self.reset_activity_timer(None)
                 screenshot_thread = threading.Thread(target=self.capture_screenshot)
                 screenshot_thread.start()
                 screenshot_thread.join()
@@ -4752,6 +4753,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                     self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                     send_keys("{ENTER}")
+                    self.reset_activity_timer(None)
                 ctypes.windll.user32.BlockInput(False)
                 if lang == "English":
                     self.after(0, lambda: self.show_information_message(
@@ -5348,7 +5350,7 @@ class TeraTermUI(customtkinter.CTk):
                                                              "Information Engineering"],
                                                      command=self.curriculums, height=30, width=150)
             curriculum.pack(pady=5)
-            termsText = customtkinter.CTkLabel(scrollable_frame, text="\n\nList of Terms:",
+            termsText = customtkinter.CTkLabel(scrollable_frame, text="\n\nHow terms work:",
                                                font=customtkinter.CTkFont(weight="bold", size=15))
             termsText.pack()
             terms = [["Year", "Term"],
@@ -5421,7 +5423,7 @@ class TeraTermUI(customtkinter.CTk):
                                                              "Ingeniería de la Información"],
                                                      command=self.curriculums, height=30, width=150)
             curriculum.pack(pady=5)
-            termsText = customtkinter.CTkLabel(scrollable_frame, text="\n\nLista de Términos:",
+            termsText = customtkinter.CTkLabel(scrollable_frame, text="\n\nCómo funcionan los términos:",
                                                font=customtkinter.CTkFont(weight="bold", size=15))
             termsText.pack()
             terms = [["Año", "Términos"],
@@ -5617,14 +5619,13 @@ class TeraTermUI(customtkinter.CTk):
 
     # checks if there is no problems with the information in the entries
     def check_format(self):
-        counter = self.a_counter
         lang = self.language_menu.get()
         choices = []
         error_flag_empty = False  # Flag to track if an error is encountered
         error_flag_format = False
 
         # Get the choices from the entries
-        for i in range(counter + 1):
+        for i in range(self.a_counter + 1):
             classes = self.m_classes_entry[i].get().upper().replace(" ", "")
             section = self.m_section_entry[i].get().upper().replace(" ", "")
             semester = self.m_semester_entry[i].get().upper().replace(" ", "")
@@ -5632,7 +5633,7 @@ class TeraTermUI(customtkinter.CTk):
             choices.append((choice, classes, section, semester))
 
         # Check for empty entries
-        for i in range(counter + 1):
+        for i in range(self.a_counter + 1):
             (choice, classes, section, semester) = choices[i]
             if not classes or not section or (choice == "Choose" or choice == "Escoge"):
                 error_flag_empty = True
@@ -5640,7 +5641,7 @@ class TeraTermUI(customtkinter.CTk):
 
         # Check each choice for errors if no empty entries
         if not error_flag_empty:
-            for i in range(counter + 1):
+            for i in range(self.a_counter + 1):
                 (choice, classes, section, semester) = choices[i]
                 if not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE) \
                         or not re.fullmatch("^[A-Z]{2}1$", section, flags=re.IGNORECASE) \
@@ -5865,4 +5866,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
