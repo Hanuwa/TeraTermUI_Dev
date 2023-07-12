@@ -21,6 +21,7 @@ import ctypes
 import customtkinter
 import gc
 import json
+import logging
 import os
 import pyautogui
 import psutil
@@ -3973,7 +3974,8 @@ class TeraTermUI(customtkinter.CTk):
             try:
                 if processName.lower() in proc.name().lower():
                     return True
-            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
+                logging.error(f"Exception occurred: {e}")
                 pass
         return False
 
@@ -4883,18 +4885,23 @@ class TeraTermUI(customtkinter.CTk):
                 self.show_sidebar_windows()
         self.connection.commit()
 
-    # Check if user has an internet connection
-    def test_connection(self, lang):
-        try:
-            sock = socket.create_connection(("Google.com", 80))
-            if sock is not None:
-                sock.close()
-            return True
-        except OSError:
+    def test_connection(self, lang, timeout=3.0):
+        urls = ["http://www.google.com/", "http://www.bing.com/", "http://www.yahoo.com/"]
+        connected = False
+        for url in urls:
+            try:
+                _ = requests.get(url, timeout=timeout)
+                connected = True
+                break
+            except requests.ConnectionError:
+                continue
+        # If none of the connections work
+        if not connected:
             if lang == "English":
                 self.after(0, lambda: self.show_error_message(300, 215, "Error! Not Connected to the internet"))
             elif lang == "Español":
                 self.after(0, lambda: self.show_error_message(300, 215, "¡Error! No Conectado al internet"))
+        return connected
 
     # Set focus on the UI application window
     def set_focus_to_tkinter(self):
