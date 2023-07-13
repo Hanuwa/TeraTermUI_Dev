@@ -805,18 +805,14 @@ class TeraTermUI(customtkinter.CTk):
         self.submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
         self.search_scrollbar.grid(row=0, column=1, padx=(0, 0), pady=(0, 0), sticky="nsew")
         self.title_search.grid(row=0, column=1, padx=(0, 0), pady=(0, 20), sticky="n")
+        self.s_classes.grid(row=1, column=1, padx=(0, 550), pady=(0, 0), sticky="n")
+        self.s_classes_entry.grid(row=1, column=1, padx=(0, 425), pady=(0, 0), sticky="n")
+        self.s_semester.grid(row=1, column=1, padx=(0, 270), pady=(0, 0), sticky="n")
+        self.s_semester_entry.grid(row=1, column=1, padx=(0, 120), pady=(0, 0), sticky="n")
         if lang == "English":
-            self.s_classes.grid(row=1, column=1, padx=(0, 535), pady=(0, 0), sticky="n")
-            self.s_classes_entry.grid(row=1, column=1, padx=(0, 410), pady=(0, 0), sticky="n")
-            self.s_semester.grid(row=1, column=1, padx=(0, 255), pady=(0, 0), sticky="n")
-            self.s_semester_entry.grid(row=1, column=1, padx=(0, 105), pady=(0, 0), sticky="n")
-            self.show_all.grid(row=1, column=1, padx=(90, 0), pady=(1, 0), sticky="n")
+            self.show_all.grid(row=1, column=1, padx=(85, 0), pady=(2, 0), sticky="n")
         elif lang == "Español":
-            self.s_classes.grid(row=1, column=1, padx=(0, 550), pady=(0, 0), sticky="n")
-            self.s_classes_entry.grid(row=1, column=1, padx=(0, 425), pady=(0, 0), sticky="n")
-            self.s_semester.grid(row=1, column=1, padx=(0, 270), pady=(0, 0), sticky="n")
-            self.s_semester_entry.grid(row=1, column=1, padx=(0, 120), pady=(0, 0), sticky="n")
-            self.show_all.grid(row=1, column=1, padx=(85, 0), pady=(0, 5), sticky="n")
+            self.show_all.grid(row=1, column=1, padx=(85, 0), pady=(0, 7), sticky="n")
         self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
         self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
         self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
@@ -1256,12 +1252,8 @@ class TeraTermUI(customtkinter.CTk):
         self.search_next_page_status = True
         self.search_next_page.configure(state="normal")
         self.search.configure(width=85)
-        if lang == "English":
-            self.search.grid(row=1, column=1, padx=(290, 0), pady=(0, 5), sticky="n")
-            self.search_next_page.grid(row=1, column=1, padx=(470, 0), pady=(0, 5), sticky="n")
-        elif lang == "Español":
-            self.search.grid(row=1, column=1, padx=(285, 0), pady=(0, 5), sticky="n")
-            self.search_next_page.grid(row=1, column=1, padx=(465, 0), pady=(0, 5), sticky="n")
+        self.search.grid(row=1, column=1, padx=(285, 0), pady=(0, 5), sticky="n")
+        self.search_next_page.grid(row=1, column=1, padx=(465, 0), pady=(0, 5), sticky="n")
 
     # function for seeing the classes you are currently enrolled for
     def my_classes_event(self):
@@ -2878,18 +2870,14 @@ class TeraTermUI(customtkinter.CTk):
         self.submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
         self.search_scrollbar.grid(row=0, column=1, padx=(0, 0), pady=(0, 0), sticky="nsew")
         self.title_search.grid(row=0, column=1, padx=(0, 0), pady=(0, 20), sticky="n")
+        self.s_classes.grid(row=1, column=1, padx=(0, 550), pady=(0, 0), sticky="n")
+        self.s_classes_entry.grid(row=1, column=1, padx=(0, 425), pady=(0, 0), sticky="n")
+        self.s_semester.grid(row=1, column=1, padx=(0, 270), pady=(0, 0), sticky="n")
+        self.s_semester_entry.grid(row=1, column=1, padx=(0, 120), pady=(0, 0), sticky="n")
         if lang == "English":
-            self.s_classes.grid(row=1, column=1, padx=(0, 580), pady=(0, 0), sticky="e")
-            self.s_classes_entry.grid(row=1, column=1, padx=(0, 430), pady=(0, 0), sticky="n")
-            self.s_semester.grid(row=1, column=1, padx=(0, 270), pady=(0, 0), sticky="n")
-            self.s_semester_entry.grid(row=1, column=1, padx=(0, 120), pady=(0, 0), sticky="n")
-            self.show_all.grid(row=1, column=1, padx=(80, 0), pady=(1, 0), sticky="n")
+            self.show_all.grid(row=1, column=1, padx=(85, 0), pady=(2, 0), sticky="n")
         elif lang == "Español":
-            self.s_classes.grid(row=1, column=1, padx=(0, 545), pady=(0, 0), sticky="n")
-            self.s_classes_entry.grid(row=1, column=1, padx=(0, 420), pady=(0, 0), sticky="n")
-            self.s_semester.grid(row=1, column=1, padx=(0, 265), pady=(0, 0), sticky="n")
-            self.s_semester_entry.grid(row=1, column=1, padx=(0, 115), pady=(0, 0), sticky="n")
-            self.show_all.grid(row=1, column=1, padx=(80, 0), pady=(0, 5), sticky="n")
+            self.show_all.grid(row=1, column=1, padx=(85, 0), pady=(0, 7), sticky="n")
         self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
         if self.search_next_page_status:
             self.search.configure(width=85)
@@ -4149,7 +4137,7 @@ class TeraTermUI(customtkinter.CTk):
             modified_data.append(item)
 
         headers = ['SEC', 'M', 'CRED', 'DAYS', 'TIMES', 'AV', 'INSTRUCTOR']
-        self.get_class_for_pdf = self.s_classes_entry.get()
+        self.get_class_for_pdf = self.s_classes_entry.get().replace(" ", "").upper()
 
         table_values = [headers]
         for item in modified_data:
@@ -4173,8 +4161,9 @@ class TeraTermUI(customtkinter.CTk):
                 header_color="#145DA0"
             )
             self.table.grid(row=2, column=1, padx=(0, 0), pady=(20, 20), sticky="n")
-            for i in range(5):
+            for i in range(4):
                 self.table.edit_column(i, width=60)
+            self.table.edit_column(5, width=60)
             tooltip_messages_en = {
                 'SEC': "Section",
                 'M': "Modality",
@@ -4538,7 +4527,6 @@ class TeraTermUI(customtkinter.CTk):
 
     # Keybindings for different widgets
     def spacebar_event(self):
-        self.focus_set()
         if self.spacebar_enabled:
             if self.in_student_frame:
                 show = self.show.get()
