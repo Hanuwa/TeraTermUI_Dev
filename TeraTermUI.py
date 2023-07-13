@@ -144,6 +144,7 @@ class TeraTermUI(customtkinter.CTk):
         self.table_rows = None
         self.is_banned = None
         self.is_banned_flag = False
+        self.connection_error = False
 
         self.images = {
             "folder": customtkinter.CTkImage(light_image=Image.open("images/folder.png"), size=(18, 18)),
@@ -5092,7 +5093,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.test_connection(lang):
             try:
                 service = build("sheets", "v4", credentials=self.credentials)
-            except ValueError:
+            except:
                 DISCOVERY_SERVICE_URL = "https://sheets.googleapis.com/$discovery/rest?version=v4"
                 service = build("sheets", "v4", credentials=self.credentials, discoveryServiceUrl=DISCOVERY_SERVICE_URL)
             now = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
@@ -5109,28 +5110,36 @@ class TeraTermUI(customtkinter.CTk):
             except HttpError as error:
                 print(f"An error occurred: {error}")
                 return None
+        else:
+            self.disable_feedback = True
+            self.connection_error = True
 
     def is_user_banned(self, user_id):
-        try:
-            service = build("sheets", "v4", credentials=self.credentials)
-        except ValueError:
-            DISCOVERY_SERVICE_URL = "https://sheets.googleapis.com/$discovery/rest?version=v4"
-            service = build("sheets", "v4", credentials=self.credentials, discoveryServiceUrl=DISCOVERY_SERVICE_URL)
-        try:
-            # Get all values in column A from the banned users spreadsheet
-            result = service.spreadsheets().values().get(
-                spreadsheetId=self.SPREADSHEET_BANNED_ID, range=self.RANGE_NAME).execute()
-            values = result.get("values", [])
-            # Check if the user_id is in the values
-            flat_values = [item for sublist in values for item in sublist]
-            if user_id in flat_values:
-                return True
-            else:
+        lang = self.language_menu.get()
+        if self.test_connection(lang):
+            try:
+                service = build("sheets", "v4", credentials=self.credentials)
+            except:
+                DISCOVERY_SERVICE_URL = "https://sheets.googleapis.com/$discovery/rest?version=v4"
+                service = build("sheets", "v4", credentials=self.credentials, discoveryServiceUrl=DISCOVERY_SERVICE_URL)
+            try:
+                # Get all values in column A from the banned users spreadsheet
+                result = service.spreadsheets().values().get(
+                    spreadsheetId=self.SPREADSHEET_BANNED_ID, range=self.RANGE_NAME).execute()
+                values = result.get("values", [])
+                # Check if the user_id is in the values
+                flat_values = [item for sublist in values for item in sublist]
+                if user_id in flat_values:
+                    return True
+                else:
+                    return False
+            except HttpError as error:
+                print(f"An error occurred: {error}")
+                self.disable_feedback = True
                 return False
-        except HttpError as error:
-            print(f"An error occurred: {error}")
+        else:
             self.disable_feedback = True
-            return False
+            self.connection_error = True
 
     def start_feedback_thread(self):
         msg = None
@@ -5179,7 +5188,8 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         if not self.is_banned_flag:
             self.is_banned = self.is_user_banned(self.user_id)
-            self.is_banned_flag = True
+            if not self.connection_error:
+                self.is_banned_flag = True
         if not self.disable_feedback and not self.is_banned:
             current_date = datetime.today().strftime("%Y-%m-%d")
             date = self.cursor.execute("SELECT date FROM user_data WHERE date IS NOT NULL").fetchall()
@@ -5933,4 +5943,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
