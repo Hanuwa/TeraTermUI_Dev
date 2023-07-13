@@ -3,11 +3,9 @@ CustomTkinter Messagebox
 Author: Akash Bora
 Version: 2.0
 """
-import gc
 
 import customtkinter
 from PIL import Image
-import tkinter as tk
 import os
 import sys
 import time
@@ -152,7 +150,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         else:
             if type(hover_color) is tuple:
                 if len(hover_color) == 2:
-                    self.button_color = (hover_color[0], hover_color[1], default_hover_color)
+                    self.hover_color = (hover_color[0], hover_color[1], default_hover_color)
                 elif len(hover_color) == 1:
                     self.hover_color = (hover_color[0], default_hover_color, default_hover_color)
                 else:
@@ -236,7 +234,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                 self.button1.grid(row=2, column=3, sticky="news", padx=(0,10), pady=10)
                 self.button1.configure(cursor="hand2")
             elif option_1_type == "checkbox":
-                self.button1_var = tk.BooleanVar()  # variable to hold checkbox value
+                self.button1_var = customtkinter.BooleanVar()  # variable to hold checkbox value
                 self.button1 = customtkinter.CTkCheckBox(self.frame_top, width=self.button_width, font=self.font,
                                                          height=self.button_height,
                                                          text=self.option_text_1,
@@ -371,7 +369,6 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                 self.fade_out()
             self.grab_release()
             self.destroy()
-        gc.collect()
 
 if __name__ == "__main__":
     app = CTkMessagebox()
