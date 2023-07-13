@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 7/12/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 7/13/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,6 +15,8 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term
 
+import aiohttp
+import asyncio
 import atexit
 import clipboard
 import ctypes
@@ -544,7 +546,7 @@ class TeraTermUI(customtkinter.CTk):
                                                 button_color=("#c30101", "#145DA0", "#145DA0"),
                                                 hover_color=("darkred", "darkblue", "darkblue"))
                         response = msg.get()
-                        if response[0] == "Yes" or response[0] == "Sí" and self.test_connection(lang):
+                        if response[0] == "Yes" or response[0] == "Sí":
                             webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
                         resultDate = self.cursor.execute("SELECT date FROM user_data").fetchall()
                         if len(resultDate) == 0:
@@ -665,7 +667,7 @@ class TeraTermUI(customtkinter.CTk):
 
                 return plaintext
 
-            if self.test_connection(lang) and self.check_server():
+            if asyncio.run(self.test_connection(lang)) and self.check_server():
                 if TeraTermUI.checkIfProcessRunning("ttermpro"):
                     try:
                         ssn = self.ssn_entry.get().replace(" ", "")
@@ -895,7 +897,7 @@ class TeraTermUI(customtkinter.CTk):
                 section = self.e_section_entry.get().upper().replace(" ", "")
                 semester = self.e_semester_entry.get().upper().replace(" ", "")
                 lang = self.language_menu.get()
-                if self.test_connection(lang) and self.check_server():
+                if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
                         if (choice == "Register" and classes not in
                             self.enrolled_classes_list.values() and section not in self.enrolled_classes_list) \
@@ -1122,7 +1124,7 @@ class TeraTermUI(customtkinter.CTk):
                 semester = self.s_semester_entry.get().upper().replace(" ", "")
                 show_all = self.show_all.get()
                 lang = self.language_menu.get()
-                if self.test_connection(lang) and self.check_server():
+                if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
                         if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE)
                                 and re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE)):
@@ -1284,7 +1286,7 @@ class TeraTermUI(customtkinter.CTk):
                 dialog_input = dialog.get_input()
                 if dialog_input is not None:
                     dialog_input = dialog_input.replace(" ", "").upper()
-                    if self.test_connection(lang) and self.check_server():
+                    if asyncio.run(self.test_connection(lang)) and self.check_server():
                         if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
                             if re.fullmatch("^[A-Z][0-9]{2}$", dialog_input, flags=re.IGNORECASE):
                                 block_window = customtkinter.CTkToplevel()
@@ -1329,7 +1331,7 @@ class TeraTermUI(customtkinter.CTk):
                 dialog_input = dialog.get_input()
                 if dialog_input is not None:
                     dialog_input = dialog_input.replace(" ", "").upper()
-                    if self.test_connection(lang) and self.check_server():
+                    if asyncio.run(self.test_connection(lang)) and self.check_server():
                         if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
                             if re.match("^[A-Z][0-9]{2}$", dialog_input, flags=re.IGNORECASE):
                                 block_window = customtkinter.CTkToplevel()
@@ -1506,7 +1508,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.destroy_windows()
                 self.hide_sidebar_windows()
                 self.unbind("<Return>")
-                counter = self.a_counter
                 lang = self.language_menu.get()
                 classes = []
                 sections = []
@@ -1517,7 +1518,7 @@ class TeraTermUI(customtkinter.CTk):
                     sections.append(self.m_section_entry[i].get().upper().replace(" ", ""))
                     choices.append(self.m_register_menu[i].get())
                 can_enroll_classes = self.e_counter + self.m_counter + self.a_counter + 1 <= 15
-                if self.test_connection(lang) and self.check_server() and self.check_format():
+                if asyncio.run(self.test_connection(lang)) and self.check_server() and self.check_format():
                     if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
                         if can_enroll_classes:
                             ctypes.windll.user32.BlockInput(True)
@@ -1784,7 +1785,7 @@ class TeraTermUI(customtkinter.CTk):
                     "SO (Cerrar Sesión)": "SO"
                 }
                 menu = menu_dict.get(menu, menu)
-                if self.test_connection(lang) and self.check_server():
+                if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
                         if re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE):
                             ctypes.windll.user32.BlockInput(True)
@@ -2251,7 +2252,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.destroy_windows()
                 self.hide_sidebar_windows()
                 lang = self.language_menu.get()
-                if self.test_connection(lang) and self.check_server():
+                if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
                         if self._1VE_screen:
                             ctypes.windll.user32.BlockInput(True)
@@ -2360,7 +2361,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.destroy_windows()
                 self.hide_sidebar_windows()
                 self.unfocus_tkinter()
-                if self.test_connection(lang) and self.check_server():
+                if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
                         ctypes.windll.user32.BlockInput(True)
                         term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
@@ -2444,7 +2445,7 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<Return>")
             username = self.username_entry.get().replace(" ", "").lower()
             lang = self.language_menu.get()
-            if self.test_connection(lang) and self.check_server():
+            if asyncio.run(self.test_connection(lang)) and self.check_server():
                 if TeraTermUI.checkIfProcessRunning("ttermpro"):
                     if username == "students":
                         self.unfocus_tkinter()
@@ -2575,7 +2576,7 @@ class TeraTermUI(customtkinter.CTk):
             skip = False
             lang = self.language_menu.get()
             host = self.host_entry.get().replace(" ", "").lower()
-            if self.test_connection(lang) and self.check_server():
+            if asyncio.run(self.test_connection(lang)) and self.check_server():
                 if host == "uprbay.uprb.edu" or host == "uprbayuprbedu":
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         while not self.tesseract_unzipped:
@@ -3295,7 +3296,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.destroy_windows()
                 if self.auto_enroll.get() == "on":
                     self.auto_enroll_bool = True
-                    if self.test_connection(lang) and self.check_server() and self.check_format():
+                    if asyncio.run(self.test_connection(lang)) and self.check_server() and self.check_format():
                         if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
                             ctypes.windll.user32.BlockInput(True)
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
@@ -3421,7 +3422,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.timer_window.bind("<Escape>", lambda event: self.end_countdown())
                                 self.cancel_button.pack(pady=25)
                                 # Create a BooleanVar to control the loop
-                                self.running_countdown = tk.BooleanVar()
+                                self.running_countdown = customtkinter.BooleanVar()
                                 self.running_countdown.set(True)
                                 # Start the countdown
                                 self.countdown(your_date)
@@ -4002,7 +4003,7 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         HOST = "uprbay.uprb.edu"
         PORT = 22
-        timeout = 1
+        timeout = 3
 
         try:
             with socket.create_connection((HOST, PORT), timeout=timeout):
@@ -4665,33 +4666,34 @@ class TeraTermUI(customtkinter.CTk):
         msg = None
         lang = self.language_menu.get()
         latest_version = self.get_latest_release()
-        if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION):
-            winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-            if lang == "English":
-                msg = CTkMessagebox(master=self, title="Update",
-                                    message="A newer version of the application is available,"
-                                            "would you like to update?",
-                                    icon="question",
-                                    option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
-                                    button_color=("#c30101", "#145DA0", "#145DA0"),
-                                    hover_color=("darkred", "darkblue", "darkblue"))
-            elif lang == "Español":
-                msg = CTkMessagebox(master=self, title="Actualizar",
-                                    message="Una nueva de versión de la aplicación esta disponible,"
-                                            "¿desea actualizar?",
-                                    icon="question",
-                                    option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
-                                    button_color=("#c30101", "#145DA0", "#145DA0"),
-                                    hover_color=("darkred", "darkblue", "darkblue"))
-            response = msg.get()
-            if response[0] == "Yes" or response[0] == "Sí" and self.test_connection(lang):
-                webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
-        else:
-            winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-            if lang == "English":
-                CTkMessagebox(master=self, title="Info", message="Application is up to date", button_width=380)
-            elif lang == "Español":
-                CTkMessagebox(master=self, title="Info", message="La Aplicación está actualizada", button_width=380)
+        if not self.connection_error:
+            if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION):
+                winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                if lang == "English":
+                    msg = CTkMessagebox(master=self, title="Update",
+                                        message="A newer version of the application is available,"
+                                                "would you like to update?",
+                                        icon="question",
+                                        option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
+                                        button_color=("#c30101", "#145DA0", "#145DA0"),
+                                        hover_color=("darkred", "darkblue", "darkblue"))
+                elif lang == "Español":
+                    msg = CTkMessagebox(master=self, title="Actualizar",
+                                        message="Una nueva de versión de la aplicación esta disponible,"
+                                                "¿desea actualizar?",
+                                        icon="question",
+                                        option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
+                                        button_color=("#c30101", "#145DA0", "#145DA0"),
+                                        hover_color=("darkred", "darkblue", "darkblue"))
+                response = msg.get()
+                if response[0] == "Yes" or response[0] == "Sí":
+                    webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
+            else:
+                winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                if lang == "English":
+                    CTkMessagebox(master=self, title="Info", message="Application is up to date", button_width=380)
+                elif lang == "Español":
+                    CTkMessagebox(master=self, title="Info", message="La Aplicación está actualizada", button_width=380)
 
     # (Unused) determines the hardware of the users' computer and change the time.sleep seconds respectively
     # def get_sleep_time(self):
@@ -4910,17 +4912,30 @@ class TeraTermUI(customtkinter.CTk):
                 self.show_sidebar_windows()
         self.connection.commit()
 
-    def test_connection(self, lang, timeout=3.0):
+    @staticmethod
+    async def fetch(session, url):
+        try:
+            async with session.get(url, timeout=3.0) as response:
+                if response.status != 200:
+                    print(f"Non-200 response code: {response.status}")
+                    return False
+                return True
+        except aiohttp.ClientConnectionError:
+            print(f"Failed to connect to {url}")
+            return False
+        except aiohttp.ClientTimeout:
+            print(f"Request to {url} timed out")
+            return False
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            return False
+
+    async def test_connection(self, lang):
         urls = ["http://www.google.com/", "http://www.bing.com/", "http://www.yahoo.com/"]
-        connected = False
-        for url in urls:
-            try:
-                _ = requests.get(url, timeout=timeout)
-                connected = True
-                break
-            except requests.ConnectionError:
-                continue
-        # If none of the connections work
+        async with aiohttp.ClientSession() as session:
+            tasks = [TeraTermUI.fetch(session, url) for url in urls]
+            results = await asyncio.gather(*tasks)
+        connected = any(results)
         if not connected:
             if lang == "English":
                 self.after(0, lambda: self.show_error_message(300, 215, "Error! Not Connected to the internet"))
@@ -4994,7 +5009,8 @@ class TeraTermUI(customtkinter.CTk):
             self.feedbackText.pack(pady=10)
             self.feedbackSend = customtkinter.CTkButton(scrollable_frame, border_width=2,
                                                         text="Send Feedback",
-                                                        text_color=("gray10", "#DCE4EE"), command=self.start_feedback_thread)
+                                                        text_color=("gray10", "#DCE4EE"),
+                                                        command=self.start_feedback_thread)
             self.feedbackSend.pack()
             checkUpdateText = customtkinter.CTkLabel(scrollable_frame, text="\n\n Check if application has a new update"
                                                                             " available")
@@ -5090,7 +5106,8 @@ class TeraTermUI(customtkinter.CTk):
     # Function to call the Google Sheets API
     def call_sheets_api(self, values):
         lang = self.language_menu.get()
-        if self.test_connection(lang):
+        if asyncio.run(self.test_connection(lang)):
+            self.connection_error = False
             try:
                 service = build("sheets", "v4", credentials=self.credentials)
             except:
@@ -5111,12 +5128,12 @@ class TeraTermUI(customtkinter.CTk):
                 print(f"An error occurred: {error}")
                 return None
         else:
-            self.disable_feedback = True
             self.connection_error = True
 
     def is_user_banned(self, user_id):
         lang = self.language_menu.get()
-        if self.test_connection(lang):
+        if asyncio.run(self.test_connection(lang)):
+            self.connection_error = False
             try:
                 service = build("sheets", "v4", credentials=self.credentials)
             except:
@@ -5135,10 +5152,8 @@ class TeraTermUI(customtkinter.CTk):
                     return False
             except HttpError as error:
                 print(f"An error occurred: {error}")
-                self.disable_feedback = True
                 return False
         else:
-            self.disable_feedback = True
             self.connection_error = True
 
     def start_feedback_thread(self):
@@ -5177,7 +5192,7 @@ class TeraTermUI(customtkinter.CTk):
                                     button_color=("#c30101", "#145DA0", "#145DA0"),
                                     hover_color=("darkred", "darkblue", "darkblue"))
             response = msg.get()
-            if response[0] == "Yes" or response[0] == "Sí" and self.test_connection(lang):
+            if response[0] == "Yes" or response[0] == "Sí":
                 feedback_thread = threading.Thread(target=self.submit_feedback)
                 feedback_thread.start()
             else:
@@ -5195,10 +5210,10 @@ class TeraTermUI(customtkinter.CTk):
             date = self.cursor.execute("SELECT date FROM user_data WHERE date IS NOT NULL").fetchall()
             dates_list = [record[0] for record in date]
             if current_date not in dates_list:
-                feedback = self.feedbackText.get("1.0", tk.END).strip()
+                feedback = self.feedbackText.get("1.0", customtkinter.END).strip()
                 word_count = len(feedback.split())
                 if word_count < 1000:
-                    feedback = self.feedbackText.get("1.0", tk.END).strip()
+                    feedback = self.feedbackText.get("1.0", customtkinter.END).strip()
                     if feedback:
                         result = self.call_sheets_api([[feedback]])
                         if result:
@@ -5217,60 +5232,69 @@ class TeraTermUI(customtkinter.CTk):
                             elif len(resultDate) == 1:
                                 self.cursor.execute("UPDATE user_data SET date=?", (current_date,))
                             self.connection.commit()
-                            self.feedbackText.delete("1.0", tk.END)
+                            self.feedbackText.delete("1.0", customtkinter.END)
                         else:
+                            if not self.connection_error:
+                                def show_error():
+                                    winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                                    if lang == "English":
+                                        CTkMessagebox(title="Error",
+                                                      message="Error! An error occurred while submitting feedback",
+                                                      icon="cancel", button_width=380)
+                                    elif lang == "Español":
+                                        CTkMessagebox(title="Error",
+                                                      message="¡Error! Un error ocurrio mientras se sometia comentario",
+                                                      icon="cancel", button_width=380)
+                                self.after(0, show_error)
+                    else:
+                        if not self.connection_error:
                             def show_error():
                                 winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                                 if lang == "English":
-                                    CTkMessagebox(title="Error",
-                                                  message="Error! An error occurred while submitting feedback",
+                                    CTkMessagebox(title="Error", message="Error! Feedback cannot be empty",
                                                   icon="cancel", button_width=380)
                                 elif lang == "Español":
                                     CTkMessagebox(title="Error",
-                                                  message="¡Error! Un error ocurrio mientras se sometia comentario",
+                                                  message="¡Error! El comentario no puede estar vacio",
                                                   icon="cancel", button_width=380)
                             self.after(0, show_error)
-                    else:
+                else:
+                    if not self.connection_error:
                         def show_error():
                             winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                             if lang == "English":
-                                CTkMessagebox(title="Error", message="Error! Feedback cannot be empty", icon="cancel",
-                                              button_width=380)
-                            elif lang == "Español":
-                                CTkMessagebox(title="Error", message="¡Error! El comentario no puede estar vacio",
+                                CTkMessagebox(title="Error", message="Error! Feedback cannot exceed 1000 words",
                                               icon="cancel", button_width=380)
+                            elif lang == "Español":
+                                CTkMessagebox(title="Error",
+                                              message="¡Error! El comentario no puede exceder 1000 palabras",
+                                              icon="cancel",
+                                              button_width=380)
                         self.after(0, show_error)
-                else:
+            else:
+                if not self.connection_error:
                     def show_error():
                         winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                         if lang == "English":
-                            CTkMessagebox(title="Error", message="Error! Feedback cannot exceed 1000 words",
+                            CTkMessagebox(title="Error", message="Error! Cannot submit more than one feedback per day",
                                           icon="cancel", button_width=380)
                         elif lang == "Español":
-                            CTkMessagebox(title="Error", message="¡Error! El comentario no puede exceder 1000 palabras",
-                                          icon="cancel",
-                                          button_width=380)
+                            CTkMessagebox(title="Error",
+                                          message="¡Error! No se puede enviar más de un comentario por día",
+                                          icon="cancel", button_width=380)
                     self.after(0, show_error)
-            else:
+        else:
+            if not self.connection_error:
                 def show_error():
                     winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                     if lang == "English":
-                        CTkMessagebox(title="Error", message="Error! Cannot submit more than one feedback per day",
+                        CTkMessagebox(title="Error", message="Error! Feedback submission not currently available",
                                       icon="cancel", button_width=380)
                     elif lang == "Español":
-                        CTkMessagebox(title="Error", message="¡Error! No se puede enviar más de un comentario por día",
+                        CTkMessagebox(title="Error",
+                                      message="¡Error! Mandar comentarios no esta disponible ahora mismo",
                                       icon="cancel", button_width=380)
                 self.after(0, show_error)
-        else:
-            def show_error():
-                winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                if lang == "English":
-                    CTkMessagebox(title="Error", message="Error! Feedback submission not currently available",
-                                  icon="cancel", button_width=380)
-                elif lang == "Español":
-                    CTkMessagebox(title="Error", message="¡Error! Mandar comentarios no esta disponible ahora mismo",
-                                  icon="cancel", button_width=380)
-            self.after(0, show_error)
         self.feedbackSend.configure(state="normal")
 
     # Function that lets user select where their Tera Term application is located
@@ -5544,28 +5568,33 @@ class TeraTermUI(customtkinter.CTk):
 
     # Gets the latest release of the application on GitHub
     def get_latest_release(self):
-        url = f"{self.GITHUB_REPO}/releases/latest"
-        try:
-            response = requests.get(url)
+        lang = self.language_menu.get()
+        if asyncio.run(self.test_connection(lang)):
+            url = f"{self.GITHUB_REPO}/releases/latest"
+            self.connection_error = False
+            try:
+                response = requests.get(url)
 
-            if response.status_code != 200:
-                print(f"Error fetching release information: {response.status_code}")
+                if response.status_code != 200:
+                    print(f"Error fetching release information: {response.status_code}")
+                    return None
+
+                release_data = response.json()
+                latest_version = release_data.get("tag_name")
+
+                if latest_version and latest_version.startswith("v"):
+                    latest_version = latest_version[1:]
+
+                return latest_version
+
+            except requests.exceptions.RequestException as e:
+                print(f"Request failed: {e}")
                 return None
-
-            release_data = response.json()
-            latest_version = release_data.get("tag_name")
-
-            if latest_version and latest_version.startswith("v"):
-                latest_version = latest_version[1:]
-
-            return latest_version
-
-        except requests.exceptions.RequestException as e:
-            print(f"Request failed: {e}")
-            return None
-        except Exception as e:
-            print(f"An error occurred while fetching the latest release: {e}")
-            return None
+            except Exception as e:
+                print(f"An error occurred while fetching the latest release: {e}")
+                return None
+        else:
+            self.connection_error = True
 
     # Compares the current version that user is using with the latest available
     @staticmethod
