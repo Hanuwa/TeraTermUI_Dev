@@ -1248,7 +1248,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.bind("<Return>", lambda event: self.search_event_handler())
 
     def search_next_page_layout(self):
-        lang = self.language_menu.get()
         self.search_next_page_status = True
         self.search_next_page.configure(state="normal")
         self.search.configure(width=85)
