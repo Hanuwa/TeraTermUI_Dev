@@ -95,7 +95,7 @@ for version in versions:
         else:
             script = "portable"
             data = data.replace('self.connection = sqlite3.connect(self.db_path, check_same_thread=False)',
-                                'self.connection = sqlite3.connect("database.db, check_same_thread=False")')
+                                'self.connection = sqlite3.connect("database.db", check_same_thread=False)')
             data = data.replace('closing(sqlite3.connect(self.db_path)) as connection',
                                 'closing(sqlite3.connect("database.db")) as connection')
             data = data.replace('with open(self.ath, "rb"):',
