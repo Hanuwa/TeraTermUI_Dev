@@ -118,6 +118,9 @@ class TeraTermUI(customtkinter.CTk):
         self.move_slider_left_enabled = True
         self.move_slider_right_enabled = True
         self.spacebar_enabled = True
+        self.up_arrow_key_enabled = True
+        self.down_arrow_key_enabled = True
+        
         # Instance variables not yet needed but defined
         # to avoid the instance attribute defined outside __init__ warning
         self.user_id = None
@@ -1426,6 +1429,14 @@ class TeraTermUI(customtkinter.CTk):
             if self.a_counter == 0:
                 self.m_remove.configure(state="disabled")
 
+    def add_event_up_arrow_key(self):
+        if self.up_arrow_key_enabled:
+            self.add_event()
+
+    def remove_event_down_arrow_key(self):
+        if self.down_arrow_key_enabled:
+            self.remove_event()
+
     # multiple classes screen
     def multiple_classes_event(self):
         self.focus_set()
@@ -1434,8 +1445,8 @@ class TeraTermUI(customtkinter.CTk):
         self.arrow_keys = True
         self.unbind("<space>")
         self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
-        self.bind("<Up>", lambda event: self.add_event())
-        self.bind("<Down>", lambda event: self.remove_event())
+        self.bind("<Up>", lambda event: self.add_event_up_arrow_key())
+        self.bind("<Down>", lambda event: self.remove_event_down_arrow_key())
         self.multiple_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 30))
         self.multiple_frame.grid_columnconfigure(2, weight=1)
         self.m_button_frame.grid(row=3, column=1, columnspan=4, rowspan=4, padx=(0, 0), pady=(0, 10))
@@ -5829,11 +5840,15 @@ class CustomEntry(customtkinter.CTkEntry):
         self.teraterm_ui.move_slider_left_enabled = False
         self.teraterm_ui.move_slider_right_enabled = False
         self.teraterm_ui.spacebar_enabled = False
+        self.teraterm_ui.up_arrow_key_enabled = False
+        self.teraterm_ui.down_arrow_key_enabled = False
 
     def enable_slider_keys(self, event=None):
         self.teraterm_ui.move_slider_left_enabled = True
         self.teraterm_ui.move_slider_right_enabled = True
         self.teraterm_ui.spacebar_enabled = True
+        self.teraterm_ui.up_arrow_key_enabled = True
+        self.teraterm_ui.down_arrow_key_enabled = True
 
     def update_undo_stack(self, event=None):
         current_text = self.get()
@@ -5877,11 +5892,15 @@ class CustomComboBox(customtkinter.CTkComboBox):
         self.teraterm_ui.move_slider_left_enabled = False
         self.teraterm_ui.move_slider_right_enabled = False
         self.teraterm_ui.spacebar_enabled = False
+        self.teraterm_ui.up_arrow_key_enabled = False
+        self.teraterm_ui.down_arrow_key_enabled = False
 
     def enable_slider_keys(self, event=None):
         self.teraterm_ui.move_slider_left_enabled = True
         self.teraterm_ui.move_slider_right_enabled = True
         self.teraterm_ui.spacebar_enabled = True
+        self.teraterm_ui.up_arrow_key_enabled = True
+        self.teraterm_ui.down_arrow_key_enabled = True
 
     def update_undo_stack(self, event=None):
         current_text = self.get()
