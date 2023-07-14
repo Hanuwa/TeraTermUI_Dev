@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 7/13/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 7/14/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -557,9 +557,10 @@ class TeraTermUI(customtkinter.CTk):
                 except requests.exceptions.RequestException as e:
                     print(f"Error occurred while fetching latest release information: {e}")
                     print("Please check your internet connection and try again.")
+                del dates_list
 
         self.after(100, update_app)
-        del user_data_fields, height, width, x, y, screen_height, screen_width, scaling_factor
+        del user_data_fields, results
         gc.collect()
 
     # function that when the user tries to close the application a confirm dialog opens up
@@ -714,7 +715,7 @@ class TeraTermUI(customtkinter.CTk):
                                 secure_delete(aes_key)
                                 secure_delete(mac_key)
                                 secure_delete(iv)
-                                del ssn, code
+                                del ssn, code, ssn_enc, code_enc, aes_key, mac_key
                                 gc.collect()
                                 self.change_bind()
                                 self.set_focus_to_tkinter()
@@ -833,6 +834,7 @@ class TeraTermUI(customtkinter.CTk):
         self.code_entry.configure(placeholder_text="####")
         self.ssn_entry.configure(show="*")
         self.code_entry.configure(show="*")
+        del self.ssn_entry, self.code_entry
         self.student_frame.grid_forget()
         self.s_buttons_frame.grid_forget()
 
@@ -2545,6 +2547,7 @@ class TeraTermUI(customtkinter.CTk):
         self.back_student.grid(row=5, column=0, padx=(0, 10), pady=(0, 0))
         self.system.grid(row=5, column=1, padx=(10, 0), pady=(0, 0))
         self.username_entry.delete(0, "end")
+        del self.username_entry
         self.a_buttons_frame.grid_forget()
         self.authentication_frame.grid_forget()
 
@@ -3646,6 +3649,7 @@ class TeraTermUI(customtkinter.CTk):
             self.search_scrollbar = customtkinter.CTkScrollableFrame(master=self.tabview.tab(self.search_tab),
                                                                      corner_radius=10, fg_color="transparent",
                                                                      width=600, height=300)
+            self.search_scrollbar.bind("<Button-1>", lambda event: self.search_scrollbar.focus_set())
             self.title_search = customtkinter.CTkLabel(self.search_scrollbar,
                                                        text="Search Classes ",
                                                        font=customtkinter.CTkFont(size=20, weight="bold"))
@@ -4947,11 +4951,14 @@ class TeraTermUI(customtkinter.CTk):
     # Changes keybind depending on the tab the user is currently on
     def change_bind(self):
         self.focus_set()
+        enroll_frame = self.tabview.tab(self.enroll_tab)
+        other_frame = self.tabview.tab(self.other_tab)
         if self.tabview.get() == self.enroll_tab:
             self.in_search_frame = False
             self.in_enroll_frame = True
             self.bind("<Return>", lambda event: self.submit_event_handler())
             self.bind("<space>", lambda event: self.spacebar_event())
+            enroll_frame.bind("<Button-1>", lambda event: enroll_frame.focus_set())
         elif self.tabview.get() == self.search_tab:
             self.in_enroll_frame = False
             self.in_search_frame = True
@@ -4961,6 +4968,7 @@ class TeraTermUI(customtkinter.CTk):
             self.in_search_frame = False
             self.bind("<Return>", lambda event: self.option_menu_event_handler())
             self.bind("<space>", lambda event: self.spacebar_event())
+            other_frame.bind("<Button-1>", lambda event: other_frame.focus_set())
 
     # Creates the status window
     def status_button_event(self):
@@ -5959,3 +5967,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
