@@ -2474,6 +2474,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.show_loading_screen_again()
                         self.server_status = self.wait_for_prompt("Press return", "REGRESE PRONTO")
                         if self.server_status == "Maintenance message found":
+                            self.back.configure(state="disabled")
                             winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                             if lang == "English":
                                 CTkMessagebox(title="Maintenance", message="Error! The university's server is currently"
@@ -2803,9 +2804,9 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Return>", lambda event: self.login_event_handler())
             self.initialization_class()
             self.initialization_multiple()
-            if self.language_menu.get() == "Español":
+            if lang == "Español":
                 self.host.grid(row=2, column=0, columnspan=2, padx=(5, 0), pady=(20, 20))
-            elif self.language_menu.get() == "English":
+            elif lang == "English":
                 self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(20, 20))
             self.disable_go_next_buttons()
             self.introduction.grid(row=0, column=1, columnspan=2, padx=(20, 0), pady=(20, 0))
@@ -2836,22 +2837,24 @@ class TeraTermUI(customtkinter.CTk):
             self.in_enroll_frame = False
             self.in_search_frame = False
             self.idle = None
-            if self.error_occurred and \
-                    (self.server_status != "Maintenance message found" and self.server_status != "Timeout"):
+            if self.error_occurred:
                 self.destroy_windows()
-                winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                if lang == "English":
-                    CTkMessagebox(master=self, title="Error Information",
-                                  message="Error while performing and automating tasks! "
-                                          "Please make sure not to interrupt the execution of the applications\n\n "
-                                          "Tera Term was forced to close",
-                                  icon="warning", button_width=380)
-                if lang == "Español":
-                    CTkMessagebox(master=self, title="Información del Error",
-                                  message="¡Error mientras se realizaban y automatizaban tareas!"
-                                          "Por favor trate de no interrumpir la ejecución de las aplicaciones\n\n "
-                                          "Tera Term fue forzado a cerrar",
-                                  icon="warning", button_width=380)
+                self.username_entry.delete(0, "end")
+                if (self.server_status != "Maintenance message found" and self.server_status != "Timeout") \
+                        and self.tesseract_unzipped:
+                    winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                    if lang == "English":
+                        CTkMessagebox(master=self, title="Error Information",
+                                      message="Error while performing and automating tasks! "
+                                              "Please make sure not to interrupt the execution of the applications\n\n "
+                                              "Tera Term was forced to close",
+                                      icon="warning", button_width=380)
+                    if lang == "Español":
+                        CTkMessagebox(master=self, title="Información del Error",
+                                      message="¡Error mientras se realizaban y automatizaban tareas!"
+                                              "Por favor trate de no interrumpir la ejecución de las aplicaciones\n\n "
+                                              "Tera Term fue forzado a cerrar",
+                                      icon="warning", button_width=380)
             self.error_occurred = False
 
     # function that goes back to Enrolling frame screen
@@ -4024,7 +4027,8 @@ class TeraTermUI(customtkinter.CTk):
     # captures a screenshot of tera term and performs OCR
     def capture_screenshot(self):
         lang = self.language_menu.get()
-        if self.tesseract_unzipped:
+        tesseract_dir_path = self.app_temp_dir / "Tesseract-OCR"
+        if self.tesseract_unzipped and tesseract_dir_path.is_dir():
             window_title = "uprbay.uprb.edu - Tera Term VT"
             hwnd = win32gui.FindWindow(None, window_title)
             win32gui.SetForegroundWindow(hwnd)
@@ -4043,12 +4047,25 @@ class TeraTermUI(customtkinter.CTk):
             text = pytesseract.image_to_string(screenshot, config=custom_config)
             return text
         else:
-            if lang == "English":
-                self.after(0, lambda: self.show_error_message(320, 225, "Fatal Error! Might need to\n"
-                                                                        "reinstall application"))
-            elif lang == "Español":
-                self.after(0, lambda: self.show_error_message(320, 225, "¡Error fatal! Es posible que necesite\n"
-                                                                        " reinstalar la aplicación"))
+            try:
+                with py7zr.SevenZipFile(self.zip_path, mode="r") as z:
+                    z.extractall(self.app_temp_dir)
+                tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
+                pytesseract.pytesseract.tesseract_cmd = str(tesseract_dir / "tesseract.exe")
+                self.tesseract_unzipped = True
+                del z, tesseract_dir, tesseract_dir_path
+                gc.collect()
+                return self.capture_screenshot()
+            except Exception as e:
+                print(f"Error occurred during unzipping: {str(e)}")
+                self.tesseract_unzipped = False
+                if lang == "English":
+                    self.after(0, lambda: self.show_error_message(320, 225, "Fatal Error! Might need to\n"
+                                                                            "reinstall application"))
+                elif lang == "Español":
+                    self.after(0, lambda: self.show_error_message(320, 225, "¡Error fatal! Es posible que necesite\n"
+                                                                            " reinstalar la aplicación"))
+                return
 
     # creates pdf of the table containing for the searched class
     def create_pdf(self, data, filename, class_name):
