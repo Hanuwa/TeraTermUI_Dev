@@ -60,18 +60,26 @@ nuitka_command = (
     r'--lto=yes --nofollow-import-to=unittest --nofollow-import-to=reportlab.graphics.testshapes'
 )
 
-# Execute the DELETE SQL command
-connection = sqlite3.connect(r"C:\Users" + "\\" + username + r"\PycharmProjects\TeraTermUI\database.db")
-cursor = connection.cursor()
-cursor.execute("DELETE FROM user_data")
-connection.commit()
-# Check current state of the script to decide the order of versions
-with open(project_directory+r"\TeraTermUI.py", 'r', encoding='utf-8') as file:
-    data = file.read()
-if 'if not os.path.isfile(db_path):' in data:
-    versions = ['installer', 'portable']
-else:
-    versions = ['portable', 'installer']
+try:
+    # Execute the DELETE SQL command
+    connection = sqlite3.connect(r"C:\Users" + "\\" + username + r"\PycharmProjects\TeraTermUI\database.db")
+    cursor = connection.cursor()
+    cursor.execute("DELETE FROM user_data")
+    connection.commit()
+except Exception as e:
+    print(Fore.RED + f"Failed to reset database: {e}\n" + Style.RESET_ALL)
+    sys.exit(1)
+try:
+    # Check current state of the script to decide the order of versions
+    with open(project_directory+r"\TeraTermUI.py", 'r', encoding='utf-8') as file:
+        data = file.read()
+    if 'if not os.path.isfile(db_path):' in data:
+        versions = ['installer', 'portable']
+    else:
+        versions = ['portable', 'installer']
+except Exception as e:
+    print(Fore.RED + f"Failed to decide what version to make (Installer or Portable): {e}\n" + Style.RESET_ALL)
+    sys.exit(1)
 
 for version in versions:
     script = None
@@ -142,7 +150,6 @@ for version in versions:
         try:
             os.remove(os.path.join(output_directory, "TeraTermUI_installer", "database.db"))
             os.remove(os.path.join(output_directory, "TeraTermUI_installer", "feedback.zip"))
-            print(Fore.GREEN + "Successfully removed database.db and feedback.zip\n" + Style.RESET_ALL)
         except Exception as e:
             print(Fore.RED + f"Error removing files: {e}\n" + Style.RESET_ALL)
             sys.exit(1)
