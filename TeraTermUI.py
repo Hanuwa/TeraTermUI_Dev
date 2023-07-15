@@ -533,8 +533,6 @@ class TeraTermUI(customtkinter.CTk):
             self.mainloop()
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-            SPANISH = 0x0A
-            language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
             if language_id & 0xFF == SPANISH:
                 messagebox.showerror("Error", "¡Error Fatal! Problema en inicializar la base de datos.\n"
                                               "Es posible que necesite reinstalar la aplicación")
@@ -583,10 +581,11 @@ class TeraTermUI(customtkinter.CTk):
                 except requests.exceptions.RequestException as e:
                     print(f"Error occurred while fetching latest release information: {e}")
                     print("Please check your internet connection and try again.")
-                del dates_list
+                del dates_list, date, current_date
 
         self.after(100, update_app)
-        del user_data_fields, results
+        del user_data_fields, results, SPANISH, language_id,\
+            scaling_factor, screen_width, screen_height, width, height, x, y, db_path
         gc.collect()
 
     # function that when the user tries to close the application a confirm dialog opens up
