@@ -920,8 +920,7 @@ class TeraTermUI(customtkinter.CTk):
                                     not in self.dropped_classes_list):
                             if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE)
                                     and re.fullmatch("^[A-Z]{2}1$", section, flags=re.IGNORECASE)
-                                    and re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE)
-                                    and (choice == "Register" or choice == "Drop")):
+                                    and re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE)):
                                 ctypes.windll.user32.BlockInput(True)
                                 term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                                 if term_window.isMinimized:
@@ -1053,40 +1052,51 @@ class TeraTermUI(customtkinter.CTk):
                                                        "Llegó al Límite de Matrícula")
                                     self.set_focus_to_tkinter()
                             else:
-                                if not classes or not section or \
-                                        (choice == "Choose" and choice == "Escoge"):
+                                if not classes or not section or not semester:
                                     if lang == "English":
                                         self.after(0, self.show_error_message, 350, 230,
-                                                   "Error! Must enter the information\n"
-                                                   " about the class you want to enroll")
+                                                   "Error! Missing information about\n"
+                                                   " the class you want to enroll")
                                     elif lang == "Español":
                                         self.after(0, self.show_error_message, 350, 230,
-                                                   "¡Error! Tiene que escribir la información\n"
-                                                   " de la clase que quieres matricular")
-                                else:
+                                                   "¡Error! Le falta información de la\n"
+                                                   " clase que deseas matricular")
+                                elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE):
                                     if lang == "English":
-                                        self.after(0, self.show_error_message, 350, 265,
-                                                   "Error! Wrong Class or Section \n\n"
-                                                   " or Semester Format")
+                                        self.after(0, self.show_error_message, 360, 230,
+                                                   "Error! Wrong Format for Class")
                                     elif lang == "Español":
-                                        self.after(0, self.show_error_message, 350, 265,
-                                                   "¡Error! Formato Incorrecto de la Clase o "
-                                                   "\n\n Sección o Semestre")
+                                        self.after(0, self.show_error_message, 360, 230,
+                                                   "¡Error! Formato Incorrecto de la Clase")
+                                elif not re.fullmatch("^[A-Z]{2}1$", section, flags=re.IGNORECASE):
+                                    if lang == "English":
+                                        self.after(0, self.show_error_message, 360, 230,
+                                                   "Error! Wrong Format for Section")
+                                    elif lang == "Español":
+                                        self.after(0, self.show_error_message, 360, 230,
+                                                   "¡Error! Formato Incorrecto de la Sección")
+                                elif not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE):
+                                    if lang == "English":
+                                        self.after(0, self.show_error_message, 360, 230,
+                                                   "Error! Wrong Format for Semester")
+                                    elif lang == "Español":
+                                        self.after(0, self.show_error_message, 360, 230,
+                                                   "¡Error! Formato Incorrecto del Semestre")
                         else:
                             if classes in self.enrolled_classes_list.values() or section in self.enrolled_classes_list:
                                 if lang == "English":
-                                    self.after(0, self.show_error_message, 335, 245,
+                                    self.after(0, self.show_error_message, 335, 240,
                                                "Error! Class or section already registered")
                                 elif lang == "Español":
-                                    self.after(0, self.show_error_message, 335, 245,
-                                               "¡Error! Ya la clase o la sección está registrada")
+                                    self.after(0, self.show_error_message, 335, 240,
+                                               "¡Error! Ya la clase o la sección\n está registrada")
                             if classes in self.dropped_classes_list.values() or section in self.dropped_classes_list:
                                 if lang == "English":
-                                    self.after(0, self.show_error_message, 335, 245,
+                                    self.after(0, self.show_error_message, 335, 240,
                                                "Error! Class or section already dropped")
                                 elif lang == "Español":
-                                    self.after(0, self.show_error_message, 335, 245,
-                                               "¡Error! Ya se dio de baja de esa clase o sección")
+                                    self.after(0, self.show_error_message, 335, 240,
+                                               "¡Error! Ya se dio de baja \nde esa clase o sección")
                     else:
                         if lang == "English":
                             self.after(0, self.show_error_message, 300, 215, "Error! Tera Term is disconnected")
@@ -1218,21 +1228,26 @@ class TeraTermUI(customtkinter.CTk):
                             if not classes or not semester:
                                 if lang == "English":
                                     self.after(0, self.show_error_message, 350, 230,
-                                               "Error! Must enter the information\n"
-                                               " about the class you want to search")
+                                               "Error! Missing information about\n"
+                                               " the class you want to search")
                                 elif lang == "Español":
                                     self.after(0, self.show_error_message, 350, 230,
-                                               "¡Error! Tiene que escribir la información\n"
-                                               " de la clase que quieres buscar")
-                            else:
-                                if lang == "English":
-                                    self.after(0, self.show_error_message, 350, 265,
-                                               "Error! Wrong Class \n\n"
-                                               " or Semester Format")
-                                elif lang == "Español":
-                                    self.after(0, self.show_error_message, 350, 265,
-                                               "¡Error! Formato Incorrecto de la Clase o"
-                                               "\n\n o el Semestre")
+                                               "¡Error! Le falta información de la\n"
+                                               " clase que deseas buscar")
+                                elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE):
+                                    if lang == "English":
+                                        self.after(0, self.show_error_message, 360, 230,
+                                                   "Error! Wrong Format for Class")
+                                    elif lang == "Español":
+                                        self.after(0, self.show_error_message, 360, 230,
+                                                   "¡Error! Formato Incorrecto de la Clase")
+                                elif not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE):
+                                    if lang == "English":
+                                        self.after(0, self.show_error_message, 360, 230,
+                                                   "Error! Wrong Format for Semester")
+                                    elif lang == "Español":
+                                        self.after(0, self.show_error_message, 360, 230,
+                                                   "¡Error! Formato Incorrecto del Semestre")
                     else:
                         if lang == "English":
                             self.after(0, self.show_error_message, 300, 215, "Error! Tera Term is disconnected")
@@ -1384,7 +1399,6 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         semester = self.m_semester_entry[0].get().upper()
         if re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE):
-            # reveal the elements at the current counter index
             if self.a_counter + 1 < len(self.m_semester_entry):  # Making sure we don't exceed the list index
                 self.m_semester_entry[self.a_counter + 1].configure(state="normal")
                 self.m_num_class[self.a_counter + 1].grid(row=self.a_counter + 2, column=0, padx=(0, 8), pady=(20, 0))
@@ -1399,7 +1413,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.m_register_menu[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(500, 0),
                                                               pady=(20, 0))
                 self.a_counter += 1
-                # Enable remove button when there's more than one set of widgets
                 if self.a_counter > 0:
                     self.m_remove.configure(state="normal")
 
@@ -1426,26 +1439,23 @@ class TeraTermUI(customtkinter.CTk):
         else:
             self.a_counter -= 1
             self.m_remove.configure(state="normal")
-            # remove the elements at the current counter index
             self.m_num_class[self.a_counter + 1].grid_forget()
             self.m_classes_entry[self.a_counter + 1].grid_forget()
             self.m_section_entry[self.a_counter + 1].grid_forget()
             self.m_semester_entry[self.a_counter + 1].grid_forget()
             self.m_register_menu[self.a_counter + 1].grid_forget()
-            # if you still need to clear the entry
             self.m_semester_entry[self.a_counter + 1].configure(state="normal")
             self.m_semester_entry[self.a_counter + 1].set("")
             self.m_semester_entry[self.a_counter + 1].configure(state="disabled")
-            # Disable remove button when there's only one set of widgets
             if self.a_counter == 0:
                 self.m_remove.configure(state="disabled")
 
     def add_event_up_arrow_key(self):
-        if self.up_arrow_key_enabled:
+        if self.up_arrow_key_enabled and self.a_counter != 5:
             self.add_event()
 
     def remove_event_down_arrow_key(self):
-        if self.down_arrow_key_enabled:
+        if self.down_arrow_key_enabled and self.a_counter != 0:
             self.remove_event()
 
     # multiple classes screen
@@ -1714,23 +1724,9 @@ class TeraTermUI(customtkinter.CTk):
                             self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                     else:
                         if lang == "English":
-                            self.after(0, self.show_error_message, 400, 300,
-                                       "Error! Wrong Format for Classes, Sections, \n\n "
-                                       "Semester or you are trying to enroll \n\n"
-                                       "a class or a section \n\n"
-                                       " that has already been enrolled")
+                            self.after(0, self.show_error_message, 300, 215, "Error! Tera Term is disconnected")
                         elif lang == "Español":
-                            self.after(0, self.show_error_message, 400, 300,
-                                       "¡Error! Formato Incorrecto de las Clases, "
-                                       "\n\n Secciones, Semestre o estás intentando de"
-                                       "\n\n matricular una clase o sección "
-                                       "\n\n que ya ha sido matriculada")
-                        self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
-                else:
-                    if lang == "English":
-                        self.after(0, self.show_error_message, 300, 215, "Error! Tera Term is disconnected")
-                    elif lang == "Español":
-                        self.after(0, self.show_error_message, 300, 215, "¡Error! Tera Term esta desconnectado")
+                            self.after(0, self.show_error_message, 300, 215, "¡Error! Tera Term esta desconnectado")
                     self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                 ctypes.windll.user32.BlockInput(False)
                 self.show_sidebar_windows()
@@ -1805,7 +1801,8 @@ class TeraTermUI(customtkinter.CTk):
                 menu = menu_dict.get(menu, menu)
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
-                        if re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE):
+                        if re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE)\
+                                and menu in menu_dict.values():
                             ctypes.windll.user32.BlockInput(True)
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
@@ -2245,14 +2242,30 @@ class TeraTermUI(customtkinter.CTk):
                                         elif lang == "Español":
                                             self.after(0, self.show_error_message, 350, 265,
                                                        "¡Error! Tera Term no esta corriendo")
-
                         else:
-                            if lang == "English":
-                                self.after(0, self.show_error_message, 350, 265, "Error! Wrong Code or Semester Format")
-                            elif lang == "Español":
-                                self.after(0, self.show_error_message, 350, 265,
-                                           "¡Error! Formato del Código o\n"
-                                           " Semestre Incorrecto")
+                            if not semester or not menu:
+                                if lang == "English":
+                                    self.after(0, self.show_error_message, 350, 230,
+                                               "Error! Missing information about\n"
+                                               " the screen you want to go to")
+                                elif lang == "Español":
+                                    self.after(0, self.show_error_message, 350, 230,
+                                               "¡Error! Le falta información de la\n"
+                                               " pantalla a la que deseas ir")
+                            elif not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE):
+                                if lang == "English":
+                                    self.after(0, self.show_error_message, 360, 230,
+                                               "Error! Wrong Format for Semester")
+                                elif lang == "Español":
+                                    self.after(0, self.show_error_message, 360, 230,
+                                               "¡Error! Formato Incorrecto del Semestre")
+                            elif menu not in menu_dict.values():
+                                if lang == "English":
+                                    self.after(0, self.show_error_message, 340, 230,
+                                               "Error! Incorrect Code")
+                                elif lang == "Español":
+                                    self.after(0, self.show_error_message, 340, 230,
+                                               "¡Error! Código Incorrecto")
                     else:
                         if lang == "English":
                             self.after(0, self.show_error_message, 300, 215, "Error! Tera Term is disconnected")
@@ -3910,6 +3923,7 @@ class TeraTermUI(customtkinter.CTk):
             self.cursor.execute("DELETE FROM save_classes")
             self.connection.commit()
             is_empty = False  # Variable to track if any entry is empty
+            is_invalid_format = False  # Variable to track if any entry has incorrect format
             # Iterate over the added entries based on self.a_counter
             for index in range(self.a_counter + 1):
                 # Get the values from the entry fields and option menus
@@ -3919,6 +3933,10 @@ class TeraTermUI(customtkinter.CTk):
                 register_value = self.m_register_menu[index].get()
                 if not class_value or not section_value or not semester_value or register_value in ("Choose", "Escoge"):
                     is_empty = True  # Set the flag if any field is empty or register is not selected
+                elif (not re.fullmatch("^[A-Z]{4}[0-9]{4}$", class_value, flags=re.IGNORECASE) or
+                      not re.fullmatch("^[A-Z]{2}1$", section_value, flags=re.IGNORECASE) or
+                      not re.fullmatch("^[A-Z][0-9]{2}$", semester_value, flags=re.IGNORECASE)):
+                    is_invalid_format = True  # Set the flag if any field has incorrect format
                 else:
                     # Perform the insert operation
                     self.cursor.execute("INSERT INTO save_classes (class, section, semester, action, 'check')"
@@ -3931,7 +3949,15 @@ class TeraTermUI(customtkinter.CTk):
                                                       " due to missing information")
                 elif lang == "Español":
                     self.show_error_message(330, 255, "No se guardaron clases debido\n"
-                                                      " a que falta información ")
+                                                      " a que falta información")
+                self.save_data.deselect()
+            if is_invalid_format:
+                if lang == "English":
+                    self.show_error_message(330, 255, "No classes were saved\n"
+                                                      " due to incorrect information")
+                elif lang == "Español":
+                    self.show_error_message(330, 255, "No se guardaron clases debido\n"
+                                                      " a que la información está incorrecta")
                 self.save_data.deselect()
             else:
                 self.cursor.execute("SELECT COUNT(*) FROM save_classes")
@@ -3939,10 +3965,10 @@ class TeraTermUI(customtkinter.CTk):
                 if row_count == 0:  # Check the counter after the loop
                     if lang == "English":
                         self.show_error_message(330, 255, "No classes were saved\n"
-                                                          " due to missing information")
+                                                          " due to incorrect information")
                     elif lang == "Español":
                         self.show_error_message(330, 255, "No se guardaron clases debido\n"
-                                                          " a que falta información ")
+                                                          " a información incorrecta")
                     self.save_data.deselect()
                 else:
                     if lang == "English":
@@ -5826,87 +5852,73 @@ class TeraTermUI(customtkinter.CTk):
     # checks if there is no problems with the information in the entries
     def check_format(self):
         lang = self.language_menu.get()
-        choices = []
-        error_flag_empty = False  # Flag to track if an error is encountered
-        error_flag_format = False
+        entries = []
+        error_msg_short = ""
+        error_msg_medium = ""
+        error_msg_long = ""
 
         # Get the choices from the entries
         for i in range(self.a_counter + 1):
             classes = self.m_classes_entry[i].get().upper().replace(" ", "")
-            section = self.m_section_entry[i].get().upper().replace(" ", "")
+            sections = self.m_section_entry[i].get().upper().replace(" ", "")
             semester = self.m_semester_entry[i].get().upper().replace(" ", "")
-            choice = self.m_register_menu[i].get()
-            choices.append((choice, classes, section, semester))
+            choices = self.m_register_menu[i].get()
+            entries.append((choices, classes, sections, semester))
 
-        # Check for empty entries
+        # Check for empty entries and format errors
         for i in range(self.a_counter + 1):
-            (choice, classes, section, semester) = choices[i]
-            if not classes or not section or (choice == "Choose" or choice == "Escoge"):
-                error_flag_empty = True
-                break  # Exit the loop if an error is found
-
-        # Check each choice for errors if no empty entries
-        if not error_flag_empty:
-            for i in range(self.a_counter + 1):
-                (choice, classes, section, semester) = choices[i]
-                if not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE) \
-                        or not re.fullmatch("^[A-Z]{2}1$", section, flags=re.IGNORECASE) \
-                        or not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE) \
-                        or ((choice == "Register" or choice == "Registra") and
-                            (classes in self.enrolled_classes_list.values() or section in self.enrolled_classes_list)) \
-                        or ((choice == "Drop" or choice == "Baja") and
-                            (classes in self.dropped_classes_list.values() or section in self.dropped_classes_list)):
-                    error_flag_format = True
-                    break  # Exit the loop if an error is found
+            (choices, classes, sections, semester) = entries[i]
+            if not classes or not sections or not semester:
+                error_msg_long = "Error! Missing information\n about the classes you want to enroll" \
+                    if lang == "English" else "¡Error! Le falta informacion\n de las clases" \
+                                              " que deseas matricular"
+                break
+            elif choices not in ["Register", "Registra", "Drop", "Baja"]:
+                error_msg_medium = "Error! Must choose to either\n enroll or drop the class" \
+                    if lang == "English" else "¡Error! Debe escoger si desea\n matricular o dar de baja la clase"
+                break
+            elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE):
+                error_msg_short = "Error! Wrong Format for Classes" if lang == "English" else \
+                    "¡Error! Formato Incorrecto de las Clases"
+                break
+            elif not re.fullmatch("^[A-Z]{2}1$", sections, flags=re.IGNORECASE):
+                error_msg_short = "Error! Wrong Format for Sections" if lang == "English" else \
+                    "¡Error! Formato Incorrecto\n de las Secciones"
+                break
+            elif not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE):
+                error_msg_short = "Error! Wrong Format for Semesters" if lang == "English" else \
+                    "¡Error! Formato Incorrecto\n de los Semestres"
+                break
+            elif ((choices == "Register" or choices == "Registra") and
+                  (classes in self.enrolled_classes_list.values() or sections in self.enrolled_classes_list)):
+                error_msg_long = "Error! You are trying to enroll a class\n " \
+                                 "or a section that has already been enrolled" \
+                    if lang == "English" else "¡Error! Estás intentando de matricular una clase\n o " \
+                                              "sección que ya ha sido matriculada"
+                break
+            elif ((choices == "Drop" or choices == "Baja") and
+                  (classes in self.dropped_classes_list.values() or sections in self.dropped_classes_list)):
+                error_msg_long = "Error! You are trying to drop a class\n or a section that has already been dropped" \
+                    if lang == "English" else "¡Error! Estás intentando dar de baja\n una clase o una " \
+                                              "sección\n que ya ha sido dada de baja"
+                break
 
         # Display error messages or proceed if no errors
-        if error_flag_empty or error_flag_format:
-            if not self.auto_enroll_bool and error_flag_empty:
-                if lang == "English":
-                    self.after(0, self.show_error_message, 350, 230,
-                               "Error! Must enter the information\n"
-                               " about the classes you want to enroll")
-                elif lang == "Español":
-                    self.after(0, self.show_error_message, 350, 230,
-                               "¡Error! Tiene que escribir la informacion\n"
-                               " de las clases que quieres matricular")
-            if not self.auto_enroll_bool and error_flag_format:
-                if lang == "English":
-                    self.after(0, self.show_error_message, 400, 310,
-                               "Error! Wrong Format for Classes, Sections, \n\n "
-                               "Semester or you are trying to enroll \n\n "
-                               "a class or a section \n\n"
-                               " that has already been enrolled")
-                elif lang == "Español":
-                    self.after(0, self.show_error_message, 400, 310,
-                               "¡Error! Formato Incorrecto de las Clases, "
-                               "\n\n Secciones, Semestre o estás intentando de "
-                               "\n\n matricular una clase o sección "
-                               "\n\n que ya ha sido matriculada")
-            if self.auto_enroll_bool and error_flag_empty:
-                if lang == "English":
-                    self.after(0, self.show_error_message, 350, 230,
-                               "Error! Must enter the information\n"
-                               " about the classes you want to enroll")
-                elif lang == "Español":
-                    self.after(0, self.show_error_message, 350, 230,
-                               "¡Error! Tiene que escribir la informacion\n"
-                               " de las clases que quieres matricular")
+        if error_msg_short:
+            self.after(0, self.show_error_message, 345, 235, error_msg_short)
+            if self.auto_enroll_bool:
                 self.auto_enroll_bool = False
                 self.auto_enroll.deselect()
-            if not self.auto_enroll_bool and error_flag_format:
-                if lang == "English":
-                    self.after(0, self.show_error_message, 400, 310,
-                               "Error! Wrong Format for Classes, Sections, \n\n "
-                               "Semester or you are trying to enroll \n\n "
-                               "a class or a section \n\n "
-                               "that has already been enrolled")
-                elif lang == "Español":
-                    self.after(0, self.show_error_message, 400, 310,
-                               "¡Error! Formato Incorrecto de las Clases, "
-                               "\n\n Secciones, Semestre o estás intentando de "
-                               "\n\n matricular una clase o sección "
-                               "\n\n que ya ha sido matriculada")
+            return False
+        elif error_msg_medium:
+            self.after(0, self.show_error_message, 355, 240, error_msg_medium)
+            if self.auto_enroll_bool:
+                self.auto_enroll_bool = False
+                self.auto_enroll.deselect()
+            return False
+        elif error_msg_long:
+            self.after(0, self.show_error_message, 390, 245, error_msg_long)
+            if self.auto_enroll_bool:
                 self.auto_enroll_bool = False
                 self.auto_enroll.deselect()
             return False
