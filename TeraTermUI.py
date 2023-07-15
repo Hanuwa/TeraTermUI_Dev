@@ -449,7 +449,7 @@ class TeraTermUI(customtkinter.CTk):
         atexit.register(self.restore_original_font, self.teraterm_file)
         try:
             db_path = "database.db"
-            if not os.path.isfile(db_path) and not os.path.exists(self.db_path):
+            if not os.path.isfile(db_path):
                 raise Exception("Database file not found.")
             self.connection = sqlite3.connect("database.db", check_same_thread=False)
             self.cursor = self.connection.cursor()
