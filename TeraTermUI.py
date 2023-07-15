@@ -3834,7 +3834,7 @@ class TeraTermUI(customtkinter.CTk):
             self.m_remove = customtkinter.CTkButton(master=self.m_button_frame, border_width=2, text="-",
                                                     text_color=("gray10", "#DCE4EE"), command=self.remove_event,
                                                     height=40, width=50, fg_color="red", hover=True,
-                                                    hover_color="darkred")
+                                                    hover_color="darkred", state="disabled")
             self.m_remove_tooltip = CTkToolTip(self.m_remove, message="Remove classes", bg_color="red")
             self.back_multiple = customtkinter.CTkButton(master=self.m_button_frame, fg_color="transparent",
                                                          border_width=2, text="Back", height=40, width=70,
