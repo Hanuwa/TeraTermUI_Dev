@@ -130,6 +130,7 @@ class TeraTermUI(customtkinter.CTk):
         self.uprbay_window = None
         self.uprb = None
         self.table = None
+        self.display_class = None
         self.server_status = None
         self.timer_window = None
         self.timer_label = None
@@ -665,12 +666,10 @@ class TeraTermUI(customtkinter.CTk):
             def aes_encrypt_then_mac(plaintext, key, inner_iv, inner_mac_key):
                 cipher = AES.new(key, AES.MODE_CBC, iv=inner_iv)
                 ciphertext = cipher.encrypt(pad(plaintext.encode(), AES.block_size))
-
                 # Compute a MAC over the ciphertext
                 hmac = HMAC.new(inner_mac_key, digestmod=SHA256)
                 hmac.update(ciphertext)
                 mac = hmac.digest()
-
                 # Append the MAC to the ciphertext
                 return ciphertext + mac
 
@@ -679,20 +678,16 @@ class TeraTermUI(customtkinter.CTk):
                 # Separate the MAC from the ciphertext
                 ciphertext = ciphertext_with_mac[:-SHA256.digest_size]
                 mac = ciphertext_with_mac[-SHA256.digest_size:]
-
                 # Compute the expected MAC over the ciphertext
                 hmac = HMAC.new(inner_mac_key, digestmod=SHA256)
                 hmac.update(ciphertext)
                 expected_mac = hmac.digest()
-
                 # Verify the MAC
                 if expected_mac != mac:
                     raise ValueError("MAC check failed")
-
                 # If the MAC is valid, decrypt the ciphertext
                 cipher = AES.new(key, AES.MODE_CBC, iv=inner_iv)
                 plaintext = unpad(cipher.decrypt(ciphertext), AES.block_size).decode()
-
                 return plaintext
 
             if asyncio.run(self.test_connection(lang)) and self.check_server():
@@ -726,11 +721,9 @@ class TeraTermUI(customtkinter.CTk):
                                 if "PASS" in text_output:
                                     send_keys("{TAB 2}")
                                 if lang == "English":
-                                    self.after(0, lambda: self.show_error_message(300, 215,
-                                                                                  "Error! Invalid SSN or Code"))
+                                    self.after(0, self.show_error_message, 300, 215, "Error! Invalid SSN or Code")
                                 if lang == "Español":
-                                    self.after(0, lambda: self.show_error_message(300, 215,
-                                                                                  "¡Error! SSN o Código Incorrecto"))
+                                    self.after(0, self.show_error_message, 300, 215, "¡Error! SSN o Código Incorrecto")
                             elif "ID NOT ON FILE" not in text_output or "PASS" not in text_output:
                                 self.reset_activity_timer(None)
                                 self.start_check_idle_thread()
@@ -749,24 +742,21 @@ class TeraTermUI(customtkinter.CTk):
                         else:
                             self.bind("<Return>", lambda event: self.tuition_event_handler())
                             if lang == "English":
-                                self.after(0, lambda: self.show_error_message(300, 215, "Error! Invalid SSN or Code"))
+                                self.after(0, self.show_error_message, 300, 215, "Error! Invalid SSN or Code")
                             elif lang == "Español":
-                                self.after(0, lambda: self.show_error_message(300, 215,
-                                                                              "¡Error! SSN o Código Incorrecto"))
-                            # self.screenshot_skip = True
+                                self.after(0, self.show_error_message, 300, 215, "¡Error! SSN o Código Incorrecto")
                     except ValueError:
                         self.bind("<Return>", lambda event: self.tuition_event_handler())
                         if lang == "English":
-                            self.after(0, lambda: self.show_error_message(300, 215, "Error! Invalid SSN or Code"))
+                            self.after(0, self.show_error_message, 300, 215, "Error! Invalid SSN or Code")
                         elif lang == "Español":
-                            self.after(0, lambda: self.show_error_message(300, 215, "¡Error! SSN o Código Incorrecto"))
-                        # self.screenshot_skip = True
+                            self.after(0, self.show_error_message, 300, 215, "¡Error! SSN o Código Incorrecto")
                 else:
                     self.bind("<Return>", lambda event: self.tuition_event_handler())
                     if lang == "English":
-                        self.after(0, lambda: self.show_error_message(300, 215, "Error! Tera Term isn't running"))
+                        self.after(0, self.show_error_message, 300, 215, "Error! Tera Term isn't running")
                     elif lang == "Español":
-                        self.after(0, lambda: self.show_error_message(300, 215, "¡Error! Tera Term no esta corriendo"))
+                        self.after(0, self.show_error_message, 300, 215, "¡Error! Tera Term no esta corriendo")
 
                     def server_maintenance():
                         self.destroy_windows()
@@ -861,7 +851,6 @@ class TeraTermUI(customtkinter.CTk):
         self.code_entry.configure(placeholder_text="####")
         self.ssn_entry.configure(show="*")
         self.code_entry.configure(show="*")
-        del self.ssn_entry, self.code_entry
         self.student_frame.grid_forget()
         self.s_buttons_frame.grid_forget()
 
@@ -944,7 +933,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.uprb.UprbayTeraTermVt.type_keys(semester)
                                 send_keys("{ENTER}")
                                 self.reset_activity_timer(None)
-                                self.disable_go_next_buttons()
+                                self.after(0, self.disable_go_next_buttons)
                                 screenshot_thread = threading.Thread(target=self.capture_screenshot)
                                 screenshot_thread.start()
                                 screenshot_thread.join()
@@ -990,11 +979,11 @@ class TeraTermUI(customtkinter.CTk):
                                             elif section in self.enrolled_classes_list:
                                                 del self.enrolled_classes_list[section]
                                             if lang == "English":
-                                                self.after(0, lambda: self.show_success_message(
-                                                    350, 265, "Enrolled class successfully"))
+                                                self.after(0, self.show_success_message, 350, 265,
+                                                           "Enrolled class successfully")
                                             elif lang == "Español":
-                                                self.after(0, lambda: self.show_success_message(
-                                                    350, 265, "Clase registrada exitósamente"))
+                                                self.after(0, self.show_success_message, 350, 265,
+                                                           "Clase registrada exitósamente")
                                         elif choice == "Drop":
                                             if section in self.enrolled_classes_list:
                                                 del self.enrolled_classes_list[section]
@@ -1003,29 +992,29 @@ class TeraTermUI(customtkinter.CTk):
                                             elif section in self.dropped_classes_list:
                                                 del self.dropped_classes_list[section]
                                             if lang == "English":
-                                                self.after(0, lambda: self.show_success_message(
-                                                    350, 265, "Dropped class successfully"))
+                                                self.after(0, self.show_success_message, 350, 265,
+                                                           "Dropped class successfully")
                                             elif lang == "Español":
-                                                self.after(0, lambda: self.show_success_message(
-                                                    350, 265, "Clase abandonada exitósamente"))
+                                                self.after(0, self.show_success_message, 350, 265,
+                                                           "Clase abandonada exitósamente")
                                         if self.e_counter + self.m_counter == 15:
                                             time.sleep(3.2)
                                             self.submit.configure(state="disabled")
                                             self.multiple.configure(state="disabled")
                                             if lang == "English":
-                                                self.after(0, lambda: self.show_information_message(
-                                                    350, 265, "Reached Enrollment limit!"))
+                                                self.after(0, self.show_information_message, 350, 265,
+                                                           "Reached Enrollment limit!")
                                             elif lang == "Español":
-                                                self.after(0, lambda: self.show_information_message(
-                                                    350, 265, "Llegó al Límite de Matrícula"))
+                                                self.after(0, self.show_information_message, 350, 265,
+                                                           "Llegó al Límite de Matrícula")
                                         self.set_focus_to_tkinter()
                                     else:
                                         if lang == "English":
-                                            self.after(0, lambda: self.show_error_message(
-                                                320, 235, "Error! Failed to enroll class"))
+                                            self.after(0, self.show_error_message, 320, 235,
+                                                       "Error! Failed to enroll class")
                                         elif lang == "Español":
-                                            self.after(0, lambda: self.show_error_message(
-                                                320, 235, "¡Error! No se pudo matricular la clase"))
+                                            self.after(0, self.show_error_message, 320, 235,
+                                                       "¡Error! No se pudo matricular la clase")
                                         self.set_focus_to_tkinter()
                                 else:
                                     if "OUTDATED" in text_output or "INVALID TERM SELECTION" in text_output:
@@ -1035,19 +1024,21 @@ class TeraTermUI(customtkinter.CTk):
                                         self.reset_activity_timer(None)
                                     if "INVALID TERM SELECTION" in text_output:
                                         if lang == "English":
-                                            self.show_error_message(300, 215, "¡Error! Invalid Semester")
+                                            self.after(0, self.show_error_message, 300, 215,
+                                                       "¡Error! Invalid Semester")
                                         elif lang == "Español":
-                                            self.show_error_message(300, 215, "¡Error! Semestre Inválido")
+                                            self.after(0, self.show_error_message, 300, 215,
+                                                       "¡Error! Semestre Inválido")
                                     else:
                                         if lang == "English":
-                                            self.after(0, lambda: self.show_error_message(
-                                                300, 210, "Error! Failed to enroll class"))
+                                            self.after(0, self.show_error_message,  300, 210,
+                                                       "Error! Failed to enroll class")
                                             if not self.enrollment_error_check:
                                                 self.after(2500, self.show_enrollment_error_information)
                                                 self.enrollment_error_check = True
                                         elif lang == "Español":
-                                            self.after(0, lambda: self.show_error_message(
-                                                320, 210, "¡Error! No se pudo matricular la clase"))
+                                            self.after(0, self.show_error_message, 320, 210,
+                                                       "¡Error! No se pudo matricular la clase")
                                             if not self.enrollment_error_check:
                                                 self.after(2500, self.show_enrollment_error_information)
                                                 self.enrollment_error_check = True
@@ -1055,55 +1046,52 @@ class TeraTermUI(customtkinter.CTk):
                                         self.submit.configure(state="disabled")
                                         self.submit_multiple.configure(sate="disabled")
                                         if lang == "English":
-                                            self.after(0, lambda: self.show_information_message(
-                                                350, 265, "Reached Enrollment limit!"))
+                                            self.after(0, self.show_information_message, 350, 265,
+                                                       "Reached Enrollment limit!")
                                         elif lang == "Español":
-                                            self.after(0, lambda: self.show_information_message(
-                                                350, 265, "Llegó al Límite de Matrícula"))
+                                            self.after(0, self.show_information_message, 350, 265,
+                                                       "Llegó al Límite de Matrícula")
                                     self.set_focus_to_tkinter()
                             else:
                                 if not classes or not section or \
                                         (choice == "Choose" and choice == "Escoge"):
                                     if lang == "English":
-                                        self.after(0, lambda: self.show_error_message(
-                                            350, 230, "Error! Must enter the information\n"
-                                                      " about the class you want to enroll"))
+                                        self.after(0, self.show_error_message, 350, 230,
+                                                   "Error! Must enter the information\n"
+                                                   " about the class you want to enroll")
                                     elif lang == "Español":
-                                        self.after(0, lambda: self.show_error_message(
-                                            350, 230, "¡Error! Tiene que escribir la información\n"
-                                                      " de la clase que quieres matricular"))
+                                        self.after(0, self.show_error_message, 350, 230,
+                                                   "¡Error! Tiene que escribir la información\n"
+                                                   " de la clase que quieres matricular")
                                 else:
                                     if lang == "English":
-                                        self.after(0, lambda: self.show_error_message(
-                                            350, 265, "Error! Wrong Class or Section \n\n"
-                                                      " or Semester Format"))
+                                        self.after(0, self.show_error_message, 350, 265,
+                                                   "Error! Wrong Class or Section \n\n"
+                                                   " or Semester Format")
                                     elif lang == "Español":
-                                        self.after(0, lambda: self.show_error_message(
-                                            350, 265, "¡Error! Formato Incorrecto de la Clase o "
-                                                      "\n\n Sección o Semestre"))
+                                        self.after(0, self.show_error_message, 350, 265,
+                                                   "¡Error! Formato Incorrecto de la Clase o "
+                                                   "\n\n Sección o Semestre")
                         else:
                             if classes in self.enrolled_classes_list.values() or section in self.enrolled_classes_list:
                                 if lang == "English":
-                                    self.after(0, lambda: self.show_error_message(
-                                        335, 245, "Error! Class or section already registered"))
+                                    self.after(0, self.show_error_message, 335, 245,
+                                               "Error! Class or section already registered")
                                 elif lang == "Español":
-                                    self.after(0, lambda: self.show_error_message(
-                                        335, 245, "¡Error! Ya la clase o la sección "
-                                                  "está registrada"))
+                                    self.after(0, self.show_error_message, 335, 245,
+                                               "¡Error! Ya la clase o la sección está registrada")
                             if classes in self.dropped_classes_list.values() or section in self.dropped_classes_list:
                                 if lang == "English":
-                                    self.after(0, lambda: self.show_error_message(
-                                        335, 245, "Error! Class or section already dropped"))
+                                    self.after(0, self.show_error_message, 335, 245,
+                                               "Error! Class or section already dropped")
                                 elif lang == "Español":
-                                    self.after(0, lambda: self.show_error_message(
-                                        335, 245, "¡Error! Ya se dio de baja de esa clase "
-                                                  "o sección"))
+                                    self.after(0, self.show_error_message, 335, 245,
+                                               "¡Error! Ya se dio de baja de esa clase o sección")
                     else:
                         if lang == "English":
-                            self.after(0, lambda: self.show_error_message(300, 215, "Error! Tera Term is disconnected"))
+                            self.after(0, self.show_error_message, 300, 215, "Error! Tera Term is disconnected")
                         elif lang == "Español":
-                            self.after(0, lambda: self.show_error_message(300, 215,
-                                                                          "¡Error! Tera Term esta desconnectado"))
+                            self.after(0, self.show_error_message, 300, 215, "¡Error! Tera Term esta desconnectado")
                 ctypes.windll.user32.BlockInput(False)
                 self.show_sidebar_windows()
             except Exception as e:
@@ -1145,7 +1133,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.focus_set()
                 self.destroy_windows()
                 self.hide_sidebar_windows()
-                classes = self.s_classes_entry.get().replace(" ", "")
+                classes = self.s_classes_entry.get().upper().replace(" ", "")
                 semester = self.s_semester_entry.get().upper().replace(" ", "")
                 show_all = self.show_all.get()
                 lang = self.language_menu.get()
@@ -1184,20 +1172,20 @@ class TeraTermUI(customtkinter.CTk):
                             send_keys("{ENTER}")
                             self.reset_activity_timer(None)
                             ctypes.windll.user32.BlockInput(False)
-                            self.disable_go_next_buttons()
+                            self.after(0, self.disable_go_next_buttons)
                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
                             screenshot_thread.start()
                             screenshot_thread.join()
                             text_output = self.capture_screenshot()
                             if "MORE SECTIONS" in text_output:
                                 self.after(0, self.search_next_page_layout)
-                            if "COURSE NOT IN COURSE TERM FILE" in text_output:
+                            if "COURSE NOT IN" in text_output:
                                 if lang == "English":
-                                    self.after(0, lambda: self.show_error_message(
-                                        300, 215, "Error! Course: " + classes + " not found"))
+                                    self.after(0, self.show_error_message, 300, 215,
+                                               "Error! Course: " + classes + " not found")
                                 elif lang == "Español":
-                                    self.after(0, lambda: self.show_error_message(
-                                        310, 215, "Error! Clase: " + classes + " \nno se encontro"))
+                                    self.after(0, self.show_error_message, 310, 215,
+                                               "Error! Clase: " + classes + " \nno se encontro")
                             elif "INVALID ACTION" in text_output or "INVALID TERM SELECTION" in text_output:
                                 self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -1205,18 +1193,18 @@ class TeraTermUI(customtkinter.CTk):
                                 self.reset_activity_timer(None)
                                 if "INVALID TERM SELECTION" in text_output:
                                     if lang == "English":
-                                        self.after(0, lambda: self.show_error_message(320, 235,
-                                                                                      "Error! Invalid Semester!"))
+                                        self.after(0, self.show_error_message, 320, 235,
+                                                   "Error! Invalid Semester!")
                                     elif lang == "Español":
-                                        self.after(0, lambda: self.show_error_message(320, 235,
-                                                                                      "¡Error! ¡Semestre Inválido!"))
+                                        self.after(0, self.show_error_message, 320, 235,
+                                                   "¡Error! ¡Semestre Inválido!")
                                 if "INVALID ACTION" in text_output:
                                     if lang == "English":
-                                        self.after(0, lambda: self.show_error_message(320, 235,
-                                                                                      "Error! Failed to search class!"))
+                                        self.after(0, self.show_error_message, 320, 235,
+                                                   "Error! Failed to search class!")
                                     elif lang == "Español":
-                                        self.after(0, lambda: self.show_error_message(
-                                            320, 235, "¡Error! ¡Problema al buscar la clase!"))
+                                        self.after(0, self.show_error_message, 320, 235,
+                                                   "¡Error! ¡Problema al buscar la clase!")
                             else:
                                 self.search_function_counter += 1
                                 self.uprb.window().menu_select("Edit->Select screen")
@@ -1224,33 +1212,32 @@ class TeraTermUI(customtkinter.CTk):
                                 self.uprbay_window.click_input(button="left")
                                 copy = clipboard.paste()
                                 data, course_found, invalid_action = TeraTermUI.extract_class_data(copy)
-                                self.display_data(data)
+                                self.after(0, self.display_data, data)
                                 self.clipboard_clear()
                         else:
                             if not classes or not semester:
                                 if lang == "English":
-                                    self.after(0, lambda: self.show_error_message(
-                                        350, 230, "Error! Must enter the information\n"
-                                                  " about the class you want to search"))
+                                    self.after(0, self.show_error_message, 350, 230,
+                                               "Error! Must enter the information\n"
+                                               " about the class you want to search")
                                 elif lang == "Español":
-                                    self.after(0, lambda: self.show_error_message(
-                                        350, 230, "¡Error! Tiene que escribir la información\n"
-                                                  " de la clase que quieres buscar"))
+                                    self.after(0, self.show_error_message, 350, 230,
+                                               "¡Error! Tiene que escribir la información\n"
+                                               " de la clase que quieres buscar")
                             else:
                                 if lang == "English":
-                                    self.after(0, lambda: self.show_error_message(
-                                        350, 265, "Error! Wrong Class \n\n"
-                                                  " or Semester Format"))
+                                    self.after(0, self.show_error_message, 350, 265,
+                                               "Error! Wrong Class \n\n"
+                                               " or Semester Format")
                                 elif lang == "Español":
-                                    self.after(0, lambda: self.show_error_message(
-                                        350, 265, "¡Error! Formato Incorrecto de la Clase o"
-                                                  "\n\n o el Semestre"))
+                                    self.after(0, self.show_error_message, 350, 265,
+                                               "¡Error! Formato Incorrecto de la Clase o"
+                                               "\n\n o el Semestre")
                     else:
                         if lang == "English":
-                            self.after(0, lambda: self.show_error_message(300, 215, "Error! Tera Term is disconnected"))
+                            self.after(0, self.show_error_message, 300, 215, "Error! Tera Term is disconnected")
                         elif lang == "Español":
-                            self.after(0, lambda: self.show_error_message(300, 215,
-                                                                          "¡Error! Tera Term esta desconnectado"))
+                            self.after(0, self.show_error_message, 300, 215, "¡Error! Tera Term esta desconnectado")
                 self.show_sidebar_windows()
             except Exception as e:
                 print("An error occurred: ", e)
@@ -1291,8 +1278,8 @@ class TeraTermUI(customtkinter.CTk):
             self.focus_set()
             self.unbind("<Return>")
             lang = self.language_menu.get()
-            width = 870
-            height = 490
+            width = 910
+            height = 485
             scaling_factor = self.tk.call("tk", "scaling")
             screen_width = self.winfo_screenwidth()
             screen_height = self.winfo_screenheight()
@@ -1300,7 +1287,7 @@ class TeraTermUI(customtkinter.CTk):
             y = (screen_height - height * scaling_factor) / 2
             if lang == "Español":
                 dialog = customtkinter.CTkInputDialog(text="Escriba el semestre:", title="Enseñar Mis Classes")
-                dialog.geometry(f"{int(x) + 175}+{int(y + 50)}")
+                dialog.geometry(f"{int(x) + 555}+{int(y + 225)}")
                 dialog.attributes("-topmost", True)
                 dialog.after(201, lambda: dialog.iconbitmap("images/tera-term.ico"))
                 dialog_input = dialog.get_input()
@@ -1337,15 +1324,15 @@ class TeraTermUI(customtkinter.CTk):
                             else:
                                 self.show_error_message(300, 215, "¡Error! Semestre Inválido")
                         else:
-                            if self.language_menu.get() == "English":
+                            if lang == "English":
                                 self.show_error_message(300, 215, "Error! Tera Term is disconnected")
-                            elif self.language_menu.get() == "Español":
+                            elif lang == "Español":
                                 self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
                 else:
                     dialog.destroy()
             elif lang == "English":
                 dialog = customtkinter.CTkInputDialog(text="Enter the semester:", title="Show My Classes")
-                dialog.geometry(dialog.geometry(f"{int(x) + 500}+{int(y + 200)}"))
+                dialog.geometry(f"{int(x) + 555}+{int(y + 225)}")
                 dialog.attributes("-topmost", True)
                 dialog.after(201, lambda: dialog.iconbitmap("images/tera-term.ico"))
                 dialog_input = dialog.get_input()
@@ -1382,9 +1369,9 @@ class TeraTermUI(customtkinter.CTk):
                             else:
                                 self.show_error_message(300, 215, "Error! Invalid Semester")
                         else:
-                            if self.language_menu.get() == "English":
+                            if lang == "English":
                                 self.show_error_message(300, 215, "Error! Tera Term is disconnected")
-                            elif self.language_menu.get() == "Español":
+                            elif lang == "Español":
                                 self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
                 else:
                     dialog.destroy()
@@ -1559,7 +1546,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys("1S4")
                             self.uprb.UprbayTeraTermVt.type_keys(semester)
                             send_keys("{ENTER}")
-                            self.disable_go_next_buttons()
+                            self.after(0, self.disable_go_next_buttons)
                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
                             screenshot_thread.start()
                             screenshot_thread.join()
@@ -1620,27 +1607,28 @@ class TeraTermUI(customtkinter.CTk):
                                     if "CONFIRMED" in text and "DROPPED" in text:
                                         send_keys("{ENTER}")
                                         if lang == "English":
-                                            self.after(0, lambda: self.show_success_message(
-                                                350, 265, "Enrolled and dropped classes\n"
-                                                          " successfully"))
+                                            self.after(0, self.show_success_message, 350, 265,
+                                                       "Enrolled and dropped classes\n"
+                                                       " successfully")
                                         elif lang == "Español":
-                                            self.show_success_message(350, 265, "Clases matriculadas y \n"
-                                                                                " abandonadas exitósamente")
+                                            self.after(0, self.show_success_message, 350, 265,
+                                                       "Clases matriculadas y \n"
+                                                       " abandonadas exitósamente")
                                     elif "CONFIRMED" in text and "DROPPED" not in text:
                                         send_keys("{ENTER}")
                                         if lang == "English":
-                                            self.after(0, lambda: self.show_success_message(
-                                                350, 265, "Enrolled classes successfully"))
+                                            self.after(0, self.show_success_message, 350, 265,
+                                                       "Enrolled classes successfully")
                                         elif lang == "Español":
-                                            self.after(0, lambda: self.show_success_message(
-                                                350, 265, "Clases matriculadas exitósamente"))
+                                            self.after(0, self.show_success_message, 350, 265,
+                                                       "Clases matriculadas exitósamente")
                                     elif "DROPPED" in text and "CONFIRMED" not in text:
                                         if lang == "English":
-                                            self.after(0, lambda: self.show_success_message(
-                                                350, 265, "Dropped classes successfully"))
+                                            self.after(0, self.show_success_message, 350, 265,
+                                                       "Dropped classes successfully")
                                         elif lang == "Español":
-                                            self.after(0, lambda: self.show_success_message(
-                                                350, 265, "Clases abandonadas exitósamente"))
+                                            self.after(0, self.show_success_message, 350, 265,
+                                                       "Clases abandonadas exitósamente")
                                     if "INVALID COURSE ID" in text or "COURSE RESERVED" in text or "COURSE CLOSED" in \
                                             text or "CRS ALRDY TAKEN/PASSED" in text or "Closed by Spec-Prog" in text \
                                             or "ILLEGAL DROP-NOT ENR" in text or "NEW COURSE,NO FUNCTION" in text or \
@@ -1656,11 +1644,11 @@ class TeraTermUI(customtkinter.CTk):
                                         self.multiple.configure(state="disabled")
                                         time.sleep(3.2)
                                         if lang == "English":
-                                            self.after(0, lambda: self.show_information_message(
-                                                350, 265, "Reached Enrollment limit!"))
+                                            self.after(0, self.show_information_message, 350, 265,
+                                                       "Reached Enrollment limit!")
                                         elif lang == "Español":
-                                            self.after(0, lambda: self.show_information_message(
-                                                350, 265, "Llegó al Límite de Matrícula"))
+                                            self.after(0, self.show_information_message, 350, 265,
+                                                       "Llegó al Límite de Matrícula")
                                     self.set_focus_to_tkinter()
                                     for i in range(self.a_counter):
                                         self.m_classes_entry[i].delete(0, "end")
@@ -1672,10 +1660,11 @@ class TeraTermUI(customtkinter.CTk):
                                             placeholder_text=self.placeholder_texts_sections[i])
                                 else:
                                     if lang == "English":
-                                        self.show_error_message(320, 235, "Error! Failed to enroll classes")
+                                        self.after(0, self.show_error_message, 320, 235,
+                                                   "Error! Failed to enroll classes")
                                     elif lang == "Español":
-                                        self.show_error_message(320, 235, "¡Error! No se pudo "
-                                                                          "matricular las clases")
+                                        self.after(0, self.show_error_message, 320, 235,
+                                                   "¡Error! No se pudo matricular las clases")
                                     self.m_counter = self.m_counter - self.a_counter - 1
                                     self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                                     self.set_focus_to_tkinter()
@@ -1692,14 +1681,14 @@ class TeraTermUI(customtkinter.CTk):
                                         self.show_error_message(300, 215, "¡Error! Semestre Inválido")
                                 else:
                                     if lang == "English":
-                                        self.after(0, lambda: self.show_error_message(
-                                            300, 210, "Error! Failed to enroll class"))
+                                        self.after(0, self.show_error_message, 300, 210,
+                                                   "Error! Failed to enroll class")
                                         if not self.enrollment_error_check:
                                             self.after(2500, self.show_enrollment_error_information)
                                             self.enrollment_error_check = True
                                     elif lang == "Español":
-                                        self.after(0, lambda: self.show_error_message(
-                                            320, 210, "¡Error! No se puede matricular la clase"))
+                                        self.after(0, self.show_error_message, 320, 210,
+                                                   "¡Error! No se puede matricular la clase")
                                         if not self.enrollment_error_check:
                                             self.after(2500, self.show_enrollment_error_information)
                                             self.enrollment_error_check = True
@@ -1708,39 +1697,40 @@ class TeraTermUI(customtkinter.CTk):
                                     self.submit.configure(state="disabled")
                                     self.submit_multiple.configure(sate="disabled")
                                     if lang == "English":
-                                        self.after(0, lambda: self.show_information_message(
-                                            350, 265, "Reached Enrollment limit!"))
+                                        self.after(0, self.show_information_message, 350, 265,
+                                                   "Reached Enrollment limit!")
                                     elif lang == "Español":
-                                        self.after(0, lambda: self.show_information_message(
-                                            350, 265, "Llegó al Límite de Matrícula"))
+                                        self.after(0, self.show_information_message, 350, 265,
+                                                   "Llegó al Límite de Matrícula")
                                 self.set_focus_to_tkinter()
                         else:
                             if lang == "English":
-                                self.after(0, lambda: self.show_error_message(
-                                    320, 235, "Error! Can only enroll up to 15 classes"))
+                                self.after(0, self.show_error_message, 320, 235,
+                                           "Error! Can only enroll up to 15 classes")
                             if lang == "Español":
-                                self.after(0, lambda: self.show_error_message(
-                                    320, 235, "¡Error! Solamente puede matricular\n\n"
-                                              " hasta 15 clases"))
+                                self.after(0, self.show_error_message, 320, 235,
+                                           "¡Error! Solamente puede matricular\n\n"
+                                           " hasta 15 clases")
                             self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                     else:
                         if lang == "English":
-                            self.show_error_message(400, 300, "Error! Wrong Format for Classes, Sections, \n\n "
-                                                              "Semester or you are trying to enroll \n\n"
-                                                              "a class or a section \n\n"
-                                                              " that has already been enrolled")
+                            self.after(0, self.show_error_message, 400, 300,
+                                       "Error! Wrong Format for Classes, Sections, \n\n "
+                                       "Semester or you are trying to enroll \n\n"
+                                       "a class or a section \n\n"
+                                       " that has already been enrolled")
                         elif lang == "Español":
-                            self.after(0, lambda: self.show_error_message(
-                                400, 300, "¡Error! Formato Incorrecto de las Clases, "
-                                          "\n\n Secciones, Semestre o estás intentando de"
-                                          "\n\n matricular una clase o sección "
-                                          "\n\n que ya ha sido matriculada"))
+                            self.after(0, self.show_error_message, 400, 300,
+                                       "¡Error! Formato Incorrecto de las Clases, "
+                                       "\n\n Secciones, Semestre o estás intentando de"
+                                       "\n\n matricular una clase o sección "
+                                       "\n\n que ya ha sido matriculada")
                         self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                 else:
                     if lang == "English":
-                        self.after(0, lambda: self.show_error_message(300, 215, "Error! Tera Term is disconnected"))
+                        self.after(0, self.show_error_message, 300, 215, "Error! Tera Term is disconnected")
                     elif lang == "Español":
-                        self.after(0, lambda: self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado"))
+                        self.after(0, self.show_error_message, 300, 215, "¡Error! Tera Term esta desconnectado")
                     self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                 ctypes.windll.user32.BlockInput(False)
                 self.show_sidebar_windows()
@@ -1826,7 +1816,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
                                     self.reset_activity_timer(None)
-                                    self.disable_go_next_buttons()
+                                    self.after(0, self.disable_go_next_buttons)
                                 case "004":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
@@ -1834,7 +1824,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     send_keys("{ENTER}")
                                     self.reset_activity_timer(None)
-                                    self.disable_go_next_buttons()
+                                    self.after(0, self.disable_go_next_buttons)
                                 case "1GP":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
@@ -1842,48 +1832,56 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     send_keys("{ENTER}")
                                     self.reset_activity_timer(None)
-                                    self.disable_go_next_buttons()
+                                    self.after(0, self.disable_go_next_buttons)
                                     screenshot_thread = threading.Thread(target=self.capture_screenshot)
                                     screenshot_thread.start()
                                     screenshot_thread.join()
                                     text_output = self.capture_screenshot()
                                     if "INVALID TERM SELECTION" not in text_output:
-                                        self.go_next_1GP.configure(state="normal")
-                                        self.go_next_1VE.grid_forget()
-                                        self.go_next_409.grid_forget()
-                                        self.go_next_683.grid_forget()
-                                        self.go_next_4CM.grid_forget()
-                                        self.go_next_1VE.configure(state="disabled")
-                                        self.go_next_409.configure(state="disabled")
-                                        self.go_next_683.configure(state="disabled")
-                                        self.go_next_4CM.configure(state="disabled")
-                                        self._1VE_screen = False
-                                        self._1GP_screen = True
-                                        self._409_screen = False
-                                        self._683_screen = False
-                                        self._4CM_screen = False
-                                        self.menu_submit.configure(width=100)
-                                        self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-                                        self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-                                        if lang == "English":
-                                            self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
-                                        elif lang == "Español":
-                                            self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
-                                        self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-                                        self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
-                                        self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0),
-                                                                      sticky="n")
-                                        self.menu_submit.grid(row=5, column=1, padx=(0, 110), pady=(40, 0), sticky="n")
-                                        self.go_next_1GP.grid(row=5, column=1, padx=(110, 0), pady=(40, 0), sticky="n")
+                                        def go_next_grid():
+                                            self.go_next_1GP.configure(state="normal")
+                                            self.go_next_1VE.grid_forget()
+                                            self.go_next_409.grid_forget()
+                                            self.go_next_683.grid_forget()
+                                            self.go_next_4CM.grid_forget()
+                                            self.go_next_1VE.configure(state="disabled")
+                                            self.go_next_409.configure(state="disabled")
+                                            self.go_next_683.configure(state="disabled")
+                                            self.go_next_4CM.configure(state="disabled")
+                                            self._1VE_screen = False
+                                            self._1GP_screen = True
+                                            self._409_screen = False
+                                            self._683_screen = False
+                                            self._4CM_screen = False
+                                            self.menu_submit.configure(width=100)
+                                            self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20),
+                                                                   sticky="n")
+                                            self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0),
+                                                                 sticky="n")
+                                            if lang == "English":
+                                                self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
+                                            elif lang == "Español":
+                                                self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
+                                            self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+                                            self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0),
+                                                                    sticky="w")
+                                            self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0),
+                                                                          sticky="n")
+                                            self.menu_submit.grid(row=5, column=1, padx=(0, 110), pady=(40, 0),
+                                                                  sticky="n")
+                                            self.go_next_1GP.grid(row=5, column=1, padx=(110, 0), pady=(40, 0),
+                                                                  sticky="n")
+                                        self.after(0, go_next_grid)
                                     else:
                                         self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                         send_keys("{ENTER}")
                                         self.reset_activity_timer(None)
                                         if lang == "English":
-                                            self.show_error_message(300, 215, "¡Error! Invalid Semester")
+                                            self.after(0, self.show_error_message, 300, 215, "¡Error! Invalid Semester")
                                         elif lang == "Español":
-                                            self.show_error_message(300, 215, "¡Error! Semestre Inválido")
+                                            self.after(0, self.show_error_message, 300, 215,
+                                                       "¡Error! Semestre Inválido")
                                 case "118":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
@@ -1891,7 +1889,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     send_keys("{ENTER}")
                                     self.reset_activity_timer(None)
-                                    self.disable_go_next_buttons()
+                                    self.after(0, self.disable_go_next_buttons)
                                     screenshot_thread = threading.Thread(target=self.capture_screenshot)
                                     screenshot_thread.start()
                                     screenshot_thread.join()
@@ -1902,9 +1900,10 @@ class TeraTermUI(customtkinter.CTk):
                                         send_keys("{ENTER}")
                                         self.reset_activity_timer(None)
                                         if lang == "English":
-                                            self.show_error_message(300, 215, "¡Error! Invalid Semester")
+                                            self.after(0, self.show_error_message, 300, 215, "¡Error! Invalid Semester")
                                         elif lang == "Español":
-                                            self.show_error_message(300, 215, "¡Error! Semestre Inválido")
+                                            self.after(0, self.show_error_message, 300, 215,
+                                                       "¡Error! Semestre Inválido")
                                 case "1VE":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
@@ -1928,11 +1927,11 @@ class TeraTermUI(customtkinter.CTk):
                                     text_output = self.capture_screenshot()
                                     if "CONFLICT" in text_output:
                                         if lang == "English":
-                                            self.after(0, lambda: self.show_information_message(
-                                                310, 225, "Student has a hold flag"))
+                                            self.after(0, self.show_information_message, 310, 225,
+                                                       "Student has a hold flag")
                                         if lang == "Español":
-                                            self.after(0, lambda: self.show_information_message(
-                                                310, 225, "Estudiante tine un hold flag"))
+                                            self.after(0, self.show_information_message, 310, 225,
+                                                       "Estudiante tine un hold flag")
                                         self.uprb.UprbayTeraTermVt.type_keys("004")
                                         self.uprb.UprbayTeraTermVt.type_keys(semester)
                                         send_keys("{ENTER}")
@@ -1942,28 +1941,35 @@ class TeraTermUI(customtkinter.CTk):
                                         send_keys("{ENTER}")
                                         self.reset_activity_timer(None)
                                         if lang == "English":
-                                            self.show_error_message(300, 215, "¡Error! Invalid Semester")
+                                            self.after(0, self.show_error_message, 300, 215, "¡Error! Invalid Semester")
                                         elif lang == "Español":
-                                            self.show_error_message(300, 215, "¡Error! Semestre Inválido")
+                                            self.after(0, self.show_error_message, 300, 215,
+                                                       "¡Error! Semestre Inválido")
                                     if "CONFLICT" not in text_output or "INVALID TERM SELECTION" not in text_output:
-                                        self.go_next_1VE.configure(state="normal")
-                                        self.go_next_1GP.grid_forget()
-                                        self.go_next_409.grid_forget()
-                                        self.go_next_683.grid_forget()
-                                        self.go_next_4CM.grid_forget()
-                                        self.menu_submit.configure(width=100)
-                                        self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-                                        self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-                                        if lang == "English":
-                                            self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
-                                        elif lang == "Español":
-                                            self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
-                                        self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-                                        self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
-                                        self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0),
-                                                                      sticky="n")
-                                        self.menu_submit.grid(row=5, column=1, padx=(0, 110), pady=(40, 0), sticky="n")
-                                        self.go_next_1VE.grid(row=5, column=1, padx=(110, 0), pady=(40, 0), sticky="n")
+                                        def go_next_grid():
+                                            self.go_next_1VE.configure(state="normal")
+                                            self.go_next_1GP.grid_forget()
+                                            self.go_next_409.grid_forget()
+                                            self.go_next_683.grid_forget()
+                                            self.go_next_4CM.grid_forget()
+                                            self.menu_submit.configure(width=100)
+                                            self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20),
+                                                                   sticky="n")
+                                            self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
+                                            if lang == "English":
+                                                self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
+                                            elif lang == "Español":
+                                                self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
+                                            self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+                                            self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0),
+                                                                    sticky="w")
+                                            self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0),
+                                                                          sticky="n")
+                                            self.menu_submit.grid(row=5, column=1, padx=(0, 110), pady=(40, 0),
+                                                                  sticky="n")
+                                            self.go_next_1VE.grid(row=5, column=1, padx=(110, 0), pady=(40, 0),
+                                                                  sticky="n")
+                                        self.after(0, go_next_grid)
                                 case "3DD":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
@@ -1971,7 +1977,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     send_keys("{ENTER}")
                                     self.reset_activity_timer(None)
-                                    self.disable_go_next_buttons()
+                                    self.after(0, self.disable_go_next_buttons)
                                     screenshot_thread = threading.Thread(target=self.capture_screenshot)
                                     screenshot_thread.start()
                                     screenshot_thread.join()
@@ -1982,9 +1988,10 @@ class TeraTermUI(customtkinter.CTk):
                                         send_keys("{ENTER}")
                                         self.reset_activity_timer(None)
                                         if lang == "English":
-                                            self.show_error_message(300, 215, "¡Error! Invalid Semester")
+                                            self.after(0, self.show_error_message, 300, 215, "¡Error! Invalid Semester")
                                         elif lang == "Español":
-                                            self.show_error_message(300, 215, "¡Error! Semestre Inválido")
+                                            self.after(0, self.show_error_message, 300, 215,
+                                                       "¡Error! Semestre Inválido")
                                 case "409":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
@@ -1997,42 +2004,49 @@ class TeraTermUI(customtkinter.CTk):
                                     screenshot_thread.join()
                                     text_output = self.capture_screenshot()
                                     if "INVALID TERM SELECTION" not in text_output:
-                                        self.go_next_409.configure(state="normal")
-                                        self.go_next_1VE.grid_forget()
-                                        self.go_next_1GP.grid_forget()
-                                        self.go_next_683.grid_forget()
-                                        self.go_next_4CM.grid_forget()
-                                        self.go_next_1GP.configure(state="disabled")
-                                        self.go_next_683.configure(state="disabled")
-                                        self.go_next_1VE.configure(state="disabled")
-                                        self.go_next_4CM.configure(state="disabled")
-                                        self._1VE_screen = False
-                                        self._1GP_screen = False
-                                        self._409_screen = True
-                                        self._683_screen = False
-                                        self._4CM_screen = False
-                                        self.menu_submit.configure(width=100)
-                                        self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-                                        self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-                                        if lang == "English":
-                                            self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
-                                        elif lang == "Español":
-                                            self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
-                                        self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-                                        self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
-                                        self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0),
-                                                                      sticky="n")
-                                        self.menu_submit.grid(row=5, column=1, padx=(0, 110), pady=(40, 0), sticky="n")
-                                        self.go_next_409.grid(row=5, column=1, padx=(110, 0), pady=(40, 0), sticky="n")
+                                        def go_next_grid():
+                                            self.go_next_409.configure(state="normal")
+                                            self.go_next_1VE.grid_forget()
+                                            self.go_next_1GP.grid_forget()
+                                            self.go_next_683.grid_forget()
+                                            self.go_next_4CM.grid_forget()
+                                            self.go_next_1GP.configure(state="disabled")
+                                            self.go_next_683.configure(state="disabled")
+                                            self.go_next_1VE.configure(state="disabled")
+                                            self.go_next_4CM.configure(state="disabled")
+                                            self._1VE_screen = False
+                                            self._1GP_screen = False
+                                            self._409_screen = True
+                                            self._683_screen = False
+                                            self._4CM_screen = False
+                                            self.menu_submit.configure(width=100)
+                                            self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20),
+                                                                   sticky="n")
+                                            self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
+                                            if lang == "English":
+                                                self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
+                                            elif lang == "Español":
+                                                self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
+                                            self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+                                            self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0),
+                                                                    sticky="w")
+                                            self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0),
+                                                                          sticky="n")
+                                            self.menu_submit.grid(row=5, column=1, padx=(0, 110), pady=(40, 0),
+                                                                  sticky="n")
+                                            self.go_next_409.grid(row=5, column=1, padx=(110, 0), pady=(40, 0),
+                                                                  sticky="n")
+                                        self.after(0, go_next_grid)
                                     else:
                                         self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                         send_keys("{ENTER}")
                                         self.reset_activity_timer(None)
                                         if lang == "English":
-                                            self.show_error_message(300, 215, "¡Error! Invalid Semester")
+                                            self.after(0, self.show_error_message, 300, 215, "¡Error! Invalid Semester")
                                         elif lang == "Español":
-                                            self.show_error_message(300, 215, "¡Error! Semestre Inválido")
+                                            self.after(0, self.show_error_message, 300, 215,
+                                                       "¡Error! Semestre Inválido")
                                 case "683":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
@@ -2059,28 +2073,34 @@ class TeraTermUI(customtkinter.CTk):
                                     text_output = self.capture_screenshot()
                                     if "CONFLICT" in text_output:
                                         if lang == "English":
-                                            self.after(0, lambda: self.show_information_message(
-                                                310, 225, "Student has a hold flag"))
+                                            self.after(0, self.show_information_message, 310, 225,
+                                                       "Student has a hold flag")
                                         if lang == "Español":
-                                            self.after(0, lambda: self.show_information_message(
-                                                310, 225, "Estudiante tine un hold flag"))
+                                            self.after(0, self.show_information_message, 310, 225,
+                                                       "Estudiante tine un hold flag")
                                         self.uprb.UprbayTeraTermVt.type_keys("004")
                                         send_keys("{ENTER}")
                                     if "CONFLICT" not in text_output:
-                                        self.go_next_683.configure(state="normal")
-                                        self.submit.configure(width=100)
-                                        self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-                                        self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-                                        if lang == "English":
-                                            self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
-                                        elif lang == "Español":
-                                            self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
-                                        self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-                                        self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
-                                        self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0),
-                                                                      sticky="n")
-                                        self.menu_submit.grid(row=5, column=1, padx=(0, 110), pady=(40, 0), sticky="n")
-                                        self.go_next_683.grid(row=5, column=1, padx=(110, 0), pady=(40, 0), sticky="n")
+                                        def go_next_grid():
+                                            self.go_next_683.configure(state="normal")
+                                            self.submit.configure(width=100)
+                                            self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20),
+                                                                   sticky="n")
+                                            self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
+                                            if lang == "English":
+                                                self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
+                                            elif lang == "Español":
+                                                self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
+                                            self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+                                            self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0),
+                                                                    sticky="w")
+                                            self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0),
+                                                                          sticky="n")
+                                            self.menu_submit.grid(row=5, column=1, padx=(0, 110), pady=(40, 0),
+                                                                  sticky="n")
+                                            self.go_next_683.grid(row=5, column=1, padx=(110, 0), pady=(40, 0),
+                                                                  sticky="n")
+                                        self.after(0, go_next_grid)
                                 case "1PL":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
@@ -2088,7 +2108,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     send_keys("{ENTER}")
                                     self.reset_activity_timer(None)
-                                    self.disable_go_next_buttons()
+                                    self.after(0, self.disable_go_next_buttons)
                                     screenshot_thread = threading.Thread(target=self.capture_screenshot)
                                     screenshot_thread.start()
                                     screenshot_thread.join()
@@ -2101,13 +2121,13 @@ class TeraTermUI(customtkinter.CTk):
                                             send_keys("{ENTER}")
                                             self.reset_activity_timer(None)
                                         if lang == "English":
-                                            self.after(0, lambda: self.show_error_message(
-                                                325, 240, "Error! Failed to enter\n " + self.menu_entry.get()
-                                                          + " screen"))
+                                            self.after(0, self.show_error_message, 325, 240,
+                                                       "Error! Failed to enter\n " + self.menu_entry.get()
+                                                       + " screen")
                                         elif lang == "Español":
-                                            self.after(0, lambda: self.show_error_message(
-                                                325, 240, "¡Error! No se pudo entrar \n a la pantalla" +
-                                                          self.menu_entry.get()))
+                                            self.after(0, self.show_error_message, 325, 240,
+                                                       "¡Error! No se pudo entrar \n a la pantalla" +
+                                                       self.menu_entry.get())
                                 case "4CM":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
@@ -2121,47 +2141,51 @@ class TeraTermUI(customtkinter.CTk):
                                     text_output = self.capture_screenshot()
                                     if "INVALID TERM SELECTION" not in text_output and \
                                             "TERM OUTDATED" not in text_output:
-                                        self.go_next_4CM.configure(state="normal")
-                                        self.go_next_1VE.grid_forget()
-                                        self.go_next_1GP.grid_forget()
-                                        self.go_next_409.grid_forget()
-                                        self.go_next_4CM.grid_forget()
-                                        self.go_next_1VE.configure(state="disabled")
-                                        self.go_next_1GP.configure(state="disabled")
-                                        self.go_next_409.configure(state="disabled")
-                                        self.go_next_683.configure(state="disabled")
-                                        self._1VE_screen = False
-                                        self._1GP_screen = False
-                                        self._409_screen = False
-                                        self._683_screen = False
-                                        self._4CM_screen = True
-                                        self.menu_submit.configure(width=100)
-                                        self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-                                        self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-                                        if lang == "English":
-                                            self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
-                                        elif lang == "Español":
-                                            self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
-                                        self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-                                        self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0), sticky="w")
-                                        self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0),
-                                                                      sticky="n")
-                                        self.menu_submit.grid(row=5, column=1, padx=(0, 110), pady=(40, 0), sticky="n")
-                                        self.go_next_4CM.grid(row=5, column=1, padx=(110, 0), pady=(40, 0), sticky="n")
+                                        def go_next_grid():
+                                            self.go_next_4CM.configure(state="normal")
+                                            self.go_next_1VE.grid_forget()
+                                            self.go_next_1GP.grid_forget()
+                                            self.go_next_409.grid_forget()
+                                            self.go_next_4CM.grid_forget()
+                                            self.go_next_1VE.configure(state="disabled")
+                                            self.go_next_1GP.configure(state="disabled")
+                                            self.go_next_409.configure(state="disabled")
+                                            self.go_next_683.configure(state="disabled")
+                                            self._1VE_screen = False
+                                            self._1GP_screen = False
+                                            self._409_screen = False
+                                            self._683_screen = False
+                                            self._4CM_screen = True
+                                            self.menu_submit.configure(width=100)
+                                            self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20),
+                                                                   sticky="n")
+                                            self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
+                                            if lang == "English":
+                                                self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
+                                            elif lang == "Español":
+                                                self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
+                                            self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+                                            self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0),
+                                                                    sticky="w")
+                                            self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0),
+                                                                          sticky="n")
+                                            self.menu_submit.grid(row=5, column=1, padx=(0, 110), pady=(40, 0),
+                                                                  sticky="n")
+                                            self.go_next_4CM.grid(row=5, column=1, padx=(110, 0), pady=(40, 0),
+                                                                  sticky="n")
+                                        self.after(0, go_next_grid)
                                     if "TERM OUTDATED" in text_output or "INVALID TERM SELECTION" in text_output:
                                         self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                         send_keys("{ENTER}")
                                         self.reset_activity_timer(None)
                                         if lang == "English":
-                                            self.after(0, lambda: self.show_error_message(325, 240,
-                                                                                          "Error! Failed to enter\n "
-                                                                                          + self.menu_entry.get()
-                                                                                          + " screen"))
+                                            self.after(0, self.show_error_message, 325, 240,
+                                                       "Error! Failed to enter\n " + self.menu_entry.get() + " screen")
                                         elif lang == "Español":
-                                            self.after(0, lambda: self.show_error_message(
-                                                325, 240, "¡Error! No se pudo entrar"
-                                                          "\n a la pantalla" + self.menu_entry.get()))
+                                            self.after(0, self.show_error_message, 325, 240,
+                                                       "¡Error! No se pudo entrar"
+                                                       "\n a la pantalla" + self.menu_entry.get())
                                 case "4SP":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
@@ -2169,7 +2193,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     send_keys("{ENTER}")
                                     self.reset_activity_timer(None)
-                                    self.disable_go_next_buttons()
+                                    self.after(0, self.disable_go_next_buttons)
                                     screenshot_thread = threading.Thread(target=self.capture_screenshot)
                                     screenshot_thread.start()
                                     screenshot_thread.join()
@@ -2181,15 +2205,12 @@ class TeraTermUI(customtkinter.CTk):
                                             send_keys("{ENTER}")
                                             self.reset_activity_timer(None)
                                         if lang == "English":
-                                            self.after(0, lambda: self.show_error_message(325, 240,
-                                                                                          "Error! Failed to enter\n "
-                                                                                          + self.menu_entry.get()
-                                                                                          + " screen"))
+                                            self.after(0, self.show_error_message, 325, 240,
+                                                       "Error! Failed to enter\n " + self.menu_entry.get() + " screen")
                                         elif lang == "Español":
-                                            self.after(0, lambda: self.show_error_message(325, 240,
-                                                                                          "Error! No se pudo entrar"
-                                                                                          "\n a la pantalla"
-                                                                                          + self.menu_entry.get()))
+                                            self.after(0, self.show_error_message, 325, 240,
+                                                       "Error! No se pudo entrar"
+                                                       "\n a la pantalla" + self.menu_entry.get())
                                 case "SO":
                                     lang = self.language_menu.get()
                                     self.hide_loading_screen()
@@ -2219,24 +2240,24 @@ class TeraTermUI(customtkinter.CTk):
                                     if not TeraTermUI.checkIfProcessRunning("ttermpro") and response[0] == "Yes" \
                                             or response[0] == "Sí":
                                         if lang == "English":
-                                            self.show_error_message(350, 265, "Error! Tera Term isn't running")
+                                            self.after(0, self.show_error_message, 350, 265,
+                                                       "Error! Tera Term isn't running")
                                         elif lang == "Español":
-                                            self.show_error_message(350, 265,
-                                                                    "¡Error! Tera Term no esta corriendo")
+                                            self.after(0, self.show_error_message, 350, 265,
+                                                       "¡Error! Tera Term no esta corriendo")
 
                         else:
                             if lang == "English":
-                                self.after(0, lambda: self.show_error_message(350, 265,
-                                                                              "Error! Wrong Code or Semester Format"))
+                                self.after(0, self.show_error_message, 350, 265, "Error! Wrong Code or Semester Format")
                             elif lang == "Español":
-                                self.after(0, lambda: self.show_error_message(350, 265, "¡Error! Formato del Código o\n"
-                                                                                        " Semestre Incorrecto"))
+                                self.after(0, self.show_error_message, 350, 265,
+                                           "¡Error! Formato del Código o\n"
+                                           " Semestre Incorrecto")
                     else:
                         if lang == "English":
-                            self.after(0, lambda: self.show_error_message(300, 215, "Error! Tera Term is disconnected"))
+                            self.after(0, self.show_error_message, 300, 215, "Error! Tera Term is disconnected")
                         elif lang == "Español":
-                            self.after(0, lambda: self.show_error_message(300, 215,
-                                                                          "¡Error! Tera Term esta desconnectado"))
+                            self.after(0, self.show_error_message, 300, 215, "¡Error! Tera Term esta desconnectado")
                 ctypes.windll.user32.BlockInput(False)
                 self.show_sidebar_windows()
             except Exception as e:
@@ -2282,6 +2303,7 @@ class TeraTermUI(customtkinter.CTk):
                 lang = self.language_menu.get()
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
+                        self.unfocus_tkinter()
                         if self._1VE_screen:
                             ctypes.windll.user32.BlockInput(True)
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
@@ -2340,9 +2362,9 @@ class TeraTermUI(customtkinter.CTk):
                             text_output = self.capture_screenshot()
                             if "RATE NOT ON ARFILE" in text_output:
                                 if lang == "English":
-                                    self.after(0, lambda: self.show_error_message(310, 225, "Unknown Error!"))
+                                    self.after(0, self.show_error_message, 310, 225, "Unknown Error!")
                                 elif lang == "Español":
-                                    self.after(0, lambda: self.show_error_message(310, 225, "¡Error Desconocido!"))
+                                    self.after(0, self.show_error_message, 310, 225, "¡Error Desconocido!")
                             else:
                                 self.go_next_4CM.configure(state="disabled")
                         self.reset_activity_timer(None)
@@ -2402,11 +2424,11 @@ class TeraTermUI(customtkinter.CTk):
                         self.uprbay_window.click_input(button="left")
                         copy = clipboard.paste()
                         data, course_found, invalid_action = TeraTermUI.extract_class_data(copy)
-                        self.display_data(data)
+                        self.after(0, self.display_data, data)
                         self.clipboard_clear()
                         self.reset_activity_timer(None)
                         ctypes.windll.user32.BlockInput(False)
-                        self.disable_go_next_buttons()
+                        self.after(0, self.disable_go_next_buttons)
                         self.search_next_page.configure(state="normal")
                         self.search_next_page_status = True
                         screenshot_thread = threading.Thread(target=self.capture_screenshot)
@@ -2540,15 +2562,15 @@ class TeraTermUI(customtkinter.CTk):
                     elif username != "students":
                         self.bind("<Return>", lambda event: self.student_event_handler())
                         if lang == "English":
-                            self.after(0, lambda: self.show_error_message(300, 215, "Error! Invalid username"))
+                            self.after(0, self.show_error_message, 300, 215, "Error! Invalid username")
                         elif lang == "Español":
-                            self.after(0, lambda: self.show_error_message(300, 215, "¡Error! Usuario Incorrecto"))
+                            self.after(0, self.show_error_message, 300, 215, "¡Error! Usuario Incorrecto")
                 else:
                     self.bind("<Return>", lambda event: self.student_event_handler())
                     if lang == "English":
-                        self.after(0, lambda: self.show_error_message(300, 215, "Error! Tera Term is disconnected"))
+                        self.after(0, self.show_error_message, 300, 215, "Error! Tera Term is disconnected")
                     elif lang == "Español":
-                        self.after(0, lambda: self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado"))
+                        self.after(0, self.show_error_message, 300, 215, "¡Error! Tera Term esta desconnectado")
             self.show_sidebar_windows()
         except Exception as e:
             print("An error occurred: ", e)
@@ -2583,7 +2605,6 @@ class TeraTermUI(customtkinter.CTk):
         self.back_student.grid(row=5, column=0, padx=(0, 10), pady=(0, 0))
         self.system.grid(row=5, column=1, padx=(10, 0), pady=(0, 0))
         self.username_entry.delete(0, "end")
-        del self.username_entry
         self.a_buttons_frame.grid_forget()
         self.authentication_frame.grid_forget()
 
@@ -2623,7 +2644,9 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread.start()
                             screenshot_thread.join()
                             text_output = self.capture_screenshot()
-                            if ("MENU DE OPCIONES" in text_output or "STUDENTS REQ/DROP" in text_output) \
+                            if ("MENU DE OPCIONES" in text_output or "STUDENTS REQ/DROP" in text_output or "HOLD FLAGS"
+                                in text_output or "PROGRAMA DE CLASES" in text_output or "ACADEMIC STATISTICS" in
+                                text_output or "SNAPSHOT" in text_output or "SOLICITUD DE PRORROGA" in text_output) \
                                     and "IDENTIFICACION PERSONAL" not in text_output:
                                 self.uprb = Application(backend="uia").connect(title="uprbay.uprb.edu - Tera Term VT",
                                                                                timeout=10)
@@ -2649,29 +2672,29 @@ class TeraTermUI(customtkinter.CTk):
                             else:
                                 self.bind("<Return>", lambda event: self.login_event_handler())
                                 if lang == "English":
-                                    self.after(0, lambda: self.show_error_message(450, 265,
-                                                                                  "Error! Cannot connect to server \n\n"
-                                                                                  " if another instance of Tera Term"
-                                                                                  " is already running"))
+                                    self.after(0, self.show_error_message, 450, 265,
+                                               "Error! Cannot connect to server \n\n"
+                                               " if another instance of Tera Term"
+                                               " is already running")
                                 elif lang == "Español":
-                                    self.after(0, lambda: self.show_error_message(450, 265,
-                                                                                  "¡Error! No es posible"
-                                                                                  " conectarse al servidor \n\n"
-                                                                                  " si otra instancia de Tera Term"
-                                                                                  " ya está corriendo"))
+                                    self.after(0, self.show_error_message, 450, 265,
+                                               "¡Error! No es posible"
+                                               " conectarse al servidor \n\n"
+                                               " si otra instancia de Tera Term"
+                                               " ya está corriendo")
                         else:
                             self.bind("<Return>", lambda event: self.login_event_handler())
                             if lang == "English":
-                                self.after(0, lambda: self.show_error_message(450, 265,
-                                                                              "Error! Cannot connect to server \n\n"
-                                                                              " if another instance of Tera Term"
-                                                                              " is already running"))
+                                self.after(0, self.show_error_message, 450, 265,
+                                           "Error! Cannot connect to server \n\n"
+                                           " if another instance of Tera Term"
+                                           " is already running")
                             elif lang == "Español":
-                                self.after(0, lambda: self.show_error_message(450, 265,
-                                                                              "¡Error! No es posible"
-                                                                              " conectarse al servidor \n\n"
-                                                                              " si otra instancia de Tera Term"
-                                                                              " ya está corriendo"))
+                                self.after(0, self.show_error_message, 450, 265,
+                                           "¡Error! No es posible"
+                                           " conectarse al servidor \n\n"
+                                           " si otra instancia de Tera Term"
+                                           " ya está corriendo")
                     else:
                         try:
                             ctypes.windll.user32.BlockInput(True)
@@ -2709,21 +2732,21 @@ class TeraTermUI(customtkinter.CTk):
                             if e.__class__.__name__ == "AppStartError":
                                 self.bind("<Return>", lambda event: self.login_event_handler())
                                 if lang == "English":
-                                    self.after(0, lambda: self.show_error_message(
-                                        425, 330, "Error! Cannot start application.\n\n "
-                                                  "The location of your Tera Term \n\n"
-                                                  " might be different "
-                                                  "from the default,\n\n "
-                                                  "click the \"Help\" button "
-                                                  "to set it's location"))
+                                    self.after(0, self.show_error_message, 425, 330,
+                                               "Error! Cannot start application.\n\n "
+                                               "The location of your Tera Term \n\n"
+                                               " might be different "
+                                               "from the default,\n\n "
+                                               "click the \"Help\" button "
+                                               "to set it's location")
                                 elif lang == "Español":
-                                    self.after(0, lambda: self.show_error_message(
-                                        425, 330, "¡Error! No se pudo iniciar la aplicación."
-                                                  "\n\n La localización de tu "
-                                                  "Tera Term\n\n"
-                                                  " es diferente de la normal, \n\n "
-                                                  "presiona el botón de \"Ayuda\""
-                                                  "para encontrarlo"))
+                                    self.after(0, self.show_error_message, 425, 330,
+                                               "¡Error! No se pudo iniciar la aplicación."
+                                               "\n\n La localización de tu "
+                                               "Tera Term\n\n"
+                                               " es diferente de la normal, \n\n "
+                                               "presiona el botón de \"Ayuda\""
+                                               "para encontrarlo")
                                 if not self.download:
                                     self.after(3500, self.download_teraterm)
                                     self.download = True
@@ -2737,9 +2760,9 @@ class TeraTermUI(customtkinter.CTk):
                 elif host != "uprbay.uprb.edu":
                     self.bind("<Return>", lambda event: self.login_event_handler())
                     if lang == "English":
-                        self.after(0, lambda: self.show_error_message(300, 215, "Error! Invalid host"))
+                        self.after(0, self.show_error_message, 300, 215, "Error! Invalid host")
                     elif lang == "Español":
-                        self.after(0, lambda: self.show_error_message(300, 215, "¡Error! Servidor Incorrecto"))
+                        self.after(0, self.show_error_message, 300, 215, "¡Error! Servidor Incorrecto")
             self.show_sidebar_windows()
         except Exception as e:
             print("An error occurred: ", e)
@@ -3334,7 +3357,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprbay_window.wait("visible", timeout=10)
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             send_keys("{ENTER}")
-                            self.disable_go_next_buttons()
+                            self.after(0, self.disable_go_next_buttons)
                             self.reset_activity_timer(None)
                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
                             screenshot_thread.start()
@@ -3354,22 +3377,22 @@ class TeraTermUI(customtkinter.CTk):
                                         date_time_string += " AM"
                                     else:
                                         if lang == "English":
-                                            self.after(0, lambda: self.show_error_message(
-                                                300, 215, "Couldn't find enrollment date"))
+                                            self.after(0, self.show_error_message, 300, 215,
+                                                       "Couldn't find enrollment date")
                                         elif lang == "Español":
-                                            self.after(0, lambda: self.show_error_message(
-                                                320, 215, "No se pudo encontrar\n"
-                                                          " la fecha de matricula"))
+                                            self.after(0, self.show_error_message, 320, 215,
+                                                       "No se pudo encontrar\n"
+                                                       " la fecha de matricula")
                                         self.auto_enroll.deselect()
                                         self.auto_enroll_bool = False
                                 else:
                                     if lang == "English":
-                                        self.after(0, lambda: self.show_error_message(300, 215,
-                                                                                      "Couldn't find enrollment date"))
+                                        self.after(0, self.show_error_message, 300, 215,
+                                                   "Couldn't find enrollment date")
                                     elif lang == "Español":
-                                        self.after(0, lambda: self.show_error_message(
-                                            320, 215, "No se pudo encontrar\n"
-                                                      " la fecha de matricula"))
+                                        self.after(0, self.show_error_message, 320, 215,
+                                                   "No se pudo encontrar\n"
+                                                   " la fecha de matricula")
                                     self.auto_enroll.deselect()
                                     self.auto_enroll_bool = False
                             date_time_string = re.sub(r"[^a-zA-Z0-9:/ ]", "", date_time_string)
@@ -3458,42 +3481,40 @@ class TeraTermUI(customtkinter.CTk):
                                 self.timer_window.protocol("WM_DELETE_WINDOW", self.end_countdown)
                             elif is_past_date or (is_same_date and is_current_time_ahead):
                                 if lang == "English":
-                                    self.after(0, lambda: self.show_error_message(300, 215,
-                                                                                  "The enrollment date already passed"))
+                                    self.after(0, self.show_error_message, 300, 215,
+                                               "The enrollment date already passed")
                                 elif lang == "Español":
-                                    self.after(0, lambda: self.show_error_message(320, 215,
-                                                                                  "La fecha de matricula ya pasó"))
+                                    self.after(0, self.show_error_message, 320, 215,
+                                               "La fecha de matricula ya pasó")
                                 self.auto_enroll_bool = False
                                 self.auto_enroll.deselect()
                             elif (is_future_date or is_more_than_one_day) or \
                                     (is_same_date and not is_time_difference_within_6_hours) or \
                                     (is_next_date and not is_time_difference_within_6_hours):
                                 if lang == "English":
-                                    self.after(0, lambda: self.show_error_message(
-                                        320, 235, "Auto-Enroll only available\n"
-                                                  " the same day of enrollment\n"
-                                                  " and within a 6 hour margin"))
+                                    self.after(0, self.show_error_message, 320, 235,
+                                               "Auto-Enroll only available\n"
+                                               " the same day of enrollment\n"
+                                               " and within a 6 hour margin")
                                 elif lang == "Español":
-                                    self.after(0, lambda: self.show_error_message(
-                                        320, 235, "Auto-Matrícula solo disponible\n"
-                                                  " el mismo día de la matrícula\n"
-                                                  " y dentro de un margen de 6 horas"))
+                                    self.after(0, self.show_error_message, 320, 235,
+                                               "Auto-Matrícula solo disponible\n"
+                                               " el mismo día de la matrícula\n"
+                                               " y dentro de un margen de 6 horas")
                                 self.auto_enroll_bool = False
                                 self.auto_enroll.deselect()
                             else:
                                 if lang == "English":
-                                    self.after(0, lambda: self.show_error_message(320, 215, "Unknown error!"))
+                                    self.after(0, self.show_error_message, 320, 215, "Unknown error!")
                                 elif lang == "Español":
-                                    self.after(0, lambda: self.show_error_message(320, 215, "¡Error desconocido!"))
+                                    self.after(0, self.show_error_message, 320, 215, "¡Error desconocido!")
                                 self.auto_enroll_bool = False
                                 self.auto_enroll.deselect()
                         else:
                             if lang == "English":
-                                self.after(0, lambda: self.show_error_message(300, 215,
-                                                                              "Error! Tera Term is disconnected"))
+                                self.after(0, self.show_error_message, 300, 215, "Error! Tera Term is disconnected")
                             elif lang == "Español":
-                                self.after(0, lambda: self.show_error_message(300, 215,
-                                                                              "¡Error! Tera Term esta desconnectado"))
+                                self.after(0, self.show_error_message, 300, 215, "¡Error! Tera Term esta desconnectado")
                             self.auto_enroll_bool = False
                             self.auto_enroll.deselect()
                 elif self.auto_enroll.get() == "off":
@@ -4042,11 +4063,10 @@ class TeraTermUI(customtkinter.CTk):
         except (socket.timeout, ConnectionRefusedError, OSError):
             # the connection attempt failed
             if lang == "English":
-                self.after(0, lambda: self.show_error_message(300, 215,
-                                                              "Error! UPRB server is currently down"))
+                self.after(0, self.show_error_message, 300, 215, "Error! UPRB server is currently down")
             elif lang == "Español":
-                self.after(0, lambda: self.show_error_message(300, 215,
-                                                              "¡Error! El servidor de la UPRB\nestá actualmente caído"))
+                self.after(0, self.show_error_message, 300, 215,
+                           "¡Error! El servidor de la UPRB\nestá actualmente caído")
             return False
 
     # captures a screenshot of tera term and performs OCR
@@ -4085,11 +4105,13 @@ class TeraTermUI(customtkinter.CTk):
                 print(f"Error occurred during unzipping: {str(e)}")
                 self.tesseract_unzipped = False
                 if lang == "English":
-                    self.after(0, lambda: self.show_error_message(320, 225, "Fatal Error! Might need to\n"
-                                                                            "reinstall application"))
+                    self.after(0, self.show_error_message, 320, 225,
+                               "Fatal Error! Might need to\n"
+                               "reinstall application")
                 elif lang == "Español":
-                    self.after(0, lambda: self.show_error_message(320, 225, "¡Error Fatal! Es posible que necesite\n"
-                                                                            " reinstalar la aplicación"))
+                    self.after(0, self.show_error_message, 320, 225,
+                               "¡Error Fatal! Es posible que necesite\n"
+                               " reinstalar la aplicación")
                 return
 
     # creates pdf of the table containing for the searched class
@@ -4216,7 +4238,15 @@ class TeraTermUI(customtkinter.CTk):
                 values=table_values,
                 header_color="#145DA0"
             )
-            self.table.grid(row=2, column=1, padx=(0, 0), pady=(20, 20), sticky="n")
+            if hasattr(self, 'display_class') and self.display_class is not None:
+                self.display_class.grid_forget()
+                del self.display_class
+
+            self.display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_pdf,
+                                                        font=customtkinter.CTkFont(size=15, weight="bold",
+                                                                                   underline=True))
+            self.display_class.grid(row=2, column=1, padx=(0, 0), pady=(8, 0), sticky="n")
+            self.table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
             for i in range(4):
                 self.table.edit_column(i, width=60)
             self.table.edit_column(5, width=60)
@@ -4264,7 +4294,7 @@ class TeraTermUI(customtkinter.CTk):
         elif lang == "Español":
             download_pdf = customtkinter.CTkButton(self.search_scrollbar, text="Guardar como PDF",
                                                    command=self.download_as_pdf)
-        download_pdf.grid(row=3, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
+        download_pdf.grid(row=3, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
 
     # extracts the text from the searched class to get the important information
     @staticmethod
@@ -4619,6 +4649,10 @@ class TeraTermUI(customtkinter.CTk):
         self.focus_set()
         webbrowser.open("https://github.com/Hanuwa/TeraTermUI")
 
+    def notaso_event(self):
+        self.focus_set()
+        webbrowser.open("https://notaso.com")
+
     # opens UPRB main page
     def uprb_event(self):
         self.focus_set()
@@ -4829,14 +4863,14 @@ class TeraTermUI(customtkinter.CTk):
                     self.reset_activity_timer(None)
                 ctypes.windll.user32.BlockInput(False)
                 if lang == "English":
-                    self.after(0, lambda: self.show_information_message(
-                        370, 250, "The problem is usually caused because "
-                                  "\n of user interacting directly\n with Tera Term "))
+                    self.after(0, self.show_information_message, 370, 250,
+                               "The problem is usually caused because "
+                               "\n of user interacting directly\n with Tera Term ")
                 elif lang == "Español":
-                    self.after(0, lambda: self.show_information_message(
-                        370, 250, "El problema suele ser causado porque "
-                                  "\n el usuario interactuo directamente\n "
-                                  "con Tera Term"))
+                    self.after(0, self.show_information_message, 370, 250,
+                               "El problema suele ser causado porque "
+                               "\n el usuario interactuo directamente\n "
+                               "con Tera Term")
                 self.show_sidebar_windows()
             except Exception as e:
                 print("An error occurred: ", e)
@@ -4897,7 +4931,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                 self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                 send_keys("{ENTER}")
-                            self.disable_go_next_buttons()
+                            self.after(0, self.disable_go_next_buttons)
                         elif self.idle_num_check > 0:
                             send_keys("{TAB 2}")
                             term_window.minimize()
@@ -4982,9 +5016,9 @@ class TeraTermUI(customtkinter.CTk):
         connected = any(results)
         if not connected:
             if lang == "English":
-                self.after(0, lambda: self.show_error_message(300, 215, "Error! Not Connected to the internet"))
+                self.after(0, self.show_error_message, 300, 215, "Error! Not Connected to the internet")
             elif lang == "Español":
-                self.after(0, lambda: self.show_error_message(300, 215, "¡Error! No Conectado al internet"))
+                self.after(0, self.show_error_message, 300, 215, "¡Error! No Conectado al internet")
         return connected
 
     # Set focus on the UI application window
@@ -5067,12 +5101,18 @@ class TeraTermUI(customtkinter.CTk):
                                                   text="      Update", anchor="w",
                                                   text_color=("gray10", "#DCE4EE"), command=self.update_app)
             checkUpdate.pack()
-            website = customtkinter.CTkLabel(scrollable_frame, text="\n\nGitHub Repository:")
+            website = customtkinter.CTkLabel(scrollable_frame, text="\n\nTera Term UI's Website:")
             website.pack(pady=5)
             link = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["link"],
                                            text="        Link", anchor="w",
                                            text_color=("gray10", "#DCE4EE"), command=self.github_event)
             link.pack()
+            notaso = customtkinter.CTkLabel(scrollable_frame, text="\n\nProfessor Rating Website:")
+            notaso.pack(pady=5)
+            notasoLink = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["link"],
+                                                 text="      Notaso", anchor="w",
+                                                 text_color=("gray10", "#DCE4EE"), command=self.notaso_event)
+            notasoLink.pack()
             faqText = customtkinter.CTkLabel(scrollable_frame, text="\n\nFrequently Asked Questions",
                                              font=customtkinter.CTkFont(size=15, weight="bold"))
             faqText.pack()
@@ -5126,12 +5166,18 @@ class TeraTermUI(customtkinter.CTk):
                                                   text="    Actualizar", anchor="w",
                                                   text_color=("gray10", "#DCE4EE"), command=self.update_app)
             checkUpdate.pack()
-            website = customtkinter.CTkLabel(scrollable_frame, text="\n\nRepositorio de GitHub:")
+            website = customtkinter.CTkLabel(scrollable_frame, text="\n\nPágina Web de Tera Term UI:")
             website.pack(pady=5)
             link = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["link"],
                                            text="      Enlace", anchor="w",
                                            text_color=("gray10", "#DCE4EE"), command=self.github_event)
             link.pack()
+            notaso = customtkinter.CTkLabel(scrollable_frame, text="\n\nPágina Web de Calificación de Profesores:")
+            notaso.pack(pady=5)
+            notasoLink = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["link"],
+                                                 text="      Notaso", anchor="w",
+                                                 text_color=("gray10", "#DCE4EE"), command=self.notaso_event)
+            notasoLink.pack()
             faqText = customtkinter.CTkLabel(scrollable_frame, text="\n\nPreguntas y Respuestas",
                                              font=customtkinter.CTkFont(size=15, weight="bold"))
             faqText.pack()
@@ -5817,48 +5863,50 @@ class TeraTermUI(customtkinter.CTk):
         if error_flag_empty or error_flag_format:
             if not self.auto_enroll_bool and error_flag_empty:
                 if lang == "English":
-                    self.after(0, lambda: self.show_error_message(350, 230, "Error! Must enter the information\n"
-                                                                            " about the classes you want to enroll"))
+                    self.after(0, self.show_error_message, 350, 230,
+                               "Error! Must enter the information\n"
+                               " about the classes you want to enroll")
                 elif lang == "Español":
-                    self.after(0, lambda: self.show_error_message(
-                        350, 230, "¡Error! Tiene que escribir la informacion\n"
-                                  " de las clases que quieres matricular"))
+                    self.after(0, self.show_error_message, 350, 230,
+                               "¡Error! Tiene que escribir la informacion\n"
+                               " de las clases que quieres matricular")
             if not self.auto_enroll_bool and error_flag_format:
                 if lang == "English":
-                    self.after(0, lambda: self.show_error_message(
-                        400, 310, "Error! Wrong Format for Classes, Sections, \n\n "
-                                  "Semester or you are trying to enroll \n\n "
-                                  "a class or a section \n\n"
-                                  " that has already been enrolled"))
+                    self.after(0, self.show_error_message, 400, 310,
+                               "Error! Wrong Format for Classes, Sections, \n\n "
+                               "Semester or you are trying to enroll \n\n "
+                               "a class or a section \n\n"
+                               " that has already been enrolled")
                 elif lang == "Español":
-                    self.after(0, lambda: self.show_error_message(
-                        400, 310, "¡Error! Formato Incorrecto de las Clases, "
-                                  "\n\n Secciones, Semestre o estás intentando de "
-                                  "\n\n matricular una clase o sección "
-                                  "\n\n que ya ha sido matriculada"))
+                    self.after(0, self.show_error_message, 400, 310,
+                               "¡Error! Formato Incorrecto de las Clases, "
+                               "\n\n Secciones, Semestre o estás intentando de "
+                               "\n\n matricular una clase o sección "
+                               "\n\n que ya ha sido matriculada")
             if self.auto_enroll_bool and error_flag_empty:
                 if lang == "English":
-                    self.after(0, lambda: self.show_error_message(350, 230, "Error! Must enter the information\n"
-                                                                            " about the classes you want to enroll"))
+                    self.after(0, self.show_error_message, 350, 230,
+                               "Error! Must enter the information\n"
+                               " about the classes you want to enroll")
                 elif lang == "Español":
-                    self.after(0, lambda: self.show_error_message(
-                        350, 230, "¡Error! Tiene que escribir la informacion\n"
-                                  " de las clases que quieres matricular"))
+                    self.after(0, self.show_error_message, 350, 230,
+                               "¡Error! Tiene que escribir la informacion\n"
+                               " de las clases que quieres matricular")
                 self.auto_enroll_bool = False
                 self.auto_enroll.deselect()
             if not self.auto_enroll_bool and error_flag_format:
                 if lang == "English":
-                    self.after(0, lambda: self.show_error_message(
-                        400, 310, "Error! Wrong Format for Classes, Sections, \n\n "
-                                  "Semester or you are trying to enroll \n\n "
-                                  "a class or a section \n\n "
-                                  "that has already been enrolled"))
+                    self.after(0, self.show_error_message, 400, 310,
+                               "Error! Wrong Format for Classes, Sections, \n\n "
+                               "Semester or you are trying to enroll \n\n "
+                               "a class or a section \n\n "
+                               "that has already been enrolled")
                 elif lang == "Español":
-                    self.after(0, lambda: self.show_error_message(
-                        400, 310, "¡Error! Formato Incorrecto de las Clases, "
-                                  "\n\n Secciones, Semestre o estás intentando de "
-                                  "\n\n matricular una clase o sección "
-                                  "\n\n que ya ha sido matriculada"))
+                    self.after(0, self.show_error_message, 400, 310,
+                               "¡Error! Formato Incorrecto de las Clases, "
+                               "\n\n Secciones, Semestre o estás intentando de "
+                               "\n\n matricular una clase o sección "
+                               "\n\n que ya ha sido matriculada")
                 self.auto_enroll_bool = False
                 self.auto_enroll.deselect()
             return False
