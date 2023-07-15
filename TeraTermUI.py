@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 7/14/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 7/15/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -13,7 +13,9 @@
 # The grid of the UI interface and placement of widgets could use some work.
 # Option Menu of all tera terms screens requires more work
 
-# FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term
+# FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
+# refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
+# and with 6000 lines of codes, it definitely makes things harder to work with
 
 import aiohttp
 import asyncio
@@ -72,7 +74,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, \
     TableStyle, Paragraph, Spacer
 from tkinter import *
 from tkinter import filedialog
-from tkinter import messagebox, Tk
+from tkinter import messagebox
 from PIL import Image, ImageOps
 
 # from collections import deque
