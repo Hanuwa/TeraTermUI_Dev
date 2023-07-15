@@ -72,6 +72,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, \
     TableStyle, Paragraph, Spacer
 from tkinter import *
 from tkinter import filedialog
+from tkinter import messagebox, Tk
 from PIL import Image, ImageOps
 
 # from collections import deque
@@ -120,7 +121,7 @@ class TeraTermUI(customtkinter.CTk):
         self.spacebar_enabled = True
         self.up_arrow_key_enabled = True
         self.down_arrow_key_enabled = True
-        
+
         # Instance variables not yet needed but defined
         # to avoid the instance attribute defined outside __init__ warning
         self.user_id = None
@@ -434,6 +435,8 @@ class TeraTermUI(customtkinter.CTk):
         self.m_counter = 0
         self.e_counter = 0
         self.search_function_counter = 0
+        SPANISH = 0x0A
+        language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
         # default location of Tera Term
         self.location = "C:/Program Files (x86)/teraterm/ttermpro.exe"
         self.teraterm_file = "C:/Program Files (x86)/teraterm/TERATERM.ini"
@@ -444,81 +447,101 @@ class TeraTermUI(customtkinter.CTk):
         self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
         atexit.register(self.cleanup_temp)
         atexit.register(self.restore_original_font, self.teraterm_file)
-        self.connection = sqlite3.connect("database.db", check_same_thread=False)
-        self.cursor = self.connection.cursor()
-        self.save = self.cursor.execute("SELECT class, section, semester, action FROM save_classes"
-                                        " WHERE class IS NOT NULL").fetchall()
-        self.saveCheck = self.cursor.execute('SELECT "check" FROM save_classes WHERE "check" IS NOT NULL').fetchall()
-        user_data_fields = ["location", "host", "language", "appearance", "scaling", "idle", "welcome", "config"]
-        results = {}
-        for field in user_data_fields:
-            query_user = f"SELECT {field} FROM user_data WHERE {field} IS NOT NULL"
-            result = self.cursor.execute(query_user).fetchone()
-            results[field] = result[0] if result else None
-        if results["host"]:
-            self.host_entry.insert(0, results["host"])
-        if results["location"]:
-            if results["location"] != self.location:
-                self.location = results["location"]
-        if results["config"]:
-            if results["config"] != self.teraterm_file:
-                self.teraterm_file = results["config"]
-                self.edit_teraterm_ini(self.teraterm_file)
-                self.can_edit = True
-        if results["language"]:
-            if results["language"] != "English":
-                self.language_menu.set(results["language"])
-                self.change_language_event(lang=results["language"])
-        if results["appearance"]:
-            if results["appearance"] != "System" or results["appearance"] != "Sistema":
-                self.appearance_mode_optionemenu.set(results["appearance"])
-                self.change_appearance_mode_event(results["appearance"])
-        if results["scaling"]:
-            if results["scaling"] != 100.0:
-                self.scaling_optionemenu.set(float(results["scaling"]))
-                self.change_scaling_event(float(results["scaling"]))
-        if not results["welcome"]:
-            self.help_button.configure(state="disabled")
-            self.status_button.configure(state="disabled")
-            self.welcome = True
+        try:
+            db_path = "database.db"
+            if not os.path.isfile(db_path):
+                raise Exception("Database file not found.")
+            self.connection = sqlite3.connect("database.db", check_same_thread=False)
+            self.cursor = self.connection.cursor()
+            self.save = self.cursor.execute("SELECT class, section, semester, action FROM save_classes"
+                                            " WHERE class IS NOT NULL").fetchall()
+            self.saveCheck = self.cursor.execute('SELECT "check" FROM save_classes WHERE "check" IS NOT NULL').fetchall()
+            user_data_fields = ["location", "host", "language", "appearance", "scaling", "idle", "welcome", "config"]
+            results = {}
+            for field in user_data_fields:
+                query_user = f"SELECT {field} FROM user_data WHERE {field} IS NOT NULL"
+                result = self.cursor.execute(query_user).fetchone()
+                results[field] = result[0] if result else None
+            if results["host"]:
+                self.host_entry.insert(0, results["host"])
+            if results["location"]:
+                if results["location"] != self.location:
+                    self.location = results["location"]
+            if results["config"]:
+                if results["config"] != self.teraterm_file:
+                    self.teraterm_file = results["config"]
+                    self.edit_teraterm_ini(self.teraterm_file)
+                    self.can_edit = True
+            if language_id & 0xFF == SPANISH:
+                self.language_menu.set("Español")
+                self.change_language_event(lang="Español")
+            if results["language"]:
+                if results["language"] != self.language_menu.get():
+                    self.language_menu.set(results["language"])
+                    self.change_language_event(lang=results["language"])
+            if results["appearance"]:
+                if results["appearance"] != "System" or results["appearance"] != "Sistema":
+                    self.appearance_mode_optionemenu.set(results["appearance"])
+                    self.change_appearance_mode_event(results["appearance"])
+            if results["scaling"]:
+                if results["scaling"] != 100.0:
+                    self.scaling_optionemenu.set(float(results["scaling"]))
+                    self.change_scaling_event(float(results["scaling"]))
+            if not results["welcome"]:
+                self.help_button.configure(state="disabled")
+                self.status_button.configure(state="disabled")
+                self.welcome = True
 
-            # Pop up message that appears only the first time the user uses the application
-            def show_message_box():
-                winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                if self.language_menu.get() == "English":
-                    CTkMessagebox(master=self, title="Welcome", message="Welcome to Tera Term UI!\n\n"
-                                                                        "Make sure to not interact with Tera Term"
-                                                                        " while the application is performing tasks",
-                                  button_width=380)
-                elif self.language_menu.get() == "Español":
-                    CTkMessagebox(master=self, title="Bienvenido", message="¡Bienvenido a Tera Term UI!\n\n"
-                                                                           "Asegúrese de no interactuar con Tera Term"
-                                                                           " mientras la aplicación está "
-                                                                           "realizando tareas", button_width=380)
-                self.status_button.configure(state="normal")
-                self.help_button.configure(state="normal")
-                self.log_in.configure(state="normal")
+                # Pop up message that appears only the first time the user uses the application
+                def show_message_box():
+                    winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                    if self.language_menu.get() == "English":
+                        CTkMessagebox(master=self, title="Welcome",
+                                      message="Welcome to Tera Term UI!\n\n"
+                                              "Make sure to not interact with Tera Term"
+                                              " while the application is performing tasks", button_width=380)
+                    elif self.language_menu.get() == "Español":
+                        CTkMessagebox(master=self, title="Bienvenido",
+                                      message="¡Bienvenido a Tera Term UI!\n\n"
+                                              "Asegúrese de no interactuar con Tera Term"
+                                              " mientras la aplicación está "
+                                              "realizando tareas", button_width=380)
+                    self.status_button.configure(state="normal")
+                    self.help_button.configure(state="normal")
+                    self.log_in.configure(state="normal")
+                    # closing event dialog
+                    self.protocol("WM_DELETE_WINDOW", self.on_closing)
+                    # enables keyboard input events
+                    self.bind("<Escape>", lambda event: self.on_closing())
+                    self.bind("<Return>", lambda event: self.login_event_handler())
+                    if not results["welcome"]:
+                        self.cursor.execute("INSERT INTO user_data (welcome) VALUES (?)", ("Checked",))
+                    elif results["welcome"]:
+                        self.cursor.execute("UPDATE user_data SET welcome=?", ("Checked",))
+
+                self.after(3500, show_message_box)
+            else:
                 # closing event dialog
                 self.protocol("WM_DELETE_WINDOW", self.on_closing)
-                # enables keyboard input events
+                # enables closing app keyboard input event
                 self.bind("<Escape>", lambda event: self.on_closing())
-                self.bind("<Return>", lambda event: self.login_event_handler())
-                if not results["welcome"]:
-                    self.cursor.execute("INSERT INTO user_data (welcome) VALUES (?)", ("Checked",))
-                elif results["welcome"]:
-                    self.cursor.execute("UPDATE user_data SET welcome=?", ("Checked",))
 
-            self.after(3500, show_message_box)
-        else:
-            # closing event dialog
-            self.protocol("WM_DELETE_WINDOW", self.on_closing)
-            # enables closing app keyboard input event
-            self.bind("<Escape>", lambda event: self.on_closing())
+            # performs some operations in a separate thread when application starts up
+            self.boot_up_thread = threading.Thread(target=self.boot_up, args=(self.teraterm_file,))
+            self.boot_up_thread.start()
 
-        # performs some operations in a separate thread when application starts up
-        self.boot_up_thread = threading.Thread(target=self.boot_up, args=(self.teraterm_file,))
-        self.boot_up_thread.start()
-        self.mainloop()
+            self.mainloop()
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            SPANISH = 0x0A
+            language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
+            if language_id & 0xFF == SPANISH:
+                messagebox.showerror("Error", "¡Error Fatal! Problema en inicializar la base de datos.\n"
+                                              "Es posible que necesite reinstalar la aplicación")
+            else:
+                messagebox.showerror("Error", "Fatal Error! Failed to initialize database.\n"
+                                              "Might need to reinstall the application")
+            exit(1)
 
         # Asks the user if they want to update to the latest version of the application
         def update_app():
@@ -570,7 +593,6 @@ class TeraTermUI(customtkinter.CTk):
     def on_closing(self):
         msg = None
         lang = self.language_menu.get()
-        on_exit = self.cursor.execute("SELECT exit FROM user_data").fetchall()
         if lang == "English":
             msg = CTkMessagebox(master=self, title="Exit", message="Are you sure you want to exit the application?",
                                 icon="question",
@@ -583,6 +605,7 @@ class TeraTermUI(customtkinter.CTk):
                                 option_1="¿Cerrar Tera Term?", option_2="No", option_3="Sí", icon_size=(65, 65),
                                 button_color=("#c30101", "#c30101", "#145DA0"), option_1_type="checkbox",
                                 hover_color=("darkred", "darkred", "darkblue"))
+        on_exit = self.cursor.execute("SELECT exit FROM user_data").fetchall()
         if on_exit[0][0] == "1":
             msg.check_checkbox()
         response, self.checkbox_state = msg.get()
@@ -1192,7 +1215,7 @@ class TeraTermUI(customtkinter.CTk):
                                                                                       "Error! Failed to search class!"))
                                     elif lang == "Español":
                                         self.after(0, lambda: self.show_error_message(
-                                            320, 235, "¡Error! ¡Falló al buscar la clase!"))
+                                            320, 235, "¡Error! ¡Problema al buscar la clase!"))
                             else:
                                 self.search_function_counter += 1
                                 self.uprb.window().menu_select("Edit->Select screen")
@@ -2960,8 +2983,8 @@ class TeraTermUI(customtkinter.CTk):
         if lang == "Español":
             self.status_button.configure(text="     Estado")
             self.help_button.configure(text="      Ayuda")
-            self.scaling_label.configure(text="Lenguaje, Apariencia y \n\n "
-                                              "Ajuste de UI:")
+            self.scaling_label.configure(text="Idioma, Apariencia y \n\n "
+                                              "Escala de Interface:")
             self.intro_box.configure(state="normal")
             self.intro_box.delete("1.0", "end")
             self.intro_box.insert("0.0", "¡Bienvenido a la aplicación de interfaz de usuario de Tera Term!\n\n" +
@@ -4063,7 +4086,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.after(0, lambda: self.show_error_message(320, 225, "Fatal Error! Might need to\n"
                                                                             "reinstall application"))
                 elif lang == "Español":
-                    self.after(0, lambda: self.show_error_message(320, 225, "¡Error fatal! Es posible que necesite\n"
+                    self.after(0, lambda: self.show_error_message(320, 225, "¡Error Fatal! Es posible que necesite\n"
                                                                             " reinstalar la aplicación"))
                 return
 
@@ -5248,6 +5271,7 @@ class TeraTermUI(customtkinter.CTk):
                                 elif lang == "Español":
                                     CTkMessagebox(title="Success", icon="check",
                                                   message="¡Comentario sometido éxitosamente!", button_width=380)
+
                             self.after(0, show_success)
                             resultDate = self.cursor.execute("SELECT date FROM user_data").fetchall()
                             if len(resultDate) == 0:
@@ -5268,6 +5292,7 @@ class TeraTermUI(customtkinter.CTk):
                                         CTkMessagebox(title="Error",
                                                       message="¡Error! Un error ocurrio mientras se sometia comentario",
                                                       icon="cancel", button_width=380)
+
                                 self.after(0, show_error)
                     else:
                         if not self.connection_error:
@@ -5280,6 +5305,7 @@ class TeraTermUI(customtkinter.CTk):
                                     CTkMessagebox(title="Error",
                                                   message="¡Error! El comentario no puede estar vacio",
                                                   icon="cancel", button_width=380)
+
                             self.after(0, show_error)
                 else:
                     if not self.connection_error:
@@ -5293,6 +5319,7 @@ class TeraTermUI(customtkinter.CTk):
                                               message="¡Error! El comentario no puede exceder 1000 palabras",
                                               icon="cancel",
                                               button_width=380)
+
                         self.after(0, show_error)
             else:
                 if not self.connection_error:
@@ -5305,6 +5332,7 @@ class TeraTermUI(customtkinter.CTk):
                             CTkMessagebox(title="Error",
                                           message="¡Error! No se puede enviar más de un comentario por día",
                                           icon="cancel", button_width=380)
+
                     self.after(0, show_error)
         else:
             if not self.connection_error:
@@ -5317,6 +5345,7 @@ class TeraTermUI(customtkinter.CTk):
                         CTkMessagebox(title="Error",
                                       message="¡Error! Mandar comentarios no esta disponible ahora mismo",
                                       icon="cancel", button_width=380)
+
                 self.after(0, show_error)
         self.feedbackSend.configure(state="normal")
 
@@ -6003,4 +6032,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
