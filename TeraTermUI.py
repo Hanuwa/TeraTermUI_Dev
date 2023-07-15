@@ -2621,7 +2621,8 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread.start()
                             screenshot_thread.join()
                             text_output = self.capture_screenshot()
-                            if "MENU DE OPCIONES" in text_output and "IDENTIFICACION PERSONAL" not in text_output:
+                            if ("MENU DE OPCIONES" in text_output or "STUDENTS REQ/DROP" in text_output) \
+                                    and "IDENTIFICACION PERSONAL" not in text_output:
                                 self.uprb = Application(backend="uia").connect(title="uprbay.uprb.edu - Tera Term VT",
                                                                                timeout=10)
                                 self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
