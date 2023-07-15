@@ -57,7 +57,7 @@ nuitka_command = (
     r'--include-data-file="'+project_directory+r'\LICENSE.txt=LICENSE.txt" '
     r'--output-dir="'+output_directory+r'" --disable-console '
     r'--windows-icon-from-ico="'+project_directory+r'\images\tera-term.ico" '
-    r'--lto=yes '
+    r'--lto=yes --nofollow-import-to=unittest --nofollow-import-to=reportlab.graphics.testshapes'
 )
 
 # Execute the DELETE SQL command
@@ -68,7 +68,7 @@ connection.commit()
 # Check current state of the script to decide the order of versions
 with open(project_directory+r"\TeraTermUI.py", 'r', encoding='utf-8') as file:
     data = file.read()
-if 'self.connection = sqlite3.connect("database.db", check_same_thread=False)' in data:
+if 'if not os.path.isfile(db_path):' in data:
     versions = ['installer', 'portable']
 else:
     versions = ['portable', 'installer']
@@ -81,6 +81,8 @@ for version in versions:
         # Replace old text with new text for portable and installer versions
         if version == 'installer':
             script = "installer"
+            data = data.replace('if not os.path.isfile(db_path):',
+                                'if not os.path.exists(self.db_path):')
             data = data.replace('self.connection = sqlite3.connect("database.db", check_same_thread=False)',
                                 'self.connection = sqlite3.connect(self.db_path, check_same_thread=False)')
             data = data.replace('closing(sqlite3.connect("database.db")) as connection',
@@ -94,6 +96,8 @@ for version in versions:
             print(Fore.GREEN + "Successfully started installer version\n" + Style.RESET_ALL)
         else:
             script = "portable"
+            data = data.replace('if not os.path.exists(self.db_path):',
+                                'if not os.path.isfile(db_path):')
             data = data.replace('self.connection = sqlite3.connect(self.db_path, check_same_thread=False)',
                                 'self.connection = sqlite3.connect("database.db", check_same_thread=False)')
             data = data.replace('closing(sqlite3.connect(self.db_path)) as connection',
@@ -133,6 +137,14 @@ for version in versions:
             print(Fore.GREEN + "Successfully created TeraTermUI installer folder\n" + Style.RESET_ALL)
         except Exception as e:
             print(Fore.RED + f"Error renaming folder: {e}\n" + Style.RESET_ALL)
+            sys.exit(1)
+            
+        try:
+            os.remove(os.path.join(output_directory, "TeraTermUI_installer", "database.db"))
+            os.remove(os.path.join(output_directory, "TeraTermUI_installer", "feedback.zip"))
+            print(Fore.GREEN + "Successfully removed database.db and feedback.zip\n" + Style.RESET_ALL)
+        except Exception as e:
+            print(Fore.RED + f"Error removing files: {e}\n" + Style.RESET_ALL)
             sys.exit(1)
 
         try:
