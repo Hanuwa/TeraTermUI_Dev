@@ -1,3 +1,3 @@
 @echo off
-python C:\Users\arman\PycharmProjects\TeraTermUI\ExeConverter.py
+python [insert your file path here]\ExeConverter.py
 pause
