@@ -1234,20 +1234,20 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(0, self.show_error_message, 350, 230,
                                                "¡Error! Le falta información de la\n"
                                                " clase que deseas buscar")
-                                elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE):
-                                    if lang == "English":
-                                        self.after(0, self.show_error_message, 360, 230,
-                                                   "Error! Wrong Format for Class")
-                                    elif lang == "Español":
-                                        self.after(0, self.show_error_message, 360, 230,
-                                                   "¡Error! Formato Incorrecto de la Clase")
-                                elif not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE):
-                                    if lang == "English":
-                                        self.after(0, self.show_error_message, 360, 230,
-                                                   "Error! Wrong Format for Semester")
-                                    elif lang == "Español":
-                                        self.after(0, self.show_error_message, 360, 230,
-                                                   "¡Error! Formato Incorrecto del Semestre")
+                            elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE):
+                                if lang == "English":
+                                    self.after(0, self.show_error_message, 360, 230,
+                                               "Error! Wrong Format for Class")
+                                elif lang == "Español":
+                                    self.after(0, self.show_error_message, 360, 230,
+                                               "¡Error! Formato Incorrecto de la Clase")
+                            elif not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE):
+                                if lang == "English":
+                                    self.after(0, self.show_error_message, 360, 230,
+                                               "Error! Wrong Format for Semester")
+                                elif lang == "Español":
+                                    self.after(0, self.show_error_message, 360, 230,
+                                               "¡Error! Formato Incorrecto del Semestre")
                     else:
                         if lang == "English":
                             self.after(0, self.show_error_message, 300, 215, "Error! Tera Term is disconnected")
@@ -5874,8 +5874,8 @@ class TeraTermUI(customtkinter.CTk):
                                               " que deseas matricular"
                 break
             elif choices not in ["Register", "Registra", "Drop", "Baja"]:
-                error_msg_medium = "Error! Must choose to either\n enroll or drop the class" \
-                    if lang == "English" else "¡Error! Debe escoger si desea\n matricular o dar de baja la clase"
+                error_msg_medium = "Error! Must choose to either\n enroll or drop the classes" \
+                    if lang == "English" else "¡Error! Debes escoger si deseas\n matricular o dar de baja las clases"
                 break
             elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE):
                 error_msg_short = "Error! Wrong Format for Classes" if lang == "English" else \
