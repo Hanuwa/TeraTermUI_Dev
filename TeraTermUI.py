@@ -96,7 +96,7 @@ class TeraTermUI(customtkinter.CTk):
         screen_height = self.winfo_screenheight()
         x = (screen_width - width * scaling_factor) / 2
         y = (screen_height - height * scaling_factor) / 2
-        self.geometry(f"{width}x{height}+{int(x) + 70}+{int(y + 30)}")
+        self.geometry(f"{width}x{height}+{int(x) + 130}+{int(y + 50)}")
         self.iconbitmap("images/tera-term.ico")
 
         # creates a thread separate from the main application for check_idle and to monitor cpu usage
@@ -1300,7 +1300,7 @@ class TeraTermUI(customtkinter.CTk):
             y = (screen_height - height * scaling_factor) / 2
             if lang == "Español":
                 dialog = customtkinter.CTkInputDialog(text="Escriba el semestre:", title="Enseñar Mis Classes")
-                dialog.geometry(f"{int(x) + 450}+{int(y + 200)}")
+                dialog.geometry(f"{int(x) + 512}+{int(y + 225)}")
                 dialog.after(201, lambda: dialog.iconbitmap("images/tera-term.ico"))
                 dialog_input = dialog.get_input()
                 if dialog_input is not None:
@@ -1344,7 +1344,7 @@ class TeraTermUI(customtkinter.CTk):
                     dialog.destroy()
             elif lang == "English":
                 dialog = customtkinter.CTkInputDialog(text="Enter the semester:", title="Show My Classes")
-                dialog.geometry(f"{int(x) + 450}+{int(y + 200)}")
+                dialog.geometry(f"{int(x) + 512}+{int(y + 225)}")
                 dialog.after(201, lambda: dialog.iconbitmap("images/tera-term.ico"))
                 dialog_input = dialog.get_input()
                 if dialog_input is not None:
@@ -5094,7 +5094,7 @@ class TeraTermUI(customtkinter.CTk):
             scaling_factor = self.tk.call("tk", "scaling")
             x_position = int((screen_width - 475 * scaling_factor) / 2)
             y_position = int((screen_height - 275 * scaling_factor) / 2)
-            window_geometry = f"{475}x{280}+{x_position + 100}+{y_position - 3}"
+            window_geometry = f"{475}x{280}+{x_position + 130}+{y_position + 18}"
             self.status.geometry(window_geometry)
             self.status.title("Status")
             self.status.after(256, lambda: self.status.iconbitmap("images/tera-term.ico"))
@@ -5160,7 +5160,7 @@ class TeraTermUI(customtkinter.CTk):
             scaling_factor = self.tk.call("tk", "scaling")
             x_position = int((screen_width - 475 * scaling_factor) / 2)
             y_position = int((screen_height - 275 * scaling_factor) / 2)
-            window_geometry = f"{475}x{280}+{x_position + 100}+{y_position + 3}"
+            window_geometry = f"{475}x{280}+{x_position + 130}+{y_position + 18}"
             self.status.geometry(window_geometry)
             self.status.title("Estado")
             self.status.after(256, lambda: self.status.iconbitmap("images/tera-term.ico"))
