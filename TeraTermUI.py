@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 7/15/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 7/16/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -96,7 +96,7 @@ class TeraTermUI(customtkinter.CTk):
         screen_height = self.winfo_screenheight()
         x = (screen_width - width * scaling_factor) / 2
         y = (screen_height - height * scaling_factor) / 2
-        self.geometry(f"{width}x{height}+{int(x) + 175}+{int(y + 50)}")
+        self.geometry(f"{width}x{height}+{int(x) + 70}+{int(y + 30)}")
         self.iconbitmap("images/tera-term.ico")
 
         # creates a thread separate from the main application for check_idle and to monitor cpu usage
@@ -231,8 +231,6 @@ class TeraTermUI(customtkinter.CTk):
         self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(20, 20))
         self.log_in.configure(state="disabled")
         self.intro_box = customtkinter.CTkTextbox(self, height=245, width=400)
-        self.intro_box.grid(row=1, column=1, padx=(20, 0), pady=(0, 0))
-        # set default values
         self.intro_box.insert("0.0", "Welcome to the Tera Term UI Application!\n\n" +
                               "The purpose of this application"
                               " is to facilitate the process enrolling and dropping classes, "
@@ -801,13 +799,13 @@ class TeraTermUI(customtkinter.CTk):
     def tuition_frame(self):
         lang = self.language_menu.get()
         self.initialization_multiple()
-        self.tabview.grid(row=0, column=1, padx=(20, 20), pady=(20, 0), sticky="n")
+        self.tabview.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 85))
         self.tabview.tab(self.enroll_tab).grid_columnconfigure(1, weight=2)
         self.tabview.tab(self.search_tab).grid_columnconfigure(1, weight=2)
         self.search_scrollbar.grid_columnconfigure(1, weight=2)
         self.tabview.tab(self.other_tab).grid_columnconfigure(1, weight=2)
-        self.t_buttons_frame.grid(row=2, column=1, padx=(20, 20), pady=(0, 0), sticky="n")
-        self.t_buttons_frame.grid_columnconfigure(2, weight=1)
+        self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 20))
+        self.t_buttons_frame.grid_columnconfigure(1, weight=2)
         self.title_enroll.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
         self.e_classes.grid(row=1, column=1, padx=(44, 0), pady=(0, 0), sticky="w")
         self.e_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
@@ -1302,8 +1300,7 @@ class TeraTermUI(customtkinter.CTk):
             y = (screen_height - height * scaling_factor) / 2
             if lang == "Español":
                 dialog = customtkinter.CTkInputDialog(text="Escriba el semestre:", title="Enseñar Mis Classes")
-                dialog.geometry(f"{int(x) + 555}+{int(y + 225)}")
-                dialog.attributes("-topmost", True)
+                dialog.geometry(f"{int(x) + 450}+{int(y + 200)}")
                 dialog.after(201, lambda: dialog.iconbitmap("images/tera-term.ico"))
                 dialog_input = dialog.get_input()
                 if dialog_input is not None:
@@ -1347,8 +1344,7 @@ class TeraTermUI(customtkinter.CTk):
                     dialog.destroy()
             elif lang == "English":
                 dialog = customtkinter.CTkInputDialog(text="Enter the semester:", title="Show My Classes")
-                dialog.geometry(f"{int(x) + 555}+{int(y + 225)}")
-                dialog.attributes("-topmost", True)
+                dialog.geometry(f"{int(x) + 450}+{int(y + 200)}")
                 dialog.after(201, lambda: dialog.iconbitmap("images/tera-term.ico"))
                 dialog_input = dialog.get_input()
                 if dialog_input is not None:
@@ -2598,12 +2594,12 @@ class TeraTermUI(customtkinter.CTk):
     def student_info_frame(self):
         lang = self.language_menu.get()
         self.initialization_class()
-        self.student_frame.grid(row=0, column=1, columnspan=2, padx=(20, 20), pady=(20, 0))
+        self.student_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
         self.student_frame.grid_columnconfigure(2, weight=1)
-        self.s_buttons_frame.grid(row=2, column=1, padx=(20, 20), pady=(20, 0))
+        self.s_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 40))
         self.s_buttons_frame.grid_columnconfigure(2, weight=1)
-        self.title_student.grid(row=0, column=1, padx=12, pady=(10, 20))
-        self.lock_grid.grid(row=1, column=1, padx=(0, 0), pady=(0, 20))
+        self.title_student.grid(row=0, column=1, padx=(20, 20), pady=(10, 20))
+        self.lock_grid.grid(row=1, column=1, padx=(00, 0), pady=(0, 20))
         if lang == "English":
             self.ssn.grid(row=2, column=1, padx=(0, 112), pady=(0, 10))
             self.ssn_entry.grid(row=2, column=1, padx=(175, 0), pady=(0, 10))
@@ -2805,13 +2801,13 @@ class TeraTermUI(customtkinter.CTk):
     def login_frame(self):
         lang = self.language_menu.get()
         self.initialization_student()
-        self.authentication_frame.grid(row=0, column=1, columnspan=2, padx=(20, 20), pady=(20, 0))
+        self.authentication_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
         self.authentication_frame.grid_columnconfigure(2, weight=1)
-        self.a_buttons_frame.grid(row=2, column=1, columnspan=2, padx=(20, 20), pady=(20, 0))
+        self.a_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 40))
         self.a_buttons_frame.grid_columnconfigure(2, weight=1)
-        self.title_login.grid(row=0, column=0, padx=12, pady=10)
-        self.uprb_image_grid.grid(row=1, column=0, padx=12, pady=10)
-        self.disclaimer.grid(row=2, column=0, padx=12, pady=(30, 0))
+        self.title_login.grid(row=0, column=0, padx=(20, 20), pady=10)
+        self.uprb_image_grid.grid(row=1, column=0, padx=(0, 0), pady=10)
+        self.disclaimer.grid(row=2, column=0, padx=(0, 0), pady=(30, 0))
         if lang == "English":
             self.username.grid(row=3, column=0, padx=(0, 125), pady=(0, 10))
             self.username_entry.grid(row=3, column=0, padx=(90, 0), pady=(0, 10))
@@ -2926,12 +2922,13 @@ class TeraTermUI(customtkinter.CTk):
         self.unbind("<Down>")
         self.change_bind()
         lang = self.language_menu.get()
-        self.tabview.grid(row=0, column=1, padx=(20, 20), pady=(20, 0), sticky="n")
+        self.tabview.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 85))
         self.tabview.tab(self.enroll_tab).grid_columnconfigure(1, weight=2)
         self.tabview.tab(self.search_tab).grid_columnconfigure(1, weight=2)
+        self.search_scrollbar.grid_columnconfigure(1, weight=2)
         self.tabview.tab(self.other_tab).grid_columnconfigure(1, weight=2)
-        self.t_buttons_frame.grid(row=2, column=1, padx=(20, 20), pady=(20, 0), sticky="n")
-        self.t_buttons_frame.grid_columnconfigure(2, weight=1)
+        self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 20))
+        self.t_buttons_frame.grid_columnconfigure(1, weight=2)
         self.title_enroll.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
         self.e_classes.grid(row=1, column=1, padx=(44, 0), pady=(0, 0), sticky="w")
         self.e_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
@@ -5097,7 +5094,7 @@ class TeraTermUI(customtkinter.CTk):
             scaling_factor = self.tk.call("tk", "scaling")
             x_position = int((screen_width - 475 * scaling_factor) / 2)
             y_position = int((screen_height - 275 * scaling_factor) / 2)
-            window_geometry = f"{475}x{280}+{x_position + 190}+{y_position + 18}"
+            window_geometry = f"{475}x{280}+{x_position + 100}+{y_position - 3}"
             self.status.geometry(window_geometry)
             self.status.title("Status")
             self.status.after(256, lambda: self.status.iconbitmap("images/tera-term.ico"))
@@ -5163,7 +5160,7 @@ class TeraTermUI(customtkinter.CTk):
             scaling_factor = self.tk.call("tk", "scaling")
             x_position = int((screen_width - 475 * scaling_factor) / 2)
             y_position = int((screen_height - 275 * scaling_factor) / 2)
-            window_geometry = f"{475}x{280}+{x_position + 190}+{y_position + 18}"
+            window_geometry = f"{475}x{280}+{x_position + 100}+{y_position + 3}"
             self.status.geometry(window_geometry)
             self.status.title("Estado")
             self.status.after(256, lambda: self.status.iconbitmap("images/tera-term.ico"))
@@ -5544,7 +5541,7 @@ class TeraTermUI(customtkinter.CTk):
             scaling_factor = self.tk.call("tk", "scaling")
             x_position = int((screen_width - 475 * scaling_factor) / 2)
             y_position = int((screen_height - 275 * scaling_factor) / 2)
-            window_geometry = f"{475}x{280}+{x_position + 190}+{y_position + 18}"
+            window_geometry = f"{475}x{280}+{x_position + 100}+{y_position - 3}"
             self.help.geometry(window_geometry)
             self.help.title("Help")
             self.help.after(256, lambda: self.help.iconbitmap("images/tera-term.ico"))
@@ -5616,7 +5613,7 @@ class TeraTermUI(customtkinter.CTk):
             scaling_factor = self.tk.call("tk", "scaling")
             x_position = int((screen_width - 475 * scaling_factor) / 2)
             y_position = int((screen_height - 275 * scaling_factor) / 2)
-            window_geometry = f"{475}x{280}+{x_position + 190}+{y_position + 18}"
+            window_geometry = f"{475}x{280}+{x_position + 100}+{y_position + 3}"
             self.help.geometry(window_geometry)
             self.help.title("Ayuda")
             self.help.after(256, lambda: self.help.iconbitmap("images/tera-term.ico"))
