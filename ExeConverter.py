@@ -1,7 +1,8 @@
-import subprocess
-import sqlite3
-import shutil
+import re
 import os
+import shutil
+import sqlite3
+import subprocess
 import sys
 from colorama import init, Fore, Style
 
@@ -15,6 +16,7 @@ update_without_v = "0.9.0"
 versions = ['installer', 'portable']
 output_directory = os.path.join(r"C:/Users/" + username + "/OneDrive/Documentos", "TeraTermUI_" + update)
 upx_command = r"upx --best " + output_directory + r"\TeraTermUI.dist\TeraTermUI.exe"
+
 try:
     if os.path.exists(output_directory):
         shutil.rmtree(output_directory)
@@ -42,6 +44,7 @@ try:
 except Exception as e:
     print(Fore.RED + f"Error modifying creating distribution directory: {e}\n" + Style.RESET_ALL)
     sys.exit(1)
+
 nuitka_command = (
     r'cd /d "'+project_directory+r'\venv\Scripts" & python -m nuitka --standalone '
     r'--experimental=treefree "'+project_directory+r'\TeraTermUI.py" '
@@ -77,6 +80,9 @@ try:
         versions = ['installer', 'portable']
     else:
         versions = ['portable', 'installer']
+    data = re.sub(r'self.USER_APP_VERSION = ".*?"', f'self.USER_APP_VERSION = "{update_without_v}"', data)
+    with open(project_directory+r"\TeraTermUI.py", 'w', encoding='utf-8') as file:
+        file.write(data)
 except Exception as e:
     print(Fore.RED + f"Failed to decide what version to make (Installer or Portable): {e}\n" + Style.RESET_ALL)
     sys.exit(1)
