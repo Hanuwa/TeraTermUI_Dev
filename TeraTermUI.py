@@ -149,6 +149,7 @@ class TeraTermUI(customtkinter.CTk):
         self.help_minimized = None
         self.checkbox_state = None
         self.get_class_for_pdf = None
+        self.download_pdf = None
         self.previous_table_values = None
         self.table_rows = None
         self.is_banned = None
@@ -309,7 +310,7 @@ class TeraTermUI(customtkinter.CTk):
 
         # Classes
         self.init_class = False
-        self.tabview = customtkinter.CTkTabview(self, corner_radius=10, command=self.change_bind)
+        self.tabview = customtkinter.CTkTabview(self, corner_radius=10, command=self.switch_tab)
         self.t_buttons_frame = customtkinter.CTkFrame(self, corner_radius=10)
         self.t_buttons_frame.bind("<Button-1>", lambda event: self.focus_set())
         self.enroll_tab = None
@@ -735,7 +736,7 @@ class TeraTermUI(customtkinter.CTk):
                                 secure_delete(iv)
                                 del ssn, code, ssn_enc, code_enc, aes_key, mac_key
                                 gc.collect()
-                                self.change_bind()
+                                self.switch_tab()
                                 self.set_focus_to_tkinter()
                         else:
                             self.bind("<Return>", lambda event: self.tuition_event_handler())
@@ -1387,7 +1388,7 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     dialog.destroy()
         self.show_sidebar_windows()
-        self.change_bind()
+        self.switch_tab()
 
     # function that adds new entries
     def add_event(self):
@@ -2437,9 +2438,6 @@ class TeraTermUI(customtkinter.CTk):
                         self.clipboard_clear()
                         self.reset_activity_timer(None)
                         ctypes.windll.user32.BlockInput(False)
-                        self.after(0, self.disable_go_next_buttons)
-                        self.search_next_page.configure(state="normal")
-                        self.search_next_page_status = True
                         screenshot_thread = threading.Thread(target=self.capture_screenshot)
                         screenshot_thread.start()
                         screenshot_thread.join()
@@ -2676,7 +2674,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.log_in.grid_forget()
                                 self.intro_box.grid_forget()
                                 self.introduction.grid_forget()
-                                self.change_bind()
+                                self.switch_tab()
                                 self.set_focus_to_tkinter()
                             else:
                                 self.bind("<Return>", lambda event: self.login_event_handler())
@@ -2920,7 +2918,7 @@ class TeraTermUI(customtkinter.CTk):
         self.unbind("<Return>")
         self.unbind("<Up>")
         self.unbind("<Down>")
-        self.change_bind()
+        self.switch_tab()
         lang = self.language_menu.get()
         self.tabview.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 85))
         self.tabview.tab(self.enroll_tab).grid_columnconfigure(1, weight=2)
@@ -3740,7 +3738,8 @@ class TeraTermUI(customtkinter.CTk):
                                                             text_color=("gray10", "#DCE4EE"), hover_color="#4E4F50",
                                                             command=self.go_next_search_handler, width=85)
             self.search_next_page_tooltip = CTkToolTip(self.search_next_page, message="There's more sections\n"
-                                                                                      "available")
+                                                                                      "available",
+                                                       bg_color="#A9A9A9", alpha=0.90)
 
             # Third Tab
             self.explanation6 = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab),
@@ -4312,12 +4311,12 @@ class TeraTermUI(customtkinter.CTk):
             self.previous_table_values = table_values
             self.update_idletasks()
         if lang == "English":
-            download_pdf = customtkinter.CTkButton(self.search_scrollbar, text="Save as PDF",
-                                                   command=self.download_as_pdf)
+            self.download_pdf = customtkinter.CTkButton(self.search_scrollbar, text="Save as PDF",
+                                                        command=self.download_as_pdf)
         elif lang == "Español":
-            download_pdf = customtkinter.CTkButton(self.search_scrollbar, text="Guardar como PDF",
-                                                   command=self.download_as_pdf)
-        download_pdf.grid(row=3, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+            self.download_pdf = customtkinter.CTkButton(self.search_scrollbar, text="Guardar como PDF",
+                                                        command=self.download_as_pdf)
+        self.download_pdf.grid(row=3, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
 
     # extracts the text from the searched class to get the important information
     @staticmethod
@@ -4917,7 +4916,7 @@ class TeraTermUI(customtkinter.CTk):
                                               "Tal vez necesite reiniciar Tera Term UI",
                                       icon="warning", button_width=380)
                     self.error_occurred = False
-                self.change_bind()
+                self.switch_tab()
 
     # Starts the check for idle thread
     def start_check_idle_thread(self):
@@ -4965,7 +4964,7 @@ class TeraTermUI(customtkinter.CTk):
                         if self.countdown_running:
                             self.idle_num_check = 1
                         self.show_sidebar_windows()
-                        self.change_bind()
+                        self.switch_tab()
             if self.idle_num_check == 5:
                 break
             time.sleep(3)
@@ -5059,7 +5058,7 @@ class TeraTermUI(customtkinter.CTk):
         win32gui.SetForegroundWindow(pywinauto_handle)
 
     # Changes keybind depending on the tab the user is currently on
-    def change_bind(self):
+    def switch_tab(self):
         self.focus_set()
         enroll_frame = self.tabview.tab(self.enroll_tab)
         other_frame = self.tabview.tab(self.other_tab)
@@ -5070,15 +5069,25 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<space>", lambda event: self.spacebar_event())
             enroll_frame.bind("<Button-1>", lambda event: enroll_frame.focus_set())
         elif self.tabview.get() == self.search_tab:
+            if hasattr(self, 'table') and self.table is not None:
+                self.display_class.grid_forget()
+                self.table.grid_forget()
+                self.download_pdf.grid_forget()
+                self.after(350, self.load_table)
             self.in_enroll_frame = False
             self.in_search_frame = True
             self.bind("<Return>", lambda event: self.search_event_handler())
+            self.bind("<space>", lambda event: self.spacebar_event())
         elif self.tabview.get() == self.other_tab:
             self.in_enroll_frame = False
             self.in_search_frame = False
             self.bind("<Return>", lambda event: self.option_menu_event_handler())
-            self.bind("<space>", lambda event: self.spacebar_event())
             other_frame.bind("<Button-1>", lambda event: other_frame.focus_set())
+
+    def load_table(self):
+        self.display_class.grid(row=2, column=1, padx=(0, 0), pady=(8, 0), sticky="n")
+        self.table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
+        self.download_pdf.grid(row=3, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
 
     # Creates the status window
     def status_button_event(self):
