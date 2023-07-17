@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 7/16/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 7/17/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -101,7 +101,7 @@ class TeraTermUI(customtkinter.CTk):
 
         # creates a thread separate from the main application for check_idle and to monitor cpu usage
         self.last_activity = time.time()
-        self.is_running = True
+        self.is_idle_thread_running = False
         self.stop_check_idle = threading.Event()
         self.lock_thread = threading.Lock()
         # self.cpu_load_history = deque(maxlen=60)
@@ -118,6 +118,7 @@ class TeraTermUI(customtkinter.CTk):
         self.credentials = None
         self.GITHUB_REPO = "https://api.github.com/repos/Hanuwa/TeraTermUI"
         self.USER_APP_VERSION = "0.9.0"
+        # disabled/enables keybind events
         self.move_slider_left_enabled = True
         self.move_slider_right_enabled = True
         self.spacebar_enabled = True
@@ -2851,7 +2852,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred or (response and (response[0] == "Yes" or response[0] == "Sí"))):
             subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"])
         if self.error_occurred or (response and (response[0] == "Yes" or response[0] == "Sí")):
-            self.stop_thread()
+            self.stop_idle_thread()
             self.reset_activity_timer(None)
             self.unbind("<space>")
             self.unbind("<Up>")
@@ -4211,7 +4212,6 @@ class TeraTermUI(customtkinter.CTk):
 
     # dipslays the extracted data into a table
     def display_data(self, data):
-        download_pdf = None
         tooltip_message = None
         lang = self.language_menu.get()
         modified_data = []
@@ -4921,16 +4921,16 @@ class TeraTermUI(customtkinter.CTk):
     # Starts the check for idle thread
     def start_check_idle_thread(self):
         if self.idle[0][0] != "Disabled":
-            self.is_running = True
+            self.is_idle_thread_running = True
             self.check_idle_thread = threading.Thread(target=self.check_idle)
             self.check_idle_thread.start()
 
-    # Checks if the user is idle for 4 minutes so that Tera Term doesn't close by itself
+    # Checks if the user is idle for 5 minutes and does some action so that Tera Term doesn't close by itself
     def check_idle(self):
         self.idle_num_check = 0
-        while self.is_running and not self.stop_check_idle.is_set():
+        while self.is_idle_thread_running and not self.stop_check_idle.is_set():
             with self.lock_thread:
-                if time.time() - self.last_activity >= 375:
+                if time.time() - self.last_activity >= 300:
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         self.unbind("<Return>")
                         self.focus_set()
@@ -4941,6 +4941,7 @@ class TeraTermUI(customtkinter.CTk):
                         if term_window.isMinimized:
                             term_window.restore()
                         self.uprbay_window.wait("visible", timeout=10)
+                        self.unfocus_tkinter()
                         if self.idle_num_check == 0:
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             send_keys("{ENTER}")
@@ -4965,13 +4966,15 @@ class TeraTermUI(customtkinter.CTk):
                             self.idle_num_check = 1
                         self.show_sidebar_windows()
                         self.switch_tab()
-            if self.idle_num_check == 5:
+                    else:
+                        self.stop_check_idle.is_set()
+            if self.idle_num_check == 6:
                 break
             time.sleep(3)
 
     # Stops the check for idle thread
-    def stop_thread(self):
-        self.is_running = False
+    def stop_idle_thread(self):
+        self.is_idle_thread_running = False
 
     # resets the idle timer when user interacts with something within the application
     def reset_activity_timer(self, _):
@@ -4987,7 +4990,7 @@ class TeraTermUI(customtkinter.CTk):
             elif len(idle) == 1:
                 self.cursor.execute("UPDATE user_data SET idle=?", ("Disabled",))
             self.reset_activity_timer(None)
-            self.stop_thread()
+            self.stop_idle_thread()
         if self.disableIdle.get() == "off":
             idle = self.cursor.execute("SELECT idle FROM user_data").fetchall()
             if len(idle) == 0:
