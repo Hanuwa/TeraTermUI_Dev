@@ -114,7 +114,7 @@ class TeraTermUI(customtkinter.CTk):
         self.SPREADSHEET_BANNED_ID = "1JGDSyB-tE7gH5ozZ1MBlr9uMGcAWRgN7CyqK-QDQRxg"
         self.RANGE_NAME = "Sheet1!A:A"
         os.environ["Feedback"] = "F_QL^B#O_/r9|Rl0i=x),;!@en|V5qR%W(9;2^+f=lRPcw!+4"
-        self.PASSWORD = os.getenv("Feedback")
+        self.FEEDBACK = os.getenv("Feedback")
         self.credentials = None
         self.GITHUB_REPO = "https://api.github.com/repos/Hanuwa/TeraTermUI"
         self.USER_APP_VERSION = "0.9.0"
@@ -4437,13 +4437,13 @@ class TeraTermUI(customtkinter.CTk):
             user_id = str(uuid.uuid4())
             # Create a new password-protected zip archive and add the text file to it
             with pyzipper.AESZipFile(user_path, "w", encryption=pyzipper.WZ_AES) as zf:
-                zf.setpassword(self.PASSWORD.encode())
+                zf.setpassword(self.FEEDBACK.encode())
                 zf.writestr("user_id.txt", user_id)
 
         # Read the user_id from the text file in the password-protected zip archive
         try:
             with pyzipper.AESZipFile(user_path, "r") as zf:
-                zf.setpassword(self.PASSWORD.encode())
+                zf.setpassword(self.FEEDBACK.encode())
                 with zf.open("user_id.txt") as f:
                     self.user_id = f.read().decode().strip()
         except Exception as e:
@@ -4454,7 +4454,7 @@ class TeraTermUI(customtkinter.CTk):
         try:
             with open(self.SERVICE_ACCOUNT_FILE, "rb"):
                 archive = pyzipper.AESZipFile(self.SERVICE_ACCOUNT_FILE)
-                archive.setpassword(self.PASSWORD.encode())
+                archive.setpassword(self.FEEDBACK.encode())
                 file_contents = archive.read("feedback.json")
                 credentials_dict = json.loads(file_contents.decode())
                 self.credentials = service_account.Credentials.from_service_account_info(
@@ -5541,7 +5541,7 @@ class TeraTermUI(customtkinter.CTk):
             scaling_factor = self.tk.call("tk", "scaling")
             x_position = int((screen_width - 475 * scaling_factor) / 2)
             y_position = int((screen_height - 275 * scaling_factor) / 2)
-            window_geometry = f"{475}x{280}+{x_position + 100}+{y_position - 3}"
+            window_geometry = f"{475}x{280}+{x_position + 130}+{y_position + 18}"
             self.help.geometry(window_geometry)
             self.help.title("Help")
             self.help.after(256, lambda: self.help.iconbitmap("images/tera-term.ico"))
@@ -5566,7 +5566,7 @@ class TeraTermUI(customtkinter.CTk):
             curriculumText.pack()
             curriculum = customtkinter.CTkOptionMenu(scrollable_frame,
                                                      values=["Departments", "Accounting", "Finance", "Management",
-                                                             "Marketing" "General Biology", "Biology-Human Focus",
+                                                             "Marketing", "General Biology", "Biology-Human Focus",
                                                              "Computer Science", "Information Systems",
                                                              "Social Sciences", "Physical Education",
                                                              "Electronics", "Equipment Management", "Pedagogy",
@@ -5613,7 +5613,7 @@ class TeraTermUI(customtkinter.CTk):
             scaling_factor = self.tk.call("tk", "scaling")
             x_position = int((screen_width - 475 * scaling_factor) / 2)
             y_position = int((screen_height - 275 * scaling_factor) / 2)
-            window_geometry = f"{475}x{280}+{x_position + 100}+{y_position + 3}"
+            window_geometry = f"{475}x{280}+{x_position + 130}+{y_position + 18}"
             self.help.geometry(window_geometry)
             self.help.title("Ayuda")
             self.help.after(256, lambda: self.help.iconbitmap("images/tera-term.ico"))
