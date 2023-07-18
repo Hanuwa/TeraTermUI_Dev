@@ -457,7 +457,8 @@ class TeraTermUI(customtkinter.CTk):
             self.cursor = self.connection.cursor()
             self.save = self.cursor.execute("SELECT class, section, semester, action FROM save_classes"
                                             " WHERE class IS NOT NULL").fetchall()
-            self.saveCheck = self.cursor.execute('SELECT "check" FROM save_classes WHERE "check" IS NOT NULL').fetchall()
+            self.saveCheck = self.cursor.execute('SELECT "check" FROM save_classes'
+                                                 ' WHERE "check" IS NOT NULL').fetchall()
             user_data_fields = ["location", "host", "language", "appearance", "scaling", "idle", "welcome", "config"]
             results = {}
             for field in user_data_fields:
@@ -580,8 +581,8 @@ class TeraTermUI(customtkinter.CTk):
                         elif len(resultDate) == 1:
                             self.cursor.execute("UPDATE user_data SET date=?", (current_date,))
                         self.connection.commit()
-                except requests.exceptions.RequestException as e:
-                    print(f"Error occurred while fetching latest release information: {e}")
+                except requests.exceptions.RequestException as err:
+                    print(f"Error occurred while fetching latest release information: {err}")
                     print("Please check your internet connection and try again.")
                 del dates_list, date, current_date
 
