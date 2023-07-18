@@ -77,7 +77,7 @@ from tkinter import messagebox
 from PIL import Image, ImageOps
 
 # from collections import deque
-from memory_profiler import profile
+# from memory_profiler import profile
 
 customtkinter.set_appearance_mode("System")
 customtkinter.set_default_color_theme("blue")
@@ -2791,7 +2791,7 @@ class TeraTermUI(customtkinter.CTk):
                                           "Tera Term fue forzado a cerrar",
                                   icon="warning", button_width=380)
                 self.error_occurred = False
-    @profile()
+
     def login_frame(self):
         lang = self.language_menu.get()
         self.initialization_student()
@@ -3378,7 +3378,7 @@ class TeraTermUI(customtkinter.CTk):
                                     # Look for date and time pattern in the string
                                     match = re.search(r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}", parts[1])
                                     if match:
-                                        date_time_string = "7/18/2023 1:29"  # match.group()
+                                        date_time_string = match.group()
                                         date_time_string += " AM"
                                     else:
                                         if lang == "English":
