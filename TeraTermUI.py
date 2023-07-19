@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 7/18/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 7/19/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -433,6 +433,8 @@ class TeraTermUI(customtkinter.CTk):
         self.passed = False
         self.tesseract_unzipped = False
         self.in_multiple_screen = False
+        self.started_auto_enroll = False
+        self.error_auto_enroll = False
         self.a_counter = 0
         self.m_counter = 0
         self.e_counter = 0
@@ -1016,12 +1018,20 @@ class TeraTermUI(customtkinter.CTk):
                                                        "¡Error! No se pudo matricular la clase")
                                         self.set_focus_to_tkinter()
                                 else:
-                                    if "OUTDATED" in text_output or "INVALID TERM SELECTION" in text_output:
+                                    if count_enroll == 15:
+                                        self.submit.configure(state="disabled")
+                                        self.submit_multiple.configure(sate="disabled")
+                                        if lang == "English":
+                                            self.after(0, self.show_information_message, 350, 265,
+                                                       "Reached Enrollment limit!")
+                                        elif lang == "Español":
+                                            self.after(0, self.show_information_message, 350, 265,
+                                                       "Llegó al Límite de Matrícula")
+                                    if "INVALID TERM SELECTION" in text_output:
                                         self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                         send_keys("{ENTER}")
                                         self.reset_activity_timer(None)
-                                    if "INVALID TERM SELECTION" in text_output:
                                         if lang == "English":
                                             self.after(0, self.show_error_message, 300, 215,
                                                        "¡Error! Invalid Semester")
@@ -1029,8 +1039,13 @@ class TeraTermUI(customtkinter.CTk):
                                             self.after(0, self.show_error_message, 300, 215,
                                                        "¡Error! Semestre Inválido")
                                     else:
+                                        if "VUELVA LUEGO" not in text_output:
+                                            self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
+                                            self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                                            send_keys("{ENTER}")
+                                            self.reset_activity_timer(None)
                                         if lang == "English":
-                                            self.after(0, self.show_error_message,  300, 210,
+                                            self.after(0, self.show_error_message, 300, 210,
                                                        "Error! Failed to enroll class")
                                             if not self.enrollment_error_check:
                                                 self.after(2500, self.show_enrollment_error_information)
@@ -1041,15 +1056,6 @@ class TeraTermUI(customtkinter.CTk):
                                             if not self.enrollment_error_check:
                                                 self.after(2500, self.show_enrollment_error_information)
                                                 self.enrollment_error_check = True
-                                    if count_enroll == 15:
-                                        self.submit.configure(state="disabled")
-                                        self.submit_multiple.configure(sate="disabled")
-                                        if lang == "English":
-                                            self.after(0, self.show_information_message, 350, 265,
-                                                       "Reached Enrollment limit!")
-                                        elif lang == "Español":
-                                            self.after(0, self.show_information_message, 350, 265,
-                                                       "Llegó al Límite de Matrícula")
                                     self.set_focus_to_tkinter()
                             else:
                                 if not classes or not section or not semester:
@@ -1497,7 +1503,7 @@ class TeraTermUI(customtkinter.CTk):
         msg = None
         lang = self.language_menu.get()
         self.focus_set()
-        if not self.auto_enroll_bool:
+        if not self.started_auto_enroll:
             if lang == "English":
                 msg = CTkMessagebox(master=self, title="Submit",
                                     message="Are you sure you are ready to submit the classes?"
@@ -1517,6 +1523,7 @@ class TeraTermUI(customtkinter.CTk):
             response = msg.get()
             if response[0] != "Yes" and response[0] != "Sí":
                 return
+        self.error_auto_enroll = False
         task_done = threading.Event()
         loading_screen = self.show_loading_screen()
         self.update_loading_screen(loading_screen, task_done)
@@ -1677,31 +1684,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                                     self.set_focus_to_tkinter()
                             else:
-                                if "OUTDATED" in text_output or "INVALID TERM SELECTION" in text_output:
-                                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                    send_keys("{ENTER}")
-                                    self.reset_activity_timer(None)
-                                if "INVALID TERM SELECTION" in text_output:
-                                    if lang == "English":
-                                        self.show_error_message(300, 215, "¡Error! Invalid Semester")
-                                    elif lang == "Español":
-                                        self.show_error_message(300, 215, "¡Error! Semestre Inválido")
-                                else:
-                                    if lang == "English":
-                                        self.after(0, self.show_error_message, 300, 210,
-                                                   "Error! Failed to enroll class")
-                                        if not self.enrollment_error_check:
-                                            self.after(2500, self.show_enrollment_error_information)
-                                            self.enrollment_error_check = True
-                                    elif lang == "Español":
-                                        self.after(0, self.show_error_message, 320, 210,
-                                                   "¡Error! No se pudo matricular la clase")
-                                        if not self.enrollment_error_check:
-                                            self.after(2500, self.show_enrollment_error_information)
-                                            self.enrollment_error_check = True
                                 if count_enroll == 15:
-                                    self.go_back_event2()
                                     self.submit.configure(state="disabled")
                                     self.submit_multiple.configure(sate="disabled")
                                     if lang == "English":
@@ -1710,6 +1693,39 @@ class TeraTermUI(customtkinter.CTk):
                                     elif lang == "Español":
                                         self.after(0, self.show_information_message, 350, 265,
                                                    "Llegó al Límite de Matrícula")
+                                if "INVALID TERM SELECTION" in text_output:
+                                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
+                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                                    send_keys("{ENTER}")
+                                    self.reset_activity_timer(None)
+                                    if lang == "English":
+                                        self.after(0, self.show_error_message, 300, 215,
+                                                   "¡Error! Invalid Semester")
+                                    elif lang == "Español":
+                                        self.after(0, self.show_error_message, 300, 215,
+                                                   "¡Error! Semestre Inválido")
+                                else:
+                                    if "VUELVA LUEGO" not in text_output:
+                                        self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
+                                        self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                                        send_keys("{ENTER}")
+                                        self.reset_activity_timer(None)
+                                    if "INVALID ACTION" in text_output and self.started_auto_enroll:
+                                        self.after(0, self.submit_multiple_event_handler)
+                                        self.error_auto_enroll = True
+                                    else:
+                                        if lang == "English":
+                                            self.after(0, self.show_error_message, 300, 210,
+                                                       "Error! Failed to enroll class")
+                                            if not self.enrollment_error_check:
+                                                self.after(2500, self.show_enrollment_error_information)
+                                                self.enrollment_error_check = True
+                                        elif lang == "Español":
+                                            self.after(0, self.show_error_message, 320, 210,
+                                                       "¡Error! No se pudo matricular la clase")
+                                            if not self.enrollment_error_check:
+                                                self.after(2500, self.show_enrollment_error_information)
+                                                self.enrollment_error_check = True
                                 self.set_focus_to_tkinter()
                         else:
                             if lang == "English":
@@ -1735,6 +1751,8 @@ class TeraTermUI(customtkinter.CTk):
             finally:
                 task_done.set()
                 lang = self.language_menu.get()
+                if not self.error_auto_enroll:
+                    self.started_auto_enroll = False
                 if self.error_occurred:
                     self.destroy_windows()
                     winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
@@ -2528,23 +2546,26 @@ class TeraTermUI(customtkinter.CTk):
                         self.show_loading_screen_again()
                         self.server_status = self.wait_for_prompt("Press return", "REGRESE PRONTO")
                         if self.server_status == "Maintenance message found":
-                            self.back.configure(state="disabled")
-                            winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                            if lang == "English":
-                                CTkMessagebox(title="Maintenance", message="Error! The university's server is currently"
-                                                                           " on maintenance, please try again later."
-                                                                           "\n\nClosing Tera Term and returning to"
-                                                                           " main menu",
-                                              icon="cancel",
-                                              button_width=380)
-                            elif lang == "Español":
-                                CTkMessagebox(title="Mantenimiento",
-                                              message="¡Error! El servidor de la universidad está en mantenimiento"
-                                                      " , trate de nuevo más tarde. \n\nCerrando Tera Term y"
-                                                      " volviendo a menú principal",
-                                              icon="cancel",
-                                              button_width=380)
-                            self.error_occurred = True
+                            def server_closed():
+                                self.back.configure(state="disabled")
+                                winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                                if lang == "English":
+                                    CTkMessagebox(title="Maintenance", message="Error! The university's server "
+                                                                               "is currently on maintenance, "
+                                                                               "please try again later. "
+                                                                               "\n\nClosing Tera Term and returning to "
+                                                                               "main menu",
+                                                  icon="cancel",
+                                                  button_width=380)
+                                elif lang == "Español":
+                                    CTkMessagebox(title="Mantenimiento",
+                                                  message="¡Error! El servidor de la universidad está en mantenimiento"
+                                                          " , trate de nuevo más tarde. \n\nCerrando Tera Term y"
+                                                          " volviendo a menú principal",
+                                                  icon="cancel",
+                                                  button_width=380)
+                                self.error_occurred = True
+                            self.after(0, server_closed)
                         elif self.server_status == "Prompt found":
                             send_keys("{ENTER 3}")
                             self.bind("<Return>", lambda event: self.tuition_event_handler())
@@ -2552,21 +2573,23 @@ class TeraTermUI(customtkinter.CTk):
                             self.in_student_frame = True
                             self.set_focus_to_tkinter()
                         elif self.server_status == "Timeout":
-                            winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                            if lang == "English":
-                                CTkMessagebox(title="Error", message="Error! Failed to connect to the universities"
-                                                                     " server, this could be because there's a lot"
-                                                                     " of traffic and the server is overloaded",
-                                              icon="cancel",
-                                              button_width=380)
-                            elif lang == "Español":
-                                CTkMessagebox(title="Error",
-                                              message="¡Error! No se pudo conectar al servidor de la universidad, esto"
-                                                      " puede ser porque hay mucho tráfico y el servidor"
-                                                      " está  en su capacidad máxima",
-                                              icon="cancel",
-                                              button_width=380)
-                            self.error_occurred = True
+                            def timeout():
+                                winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                                if lang == "English":
+                                    CTkMessagebox(title="Error", message="Error! Failed to connect to the universities"
+                                                                         " server, this could be because there's a lot"
+                                                                         " of traffic and the server is overloaded",
+                                                  icon="cancel",
+                                                  button_width=380)
+                                elif lang == "Español":
+                                    CTkMessagebox(title="Error",
+                                                  message="¡Error! No se pudo conectar al servidor de la universidad,"
+                                                          " esto puede ser porque hay mucho tráfico y el servidor"
+                                                          " está  en su capacidad máxima",
+                                                  icon="cancel",
+                                                  button_width=380)
+                                self.error_occurred = True
+                            self.after(0, timeout)
                     elif username != "students":
                         self.bind("<Return>", lambda event: self.student_event_handler())
                         if lang == "English":
@@ -3375,22 +3398,10 @@ class TeraTermUI(customtkinter.CTk):
                             if turno_index != -1:
                                 sliced_text = text_output[turno_index:]
                                 parts = sliced_text.split(":", 1)
-                                if len(parts) > 1:
-                                    # Look for date and time pattern in the string
-                                    match = re.search(r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}", parts[1])
-                                    if match:
-                                        date_time_string = match.group()
-                                        date_time_string += " AM"
-                                    else:
-                                        if lang == "English":
-                                            self.after(0, self.show_error_message, 300, 215,
-                                                       "Couldn't find enrollment date")
-                                        elif lang == "Español":
-                                            self.after(0, self.show_error_message, 320, 215,
-                                                       "No se pudo encontrar\n"
-                                                       " la fecha de matricula")
-                                        self.auto_enroll.deselect()
-                                        self.auto_enroll_bool = False
+                                match = re.search(r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}", parts[1])
+                                if match:
+                                    date_time_string = match.group()
+                                    date_time_string += " AM"
                                 else:
                                     if lang == "English":
                                         self.after(0, self.show_error_message, 300, 215,
@@ -3401,6 +3412,23 @@ class TeraTermUI(customtkinter.CTk):
                                                    " la fecha de matricula")
                                     self.auto_enroll.deselect()
                                     self.auto_enroll_bool = False
+                                    return
+                            else:
+                                if "LISTA DE SECCIONES" not in text_output:
+                                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
+                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                                    send_keys("{ENTER}")
+                                    self.reset_activity_timer(None)
+                                if lang == "English":
+                                    self.after(0, self.show_error_message, 300, 215,
+                                               "Couldn't find enrollment date")
+                                elif lang == "Español":
+                                    self.after(0, self.show_error_message, 320, 215,
+                                               "No se pudo encontrar\n"
+                                               " la fecha de matricula")
+                                self.auto_enroll.deselect()
+                                self.auto_enroll_bool = False
+                                return
                             date_time_string = re.sub(r"[^a-zA-Z0-9:/ ]", "", date_time_string)
                             date_time_naive = datetime.strptime(date_time_string, "%m/%d/%Y %I:%M %p")
                             puerto_rico_tz = pytz.timezone("America/Puerto_Rico")
@@ -3413,9 +3441,11 @@ class TeraTermUI(customtkinter.CTk):
                             is_past_date = current_date > your_date
                             is_future_date = current_date < your_date
                             is_next_date = (your_date.date() - current_date.date() == timedelta(days=1))
-                            is_time_difference_within_6_hours = timedelta(hours=6) >= time_difference >= timedelta()
+                            is_time_difference_within_6_hours = \
+                                timedelta(hours=6, minutes=15) >= time_difference >= timedelta()
                             is_more_than_one_day = (your_date.date() - current_date.date() > timedelta(days=1))
                             is_current_time_ahead = current_date.time() > your_date.time()
+                            is_current_time_6_hours_ahead = time_difference >= timedelta(hours=-6)
                             # Comparing Dates
                             if (is_same_date and is_time_difference_within_6_hours) or \
                                     (is_next_date and is_time_difference_within_6_hours):
@@ -3423,20 +3453,27 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(0, self.disable_enable_gui)
                                 # Create timer window
                                 self.after(0, self.create_timer_window)
-                                # Create a BooleanVar to control the loop
+                                # Create a BooleanVar to control the countdown loop
                                 self.running_countdown = customtkinter.BooleanVar()
                                 self.running_countdown.set(True)
                                 # Start the countdown
                                 self.after(100, self.countdown, your_date)
                             elif is_past_date or (is_same_date and is_current_time_ahead):
-                                if lang == "English":
-                                    self.after(0, self.show_error_message, 300, 215,
-                                               "The enrollment date already passed")
-                                elif lang == "Español":
-                                    self.after(0, self.show_error_message, 320, 215,
-                                               "La fecha de matricula ya pasó")
-                                self.auto_enroll_bool = False
-                                self.auto_enroll.deselect()
+                                if is_current_time_6_hours_ahead:
+                                    self.running_countdown = customtkinter.BooleanVar()
+                                    self.running_countdown.set(True)
+                                    self.started_auto_enroll = True
+                                    self.after(0, self.submit_multiple_event_handler)
+                                    self.after(0, self.end_countdown)
+                                else:
+                                    if lang == "English":
+                                        self.after(0, self.show_error_message, 300, 215,
+                                                   "The enrollment date already passed")
+                                    elif lang == "Español":
+                                        self.after(0, self.show_error_message, 320, 215,
+                                                   "La fecha de matricula ya pasó")
+                                    self.auto_enroll_bool = False
+                                    self.auto_enroll.deselect()
                             elif (is_future_date or is_more_than_one_day) or \
                                     (is_same_date and not is_time_difference_within_6_hours) or \
                                     (is_next_date and not is_time_difference_within_6_hours):
@@ -3452,13 +3489,12 @@ class TeraTermUI(customtkinter.CTk):
                                                " y dentro de un margen de 6 horas")
                                 self.auto_enroll_bool = False
                                 self.auto_enroll.deselect()
-                            else:
-                                if lang == "English":
-                                    self.after(0, self.show_error_message, 320, 215, "Unknown error!")
-                                elif lang == "Español":
-                                    self.after(0, self.show_error_message, 320, 215, "¡Error desconocido!")
-                                self.auto_enroll_bool = False
-                                self.auto_enroll.deselect()
+                            if "INVALID ACTION" in text_output:
+                                self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
+                                self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                                send_keys("{ENTER}")
+                                self.reset_activity_timer(None)
+                                self.after(0, self.bring_back_timer_window)
                         else:
                             if lang == "English":
                                 self.after(0, self.show_error_message, 300, 215, "Error! Tera Term is disconnected")
@@ -3469,6 +3505,7 @@ class TeraTermUI(customtkinter.CTk):
                 elif self.auto_enroll.get() == "off":
                     self.countdown_running = False
                     self.auto_enroll_bool = False
+                    self.hide_loading_screen()
                     self.after(0, self.disable_enable_gui)
                     # If the countdown is running, stop it and destroy the timer window
                     if hasattr(self, "running_countdown") and self.running_countdown \
@@ -3513,19 +3550,20 @@ class TeraTermUI(customtkinter.CTk):
                     self.timer_label.configure(text="performing auto-enrollment now...")
                 elif lang == "Español":
                     self.timer_label.configure(text="ejecutando auto-matrícula ahora...")
+                self.started_auto_enroll = True
                 self.after(5000, self.submit_multiple_event_handler)
                 self.after(5000, self.end_countdown)
                 return
             else:
                 hours, remainder = divmod(total_seconds, 3600)
                 minutes, _ = divmod(remainder, 60)
-                # If there's a part of minute left, consider it as a whole minute
-                if _ > 0:
-                    minutes += 1
                 # If more than an hour remains
                 if hours > 0:
                     if lang == "English":
-                        if hours == 1 and minutes == 1:
+                        if minutes == 0:
+                            self.timer_label.configure(
+                                text=f"{int(hours)} hours remaining until enrollment")
+                        elif hours == 1 and minutes == 1:
                             self.timer_label.configure(
                                 text=f"{int(hours)} hour and {int(minutes)} minute \nremaining until enrollment")
                         elif hours == 1:
@@ -3538,7 +3576,10 @@ class TeraTermUI(customtkinter.CTk):
                             self.timer_label.configure(
                                 text=f"{int(hours)} hours and {int(minutes)} minutes \nremaining until enrollment")
                     elif lang == "Español":
-                        if hours == 1 and minutes == 1:
+                        if minutes == 0:
+                            self.timer_label.configure(
+                                text=f"{int(hours)} horas restantes hasta la matrícula")
+                        elif hours == 1 and minutes == 1:
                             self.timer_label.configure(text=f"{int(hours)} hora y {int(minutes)} "
                                                             f"minuto \nrestante hasta la matrícula")
                         elif hours == 1:
@@ -3555,6 +3596,9 @@ class TeraTermUI(customtkinter.CTk):
                         self.timer_window.after(seconds_until_next_minute * 1000, lambda: self.countdown(your_date))
 
                 else:  # When there's less than an hour remaining
+                    # If there's a part of minute left, consider it as a whole minute
+                    if _ > 0:
+                        minutes += 1
                     if lang == "English":
                         if minutes >= 60:
                             self.timer_label.configure(text="1 hour remaining until enrollment")
@@ -3598,7 +3642,8 @@ class TeraTermUI(customtkinter.CTk):
         self.auto_enroll_bool = False
         self.countdown_running = False
         self.running_countdown.set(False)  # Stop the countdown
-        self.timer_window.destroy()  # Destroy the countdown window
+        if self.timer_window and self.timer_window.winfo_exists():
+            self.timer_window.destroy()  # Destroy the countdown window
         self.auto_enroll.deselect()
         self.disable_enable_gui()
 
@@ -3649,6 +3694,24 @@ class TeraTermUI(customtkinter.CTk):
         self.timer_window.bind("<Escape>", lambda event: self.end_countdown())
         self.cancel_button.pack(pady=25)
         self.timer_window.protocol("WM_DELETE_WINDOW", self.end_countdown)
+
+    def bring_back_timer_window(self):
+        if self.window_exists("Auto-Enroll"):
+            handle = win32gui.FindWindow(None, "Auto-Enroll")
+            self.timer_window.deiconify()
+            win32gui.SetForegroundWindow(handle)
+            self.timer_window.focus_force()
+            self.timer_window.lift()
+            self.timer_window.attributes("-topmost", 1)
+            self.timer_window.after_idle(self.timer_window.attributes, "-topmost", 0)
+        elif self.window_exists("Auto-Matrícula"):
+            handle = win32gui.FindWindow(None, "Auto-Matrícula")
+            self.timer_window.deiconify()
+            win32gui.SetForegroundWindow(handle)
+            self.timer_window.focus_force()
+            self.timer_window.lift()
+            self.timer_window.attributes("-topmost", 1)
+            self.timer_window.after_idle(self.timer_window.attributes, "-topmost", 0)
 
     def disable_enable_gui(self):
         if self.countdown_running:
@@ -4998,20 +5061,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.show_sidebar_windows()
                         if not self.in_multiple_screen:
                             self.switch_tab()
-                        if self.window_exists("Auto-Enroll"):
-                            handle = win32gui.FindWindow(None, "Auto-Enroll")
-                            win32gui.SetForegroundWindow(handle)
-                            self.timer_window.focus_force()
-                            self.timer_window.lift()
-                            self.timer_window.attributes("-topmost", 1)
-                            self.timer_window.after_idle(self.timer_window.attributes, "-topmost", 0)
-                        elif self.window_exists("Auto-Matrícula"):
-                            handle = win32gui.FindWindow(None, "Auto-Matrícula")
-                            win32gui.SetForegroundWindow(handle)
-                            self.timer_window.focus_force()
-                            self.timer_window.lift()
-                            self.timer_window.attributes("-topmost", 1)
-                            self.timer_window.after_idle(self.timer_window.attributes, "-topmost", 0)
+                        self.bring_back_timer_window()
                     else:
                         self.stop_check_idle.is_set()
             if self.idle_num_check == 6:
