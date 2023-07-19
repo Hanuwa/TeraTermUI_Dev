@@ -942,7 +942,7 @@ class TeraTermUI(customtkinter.CTk):
                                 enrolled_classes = "ENROLLED"
                                 count_enroll = text_output.count(enrolled_classes)
                                 if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output and \
-                                        "VUELVA LUEGO" not in text_output and "REGISTRATION DATA " in text_output and \
+                                        "VUELVA LUEGO" not in text_output and "REGISTRATION DATA" in text_output and \
                                         count_enroll != 15:
                                     self.e_counter = 0
                                     send_keys("{TAB 2}")
@@ -1569,7 +1569,7 @@ class TeraTermUI(customtkinter.CTk):
                             enrolled_classes = "ENROLLED"
                             count_enroll = text_output.count(enrolled_classes)
                             if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output and \
-                                    "VUELVA LUEGO" not in text_output and "REGISTRATION DATA " \
+                                    "VUELVA LUEGO" not in text_output and "REGISTRATION DATA" \
                                     in text_output and count_enroll != 15:
                                 self.e_counter = 0
                                 self.m_counter = 0
@@ -3505,7 +3505,6 @@ class TeraTermUI(customtkinter.CTk):
                 elif self.auto_enroll.get() == "off":
                     self.countdown_running = False
                     self.auto_enroll_bool = False
-                    self.hide_loading_screen()
                     self.after(0, self.disable_enable_gui)
                     # If the countdown is running, stop it and destroy the timer window
                     if hasattr(self, "running_countdown") and self.running_countdown \
