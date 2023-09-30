@@ -52,12 +52,15 @@ nuitka_command = (
     r'\customtkinter=customtkinter" --include-data-dir="'+project_directory+r'\venv\Lib\site-packages'
     r'\CTkMessageBox=CTkMessageBox" --include-package=CTkToolTip '
     r'--include-data-dir="'+project_directory+r'\images=images" '
+    r'--include-data-dir="'+project_directory+r'\slideshow=slideshow" '                                           
     r'--include-data-dir="'+project_directory+r'\sounds=sounds" '
     r'--include-data-file="'+project_directory+r'\database.db=database.db" '
     r'--include-data-file="'+project_directory+r'\Tesseract-OCR.7z=Tesseract-OCR.7z" '
     r'--include-data-file="'+project_directory+r'\feedback.zip=feedback.zip" '
     r'--include-data-file="'+project_directory+r'\VERSION.txt=VERSION.txt" '
     r'--include-data-file="'+project_directory+r'\LICENSE.txt=LICENSE.txt" '
+    r'--include-data-file="'+project_directory+r'\english.json=english.json" '     
+    r'--include-data-file="'+project_directory+r'\spanish.json=spanish.json" '                                                
     r'--output-dir="'+output_directory+r'" --disable-console '
     r'--windows-icon-from-ico="'+project_directory+r'\images\tera-term.ico" '
     r'--lto=yes --nofollow-import-to=unittest --nofollow-import-to=reportlab.graphics.testshapes'
@@ -97,7 +100,7 @@ for version in versions:
             script = "installer"
             data = data.replace('if not os.path.isfile(db_path):',
                                 'if not os.path.exists(self.db_path):')
-            data = data.replace('self.connection = sqlite3.connect("database.db", check_same_thread=False)',
+            data = data.replace('self.connection = sqlite3.connect(db_path, check_same_thread=False)',
                                 'self.connection = sqlite3.connect(self.db_path, check_same_thread=False)')
             data = data.replace('closing(sqlite3.connect("database.db")) as connection',
                                 'closing(sqlite3.connect(self.db_path)) as connection')
@@ -113,7 +116,7 @@ for version in versions:
             data = data.replace('if not os.path.exists(self.db_path):',
                                 'if not os.path.isfile(db_path):')
             data = data.replace('self.connection = sqlite3.connect(self.db_path, check_same_thread=False)',
-                                'self.connection = sqlite3.connect("database.db", check_same_thread=False)')
+                                'self.connection = sqlite3.connect(db_path, check_same_thread=False)')
             data = data.replace('closing(sqlite3.connect(self.db_path)) as connection',
                                 'closing(sqlite3.connect("database.db")) as connection')
             data = data.replace('with open(self.ath, "rb"):',
@@ -152,7 +155,7 @@ for version in versions:
         except Exception as e:
             print(Fore.RED + f"Error renaming folder: {e}\n" + Style.RESET_ALL)
             sys.exit(1)
-            
+
         try:
             os.remove(os.path.join(output_directory, "TeraTermUI_installer", "database.db"))
             os.remove(os.path.join(output_directory, "TeraTermUI_installer", "feedback.zip"))
