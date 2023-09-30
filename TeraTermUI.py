@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 7/19/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 9/30/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -231,7 +231,8 @@ class TeraTermUI(customtkinter.CTk):
                                               command=self.login_event_handler)
         self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(20, 20))
         self.log_in.configure(state="disabled")
-        self.intro_box = customtkinter.CTkTextbox(self, height=245, width=400)
+        self.slideshow_frame = ImageSlideshow(self, 'slideshow', interval=5, width=300, height=150)
+        self.intro_box = customtkinter.CTkTextbox(self, height=120, width=400)
         self.intro_box.insert("0.0", "Welcome to the Tera Term UI Application!\n\n" +
                               "The purpose of this application"
                               " is to facilitate the process enrolling and dropping classes, "
@@ -259,7 +260,8 @@ class TeraTermUI(customtkinter.CTk):
                               "IMPORTANT: DO NOT USE WHILE HAVING ANOTHER INSTANCE OF THE APPLICATION OPENED.  "
                               "")
         self.intro_box.configure(state="disabled", wrap="word", border_spacing=7)
-        self.intro_box.grid(row=1, column=1, padx=(20, 0), pady=(0, 0))
+        self.intro_box.grid(row=1, column=1, padx=(20, 0), pady=(0, 150))
+        self.slideshow_frame.grid(row=1, column=1, padx=(20, 0), pady=(140, 0))
 
         # (Log-in Screen)
         self.authentication_frame = customtkinter.CTkFrame(self, corner_radius=10)
@@ -446,6 +448,8 @@ class TeraTermUI(customtkinter.CTk):
         self.teraterm_file = "C:/Program Files (x86)/teraterm/TERATERM.ini"
         self.original_font = None
         # Database
+        self.translations_cache = {}
+        translation = self.load_language(self.language_menu.get())
         appdata_path = os.getenv("APPDATA")
         self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
         self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
@@ -455,7 +459,7 @@ class TeraTermUI(customtkinter.CTk):
             db_path = "database.db"
             if not os.path.isfile(db_path):
                 raise Exception("Database file not found.")
-            self.connection = sqlite3.connect("database.db", check_same_thread=False)
+            self.connection = sqlite3.connect(db_path, check_same_thread=False)
             self.cursor = self.connection.cursor()
             self.save = self.cursor.execute("SELECT class, section, semester, action FROM save_classes"
                                             " WHERE class IS NOT NULL").fetchall()
@@ -500,17 +504,8 @@ class TeraTermUI(customtkinter.CTk):
                 # Pop up message that appears only the first time the user uses the application
                 def show_message_box():
                     winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    if self.language_menu.get() == "English":
-                        CTkMessagebox(master=self, title="Welcome",
-                                      message="Welcome to Tera Term UI!\n\n"
-                                              "Make sure to not interact with Tera Term"
-                                              " while the application is performing tasks", button_width=380)
-                    elif self.language_menu.get() == "Español":
-                        CTkMessagebox(master=self, title="Bienvenido",
-                                      message="¡Bienvenido a Tera Term UI!\n\n"
-                                              "Asegúrese de no interactuar con Tera Term"
-                                              " mientras la aplicación está "
-                                              "realizando tareas", button_width=380)
+                    CTkMessagebox(master=self, title=translation["welcome_title"],
+                                  message=translation["welcome_message"], button_width=380)
                     self.status_button.configure(state="normal")
                     self.help_button.configure(state="normal")
                     self.log_in.configure(state="normal")
@@ -548,8 +543,6 @@ class TeraTermUI(customtkinter.CTk):
 
         # Asks the user if they want to update to the latest version of the application
         def update_app():
-            msg = None
-            lang = self.language_menu.get()
             current_date = datetime.today().strftime("%Y-%m-%d")
             date = self.cursor.execute("SELECT date FROM user_data WHERE date IS NOT NULL").fetchall()
             dates_list = [record[0] for record in date]
@@ -558,22 +551,12 @@ class TeraTermUI(customtkinter.CTk):
                     latest_version = self.get_latest_release()
                     if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION) and results["welcome"]:
                         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                        if lang == "English":
-                            msg = CTkMessagebox(master=self, title="Update",
-                                                message="A newer version of the application is available,\n\n"
-                                                        "would you like to update?",
-                                                icon="question",
-                                                option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
-                                                button_color=("#c30101", "#145DA0", "#145DA0"),
-                                                hover_color=("darkred", "darkblue", "darkblue"))
-                        elif lang == "Español":
-                            msg = CTkMessagebox(master=self, title="Actualización",
-                                                message="Una nueva de versión de la aplicación esta disponible,\n\n "
-                                                        "¿desea actualizar?",
-                                                icon="question",
-                                                option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
-                                                button_color=("#c30101", "#145DA0", "#145DA0"),
-                                                hover_color=("darkred", "darkblue", "darkblue"))
+                        msg = CTkMessagebox(master=self, title=translation["update_popup_title"],
+                                            message=translation["update_popup_message"],
+                                            icon="question", option_1=translation["option_1"],
+                                            option_2=translation["option_2"], option_3=translation["option_3"],
+                                            icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                            hover_color=("darkred", "darkblue", "darkblue"))
                         response = msg.get()
                         if response[0] == "Yes" or response[0] == "Sí":
                             webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
@@ -589,26 +572,19 @@ class TeraTermUI(customtkinter.CTk):
                 del dates_list, date, current_date
 
         self.after(100, update_app)
-        del user_data_fields, results, SPANISH, language_id,\
+        del user_data_fields, results, SPANISH, language_id, \
             scaling_factor, screen_width, screen_height, width, height, x, y, db_path
         gc.collect()
 
     # function that when the user tries to close the application a confirm dialog opens up
     def on_closing(self):
-        msg = None
         lang = self.language_menu.get()
-        if lang == "English":
-            msg = CTkMessagebox(master=self, title="Exit", message="Are you sure you want to exit the application?",
-                                icon="question",
-                                option_1="Close Tera Term?", option_2="No", option_3="Yes", icon_size=(65, 65),
-                                button_color=("#c30101", "#c30101", "#145DA0"), option_1_type="checkbox",
-                                hover_color=("darkred", "darkred", "darkblue"))
-        elif lang == "Español":
-            msg = CTkMessagebox(master=self, title="Salir", message="¿Estás seguro que quieres salir de la aplicación?",
-                                icon="question",
-                                option_1="¿Cerrar Tera Term?", option_2="No", option_3="Sí", icon_size=(65, 65),
-                                button_color=("#c30101", "#c30101", "#145DA0"), option_1_type="checkbox",
-                                hover_color=("darkred", "darkred", "darkblue"))
+        translation = self.load_language(lang)
+        msg = CTkMessagebox(master=self, title=translation["exit"], message=translation["exit_message"],
+                            icon="question", option_1=translation["close_tera_term"],
+                            option_2=translation["option_2"], option_3=translation["option_3"], icon_size=(65, 65),
+                            button_color=("#c30101", "#c30101", "#145DA0"), option_1_type="checkbox",
+                            hover_color=("darkred", "darkred", "darkblue"))
         on_exit = self.cursor.execute("SELECT exit FROM user_data").fetchall()
         if on_exit[0][0] == "1":
             msg.check_checkbox()
@@ -650,6 +626,7 @@ class TeraTermUI(customtkinter.CTk):
             self.hide_sidebar_windows()
             self.unbind("<Return>")
             lang = self.language_menu.get()
+            translation = self.load_language(lang)
             aes_key = secrets.token_bytes(32)  # 256-bit key
             mac_key = secrets.token_bytes(32)  # separate 256-bit key for HMAC
             iv = get_random_bytes(16)  # for AES CBC mode
@@ -722,10 +699,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.bind("<Return>", lambda event: self.tuition_event_handler())
                                 if "PASS" in text_output:
                                     send_keys("{TAB 2}")
-                                if lang == "English":
-                                    self.after(0, self.show_error_message, 300, 215, "Error! Invalid SSN or Code")
-                                if lang == "Español":
-                                    self.after(0, self.show_error_message, 300, 215, "¡Error! SSN o Código Incorrecto")
+                                self.after(0, self.show_error_message, 300, 215, translation["error_ssn"])
                             elif "ID NOT ON FILE" not in text_output or "PASS" not in text_output:
                                 self.reset_activity_timer(None)
                                 self.start_check_idle_thread()
@@ -743,36 +717,19 @@ class TeraTermUI(customtkinter.CTk):
                                 self.set_focus_to_tkinter()
                         else:
                             self.bind("<Return>", lambda event: self.tuition_event_handler())
-                            if lang == "English":
-                                self.after(0, self.show_error_message, 300, 215, "Error! Invalid SSN or Code")
-                            elif lang == "Español":
-                                self.after(0, self.show_error_message, 300, 215, "¡Error! SSN o Código Incorrecto")
+                            self.after(0, self.show_error_message, 300, 215, translation["error_ssn"])
                     except ValueError:
                         self.bind("<Return>", lambda event: self.tuition_event_handler())
-                        if lang == "English":
-                            self.after(0, self.show_error_message, 300, 215, "Error! Invalid SSN or Code")
-                        elif lang == "Español":
-                            self.after(0, self.show_error_message, 300, 215, "¡Error! SSN o Código Incorrecto")
+                        self.after(0, self.show_error_message, 300, 215, translation["error_ssn"])
                 else:
                     self.bind("<Return>", lambda event: self.tuition_event_handler())
-                    if lang == "English":
-                        self.after(0, self.show_error_message, 300, 215, "Error! Tera Term isn't running")
-                    elif lang == "Español":
-                        self.after(0, self.show_error_message, 300, 215, "¡Error! Tera Term no esta corriendo")
+                    self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
 
                     def server_maintenance():
                         self.destroy_windows()
                         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                        if lang == "English":
-                            CTkMessagebox(title="Server Maintenance",
-                                          message="If Tera Term closed itself, then it probably"
-                                                  " means that the server of the university is on"
-                                                  " maintenance, try again later", button_width=380)
-                        elif lang == "Español":
-                            CTkMessagebox(title="Mantenimiento de Servidor",
-                                          message="Si Tera Term se cerró solo, entonces probablemente"
-                                                  " significa que el servidor de la universidad está en"
-                                                  " mantenimiento, intente más tarde", button_width=380)
+                        CTkMessagebox(title=translation["server_maintenance_title"],
+                                      message=translation["server_maintenance"], button_width=380)
 
                     self.after(2500, server_maintenance)
             ctypes.windll.user32.BlockInput(False)
@@ -783,21 +740,13 @@ class TeraTermUI(customtkinter.CTk):
         finally:
             task_done.set()
             lang = self.language_menu.get()
+            translation = self.load_language(lang)
             if self.error_occurred:
                 self.destroy_windows()
                 winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                if lang == "English":
-                    CTkMessagebox(master=self, title="Error Information",
-                                  message="Error while performing and automating tasks! "
-                                          "Please make sure not to interrupt the execution of the applications\n\n "
-                                          "Might need to restart Tera Term UI",
-                                  icon="warning", button_width=380)
-                if lang == "Español":
-                    CTkMessagebox(master=self, title="Información del Error",
-                                  message="¡Error mientras se realizaban y automatizaban tareas!"
-                                          "Por favor trate de no interrumpir la ejecución de las aplicaciones\n\n "
-                                          "Tal vez necesite reiniciar Tera Term UI",
-                                  icon="warning", button_width=380)
+                CTkMessagebox(master=self, title=translation["automation_error_title"],
+                              message=translation["automation_error"],
+                              icon="warning", button_width=380)
                 self.error_occurred = False
 
     def tuition_frame(self):
@@ -859,6 +808,7 @@ class TeraTermUI(customtkinter.CTk):
     def submit_event_handler(self):
         msg = None
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         choice = self.radio_var.get().lower()
         self.focus_set()
         if lang == "English":
@@ -867,7 +817,8 @@ class TeraTermUI(customtkinter.CTk):
                                                                                  "\n\nWARNING: Make sure the "
                                                                                  "information is correct",
                                 icon="images/submit.png",
-                                option_1="Cancel", option_2="No", option_3="Yes",
+                                option_1=translation["option_1"], option_2=translation["option_2"],
+                                option_3=translation["option_3"],
                                 icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
                                 hover_color=("darkred", "darkblue", "darkblue"))
         elif lang == "Español":
@@ -878,7 +829,8 @@ class TeraTermUI(customtkinter.CTk):
                                                                                 "\n\nWARNING: Asegúrese de que la "
                                                                                 "información está correcta",
                                     icon="images/submit.png",
-                                    option_1="Cancelar", option_2="No", option_3="Sí",
+                                    option_1=translation["option_1"], option_2=translation["option_2"],
+                                    option_3=translation["option_3"],
                                     icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
                                     hover_color=("darkred", "darkblue", "darkblue"))
             if choice == "drop":
@@ -889,7 +841,8 @@ class TeraTermUI(customtkinter.CTk):
                                                                                          "que la información está "
                                                                                          "correcta",
                                     icon="images/submit.png",
-                                    option_1="Cancelar", option_2="No", option_3="Sí",
+                                    option_1=translation["option_1"], option_2=translation["option_2"],
+                                    option_3=translation["option_3"],
                                     icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
                                     hover_color=("darkred", "darkblue", "darkblue"))
         response = msg.get()
@@ -913,6 +866,7 @@ class TeraTermUI(customtkinter.CTk):
                 section = self.e_section_entry.get().upper().replace(" ", "")
                 semester = self.e_semester_entry.get().upper().replace(" ", "")
                 lang = self.language_menu.get()
+                translation = self.load_language(lang)
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
                         if (choice == "Register" and classes not in
@@ -979,12 +933,8 @@ class TeraTermUI(customtkinter.CTk):
                                                 self.enrolled_classes_list[section] = classes
                                             elif section in self.enrolled_classes_list:
                                                 del self.enrolled_classes_list[section]
-                                            if lang == "English":
-                                                self.after(0, self.show_success_message, 350, 265,
-                                                           "Enrolled class successfully")
-                                            elif lang == "Español":
-                                                self.after(0, self.show_success_message, 350, 265,
-                                                           "Clase registrada exitósamente")
+                                            self.after(0, self.show_success_message, 350, 265,
+                                                       translation["success_enrolled"])
                                         elif choice == "Drop":
                                             if section in self.enrolled_classes_list:
                                                 del self.enrolled_classes_list[section]
@@ -992,122 +942,62 @@ class TeraTermUI(customtkinter.CTk):
                                                 self.dropped_classes_list[section] = classes
                                             elif section in self.dropped_classes_list:
                                                 del self.dropped_classes_list[section]
-                                            if lang == "English":
-                                                self.after(0, self.show_success_message, 350, 265,
-                                                           "Dropped class successfully")
-                                            elif lang == "Español":
-                                                self.after(0, self.show_success_message, 350, 265,
-                                                           "Clase abandonada exitósamente")
+                                            self.after(0, self.show_success_message, 350, 265,
+                                                       translation["success_dropped"])
                                         if self.e_counter + self.m_counter == 15:
                                             time.sleep(3.2)
                                             self.submit.configure(state="disabled")
                                             self.multiple.configure(state="disabled")
-                                            if lang == "English":
-                                                self.after(0, self.show_information_message, 350, 265,
-                                                           "Reached Enrollment limit!")
-                                            elif lang == "Español":
-                                                self.after(0, self.show_information_message, 350, 265,
-                                                           "Llegó al Límite de Matrícula")
+                                            self.after(0, self.show_information_message, 350, 265,
+                                                       translation["enrollment_limit"])
                                         self.set_focus_to_tkinter()
                                     else:
-                                        if lang == "English":
-                                            self.after(0, self.show_error_message, 320, 235,
-                                                       "Error! Failed to enroll class")
-                                        elif lang == "Español":
-                                            self.after(0, self.show_error_message, 320, 235,
-                                                       "¡Error! No se pudo matricular la clase")
+                                        self.after(0, self.show_error_message, 320, 235,
+                                                   translation["failed_enroll"])
                                         self.set_focus_to_tkinter()
                                 else:
                                     if count_enroll == 15:
                                         self.submit.configure(state="disabled")
                                         self.submit_multiple.configure(sate="disabled")
-                                        if lang == "English":
-                                            self.after(0, self.show_information_message, 350, 265,
-                                                       "Reached Enrollment limit!")
-                                        elif lang == "Español":
-                                            self.after(0, self.show_information_message, 350, 265,
-                                                       "Llegó al Límite de Matrícula")
+                                        self.after(0, self.show_information_message, 350, 265,
+                                                   translation["enrollment_limit"])
                                     if "INVALID TERM SELECTION" in text_output:
                                         self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                         send_keys("{ENTER}")
                                         self.reset_activity_timer(None)
-                                        if lang == "English":
-                                            self.after(0, self.show_error_message, 300, 215,
-                                                       "¡Error! Invalid Semester")
-                                        elif lang == "Español":
-                                            self.after(0, self.show_error_message, 300, 215,
-                                                       "¡Error! Semestre Inválido")
+                                        self.after(0, self.show_error_message, 300, 215,
+                                                   translation["invalid_semester"])
                                     else:
                                         if "VUELVA LUEGO" not in text_output:
                                             self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                             send_keys("{ENTER}")
                                             self.reset_activity_timer(None)
-                                        if lang == "English":
                                             self.after(0, self.show_error_message, 300, 210,
-                                                       "Error! Failed to enroll class")
-                                            if not self.enrollment_error_check:
-                                                self.after(2500, self.show_enrollment_error_information)
-                                                self.enrollment_error_check = True
-                                        elif lang == "Español":
-                                            self.after(0, self.show_error_message, 320, 210,
-                                                       "¡Error! No se pudo matricular la clase")
+                                                       translation["failed_enroll"])
                                             if not self.enrollment_error_check:
                                                 self.after(2500, self.show_enrollment_error_information)
                                                 self.enrollment_error_check = True
                                     self.set_focus_to_tkinter()
                             else:
                                 if not classes or not section or not semester:
-                                    if lang == "English":
-                                        self.after(0, self.show_error_message, 350, 230,
-                                                   "Error! Missing information about\n"
-                                                   " the class you want to enroll")
-                                    elif lang == "Español":
-                                        self.after(0, self.show_error_message, 350, 230,
-                                                   "¡Error! Le falta información de la\n"
-                                                   " clase que deseas matricular")
+                                    self.after(0, self.show_error_message, 350, 230, translation["missing_info"])
                                 elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE):
-                                    if lang == "English":
-                                        self.after(0, self.show_error_message, 360, 230,
-                                                   "Error! Wrong Format for Class")
-                                    elif lang == "Español":
-                                        self.after(0, self.show_error_message, 360, 230,
-                                                   "¡Error! Formato Incorrecto de la Clase")
+                                    self.after(0, self.show_error_message, 360, 230, translation["class_format_error"])
                                 elif not re.fullmatch("^[A-Z]{2}1$", section, flags=re.IGNORECASE):
-                                    if lang == "English":
-                                        self.after(0, self.show_error_message, 360, 230,
-                                                   "Error! Wrong Format for Section")
-                                    elif lang == "Español":
-                                        self.after(0, self.show_error_message, 360, 230,
-                                                   "¡Error! Formato Incorrecto de la Sección")
+                                    self.after(0, self.show_error_message, 360, 230,
+                                               translation["section_format_error"])
                                 elif not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE):
-                                    if lang == "English":
-                                        self.after(0, self.show_error_message, 360, 230,
-                                                   "Error! Wrong Format for Semester")
-                                    elif lang == "Español":
-                                        self.after(0, self.show_error_message, 360, 230,
-                                                   "¡Error! Formato Incorrecto del Semestre")
+                                    self.after(0, self.show_error_message, 360, 230,
+                                               translation["semester_format_error"])
                         else:
                             if classes in self.enrolled_classes_list.values() or section in self.enrolled_classes_list:
-                                if lang == "English":
-                                    self.after(0, self.show_error_message, 335, 240,
-                                               "Error! Class or section already registered")
-                                elif lang == "Español":
-                                    self.after(0, self.show_error_message, 335, 240,
-                                               "¡Error! Ya la clase o la sección\n está registrada")
+                                self.after(0, self.show_error_message, 335, 240, translation["already_enrolled"])
                             if classes in self.dropped_classes_list.values() or section in self.dropped_classes_list:
-                                if lang == "English":
-                                    self.after(0, self.show_error_message, 335, 240,
-                                               "Error! Class or section already dropped")
-                                elif lang == "Español":
-                                    self.after(0, self.show_error_message, 335, 240,
-                                               "¡Error! Ya se dio de baja \nde esa clase o sección")
+                                self.after(0, self.show_error_message, 335, 240, translation["already_dropped"])
                     else:
-                        if lang == "English":
-                            self.after(0, self.show_error_message, 300, 215, "Error! Tera Term is disconnected")
-                        elif lang == "Español":
-                            self.after(0, self.show_error_message, 300, 215, "¡Error! Tera Term esta desconnectado")
+                        self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
                 ctypes.windll.user32.BlockInput(False)
                 self.show_sidebar_windows()
             except Exception as e:
@@ -1116,21 +1006,13 @@ class TeraTermUI(customtkinter.CTk):
             finally:
                 task_done.set()
                 lang = self.language_menu.get()
+                translation = self.load_language(lang)
                 if self.error_occurred:
                     self.destroy_windows()
                     winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    if lang == "English":
-                        CTkMessagebox(master=self, title="Error Information",
-                                      message="Error while performing and automating tasks! "
-                                              "Please make sure not to interrupt the execution of the applications\n\n "
-                                              "Might need to restart Tera Term UI",
-                                      icon="warning", button_width=380)
-                    if lang == "Español":
-                        CTkMessagebox(master=self, title="Información del Error",
-                                      message="¡Error mientras se realizaban y automatizaban tareas!"
-                                              "Por favor trate de no interrumpir la ejecución de las aplicaciones\n\n "
-                                              "Tal vez necesite reiniciar Tera Term UI",
-                                      icon="warning", button_width=380)
+                    CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                  message=translation["automation_error"],
+                                  icon="warning", button_width=380)
                     self.error_occurred = False
                 self.bind("<Return>", lambda event: self.submit_event_handler())
 
@@ -1153,6 +1035,7 @@ class TeraTermUI(customtkinter.CTk):
                 semester = self.s_semester_entry.get().upper().replace(" ", "")
                 show_all = self.show_all.get()
                 lang = self.language_menu.get()
+                translation = self.load_language(lang)
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
                         if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE)
@@ -1168,6 +1051,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys(semester)
                             send_keys("{ENTER}")
                             if self.passed and self.search_function_counter == 0:
+                                self.uprb.window().menu_select("Edit")
                                 self.uprb.window().menu_select("Edit->Select screen")
                                 self.uprb.UprbayTeraTermVt.type_keys("%c")
                                 self.uprbay_window.click_input(button="left")
@@ -1208,57 +1092,30 @@ class TeraTermUI(customtkinter.CTk):
                                 send_keys("{ENTER}")
                                 self.reset_activity_timer(None)
                                 if "INVALID TERM SELECTION" in text_output:
-                                    if lang == "English":
-                                        self.after(0, self.show_error_message, 320, 235,
-                                                   "Error! Invalid Semester!")
-                                    elif lang == "Español":
-                                        self.after(0, self.show_error_message, 320, 235,
-                                                   "¡Error! ¡Semestre Inválido!")
+                                    self.after(0, self.show_error_message, 320, 235, translation["invalid_semester"])
                                 if "INVALID ACTION" in text_output:
-                                    if lang == "English":
-                                        self.after(0, self.show_error_message, 320, 235,
-                                                   "Error! Failed to search class!")
-                                    elif lang == "Español":
-                                        self.after(0, self.show_error_message, 320, 235,
-                                                   "¡Error! ¡Problema al buscar la clase!")
+                                    self.after(0, self.show_error_message, 320, 235, translation["failed_to_search"])
+                                self.search_function_counter += 1
                             else:
                                 self.search_function_counter += 1
+                                self.uprb.window().menu_select("Edit")
                                 self.uprb.window().menu_select("Edit->Select screen")
                                 self.uprb.UprbayTeraTermVt.type_keys("%c")
                                 self.uprbay_window.click_input(button="left")
                                 copy = clipboard.paste()
                                 data, course_found, invalid_action = TeraTermUI.extract_class_data(copy)
+                                self.get_class_for_pdf = self.s_classes_entry.get().replace(" ", "").upper()
                                 self.after(0, self.display_data, data)
                                 self.clipboard_clear()
                         else:
                             if not classes or not semester:
-                                if lang == "English":
-                                    self.after(0, self.show_error_message, 350, 230,
-                                               "Error! Missing information about\n"
-                                               " the class you want to search")
-                                elif lang == "Español":
-                                    self.after(0, self.show_error_message, 350, 230,
-                                               "¡Error! Le falta información de la\n"
-                                               " clase que deseas buscar")
+                                self.after(0, self.show_error_message, 350, 230, translation["missing_info_search"])
                             elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE):
-                                if lang == "English":
-                                    self.after(0, self.show_error_message, 360, 230,
-                                               "Error! Wrong Format for Class")
-                                elif lang == "Español":
-                                    self.after(0, self.show_error_message, 360, 230,
-                                               "¡Error! Formato Incorrecto de la Clase")
+                                self.after(0, self.show_error_message, 360, 230, translation["class_format_error"])
                             elif not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE):
-                                if lang == "English":
-                                    self.after(0, self.show_error_message, 360, 230,
-                                               "Error! Wrong Format for Semester")
-                                elif lang == "Español":
-                                    self.after(0, self.show_error_message, 360, 230,
-                                               "¡Error! Formato Incorrecto del Semestre")
+                                self.after(0, self.show_error_message, 360, 230, translation["semester_format_error"])
                     else:
-                        if lang == "English":
-                            self.after(0, self.show_error_message, 300, 215, "Error! Tera Term is disconnected")
-                        elif lang == "Español":
-                            self.after(0, self.show_error_message, 300, 215, "¡Error! Tera Term esta desconnectado")
+                        self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
                 self.show_sidebar_windows()
             except Exception as e:
                 print("An error occurred: ", e)
@@ -1266,21 +1123,13 @@ class TeraTermUI(customtkinter.CTk):
             finally:
                 task_done.set()
                 lang = self.language_menu.get()
+                translation = self.load_language(lang)
                 if self.error_occurred:
                     self.destroy_windows()
                     winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    if lang == "English":
-                        CTkMessagebox(master=self, title="Error Information",
-                                      message="Error while performing and automating tasks! "
-                                              "Please make sure not to interrupt the execution of the applications\n\n "
-                                              "Might need to restart Tera Term UI",
-                                      icon="warning", button_width=380)
-                    if lang == "Español":
-                        CTkMessagebox(master=self, title="Información del Error",
-                                      message="¡Error mientras se realizaban y automatizaban tareas!"
-                                              "Por favor trate de no interrumpir la ejecución de las aplicaciones\n\n "
-                                              "Tal vez necesite reiniciar Tera Term UI",
-                                      icon="warning", button_width=380)
+                    CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                  message=translation["automation_error"],
+                                  icon="warning", button_width=380)
                     self.error_occurred = False
                 self.bind("<Return>", lambda event: self.search_event_handler())
 
@@ -1299,6 +1148,7 @@ class TeraTermUI(customtkinter.CTk):
             self.focus_set()
             self.unbind("<Return>")
             lang = self.language_menu.get()
+            translation = self.load_language(lang)
             width = 910
             height = 485
             scaling_factor = self.tk.call("tk", "scaling")
@@ -1306,94 +1156,47 @@ class TeraTermUI(customtkinter.CTk):
             screen_height = self.winfo_screenheight()
             x = (screen_width - width * scaling_factor) / 2
             y = (screen_height - height * scaling_factor) / 2
-            if lang == "Español":
-                dialog = customtkinter.CTkInputDialog(text="Escriba el semestre:", title="Enseñar Mis Classes")
-                dialog.geometry(f"{int(x) + 512}+{int(y + 225)}")
-                dialog.after(201, lambda: dialog.iconbitmap("images/tera-term.ico"))
-                dialog_input = dialog.get_input()
-                if dialog_input is not None:
-                    dialog_input = dialog_input.replace(" ", "").upper()
-                    if asyncio.run(self.test_connection(lang)) and self.check_server():
-                        if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
-                            if re.fullmatch("^[A-Z][0-9]{2}$", dialog_input, flags=re.IGNORECASE):
-                                block_window = customtkinter.CTkToplevel()
-                                block_window.attributes("-alpha", 0.0)
-                                block_window.grab_set()
-                                ctypes.windll.user32.BlockInput(True)
-                                term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
-                                if term_window.isMinimized:
-                                    term_window.restore()
-                                self.uprbay_window.wait("visible", timeout=10)
+            dialog = customtkinter.CTkInputDialog(text=translation["dialog_message"],
+                                                  title=translation["dialog_title"])
+            dialog.geometry(f"{int(x) + 512}+{int(y + 225)}")
+            dialog.after(201, lambda: dialog.iconbitmap("images/tera-term.ico"))
+            dialog_input = dialog.get_input()
+            if dialog_input is not None:
+                dialog_input = dialog_input.replace(" ", "").upper()
+                if asyncio.run(self.test_connection(lang)) and self.check_server():
+                    if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
+                        if re.fullmatch("^[A-Z][0-9]{2}$", dialog_input, flags=re.IGNORECASE):
+                            block_window = customtkinter.CTkToplevel()
+                            block_window.attributes("-alpha", 0.0)
+                            block_window.grab_set()
+                            ctypes.windll.user32.BlockInput(True)
+                            term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
+                            if term_window.isMinimized:
+                                term_window.restore()
+                            self.uprbay_window.wait("visible", timeout=10)
+                            self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                            send_keys("{ENTER}")
+                            self.uprb.UprbayTeraTermVt.type_keys("1CP")
+                            self.uprb.UprbayTeraTermVt.type_keys(dialog_input.replace(" ", "").upper())
+                            send_keys("{ENTER}")
+                            text_output = self.capture_screenshot()
+                            if "INVALID TERM SELECTION" in text_output:
+                                self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                 send_keys("{ENTER}")
-                                self.uprb.UprbayTeraTermVt.type_keys("1CP")
-                                self.uprb.UprbayTeraTermVt.type_keys(dialog_input.replace(" ", "").upper())
-                                send_keys("{ENTER}")
-                                text_output = self.capture_screenshot()
-                                if "INVALID TERM SELECTION" in text_output:
-                                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                    send_keys("{ENTER}")
-                                    self.reset_activity_timer(None)
-                                    self.show_error_message(300, 215, "¡Error! Semestre Inválido")
-                                ctypes.windll.user32.BlockInput(False)
                                 self.reset_activity_timer(None)
-                                self.disable_go_next_buttons()
-                                block_window.destroy()
-                                self.after(100, self.unfocus_tkinter)
-                            else:
-                                self.show_error_message(300, 215, "¡Error! Semestre Inválido")
+                                self.show_error_message(300, 215, translation["invalid_semester"])
+                            ctypes.windll.user32.BlockInput(False)
+                            self.reset_activity_timer(None)
+                            self.disable_go_next_buttons()
+                            block_window.destroy()
+                            self.after(100, self.unfocus_tkinter)
                         else:
-                            if lang == "English":
-                                self.show_error_message(300, 215, "Error! Tera Term is disconnected")
-                            elif lang == "Español":
-                                self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
-                else:
-                    dialog.destroy()
-            elif lang == "English":
-                dialog = customtkinter.CTkInputDialog(text="Enter the semester:", title="Show My Classes")
-                dialog.geometry(f"{int(x) + 512}+{int(y + 225)}")
-                dialog.after(201, lambda: dialog.iconbitmap("images/tera-term.ico"))
-                dialog_input = dialog.get_input()
-                if dialog_input is not None:
-                    dialog_input = dialog_input.replace(" ", "").upper()
-                    if asyncio.run(self.test_connection(lang)) and self.check_server():
-                        if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
-                            if re.match("^[A-Z][0-9]{2}$", dialog_input, flags=re.IGNORECASE):
-                                block_window = customtkinter.CTkToplevel()
-                                block_window.attributes("-alpha", 0.0)
-                                block_window.grab_set()
-                                ctypes.windll.user32.BlockInput(True)
-                                term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
-                                if term_window.isMinimized:
-                                    term_window.restore()
-                                self.uprbay_window.wait("visible", timeout=10)
-                                self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                send_keys("{ENTER}")
-                                self.uprb.UprbayTeraTermVt.type_keys("1CP")
-                                self.uprb.UprbayTeraTermVt.type_keys(dialog_input)
-                                send_keys("{ENTER}")
-                                text_output = self.capture_screenshot()
-                                if "INVALID TERM SELECTION" in text_output:
-                                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                    send_keys("{ENTER}")
-                                    self.reset_activity_timer(None)
-                                    self.show_error_message(300, 215, "Error! Invalid Semester")
-                                ctypes.windll.user32.BlockInput(False)
-                                self.reset_activity_timer(None)
-                                self.disable_go_next_buttons()
-                                block_window.destroy()
-                                self.after(100, self.unfocus_tkinter)
-                            else:
-                                self.show_error_message(300, 215, "Error! Invalid Semester")
-                        else:
-                            if lang == "English":
-                                self.show_error_message(300, 215, "Error! Tera Term is disconnected")
-                            elif lang == "Español":
-                                self.show_error_message(300, 215, "¡Error! Tera Term esta desconnectado")
-                else:
-                    dialog.destroy()
+                            self.show_error_message(300, 215, translation["invalid_semester"])
+                    else:
+                        self.show_error_message(300, 215, translation["tera_term_not_running"])
+            else:
+                dialog.destroy()
         self.show_sidebar_windows()
         self.switch_tab()
 
@@ -1401,6 +1204,7 @@ class TeraTermUI(customtkinter.CTk):
     def add_event(self):
         self.focus_set()
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         semester = self.m_semester_entry[0].get().upper()
         if re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE):
             if self.a_counter + 1 < len(self.m_semester_entry):  # Making sure we don't exceed the list index
@@ -1424,15 +1228,9 @@ class TeraTermUI(customtkinter.CTk):
                     self.m_add.configure(state="disabled")
         else:
             if not semester:
-                if lang == "English":
-                    self.show_error_message(350, 255, "Error! Must enter \n\n the semester")
-                elif lang == "Español":
-                    self.show_error_message(350, 255, "¡Error! Debe escribir el \n\n semestre")
+                self.show_error_message(350, 255, translation["add_no_semester"])
             else:
-                if lang == "English":
-                    self.show_error_message(350, 255, "Error! Must enter \n\n a valid semester")
-                elif lang == "Español":
-                    self.show_error_message(350, 255, "¡Error! Debe escribir \n\n un semestre válido")
+                self.show_error_message(350, 255, translation["add_invalid_semester"])
 
     # function that removes existing entries
     def remove_event(self):
@@ -1500,26 +1298,17 @@ class TeraTermUI(customtkinter.CTk):
         self.t_buttons_frame.grid_forget()
 
     def submit_multiple_event_handler(self):
-        msg = None
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         self.focus_set()
         if not self.started_auto_enroll:
-            if lang == "English":
-                msg = CTkMessagebox(master=self, title="Submit",
-                                    message="Are you sure you are ready to submit the classes?"
-                                            " \n\nWARNING: Make sure the information is correct",
-                                    icon="images/submit.png",
-                                    option_1="Cancel", option_2="No", option_3="Yes",
-                                    icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                                    hover_color=("darkred", "darkblue", "darkblue"))
-            elif lang == "Español":
-                msg = CTkMessagebox(master=self, title="Someter",
-                                    message="¿Estás preparado para someter las clases?"
-                                            " \n\nWARNING: Asegúrese de que la información está correcta",
-                                    icon="images/submit.png",
-                                    option_1="Cancelar", option_2="No", option_3="Sí",
-                                    icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                                    hover_color=("darkred", "darkblue", "darkblue"))
+            msg = CTkMessagebox(master=self, title=translation["submit"],
+                                message=translation["enroll_multiple"],
+                                icon="images/submit.png",
+                                option_1=translation["option_1"], option_2=translation["option_2"],
+                                option_3=translation["option_3"],
+                                icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                hover_color=("darkred", "darkblue", "darkblue"))
             response = msg.get()
             if response[0] != "Yes" and response[0] != "Sí":
                 return
@@ -1539,6 +1328,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.hide_sidebar_windows()
                 self.unbind("<Return>")
                 lang = self.language_menu.get()
+                translation = self.load_language(lang)
                 classes = []
                 sections = []
                 semester = self.m_semester_entry[0].get().upper().replace(" ", "")
@@ -1621,29 +1411,15 @@ class TeraTermUI(customtkinter.CTk):
                                                     self.dropped_classes_list[sec] = cls
                                     if "CONFIRMED" in text and "DROPPED" in text:
                                         send_keys("{ENTER}")
-                                        if lang == "English":
-                                            self.after(0, self.show_success_message, 350, 265,
-                                                       "Enrolled and dropped classes\n"
-                                                       " successfully")
-                                        elif lang == "Español":
-                                            self.after(0, self.show_success_message, 350, 265,
-                                                       "Clases matriculadas y \n"
-                                                       " abandonadas exitósamente")
+                                        self.after(0, self.show_success_message, 350, 265,
+                                                   translation["enrolled_dropped_multiple_success"])
                                     elif "CONFIRMED" in text and "DROPPED" not in text:
                                         send_keys("{ENTER}")
-                                        if lang == "English":
-                                            self.after(0, self.show_success_message, 350, 265,
-                                                       "Enrolled classes successfully")
-                                        elif lang == "Español":
-                                            self.after(0, self.show_success_message, 350, 265,
-                                                       "Clases matriculadas exitósamente")
+                                        self.after(0, self.show_success_message, 350, 265,
+                                                   translation["enrolled_multiple_success"])
                                     elif "DROPPED" in text and "CONFIRMED" not in text:
-                                        if lang == "English":
-                                            self.after(0, self.show_success_message, 350, 265,
-                                                       "Dropped classes successfully")
-                                        elif lang == "Español":
-                                            self.after(0, self.show_success_message, 350, 265,
-                                                       "Clases abandonadas exitósamente")
+                                        self.after(0, self.show_success_message, 350, 265,
+                                                   translation["dropped_multiple_success"])
                                     if "INVALID COURSE ID" in text or "COURSE RESERVED" in text or "COURSE CLOSED" in \
                                             text or "CRS ALRDY TAKEN/PASSED" in text or "Closed by Spec-Prog" in text \
                                             or "ILLEGAL DROP-NOT ENR" in text or "NEW COURSE,NO FUNCTION" in text or \
@@ -1658,12 +1434,8 @@ class TeraTermUI(customtkinter.CTk):
                                         self.submit.configure(state="disabled")
                                         self.multiple.configure(state="disabled")
                                         time.sleep(3.2)
-                                        if lang == "English":
-                                            self.after(0, self.show_information_message, 350, 265,
-                                                       "Reached Enrollment limit!")
-                                        elif lang == "Español":
-                                            self.after(0, self.show_information_message, 350, 265,
-                                                       "Llegó al Límite de Matrícula")
+                                        self.after(0, self.show_information_message, 350, 265,
+                                                   translation["enrollment_limit"])
                                     self.set_focus_to_tkinter()
                                     for i in range(self.a_counter):
                                         self.m_classes_entry[i].delete(0, "end")
@@ -1674,12 +1446,8 @@ class TeraTermUI(customtkinter.CTk):
                                         self.m_section_entry[i].configure(
                                             placeholder_text=self.placeholder_texts_sections[i])
                                 else:
-                                    if lang == "English":
-                                        self.after(0, self.show_error_message, 320, 235,
-                                                   "Error! Failed to enroll classes")
-                                    elif lang == "Español":
-                                        self.after(0, self.show_error_message, 320, 235,
-                                                   "¡Error! No se pudo matricular las clases")
+                                    self.after(0, self.show_error_message, 320, 235,
+                                               translation["failed_enroll_multiple"])
                                     self.m_counter = self.m_counter - self.a_counter - 1
                                     self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                                     self.set_focus_to_tkinter()
@@ -1687,23 +1455,15 @@ class TeraTermUI(customtkinter.CTk):
                                 if count_enroll == 15:
                                     self.submit.configure(state="disabled")
                                     self.submit_multiple.configure(sate="disabled")
-                                    if lang == "English":
-                                        self.after(0, self.show_information_message, 350, 265,
-                                                   "Reached Enrollment limit!")
-                                    elif lang == "Español":
-                                        self.after(0, self.show_information_message, 350, 265,
-                                                   "Llegó al Límite de Matrícula")
+                                    self.after(0, self.show_information_message, 350, 265,
+                                               translation["enrollment_limit"])
                                 if "INVALID TERM SELECTION" in text_output:
                                     self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
                                     self.reset_activity_timer(None)
-                                    if lang == "English":
-                                        self.after(0, self.show_error_message, 300, 215,
-                                                   "¡Error! Invalid Semester")
-                                    elif lang == "Español":
-                                        self.after(0, self.show_error_message, 300, 215,
-                                                   "¡Error! Semestre Inválido")
+                                    self.after(0, self.show_error_message, 300, 215,
+                                               translation["invalid_semester"])
                                 else:
                                     if "VUELVA LUEGO" not in text_output:
                                         self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
@@ -1714,33 +1474,18 @@ class TeraTermUI(customtkinter.CTk):
                                         self.after(0, self.submit_multiple_event_handler)
                                         self.error_auto_enroll = True
                                     else:
-                                        if lang == "English":
-                                            self.after(0, self.show_error_message, 300, 210,
-                                                       "Error! Failed to enroll class")
-                                            if not self.enrollment_error_check:
-                                                self.after(2500, self.show_enrollment_error_information)
-                                                self.enrollment_error_check = True
-                                        elif lang == "Español":
-                                            self.after(0, self.show_error_message, 320, 210,
-                                                       "¡Error! No se pudo matricular la clase")
-                                            if not self.enrollment_error_check:
-                                                self.after(2500, self.show_enrollment_error_information)
-                                                self.enrollment_error_check = True
+                                        self.after(0, self.show_error_message, 300, 210,
+                                                   translation["failed_enroll_multiple"])
+                                        if not self.enrollment_error_check:
+                                            self.after(2500, self.show_enrollment_error_information)
+                                            self.enrollment_error_check = True
                                 self.set_focus_to_tkinter()
                         else:
-                            if lang == "English":
-                                self.after(0, self.show_error_message, 320, 235,
-                                           "Error! Can only enroll up to 15 classes")
-                            if lang == "Español":
-                                self.after(0, self.show_error_message, 320, 235,
-                                           "¡Error! Solamente puede matricular\n\n"
-                                           " hasta 15 clases")
+                            self.after(0, self.show_error_message, 320, 235,
+                                       translation["max_enroll"])
                             self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                     else:
-                        if lang == "English":
-                            self.after(0, self.show_error_message, 300, 215, "Error! Tera Term is disconnected")
-                        elif lang == "Español":
-                            self.after(0, self.show_error_message, 300, 215, "¡Error! Tera Term esta desconnectado")
+                        self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
                     self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                 ctypes.windll.user32.BlockInput(False)
                 self.show_sidebar_windows()
@@ -1751,23 +1496,15 @@ class TeraTermUI(customtkinter.CTk):
             finally:
                 task_done.set()
                 lang = self.language_menu.get()
+                translation = self.load_language(lang)
                 if not self.error_auto_enroll:
                     self.started_auto_enroll = False
                 if self.error_occurred:
                     self.destroy_windows()
                     winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    if lang == "English":
-                        CTkMessagebox(master=self, title="Error Information",
-                                      message="Error while performing and automating tasks! "
-                                              "Please make sure not to interrupt the execution of the applications\n\n "
-                                              "Might need to restart Tera Term UI",
-                                      icon="question", button_width=380)
-                    if lang == "Español":
-                        CTkMessagebox(master=self, title="Información del Error",
-                                      message="¡Error mientras se realizaban y automatizaban tareas!"
-                                              "Por favor trate de no interrumpir la ejecución de las aplicaciones\n\n "
-                                              "Tal vez necesite reiniciar Tera Term UI",
-                                      icon="question", button_width=380)
+                    CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                  message=translation["automation_error"],
+                                  icon="question", button_width=380)
                     self.error_occurred = False
                 self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
 
@@ -1788,6 +1525,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.hide_sidebar_windows()
                 menu = self.menu_entry.get()
                 lang = self.language_menu.get()
+                translation = self.load_language(lang)
                 semester = self.menu_semester_entry.get().upper().replace(" ", "")
                 menu_dict = {
                     "SRM (Main Menu)": "SRM",
@@ -1817,7 +1555,7 @@ class TeraTermUI(customtkinter.CTk):
                 menu = menu_dict.get(menu, menu)
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
-                        if re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE)\
+                        if re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE) \
                                 and menu in menu_dict.values():
                             ctypes.windll.user32.BlockInput(True)
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
@@ -1884,17 +1622,15 @@ class TeraTermUI(customtkinter.CTk):
                                                                   sticky="n")
                                             self.go_next_1GP.grid(row=5, column=1, padx=(110, 0), pady=(40, 0),
                                                                   sticky="n")
+
                                         self.after(0, go_next_grid)
                                     else:
                                         self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                         send_keys("{ENTER}")
                                         self.reset_activity_timer(None)
-                                        if lang == "English":
-                                            self.after(0, self.show_error_message, 300, 215, "¡Error! Invalid Semester")
-                                        elif lang == "Español":
-                                            self.after(0, self.show_error_message, 300, 215,
-                                                       "¡Error! Semestre Inválido")
+                                        self.after(0, self.show_error_message, 300, 215,
+                                                   translation["invalid_semester"])
                                 case "118":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
@@ -1912,11 +1648,8 @@ class TeraTermUI(customtkinter.CTk):
                                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                         send_keys("{ENTER}")
                                         self.reset_activity_timer(None)
-                                        if lang == "English":
-                                            self.after(0, self.show_error_message, 300, 215, "¡Error! Invalid Semester")
-                                        elif lang == "Español":
-                                            self.after(0, self.show_error_message, 300, 215,
-                                                       "¡Error! Semestre Inválido")
+                                        self.after(0, self.show_error_message, 300, 215,
+                                                   translation["invalid_semester"])
                                 case "1VE":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
@@ -1939,12 +1672,8 @@ class TeraTermUI(customtkinter.CTk):
                                     screenshot_thread.join()
                                     text_output = self.capture_screenshot()
                                     if "CONFLICT" in text_output:
-                                        if lang == "English":
-                                            self.after(0, self.show_information_message, 310, 225,
-                                                       "Student has a hold flag")
-                                        if lang == "Español":
-                                            self.after(0, self.show_information_message, 310, 225,
-                                                       "Estudiante tine un hold flag")
+                                        self.after(0, self.show_information_message, 310, 225,
+                                                   translation["hold_flag"])
                                         self.uprb.UprbayTeraTermVt.type_keys("004")
                                         self.uprb.UprbayTeraTermVt.type_keys(semester)
                                         send_keys("{ENTER}")
@@ -1953,11 +1682,8 @@ class TeraTermUI(customtkinter.CTk):
                                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                         send_keys("{ENTER}")
                                         self.reset_activity_timer(None)
-                                        if lang == "English":
-                                            self.after(0, self.show_error_message, 300, 215, "¡Error! Invalid Semester")
-                                        elif lang == "Español":
-                                            self.after(0, self.show_error_message, 300, 215,
-                                                       "¡Error! Semestre Inválido")
+                                        self.after(0, self.show_error_message, 300, 215,
+                                                   translation["invalid_semester"])
                                     if "CONFLICT" not in text_output or "INVALID TERM SELECTION" not in text_output:
                                         def go_next_grid():
                                             self.go_next_1VE.configure(state="normal")
@@ -1982,6 +1708,7 @@ class TeraTermUI(customtkinter.CTk):
                                                                   sticky="n")
                                             self.go_next_1VE.grid(row=5, column=1, padx=(110, 0), pady=(40, 0),
                                                                   sticky="n")
+
                                         self.after(0, go_next_grid)
                                 case "3DD":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -2000,11 +1727,8 @@ class TeraTermUI(customtkinter.CTk):
                                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                         send_keys("{ENTER}")
                                         self.reset_activity_timer(None)
-                                        if lang == "English":
-                                            self.after(0, self.show_error_message, 300, 215, "¡Error! Invalid Semester")
-                                        elif lang == "Español":
-                                            self.after(0, self.show_error_message, 300, 215,
-                                                       "¡Error! Semestre Inválido")
+                                        self.after(0, self.show_error_message, 300, 215,
+                                                   translation["invalid_semester"])
                                 case "409":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
@@ -2049,17 +1773,15 @@ class TeraTermUI(customtkinter.CTk):
                                                                   sticky="n")
                                             self.go_next_409.grid(row=5, column=1, padx=(110, 0), pady=(40, 0),
                                                                   sticky="n")
+
                                         self.after(0, go_next_grid)
                                     else:
                                         self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                         send_keys("{ENTER}")
                                         self.reset_activity_timer(None)
-                                        if lang == "English":
-                                            self.after(0, self.show_error_message, 300, 215, "¡Error! Invalid Semester")
-                                        elif lang == "Español":
-                                            self.after(0, self.show_error_message, 300, 215,
-                                                       "¡Error! Semestre Inválido")
+                                        self.after(0, self.show_error_message, 300, 215,
+                                                   translation["invalid_semester"])
                                 case "683":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
@@ -2085,12 +1807,8 @@ class TeraTermUI(customtkinter.CTk):
                                     screenshot_thread.join()
                                     text_output = self.capture_screenshot()
                                     if "CONFLICT" in text_output:
-                                        if lang == "English":
-                                            self.after(0, self.show_information_message, 310, 225,
-                                                       "Student has a hold flag")
-                                        if lang == "Español":
-                                            self.after(0, self.show_information_message, 310, 225,
-                                                       "Estudiante tine un hold flag")
+                                        self.after(0, self.show_information_message, 310, 225,
+                                                   translation["hold_flag"])
                                         self.uprb.UprbayTeraTermVt.type_keys("004")
                                         send_keys("{ENTER}")
                                     if "CONFLICT" not in text_output:
@@ -2113,6 +1831,7 @@ class TeraTermUI(customtkinter.CTk):
                                                                   sticky="n")
                                             self.go_next_683.grid(row=5, column=1, padx=(110, 0), pady=(40, 0),
                                                                   sticky="n")
+
                                         self.after(0, go_next_grid)
                                 case "1PL":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -2186,6 +1905,7 @@ class TeraTermUI(customtkinter.CTk):
                                                                   sticky="n")
                                             self.go_next_4CM.grid(row=5, column=1, padx=(110, 0), pady=(40, 0),
                                                                   sticky="n")
+
                                         self.after(0, go_next_grid)
                                     if "TERM OUTDATED" in text_output or "INVALID TERM SELECTION" in text_output:
                                         self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
@@ -2227,23 +1947,14 @@ class TeraTermUI(customtkinter.CTk):
                                 case "SO":
                                     lang = self.language_menu.get()
                                     self.hide_loading_screen()
-                                    if lang == "English":
-                                        msg = CTkMessagebox(master=self, title="Exit",
-                                                            message="Are you sure you want to sign out"
-                                                                    " and exit Tera Term?", icon="question",
-                                                            option_1="Cancel", option_2="No", option_3="Yes",
-                                                            icon_size=(65, 65),
-                                                            button_color=("#c30101", "#145DA0", "#145DA0"),
-                                                            hover_color=("darkred", "darkblue", "darkblue"))
-                                    elif lang == "Español":
-                                        msg = CTkMessagebox(master=self, title="Salir",
-                                                            message="¿Estás seguro que quieres salir y cerrar "
-                                                                    " la sesión de Tera Term?",
-                                                            icon="question",
-                                                            option_1="Cancelar", option_2="No", option_3="Sí",
-                                                            icon_size=(65, 65),
-                                                            button_color=("#c30101", "#145DA0", "#145DA0"),
-                                                            hover_color=("darkred", "darkblue", "darkblue"))
+                                    msg = CTkMessagebox(master=self, title=translation["error"],
+                                                        message=translation["error_message"],
+                                                        option_1=translation["option_1"],
+                                                        option_2=translation["option_2"],
+                                                        option_3=translation["option_3"],
+                                                        icon_size=(65, 65),
+                                                        button_color=("#c30101", "#145DA0", "#145DA0"),
+                                                        hover_color=("darkred", "darkblue", "darkblue"))
                                     response = msg.get()
                                     self.show_loading_screen_again()
                                     if TeraTermUI.checkIfProcessRunning("ttermpro") and response[0] == "Yes" \
@@ -2252,41 +1963,20 @@ class TeraTermUI(customtkinter.CTk):
                                         send_keys("{ENTER}")
                                     if not TeraTermUI.checkIfProcessRunning("ttermpro") and response[0] == "Yes" \
                                             or response[0] == "Sí":
-                                        if lang == "English":
-                                            self.after(0, self.show_error_message, 350, 265,
-                                                       "Error! Tera Term isn't running")
-                                        elif lang == "Español":
-                                            self.after(0, self.show_error_message, 350, 265,
-                                                       "¡Error! Tera Term no esta corriendo")
+                                        self.after(0, self.show_error_message, 350, 265,
+                                                   translation["tera_term_not_running"])
                         else:
                             if not semester or not menu:
-                                if lang == "English":
-                                    self.after(0, self.show_error_message, 350, 230,
-                                               "Error! Missing information about\n"
-                                               " the screen you want to go to")
-                                elif lang == "Español":
-                                    self.after(0, self.show_error_message, 350, 230,
-                                               "¡Error! Le falta información de la\n"
-                                               " pantalla a la que deseas ir")
+                                self.after(0, self.show_error_message, 350, 230,
+                                           translation["menu_missing_info"])
                             elif not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE):
-                                if lang == "English":
-                                    self.after(0, self.show_error_message, 360, 230,
-                                               "Error! Wrong Format for Semester")
-                                elif lang == "Español":
-                                    self.after(0, self.show_error_message, 360, 230,
-                                               "¡Error! Formato Incorrecto del Semestre")
+                                self.after(0, self.show_error_message, 360, 230,
+                                           translation["semester_format_error"])
                             elif menu not in menu_dict.values():
-                                if lang == "English":
-                                    self.after(0, self.show_error_message, 340, 230,
-                                               "Error! Incorrect Code")
-                                elif lang == "Español":
-                                    self.after(0, self.show_error_message, 340, 230,
-                                               "¡Error! Código Incorrecto")
+                                self.after(0, self.show_error_message, 340, 230,
+                                           translation["menu_code_error"])
                     else:
-                        if lang == "English":
-                            self.after(0, self.show_error_message, 300, 215, "Error! Tera Term is disconnected")
-                        elif lang == "Español":
-                            self.after(0, self.show_error_message, 300, 215, "¡Error! Tera Term esta desconnectado")
+                        self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
                 ctypes.windll.user32.BlockInput(False)
                 self.show_sidebar_windows()
             except Exception as e:
@@ -2295,21 +1985,13 @@ class TeraTermUI(customtkinter.CTk):
             finally:
                 task_done.set()
                 lang = self.language_menu.get()
+                translation = self.load_language(lang)
                 if self.error_occurred:
                     self.destroy_windows()
                     winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    if lang == "English":
-                        CTkMessagebox(master=self, title="Error Information",
-                                      message="Error while performing and automating tasks! "
-                                              "Please make sure not to interrupt the execution of the applications\n\n "
-                                              "Might need to restart Tera Term UI",
-                                      icon="warning", button_width=380)
-                    if lang == "Español":
-                        CTkMessagebox(master=self, title="Información del Error",
-                                      message="¡Error mientras se realizaban y automatizaban tareas!"
-                                              "Por favor trate de no interrumpir la ejecución de las aplicaciones\n\n "
-                                              "Tal vez necesite reiniciar Tera Term UI",
-                                      icon="warning", button_width=380)
+                    CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                  message=translation["automation_error"],
+                                  icon="warning", button_width=380)
                     self.error_occurred = False
                 self.bind("<Return>", lambda event: self.option_menu_event_handler())
                 self.unfocus_tkinter()
@@ -2330,6 +2012,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.destroy_windows()
                 self.hide_sidebar_windows()
                 lang = self.language_menu.get()
+                translation = self.load_language(lang)
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
                         self.unfocus_tkinter()
@@ -2390,10 +2073,7 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread.join()
                             text_output = self.capture_screenshot()
                             if "RATE NOT ON ARFILE" in text_output:
-                                if lang == "English":
-                                    self.after(0, self.show_error_message, 310, 225, "Unknown Error!")
-                                elif lang == "Español":
-                                    self.after(0, self.show_error_message, 310, 225, "¡Error Desconocido!")
+                                self.after(0, self.show_error_message, 310, 225, translation["unknown_error"])
                             else:
                                 self.go_next_4CM.configure(state="disabled")
                         self.reset_activity_timer(None)
@@ -2404,21 +2084,13 @@ class TeraTermUI(customtkinter.CTk):
             finally:
                 task_done.set()
                 lang = self.language_menu.get()
+                translation = self.load_language(lang)
                 if self.error_occurred:
                     self.destroy_windows()
                     winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    if lang == "English":
-                        CTkMessagebox(master=self, title="Error Information",
-                                      message="Error while performing and automating tasks! "
-                                              "Please make sure not to interrupt the execution of the applications\n\n "
-                                              "Might need to restart Tera Term UI",
-                                      icon="warning", button_width=380)
-                    if lang == "Español":
-                        CTkMessagebox(master=self, title="Información del Error",
-                                      message="¡Error mientras se realizaban y automatizaban tareas!"
-                                              "Por favor trate de no interrumpir la ejecución de las aplicaciones\n\n "
-                                              "Tal vez necesite reiniciar Tera Term UI",
-                                      icon="warning", button_width=380)
+                    CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                  message=translation["automation_error"],
+                                  icon="warning", button_width=380)
                     self.error_occurred = False
                 self.bind("<Return>", lambda event: self.option_menu_event_handler())
                 self.unfocus_tkinter()
@@ -2470,25 +2142,16 @@ class TeraTermUI(customtkinter.CTk):
             finally:
                 task_done.set()
                 lang = self.language_menu.get()
+                translation = self.load_language(lang)
                 if self.error_occurred:
                     self.destroy_windows()
                     winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    if lang == "English":
-                        CTkMessagebox(master=self, title="Error Information",
-                                      message="Error while performing and automating tasks! "
-                                              "Please make sure not to interrupt the execution of the applications\n\n "
-                                              "Might need to restart Tera Term UI",
-                                      icon="warning", button_width=380)
-                    elif lang == "Español":
-                        CTkMessagebox(master=self, title="Información del Error",
-                                      message="¡Error mientras se realizaban y automatizaban tareas!"
-                                              "Por favor trate de no interrumpir la ejecución de las aplicaciones\n\n "
-                                              "Tal vez necesite reiniciar Tera Term UI",
-                                      icon="warning", button_width=380)
+                    CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                  message=translation["automation_error"],
+                                  icon="warning", button_width=380)
                     self.error_occurred = False
                 self.bind("<Return>", lambda event: self.search_event_handler())
                 self.show_sidebar_windows()
-                self.unfocus_tkinter()
 
     # disable these buttons if the user changed screen
     def disable_go_next_buttons(self):
@@ -2521,6 +2184,7 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<Return>")
             username = self.username_entry.get().replace(" ", "").lower()
             lang = self.language_menu.get()
+            translation = self.load_language(lang)
             if asyncio.run(self.test_connection(lang)) and self.check_server():
                 if TeraTermUI.checkIfProcessRunning("ttermpro"):
                     if username == "students":
@@ -2532,7 +2196,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.uprbay_window.wait("visible", timeout=10)
                         user = self.uprb.UprbayTeraTermVt.child_window(title="User name:",
                                                                        control_type="Edit").wrapper_object()
-                        user.type_keys("students", with_spaces=False, pause=0.02)
+                        user.set_text(username)
                         check = self.uprb.UprbayTeraTermVt.child_window(title="Remember password in memory",
                                                                         control_type="CheckBox")
                         if check.get_toggle_state() == 0:
@@ -2544,27 +2208,19 @@ class TeraTermUI(customtkinter.CTk):
                                                                           control_type="Button").wrapper_object()
                         okConn2.click()
                         self.show_loading_screen_again()
-                        self.server_status = self.wait_for_prompt("Press return", "REGRESE PRONTO")
+                        self.server_status = self.wait_for_prompt("return to continue", "REGRESE PRONTO")
                         if self.server_status == "Maintenance message found":
                             def server_closed():
+                                self.unbind("<Return>")
                                 self.back.configure(state="disabled")
+                                self.student.configure(state="disabled")
                                 winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                                if lang == "English":
-                                    CTkMessagebox(title="Maintenance", message="Error! The university's server "
-                                                                               "is currently on maintenance, "
-                                                                               "please try again later. "
-                                                                               "\n\nClosing Tera Term and returning to "
-                                                                               "main menu",
-                                                  icon="cancel",
-                                                  button_width=380)
-                                elif lang == "Español":
-                                    CTkMessagebox(title="Mantenimiento",
-                                                  message="¡Error! El servidor de la universidad está en mantenimiento"
-                                                          " , trate de nuevo más tarde. \n\nCerrando Tera Term y"
-                                                          " volviendo a menú principal",
-                                                  icon="cancel",
-                                                  button_width=380)
+                                CTkMessagebox(title=translation["server_maintenance_title"],
+                                              message=translation["server_maintenance"],
+                                              icon="cancel",
+                                              button_width=380)
                                 self.error_occurred = True
+
                             self.after(0, server_closed)
                         elif self.server_status == "Prompt found":
                             send_keys("{ENTER 3}")
@@ -2575,33 +2231,18 @@ class TeraTermUI(customtkinter.CTk):
                         elif self.server_status == "Timeout":
                             def timeout():
                                 winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                                if lang == "English":
-                                    CTkMessagebox(title="Error", message="Error! Failed to connect to the universities"
-                                                                         " server, this could be because there's a lot"
-                                                                         " of traffic and the server is overloaded",
-                                                  icon="cancel",
-                                                  button_width=380)
-                                elif lang == "Español":
-                                    CTkMessagebox(title="Error",
-                                                  message="¡Error! No se pudo conectar al servidor de la universidad,"
-                                                          " esto puede ser porque hay mucho tráfico y el servidor"
-                                                          " está  en su capacidad máxima",
-                                                  icon="cancel",
-                                                  button_width=380)
+                                CTkMessagebox(title="Error", message=translation["timeout_server"],
+                                              icon="cancel",
+                                              button_width=380)
                                 self.error_occurred = True
+
                             self.after(0, timeout)
                     elif username != "students":
                         self.bind("<Return>", lambda event: self.student_event_handler())
-                        if lang == "English":
-                            self.after(0, self.show_error_message, 300, 215, "Error! Invalid username")
-                        elif lang == "Español":
-                            self.after(0, self.show_error_message, 300, 215, "¡Error! Usuario Incorrecto")
+                        self.after(0, self.show_error_message, 300, 215, translation["invalid_username"])
                 else:
                     self.bind("<Return>", lambda event: self.student_event_handler())
-                    if lang == "English":
-                        self.after(0, self.show_error_message, 300, 215, "Error! Tera Term is disconnected")
-                    elif lang == "Español":
-                        self.after(0, self.show_error_message, 300, 215, "¡Error! Tera Term esta desconnectado")
+                    self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             self.show_sidebar_windows()
         except Exception as e:
             print("An error occurred: ", e)
@@ -2658,6 +2299,7 @@ class TeraTermUI(customtkinter.CTk):
             timeout_counter = 0
             skip = False
             lang = self.language_menu.get()
+            translation = self.load_language(lang)
             host = self.host_entry.get().replace(" ", "").lower()
             if asyncio.run(self.test_connection(lang)) and self.check_server():
                 if host == "uprbay.uprb.edu" or host == "uprbayuprbedu":
@@ -2668,7 +2310,8 @@ class TeraTermUI(customtkinter.CTk):
                             if timeout_counter > 5:
                                 skip = True
                                 break
-                        if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT") and not skip:
+                        if (TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
+                                and not TeraTermUI.window_exists("SSH Authentication") and not skip):
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             dont_close = True
                             if term_window.isMinimized:
@@ -2677,10 +2320,10 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread.start()
                             screenshot_thread.join()
                             text_output = self.capture_screenshot()
-                            if ("MENU DE OPCIONES" in text_output or "STUDENTS REQ/DROP" in text_output or "HOLD FLAGS"
-                                in text_output or "PROGRAMA DE CLASES" in text_output or "ACADEMIC STATISTICS" in
-                                text_output or "SNAPSHOT" in text_output or "SOLICITUD DE PRORROGA" in text_output) \
-                                    and "IDENTIFICACION PERSONAL" not in text_output:
+                            if (("MENU DE OPCIONES" in text_output or "STUDENTS REQ/DROP" in text_output or "HOLD FLAGS"
+                                 in text_output or "PROGRAMA DE CLASES" in text_output or "ACADEMIC STATISTICS" in
+                                 text_output or "SNAPSHOT" in text_output or "SOLICITUD DE PRORROGA" in text_output
+                                 or "LISTA DE SECCIONES") and "IDENTIFICACION PERSONAL" not in text_output):
                                 self.uprb = Application(backend="uia").connect(title="uprbay.uprb.edu - Tera Term VT",
                                                                                timeout=10)
                                 self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
@@ -2695,39 +2338,23 @@ class TeraTermUI(customtkinter.CTk):
                                 self.in_student_frame = False
                                 self.run_fix = True
                                 self.language_menu.configure(state="disabled")
+                                self.slideshow_frame.pause_cycle()
                                 self.host.grid_forget()
                                 self.host_entry.grid_forget()
                                 self.log_in.grid_forget()
                                 self.intro_box.grid_forget()
                                 self.introduction.grid_forget()
+                                self.slideshow_frame.grid_forget()
                                 self.switch_tab()
                                 self.set_focus_to_tkinter()
                             else:
                                 self.bind("<Return>", lambda event: self.login_event_handler())
-                                if lang == "English":
-                                    self.after(0, self.show_error_message, 450, 265,
-                                               "Error! Cannot connect to server \n\n"
-                                               " if another instance of Tera Term"
-                                               " is already running")
-                                elif lang == "Español":
-                                    self.after(0, self.show_error_message, 450, 265,
-                                               "¡Error! No es posible"
-                                               " conectarse al servidor \n\n"
-                                               " si otra instancia de Tera Term"
-                                               " ya está corriendo")
+                                self.after(0, self.show_error_message, 450, 265,
+                                           translation["tera_term_already_running"])
                         else:
                             self.bind("<Return>", lambda event: self.login_event_handler())
-                            if lang == "English":
-                                self.after(0, self.show_error_message, 450, 265,
-                                           "Error! Cannot connect to server \n\n"
-                                           " if another instance of Tera Term"
-                                           " is already running")
-                            elif lang == "Español":
-                                self.after(0, self.show_error_message, 450, 265,
-                                           "¡Error! No es posible"
-                                           " conectarse al servidor \n\n"
-                                           " si otra instancia de Tera Term"
-                                           " ya está corriendo")
+                            self.after(0, self.show_error_message, 450, 265,
+                                       translation["tera_term_already_running"])
                     else:
                         try:
                             ctypes.windll.user32.BlockInput(True)
@@ -2740,7 +2367,7 @@ class TeraTermUI(customtkinter.CTk):
                             hostText = \
                                 self.uprb.TeraTermDisconnectedVt.child_window(title="Host:",
                                                                               control_type="Edit").wrapper_object()
-                            hostText.type_keys("uprbay.uprb.edu", with_spaces=False, pause=0.02)
+                            hostText.set_text("uprbay.uprb.edu")
                             self.hide_loading_screen()
                             okConn = \
                                 self.uprb.TeraTermDisconnectedVt.child_window(title="OK",
@@ -2764,37 +2391,21 @@ class TeraTermUI(customtkinter.CTk):
                         except Exception as e:
                             if e.__class__.__name__ == "AppStartError":
                                 self.bind("<Return>", lambda event: self.login_event_handler())
-                                if lang == "English":
-                                    self.after(0, self.show_error_message, 425, 330,
-                                               "Error! Cannot start application.\n\n "
-                                               "The location of your Tera Term \n\n"
-                                               " might be different "
-                                               "from the default,\n\n "
-                                               "click the \"Help\" button "
-                                               "to set it's location")
-                                elif lang == "Español":
-                                    self.after(0, self.show_error_message, 425, 330,
-                                               "¡Error! No se pudo iniciar la aplicación."
-                                               "\n\n La localización de tu "
-                                               "Tera Term\n\n"
-                                               " es diferente de la normal, \n\n "
-                                               "presiona el botón de \"Ayuda\""
-                                               "para encontrarlo")
+                                self.after(0, self.show_error_message, 425, 330,
+                                           translation["tera_term_failed_to_start"])
                                 if not self.download:
                                     self.after(3500, self.download_teraterm)
                                     self.download = True
                 elif host != "uprbay.uprb.edu":
                     self.bind("<Return>", lambda event: self.login_event_handler())
-                    if lang == "English":
-                        self.after(0, self.show_error_message, 300, 215, "Error! Invalid host")
-                    elif lang == "Español":
-                        self.after(0, self.show_error_message, 300, 215, "¡Error! Servidor Incorrecto")
+                    self.after(0, self.show_error_message, 300, 215, translation["invalid_host"])
             self.show_sidebar_windows()
         except Exception as e:
             print("An error occurred: ", e)
             self.error_occurred = True
         finally:
             lang = self.language_menu.get()
+            translation = self.load_language(lang)
             task_done.set()
             if self.error_occurred:
                 self.destroy_windows()
@@ -2802,18 +2413,9 @@ class TeraTermUI(customtkinter.CTk):
                     winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                     subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
                                    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                if lang == "English":
-                    CTkMessagebox(master=self, title="Error Information",
-                                  message="Error while performing and automating tasks! "
-                                          "Please make sure not to interrupt the execution of the applications\n\n "
-                                          "Tera Term was forced to close",
-                                  icon="warning", button_width=380)
-                if lang == "Español":
-                    CTkMessagebox(master=self, title="Información del Error",
-                                  message="¡Error mientras se realizaban y automatizaban tareas!"
-                                          "Por favor trate de no interrumpir la ejecución de las aplicaciones\n\n "
-                                          "Tera Term fue forzado a cerrar",
-                                  icon="warning", button_width=380)
+                CTkMessagebox(master=self, title="Error Information",
+                              message=translation["tera_term_forced_to_close"],
+                              icon="warning", button_width=380)
                 self.error_occurred = False
 
     def login_frame(self):
@@ -2835,34 +2437,27 @@ class TeraTermUI(customtkinter.CTk):
         self.back.grid(row=4, column=0, padx=(0, 10), pady=(0, 0))
         self.student.grid(row=4, column=1, padx=(10, 0), pady=(0, 0))
         self.language_menu.configure(state="disabled")
+        self.slideshow_frame.pause_cycle()
         self.host.grid_forget()
         self.host_entry.grid_forget()
         self.log_in.grid_forget()
         self.intro_box.grid_forget()
         self.introduction.grid_forget()
+        self.slideshow_frame.grid_forget()
 
     # function that lets user go back to the initial screen
     def go_back_event(self):
-        msg = None
         response = None
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         if not self.error_occurred:
-            if lang == "English":
-                msg = CTkMessagebox(master=self, title="Go back?",
-                                    message="Are you sure you want to go back? "
-                                            " \n\n""WARNING: Tera Term will close",
-                                    icon="question",
-                                    option_1="Cancel", option_2="No", option_3="Yes",
-                                    icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                                    hover_color=("darkred", "darkblue", "darkblue"))
-            elif lang == "Español":
-                msg = CTkMessagebox(master=self, title="¿Ir atrás?",
-                                    message="¿Estás seguro que quieres ir atrás?"
-                                            " \n\n""WARNING: Tera Term va a cerrar",
-                                    icon="question",
-                                    option_1="Cancelar", option_2="No", option_3="Sí",
-                                    icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                                    hover_color=("darkred", "darkblue", "darkblue"))
+            msg = CTkMessagebox(master=self, title=translation["go_back_title"],
+                                message=translation["go_back"],
+                                icon="question",
+                                option_1=translation["option_1"], option_2=translation["option_2"],
+                                option_3=translation["option_3"],
+                                icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                hover_color=("darkred", "darkblue", "darkblue"))
             response = msg.get()
         if TeraTermUI.checkIfProcessRunning("ttermpro") and (
                 self.error_occurred or (response and (response[0] == "Yes" or response[0] == "Sí"))):
@@ -2887,7 +2482,8 @@ class TeraTermUI(customtkinter.CTk):
             self.introduction.grid(row=0, column=1, columnspan=2, padx=(20, 0), pady=(20, 0))
             self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(20, 20))
             self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(20, 20))
-            self.intro_box.grid(row=1, column=1, padx=(20, 0), pady=(0, 0))
+            self.intro_box.grid(row=1, column=1, padx=(20, 0), pady=(0, 150))
+            self.slideshow_frame.grid(row=1, column=1, padx=(20, 0), pady=(140, 0))
             self.authentication_frame.grid_forget()
             self.student_frame.grid_forget()
             self.a_buttons_frame.grid_forget()
@@ -2907,6 +2503,7 @@ class TeraTermUI(customtkinter.CTk):
             self.m_counter = 0
             self.enrolled_classes_list.clear()
             self.dropped_classes_list.clear()
+            self.slideshow_frame.resume_cycle()
             self.run_fix = False
             self.in_student_frame = False
             self.in_enroll_frame = False
@@ -2915,21 +2512,14 @@ class TeraTermUI(customtkinter.CTk):
             if self.error_occurred:
                 self.destroy_windows()
                 self.username_entry.delete(0, "end")
+                self.back.configure(state="normal")
+                self.student.configure(state="normal")
                 if (self.server_status != "Maintenance message found" and self.server_status != "Timeout") \
                         and self.tesseract_unzipped:
                     winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                    if lang == "English":
-                        CTkMessagebox(master=self, title="Error Information",
-                                      message="Error while performing and automating tasks! "
-                                              "Please make sure not to interrupt the execution of the applications\n\n "
-                                              "Tera Term was forced to close",
-                                      icon="warning", button_width=380)
-                    if lang == "Español":
-                        CTkMessagebox(master=self, title="Información del Error",
-                                      message="¡Error mientras se realizaban y automatizaban tareas!"
-                                              "Por favor trate de no interrumpir la ejecución de las aplicaciones\n\n "
-                                              "Tera Term fue forzado a cerrar",
-                                      icon="warning", button_width=380)
+                    CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                  message=translation["tera_term_forced_to_close"],
+                                  icon="warning", button_width=380)
             self.error_occurred = False
 
     # function that goes back to Enrolling frame screen
@@ -3028,293 +2618,128 @@ class TeraTermUI(customtkinter.CTk):
         self.save_frame.grid_forget()
         self.auto_frame.grid_forget()
 
+    def load_language(self, lang):
+        # Check if the translations for the requested language are in the cache
+        if lang in self.translations_cache:
+            # If they are, return the cached translations without loading the file again
+            return self.translations_cache[lang]
+
+        # If the translations are not in the cache, identify the filename
+        filename = None
+        if lang == "English":
+            filename = "english.json"
+        elif lang == "Español":
+            filename = "spanish.json"
+
+        # Load the translations from the file and store them in the cache
+        if filename:
+            with open(filename, "r", encoding='utf-8') as f:
+                translations = json.load(f)
+            self.translations_cache[lang] = translations
+            # Return the newly loaded translations
+            return translations
+
+        # If the language is not supported, return an empty dictionary or raise an exception
+        return {}
+
     # function for changing language
     def change_language_event(self, lang):
+        translation = self.load_language(lang)
         self.focus_set()
         self.initialization_student()
         self.initialization_class()
         self.initialization_multiple()
-        if lang == "Español":
-            self.status_button.configure(text="     Estado")
-            self.help_button.configure(text="      Ayuda")
-            self.scaling_label.configure(text="Idioma, Apariencia y \n\n "
-                                              "Escala de Interface:")
-            self.intro_box.configure(state="normal")
-            self.intro_box.delete("1.0", "end")
-            self.intro_box.insert("0.0", "¡Bienvenido a la aplicación de interfaz de usuario de Tera Term!\n\n" +
-                                  "El propósito de esta aplicación"
-                                  " es facilitar el proceso de inscripción y baja de clases, "
-                                  "dado que Tera Term usa la interfaz de terminal, "
-                                  "es difícil nuevos usuarios usar y "
-                                  "aprender a navegar y hacer cosas en "
-                                  "Tera Term. "
-                                  "Esta aplicación tiene una interfaz de usuario muy agradable "
-                                  "y limpia que la mayoría de los usuarios conocen.\n\n" +
-                                  "Hay algunas cosas que debes saber antes de usar esta app: \n\n" +
-                                  "La aplicación se encuentra en una etapa muy temprana de desarrollo, "
-                                  "lo que significa que aún le faltan cosas que "
-                                  "arreglar e implementar. "
-                                  "En este momento, las aplicaciones te permiten hacer "
-                                  "lo esencial como inscribirte y darle de baja a "
-                                  "clases"
-                                  ", la búsqueda de clases y otras funciones se implementará más adelante en el camino "
-                                  "la prioridad en este momento es obtener la experiencia del usuario correcta, "
-                                  "todo debe verse bien"
-                                  " y fácil de entender. "
-                                  + "Todo lo que se ingrese aquí se almacena localmente, "
-                                    "lo que significa que solo usted puede acceder la "
-                                    "información "
-                                    "a sí que no tendrás que preocuparte "
-                                    "por información sensible ya que cosas "
-                                    "como el Número de Seguro Social, se "
-                                    "encriptan usando AES. \n\n" +
-                                  "Gracias por usar nuestra aplicación, para más información, "
-                                  "ayuda y para personalizar tu "
-                                  "experiencia "
-                                  "asegúrese de hacer clic en los botones de la barra lateral, "
-                                  "la aplicación también esta planiado hacerlo código abierto "
-                                  "para cualquiera que esté interesado en trabajar/ver el proyecto. \n\n" +
-                                  "IMPORTANTE: NO UTILIZAR MIENTRAS TENGA OTRA  INSTANCIA DE LA APLICACIÓN ABIERTA. "
-                                  "")
-            self.intro_box.configure(state="disabled")
-            self.appearance_mode_optionemenu.configure(values=["Claro", "Oscuro", "Sistema"])
-            if self.appearance_mode_optionemenu.get() == "Dark":
-                self.appearance_mode_optionemenu.set("Oscuro")
-            elif self.appearance_mode_optionemenu.get() == "Light":
-                self.appearance_mode_optionemenu.set("Claro")
-            elif self.appearance_mode_optionemenu.get() == "System":
-                self.appearance_mode_optionemenu.set("Sistema")
-            self.introduction.configure(text="UPRB Proceso de Matrícula")
-            self.host.configure(text="Servidor ")
-            self.host.grid(row=2, column=0, columnspan=2, padx=(5, 0), pady=(20, 20))
-            self.log_in.configure(text="Iniciar Sesión")
-            self.title_login.configure(text="Conectado al servidor éxitosamente")
-            self.disclaimer.configure(text="Autenticación requerida")
-            self.username.configure(text="Usuario ")
-            self.student.configure(text="Próximo")
-            self.back.configure(text="Atrás")
-            self.title_student.configure(text="Información para entrar al Sistema")
-            self.ssn.configure(text="Número de Seguro Social ")
-            self.code.configure(text="Código Identificación Personal ")
-            self.show.configure(text="¿Enseñar?")
-            self.system.configure(text="Entrar")
-            self.back_student.configure(text="Atrás")
-            self.title_enroll.configure(text="Matricular Clases ")
-            self.e_classes.configure(text="Clase ")
-            self.e_section.configure(text="Sección ")
-            self.e_semester.configure(text="Semestre ")
-            self.register.configure(text="Registra")
-            self.register_tooltip.configure(message="Matricula la clase")
-            self.drop.configure(text="Baja")
-            self.drop_tooltip.configure(message="Darle de baja a la clase")
-            self.title_search.configure(text="Buscar Clases ")
-            self.s_classes.configure(text="Clase ")
-            self.s_semester.configure(text="Semestre ")
-            self.show_all.configure(text="¿Enseñar \n Todas?")
-            self.explanation6.configure(text="Menú de Opciones ")
-            self.title_menu.configure(text="Selecciona el Código de la pantalla \n"
-                                           "A la que quieres acceder: ")
-            self.menu.configure(text="Código")
-            self.menu_entry.configure(values=["SRM (Menú Principal)", "004 (Hold Flags)", "1GP (Programa de Clases)",
-                                              "118 (Estadísticas Académicas)", "1VE (Expediente Académico)",
-                                              "3DD (Historial de Pagos de Beca)", "409 (Balance de Cuenta)",
-                                              "683 (Evaluación Académica)", "1PL (Datos Básicos)",
-                                              "4CM (Cómputo de Matrícula)", "4SP (Solicitud de Prórroga)",
-                                              "SO (Cerrar Sesión)"])
-            self.menu_entry.set("SRM (Menú Principal)")
-            self.menu_semester.configure(text="Semestre")
-            self.menu_submit.configure(text="Someter")
-            self.go_next_1VE.configure(text="Próxima Página")
-            self.go_next_1GP.configure(text="Próxima Página")
-            self.go_next_409.configure(text="Próxima Página")
-            self.go_next_683.configure(text="Próxima Página")
-            self.go_next_4CM.configure(text="Próxima Página")
-            self.search_next_page.configure(text="Próxima")
-            self.submit.configure(text="Someter")
-            self.search.configure(text="Buscar")
-            self.show_classes.configure(text="Enseñar Mis Clases")
-            self.back_classes.configure(text="Atrás")
-            self.multiple.configure(text="Múltiples Clases")
-            self.explanation7.configure(text="Matricular Múltiples Clases ")
-            self.m_class.configure(text="Clase")
-            self.m_section.configure(text="Sección")
-            self.m_semester.configure(text="Semestre")
-            self.m_choice.configure(text="Registra/Baja")
-            self.back_multiple.configure(text="Atrás")
-            self.submit_multiple.configure(text="Someter")
-            for i in range(6):
-                self.m_register_menu[i].configure(values=["Registra", "Baja"])
-                self.m_register_menu[i].set("Escoge")
-            self.host_tooltip.configure(message="Ingrese el nombre del servidor\n de la universidad")
-            self.username_tooltip.configure(message="La universidad requiere esto \npara entrar y acceder \nel sistema")
-            self.ssn_tooltip.configure(message="Requerido para iniciar sesión,\n la información se encripta")
-            self.code_tooltip.configure(message="Código de 4 dígitos incluido en\n"
-                                                " el correo electrónico del \nticket de pre-matrícula")
-            self.back_tooltip.configure(message="Volver al menú principal\n"
-                                                " de la aplicación")
-            self.back_student_tooltip.configure(message="Volver al menú principal\n"
-                                                        " de la aplicación")
-            self.back_classes_tooltip.configure(message="Volver al menú principal\n"
-                                                        " de la aplicación")
-            self.back_multiple_tooltip.configure(message="Volver a la pantalla "
-                                                         "\nanterior")
-            self.show_all_tooltip.configure(message="Muestre todas las secciones\n"
-                                                    "o solamente las que están\n"
-                                                    "abiertas")
-            self.show_classes_tooltip.configure(message="Enseña las clases que tienes\n"
-                                                        "matriculadas en un semestre")
-            self.m_add_tooltip.configure(message="Añade más clases")
-            self.m_remove_tooltip.configure(message="Eliminar clases")
-            self.multiple_tooltip.configure(message="Matricula múltiples \nclases"
-                                                    " a la misma vez")
-            self.save_data.configure(text="Guardar Clases ")
-            self.save_data_tooltip.configure(message="¡La próxima vez que inicies sesión,\n"
-                                                     " las clases que guardaste estarán ahí!")
-            self.auto_enroll.configure(text="Auto-Matrícula ")
-            self.auto_enroll_tooltip.configure(message="Matriculará automáticamente las clases\n"
-                                                       " que seleccionó, en el momento exacto\n"
-                                                       " en el que el proceso de inscripción esté disponible")
-            self.search_next_page_tooltip.configure(message="Hay mas secciones\n"
-                                                            "disponibles")
-
-        elif lang == "English":
-            self.status_button.configure(text="     Status")
-            self.help_button.configure(text="       Help")
-            self.scaling_label.configure(text="Language, Appearance and \n\n "
-                                              "UI Scaling ")
-            self.intro_box.configure(state="normal")
-            self.intro_box.delete("1.0", "end")
-            self.intro_box.insert("0.0", "Welcome to the Tera Term UI Application!\n\n" +
-                                  "The purpose of this application"
-                                  " is to facilitate the process enrolling and dropping classes, "
-                                  "since Tera Term uses Terminal interface, "
-                                  "it's hard for new users to use and learn how to navigate and do stuff in "
-                                  "Tera Term. "
-                                  "This application has a very nice and clean user interface that most users are "
-                                  "used to.\n\n" +
-                                  "There's a few things you should know before using this tool: \n\n" +
-                                  "The application is very early in development, "
-                                  "which means it still got things to work, "
-                                  "fix and implement. "
-                                  "Right now, the applications lets you do the essentials like enrolling and dropping "
-                                  "classes"
-                                  ", searching for classes other functionally will be implemented later down the road "
-                                  "the priority right now is getting the user experience right, "
-                                  "everything must looks nice"
-                                  " and be easy to understand. "
-                                  + "Everything you input here is stored locally meaning only you can access the "
-                                    "information"
-                                    " so you will not have to worry about securities issues "
-                                    "plus for sensitive information "
-                                    "like the Social Security Number, they get encrypted using AES. \n\n" +
-                                  "Thanks for using our application, for more information, help and to customize your "
-                                  "experience"
-                                  " make sure to click the buttons on the sidebar, the application is also planned to "
-                                  "be open source for anyone who is interested in working/seeing the project. \n\n" +
-                                  "IMPORTANT: DO NOT USE WHILE HAVING ANOTHER INSTANCE OF THE APPLICATION OPENED."
-                                  "")
-            self.intro_box.configure(state="disabled")
-            self.appearance_mode_optionemenu.configure(values=["Light", "Dark", "System"])
-            if self.appearance_mode_optionemenu.get() == "Oscuro":
-                self.appearance_mode_optionemenu.set("Dark")
-            elif self.appearance_mode_optionemenu.get() == "Claro":
-                self.appearance_mode_optionemenu.set("Light")
-            elif self.appearance_mode_optionemenu.get() == "Sistema":
-                self.appearance_mode_optionemenu.set("System")
-            self.introduction.configure(text="UPRB Enrollment Process")
-            self.host.configure(text="Host ")
+        self.status_button.configure(text=translation["status_button"])
+        self.help_button.configure(text=translation["help_button"])
+        self.scaling_label.configure(text=translation["option_label"])
+        self.intro_box.configure(state="normal")
+        self.intro_box.delete("1.0", "end")
+        self.intro_box.insert("0.0", translation["intro_box"])
+        self.intro_box.configure(state="disabled")
+        self.appearance_mode_optionemenu.configure(values=[translation["light"], translation["dark"],
+                                                           translation["default"]])
+        self.appearance_mode_optionemenu.set(translation["dark"])
+        self.appearance_mode_optionemenu.set(translation["light"])
+        self.appearance_mode_optionemenu.set(translation["default"])
+        self.introduction.configure(text=translation["introduction"])
+        self.host.configure(text=translation["host"])
+        self.log_in.configure(text=translation["log_in"])
+        self.title_login.configure(text=translation["title_auth"])
+        self.disclaimer.configure(text=translation["disclaimer"])
+        self.username.configure(text=translation["username"])
+        self.student.configure(text=translation["authentication"])
+        self.back.configure(text=translation["back"])
+        self.title_student.configure(text=translation["title_security"])
+        self.ssn.configure(text=translation["ssn"])
+        self.code.configure(text=translation["code"])
+        self.show.configure(text=translation["show"])
+        self.system.configure(text=translation["system"])
+        self.back_student.configure(text=translation["back"])
+        self.title_enroll.configure(text=translation["title_enroll"])
+        self.e_classes.configure(text=translation["class"])
+        self.e_section.configure(text=translation["section"])
+        self.e_semester.configure(text=translation["semester"])
+        self.register.configure(text=translation["register"])
+        self.drop.configure(text=translation["drop"])
+        self.title_search.configure(text=translation["title_search"])
+        self.s_classes.configure(text=translation["class"])
+        self.s_semester.configure(text=translation["semester"])
+        self.show_all.configure(text=translation["show_all"])
+        self.title_menu.configure(text=translation["explanation_menu"])
+        self.explanation6.configure(text=translation["title_menu"])
+        self.menu.configure(text=translation["menu"])
+        self.menu_entry.configure(values=[translation["SRM"], translation["004"], translation["1GP"],
+                                          translation["118"], translation["1VE"], translation["3DD"],
+                                          translation["409"], translation["683"], translation["1PL"],
+                                          translation["4CM"], translation["4SP"], translation["SO"]])
+        self.menu_entry.set(translation["SRM"])
+        self.menu_semester.configure(text=translation["semester"])
+        self.menu_submit.configure(text=translation["submit"])
+        self.go_next_1VE.configure(text=translation["go_next"])
+        self.go_next_1GP.configure(text=translation["go_next"])
+        self.go_next_409.configure(text=translation["go_next"])
+        self.go_next_683.configure(text=translation["go_next"])
+        self.go_next_4CM.configure(text=translation["go_next"])
+        self.search_next_page.configure(text=translation["search_next_page"])
+        self.submit.configure(text=translation["submit"])
+        self.search.configure(text=translation["search"])
+        self.show_classes.configure(text=translation["show_my_classes"])
+        self.back_classes.configure(text=translation["back"])
+        self.multiple.configure(text=translation["multiple"])
+        self.explanation7.configure(text=translation["title_multiple"])
+        self.m_class.configure(text=translation["class"])
+        self.m_section.configure(text=translation["section"])
+        self.m_semester.configure(text=translation["semester"])
+        self.m_choice.configure(text=translation["choice"])
+        self.back_multiple.configure(text=translation["back"])
+        self.submit_multiple.configure(text=translation["submit"])
+        for i in range(6):
+            self.m_register_menu[i].configure(values=[translation["register"], translation["drop"]])
+            self.m_register_menu[i].set(translation["choose"])
+        self.auto_enroll.configure(text=translation["auto_enroll"])
+        self.save_data.configure(text=translation["save_data"])
+        self.register_tooltip.configure(message=translation["register_tooltip"])
+        self.drop_tooltip.configure(message=translation["drop_tooltip"])
+        self.host_tooltip.configure(message=translation["host_tooltip"])
+        self.username_tooltip.configure(message=translation["username_tooltip"])
+        self.ssn_tooltip.configure(message=translation["ssn_tooltip"])
+        self.code_tooltip.configure(message=translation["code_tooltip"])
+        self.back_tooltip.configure(message=translation["back_tooltip"])
+        self.back_student_tooltip.configure(message=translation["back_tooltip"])
+        self.back_classes_tooltip.configure(message=translation["back_tooltip"])
+        self.back_multiple_tooltip.configure(message=translation["back_multiple"])
+        self.show_all_tooltip.configure(message=translation["show_all_tooltip"])
+        self.show_classes_tooltip.configure(message=translation["show_classes_tooltip"])
+        self.m_add_tooltip.configure(message=translation["add_tooltip"])
+        self.m_remove_tooltip.configure(message=translation["remove_tooltip"])
+        self.multiple_tooltip.configure(message=translation["multiple_tooltip"])
+        self.save_data_tooltip.configure(message=translation["save_data_tooltip"])
+        self.auto_enroll_tooltip.configure(message=translation["auto_enroll_tooltip"])
+        self.search_next_page_tooltip.configure(message=translation["search_next_page_tooltip"])
+        if lang == "English":
             self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(20, 20))
-            self.log_in.configure(text="Log-In")
-            self.title_login.configure(text="Connected to the server successfully")
-            self.disclaimer.configure(text="Authentication required")
-            self.username.configure(text="Username ")
-            self.student.configure(text="Next")
-            self.back.configure(text="Back")
-            self.title_student.configure(text="Information to enter the System")
-            self.ssn.configure(text="Social Security Number ")
-            self.code.configure(text="Code of Personal Information ")
-            self.show.configure(text="Show?")
-            self.system.configure(text="Enter")
-            self.back_student.configure(text="Back")
-            self.title_enroll.configure(text="Enroll Classes ")
-            self.e_classes.configure(text="Class ")
-            self.e_section.configure(text="Section ")
-            self.e_semester.configure(text="Semester ")
-            self.register.configure(text="Register")
-            self.register_tooltip.configure(message="Enroll class")
-            self.drop.configure(text="Drop")
-            self.drop_tooltip.configure(message="Drop class")
-            self.title_search.configure(text="Search Classes ")
-            self.s_classes.configure(text="Class ")
-            self.s_semester.configure(text="Semester ")
-            self.show_all.configure(text="Show All?")
-            self.submit.configure(text="Submit")
-            self.search.configure(text="Search")
-            self.explanation6.configure(text="Option Menu ")
-            self.title_menu.configure(text="Select code for the screen\n"
-                                           " you want to go to: ")
-            self.menu.configure(text="Code")
-            self.menu_entry.configure(values=["SRM (Main Menu)", "004 (Hold Flags)",
-                                              "1GP (Class Schedule)", "118 (Academic Staticstics)",
-                                              "1VE (Academic Record)", "3DD (Scholarship Payment Record)",
-                                              "409 (Account Balance)", "683 (Academic Evaluation)",
-                                              "1PL (Basic Personal Data)", "4CM (Tuition Calculation)",
-                                              "4SP (Apply for Extension)", "SO (Sign out)"])
-            self.menu_entry.set("SRM (Main Menu)")
-            self.menu_semester.configure(text="Semester")
-            self.menu_submit.configure(text="Submit")
-            self.go_next_1VE.configure(text="Next Page")
-            self.go_next_1GP.configure(text="Next Page")
-            self.go_next_409.configure(text="Next Page")
-            self.go_next_683.configure(text="Next Page")
-            self.go_next_4CM.configure(text="Next Page")
-            self.search_next_page.configure(text="Next Page")
-            self.show_classes.configure(text="Show My Classes")
-            self.back_classes.configure(text="Back")
-            self.multiple.configure(text="Multiple Classes")
-            self.explanation7.configure(text="Enroll Multiple Classes ")
-            self.m_class.configure(text="Class")
-            self.m_section.configure(text="Section")
-            self.m_semester.configure(text="Semester")
-            self.m_choice.configure(text="Register/Drop")
-            self.back_multiple.configure(text="Back")
-            self.submit_multiple.configure(text="Submit")
-            for i in range(6):
-                self.m_register_menu[i].configure(values=["Register", "Drop"])
-                self.m_register_menu[i].set("Choose")
-            self.host_tooltip.configure(message="Enter the name of the server\n of the university")
-            self.username_tooltip.configure(message="The university requires this to\n"
-                                                    " enter and access the system")
-            self.ssn_tooltip.configure(message="Required to log-in,\n "
-                                               "information gets encrypted")
-            self.code_tooltip.configure(message="4 digit code included in the\n "
-                                                "pre-enrollment ticket email")
-            self.back_tooltip.configure(message="Go back to the main menu\n "
-                                                "of the application")
-            self.back_student_tooltip.configure(message="Go back to the main menu\n "
-                                                        "of the application")
-            self.back_classes_tooltip.configure(message="Go back to the main menu\n "
-                                                        "of the application")
-            self.back_multiple_tooltip.configure(message="Go back to the previous "
-                                                         "\nscreen")
-            self.show_classes_tooltip.configure(message="Shows the classes you are\n "
-                                                        "enrolled in for a \n "
-                                                        "specific semester")
-            self.show_all_tooltip.configure(message="Display all sections or\n "
-                                                    "only ones with spaces")
-            self.m_add_tooltip.configure(message="Add more classes")
-            self.m_remove_tooltip.configure(message="Remove classes")
-            self.multiple_tooltip.configure(message="Enroll multiple classes\n at once")
-            self.save_data.configure(text="Save Classes ")
-            self.save_data_tooltip.configure(message="Next time you log-in, the classes\n"
-                                                     " you saved will already be there!")
-            self.auto_enroll.configure(text="Auto-Enroll ")
-            self.auto_enroll_tooltip.configure(message="Will Automatically enroll the classes\n"
-                                                       " you selected at the exact time\n"
-                                                       " the enrollment process becomes\n"
-                                                       " available for you")
-            self.search_next_page_tooltip.configure(message="There's more sections\n"
-                                                            "available")
+        elif lang == "Español":
+            self.host.grid(row=2, column=0, columnspan=2, padx=(5, 0), pady=(20, 20))
 
     def change_semester(self):
         for i in range(1, self.a_counter + 1):
@@ -3324,28 +2749,19 @@ class TeraTermUI(customtkinter.CTk):
             self.m_semester_entry[i].configure(state="disabled")
 
     def auto_enroll_event_handler(self):
-        msg = None
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         self.focus_set()
         idle = self.cursor.execute("SELECT idle FROM user_data").fetchall()
         if idle[0][0] != "Disabled":
             if self.auto_enroll.get() == "on":
-                if lang == "English":
-                    msg = CTkMessagebox(master=self, title="Submit",
-                                        message="Are you sure you are ready to submit the classes?"
-                                                " \n\nWARNING: Make sure the information is correct",
-                                        icon="images/submit.png",
-                                        option_1="Cancel", option_2="No", option_3="Yes",
-                                        icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                                        hover_color=("darkred", "darkblue", "darkblue"))
-                elif lang == "Español":
-                    msg = CTkMessagebox(master=self, title="Someter",
-                                        message="¿Estás preparado para someter la clases?"
-                                                " \n\nWARNING: Asegúrese de que la información está correcta",
-                                        icon="images/submit.png",
-                                        option_1="Cancelar", option_2="No", option_3="Sí",
-                                        icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                                        hover_color=("darkred", "darkblue", "darkblue"))
+                msg = CTkMessagebox(master=self, title=translation["submit"],
+                                    message=translation["enroll_multiple"],
+                                    icon="images/submit.png",
+                                    option_1=translation["option_1"], option_2=translation["option_2"],
+                                    option_3=translation["option_3"],
+                                    icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                    hover_color=("darkred", "darkblue", "darkblue"))
                 response = msg.get()
                 if response[0] != "Yes" and response[0] != "Sí":
                     self.auto_enroll.deselect()
@@ -3357,12 +2773,8 @@ class TeraTermUI(customtkinter.CTk):
             event_thread.start()
         else:
             winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-            if lang == "English":
-                CTkMessagebox(master=self, title="Auto-Enroll", icon="cancel", button_width=380,
-                              message="Anti-Idle must be enabled in order for you to use Auto-Enroll")
-            elif lang == "Español":
-                CTkMessagebox(master=self, title="Auto-Matrícula", icon="cancel", button_width=380,
-                              message="Anti-Inactivo tiene que estar activado para usar la Auto-Matrícula")
+            CTkMessagebox(master=self, title="Auto-Enroll", icon="cancel", button_width=380,
+                          message=translation["auto_enroll_idle"])
             self.auto_enroll.deselect()
             self.auto_enroll.configure(state="disabled")
 
@@ -3371,6 +2783,7 @@ class TeraTermUI(customtkinter.CTk):
         with self.lock_thread:
             try:
                 lang = self.language_menu.get()
+                translation = self.load_language(lang)
                 self.unbind("<Return>")
                 self.focus_set()
                 self.hide_sidebar_windows()
@@ -3403,13 +2816,8 @@ class TeraTermUI(customtkinter.CTk):
                                     date_time_string = match.group()
                                     date_time_string += " AM"
                                 else:
-                                    if lang == "English":
-                                        self.after(0, self.show_error_message, 300, 215,
-                                                   "Couldn't find enrollment date")
-                                    elif lang == "Español":
-                                        self.after(0, self.show_error_message, 320, 215,
-                                                   "No se pudo encontrar\n"
-                                                   " la fecha de matricula")
+                                    self.after(0, self.show_error_message, 300, 215,
+                                               translation["failed_to_find_date"])
                                     self.auto_enroll.deselect()
                                     self.auto_enroll_bool = False
                                     return
@@ -3419,13 +2827,8 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
                                     self.reset_activity_timer(None)
-                                if lang == "English":
                                     self.after(0, self.show_error_message, 300, 215,
-                                               "Couldn't find enrollment date")
-                                elif lang == "Español":
-                                    self.after(0, self.show_error_message, 320, 215,
-                                               "No se pudo encontrar\n"
-                                               " la fecha de matricula")
+                                               translation["failed_to_find_date"])
                                 self.auto_enroll.deselect()
                                 self.auto_enroll_bool = False
                                 return
@@ -3466,27 +2869,15 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(0, self.submit_multiple_event_handler)
                                     self.after(0, self.end_countdown)
                                 else:
-                                    if lang == "English":
-                                        self.after(0, self.show_error_message, 300, 215,
-                                                   "The enrollment date already passed")
-                                    elif lang == "Español":
-                                        self.after(0, self.show_error_message, 320, 215,
-                                                   "La fecha de matricula ya pasó")
+                                    self.after(0, self.show_error_message, 300, 215,
+                                               translation["date_past"])
                                     self.auto_enroll_bool = False
                                     self.auto_enroll.deselect()
                             elif (is_future_date or is_more_than_one_day) or \
                                     (is_same_date and not is_time_difference_within_6_hours) or \
                                     (is_next_date and not is_time_difference_within_6_hours):
-                                if lang == "English":
-                                    self.after(0, self.show_error_message, 320, 235,
-                                               "Auto-Enroll only available\n"
-                                               " the same day of enrollment\n"
-                                               " and within a 6 hour margin")
-                                elif lang == "Español":
-                                    self.after(0, self.show_error_message, 320, 235,
-                                               "Auto-Matrícula solo disponible\n"
-                                               " el mismo día de la matrícula\n"
-                                               " y dentro de un margen de 6 horas")
+                                self.after(0, self.show_error_message, 320, 235,
+                                           translation["date_not_within_6_hours"])
                                 self.auto_enroll_bool = False
                                 self.auto_enroll.deselect()
                             if "INVALID ACTION" in text_output:
@@ -3496,10 +2887,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.reset_activity_timer(None)
                                 self.after(0, self.bring_back_timer_window)
                         else:
-                            if lang == "English":
-                                self.after(0, self.show_error_message, 300, 215, "Error! Tera Term is disconnected")
-                            elif lang == "Español":
-                                self.after(0, self.show_error_message, 300, 215, "¡Error! Tera Term esta desconnectado")
+                            self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
                             self.auto_enroll_bool = False
                             self.auto_enroll.deselect()
                 elif self.auto_enroll.get() == "off":
@@ -3517,27 +2905,20 @@ class TeraTermUI(customtkinter.CTk):
             finally:
                 task_done.set()
                 lang = self.language_menu.get()
+                translation = self.load_language(lang)
                 if self.error_occurred:
                     self.destroy_windows()
                     winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    if lang == "English":
-                        CTkMessagebox(master=self, title="Error Information",
-                                      message="Error while performing and automating tasks! "
-                                              "Please make sure not to interrupt the execution of the applications\n\n "
-                                              "Might need to restart Tera Term UI",
-                                      icon="warning", button_width=380)
-                    if lang == "Español":
-                        CTkMessagebox(master=self, title="Información del Error",
-                                      message="¡Error mientras se realizaban y automatizaban tareas!"
-                                              "Por favor trate de no interrumpir la ejecución de las aplicaciones\n\n "
-                                              "Tal vez necesite reiniciar Tera Term UI",
-                                      icon="warning", button_width=380)
+                    CTkMessagebox(master=self, title=translation["server_maintenance_title"],
+                                  message=translation["server_maintenance"],
+                                  icon="warning", button_width=380)
                     self.error_occurred = False
                 self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
 
     # Starts the countdown on when the auto-enroll process will occur
     def countdown(self, your_date):
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         puerto_rico_tz = pytz.timezone("America/Puerto_Rico")
         current_date = datetime.now(puerto_rico_tz)
         time_difference = your_date - current_date
@@ -3545,10 +2926,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.running_countdown.get():
             if total_seconds <= 0:
                 # Call enrollment function here
-                if lang == "English":
-                    self.timer_label.configure(text="performing auto-enrollment now...")
-                elif lang == "Español":
-                    self.timer_label.configure(text="ejecutando auto-matrícula ahora...")
+                self.timer_label.configure(text=translation["performing_auto_enroll"])
                 self.started_auto_enroll = True
                 self.after(5000, self.submit_multiple_event_handler)
                 self.after(5000, self.end_countdown)
@@ -3648,6 +3026,7 @@ class TeraTermUI(customtkinter.CTk):
 
     def create_timer_window(self):
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         width = 335
         height = 160
         scaling_factor = self.tk.call("tk", "scaling")
@@ -3656,55 +3035,32 @@ class TeraTermUI(customtkinter.CTk):
         x = (screen_width - width * scaling_factor) / 2
         y = (screen_height - height * scaling_factor) / 2
         self.timer_window = customtkinter.CTkToplevel(self)
-        if lang == "English":
-            self.timer_window.title("Auto-Enroll")
-        elif lang == "Español":
-            self.timer_window.title("Auto-Matrícula")
+        self.timer_window.title(translation["loading"])
         self.timer_window.geometry(f"{width}x{height}+{int(x) + 130}+{int(y)}")
         self.timer_window.attributes("-alpha", 0.90)
         self.timer_window.resizable(False, False)
         self.timer_window.after(256, lambda: self.timer_window.iconbitmap("images/tera-term.ico"))
-        if lang == "English":
-            self.message_label = customtkinter.CTkLabel(self.timer_window,
-                                                        font=customtkinter.CTkFont(
-                                                            size=20, weight="bold"),
-                                                        text="\nAuto-Enrollment activated")
-        elif lang == "Español":
-            self.message_label = customtkinter.CTkLabel(self.timer_window,
-                                                        font=customtkinter.CTkFont(
-                                                            size=20,
-                                                            weight="bold"),
-                                                        text="\nAuto-Matrícula ha sido "
-                                                             "activado")
+        self.message_label = customtkinter.CTkLabel(self.timer_window,
+                                                    font=customtkinter.CTkFont(
+                                                        size=20, weight="bold"),
+                                                    text=translation["auto_enroll_activated"])
         self.message_label.pack()
         self.timer_label = customtkinter.CTkLabel(self.timer_window, text="",
                                                   font=customtkinter.CTkFont(size=15))
         self.timer_label.pack()
-        if lang == "English":
-            self.cancel_button = customtkinter.CTkButton(self.timer_window, text="Cancel",
-                                                         width=260, height=32,
-                                                         hover_color="darkred", fg_color="red",
-                                                         command=self.end_countdown)
-        elif lang == "Español":
-            self.cancel_button = customtkinter.CTkButton(self.timer_window, text="Cancelar",
-                                                         width=260, height=32,
-                                                         hover_color="darkred", fg_color="red",
-                                                         command=self.end_countdown)
+        self.cancel_button = customtkinter.CTkButton(self.timer_window, text=translation["option_1"],
+                                                     width=260, height=32,
+                                                     hover_color="darkred", fg_color="red",
+                                                     command=self.end_countdown)
         self.timer_window.bind("<Escape>", lambda event: self.end_countdown())
         self.cancel_button.pack(pady=25)
         self.timer_window.protocol("WM_DELETE_WINDOW", self.end_countdown)
 
     def bring_back_timer_window(self):
-        if self.window_exists("Auto-Enroll"):
-            handle = win32gui.FindWindow(None, "Auto-Enroll")
-            self.timer_window.deiconify()
-            win32gui.SetForegroundWindow(handle)
-            self.timer_window.focus_force()
-            self.timer_window.lift()
-            self.timer_window.attributes("-topmost", 1)
-            self.timer_window.after_idle(self.timer_window.attributes, "-topmost", 0)
-        elif self.window_exists("Auto-Matrícula"):
-            handle = win32gui.FindWindow(None, "Auto-Matrícula")
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        if self.window_exists(translation["auto_enroll"]):
+            handle = win32gui.FindWindow(None, translation["auto_enroll"])
             self.timer_window.deiconify()
             win32gui.SetForegroundWindow(handle)
             self.timer_window.focus_force()
@@ -4071,12 +3427,10 @@ class TeraTermUI(customtkinter.CTk):
     # shows the important information window
     def show_loading_screen(self):
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         self.loading_screen = customtkinter.CTkToplevel(self)
         self.loading_screen.grab_set()
-        if lang == "English":
-            self.loading_screen.title("Loading...")
-        if lang == "Español":
-            self.loading_screen.title("Procesando...")
+        self.loading_screen.title(translation["loading"])
         self.loading_screen.overrideredirect(True)
         width = 275
         height = 150
@@ -4093,14 +3447,9 @@ class TeraTermUI(customtkinter.CTk):
         self.loading_screen.attributes("-topmost", True, "-alpha", 0.90)
         self.loading_screen.resizable(False, False)
         self.loading_screen.after(256, lambda: self.loading_screen.iconbitmap("images/tera-term.ico"))
-        if lang == "English":
-            loading = customtkinter.CTkLabel(self.loading_screen, text="Loading...",
-                                             font=customtkinter.CTkFont(size=20, weight="bold"))
-            loading.pack(pady=(48, 12))
-        if lang == "Español":
-            loading = customtkinter.CTkLabel(self.loading_screen, text="Procesando...",
-                                             font=customtkinter.CTkFont(size=20, weight="bold"))
-            loading.pack(pady=(48, 12))
+        loading = customtkinter.CTkLabel(self.loading_screen, text=translation["loading"],
+                                         font=customtkinter.CTkFont(size=20, weight="bold"))
+        loading.pack(pady=(48, 12))
         self.progress_bar = customtkinter.CTkProgressBar(self.loading_screen, mode="indeterminate",
                                                          height=15, width=230, indeterminate_speed=1.5)
         self.progress_bar.pack(pady=1)
@@ -4167,6 +3516,7 @@ class TeraTermUI(customtkinter.CTk):
     # function that checks if UPRB server is currently running
     def check_server(self):
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         HOST = "uprbay.uprb.edu"
         PORT = 22
         timeout = 3
@@ -4177,16 +3527,13 @@ class TeraTermUI(customtkinter.CTk):
                 return True
         except (socket.timeout, ConnectionRefusedError, OSError):
             # the connection attempt failed
-            if lang == "English":
-                self.after(0, self.show_error_message, 300, 215, "Error! UPRB server is currently down")
-            elif lang == "Español":
-                self.after(0, self.show_error_message, 300, 215,
-                           "¡Error! El servidor de la UPRB\nestá actualmente caído")
+            self.after(0, self.show_error_message, 300, 215, translation["uprb_down"])
             return False
 
     # captures a screenshot of tera term and performs OCR
     def capture_screenshot(self):
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         tesseract_dir_path = self.app_temp_dir / "Tesseract-OCR"
         if self.tesseract_unzipped and tesseract_dir_path.is_dir():
             window_title = "uprbay.uprb.edu - Tera Term VT"
@@ -4219,14 +3566,7 @@ class TeraTermUI(customtkinter.CTk):
             except Exception as e:
                 print(f"Error occurred during unzipping: {str(e)}")
                 self.tesseract_unzipped = False
-                if lang == "English":
-                    self.after(0, self.show_error_message, 320, 225,
-                               "Fatal Error! Might need to\n"
-                               "reinstall application")
-                elif lang == "Español":
-                    self.after(0, self.show_error_message, 320, 225,
-                               "¡Error Fatal! Es posible que necesite\n"
-                               " reinstalar la aplicación")
+                self.after(0, self.show_error_message, 320, 225, translation["tesseract_error"])
                 return
 
     # creates pdf of the table containing for the searched class
@@ -4272,6 +3612,7 @@ class TeraTermUI(customtkinter.CTk):
     def download_as_pdf(self):
         filepath = None
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         # Get the class name from the user input
         class_name = self.get_class_for_pdf
         # Gather the table data
@@ -4281,34 +3622,24 @@ class TeraTermUI(customtkinter.CTk):
         # Append "Downloads" to the home directory path
         downloads = os.path.join(home, "Downloads")
         # Open a dialog for the user to choose the save location and filename
-        if lang == "English":
-            filepath = filedialog.asksaveasfilename(title="Select where do you want to save your PDF file",
-                                                    defaultextension=".pdf", initialdir=downloads,
-                                                    filetypes=[('PDF Files', '*.pdf')],
-                                                    initialfile=f"{class_name}_class_data.pdf")
-        elif lang == "Español":
-            filepath = filedialog.asksaveasfilename(title="Selecciona donde deseas guardar tu archivo PDF",
-                                                    defaultextension=".pdf", initialdir=downloads,
-                                                    filetypes=[('PDF Files', '*.pdf')],
-                                                    initialfile=f"{class_name}_data_de_clase.pdf")
+        filepath = filedialog.asksaveasfilename(title=translation["save_pdf"],
+                                                defaultextension=".pdf", initialdir=downloads,
+                                                filetypes=[('PDF Files', '*.pdf')],
+                                                initialfile=f"{class_name}_class_data.pdf")
         if not filepath:
             # User cancelled the dialog, stop the function
             return
         else:
-            if lang == "English":
-                self.show_success_message(350, 265, "PDF has been saved successfully")
-            elif lang == "Español":
-                self.show_success_message(350, 265, "El PDF ha sido guardado éxitosamente")
+            self.show_success_message(350, 265, translation["pdf_save_success"])
         # Call create_pdf with the chosen filepath
         self.create_pdf(data, filepath, class_name)
 
     # dipslays the extracted data into a table
     def display_data(self, data):
-        tooltip_message = None
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         modified_data = []
         for item in data:
-            # Split the times at '-' and remove leading zero if present
             if 'TIMES' in item:
                 times_parts = item['TIMES'].split('-')
                 if len(times_parts) == 2:
@@ -4321,7 +3652,6 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     item['TIMES'] = item['TIMES'].lstrip('0')
 
-            # Split the instructor value at the comma
             if 'INSTRUCTOR' in item:
                 parts = item['INSTRUCTOR'].split(',')
                 item['INSTRUCTOR'] = '\n'.join(parts)
@@ -4329,7 +3659,6 @@ class TeraTermUI(customtkinter.CTk):
             modified_data.append(item)
 
         headers = ['SEC', 'M', 'CRED', 'DAYS', 'TIMES', 'AV', 'INSTRUCTOR']
-        self.get_class_for_pdf = self.s_classes_entry.get().replace(" ", "").upper()
 
         table_values = [headers]
         for item in modified_data:
@@ -4337,10 +3666,17 @@ class TeraTermUI(customtkinter.CTk):
             table_values.append(row)
 
         num_rows = len(modified_data) + 1
-        # Check if the table needs to be recreated
-        if not hasattr(self, 'table') or self.table is None or \
-                num_rows != self.table_rows:
-            # The table does not exist or its dimensions have changed, so create a new table
+
+        # Update the display_class every time, irrespective of whether the table dimensions have changed or not.
+        if hasattr(self, 'display_class') and self.display_class is not None:
+            self.display_class.grid_forget()
+            del self.display_class
+
+        self.display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_pdf,
+                                                    font=customtkinter.CTkFont(size=15, weight="bold", underline=True))
+        self.display_class.grid(row=2, column=1, padx=(0, 0), pady=(8, 0), sticky="n")
+
+        if not hasattr(self, 'table') or self.table is None or num_rows != self.table_rows:
             if hasattr(self, 'table') and self.table is not None:
                 self.table.grid_forget()
                 del self.table
@@ -4352,62 +3688,35 @@ class TeraTermUI(customtkinter.CTk):
                 values=table_values,
                 header_color="#145DA0"
             )
-            if hasattr(self, 'display_class') and self.display_class is not None:
-                self.display_class.grid_forget()
-                del self.display_class
-
-            self.display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_pdf,
-                                                        font=customtkinter.CTkFont(size=15, weight="bold",
-                                                                                   underline=True))
-            self.display_class.grid(row=2, column=1, padx=(0, 0), pady=(8, 0), sticky="n")
             self.table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
             for i in range(4):
-                self.table.edit_column(i, width=60)
-            self.table.edit_column(5, width=60)
-            tooltip_messages_en = {
-                'SEC': "Section",
-                'M': "Modality",
-                'CRED': "Amount of Credits",
-                'DAYS': "The days you take the class",
-                'TIMES': "The time frame you take the class",
-                'AV': "Available spaces",
-                'INSTRUCTOR': "The professor who will \ngive the class",
-            }
-            tooltip_messages_es = {
-                'SEC': "Sección",
-                'M': "Modalidad",
-                'CRED': "Cantidad de Créditos",
-                'DAYS': "Los días en el que tomarás la clase",
-                'TIMES': "El marco de tiempo \nen el que tomarás clase",
-                'AV': "Espacios disponibles",
-                'INSTRUCTOR': "El profésor que dara la clase",
+                self.table.edit_column(i, width=55)
+            self.table.edit_column(5, width=55)
+            tooltip_messages = {
+                'SEC': translation["tooltip_sec"],
+                'M': translation["tooltip_m"],
+                'CRED': translation["tooltip_cred"],
+                'DAYS': translation["tooltip_days"],
+                'TIMES': translation["tooltip_times"],
+                'AV': translation["tooltip_av"],
+                'INSTRUCTOR': translation["tooltip_instructor"],
             }
             for i, header in enumerate(headers):
-                cell = self.table.get_cell(0, i)  # Assuming 0 is the index of the header row
-                if lang == "English":
-                    tooltip_message = tooltip_messages_en[header]
-                elif lang == "Español":
-                    tooltip_message = tooltip_messages_es[header]
+                cell = self.table.get_cell(0, i)
+                tooltip_message = tooltip_messages[header]
                 tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#A9A9A9", alpha=0.90)
-            # Store the current table values and dimensions for the next update
             self.previous_table_values = table_values
             self.table_rows = num_rows
         else:
-            # The table already exists and its dimensions have not changed, so update the cells that have changed
             for i, (new_row, old_row) in enumerate(zip(table_values, self.previous_table_values)):
                 for j, (new_value, old_value) in enumerate(zip(new_row, old_row)):
                     if new_value != old_value:
-                        # This cell has changed, so update it
                         self.table.insert(i, j, new_value)
-            # Store the current table values for the next update
             self.previous_table_values = table_values
             self.update_idletasks()
-        if lang == "English":
-            self.download_pdf = customtkinter.CTkButton(self.search_scrollbar, text="Save as PDF",
-                                                        command=self.download_as_pdf)
-        elif lang == "Español":
-            self.download_pdf = customtkinter.CTkButton(self.search_scrollbar, text="Guardar como PDF",
-                                                        command=self.download_as_pdf)
+
+        self.download_pdf = customtkinter.CTkButton(self.search_scrollbar, text=translation["pdf_save_as"],
+                                                    command=self.download_as_pdf)
         self.download_pdf.grid(row=3, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
 
     # extracts the text from the searched class to get the important information
@@ -4427,19 +3736,26 @@ class TeraTermUI(customtkinter.CTk):
                 if text_next_to_course:
                     course_found = True
 
-        for line in lines:
-            match = re.search(
-                r"(\w+)\s+(\w)\s+LEC\s+(\d+\.\d+)\s+(\w+)\s+([\dAMP\-TBA]+)\s+([\d\s]+)?\s+[\w\s]*\s+([\w\s,.]*)",
-                line)
-            if match:
-                data.append({"SEC": match.group(1),
-                             "M": match.group(2),
-                             "CRED": match.group(3),
-                             "DAYS": match.group(4),
-                             "TIMES": match.group(5),
-                             "AV": match.group(6).strip() if match.group(6) else "0",
-                             "INSTRUCTOR": match.group(7).strip() if match.group(7) not in ['N', 'RSTR'] else ""})
+        pattern = re.compile(
+            r"(\w+)\s+(\w)\s+LEC\s+(\d+\.\d+)\s+(\w+)\s+([\dAMP\-TBA]+)\s+([\d\s]+)?\s+.*?\s*([NFUL\s]*.*)"
+        )
 
+        for line in lines:
+            match = pattern.search(line)
+            if match:
+                instructor = match.group(7)
+                instructor = re.sub(r'\bN\b', '', instructor)  # remove standalone 'N'
+                instructor = re.sub(r'\bFULL\b', '', instructor)  # remove standalone 'FULL'
+                instructor = instructor.strip()  # remove leading and trailing whitespace
+                data.append({
+                    "SEC": match.group(1),
+                    "M": match.group(2),
+                    "CRED": match.group(3),
+                    "DAYS": match.group(4),
+                    "TIMES": match.group(5),
+                    "AV": match.group(6).strip() if match.group(6) else "0",
+                    "INSTRUCTOR": instructor
+                })
         return data, course_found, invalid_action
 
     # checks whether the program can continue it's normal execution or if the server is on maintenance
@@ -4607,6 +3923,7 @@ class TeraTermUI(customtkinter.CTk):
     # success window pop up message
     def show_success_message(self, width, height, success_msg_text):
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         if self.success and self.success.winfo_exists():
             self.success.lift()
             return
@@ -4622,10 +3939,7 @@ class TeraTermUI(customtkinter.CTk):
         winsound.PlaySound("sounds/success.wav", winsound.SND_ASYNC)
         self.success = customtkinter.CTkToplevel()
         self.success.geometry(window_geometry)
-        if lang == "English":
-            self.success.title("Success")
-        elif lang == "Español":
-            self.success.title("Éxito")
+        self.success.title(translation["success_title"])
         self.success.attributes("-topmost", True)
         self.success.resizable(False, False)
         self.success.after(256, lambda: self.success.iconbitmap("images/tera-term.ico"))
@@ -4642,21 +3956,15 @@ class TeraTermUI(customtkinter.CTk):
     def show_enrollment_error_information(self):
         self.destroy_windows()
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-        if lang == "English":
-            CTkMessagebox(master=self, title="Error Information",
-                          message="This error is usually caused because it isn't time "
-                                  "yet for you to be able to enroll classes or because the "
-                                  "TERM you selected is outdated", button_width=380)
-        if lang == "Español":
-            CTkMessagebox(master=self, title="Información del Error",
-                          message="Este error generalmente se debe a que todavía "
-                                  "no es su turno para inscribirse en clases o porque el "
-                                  "término que seleccionó está desactualizado", button_width=380)
+        CTkMessagebox(master=self, title=translation["automation_error_title"],
+                      message=translation["enrollment_error"], button_width=380)
 
     # important information window pop up message
     def show_information_message(self, width, height, success_msg_text):
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         if self.information and self.information.winfo_exists():
             self.information.lift()
             return
@@ -4672,10 +3980,7 @@ class TeraTermUI(customtkinter.CTk):
         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
         self.information = customtkinter.CTkToplevel()
         self.information.geometry(window_geometry)
-        if lang == "English":
-            self.information.title("Information")
-        elif lang == "Español":
-            self.information.title("Información")
+        self.information.title(translation["information_title"])
         self.information.resizable(False, False)
         self.information.after(256, lambda: self.information.iconbitmap("images/tera-term.ico"))
         my_image = self.images["information"]
@@ -4779,25 +4084,16 @@ class TeraTermUI(customtkinter.CTk):
 
     # link to download tera term
     def download_teraterm(self):
-        msg = None
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-        if lang == "English":
-            msg = CTkMessagebox(master=self, title="Download",
-                                message="Tera Term must be installed in your computer in order to use this application"
-                                        " do you wish to download it?",
-                                icon="question",
-                                option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
-                                button_color=("#c30101", "#145DA0", "#145DA0"),
-                                hover_color=("darkred", "darkblue", "darkblue"))
-        elif lang == "Español":
-            msg = CTkMessagebox(master=self, title="Download",
-                                message="Tera Term tiene que estar instalado en su computadora para poder usar esta"
-                                        " aplicación, ¿desea instalarlo?",
-                                icon="question",
-                                option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
-                                button_color=("#c30101", "#145DA0", "#145DA0"),
-                                hover_color=("darkred", "darkblue", "darkblue"))
+        msg = CTkMessagebox(master=self, title=translation["download_title"],
+                            message=translation["download_tera_term"],
+                            icon="question",
+                            option_1=translation["option_1"], option_2=translation["option_2"],
+                            option_3=translation["option_3"], icon_size=(65, 65),
+                            button_color=("#c30101", "#145DA0", "#145DA0"),
+                            hover_color=("darkred", "darkblue", "darkblue"))
         response = msg.get()
         if response[0] == "Yes" or response[0] == "Sí":
             webbrowser.open("https://osdn.net/projects/ttssh2/releases/")
@@ -4855,37 +4151,25 @@ class TeraTermUI(customtkinter.CTk):
 
     # will tell the user that there's a new update available for the application
     def update_app(self):
-        msg = None
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         latest_version = self.get_latest_release()
         if not self.connection_error:
             if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION):
                 winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                if lang == "English":
-                    msg = CTkMessagebox(master=self, title="Update",
-                                        message="A newer version of the application is available,"
-                                                "would you like to update?",
-                                        icon="question",
-                                        option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
-                                        button_color=("#c30101", "#145DA0", "#145DA0"),
-                                        hover_color=("darkred", "darkblue", "darkblue"))
-                elif lang == "Español":
-                    msg = CTkMessagebox(master=self, title="Actualizar",
-                                        message="Una nueva de versión de la aplicación esta disponible,"
-                                                "¿desea actualizar?",
-                                        icon="question",
-                                        option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
-                                        button_color=("#c30101", "#145DA0", "#145DA0"),
-                                        hover_color=("darkred", "darkblue", "darkblue"))
+                msg = CTkMessagebox(master=self, title=translation["update_popup_title"],
+                                    message=translation["update_popup_message"],
+                                    icon="question",
+                                    option_1=translation["option_1"], option_2=translation["option_2"],
+                                    option_3=translation["option_3"], icon_size=(65, 65),
+                                    button_color=("#c30101", "#145DA0", "#145DA0"),
+                                    hover_color=("darkred", "darkblue", "darkblue"))
                 response = msg.get()
                 if response[0] == "Yes" or response[0] == "Sí":
                     webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
             else:
                 winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                if lang == "English":
-                    CTkMessagebox(master=self, title="Info", message="Application is up to date", button_width=380)
-                elif lang == "Español":
-                    CTkMessagebox(master=self, title="Info", message="La Aplicación está actualizada", button_width=380)
+                CTkMessagebox(master=self, title="Info", message=translation["update_up_to_date"], button_width=380)
 
     # (Unused) determines the hardware of the users' computer and change the time.sleep seconds respectively
     # def get_sleep_time(self):
@@ -4920,24 +4204,15 @@ class TeraTermUI(customtkinter.CTk):
     def fix_execution_event_handler(self):
         msg = None
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         if TeraTermUI.checkIfProcessRunning("ttermpro") and self.run_fix:
-            if lang == "English":
-                msg = CTkMessagebox(master=self, title="Fix", message="This button is only made to fix "
-                                                                      "the issue mentioned, are you sure you "
-                                                                      "want to do it?",
-                                    icon="warning",
-                                    option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
-                                    button_color=("#c30101", "#145DA0", "#145DA0"),
-                                    hover_color=("darkred", "darkblue", "darkblue"))
-            elif lang == "Español":
-                msg = CTkMessagebox(master=self, title="Arreglar", message="Este botón solo se creó para "
-                                                                           "solucionar el problema mencionado "
-                                                                           "¿Estás seguro de que quieres "
-                                                                           "hacerlo?",
-                                    icon="question",
-                                    option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
-                                    button_color=("#c30101", "#145DA0", "#145DA0"),
-                                    hover_color=("darkred", "darkblue", "darkblue"))
+            msg = CTkMessagebox(master=self, title=translation["fix_messagebox_title"],
+                                message=translation["fix_messagebox"],
+                                icon="warning",
+                                option_1=translation["option_1"], option_2=translation["option_2"],
+                                option_3=translation["option_3"], icon_size=(65, 65),
+                                button_color=("#c30101", "#145DA0", "#145DA0"),
+                                hover_color=("darkred", "darkblue", "darkblue"))
             response = msg.get()
             if response[0] == "Yes" or response[0] == "Sí":
                 task_done = threading.Event()
@@ -4951,6 +4226,7 @@ class TeraTermUI(customtkinter.CTk):
         with self.lock_thread:
             try:
                 lang = self.language_menu.get()
+                translation = self.load_language(lang)
                 self.unbind("<Return>")
                 self.focus_set()
                 self.hide_sidebar_windows()
@@ -4976,15 +4252,8 @@ class TeraTermUI(customtkinter.CTk):
                     send_keys("{ENTER}")
                     self.reset_activity_timer(None)
                 ctypes.windll.user32.BlockInput(False)
-                if lang == "English":
-                    self.after(0, self.show_information_message, 370, 250,
-                               "The problem is usually caused because "
-                               "\n of user interacting directly\n with Tera Term ")
-                elif lang == "Español":
-                    self.after(0, self.show_information_message, 370, 250,
-                               "El problema suele ser causado porque "
-                               "\n el usuario interactuo directamente\n "
-                               "con Tera Term")
+                self.after(0, self.show_information_message, 370, 250,
+                           translation["fix_after"])
                 self.show_sidebar_windows()
             except Exception as e:
                 print("An error occurred: ", e)
@@ -4992,21 +4261,13 @@ class TeraTermUI(customtkinter.CTk):
             finally:
                 task_done.set()
                 lang = self.language_menu.get()
+                translation = self.load_language(lang)
                 if self.error_occurred:
                     self.destroy_windows()
                     winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    if lang == "English":
-                        CTkMessagebox(master=self, title="Error Information",
-                                      message="Error while performing and automating tasks! "
-                                              "Please make sure not to interrupt the execution of the applications\n\n "
-                                              "Might need to restart Tera Term UI",
-                                      icon="warning", button_width=380)
-                    if lang == "Español":
-                        CTkMessagebox(master=self, title="Información del Error",
-                                      message="¡Error mientras se realizaban y automatizaban tareas!"
-                                              "Por favor trate de no interrumpir la ejecución de las aplicaciones\n\n "
-                                              "Tal vez necesite reiniciar Tera Term UI",
-                                      icon="warning", button_width=380)
+                    CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                  message=translation["automation_error"],
+                                  icon="warning", button_width=380)
                     self.error_occurred = False
                 self.switch_tab()
 
@@ -5129,16 +4390,14 @@ class TeraTermUI(customtkinter.CTk):
             return False
 
     async def test_connection(self, lang):
+        translation = self.load_language(lang)
         urls = ["http://www.google.com/", "http://www.bing.com/", "http://www.yahoo.com/"]
         async with aiohttp.ClientSession() as session:
             tasks = [TeraTermUI.fetch(session, url) for url in urls]
             results = await asyncio.gather(*tasks)
         connected = any(results)
         if not connected:
-            if lang == "English":
-                self.after(0, self.show_error_message, 300, 215, "Error! Not Connected to the internet")
-            elif lang == "Español":
-                self.after(0, self.show_error_message, 300, 215, "¡Error! No Conectado al internet")
+            self.after(0, self.show_error_message, 300, 215, translation["no_internet"])
         return connected
 
     # Set focus on the UI application window
@@ -5194,137 +4453,60 @@ class TeraTermUI(customtkinter.CTk):
             return
         self.focus_set()
         lang = self.language_menu.get()
-        if lang == "English":
-            self.status = SmoothFadeToplevel()
-            screen_width = self.winfo_screenwidth()
-            screen_height = self.winfo_screenheight()
-            scaling_factor = self.tk.call("tk", "scaling")
-            x_position = int((screen_width - 475 * scaling_factor) / 2)
-            y_position = int((screen_height - 275 * scaling_factor) / 2)
-            window_geometry = f"{475}x{280}+{x_position + 130}+{y_position + 18}"
-            self.status.geometry(window_geometry)
-            self.status.title("Status")
-            self.status.after(256, lambda: self.status.iconbitmap("images/tera-term.ico"))
-            self.status.resizable(False, False)
-            scrollable_frame = customtkinter.CTkScrollableFrame(self.status, width=475, height=280,
-                                                                fg_color=("#e6e6e6", "#222222"))
-            scrollable_frame.pack()
-            title = customtkinter.CTkLabel(scrollable_frame, text="Status of the Application",
-                                           font=customtkinter.CTkFont(size=20, weight="bold"))
-            title.pack()
-            version = customtkinter.CTkLabel(scrollable_frame, text="\n0.9.0 Version \n"
-                                                                    "--Testing Phase-- \n\n"
-                                                                    "Any feedback is greatly appreciated!")
-            version.pack()
-            self.feedbackText = customtkinter.CTkTextbox(scrollable_frame, wrap="word", border_spacing=8, width=300,
-                                                         height=170, fg_color=("#ffffff", "#111111"))
-            self.feedbackText.pack(pady=10)
-            self.feedbackSend = customtkinter.CTkButton(scrollable_frame, border_width=2,
-                                                        text="Send Feedback",
-                                                        text_color=("gray10", "#DCE4EE"),
-                                                        command=self.start_feedback_thread)
-            self.feedbackSend.pack()
-            checkUpdateText = customtkinter.CTkLabel(scrollable_frame, text="\n\n Check if application has a new update"
-                                                                            " available")
-            checkUpdateText.pack(pady=5)
-            checkUpdate = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["update"],
-                                                  text="      Update", anchor="w",
-                                                  text_color=("gray10", "#DCE4EE"), command=self.update_app)
-            checkUpdate.pack()
-            website = customtkinter.CTkLabel(scrollable_frame, text="\n\nTera Term UI's Website:")
-            website.pack(pady=5)
-            link = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["link"],
-                                           text="        Link", anchor="w",
-                                           text_color=("gray10", "#DCE4EE"), command=self.github_event)
-            link.pack()
-            notaso = customtkinter.CTkLabel(scrollable_frame, text="\n\nProfessor Rating Website:")
-            notaso.pack(pady=5)
-            notasoLink = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["link"],
-                                                 text="      Notaso", anchor="w",
-                                                 text_color=("gray10", "#DCE4EE"), command=self.notaso_event)
-            notasoLink.pack()
-            faqText = customtkinter.CTkLabel(scrollable_frame, text="\n\nFrequently Asked Questions",
-                                             font=customtkinter.CTkFont(size=15, weight="bold"))
-            faqText.pack()
-            qaTable = [["Question", "Answer"],
-                       ["Is putting information \nhere safe?", "Yes, the application doesn't\n store your personal "
-                                                               "data\n anywhere but, if you are still\n skeptical then "
-                                                               "you can see\n which information we do store\n by "
-                                                               "accessing the file called\n database.db and things "
-                                                               "like the\n ssn are encrypted using\n an "
-                                                               "asymmetrical key."],
-                       ["What is a section?", "The section determines which days\n and at what hours you take your "
-                                              "classes\n, for example, \"LM1\" the L and the\n M tells you that the "
-                                              "classes are on \nMondays and Wednesdays and the 1\n tells you they start"
-                                              " at 1:00 PM."]]
-            faq = ctktable.CTkTable(scrollable_frame, row=3, column=2, values=qaTable)
-            faq.pack(expand=True, fill="both", padx=20, pady=20)
-
-        elif lang == "Español":
-            self.status = SmoothFadeToplevel()
-            screen_width = self.winfo_screenwidth()
-            screen_height = self.winfo_screenheight()
-            scaling_factor = self.tk.call("tk", "scaling")
-            x_position = int((screen_width - 475 * scaling_factor) / 2)
-            y_position = int((screen_height - 275 * scaling_factor) / 2)
-            window_geometry = f"{475}x{280}+{x_position + 130}+{y_position + 18}"
-            self.status.geometry(window_geometry)
-            self.status.title("Estado")
-            self.status.after(256, lambda: self.status.iconbitmap("images/tera-term.ico"))
-            self.status.resizable(False, False)
-            scrollable_frame = customtkinter.CTkScrollableFrame(self.status, width=475, height=280, corner_radius=10,
-                                                                fg_color=("#e6e6e6", "#222222"))
-            scrollable_frame.pack()
-            title = customtkinter.CTkLabel(scrollable_frame, text="Estado de la Aplicación",
-                                           font=customtkinter.CTkFont(size=20, weight="bold"))
-            title.pack()
-            version = customtkinter.CTkLabel(scrollable_frame, text="\nVersión 0.9.0 \n"
-                                                                    "--Fase de Pruebas-- \n\n"
-                                                                    "¡Cualquier comentario es muy apreciado!")
-            version.pack()
-            self.feedbackText = customtkinter.CTkTextbox(scrollable_frame, wrap="word", border_spacing=8, width=300,
-                                                         height=170, fg_color=("#ffffff", "#111111"))
-            self.feedbackText.pack(pady=10)
-            self.feedbackSend = customtkinter.CTkButton(scrollable_frame, border_width=2,
-                                                        text="Enviar Comentario",
-                                                        text_color=("gray10", "#DCE4EE"), command=self.submit_feedback)
-            self.feedbackSend.pack()
-            checkUpdateText = customtkinter.CTkLabel(scrollable_frame, text="\n\n Revisa sí la aplicación tiene una"
-                                                                            " actualización nueva")
-            checkUpdateText.pack(pady=5)
-            checkUpdate = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["update"],
-                                                  text="    Actualizar", anchor="w",
-                                                  text_color=("gray10", "#DCE4EE"), command=self.update_app)
-            checkUpdate.pack()
-            website = customtkinter.CTkLabel(scrollable_frame, text="\n\nPágina Web de Tera Term UI:")
-            website.pack(pady=5)
-            link = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["link"],
-                                           text="      Enlace", anchor="w",
-                                           text_color=("gray10", "#DCE4EE"), command=self.github_event)
-            link.pack()
-            notaso = customtkinter.CTkLabel(scrollable_frame, text="\n\nPágina Web de Calificación de Profesores:")
-            notaso.pack(pady=5)
-            notasoLink = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["link"],
-                                                 text="      Notaso", anchor="w",
-                                                 text_color=("gray10", "#DCE4EE"), command=self.notaso_event)
-            notasoLink.pack()
-            faqText = customtkinter.CTkLabel(scrollable_frame, text="\n\nPreguntas y Respuestas",
-                                             font=customtkinter.CTkFont(size=15, weight="bold"))
-            faqText.pack()
-            qaTable = [["Pregunta", "Respuesta"],
-                       ["¿Es seguro poner \nmi información aquí?", "Sí, la aplicación no almacena\n su "
-                                                                   "data personal pero, si\n todavía estás "
-                                                                   "escéptico,\n entonces puedes ver "
-                                                                   "que\n información sí almacenamos \naccediendo "
-                                                                   "al archivo llamado\n database.db y cosas como el "
-                                                                   "\nssn son encriptado usando\n una"
-                                                                   " llave asimétrica."],
-                       ["¿Qué es una sección?", "La sección determina qué días\ny a qué horas tomas tus "
-                                                "clases\n, por ejemplo, \"LM1\" la L y la\n M te dice que las "
-                                                "clases son los \nlunes y miercoles y el 1\n te dice que empiezan"
-                                                "a las 1:00 PM."]]
-            faq = ctktable.CTkTable(scrollable_frame, row=3, column=2, values=qaTable)
-            faq.pack(expand=True, fill="both", padx=20, pady=20)
+        translation = self.load_language(lang)
+        self.status = SmoothFadeToplevel()
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        scaling_factor = self.tk.call("tk", "scaling")
+        x_position = int((screen_width - 475 * scaling_factor) / 2)
+        y_position = int((screen_height - 275 * scaling_factor) / 2)
+        window_geometry = f"{475}x{280}+{x_position + 130}+{y_position + 18}"
+        self.status.geometry(window_geometry)
+        self.status.title(translation["status"])
+        self.status.after(256, lambda: self.status.iconbitmap("images/tera-term.ico"))
+        self.status.resizable(False, False)
+        scrollable_frame = customtkinter.CTkScrollableFrame(self.status, width=475, height=280,
+                                                            fg_color=("#e6e6e6", "#222222"))
+        scrollable_frame.pack()
+        title = customtkinter.CTkLabel(scrollable_frame, text=translation["status_title"],
+                                       font=customtkinter.CTkFont(size=20, weight="bold"))
+        title.pack()
+        version = customtkinter.CTkLabel(scrollable_frame, text=translation["app_version"])
+        version.pack()
+        self.feedbackText = customtkinter.CTkTextbox(scrollable_frame, wrap="word", border_spacing=8, width=300,
+                                                     height=170, fg_color=("#ffffff", "#111111"))
+        self.feedbackText.pack(pady=10)
+        self.feedbackSend = customtkinter.CTkButton(scrollable_frame, border_width=2,
+                                                    text=translation["feedback"],
+                                                    text_color=("gray10", "#DCE4EE"),
+                                                    command=self.start_feedback_thread)
+        self.feedbackSend.pack()
+        checkUpdateText = customtkinter.CTkLabel(scrollable_frame, text=translation["update_title"])
+        checkUpdateText.pack(pady=5)
+        checkUpdate = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["update"],
+                                              text=translation["update"], anchor="w",
+                                              text_color=("gray10", "#DCE4EE"), command=self.update_app)
+        checkUpdate.pack()
+        website = customtkinter.CTkLabel(scrollable_frame, text=translation["website"])
+        website.pack(pady=5)
+        link = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["link"],
+                                       text=translation["link"], anchor="w",
+                                       text_color=("gray10", "#DCE4EE"), command=self.github_event)
+        link.pack()
+        notaso = customtkinter.CTkLabel(scrollable_frame, text=translation["notaso_title"])
+        notaso.pack(pady=5)
+        notasoLink = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["link"],
+                                             text=translation["notaso_link"], anchor="w",
+                                             text_color=("gray10", "#DCE4EE"), command=self.notaso_event)
+        notasoLink.pack()
+        faqText = customtkinter.CTkLabel(scrollable_frame, text=translation["faq"],
+                                         font=customtkinter.CTkFont(size=15, weight="bold"))
+        faqText.pack()
+        qaTable = [[translation["q"], translation["a"]],
+                   [translation["q1"], translation["a1"]],
+                   [translation["q2"], translation["a2"]]]
+        faq = ctktable.CTkTable(scrollable_frame, row=3, column=2, values=qaTable)
+        faq.pack(expand=True, fill="both", padx=20, pady=20)
         self.status.bind("<Escape>", lambda event: self.status.destroy())
 
     # Function to call the Google Sheets API
@@ -5336,7 +4518,8 @@ class TeraTermUI(customtkinter.CTk):
                 service = build("sheets", "v4", credentials=self.credentials)
             except:
                 DISCOVERY_SERVICE_URL = "https://sheets.googleapis.com/$discovery/rest?version=v4"
-                service = build("sheets", "v4", credentials=self.credentials, discoveryServiceUrl=DISCOVERY_SERVICE_URL)
+                service = build("sheets", "v4", credentials=self.credentials,
+                                discoveryServiceUrl=DISCOVERY_SERVICE_URL)
             now = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
             body = {
                 "values": [[now, self.user_id, values[0][0]]]
@@ -5362,7 +4545,8 @@ class TeraTermUI(customtkinter.CTk):
                 service = build("sheets", "v4", credentials=self.credentials)
             except:
                 DISCOVERY_SERVICE_URL = "https://sheets.googleapis.com/$discovery/rest?version=v4"
-                service = build("sheets", "v4", credentials=self.credentials, discoveryServiceUrl=DISCOVERY_SERVICE_URL)
+                service = build("sheets", "v4", credentials=self.credentials,
+                                discoveryServiceUrl=DISCOVERY_SERVICE_URL)
             try:
                 # Get all values in column A from the banned users spreadsheet
                 result = service.spreadsheets().values().get(
@@ -5381,9 +4565,9 @@ class TeraTermUI(customtkinter.CTk):
             self.connection_error = True
 
     def start_feedback_thread(self):
-        msg = None
         timeout_counter = 0
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         self.feedbackSend.configure(state="disabled")
         while self.user_id is None:
             time.sleep(1)
@@ -5392,29 +4576,16 @@ class TeraTermUI(customtkinter.CTk):
                 break
         if self.user_id is None:
             winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-            if lang == "English":
-                CTkMessagebox(title="Error", message="Error! Feedback submission not currently available",
-                              icon="cancel", button_width=380)
-            elif lang == "Español":
-                CTkMessagebox(title="Error", message="¡Error! Mandar comentarios no esta disponible ahora mismo",
-                              icon="cancel", button_width=380)
+            CTkMessagebox(title="Error", message=translation["feedback_unavailable"],
+                          icon="cancel", button_width=380)
         else:
-            if lang == "English":
-                msg = CTkMessagebox(master=self, title="Submit",
-                                    message="Are you ready to submit your feedback?"
-                                            " \n\n(SUBMISSION IS COMPLETELY ANONYMOUS)",
-                                    icon="question",
-                                    option_1="Cancel", option_2="No", option_3="Yes", icon_size=(65, 65),
-                                    button_color=("#c30101", "#145DA0", "#145DA0"),
-                                    hover_color=("darkred", "darkblue", "darkblue"))
-            elif lang == "Español":
-                msg = CTkMessagebox(master=self, title="Someter",
-                                    message="¿Estás preparado para mandar to comentario?"
-                                            " \n\n(EL ENVÍO ES COMPLETAMENTE ANÓNIMO)",
-                                    icon="question",
-                                    option_1="Cancelar", option_2="No", option_3="Sí", icon_size=(65, 65),
-                                    button_color=("#c30101", "#145DA0", "#145DA0"),
-                                    hover_color=("darkred", "darkblue", "darkblue"))
+            msg = CTkMessagebox(master=self, title="Submit",
+                                message=translation["submit_feedback"],
+                                icon="question",
+                                option_1=translation["option_1"], option_2=translation["option_2"],
+                                option_3=translation["option_3"], icon_size=(65, 65),
+                                button_color=("#c30101", "#145DA0", "#145DA0"),
+                                hover_color=("darkred", "darkblue", "darkblue"))
             response = msg.get()
             if response[0] == "Yes" or response[0] == "Sí":
                 feedback_thread = threading.Thread(target=self.submit_feedback)
@@ -5425,6 +4596,7 @@ class TeraTermUI(customtkinter.CTk):
     # Submits feedback from the user to a Google sheet
     def submit_feedback(self):
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         if not self.is_banned_flag:
             self.is_banned = self.is_user_banned(self.user_id)
             if not self.connection_error:
@@ -5443,12 +4615,8 @@ class TeraTermUI(customtkinter.CTk):
                         if result:
                             def show_success():
                                 winsound.PlaySound("sounds/success.wav", winsound.SND_ASYNC)
-                                if lang == "English":
-                                    CTkMessagebox(title="Success", icon="check",
-                                                  message="Feedback submitted successfully!", button_width=380)
-                                elif lang == "Español":
-                                    CTkMessagebox(title="Success", icon="check",
-                                                  message="¡Comentario sometido éxitosamente!", button_width=380)
+                                CTkMessagebox(title=translation["success_title"], icon="check",
+                                              message=translation["feedback_success"], button_width=380)
 
                             self.after(0, show_success)
                             resultDate = self.cursor.execute("SELECT date FROM user_data").fetchall()
@@ -5462,67 +4630,41 @@ class TeraTermUI(customtkinter.CTk):
                             if not self.connection_error:
                                 def show_error():
                                     winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                                    if lang == "English":
-                                        CTkMessagebox(title="Error",
-                                                      message="Error! An error occurred while submitting feedback",
-                                                      icon="cancel", button_width=380)
-                                    elif lang == "Español":
-                                        CTkMessagebox(title="Error",
-                                                      message="¡Error! Un error ocurrio mientras se sometia comentario",
-                                                      icon="cancel", button_width=380)
+                                    CTkMessagebox(title="Error",
+                                                  message=translation["feedback_error"],
+                                                  icon="cancel", button_width=380)
 
                                 self.after(0, show_error)
                     else:
                         if not self.connection_error:
                             def show_error():
                                 winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                                if lang == "English":
-                                    CTkMessagebox(title="Error", message="Error! Feedback cannot be empty",
-                                                  icon="cancel", button_width=380)
-                                elif lang == "Español":
-                                    CTkMessagebox(title="Error",
-                                                  message="¡Error! El comentario no puede estar vacio",
-                                                  icon="cancel", button_width=380)
+                                CTkMessagebox(title="Error", message=translation["feedback_empty"],
+                                              icon="cancel", button_width=380)
 
                             self.after(0, show_error)
                 else:
                     if not self.connection_error:
                         def show_error():
                             winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                            if lang == "English":
-                                CTkMessagebox(title="Error", message="Error! Feedback cannot exceed 1000 words",
-                                              icon="cancel", button_width=380)
-                            elif lang == "Español":
-                                CTkMessagebox(title="Error",
-                                              message="¡Error! El comentario no puede exceder 1000 palabras",
-                                              icon="cancel",
-                                              button_width=380)
+                            CTkMessagebox(title="Error", message=translation["feedback_1000"],
+                                          icon="cancel", button_width=380)
 
                         self.after(0, show_error)
             else:
                 if not self.connection_error:
                     def show_error():
                         winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                        if lang == "English":
-                            CTkMessagebox(title="Error", message="Error! Cannot submit more than one feedback per day",
-                                          icon="cancel", button_width=380)
-                        elif lang == "Español":
-                            CTkMessagebox(title="Error",
-                                          message="¡Error! No se puede enviar más de un comentario por día",
-                                          icon="cancel", button_width=380)
+                        CTkMessagebox(title="Error", message=translation["feedback_day"],
+                                      icon="cancel", button_width=380)
 
                     self.after(0, show_error)
         else:
             if not self.connection_error:
                 def show_error():
                     winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                    if lang == "English":
-                        CTkMessagebox(title="Error", message="Error! Feedback submission not currently available",
-                                      icon="cancel", button_width=380)
-                    elif lang == "Español":
-                        CTkMessagebox(title="Error",
-                                      message="¡Error! Mandar comentarios no esta disponible ahora mismo",
-                                      icon="cancel", button_width=380)
+                    CTkMessagebox(title="Error", message=translation["feedback_unavailable"],
+                                  icon="cancel", button_width=380)
 
                 self.after(0, show_error)
         self.feedbackSend.configure(state="normal")
@@ -5530,48 +4672,27 @@ class TeraTermUI(customtkinter.CTk):
     # Function that lets user select where their Tera Term application is located
     def change_location_event(self):
         lang = self.language_menu.get()
-        if lang == "English":
-            filename = filedialog.askopenfilename(initialdir="C:/",
-                                                  title="Select where your Tera Term is located (The executable)",
-                                                  filetypes=(("Tera Term", "*ttermpro.exe"),))
-            if re.search("ttermpro.exe", filename):
-                self.location = filename
-                directory, filename = os.path.split(filename)
-                self.teraterm_file = directory + "/TERATERM.ini"
-                location = self.cursor.execute("SELECT location FROM user_data").fetchall()
-                teraterm_config = self.cursor.execute("SELECT config FROM user_data").fetchall()
-                if len(location) == 0:
-                    self.cursor.execute("INSERT INTO user_data (location) VALUES (?)", (self.location,))
-                elif len(location) == 1:
-                    self.cursor.execute("UPDATE user_data SET location=?", (self.location,))
-                if len(teraterm_config) == 0:
-                    self.cursor.execute("INSERT INTO user_data (config) VALUES (?)", (self.teraterm_file,))
-                elif len(teraterm_config) == 1:
-                    self.cursor.execute("UPDATE user_data SET config=?", (self.teraterm_file,))
-                self.connection.commit()
-                self.show_success_message(350, 265, "Tera Term has been located successfully")
-                self.edit_teraterm_ini(self.teraterm_file)
-        if lang == "Español":
-            filename = filedialog.askopenfilename(initialdir="C:/",
-                                                  title="Selecciona donde tu Tera Term está localizado (El ejecutable)",
-                                                  filetypes=(("Tera Term", "*ttermpro.exe"),))
-            if re.search("ttermpro.exe", filename):
-                self.location = filename
-                directory, filename = os.path.split(filename)
-                self.teraterm_file = directory + "/TERATERM.ini"
-                location = self.cursor.execute("SELECT location FROM user_data").fetchall()
-                teraterm_config = self.cursor.execute("SELECT config FROM user_data").fetchall()
-                if len(location) == 0:
-                    self.cursor.execute("INSERT INTO user_data (location) VALUES (?)", (self.location,))
-                elif len(location) == 1:
-                    self.cursor.execute("UPDATE user_data SET location=?", (self.location,))
-                if len(teraterm_config) == 0:
-                    self.cursor.execute("INSERT INTO user_data (config) VALUES (?)", (self.teraterm_file,))
-                elif len(teraterm_config) == 1:
-                    self.cursor.execute("UPDATE user_data SET config=?", (self.teraterm_file,))
-                self.connection.commit()
-                self.show_success_message(350, 265, "Tera Term localizado exitósamente")
-                self.edit_teraterm_ini(self.teraterm_file)
+        translation = self.load_language(lang)
+        filename = filedialog.askopenfilename(initialdir="C:/",
+                                              title=translation["select_tera_term"],
+                                              filetypes=(("Tera Term", "*ttermpro.exe"),))
+        if re.search("ttermpro.exe", filename):
+            self.location = filename
+            directory, filename = os.path.split(filename)
+            self.teraterm_file = directory + "/TERATERM.ini"
+            location = self.cursor.execute("SELECT location FROM user_data").fetchall()
+            teraterm_config = self.cursor.execute("SELECT config FROM user_data").fetchall()
+            if len(location) == 0:
+                self.cursor.execute("INSERT INTO user_data (location) VALUES (?)", (self.location,))
+            elif len(location) == 1:
+                self.cursor.execute("UPDATE user_data SET location=?", (self.location,))
+            if len(teraterm_config) == 0:
+                self.cursor.execute("INSERT INTO user_data (config) VALUES (?)", (self.teraterm_file,))
+            elif len(teraterm_config) == 1:
+                self.cursor.execute("UPDATE user_data SET config=?", (self.teraterm_file,))
+            self.connection.commit()
+            self.show_success_message(350, 265, translation["tera_term_success"])
+            self.edit_teraterm_ini(self.teraterm_file)
         self.help.lift()
 
     # disables scrolling for the class list
@@ -5638,155 +4759,79 @@ class TeraTermUI(customtkinter.CTk):
             return
         self.focus_set()
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         bg_color = "#0e95eb"
         fg_color = "#333333"
         listbox_font = ("Arial", 11)
-        if lang == "English":
-            self.help = SmoothFadeToplevel()
-            screen_width = self.winfo_screenwidth()
-            screen_height = self.winfo_screenheight()
-            scaling_factor = self.tk.call("tk", "scaling")
-            x_position = int((screen_width - 475 * scaling_factor) / 2)
-            y_position = int((screen_height - 275 * scaling_factor) / 2)
-            window_geometry = f"{475}x{280}+{x_position + 130}+{y_position + 18}"
-            self.help.geometry(window_geometry)
-            self.help.title("Help")
-            self.help.after(256, lambda: self.help.iconbitmap("images/tera-term.ico"))
-            self.help.resizable(False, False)
-            scrollable_frame = customtkinter.CTkScrollableFrame(self.help, width=475, height=280,
-                                                                fg_color=("#e6e6e6", "#222222"))
-            scrollable_frame.pack()
-            title = customtkinter.CTkLabel(scrollable_frame, text="Help",
-                                           font=customtkinter.CTkFont(size=20, weight="bold"))
-            title.pack()
-            notice = customtkinter.CTkLabel(scrollable_frame, text="*Don't interact/touch Tera Term\n "
-                                                                   "while using this application*",
-                                            font=customtkinter.CTkFont(weight="bold", underline=True))
-            notice.pack()
-            searchboxText = customtkinter.CTkLabel(scrollable_frame, text="\n\nFind the code of your class:")
-            searchboxText.pack()
-            self.search_box = CustomEntry(scrollable_frame, self, placeholder_text="Class Name")
-            self.search_box.pack(pady=10)
-            self.class_list = tk.Listbox(scrollable_frame, width=35, bg=bg_color, fg=fg_color, font=listbox_font)
-            self.class_list.pack()
-            curriculumText = customtkinter.CTkLabel(scrollable_frame, text="\n\nCurriculums of Departments:")
-            curriculumText.pack()
-            curriculum = customtkinter.CTkOptionMenu(scrollable_frame,
-                                                     values=["Departments", "Accounting", "Finance", "Management",
-                                                             "Marketing", "General Biology", "Biology-Human Focus",
-                                                             "Computer Science", "Information Systems",
-                                                             "Social Sciences", "Physical Education",
-                                                             "Electronics", "Equipment Management", "Pedagogy",
-                                                             "Chemistry", "Nursing", "Office Systems",
-                                                             "Information Engineering"],
-                                                     command=self.curriculums, height=30, width=150)
-            curriculum.pack(pady=5)
-            termsText = customtkinter.CTkLabel(scrollable_frame, text="\n\nHow terms work:",
-                                               font=customtkinter.CTkFont(weight="bold", size=15))
-            termsText.pack()
-            terms = [["Year", "Term"],
-                     ["2019", "B91, B92, B93"],
-                     ["2020", "C01, C02, C03"],
-                     ["2021", "C11, C12, C13"],
-                     ["2022", "C21, C22, C23"],
-                     ["2023", "C31, C32, C33"],
-                     ["Semester", "Fall, Spring, Summer"]]
-            termsTable = ctktable.CTkTable(scrollable_frame, column=2, row=7, values=terms)
-            termsTable.pack(expand=True, fill="both", padx=20, pady=20)
-            filesText = customtkinter.CTkLabel(scrollable_frame, text="\nSelect the location of your Tera Term: (.exe)")
-            filesText.pack()
-            files = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["folder"],
-                                            text="       Find", anchor="w",
-                                            text_color=("gray10", "#DCE4EE"), command=self.change_location_event)
-            files.pack(pady=5)
-            disableIdleText = customtkinter.CTkLabel(scrollable_frame, text="\nDisables the functionality that prevents"
-                                                                            " Tera Term\n from closing automatically"
-                                                                            " because of inactivity")
-            disableIdleText.pack()
-            self.disableIdle = customtkinter.CTkSwitch(scrollable_frame, text="Disable Anti-Idle", onvalue="on",
-                                                       offvalue="off", command=self.disable_enable_idle)
-            self.disableIdle.pack()
-            fixText = customtkinter.CTkLabel(scrollable_frame, text="\nFix the program not executing things properly")
-            fixText.pack()
-            fix = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["fix"],
-                                          text="        Fix it", anchor="w",
-                                          text_color=("gray10", "#DCE4EE"), command=self.fix_execution_event_handler)
-            fix.pack(pady=5)
-
-        elif lang == "Español":
-            self.help = SmoothFadeToplevel()
-            screen_width = self.winfo_screenwidth()
-            screen_height = self.winfo_screenheight()
-            scaling_factor = self.tk.call("tk", "scaling")
-            x_position = int((screen_width - 475 * scaling_factor) / 2)
-            y_position = int((screen_height - 275 * scaling_factor) / 2)
-            window_geometry = f"{475}x{280}+{x_position + 130}+{y_position + 18}"
-            self.help.geometry(window_geometry)
-            self.help.title("Ayuda")
-            self.help.after(256, lambda: self.help.iconbitmap("images/tera-term.ico"))
-            self.help.resizable(False, False)
-            scrollable_frame = customtkinter.CTkScrollableFrame(self.help, width=475, height=280,
-                                                                fg_color=("#e6e6e6", "#222222"))
-            scrollable_frame.pack()
-            title = customtkinter.CTkLabel(scrollable_frame, text="Ayuda",
-                                           font=customtkinter.CTkFont(size=20, weight="bold"))
-            title.pack()
-            notice = customtkinter.CTkLabel(scrollable_frame, text="*No toque Tera Term\n "
-                                                                   "mientras use esta aplicación*",
-                                            font=customtkinter.CTkFont(weight="bold", underline=True))
-            notice.pack()
-            searchboxText = customtkinter.CTkLabel(scrollable_frame, text="\n\nEncuentra el código de tu clase:")
-            searchboxText.pack()
-            self.search_box = CustomEntry(scrollable_frame, self, placeholder_text="Nombre de la Clase")
-            self.search_box.pack(pady=10)
-            self.class_list = tk.Listbox(scrollable_frame, width=35, bg=bg_color, fg=fg_color, font=listbox_font)
-            self.class_list.pack()
-            curriculumText = customtkinter.CTkLabel(scrollable_frame, text="\n\nCurrículos de Departamentos:")
-            curriculumText.pack()
-            curriculum = customtkinter.CTkOptionMenu(scrollable_frame,
-                                                     values=["Departamentos", "Contabilidad", "Finanzas",
-                                                             "Gerencia", "Mercadeo", "Biología General",
-                                                             "Biología-Enfoque Humano", "Ciencias de Computadoras",
-                                                             "Sistemas de Información", "Ciencias Sociales",
-                                                             "Educación Física", "Electrónica",
-                                                             "Gerencia de Materiales", "Pedagogía", "Química",
-                                                             "Enfermería", "Sistemas de Oficina",
-                                                             "Ingeniería de la Información"],
-                                                     command=self.curriculums, height=30, width=150)
-            curriculum.pack(pady=5)
-            termsText = customtkinter.CTkLabel(scrollable_frame, text="\n\nCómo funcionan los términos:",
-                                               font=customtkinter.CTkFont(weight="bold", size=15))
-            termsText.pack()
-            terms = [["Año", "Términos"],
-                     ["2019", "B91, B92, B93"],
-                     ["2020", "C01, C02, C03"],
-                     ["2021", "C11, C12, C13"],
-                     ["2022", "C21, C22, C23"],
-                     ["2023", "C31, C32, C33"],
-                     ["Semestre", "Otoño, Primavera, Verano"]]
-            termsTable = ctktable.CTkTable(scrollable_frame, column=2, row=7, values=terms)
-            termsTable.pack(expand=True, fill="both", padx=20, pady=20)
-            filesText = customtkinter.CTkLabel(scrollable_frame, text="\nSelecciona donde está localizado tu"
-                                                                      " Tera Term: (.exe)")
-            filesText.pack()
-            files = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["folder"],
-                                            text="     Buscar", anchor="w",
-                                            text_color=("gray10", "#DCE4EE"), command=self.change_location_event)
-            files.pack(pady=5)
-            disableIdleText = customtkinter.CTkLabel(scrollable_frame, text="\nDesactiva la funcionalidad que previene"
-                                                                            " que Tera Term\n se cierre automáticamente"
-                                                                            " por inactividad")
-            disableIdleText.pack()
-            self.disableIdle = customtkinter.CTkSwitch(scrollable_frame, text="Desactiva Anti-Inactivo", onvalue="on",
-                                                       offvalue="off", command=self.disable_enable_idle)
-            self.disableIdle.pack()
-            fixText = customtkinter.CTkLabel(scrollable_frame, text="\nArreglar el programa que no ejecuta"
-                                                                    "\n las cosas correctamente")
-            fixText.pack()
-            fix = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["fix"],
-                                          text="     Arreglalo", anchor="w",
-                                          text_color=("gray10", "#DCE4EE"), command=self.fix_execution_event_handler)
-            fix.pack(pady=5)
+        self.help = SmoothFadeToplevel()
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        scaling_factor = self.tk.call("tk", "scaling")
+        x_position = int((screen_width - 475 * scaling_factor) / 2)
+        y_position = int((screen_height - 275 * scaling_factor) / 2)
+        window_geometry = f"{475}x{280}+{x_position + 130}+{y_position + 18}"
+        self.help.geometry(window_geometry)
+        self.help.title(translation["help"])
+        self.help.after(256, lambda: self.help.iconbitmap("images/tera-term.ico"))
+        self.help.resizable(False, False)
+        scrollable_frame = customtkinter.CTkScrollableFrame(self.help, width=475, height=280,
+                                                            fg_color=("#e6e6e6", "#222222"))
+        scrollable_frame.pack()
+        title = customtkinter.CTkLabel(scrollable_frame, text=translation["help"],
+                                       font=customtkinter.CTkFont(size=20, weight="bold"))
+        title.pack()
+        notice = customtkinter.CTkLabel(scrollable_frame, text=translation["notice"],
+                                        font=customtkinter.CTkFont(weight="bold", underline=True))
+        notice.pack()
+        searchboxText = customtkinter.CTkLabel(scrollable_frame, text=translation["searchbox_title"])
+        searchboxText.pack()
+        self.search_box = CustomEntry(scrollable_frame, self, placeholder_text=translation["searchbox"])
+        self.search_box.pack(pady=10)
+        self.class_list = tk.Listbox(scrollable_frame, width=35, bg=bg_color, fg=fg_color, font=listbox_font)
+        self.class_list.pack()
+        curriculumText = customtkinter.CTkLabel(scrollable_frame, text=translation["curriculums_title"])
+        curriculumText.pack()
+        curriculum = customtkinter.CTkOptionMenu(scrollable_frame,
+                                                 values=[translation["dep"], translation["acc"],
+                                                         translation["finance"], translation["management"],
+                                                         translation["mark"], translation["g_biology"],
+                                                         translation["h_biology"], translation["c_science"],
+                                                         translation["it"], translation["s_science"],
+                                                         translation["physical"], translation["elec"],
+                                                         translation["equip"], translation["peda"],
+                                                         translation["che"], translation["nur"],
+                                                         translation["office"], translation["engi"]],
+                                                 command=self.curriculums, height=30, width=150)
+        curriculum.pack(pady=5)
+        termsText = customtkinter.CTkLabel(scrollable_frame, text=translation["terms_title"],
+                                           font=customtkinter.CTkFont(weight="bold", size=15))
+        termsText.pack()
+        terms = [[translation["terms_year"], translation["terms_term"]],
+                 ["2019", "B91, B92, B93"],
+                 ["2020", "C01, C02, C03"],
+                 ["2021", "C11, C12, C13"],
+                 ["2022", "C21, C22, C23"],
+                 ["2023", "C31, C32, C33"],
+                 [translation["semester"], translation["seasons"]]]
+        termsTable = ctktable.CTkTable(scrollable_frame, column=2, row=7, values=terms)
+        termsTable.pack(expand=True, fill="both", padx=20, pady=20)
+        filesText = customtkinter.CTkLabel(scrollable_frame, text=translation["files_title"])
+        filesText.pack()
+        files = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["folder"],
+                                        text=translation["files_button"], anchor="w",
+                                        text_color=("gray10", "#DCE4EE"), command=self.change_location_event)
+        files.pack(pady=5)
+        disableIdleText = customtkinter.CTkLabel(scrollable_frame, text=translation["idle_title"])
+        disableIdleText.pack()
+        self.disableIdle = customtkinter.CTkSwitch(scrollable_frame, text=translation["idle"], onvalue="on",
+                                                   offvalue="off", command=self.disable_enable_idle)
+        self.disableIdle.pack()
+        fixText = customtkinter.CTkLabel(scrollable_frame, text=translation["fix_title"])
+        fixText.pack()
+        fix = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["fix"],
+                                      text=translation["fix"], anchor="w",
+                                      text_color=("gray10", "#DCE4EE"), command=self.fix_execution_event_handler)
+        fix.pack(pady=5)
         idle = self.cursor.execute("SELECT idle FROM user_data").fetchall()
         if idle:
             if idle[0][0] == "Disabled":
@@ -5956,6 +5001,7 @@ class TeraTermUI(customtkinter.CTk):
     # checks if there is no problems with the information in the entries
     def check_format(self):
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         entries = []
         error_msg_short = ""
         error_msg_medium = ""
@@ -5973,38 +5019,27 @@ class TeraTermUI(customtkinter.CTk):
         for i in range(self.a_counter + 1):
             (choices, classes, sections, semester) = entries[i]
             if not classes or not sections or not semester:
-                error_msg_long = "Error! Missing information\n about the classes you want to enroll" \
-                    if lang == "English" else "¡Error! Le falta informacion\n de las clases" \
-                                              " que deseas matricular"
+                error_msg_long = translation["missing_info_multiple"]
                 break
             elif choices not in ["Register", "Registra", "Drop", "Baja"]:
-                error_msg_medium = "Error! Must choose to either\n enroll or drop the classes" \
-                    if lang == "English" else "¡Error! Debes escoger si deseas\n matricular o dar de baja las clases"
+                error_msg_medium = translation["drop_or_enroll"]
                 break
             elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE):
-                error_msg_short = "Error! Wrong Format for Classes" if lang == "English" else \
-                    "¡Error! Formato Incorrecto de las Clases"
+                error_msg_short = translation["multiple_class_format_error"]
                 break
             elif not re.fullmatch("^[A-Z]{2}1$", sections, flags=re.IGNORECASE):
-                error_msg_short = "Error! Wrong Format for Sections" if lang == "English" else \
-                    "¡Error! Formato Incorrecto\n de las Secciones"
+                error_msg_short = translation["multiple_section_format_error"]
                 break
             elif not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE):
-                error_msg_short = "Error! Wrong Format for Semesters" if lang == "English" else \
-                    "¡Error! Formato Incorrecto\n de los Semestres"
+                error_msg_short = translation["multiple_semester_format_error"]
                 break
             elif ((choices == "Register" or choices == "Registra") and
                   (classes in self.enrolled_classes_list.values() or sections in self.enrolled_classes_list)):
-                error_msg_long = "Error! You are trying to enroll a class\n " \
-                                 "or a section that has already been enrolled" \
-                    if lang == "English" else "¡Error! Estás intentando de matricular una clase\n o " \
-                                              "sección que ya ha sido matriculada"
+                error_msg_long = translation["multiple_already_enrolled"]
                 break
             elif ((choices == "Drop" or choices == "Baja") and
                   (classes in self.dropped_classes_list.values() or sections in self.dropped_classes_list)):
-                error_msg_long = "Error! You are trying to drop a class\n or a section that has already been dropped" \
-                    if lang == "English" else "¡Error! Estás intentando dar de baja\n una clase o una " \
-                                              "sección\n que ya ha sido dada de baja"
+                error_msg_long = translation["multiple_already_dropped"]
                 break
 
         # Display error messages or proceed if no errors
@@ -6158,6 +5193,77 @@ class SmoothFadeToplevel(customtkinter.CTkToplevel):
     def button_event(self, event=None):
         self.fade_direction = -1
         self._fade()
+
+
+class ImageSlideshow:
+    def __init__(self, parent, image_folder, interval=3, width=300, height=200):
+        self.slideshow_frame = customtkinter.CTkFrame(parent)
+        self.image_folder = image_folder
+        self.interval = interval
+        self.width = width
+        self.height = height
+
+        self.load_images()
+        self.index = 0  # Added index to keep track of the current position in the list
+
+        self.label = customtkinter.CTkLabel(self.slideshow_frame, text="")
+        self.label.grid(row=0, column=1)
+
+        self.arrow_left = customtkinter.CTkButton(self.slideshow_frame, text='<', command=self.prev_image, width=25)
+        self.arrow_left.grid(row=0, column=0)
+
+        self.arrow_right = customtkinter.CTkButton(self.slideshow_frame, text='>', command=self.next_image, width=25)
+        self.arrow_right.grid(row=0, column=2)
+
+        self.after_id = self.slideshow_frame.after(1, lambda: None)
+        self.is_running = True
+        self.show_image()
+
+    def grid(self, **kwargs):
+        self.slideshow_frame.grid(**kwargs)
+
+    def grid_forget(self):
+        self.slideshow_frame.grid_forget()
+
+    def load_images(self):
+        image_files = [f for f in os.listdir(self.image_folder) if f.endswith(('png', 'gif', 'jpg', 'jpeg'))]
+        self.images = [
+            customtkinter.CTkImage(
+                light_image=Image.open(os.path.join(self.image_folder, f)).resize((self.width * 2, self.height * 2)),
+                size=(self.width, self.height))
+            for f in sorted(image_files)
+        ]
+
+    def show_image(self):
+        self.slideshow_frame.after_cancel(self.after_id)  # Cancel the existing timer
+        self.label.configure(image=self.images[self.index])  # Show the current image
+        self.reset_timer()  # Reset the timer after showing the image
+
+    def cycle_images(self):
+        self.index = (self.index + 1) % len(self.images)  # Advance to the next image in the list
+        self.show_image()  # Show the new image and reset the timer
+
+    def prev_image(self):
+        self.index = (self.index - 1) % len(self.images)  # Decrease index and wrap around if needed
+        self.show_image()  # Show the new image and reset the timer
+
+    def next_image(self):
+        self.index = (self.index + 1) % len(self.images)  # Increase index and wrap around if needed
+        self.show_image()  # Show the new image and reset the timer
+
+    def pause_cycle(self):
+        self.slideshow_frame.after_cancel(self.after_id)  # Cancel the existing timer
+        self.is_running = False  # Set the flag to indicate that the slideshow is not running
+
+    def resume_cycle(self):
+        if not self.is_running:  # Only resume if it is not already running
+            self.is_running = True  # Set the flag to indicate that the slideshow is running
+            self.reset_timer()  # Reset the timer to resume cycling of images
+
+    def reset_timer(self):
+        if self.is_running:  # Only reset the timer if the slideshow is running
+            self.slideshow_frame.after_cancel(self.after_id)  # Cancel the existing timer if any
+            self.after_id = self.slideshow_frame.after(self.interval * 1000, self.cycle_images)  # Set a new timer to cycle images
 
 
 DWMWA_EXTENDED_FRAME_BOUNDS = 9
