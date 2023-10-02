@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 9/30/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 10/1/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -189,13 +189,11 @@ class TeraTermUI(customtkinter.CTk):
         self.logo_label = customtkinter.CTkLabel(self.sidebar_frame, text="Tera Term UI",
                                                  font=customtkinter.CTkFont(size=20, weight="bold"))
         self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
-        self.status_button = customtkinter.CTkButton(self.sidebar_frame, text="     Status",
-                                                     image=self.images["status"],
-                                                     command=self.status_button_event, anchor="w")
+        self.status_button = CustomButton(self.sidebar_frame, text="     Status", image=self.images["status"],
+                                          command=self.status_button_event, anchor="w")
         self.status_button.grid(row=1, column=0, padx=20, pady=10)
-        self.help_button = customtkinter.CTkButton(self.sidebar_frame, text="       Help",
-                                                   image=self.images["help"],
-                                                   command=self.help_button_event, anchor="w")
+        self.help_button = CustomButton(self.sidebar_frame, text="       Help", image=self.images["help"],
+                                        command=self.help_button_event, anchor="w")
         self.help_button.grid(row=2, column=0, padx=20, pady=10)
         self.scaling_label = customtkinter.CTkLabel(self.sidebar_frame, text="Language, Appearance and \n\n "
                                                                              "UI Scaling:", anchor="w")
@@ -227,8 +225,8 @@ class TeraTermUI(customtkinter.CTk):
         self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(20, 20))
         self.host_tooltip = CTkToolTip(self.host_entry, message="Enter the name of the server\n of the university",
                                        bg_color="#1E90FF")
-        self.log_in = customtkinter.CTkButton(self, border_width=2, text="Log-In", text_color=("gray10", "#DCE4EE"),
-                                              command=self.login_event_handler)
+        self.log_in = CustomButton(self, border_width=2, text="Log-In", text_color=("gray10", "#DCE4EE"),
+                                         command=self.login_event_handler)
         self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(20, 20))
         self.log_in.configure(state="disabled")
         self.slideshow_frame = ImageSlideshow(self, 'slideshow', interval=5, width=300, height=150)
@@ -272,20 +270,18 @@ class TeraTermUI(customtkinter.CTk):
                                                   text="Connected to the server successfully",
                                                   font=customtkinter.CTkFont(size=20, weight="bold"))
         self.uprb_image = self.images["uprb"]
-        self.uprb_image_grid = customtkinter.CTkButton(self.authentication_frame, text="", image=self.uprb_image,
-                                                       command=self.uprb_event, fg_color="transparent", hover=False)
+        self.uprb_image_grid = CustomButton(self.authentication_frame, text="", image=self.uprb_image,
+                                            command=self.uprb_event, fg_color="transparent", hover=False)
         self.disclaimer = customtkinter.CTkLabel(master=self.authentication_frame, text="Authentication required")
         self.username = customtkinter.CTkLabel(master=self.authentication_frame, text="Username ")
         self.username_entry = CustomEntry(self.authentication_frame, self)
         self.username_tooltip = CTkToolTip(self.username_entry, message="The university requires this to\n"
                                                                         " enter and access the system",
                                            bg_color="#1E90FF")
-        self.student = customtkinter.CTkButton(master=self.a_buttons_frame, border_width=2,
-                                               text="Next",
-                                               text_color=("gray10", "#DCE4EE"), command=self.student_event_handler)
-        self.back = customtkinter.CTkButton(master=self.a_buttons_frame, fg_color="transparent", border_width=2,
-                                            text="Back", hover_color="#4E4F50", text_color=("gray10", "#DCE4EE"),
-                                            command=self.go_back_event)
+        self.student = CustomButton(master=self.a_buttons_frame, border_width=2, text="Next",
+                                    text_color=("gray10", "#DCE4EE"), command=self.student_event_handler)
+        self.back = CustomButton(master=self.a_buttons_frame, fg_color="transparent", border_width=2, text="Back",
+                                 hover_color="#4E4F50", text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
         self.back_tooltip = CTkToolTip(self.back, message="Go back to the main menu\n"
                                                           "of the application", bg_color="#A9A9A9", alpha=0.90)
 
@@ -3048,10 +3044,9 @@ class TeraTermUI(customtkinter.CTk):
         self.timer_label = customtkinter.CTkLabel(self.timer_window, text="",
                                                   font=customtkinter.CTkFont(size=15))
         self.timer_label.pack()
-        self.cancel_button = customtkinter.CTkButton(self.timer_window, text=translation["option_1"],
-                                                     width=260, height=32,
-                                                     hover_color="darkred", fg_color="red",
-                                                     command=self.end_countdown)
+        self.cancel_button = CustomButton(self.timer_window, text=translation["option_1"], width=260, height=32,
+                                          hover_color="darkred", fg_color="red",
+                                          command=self.end_countdown)
         self.timer_window.bind("<Escape>", lambda event: self.end_countdown())
         self.cancel_button.pack(pady=25)
         self.timer_window.protocol("WM_DELETE_WINDOW", self.end_countdown)
@@ -3102,8 +3097,8 @@ class TeraTermUI(customtkinter.CTk):
                                                         text="Information to enter the System",
                                                         font=customtkinter.CTkFont(size=20, weight="bold"))
             self.lock = self.images["lock"]
-            self.lock_grid = customtkinter.CTkButton(self.student_frame, text="", image=self.lock,
-                                                     command=self.lock_event, fg_color="transparent", hover=False)
+            self.lock_grid = CustomButton(self.student_frame, text="", image=self.lock, command=self.lock_event,
+                                          fg_color="transparent", hover=False)
             self.ssn = customtkinter.CTkLabel(master=self.student_frame, text="Social Security Number ")
             self.ssn_entry = CustomEntry(self.student_frame, self, placeholder_text="#########", show="*")
             self.ssn_tooltip = CTkToolTip(self.ssn_entry, message="Required to log-in,\n"
@@ -3119,12 +3114,11 @@ class TeraTermUI(customtkinter.CTk):
             self.ssn_entry.bind("<Control-c>", lambda e: "break")
             self.code_entry.bind("<Command-c>", lambda e: "break")
             self.code_entry.bind("<Control-c>", lambda e: "break")
-            self.system = customtkinter.CTkButton(master=self.s_buttons_frame, border_width=2,
-                                                  text="Enter",
-                                                  text_color=("gray10", "#DCE4EE"), command=self.tuition_event_handler)
-            self.back_student = customtkinter.CTkButton(master=self.s_buttons_frame, fg_color="transparent",
-                                                        border_width=2, text="Back", hover_color="#4E4F50",
-                                                        text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
+            self.system = CustomButton(master=self.s_buttons_frame, border_width=2, text="Enter",
+                                       text_color=("gray10", "#DCE4EE"), command=self.tuition_event_handler)
+            self.back_student = CustomButton(master=self.s_buttons_frame, fg_color="transparent", border_width=2,
+                                             text="Back", hover_color="#4E4F50", text_color=("gray10", "#DCE4EE"),
+                                             command=self.go_back_event)
             self.back_student_tooltip = CTkToolTip(self.back_student, message="Go back to the main menu\n"
                                                                               "of the application", bg_color="#A9A9A9",
                                                    alpha=0.90)
@@ -3182,10 +3176,9 @@ class TeraTermUI(customtkinter.CTk):
                                                       onvalue="on", offvalue="off", command=self.set_focus)
             self.show_all_tooltip = CTkToolTip(self.show_all, message="Display all sections or\n"
                                                                       "only ones with spaces", bg_color="#1E90FF")
-            self.search_next_page = customtkinter.CTkButton(master=self.search_scrollbar, fg_color="transparent",
-                                                            border_width=2, text="Next Page",
-                                                            text_color=("gray10", "#DCE4EE"), hover_color="#4E4F50",
-                                                            command=self.go_next_search_handler, width=85)
+            self.search_next_page = CustomButton(master=self.search_scrollbar, fg_color="transparent", border_width=2,
+                                                 text="Next Page", text_color=("gray10", "#DCE4EE"),
+                                                 hover_color="#4E4F50", command=self.go_next_search_handler, width=85)
             self.search_next_page_tooltip = CTkToolTip(self.search_next_page, message="There's more sections\n"
                                                                                       "available",
                                                        bg_color="#A9A9A9", alpha=0.90)
@@ -3210,54 +3203,50 @@ class TeraTermUI(customtkinter.CTk):
                                                               "C11", "C12", "C13", "C21", "C22", "C23", "C31"],
                                                       width=141)
             self.menu_semester_entry.set(self.DEFAULT_SEMESTER)
-            self.menu_submit = customtkinter.CTkButton(master=self.tabview.tab(self.other_tab), border_width=2,
-                                                       text="Submit", text_color=("gray10", "#DCE4EE"),
-                                                       command=self.option_menu_event_handler, width=141)
-            self.go_next_1VE = customtkinter.CTkButton(master=self.tabview.tab(self.other_tab), fg_color="transparent",
-                                                       border_width=2, text="Next Page",
-                                                       text_color=("gray10", "#DCE4EE"), hover_color="#4E4F50",
-                                                       command=self.go_next_page_handler, width=100)
-            self.go_next_1GP = customtkinter.CTkButton(master=self.tabview.tab(self.other_tab), fg_color="transparent",
-                                                       border_width=2, text="Next Page",
-                                                       text_color=("gray10", "#DCE4EE"), hover_color="#4E4F50",
-                                                       command=self.go_next_page_handler, width=100)
-            self.go_next_409 = customtkinter.CTkButton(master=self.tabview.tab(self.other_tab), fg_color="transparent",
-                                                       border_width=2, text="Next Page",
-                                                       text_color=("gray10", "#DCE4EE"), hover_color="#4E4F50",
-                                                       command=self.go_next_page_handler, width=100)
-            self.go_next_683 = customtkinter.CTkButton(master=self.tabview.tab(self.other_tab), fg_color="transparent",
-                                                       border_width=2, text="Next Page", hover_color="#4E4F50",
-                                                       text_color=("gray10", "#DCE4EE"),
-                                                       command=self.go_next_page_handler, width=100)
-            self.go_next_4CM = customtkinter.CTkButton(master=self.tabview.tab(self.other_tab), fg_color="transparent",
-                                                       border_width=2, text="Next Page",
-                                                       text_color=("gray10", "#DCE4EE"), hover_color="#4E4F50",
-                                                       command=self.go_next_page_handler, width=100)
+            self.menu_submit = CustomButton(master=self.tabview.tab(self.other_tab), border_width=2, text="Submit",
+                                            text_color=("gray10", "#DCE4EE"), command=self.option_menu_event_handler,
+                                            width=141)
+            self.go_next_1VE = CustomButton(master=self.tabview.tab(self.other_tab), fg_color="transparent",
+                                            border_width=2, text="Next Page",
+                                            text_color=("gray10", "#DCE4EE"), hover_color="#4E4F50",
+                                            command=self.go_next_page_handler, width=100)
+            self.go_next_1GP = CustomButton(master=self.tabview.tab(self.other_tab), fg_color="transparent",
+                                            border_width=2, text="Next Page",
+                                            text_color=("gray10", "#DCE4EE"), hover_color="#4E4F50",
+                                            command=self.go_next_page_handler, width=100)
+            self.go_next_409 = CustomButton(master=self.tabview.tab(self.other_tab), fg_color="transparent",
+                                            border_width=2, text="Next Page",
+                                            text_color=("gray10", "#DCE4EE"), hover_color="#4E4F50",
+                                            command=self.go_next_page_handler, width=100)
+            self.go_next_683 = CustomButton(master=self.tabview.tab(self.other_tab), fg_color="transparent",
+                                            border_width=2, text="Next Page", hover_color="#4E4F50",
+                                            text_color=("gray10", "#DCE4EE"),
+                                            command=self.go_next_page_handler, width=100)
+            self.go_next_4CM = CustomButton(master=self.tabview.tab(self.other_tab), fg_color="transparent",
+                                            border_width=2, text="Next Page",
+                                            text_color=("gray10", "#DCE4EE"), hover_color="#4E4F50",
+                                            command=self.go_next_page_handler, width=100)
 
             # Bottom Buttons
-            self.back_classes = customtkinter.CTkButton(master=self.t_buttons_frame, fg_color="transparent",
-                                                        border_width=2, text="Back", hover_color="#4E4F50",
-                                                        text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
+            self.back_classes = CustomButton(master=self.t_buttons_frame, fg_color="transparent", border_width=2,
+                                             text="Back", hover_color="#4E4F50", text_color=("gray10", "#DCE4EE"),
+                                             command=self.go_back_event)
             self.back_classes_tooltip = CTkToolTip(self.back_classes, alpha=0.90,
                                                    message="Go back to the main menu\n of the application",
                                                    bg_color="#A9A9A9")
-            self.submit = customtkinter.CTkButton(master=self.tabview.tab(self.enroll_tab), border_width=2,
-                                                  text="Submit",
-                                                  text_color=("gray10", "#DCE4EE"), command=self.submit_event_handler)
-            self.search = customtkinter.CTkButton(self.search_scrollbar, border_width=2,
-                                                  text="Search",
-                                                  text_color=("gray10", "#DCE4EE"), command=self.search_event_handler)
-            self.show_classes = customtkinter.CTkButton(master=self.t_buttons_frame, border_width=2,
-                                                        text="Show My Classes",
-                                                        text_color=("gray10", "#DCE4EE"),
-                                                        command=self.my_classes_event)
+            self.submit = CustomButton(master=self.tabview.tab(self.enroll_tab), border_width=2, text="Submit",
+                                       text_color=("gray10", "#DCE4EE"), command=self.submit_event_handler)
+            self.search = CustomButton(self.search_scrollbar, border_width=2, text="Search",
+                                       text_color=("gray10", "#DCE4EE"), command=self.search_event_handler)
+            self.show_classes = CustomButton(master=self.t_buttons_frame, border_width=2, text="Show My Classes",
+                                             text_color=("gray10", "#DCE4EE"),
+                                             command=self.my_classes_event)
             self.show_classes_tooltip = CTkToolTip(self.show_classes, message="Shows the classes you are\n "
                                                                               "enrolled in for a \n"
                                                                               "specific semester", bg_color="#1E90FF")
-            self.multiple = customtkinter.CTkButton(master=self.t_buttons_frame, fg_color="transparent", border_width=2,
-                                                    text="Multiple Classes", hover_color="#4E4F50",
-                                                    text_color=("gray10", "#DCE4EE"),
-                                                    command=self.multiple_classes_event)
+            self.multiple = CustomButton(master=self.t_buttons_frame, fg_color="transparent", border_width=2,
+                                         text="Multiple Classes", hover_color="#4E4F50",
+                                         text_color=("gray10", "#DCE4EE"), command=self.multiple_classes_event)
             self.multiple_tooltip = CTkToolTip(self.multiple, message="Enroll Multiple Classes\nat once",
                                                bg_color="blue")
 
@@ -3285,25 +3274,23 @@ class TeraTermUI(customtkinter.CTk):
                 self.m_register_menu.append(customtkinter.CTkOptionMenu(master=self.multiple_frame,
                                                                         values=["Register", "Drop"]))
                 self.m_register_menu[i].set("Choose")
-            self.m_add = customtkinter.CTkButton(master=self.m_button_frame, border_width=2, text="+",
-                                                 text_color=("gray10", "#DCE4EE"), command=self.add_event, height=40,
-                                                 width=50, hover=True, fg_color="blue")
+            self.m_add = CustomButton(master=self.m_button_frame, border_width=2, text="+",
+                                      text_color=("gray10", "#DCE4EE"), command=self.add_event, height=40, width=50,
+                                      hover=True, fg_color="blue")
             self.m_add_tooltip = CTkToolTip(self.m_add, message="Add more classes", bg_color="blue")
-            self.m_remove = customtkinter.CTkButton(master=self.m_button_frame, border_width=2, text="-",
-                                                    text_color=("gray10", "#DCE4EE"), command=self.remove_event,
-                                                    height=40, width=50, fg_color="red", hover=True,
-                                                    hover_color="darkred", state="disabled")
+            self.m_remove = CustomButton(master=self.m_button_frame, border_width=2, text="-",
+                                         text_color=("gray10", "#DCE4EE"), command=self.remove_event, height=40,
+                                         width=50, fg_color="red", hover=True, hover_color="darkred",
+                                         state="disabled")
             self.m_remove_tooltip = CTkToolTip(self.m_remove, message="Remove classes", bg_color="red")
-            self.back_multiple = customtkinter.CTkButton(master=self.m_button_frame, fg_color="transparent",
-                                                         border_width=2, text="Back", height=40, width=70,
-                                                         hover_color="#4E4F50", text_color=("gray10", "#DCE4EE"),
-                                                         command=self.go_back_event2)
+            self.back_multiple = CustomButton(master=self.m_button_frame, fg_color="transparent", border_width=2,
+                                              text="Back", height=40, width=70, hover_color="#4E4F50",
+                                              text_color=("gray10", "#DCE4EE"), command=self.go_back_event2)
             self.back_multiple_tooltip = CTkToolTip(self.back_multiple, alpha=0.90,
                                                     message="Go back to the previous \nscreen", bg_color="#A9A9A9")
-            self.submit_multiple = customtkinter.CTkButton(master=self.m_button_frame, border_width=2,
-                                                           text="Submit", text_color=("gray10", "#DCE4EE"),
-                                                           command=self.submit_multiple_event_handler, height=40,
-                                                           width=70)
+            self.submit_multiple = CustomButton(master=self.m_button_frame, border_width=2, text="Submit",
+                                                text_color=("gray10", "#DCE4EE"),
+                                                command=self.submit_multiple_event_handler, height=40,  width=70)
             self.save_data = customtkinter.CTkCheckBox(master=self.save_frame, text="Save Classes ",
                                                        command=self.save_classes, onvalue="on", offvalue="off")
             self.save_data_tooltip = CTkToolTip(self.save_data,
@@ -3715,8 +3702,8 @@ class TeraTermUI(customtkinter.CTk):
             self.previous_table_values = table_values
             self.update_idletasks()
 
-        self.download_pdf = customtkinter.CTkButton(self.search_scrollbar, text=translation["pdf_save_as"],
-                                                    command=self.download_as_pdf)
+        self.download_pdf = CustomButton(self.search_scrollbar, text=translation["pdf_save_as"],
+                                         command=self.download_as_pdf)
         self.download_pdf.grid(row=3, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
 
     # extracts the text from the searched class to get the important information
@@ -4476,28 +4463,25 @@ class TeraTermUI(customtkinter.CTk):
         self.feedbackText = customtkinter.CTkTextbox(scrollable_frame, wrap="word", border_spacing=8, width=300,
                                                      height=170, fg_color=("#ffffff", "#111111"))
         self.feedbackText.pack(pady=10)
-        self.feedbackSend = customtkinter.CTkButton(scrollable_frame, border_width=2,
-                                                    text=translation["feedback"],
-                                                    text_color=("gray10", "#DCE4EE"),
-                                                    command=self.start_feedback_thread)
+        self.feedbackSend = CustomButton(scrollable_frame, border_width=2, text=translation["feedback"],
+                                         text_color=("gray10", "#DCE4EE"), command=self.start_feedback_thread)
         self.feedbackSend.pack()
         checkUpdateText = customtkinter.CTkLabel(scrollable_frame, text=translation["update_title"])
         checkUpdateText.pack(pady=5)
-        checkUpdate = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["update"],
-                                              text=translation["update"], anchor="w",
-                                              text_color=("gray10", "#DCE4EE"), command=self.update_app)
+        checkUpdate = CustomButton(scrollable_frame, border_width=2, image=self.images["update"],
+                                   text=translation["update"], anchor="w", text_color=("gray10", "#DCE4EE"),
+                                   command=self.update_app)
         checkUpdate.pack()
         website = customtkinter.CTkLabel(scrollable_frame, text=translation["website"])
         website.pack(pady=5)
-        link = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["link"],
-                                       text=translation["link"], anchor="w",
-                                       text_color=("gray10", "#DCE4EE"), command=self.github_event)
+        link = CustomButton(scrollable_frame, border_width=2, image=self.images["link"], text=translation["link"],
+                            anchor="w", text_color=("gray10", "#DCE4EE"), command=self.github_event)
         link.pack()
         notaso = customtkinter.CTkLabel(scrollable_frame, text=translation["notaso_title"])
         notaso.pack(pady=5)
-        notasoLink = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["link"],
-                                             text=translation["notaso_link"], anchor="w",
-                                             text_color=("gray10", "#DCE4EE"), command=self.notaso_event)
+        notasoLink = CustomButton(scrollable_frame, border_width=2, image=self.images["link"],
+                                  text=translation["notaso_link"], anchor="w", text_color=("gray10", "#DCE4EE"),
+                                  command=self.notaso_event)
         notasoLink.pack()
         faqText = customtkinter.CTkLabel(scrollable_frame, text=translation["faq"],
                                          font=customtkinter.CTkFont(size=15, weight="bold"))
@@ -4817,9 +4801,9 @@ class TeraTermUI(customtkinter.CTk):
         termsTable.pack(expand=True, fill="both", padx=20, pady=20)
         filesText = customtkinter.CTkLabel(scrollable_frame, text=translation["files_title"])
         filesText.pack()
-        files = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["folder"],
-                                        text=translation["files_button"], anchor="w",
-                                        text_color=("gray10", "#DCE4EE"), command=self.change_location_event)
+        files = CustomButton(scrollable_frame, border_width=2, image=self.images["folder"],
+                             text=translation["files_button"], anchor="w", text_color=("gray10", "#DCE4EE"),
+                             command=self.change_location_event)
         files.pack(pady=5)
         disableIdleText = customtkinter.CTkLabel(scrollable_frame, text=translation["idle_title"])
         disableIdleText.pack()
@@ -4828,9 +4812,8 @@ class TeraTermUI(customtkinter.CTk):
         self.disableIdle.pack()
         fixText = customtkinter.CTkLabel(scrollable_frame, text=translation["fix_title"])
         fixText.pack()
-        fix = customtkinter.CTkButton(scrollable_frame, border_width=2, image=self.images["fix"],
-                                      text=translation["fix"], anchor="w",
-                                      text_color=("gray10", "#DCE4EE"), command=self.fix_execution_event_handler)
+        fix = CustomButton(scrollable_frame, border_width=2, image=self.images["fix"], text=translation["fix"],
+                           anchor="w", text_color=("gray10", "#DCE4EE"), command=self.fix_execution_event_handler)
         fix.pack(pady=5)
         idle = self.cursor.execute("SELECT idle FROM user_data").fetchall()
         if idle:
@@ -5066,6 +5049,26 @@ class TeraTermUI(customtkinter.CTk):
         return True
 
 
+class CustomButton(customtkinter.CTkButton):
+    def __init__(self, master=None, command=None, **kwargs):
+        super().__init__(master, cursor="hand2", **kwargs)  # Set cursor here
+        self.is_pressed = False
+        self.click_command = command
+        self.bind("<ButtonPress-1>", self.on_button_down)
+        self.bind("<ButtonRelease-1>", self.on_button_up)
+
+    def on_button_down(self, event):
+        self.is_pressed = True
+
+    def on_button_up(self, event):
+        width = self.winfo_width()
+        height = self.winfo_height()
+        if self.is_pressed and 0 <= event.x <= width and 0 <= event.y <= height:
+            if self.click_command:
+                self.click_command()
+        self.is_pressed = False
+
+
 class CustomEntry(customtkinter.CTkEntry):
     def __init__(self, master, teraterm_ui_instance, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
@@ -5209,10 +5212,10 @@ class ImageSlideshow:
         self.label = customtkinter.CTkLabel(self.slideshow_frame, text="")
         self.label.grid(row=0, column=1)
 
-        self.arrow_left = customtkinter.CTkButton(self.slideshow_frame, text='<', command=self.prev_image, width=25)
+        self.arrow_left = CustomButton(self.slideshow_frame, text='<', command=self.prev_image, width=25)
         self.arrow_left.grid(row=0, column=0)
 
-        self.arrow_right = customtkinter.CTkButton(self.slideshow_frame, text='>', command=self.next_image, width=25)
+        self.arrow_right = CustomButton(self.slideshow_frame, text='>', command=self.next_image, width=25)
         self.arrow_right.grid(row=0, column=2)
 
         self.after_id = self.slideshow_frame.after(1, lambda: None)
