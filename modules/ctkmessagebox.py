@@ -226,7 +226,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         if option_1:
             self.option_text_1 = option_1
             if option_1_type == "button":
-                self.button1 = customtkinter.CTkButton(self.frame_top, width=self.button_width, font=self.font,
+                self.button1 = CustomButton(self.frame_top, width=self.button_width, font=self.font,
                                                        height=self.button_height,
                                                        border_width=0, hover_color=self.hover_color[0],
                                                        fg_color=self.button_color[0], text_color=self.bt_text_color,
@@ -243,7 +243,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
 
         if option_2:
             self.option_text_2 = option_2
-            self.button_2 = customtkinter.CTkButton(self.frame_top, text=self.option_text_2, fg_color=self.button_color[1],
+            self.button_2 = CustomButton(self.frame_top, text=self.option_text_2, fg_color=self.button_color[1],
                                                     width=self.button_width, font=self.font, text_color=self.bt_text_color,
                                                     hover_color=self.hover_color[1], height=self.button_height,
                                                     command=lambda: self.button_event(self.option_text_2))
@@ -251,7 +251,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
 
         if option_3:
             self.option_text_3 = option_3
-            self.button_3 = customtkinter.CTkButton(self.frame_top, text=self.option_text_3, fg_color=self.button_color[2],
+            self.button_3 = CustomButton(self.frame_top, text=self.option_text_3, fg_color=self.button_color[2],
                                                     width=self.button_width, font=self.font, text_color=self.bt_text_color,
                                                     hover_color=self.hover_color[2], height=self.button_height,
                                                     command=lambda: self.button_event(self.option_text_3))
@@ -369,6 +369,27 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                 self.fade_out()
             self.grab_release()
             self.destroy()
+
+
+class CustomButton(customtkinter.CTkButton):
+    def __init__(self, master=None, command=None, **kwargs):
+        super().__init__(master, cursor="hand2", **kwargs)  # Set cursor here
+        self.is_pressed = False
+        self.click_command = command
+        self.bind("<ButtonPress-1>", self.on_button_down)
+        self.bind("<ButtonRelease-1>", self.on_button_up)
+
+    def on_button_down(self, event):
+        self.is_pressed = True
+
+    def on_button_up(self, event):
+        width = self.winfo_width()
+        height = self.winfo_height()
+        if self.is_pressed and 0 <= event.x <= width and 0 <= event.y <= height:
+            if self.click_command:
+                self.click_command()
+        self.is_pressed = False
+
 
 if __name__ == "__main__":
     app = CTkMessagebox()
