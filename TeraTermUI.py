@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 10/1/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 10/3/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -226,7 +226,7 @@ class TeraTermUI(customtkinter.CTk):
         self.host_tooltip = CTkToolTip(self.host_entry, message="Enter the name of the server\n of the university",
                                        bg_color="#1E90FF")
         self.log_in = CustomButton(self, border_width=2, text="Log-In", text_color=("gray10", "#DCE4EE"),
-                                         command=self.login_event_handler)
+                                   command=self.login_event_handler)
         self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(20, 20))
         self.log_in.configure(state="disabled")
         self.slideshow_frame = ImageSlideshow(self, 'slideshow', interval=5, width=300, height=150)
@@ -4189,7 +4189,6 @@ class TeraTermUI(customtkinter.CTk):
     # self.cpu_load_history.append(cpu_percent)
 
     def fix_execution_event_handler(self):
-        msg = None
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         if TeraTermUI.checkIfProcessRunning("ttermpro") and self.run_fix:
@@ -5051,16 +5050,20 @@ class TeraTermUI(customtkinter.CTk):
 
 class CustomButton(customtkinter.CTkButton):
     def __init__(self, master=None, command=None, **kwargs):
-        super().__init__(master, cursor="hand2", **kwargs)  # Set cursor here
+        super().__init__(master, cursor="hand2", **kwargs)
         self.is_pressed = False
         self.click_command = command
         self.bind("<ButtonPress-1>", self.on_button_down)
         self.bind("<ButtonRelease-1>", self.on_button_up)
 
     def on_button_down(self, event):
+        if self.cget("state") == "disabled":
+            return
         self.is_pressed = True
 
     def on_button_up(self, event):
+        if self.cget("state") == "disabled":
+            return
         width = self.winfo_width()
         height = self.winfo_height()
         if self.is_pressed and 0 <= event.x <= width and 0 <= event.y <= height:
@@ -5266,7 +5269,8 @@ class ImageSlideshow:
     def reset_timer(self):
         if self.is_running:  # Only reset the timer if the slideshow is running
             self.slideshow_frame.after_cancel(self.after_id)  # Cancel the existing timer if any
-            self.after_id = self.slideshow_frame.after(self.interval * 1000, self.cycle_images)  # Set a new timer to cycle images
+            # Set a new timer to cycle images
+            self.after_id = self.slideshow_frame.after(self.interval * 1000, self.cycle_images)
 
 
 DWMWA_EXTENDED_FRAME_BOUNDS = 9
