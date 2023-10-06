@@ -3734,6 +3734,7 @@ class TeraTermUI(customtkinter.CTk):
                 instructor = re.sub(r'\bN\b', '', instructor)  # remove standalone 'N'
                 instructor = re.sub(r'\bFULL\b', '', instructor)  # remove standalone 'FULL'
                 instructor = re.sub(r'\bRSVD\b', '', instructor)  # remove standalone 'RSVD'
+                instructor = re.sub(r'\bRSTR\b', '', instructor)  # remove standalone 'RSTR'
                 instructor = instructor.strip()  # remove leading and trailing whitespace
                 data.append({
                     "SEC": match.group(1),
