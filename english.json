@@ -203,7 +203,7 @@
 	"pdf_save_success": "PDF has been saved successfully",
 	"tooltip_sec": "Section",
 	"tooltip_m": "Modality",
-	"tooltip_cred": "Amount of Credits",
+	"tooltip_cred": "Amount of credits",
 	"tooltip_days": "The days you take the class",
 	"tooltip_times": "The time frame you take the class",
 	"tooltip_av": "Available spaces",
