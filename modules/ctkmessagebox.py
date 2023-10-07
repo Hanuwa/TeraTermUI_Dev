@@ -56,38 +56,38 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                  option_focus: Literal[1, 2, 3] = None):
         
         super().__init__()
-        
-        
+
+
         self.master_window = master
-     
+
         self.width = 250 if width<250 else width
         self.height = 150 if height<150 else  height
-            
+
         if self.master_window is None:
             self.spawn_x = int((self.winfo_screenwidth()-self.width)/2)
             self.spawn_y = int((self.winfo_screenheight()-self.height)/2)
         else:
             self.spawn_x = int(self.master_window.winfo_width() * .5 + self.master_window.winfo_x() - .5 * self.width + 7)
             self.spawn_y = int(self.master_window.winfo_height() * .5 + self.master_window.winfo_y() - .5 * self.height + 20)
-            
+
         self.after(10)
         self.geometry(f"{self.width}x{self.height}+{self.spawn_x}+{self.spawn_y}")
         self.title(title)
         self.resizable(width=False, height=False)
         self.fade = fade_in_duration
-        
+
         if self.fade:
             self.fade = 20 if self.fade<20 else self.fade
             self.attributes("-alpha", 0)
-        
+
         if not header:
             self.overrideredirect(1)
-            
+
         if topmost:
             self.attributes("-topmost", True)
         else:
             self.transient(self.master_window)
-    
+
         if sys.platform.startswith("win"):
             self.transparent_color = self._apply_appearance_mode(self.cget("fg_color"))
             self.attributes("-transparentcolor", self.transparent_color)
@@ -102,11 +102,11 @@ class CTkMessagebox(customtkinter.CTkToplevel):
             default_cancel_button = "cross"
 
         self.lift()
-        
+
         self.config(background=self.transparent_color)
         self.protocol("WM_DELETE_WINDOW", self.button_event)
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(0, weight=1)    
+        self.grid_rowconfigure(0, weight=1)
         self.x = self.winfo_x()
         self.y = self.winfo_y()
         self._title = title
@@ -114,24 +114,24 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         self.font = font
         self.justify = justify
         self.sound = sound
-        self.cancel_button = cancel_button if cancel_button else default_cancel_button      
+        self.cancel_button = cancel_button if cancel_button else default_cancel_button
         self.round_corners = corner_radius if corner_radius<=30 else 30
         self.button_width = button_width if button_width else self.width/4
         self.button_height = button_height if button_height else 28
-  
+
         if self.fade: self.attributes("-alpha", 0)
-        
+
         if self.button_height>self.height/4: self.button_height = self.height/4 -20
         self.dot_color = cancel_button_color
         self.border_width = border_width if border_width<6 else 5
-        
+
         if type(options) is list and len(options)>0:
             try:
                 option_1 = options[-1]
                 option_2 = options[-2]
                 option_3 = options[-3]
             except IndexError: None
-            
+
         if bg_color=="default":
             self.bg_color = self._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkFrame"]["fg_color"])
         else:
@@ -141,7 +141,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
             self.fg_color = self._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkFrame"]["top_fg_color"])
         else:
             self.fg_color = fg_color
-            
+
         default_button_color = self._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkButton"]["fg_color"])
 
         if sys.platform.startswith("win"):
@@ -154,7 +154,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
             self.button_color = (default_button_color, default_button_color, default_button_color)
         else:
             if type(button_color) is tuple:
-                if len(button_color)==2:                
+                if len(button_color)==2:
                     self.button_color = (button_color[0], button_color[1], default_button_color)
                 elif len(button_color)==1:
                     self.button_color = (button_color[0], default_button_color, default_button_color)
@@ -162,7 +162,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                     self.button_color = button_color
             else:
                 self.button_color = (button_color, button_color, button_color)
-        
+
         default_hover_color = self._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkButton"]["hover_color"])
 
         if hover_color == "default":
@@ -177,7 +177,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                     self.hover_color = hover_color
             else:
                 self.hover_color = (hover_color, hover_color, hover_color)
-        
+
         if text_color=="default":
             self.text_color = self._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkLabel"]["text_color"])
         else:
@@ -187,25 +187,25 @@ class CTkMessagebox(customtkinter.CTkToplevel):
             self.title_color = self._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkLabel"]["text_color"])
         else:
             self.title_color = title_color
-            
+
         if button_text_color=="default":
             self.bt_text_color = self._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkButton"]["text_color"])
         else:
             self.bt_text_color = button_text_color
-            
+
         if border_color=="default":
             self.border_color = self._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkFrame"]["border_color"])
         else:
             self.border_color = border_color
-            
+
         if icon_size:
             self.size_height = icon_size[1] if icon_size[1]<=self.height-100 else self.height-100
             self.size = (icon_size[0], self.size_height)
         else:
             self.size = (self.height/4, self.height/4)
-        
+
         self.icon = self.load_icon(icon, icon_size) if icon else None
-        
+
         self.frame_top = customtkinter.CTkFrame(self, corner_radius=self.round_corners, width=self.width, border_width=self.border_width,
                                                 bg_color=self.transparent_color, fg_color=self.bg_color, border_color=self.border_color)
         self.frame_top.grid(sticky="nswe")
@@ -219,7 +219,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
             self.frame_top.grid_rowconfigure((0,1,3), weight=1)
         else:
             self.frame_top.grid_rowconfigure((0,1,2), weight=1)
-            
+
         self.frame_top.bind("<B1-Motion>", self.move_window)
         self.frame_top.bind("<ButtonPress-1>", self.oldxyset)
 
@@ -230,19 +230,19 @@ class CTkMessagebox(customtkinter.CTkToplevel):
             self.button_close.grid(row=0, column=5, sticky="ne", padx=5+self.border_width, pady=5+self.border_width)
         elif self.cancel_button=="circle":
             self.button_close = customtkinter.CTkButton(self.frame_top, corner_radius=10, width=10, height=10, hover=False, border_width=0,
-                                                        text="", fg_color=self.dot_color if self.dot_color else "#c42b1c", command=self.button_event)     
-            self.button_close.grid(row=0, column=5, sticky="ne", padx=10, pady=10)       
-            
+                                                        text="", fg_color=self.dot_color if self.dot_color else "#c42b1c", command=self.button_event)
+            self.button_close.grid(row=0, column=5, sticky="ne", padx=10, pady=10)
+
         self.title_label = customtkinter.CTkLabel(self.frame_top, width=1, text=self._title, text_color=self.title_color, font=self.font)
         self.title_label.grid(row=0, column=0, columnspan=6, sticky="nw", padx=(15,30), pady=5)
         self.title_label.bind("<B1-Motion>", self.move_window)
         self.title_label.bind("<ButtonPress-1>", self.oldxyset)
-        
+
         self.info = customtkinter.CTkButton(self.frame_top,  width=1, height=self.height/2, corner_radius=0, text=self.message, font=self.font,
                                             fg_color=self.fg_color, hover=False, text_color=self.text_color, image=self.icon)
         self.info._text_label.configure(wraplength=self.width/2, justify="left")
         self.info.grid(row=1, column=0, columnspan=6, sticky="nwes", padx=self.border_width)
-        
+
         if self.info._text_label.winfo_reqheight()>self.height/2:
             height_offset = int((self.info._text_label.winfo_reqheight())-(self.height/2) + self.height)
             self.geometry(f"{self.width}x{height_offset}")
@@ -264,8 +264,8 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                                                          variable=self.button1_var)
                 self.button1.grid(row=2, column=3, sticky="news", padx=(0, 10), pady=10)
 
-        self.option_text_2 = option_2 
-        if option_2:     
+        self.option_text_2 = option_2
+        if option_2:
             self.button_2 = CustomButton(self.frame_top, text=self.option_text_2, fg_color=self.button_color[1],
                                                     width=self.button_width, font=self.font, text_color=self.bt_text_color,
                                                     hover_color=self.hover_color[1], height=self.button_height,
@@ -277,7 +277,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                                                     width=self.button_width, font=self.font, text_color=self.bt_text_color,
                                                     hover_color=self.hover_color[2], height=self.button_height,
                                                     command=lambda: self.button_event(self.option_text_3))
-            
+
         if self.justify=="center":
             if button_width:
                 columns = [4,3,2]
@@ -306,7 +306,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
             if button_width:
                 columns = [0,1,2]
                 span = 1
-            else:        
+            else:
                 columns = [0,2,4]
                 span = 2
             if option_3:
@@ -327,11 +327,11 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                 columns = [4,2,0]
                 span = 2
             self.button1.grid(row=2, column=columns[0], columnspan=span, sticky="news", padx=(0,10), pady=10)
-            if option_2:  
+            if option_2:
                 self.button_2.grid(row=2, column=columns[1], columnspan=span, sticky="news", padx=10, pady=10)
             if option_3:
                 self.button_3.grid(row=2, column=columns[2], columnspan=span, sticky="news", padx=(10,0), pady=10)
-                        
+
         if header:
             self.title_label.configure(text="")
             self.title_label.grid_configure(pady=0)
@@ -343,10 +343,16 @@ class CTkMessagebox(customtkinter.CTkToplevel):
 
         if self.sound:
             self.bell()
-            
+
         if self.fade:
             self.fade_in()
-            
+
+        self.bind("<Return>", self.return_key_handler)
+        self.bind("<Escape>", self.escape_key_handler)
+        self.bind("<space>", self.toggle_checkbox)
+
+        self.focus_set()
+
         if option_focus:
             self.option_focus = option_focus
             self.focus_button(self.option_focus)
@@ -354,9 +360,9 @@ class CTkMessagebox(customtkinter.CTkToplevel):
             if not self.option_text_2 and not self.option_text_3:
                 self.button1.focus()
                 self.button1.bind("<Return>", lambda event: self.button_event(self.option_text_1))
- 
+
         self.bind("<Escape>", lambda e: self.button_event())
-        
+
     def focus_button(self, option_focus):
         try:
             self.selected_button = getattr(self, "button_"+str(option_focus))
@@ -366,31 +372,31 @@ class CTkMessagebox(customtkinter.CTkToplevel):
             self.selected_button.bind("<Return>", lambda event: self.button_event(self.selected_option))
         except AttributeError:
             return
-        
+
         self.bind("<Left>", lambda e: self.change_left())
         self.bind("<Right>", lambda e: self.change_right())
-        
+
     def change_left(self):
         if self.option_focus==3:
             return
-        
+
         self.selected_button.unbind("<Return>")
         self.selected_button.configure(border_width=0)
-    
+
         if self.option_focus==1:
             if self.option_text_2:
                 self.option_focus = 2
-        
+
         elif self.option_focus==2:
             if self.option_text_3:
                 self.option_focus = 3
-  
+
         self.focus_button(self.option_focus)
-        
+
     def change_right(self):
         if self.option_focus==1:
             return
-        
+
         self.selected_button.unbind("<Return>")
         self.selected_button.configure(border_width=0)
 
@@ -399,9 +405,9 @@ class CTkMessagebox(customtkinter.CTkToplevel):
 
         elif self.option_focus==3:
             self.option_focus = 2
-                
+
         self.focus_button(self.option_focus)
-    
+
     def load_icon(self, icon, icon_size):
         if icon not in self.ICONS or self.ICONS[icon] is None:
             if icon in ["check", "cancel", "info", "question", "warning"]:
@@ -438,7 +444,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
             self.attributes("-alpha", i/100)
             self.update()
             time.sleep(1/self.fade)
-            
+
     def fade_out(self):
         for i in range(100,0,-10):
             if not self.winfo_exists():
@@ -456,6 +462,14 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         else:
             return self.event, None
 
+    def toggle_checkbox(self, event):
+        current_state = self.button1_var.get()
+
+        if current_state == 0:
+            self.button1.select()
+        else:
+            self.button1.deselect()
+
     def check_checkbox(self):
         if hasattr(self, 'button1_var'):  # If it's a checkbox
             self.button1.select()
@@ -467,12 +481,12 @@ class CTkMessagebox(customtkinter.CTkToplevel):
     def oldxyset(self, event):
         self.oldx = event.x
         self.oldy = event.y
-    
+
     def move_window(self, event):
         self.y = event.y_root - self.oldy
         self.x = event.x_root - self.oldx
         self.geometry(f'+{self.x}+{self.y}')
-        
+
     def button_event(self, event=None):
         try:
             self.button1.configure(state="disabled")
