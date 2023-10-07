@@ -3777,6 +3777,7 @@ class TeraTermUI(customtkinter.CTk):
             tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
             pytesseract.pytesseract.tesseract_cmd = str(tesseract_dir / "tesseract.exe")
             unzip_tesseract = False
+            self.tesseract_unzipped = True
 
         if TeraTermUI.is_file_in_directory("ttermpro.exe", r"C:/Program Files (x86)/teraterm"):
             backup_path = self.app_temp_dir / "TERATERM.ini.bak"
