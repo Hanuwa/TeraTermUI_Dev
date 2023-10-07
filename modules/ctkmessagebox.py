@@ -250,7 +250,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         if option_1:
             self.option_text_1 = option_1
             if option_1_type == "button":
-                self.button1 = customtkinter.CTkButton(self.frame_top, text=self.option_text_1, fg_color=self.button_color[0],
+                self.button1 = CustomButton(self.frame_top, text=self.option_text_1, fg_color=self.button_color[0],
                                                         width=self.button_width, font=self.font, text_color=self.bt_text_color,
                                                         hover_color=self.hover_color[0], height=self.button_height,
                                                         command=lambda: self.button_event(self.option_text_1))
@@ -266,14 +266,14 @@ class CTkMessagebox(customtkinter.CTkToplevel):
 
         self.option_text_2 = option_2 
         if option_2:     
-            self.button_2 = customtkinter.CTkButton(self.frame_top, text=self.option_text_2, fg_color=self.button_color[1],
+            self.button_2 = CustomButton(self.frame_top, text=self.option_text_2, fg_color=self.button_color[1],
                                                     width=self.button_width, font=self.font, text_color=self.bt_text_color,
                                                     hover_color=self.hover_color[1], height=self.button_height,
                                                     command=lambda: self.button_event(self.option_text_2))
 
         self.option_text_3 = option_3
         if option_3:
-            self.button_3 = customtkinter.CTkButton(self.frame_top, text=self.option_text_3, fg_color=self.button_color[2],
+            self.button_3 = CustomButton(self.frame_top, text=self.option_text_3, fg_color=self.button_color[2],
                                                     width=self.button_width, font=self.font, text_color=self.bt_text_color,
                                                     hover_color=self.hover_color[2], height=self.button_height,
                                                     command=lambda: self.button_event(self.option_text_3))
