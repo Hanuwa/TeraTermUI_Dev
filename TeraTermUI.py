@@ -3771,9 +3771,12 @@ class TeraTermUI(customtkinter.CTk):
     # Necessary things to do while the application is booting, gets done on a separate thread
     def boot_up(self, file_path):
         # Cleanup any leftover files/directories if they exist in any directory under temp_dir
+        unzip_tesseract = True
         tesseract_dir_path = self.app_temp_dir / "Tesseract-OCR"
         if tesseract_dir_path.is_dir():
-            shutil.rmtree(tesseract_dir_path)
+            tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
+            pytesseract.pytesseract.tesseract_cmd = str(tesseract_dir / "tesseract.exe")
+            unzip_tesseract = False
 
         if TeraTermUI.is_file_in_directory("ttermpro.exe", r"C:/Program Files (x86)/teraterm"):
             backup_path = self.app_temp_dir / "TERATERM.ini.bak"
@@ -3815,16 +3818,17 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Return>", lambda event: self.login_event_handler())
 
         # Unzips Teserract OCR
-        try:
-            with py7zr.SevenZipFile(self.zip_path, mode="r") as z:
-                z.extractall(self.app_temp_dir)
-            tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
-            pytesseract.pytesseract.tesseract_cmd = str(tesseract_dir / "tesseract.exe")
-            # tessdata_dir_config = f"--tessdata-dir {tesseract_dir / 'tessdata'}"
-            self.tesseract_unzipped = True
-        except Exception as e:
-            print(f"Error occurred during unzipping: {str(e)}")
-            self.tesseract_unzipped = False
+        if unzip_tesseract:
+            try:
+                with py7zr.SevenZipFile(self.zip_path, mode="r") as z:
+                    z.extractall(self.app_temp_dir)
+                tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
+                pytesseract.pytesseract.tesseract_cmd = str(tesseract_dir / "tesseract.exe")
+                # tessdata_dir_config = f"--tessdata-dir {tesseract_dir / 'tessdata'}"
+                self.tesseract_unzipped = True
+            except Exception as e:
+                print(f"Error occurred during unzipping: {str(e)}")
+                self.tesseract_unzipped = False
 
         # Generating user_id to ban user from sending feedback if needed
         # If the file doesn't already exist, generate a new UUID and write it to the file
@@ -3861,7 +3865,7 @@ class TeraTermUI(customtkinter.CTk):
             print(f"Failed to load credentials: {str(e)}")
             self.credentials = None
             self.disable_feedback = True
-        del tesseract_dir_path, tesseract_dir, backup_path, z, line, lines, credentials_dict, user_path
+        del tesseract_dir_path, tesseract_dir, backup_path, line, lines, credentials_dict, user_path
         gc.collect()
 
     # Deletes Tesseract OCR and tera term config file from the temp folder
