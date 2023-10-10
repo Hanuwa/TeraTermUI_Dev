@@ -228,5 +228,9 @@
 	"no_results": "NO SE ENCONTRARON RESULTADOS",	
 	
 	"chat_send": "Enviar",
-	"chat_exit": "¿Estás seguro de que quieres desconectarte del chat?"
+	"chat_exit": "¿Estás seguro de que quieres desconectarte del chat?",
+	"chat_count": "Usuarios conectados: ",
+	"chat_user": "Usuario: ",
+	"chat_max": "El mensaje es demasiado largo",
+    "chat_empty": "El mensaje no puede estar vacío"
 }
