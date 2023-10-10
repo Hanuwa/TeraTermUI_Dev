@@ -115,6 +115,7 @@ nuitka_command = (
     r'--include-data-file="'+project_directory+r'\spanish.json=spanish.json" '                                                
     r'--output-dir="'+output_directory+r'" --disable-console '
     r'--windows-icon-from-ico="'+project_directory+r'\images\tera-term.ico" '
+    r'--include-package=websockets.legacy '
     r'--lto=yes --nofollow-import-to=unittest --nofollow-import-to=reportlab.graphics.testshapes'
 )
 
