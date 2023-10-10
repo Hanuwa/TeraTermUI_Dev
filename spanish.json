@@ -225,5 +225,8 @@
 	"feedback_day": "¡Error! No se puede enviar más de un comentario por día",
 	"select_tera_term": "Selecciona donde tu Tera Term está localizado (El ejecutable)",
 	"tera_term_success": "Tera Term localizado exitósamente",
-	"no_results": "NO SE ENCONTRARON RESULTADOS"	
+	"no_results": "NO SE ENCONTRARON RESULTADOS",	
+	
+	"chat_send": "Enviar",
+	"chat_exit": "¿Estás seguro de que quieres desconectarte del chat?"
 }
