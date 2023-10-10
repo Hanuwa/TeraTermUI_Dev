@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 10/6/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 10/9/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -50,6 +50,7 @@ import uuid
 import webbrowser
 import win32gui
 import winsound
+from chat import ChatRoom
 from contextlib import closing
 from Cryptodome.Hash import HMAC, SHA256
 from Cryptodome.Cipher import AES
@@ -72,6 +73,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Table, \
     TableStyle, Paragraph, Spacer
+from chat import start_server
 from tkinter import filedialog
 from tkinter import messagebox
 from PIL import Image, ImageOps
@@ -165,6 +167,7 @@ class TeraTermUI(customtkinter.CTk):
             "success": customtkinter.CTkImage(light_image=Image.open("images/success.png"), size=(200, 150)),
             "status": customtkinter.CTkImage(light_image=Image.open("images/home.png"), size=(20, 20)),
             "help": customtkinter.CTkImage(light_image=Image.open("images/setting.png"), size=(18, 18)),
+            "chat": customtkinter.CTkImage(light_image=Image.open("images/chat.png"), size=(20, 20)),
             "uprb": customtkinter.CTkImage(light_image=Image.open("images/uprb.jpg"), size=(300, 100)),
             "lock": customtkinter.CTkImage(light_image=Image.open("images/lock.png"), size=(75, 75)),
             "update": customtkinter.CTkImage(light_image=Image.open("images/update.png"), size=(15, 15)),
@@ -195,6 +198,8 @@ class TeraTermUI(customtkinter.CTk):
         self.help_button = CustomButton(self.sidebar_frame, text="       Help", image=self.images["help"],
                                         command=self.help_button_event, anchor="w")
         self.help_button.grid(row=2, column=0, padx=20, pady=10)
+        self.chat_room = CustomButton(self.sidebar_frame, text="      Chat", image=self.images["chat"],
+                                      command=self.chat_button_event, anchor="w")
         self.scaling_label = customtkinter.CTkLabel(self.sidebar_frame, text="Language, Appearance and \n\n "
                                                                              "UI Scaling:", anchor="w")
         self.scaling_label.grid(row=5, column=0, padx=20, pady=(10, 10))
@@ -792,6 +797,7 @@ class TeraTermUI(customtkinter.CTk):
         self.back_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
         self.show_classes.grid(row=4, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         self.multiple.grid(row=4, column=2, padx=(10, 0), pady=(0, 0), sticky="e")
+        self.chat_room.grid(row=3, column=0, padx=20, pady=10)
         self.ssn_entry.delete(0, "end")
         self.code_entry.delete(0, "end")
         self.ssn_entry.configure(placeholder_text="#########")
@@ -2488,6 +2494,7 @@ class TeraTermUI(customtkinter.CTk):
             self.t_buttons_frame.grid_forget()
             self.multiple_frame.grid_forget()
             self.m_button_frame.grid_forget()
+            self.chat_room.grid_forget()
             self.language_menu.configure(state="normal")
             self.multiple.configure(state="normal")
             self.submit.configure(state="normal")
@@ -3290,7 +3297,7 @@ class TeraTermUI(customtkinter.CTk):
                                                     message="Go back to the previous \nscreen", bg_color="#A9A9A9")
             self.submit_multiple = CustomButton(master=self.m_button_frame, border_width=2, text="Submit",
                                                 text_color=("gray10", "#DCE4EE"),
-                                                command=self.submit_multiple_event_handler, height=40,  width=70)
+                                                command=self.submit_multiple_event_handler, height=40, width=70)
             self.save_data = customtkinter.CTkCheckBox(master=self.save_frame, text="Save Classes ",
                                                        command=self.save_classes, onvalue="on", offvalue="off")
             self.save_data_tooltip = CTkToolTip(self.save_data,
@@ -4839,6 +4846,16 @@ class TeraTermUI(customtkinter.CTk):
         self.class_list.bind("<MouseWheel>", self.disable_scroll)
         self.search_box.bind("<KeyRelease>", self.search_classes)
         self.help.bind("<Escape>", lambda event: self.help.destroy())
+
+    def chat_button_event(self):
+        lang = self.language_menu.get()
+        self.chat_room.configure(state="disabled")
+        server_thread = threading.Thread(target=start_server)
+        server_thread.daemon = True
+        server_thread.start()
+
+        chat_app = ChatRoom(lang=self.load_language(lang), chat_button=self.chat_room)
+        chat_app.change_language()
 
     # Gets the latest release of the application on GitHub
     def get_latest_release(self):
