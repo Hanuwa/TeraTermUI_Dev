@@ -6,8 +6,10 @@ import threading
 import tkinter as tk
 import uuid
 import websockets
+import winsound
 from CTkMessagebox import CTkMessagebox
 from datetime import datetime
+from tkinter import ttk
 
 
 class ChatRoom(ctk.CTkToplevel):
@@ -28,33 +30,38 @@ class ChatRoom(ctk.CTkToplevel):
         self.chat_room = chat_button
 
         self.chat_display = tk.Text(self)
-        self.chat_display.configure(background='lightgray')
-        self.chat_display.configure(font=("Roboto", 12))
-        self.chat_display.configure(state=tk.DISABLED)
-        self.chat_display.configure(wrap=tk.WORD)
-        self.chat_display.grid(row=0, column=0, sticky='nsew', padx=(20, 0), pady=20)
+        self.chat_display.configure(background="#d1d1d1", font=("Helvetica", 12), state=tk.DISABLED, wrap=tk.WORD,
+                                    bd=0, highlightthickness=0, padx=10, pady=10, fg="#333333")
+        self.chat_display.grid(row=0, column=0, sticky="nsew", padx=(20, 0), pady=20)
 
         # Create a frame for the entry and button
         self.bottom_frame = ctk.CTkFrame(self)
-        self.bottom_frame.grid(row=1, column=0, sticky='nsew', padx=20)
+        self.bottom_frame.grid(row=1, column=0, sticky="nsew", padx=20)
 
-        self.msg_entry = ctk.CTkTextbox(self.bottom_frame, width=300, height=55, wrap='word')
-        self.msg_entry.grid(row=0, column=0, sticky='nsew')
+        self.msg_entry = ctk.CTkTextbox(self.bottom_frame, width=300, height=55, wrap="word")
+        self.msg_entry.grid(row=0, column=0, sticky="nsew")
 
         self.send_btn = CustomButton(self.bottom_frame, text="Send", command=self.send_msg)
-        self.send_btn.grid(row=0, column=1, sticky='nsew')
+        self.send_btn.grid(row=0, column=1, sticky="nsew")
         self.exit_btn = CustomButton(self.bottom_frame, text="Exit", fg_color="#c30101", hover_color="darkred",
                                      command=self.disconnect_and_close)
-        self.exit_btn.grid(row=1, column=0, columnspan=2, pady=(15, 0), sticky='nsew')
-        self.user_count_label = tk.Label(self, text="Users connected: 0", bg="lightgray")
-        self.user_count_label.grid(row=2, column=0, sticky='nsew', padx=20, pady=(0, 20))
+        self.exit_btn.grid(row=1, column=0, columnspan=2, pady=(15, 0), sticky="nsew")
+        self.user_count_label = tk.Label(self, text="Users connected: 0", bg="lightgray", font=("Helvetica", 10))
+        self.user_count_label.grid(row=2, column=0, sticky="e", padx=(0, 75), pady=(15, 0))
 
         self.username = f"User{random.randint(1000, 9999)}"
         self.sent_message_ids = set()
 
-        self.scrollbar = tk.Scrollbar(self, orient=tk.VERTICAL, command=self.chat_display.yview)
-        self.chat_display['yscrollcommand'] = self.scrollbar.set
-        self.scrollbar.grid(row=0, column=1, sticky='ns', pady=20)
+        self.username_label = tk.Label(self, text=f"User: {self.username}", bg="lightgray", font=("Helvetica", 10))
+        self.username_label.grid(row=2, column=0, sticky="w", padx=(100, 0), pady=(15, 0))
+
+        style = ttk.Style()
+        style.configure("TScrollbar", background="gray", troughcolor="white", gripcount=0,
+                        darkcolor="gray", lightcolor="gray", bordercolor="gray")
+
+        self.scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, style="TScrollbar", command=self.chat_display.yview)
+        self.chat_display["yscrollcommand"] = self.scrollbar.set
+        self.scrollbar.grid(row=0, column=1, sticky="ns", pady=20)
 
         # Configure the grid columns and rows
         self.grid_rowconfigure(0, weight=1)  # chat_display should expand vertically
@@ -73,8 +80,8 @@ class ChatRoom(ctk.CTkToplevel):
         # Start websocket client in a new thread
         threading.Thread(target=self.start_websocket_client, daemon=True).start()
 
-        self.msg_entry.bind('<Return>', self.send_msg)
-        self.bind('<Escape>', self.disconnect_and_close)
+        self.msg_entry.bind("<Return>", self.send_msg)
+        self.bind("<Escape>", self.disconnect_and_close)
         self.protocol("WM_DELETE_WINDOW", self.disconnect_and_close)
         self.chat_display.bind("<MouseWheel>", self.smooth_scroll)  # for Windows
         self.chat_display.bind("<Button-4>", self.smooth_scroll)  # for Linux scroll up
@@ -83,6 +90,7 @@ class ChatRoom(ctk.CTkToplevel):
     def change_language(self):
         self.send_btn.configure(text=self.translations["chat_send"])
         self.exit_btn.configure(text=self.translations["exit"])
+        self.username_label.configure(text=self.translations["chat_user"] + self.username)
 
     def send_msg(self, event=None):
         # Generate a unique ID for the message
@@ -93,8 +101,16 @@ class ChatRoom(ctk.CTkToplevel):
 
         # Retrieve the message from the entry widget
         msg_content = self.msg_entry.get("1.0", tk.END).strip()
-
+        word_count = len(msg_content.split())
         if not msg_content:
+            winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+            CTkMessagebox(title="Error", message=self.translations["chat_empty"], icon="cancel",
+                          button_width=380)
+            return
+        if word_count >= 1000:
+            winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+            CTkMessagebox(title="Error", message=self.translations["chat_max"], icon="cancel",
+                          button_width=380)
             return
 
         # Construct the message with ID, username, and content
@@ -121,7 +137,7 @@ class ChatRoom(ctk.CTkToplevel):
         self.after_id = self.after(100, self.check_for_messages)
 
     def update_user_count_label(self, count):
-        self.user_count_label.configure(text=f"Users connected: {count}")
+        self.user_count_label.configure(text=self.translations["chat_count"] + count)
 
     def append_msg(self, message, user, message_id):
         self.chat_display.configure(state=tk.NORMAL)
@@ -129,12 +145,12 @@ class ChatRoom(ctk.CTkToplevel):
         # Handle System messages
         if user == "System":
             self.chat_display.insert(tk.END, f"{message}\n", "system_msg")
-            self.chat_display.tag_configure("system_msg", foreground="gray", justify='center')
+            self.chat_display.tag_configure("system_msg", foreground="gray", justify="center")
             self.chat_display.configure(state=tk.DISABLED)
             return
 
         # Get current time and format it for timestamps
-        current_time = datetime.now().strftime('%H:%M:%S')
+        current_time = datetime.now().strftime("%H:%M:%S")
 
         # Check if the message is from the current user or someone else
         if user == self.username:
@@ -149,12 +165,14 @@ class ChatRoom(ctk.CTkToplevel):
             self.chat_display.insert(tk.END, f"{message}\n\n", f"msg_{message_id}")
 
         # Configure tags
-        self.chat_display.tag_configure("left_name", foreground="darkgreen", justify='left')
-        self.chat_display.tag_configure("right_name", foreground="darkblue", justify='right')
-        self.chat_display.tag_configure(f"msg_{message_id}", foreground="black",
-                                        justify='left' if user != self.username else 'right')
-        self.chat_display.tag_configure("left_time", foreground="gray", justify='left')
-        self.chat_display.tag_configure("right_time", foreground="gray", justify='right')
+        self.chat_display.tag_configure("left_name", foreground="darkgreen", justify="left")
+        self.chat_display.tag_configure("right_name", foreground="darkblue", justify="right")
+        if user != self.username:
+            self.chat_display.tag_configure(f"msg_{message_id}", foreground="black", justify="left")
+        else:
+            self.chat_display.tag_configure(f"msg_{message_id}", foreground="black", justify="right")
+        self.chat_display.tag_configure("left_time", foreground="gray", justify="left")
+        self.chat_display.tag_configure("right_time", foreground="gray", justify="right")
         self.chat_display.yview(tk.END)
 
         self.chat_display.configure(state=tk.DISABLED)
@@ -184,15 +202,15 @@ class ChatRoom(ctk.CTkToplevel):
                 message = await websocket.recv()
                 parts = message.split("|")
 
+                # Check for user count updates
                 if len(parts) == 2 and parts[0] == "USERS_COUNT":
                     user_count = parts[1]
                     self.after(0, self.update_user_count_label, user_count)
+                    continue  # Skip the rest and wait for the next message
 
+                # Check for regular chat messages
                 elif len(parts) == 3:
                     message_id, user, msg = parts
-                    if user == "USERS_COUNT":
-                        self.after(0, self.update_user_count_label, msg)
-                        continue
 
                     if message_id in self.sent_message_ids:
                         # This message was sent by this client, so ignore it
@@ -226,7 +244,7 @@ class ChatRoom(ctk.CTkToplevel):
             except Exception:
                 print("Failed to notify the server about the disconnection.")
         self.connected = False
-        if hasattr(self, 'chat_room') and self.chat_room is not None:
+        if hasattr(self, "chat_room") and self.chat_room is not None:
             self.chat_room.configure(state="normal")
 
     def start_websocket_client(self):
