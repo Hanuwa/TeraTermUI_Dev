@@ -9,8 +9,8 @@ NO_USER_TIMEOUT = 60  # 60 seconds
 
 async def handler(websocket, path):
     connected_clients.add(websocket)
-    user_count_msg = f"USERS_COUNT|{len(connected_clients)}"
-    await asyncio.gather(*[client.send(user_count_msg) for client in connected_clients])
+    await update_user_count()
+
     try:
         async for message in websocket:
             if message == "disconnecting":
@@ -26,9 +26,13 @@ async def handler(websocket, path):
             connected_clients.remove(websocket)
             logging.info(f"Client {websocket.remote_address} has been removed.")
             disconnect_msg = f"{websocket.remote_address} has disconnected."
-            user_count_msg = f"USERS_COUNT|{len(connected_clients)}"
-            await asyncio.gather(*[client.send(user_count_msg) for client in connected_clients],
-                                 *[client.send(disconnect_msg) for client in connected_clients])
+            await update_user_count()
+            await asyncio.gather(*[client.send(disconnect_msg) for client in connected_clients])
+
+
+async def update_user_count():
+    user_count_msg = f"USERS_COUNT|{len(connected_clients)}"
+    await asyncio.gather(*[client.send(user_count_msg) for client in connected_clients])
 
 
 async def check_connections(server_running):
