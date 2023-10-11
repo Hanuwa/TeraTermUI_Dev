@@ -8,11 +8,27 @@ import sys
 from colorama import init, Fore, Style
 
 
+def extract_second_date_from_file(filepath):
+    with open(filepath, 'r') as f:
+        for line in f:
+            if "Current Build" in line:
+                # Split by '-' and get the last part which should be the date
+                return line.split("-")[-1].strip()
+    return None
+
+
 def check_and_restore_backup():
     if os.path.exists(program_backup):
-        shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
-        os.remove(program_backup)
-        print(Fore.YELLOW + "\nPrevious session was interrupted. Restoration from backup completed." + Style.RESET_ALL)
+        program_backup_date = extract_second_date_from_file(program_backup)
+        tera_term_ui_date = extract_second_date_from_file(project_directory + r"\TeraTermUI.py")
+        if program_backup_date and tera_term_ui_date and program_backup_date != tera_term_ui_date:
+            print(Fore.YELLOW + "\nDate mismatch detected in the backup file. Restoration from backup skipped.\n"
+                                "Delete Backup file if no longer needed (Main Program File)" + Style.RESET_ALL)
+        else:
+            shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+            print(
+                Fore.YELLOW + "\nPrevious session was interrupted. Restoration from backup completed." + Style.RESET_ALL)
+            os.remove(program_backup)
 
 
 def terminate_process(signum, frame):
