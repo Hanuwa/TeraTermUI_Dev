@@ -225,5 +225,9 @@
 	"feedback_day": "Error! Cannot submit more than one feedback per day",
 	"select_tera_term": "Select where your Tera Term is located (The executable)",
 	"tera_term_success": "Tera Term has been located successfully",
-	"no_results": "NO RESULTS FOUND"
+	"no_results": "NO RESULTS FOUND",
+	
+	"enroll_tab": "Enroll",
+	"search_tab": "Search",
+	"other_tab": "Other"
 }
