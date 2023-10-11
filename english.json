@@ -225,12 +225,5 @@
 	"feedback_day": "Error! Cannot submit more than one feedback per day",
 	"select_tera_term": "Select where your Tera Term is located (The executable)",
 	"tera_term_success": "Tera Term has been located successfully",
-	"no_results": "NO RESULTS FOUND",
-	
-	"chat_send": "Send",
-	"chat_exit": "Are you sure you want to disconnect from the chat?",
-	"chat_count": "Users connected: ",
-	"chat_user": "User: ",
-	"chat_max": "Message is too long",
-	"chat_empty": "Message cannot be empty"
+	"no_results": "NO RESULTS FOUND"
 }
