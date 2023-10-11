@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 10/9/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 10/11/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -50,7 +50,6 @@ import uuid
 import webbrowser
 import win32gui
 import winsound
-from chat import ChatRoom
 from contextlib import closing
 from Cryptodome.Hash import HMAC, SHA256
 from Cryptodome.Cipher import AES
@@ -73,7 +72,6 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Table, \
     TableStyle, Paragraph, Spacer
-from chat import start_server
 from tkinter import filedialog
 from tkinter import messagebox
 from PIL import Image, ImageOps
@@ -167,7 +165,6 @@ class TeraTermUI(customtkinter.CTk):
             "success": customtkinter.CTkImage(light_image=Image.open("images/success.png"), size=(200, 150)),
             "status": customtkinter.CTkImage(light_image=Image.open("images/home.png"), size=(20, 20)),
             "help": customtkinter.CTkImage(light_image=Image.open("images/setting.png"), size=(18, 18)),
-            "chat": customtkinter.CTkImage(light_image=Image.open("images/chat.png"), size=(20, 20)),
             "uprb": customtkinter.CTkImage(light_image=Image.open("images/uprb.jpg"), size=(300, 100)),
             "lock": customtkinter.CTkImage(light_image=Image.open("images/lock.png"), size=(75, 75)),
             "update": customtkinter.CTkImage(light_image=Image.open("images/update.png"), size=(15, 15)),
@@ -198,8 +195,6 @@ class TeraTermUI(customtkinter.CTk):
         self.help_button = CustomButton(self.sidebar_frame, text="       Help", image=self.images["help"],
                                         command=self.help_button_event, anchor="w")
         self.help_button.grid(row=2, column=0, padx=20, pady=10)
-        self.chat_room = CustomButton(self.sidebar_frame, text="      Chat", image=self.images["chat"],
-                                      command=self.chat_button_event, anchor="w")
         self.scaling_label = customtkinter.CTkLabel(self.sidebar_frame, text="Language, Appearance and \n\n "
                                                                              "UI Scaling:", anchor="w")
         self.scaling_label.grid(row=5, column=0, padx=20, pady=(10, 10))
@@ -761,17 +756,17 @@ class TeraTermUI(customtkinter.CTk):
         self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 20))
         self.t_buttons_frame.grid_columnconfigure(1, weight=2)
         self.title_enroll.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-        self.e_classes.grid(row=1, column=1, padx=(44, 0), pady=(0, 0), sticky="w")
+        self.e_classes.grid(row=1, column=1, padx=(32, 0), pady=(0, 0), sticky="w")
         self.e_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         if lang == "English":
-            self.e_section.grid(row=2, column=1, padx=(33, 0), pady=(20, 0), sticky="w")
+            self.e_section.grid(row=2, column=1, padx=(21, 0), pady=(20, 0), sticky="w")
         elif lang == "Español":
-            self.e_section.grid(row=2, column=1, padx=(30, 0), pady=(20, 0), sticky="w")
+            self.e_section.grid(row=2, column=1, padx=(18, 0), pady=(20, 0), sticky="w")
         self.e_section_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
-        self.e_semester.grid(row=3, column=1, padx=(21, 0), pady=(20, 0), sticky="w")
+        self.e_semester.grid(row=3, column=1, padx=(9, 0), pady=(20, 0), sticky="w")
         self.e_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
-        self.register.grid(row=4, column=1, padx=(75, 0), pady=(20, 0), sticky="w")
-        self.drop.grid(row=4, column=1, padx=(0, 35), pady=(20, 0), sticky="e")
+        self.register.grid(row=4, column=1, padx=(65, 0), pady=(20, 0), sticky="w")
+        self.drop.grid(row=4, column=1, padx=(0, 25), pady=(20, 0), sticky="e")
         self.submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
         self.search_scrollbar.grid(row=0, column=1, padx=(0, 0), pady=(0, 0), sticky="nsew")
         self.title_search.grid(row=0, column=1, padx=(0, 0), pady=(0, 20), sticky="n")
@@ -787,17 +782,18 @@ class TeraTermUI(customtkinter.CTk):
         self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
         self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         if lang == "English":
-            self.menu.grid(row=2, column=1, padx=(47, 0), pady=(10, 0), sticky="w")
+            self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
         elif lang == "Español":
-            self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
+            self.menu.grid(row=2, column=1, padx=(24, 0), pady=(10, 0), sticky="w")
         self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-        self.menu_semester.grid(row=3, column=1, padx=(21, 0), pady=(20, 0), sticky="w")
+        self.menu_semester.grid(row=3, column=1, padx=(9, 0), pady=(20, 0), sticky="w")
         self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
         self.menu_submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
         self.back_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
         self.show_classes.grid(row=4, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         self.multiple.grid(row=4, column=2, padx=(10, 0), pady=(0, 0), sticky="e")
-        self.chat_room.grid(row=3, column=0, padx=20, pady=10)
+        self.tabview.set(self.enroll_tab)
+        self.bind("<Control-Tab>", lambda event: self.tab_switcher())
         self.ssn_entry.delete(0, "end")
         self.code_entry.delete(0, "end")
         self.ssn_entry.configure(placeholder_text="#########")
@@ -2473,6 +2469,7 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<space>")
             self.unbind("<Up>")
             self.unbind("<Down>")
+            self.unbind("<Control-Tab>")
             self.bind("<Return>", lambda event: self.login_event_handler())
             self.initialization_class()
             self.initialization_multiple()
@@ -2494,7 +2491,6 @@ class TeraTermUI(customtkinter.CTk):
             self.t_buttons_frame.grid_forget()
             self.multiple_frame.grid_forget()
             self.m_button_frame.grid_forget()
-            self.chat_room.grid_forget()
             self.language_menu.configure(state="normal")
             self.multiple.configure(state="normal")
             self.submit.configure(state="normal")
@@ -2739,10 +2735,22 @@ class TeraTermUI(customtkinter.CTk):
         self.save_data_tooltip.configure(message=translation["save_data_tooltip"])
         self.auto_enroll_tooltip.configure(message=translation["auto_enroll_tooltip"])
         self.search_next_page_tooltip.configure(message=translation["search_next_page_tooltip"])
+        if self.enroll_tab != translation["enroll_tab"]:
+            self.after(1000, self.rename_tabs)
         if lang == "English":
             self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(20, 20))
         elif lang == "Español":
             self.host.grid(row=2, column=0, columnspan=2, padx=(5, 0), pady=(20, 20))
+
+    def rename_tabs(self):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        self.tabview.rename(self.enroll_tab, translation["enroll_tab"])
+        self.enroll_tab = translation["enroll_tab"]
+        self.tabview.rename(self.search_tab, translation["search_tab"])
+        self.search_tab = translation["search_tab"]
+        self.tabview.rename(self.other_tab, translation["other_tab"])
+        self.other_tab = translation["other_tab"]
 
     def change_semester(self):
         for i in range(1, self.a_counter + 1):
@@ -3134,9 +3142,9 @@ class TeraTermUI(customtkinter.CTk):
         # Classes
         if not self.init_class:
             self.init_class = True
-            self.enroll_tab = "Enroll/Matricular"
-            self.search_tab = "Search/Buscar"
-            self.other_tab = "Other/Otros"
+            self.enroll_tab = "Enroll"
+            self.search_tab = "Search"
+            self.other_tab = "Other"
             self.tabview.add(self.enroll_tab)
             self.tabview.add(self.search_tab)
             self.tabview.add(self.other_tab)
@@ -4424,6 +4432,15 @@ class TeraTermUI(customtkinter.CTk):
         pywinauto_handle = self.uprb.top_window().handle
         win32gui.SetForegroundWindow(pywinauto_handle)
 
+    def tab_switcher(self):
+        if self.tabview.get() == self.enroll_tab:
+            self.tabview.set(self.search_tab)
+        elif self.tabview.get() == self.search_tab:
+            self.tabview.set(self.other_tab)
+        elif self.tabview.get() == self.other_tab:
+            self.tabview.set(self.enroll_tab)
+        self.switch_tab()
+
     # Changes keybind depending on the tab the user is currently on
     def switch_tab(self):
         self.focus_set()
@@ -4846,16 +4863,6 @@ class TeraTermUI(customtkinter.CTk):
         self.class_list.bind("<MouseWheel>", self.disable_scroll)
         self.search_box.bind("<KeyRelease>", self.search_classes)
         self.help.bind("<Escape>", lambda event: self.help.destroy())
-
-    def chat_button_event(self):
-        lang = self.language_menu.get()
-        self.chat_room.configure(state="disabled")
-        server_thread = threading.Thread(target=start_server)
-        server_thread.daemon = True
-        server_thread.start()
-
-        chat_app = ChatRoom(lang=self.load_language(lang), chat_button=self.chat_room)
-        chat_app.change_language()
 
     # Gets the latest release of the application on GitHub
     def get_latest_release(self):
