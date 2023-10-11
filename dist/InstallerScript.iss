@@ -11,7 +11,7 @@
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{E93AB9D4-A46D-467F-A63C-4CF6B57A37C3}
+AppId={{CF2350A9-945A-44CD-B538-226F1CEB6FD4}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 ArchitecturesInstallIn64BitMode=x64
@@ -37,18 +37,17 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 
 [CustomMessages]
 english.teraterm=Do you wish to install Tera Term too?
-spanish.teraterm=¿Desea instalar Tera Term también?
+spanish.teraterm=Â¿Desea instalar Tera Term tambiÃ©n?
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 Name: "teraterm"; Description: "{cm:teraterm}"; GroupDescription: "Additional installations"; Flags: unchecked
 
 [Files]
-Source: "{#MyAppPath}\TeraTermUI_installer\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion 
-Source: "{#MyAppPath}\TeraTermUI_installer\Tesseract-OCR.7z"; DestDir: "{app}"; Flags: onlyifdoesntexist 
+Source: "{#MyAppPath}\TeraTermUI_installer\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyAppPath}\database.db"; DestDir: "{userappdata}\TeraTermUI"; Flags: onlyifdoesntexist 
 Source: "{#MyAppPath}\feedback.zip"; DestDir: "{userappdata}\TeraTermUI"; Flags: onlyifdoesntexist
-Source: "{#MyAppPath}\TeraTermUI_installer\*"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist recursesubdirs createallsubdirs
+Source: "{#MyAppPath}\TeraTermUI_installer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#MyAppPath}\teraterm-4.106.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
@@ -70,7 +69,11 @@ begin
     if WizardIsTaskSelected('teraterm') then
     begin
       // Run the teraterm installer without any prompt
-      Exec(ExpandConstant('{tmp}\teraterm-4.106.exe'), '/SILENT', '', SW_SHOW, ewWaitUntilTerminated, ResultCode);
+      if not Exec(ExpandConstant('{tmp}\teraterm-4.106.exe'), '/SILENT', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
+      begin
+        // Handle the error. For example, show a message to the user.
+        MsgBox('Tera Term installation failed.', mbError, MB_OK);
+      end;
     end;
   end;
 end;
