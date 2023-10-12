@@ -11,23 +11,50 @@ from colorama import init, Fore, Style
 def extract_second_date_from_file(filepath):
     with open(filepath, 'r') as f:
         for line in f:
-            if "Current Build" in line:
-                # Split by '-' and get the last part which should be the date
-                return line.split("-")[-1].strip()
-    return None
+            # Find all date patterns in the line
+            dates = re.findall(r'\d{1,2}/\d{1,2}/\d{2,4}', line)
+
+            # Check if at least two dates are found
+            if len(dates) >= 2:
+                return dates[1]
+        return None
+
+
+def extract_version_main_file(filepath):
+    with open(filepath, 'r') as f:
+        for line in f:
+            # Check if the line contains the word "v" followed by a numeric character
+            if 'v' in line:
+                positions = [pos for pos, char in enumerate(line) if char == 'v']
+                for pos in positions:
+                    if line[pos+1].isdigit():
+                        start_pos = pos + 1
+                        end_pos = line[start_pos:].find(' ')
+                        return line[start_pos:start_pos+end_pos]
+        return None
 
 
 def check_and_restore_backup():
     if os.path.exists(program_backup):
         program_backup_date = extract_second_date_from_file(program_backup)
         tera_term_ui_date = extract_second_date_from_file(project_directory + r"\TeraTermUI.py")
-        if program_backup_date and tera_term_ui_date and program_backup_date != tera_term_ui_date:
-            print(Fore.YELLOW + "\nDate mismatch detected in the backup file. Restoration from backup skipped.\n"
-                                "Delete Backup file if no longer needed (Main Program File)" + Style.RESET_ALL)
+        tera_term_ui_version = extract_version_main_file(project_directory + r"\TeraTermUI.py")
+        print(program_backup_date)
+        print(tera_term_ui_date)
+        print(tera_term_ui_version)
+        if program_backup_date != tera_term_ui_date:
+            print(Fore.YELLOW + "\nDate mismatch detected between the main file and the backup one. "
+                                "\nRestoration from backup skipped. Delete backup file if no longer needed"
+                  + Style.RESET_ALL)
+        elif tera_term_ui_version != update_without_v:
+            print(Fore.YELLOW + "\nVersion mismatch detected between the main file and the backup one. "
+                                "\nRestoration from backup skipped. Delete backup file if no longer needed"
+                  + Style.RESET_ALL)
         else:
             shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
             print(
-                Fore.YELLOW + "\nPrevious session was interrupted. Restoration from backup completed." + Style.RESET_ALL)
+                Fore.YELLOW + "\nPrevious session was interrupted. Restoration from backup completed." + 
+                Style.RESET_ALL)
             os.remove(program_backup)
 
 
@@ -69,7 +96,7 @@ else:
     update = "v" + update_without_v
 versions = ['installer', 'portable']
 output_directory = os.path.join(r"C:/Users/" + username + "/OneDrive/Documentos", "TeraTermUI_" + update)
-upx_command = r"upx --best " + output_directory + r"\TeraTermUI.dist\TeraTermUI.exe"
+upx_command = r"upx --ultra-brute " + output_directory + r"\TeraTermUI.dist\TeraTermUI.exe"
 
 # If process gets abruptly interrupted, load backup file
 program_backup = project_directory + r"\TeraTermUI.BAK.py"
