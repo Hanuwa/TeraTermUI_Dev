@@ -1175,7 +1175,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             send_keys("{ENTER}")
                             self.uprb.UprbayTeraTermVt.type_keys("1CP")
-                            self.uprb.UprbayTeraTermVt.type_keys(dialog_input.replace(" ", "").upper())
+                            self.uprb.UprbayTeraTermVt.type_keys(dialog_input)
                             send_keys("{ENTER}")
                             text_output = self.capture_screenshot()
                             if "INVALID TERM SELECTION" in text_output:
@@ -1362,10 +1362,9 @@ class TeraTermUI(customtkinter.CTk):
                                     in text_output and count_enroll != 15:
                                 self.e_counter = 0
                                 self.m_counter = 0
-                                for i in range(count_enroll, 0, -1):
-                                    self.e_counter += 1
                                 send_keys("{TAB 2}")
                                 for i in range(count_enroll, 0, -1):
+                                    self.e_counter += 1
                                     send_keys("{TAB 2}")
                                 for i in range(self.a_counter + 1):
                                     if choices[i] in ["Register", "Registra"]:
@@ -3614,7 +3613,6 @@ class TeraTermUI(customtkinter.CTk):
 
     # function for the user to download the created pdf to their computer
     def download_as_pdf(self):
-        filepath = None
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         # Get the class name from the user input
@@ -4112,7 +4110,8 @@ class TeraTermUI(customtkinter.CTk):
     # links to each correspondant curriculum that the user chooses
     def curriculums(self, choice):
         links = {
-            "Departments": "https://www.uprb.edu/sample-page/decanato-de-asuntos-academicos/departamentos-academicos-2/",
+            "Departments": "https://www.uprb.edu/sample-page/decanato-de-asuntos-academicos"
+                           "/departamentos-academicos-2/",
             "Departamentos": "https://www.uprb.edu/sample-page/decanato-de-asuntos-academicos/departamentos"
                              "-academicos-2/",
             "Accounting": "https://drive.google.com/file/d/0BzdErxfu_JSCSDA0NHMyYVNhdXA3V1ZqX2c1aUlIT21Oc1RF/view"
