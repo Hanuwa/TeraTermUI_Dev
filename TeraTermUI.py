@@ -1608,11 +1608,11 @@ class TeraTermUI(customtkinter.CTk):
                                             self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0),
                                                                  sticky="n")
                                             if lang == "English":
-                                                self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
+                                                self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
                                             elif lang == "Español":
-                                                self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
+                                                self.menu.grid(row=2, column=1, padx=(24, 0), pady=(10, 0), sticky="w")
                                             self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-                                            self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0),
+                                            self.menu_semester.grid(row=3, column=1, padx=(9, 0), pady=(20, 0),
                                                                     sticky="w")
                                             self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0),
                                                                           sticky="n")
@@ -1694,11 +1694,11 @@ class TeraTermUI(customtkinter.CTk):
                                                                    sticky="n")
                                             self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
                                             if lang == "English":
-                                                self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
+                                                self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
                                             elif lang == "Español":
-                                                self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
+                                                self.menu.grid(row=2, column=1, padx=(24, 0), pady=(10, 0), sticky="w")
                                             self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-                                            self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0),
+                                            self.menu_semester.grid(row=3, column=1, padx=(9, 0), pady=(20, 0),
                                                                     sticky="w")
                                             self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0),
                                                                           sticky="n")
@@ -1759,11 +1759,11 @@ class TeraTermUI(customtkinter.CTk):
                                                                    sticky="n")
                                             self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
                                             if lang == "English":
-                                                self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
+                                                self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
                                             elif lang == "Español":
-                                                self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
+                                                self.menu.grid(row=2, column=1, padx=(24, 0), pady=(10, 0), sticky="w")
                                             self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-                                            self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0),
+                                            self.menu_semester.grid(row=3, column=1, padx=(9, 0), pady=(20, 0),
                                                                     sticky="w")
                                             self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0),
                                                                           sticky="n")
@@ -1817,11 +1817,11 @@ class TeraTermUI(customtkinter.CTk):
                                                                    sticky="n")
                                             self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
                                             if lang == "English":
-                                                self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
+                                                self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
                                             elif lang == "Español":
-                                                self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
+                                                self.menu.grid(row=2, column=1, padx=(24, 0), pady=(10, 0), sticky="w")
                                             self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-                                            self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0),
+                                            self.menu_semester.grid(row=3, column=1, padx=(9, 0), pady=(20, 0),
                                                                     sticky="w")
                                             self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0),
                                                                           sticky="n")
@@ -1891,11 +1891,11 @@ class TeraTermUI(customtkinter.CTk):
                                                                    sticky="n")
                                             self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
                                             if lang == "English":
-                                                self.menu.grid(row=2, column=1, padx=(44, 0), pady=(10, 0), sticky="w")
+                                                self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
                                             elif lang == "Español":
-                                                self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
+                                                self.menu.grid(row=2, column=1, padx=(24, 0), pady=(10, 0), sticky="w")
                                             self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-                                            self.menu_semester.grid(row=3, column=1, padx=(20, 0), pady=(20, 0),
+                                            self.menu_semester.grid(row=3, column=1, padx=(9, 0), pady=(20, 0),
                                                                     sticky="w")
                                             self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0),
                                                                           sticky="n")
@@ -2539,17 +2539,17 @@ class TeraTermUI(customtkinter.CTk):
         self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 20))
         self.t_buttons_frame.grid_columnconfigure(1, weight=2)
         self.title_enroll.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-        self.e_classes.grid(row=1, column=1, padx=(44, 0), pady=(0, 0), sticky="w")
+        self.e_classes.grid(row=1, column=1, padx=(32, 0), pady=(0, 0), sticky="w")
         self.e_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         if lang == "English":
-            self.e_section.grid(row=2, column=1, padx=(33, 0), pady=(20, 0), sticky="w")
+            self.e_section.grid(row=2, column=1, padx=(21, 0), pady=(20, 0), sticky="w")
         elif lang == "Español":
-            self.e_section.grid(row=2, column=1, padx=(30, 0), pady=(20, 0), sticky="w")
+            self.e_section.grid(row=2, column=1, padx=(18, 0), pady=(20, 0), sticky="w")
         self.e_section_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
-        self.e_semester.grid(row=3, column=1, padx=(21, 0), pady=(20, 0), sticky="w")
+        self.e_semester.grid(row=3, column=1, padx=(9, 0), pady=(20, 0), sticky="w")
         self.e_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
-        self.register.grid(row=4, column=1, padx=(75, 0), pady=(20, 0), sticky="w")
-        self.drop.grid(row=4, column=1, padx=(0, 35), pady=(20, 0), sticky="e")
+        self.register.grid(row=4, column=1, padx=(65, 0), pady=(20, 0), sticky="w")
+        self.drop.grid(row=4, column=1, padx=(0, 25), pady=(20, 0), sticky="e")
         self.submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
         self.search_scrollbar.grid(row=0, column=1, padx=(0, 0), pady=(0, 0), sticky="nsew")
         self.title_search.grid(row=0, column=1, padx=(0, 0), pady=(0, 20), sticky="n")
@@ -2576,11 +2576,11 @@ class TeraTermUI(customtkinter.CTk):
         self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
         self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         if lang == "English":
-            self.menu.grid(row=2, column=1, padx=(47, 0), pady=(10, 0), sticky="w")
+            self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
         elif lang == "Español":
-            self.menu.grid(row=2, column=1, padx=(36, 0), pady=(10, 0), sticky="w")
+            self.menu.grid(row=2, column=1, padx=(24, 0), pady=(10, 0), sticky="w")
         self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-        self.menu_semester.grid(row=3, column=1, padx=(21, 0), pady=(20, 0), sticky="w")
+        self.menu_semester.grid(row=3, column=1, padx=(9, 0), pady=(20, 0), sticky="w")
         self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
         if self._1VE_screen:
             self.menu_submit.configure(width=100)
