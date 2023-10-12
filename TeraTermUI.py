@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 10/11/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 10/12/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1265,6 +1265,7 @@ class TeraTermUI(customtkinter.CTk):
         self.in_search_frame = False
         self.in_multiple_screen = True
         self.unbind("<space>")
+        self.unbind("<Control-Tab>")
         self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
         self.bind("<Up>", lambda event: self.add_event_up_arrow_key())
         self.bind("<Down>", lambda event: self.remove_event_down_arrow_key())
@@ -2527,6 +2528,7 @@ class TeraTermUI(customtkinter.CTk):
         self.unbind("<Return>")
         self.unbind("<Up>")
         self.unbind("<Down>")
+        self.bind("<Control-Tab>", lambda event: self.tab_switcher())
         self.switch_tab()
         lang = self.language_menu.get()
         self.in_multiple_screen = False
