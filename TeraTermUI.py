@@ -445,7 +445,6 @@ class TeraTermUI(customtkinter.CTk):
         self.original_font = None
         # Database
         self.translations_cache = {}
-        translation = self.load_language(self.language_menu.get())
         appdata_path = os.getenv("APPDATA")
         self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
         self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
@@ -499,6 +498,7 @@ class TeraTermUI(customtkinter.CTk):
 
                 # Pop up message that appears only the first time the user uses the application
                 def show_message_box():
+                    translation = self.load_language(self.language_menu.get())
                     winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
                     CTkMessagebox(master=self, title=translation["welcome_title"],
                                   message=translation["welcome_message"], button_width=380)
@@ -539,6 +539,7 @@ class TeraTermUI(customtkinter.CTk):
 
         # Asks the user if they want to update to the latest version of the application
         def update_app():
+            translation = self.load_language(self.language_menu.get())
             current_date = datetime.today().strftime("%Y-%m-%d")
             date = self.cursor.execute("SELECT date FROM user_data WHERE date IS NOT NULL").fetchall()
             dates_list = [record[0] for record in date]
@@ -5353,3 +5354,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
