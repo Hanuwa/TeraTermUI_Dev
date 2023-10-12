@@ -2646,6 +2646,7 @@ class TeraTermUI(customtkinter.CTk):
     # function for changing language
     def change_language_event(self, lang):
         translation = self.load_language(lang)
+        appearance = self.appearance_mode_optionemenu.get()
         self.focus_set()
         self.initialization_student()
         self.initialization_class()
@@ -2659,9 +2660,12 @@ class TeraTermUI(customtkinter.CTk):
         self.intro_box.configure(state="disabled")
         self.appearance_mode_optionemenu.configure(values=[translation["light"], translation["dark"],
                                                            translation["default"]])
-        self.appearance_mode_optionemenu.set(translation["dark"])
-        self.appearance_mode_optionemenu.set(translation["light"])
-        self.appearance_mode_optionemenu.set(translation["default"])
+        if appearance == "Dark" or appearance == "Oscuro":
+            self.appearance_mode_optionemenu.set(translation["dark"])
+        elif appearance == "Light" or appearance == "Claro":
+            self.appearance_mode_optionemenu.set(translation["light"])
+        elif appearance == "System" or appearance == "Sistema":
+            self.appearance_mode_optionemenu.set(translation["default"])
         self.introduction.configure(text=translation["introduction"])
         self.host.configure(text=translation["host"])
         self.log_in.configure(text=translation["log_in"])
