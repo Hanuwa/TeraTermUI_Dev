@@ -527,6 +527,7 @@ class TeraTermUI(customtkinter.CTk):
             self.boot_up_thread.start()
 
             self.mainloop()
+            self.after(0, self.set_focus_to_tkinter)
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
             if language_id & 0xFF == SPANISH:
