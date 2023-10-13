@@ -63,7 +63,7 @@ def terminate_process(signum, frame):
 
 
 def validate_version(ver_str: str) -> bool:
-    pattern = r"^[vV]?([0-9]{1,2}\.[0-9]{1,2}(\.[0-9]{1,2})?|[0-9]{1,2})$"
+    pattern = r"^[vV]?([0-9]{1,3}\.[0-9]{1,3}(\.[0-9]{1,3})?|[0-9]{1,3})$"
     return bool(re.match(pattern, ver_str, re.IGNORECASE))
 
 
