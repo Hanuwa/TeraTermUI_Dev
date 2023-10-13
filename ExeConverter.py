@@ -63,7 +63,7 @@ def terminate_process(signum, frame):
 
 
 def validate_version(ver_str: str) -> bool:
-    pattern = r"^[vV]?(\d+\.\d+\.\d+|\d{3})$"
+    pattern = r"^[vV]?([0-9]{1,2}\.[0-9]{1,2}(\.[0-9]{1,2})?|[0-9]{1,2})$"
     return bool(re.match(pattern, ver_str, re.IGNORECASE))
 
 
@@ -77,10 +77,15 @@ while True:
     user_input = input(Fore.BLUE + "Please enter the update version number"
                        " (e.g., v1.0.0 or 1.0.0): " + Style.RESET_ALL).replace(" ", "").strip()
     if validate_version(user_input):
-        if user_input.lower().startswith('v') and len(user_input) == 4:
-            user_input = f"v{user_input[1]}.{user_input[2]}.{user_input[3]}"
+        user_input_segments = user_input.lower().replace('v', '').split('.')
+        if len(user_input_segments) == 2:
+            user_input = f"{user_input_segments[0]}.{user_input_segments[1]}"
+        elif len(user_input_segments) == 3:
+            user_input = f"{user_input_segments[0]}.{user_input_segments[1]}.{user_input_segments[2]}"
         elif len(user_input) == 3 and user_input.isdigit():
             user_input = f"{user_input[0]}.{user_input[1]}.{user_input[2]}"
+        elif len(user_input) == 2 and user_input.isdigit():
+            user_input = f"{user_input[0]}.{user_input[1]}"
         break
     print(Fore.RED + "\nInvalid format. Please provide an update version number"
           " in the format x.x.x or vx.x.x (e.g., v1.0.0 or 1.0.0): \n" + Style.RESET_ALL)
@@ -93,7 +98,7 @@ else:
     update = "v" + update_without_v
 versions = ['installer', 'portable']
 output_directory = os.path.join(r"C:/Users/" + username + "/OneDrive/Documentos", "TeraTermUI_" + update)
-upx_command = r"upx " + output_directory + r"\TeraTermUI.dist\TeraTermUI.exe"
+upx_command = r"upx --best " + output_directory + r"\TeraTermUI.dist\TeraTermUI.exe"
 
 # If process gets abruptly interrupted, load backup file
 program_backup = project_directory + r"\TeraTermUI.BAK.py"
