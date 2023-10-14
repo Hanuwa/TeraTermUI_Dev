@@ -448,8 +448,6 @@ class TeraTermUI(customtkinter.CTk):
         self.translations_cache = {}
         appdata_path = os.getenv("APPDATA")
         self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
-        self.en_path = os.path.join(appdata_path, "TeraTermUI/english.json")
-        self.es_path = os.path.join(appdata_path, "TeraTermUI/spanish.json")
         self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
         atexit.register(self.cleanup_temp)
         atexit.register(self.restore_original_font, self.teraterm_file)
