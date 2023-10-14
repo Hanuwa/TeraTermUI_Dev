@@ -3180,8 +3180,7 @@ class TeraTermUI(customtkinter.CTk):
 
             # Second Tab
             self.search_scrollbar = customtkinter.CTkScrollableFrame(master=self.tabview.tab(self.search_tab),
-                                                                     corner_radius=10, fg_color="transparent",
-                                                                     width=600, height=300)
+                                                                     corner_radius=10, width=600, height=300)
             self.search_scrollbar.bind("<Button-1>", lambda event: self.search_scrollbar.focus_set())
             self.title_search = customtkinter.CTkLabel(self.search_scrollbar,
                                                        text="Search Classes ",
