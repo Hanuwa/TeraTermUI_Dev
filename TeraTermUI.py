@@ -153,6 +153,7 @@ class TeraTermUI(customtkinter.CTk):
         self.previous_table_values = None
         self.table_rows = None
         self.is_banned = None
+        self.block_window = None
         self.is_banned_flag = False
         self.connection_error = False
 
@@ -3180,7 +3181,7 @@ class TeraTermUI(customtkinter.CTk):
 
             # Second Tab
             self.search_scrollbar = customtkinter.CTkScrollableFrame(master=self.tabview.tab(self.search_tab),
-                                                                     corner_radius=10, width=600, height=300)
+                                                                     corner_radius=10, width=600, height=293)
             self.search_scrollbar.bind("<Button-1>", lambda event: self.search_scrollbar.focus_set())
             self.title_search = customtkinter.CTkLabel(self.search_scrollbar,
                                                        text="Search Classes ",
@@ -3462,6 +3463,9 @@ class TeraTermUI(customtkinter.CTk):
                                                          height=15, width=230, indeterminate_speed=1.5)
         self.progress_bar.pack(pady=1)
         self.progress_bar.start()
+        self.block_window = customtkinter.CTkToplevel()
+        self.block_window.attributes("-alpha", 0.0)
+        self.block_window.grab_set()
         return self.loading_screen
 
     # hides the loading screen
@@ -3477,6 +3481,7 @@ class TeraTermUI(customtkinter.CTk):
         if task_done.is_set():
             self.hide_loading_screen()
             self.progress_bar.stop()
+            self.block_window.destroy()
             loading_screen.destroy()
         else:
             self.after(100, self.update_loading_screen, loading_screen, task_done)
@@ -4449,7 +4454,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # Changes keybind depending on the tab the user is currently on
     def switch_tab(self):
-        self.focus_set()
+        self.after(0, self.set_focus)
         enroll_frame = self.tabview.tab(self.enroll_tab)
         other_frame = self.tabview.tab(self.other_tab)
         if self.tabview.get() == self.enroll_tab:
