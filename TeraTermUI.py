@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 10/13/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 10/14/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -5266,17 +5266,24 @@ class ImageSlideshow:
         self.index = 0  # Added index to keep track of the current position in the list
 
         self.label = customtkinter.CTkLabel(self.slideshow_frame, text="")
+        self.label.bind("<Button-1>", lambda event: self.focus_set())
         self.label.grid(row=0, column=1)
 
         self.arrow_left = CustomButton(self.slideshow_frame, text='<', command=self.prev_image, width=25)
+        self.arrow_left.bind("<Button-1>", lambda event: self.focus_set())
         self.arrow_left.grid(row=0, column=0)
 
         self.arrow_right = CustomButton(self.slideshow_frame, text='>', command=self.next_image, width=25)
+        self.arrow_right.bind("<Button-1>", lambda event: self.focus_set())
         self.arrow_right.grid(row=0, column=2)
 
         self.after_id = self.slideshow_frame.after(1, lambda: None)
+        self.slideshow_frame.bind("<Button-1>", lambda event: self.focus_set())
         self.is_running = True
         self.show_image()
+
+    def focus_set(self, **kwargs):
+        self.slideshow_frame.focus_set()
 
     def grid(self, **kwargs):
         self.slideshow_frame.grid(**kwargs)
