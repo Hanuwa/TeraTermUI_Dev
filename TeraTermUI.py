@@ -5135,6 +5135,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
 
         # Event binding
         self.bind("<Button-1>", self.stop_autoscroll)
+        self.bind("<MouseWheel>", self.stop_autoscroll)
 
     def update_text(self):
         if self.auto_scroll:
