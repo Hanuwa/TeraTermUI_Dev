@@ -211,6 +211,8 @@ for version in versions:
             script = "installer"
             data = data.replace('if not os.path.isfile(db_path):',
                                 'if not os.path.exists(self.db_path):')
+            data = data.replace('if not os.path.isfile(en_path) or not os.path.isfile(es_path):',
+                                'if not os.path.exists(self.en_path) or not os.path.exists(self.es_path):')
             data = data.replace('self.connection = sqlite3.connect(db_path, check_same_thread=False)',
                                 'self.connection = sqlite3.connect(self.db_path, check_same_thread=False)')
             data = data.replace('closing(sqlite3.connect("database.db")) as connection',
@@ -226,6 +228,8 @@ for version in versions:
             script = "portable"
             data = data.replace('if not os.path.exists(self.db_path):',
                                 'if not os.path.isfile(db_path):')
+            data = data.replace('if not os.path.exists(self.en_path) or not os.path.exists(self.es_path):',
+                                'if not os.path.isfile(en_path) or not os.path.isfile(es_path):')
             data = data.replace('self.connection = sqlite3.connect(self.db_path, check_same_thread=False)',
                                 'self.connection = sqlite3.connect(db_path, check_same_thread=False)')
             data = data.replace('closing(sqlite3.connect(self.db_path)) as connection',
