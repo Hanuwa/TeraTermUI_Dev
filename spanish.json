@@ -86,7 +86,7 @@
 	"q1": "¿Es seguro poner \nmi información aquí?",
 	"a1": "Sí, la aplicación no almacena\nsu data personal pero, si\ntodavía estás escéptico,\nentonces puedes ver que\ninformación sí almacenamos\naccediendo al archivo llamado\ndatabase.db y cosas como el\nssn son encriptado usando\nuna llave asimétrica.",
 	"q2": "¿Qué es una sección?",
-	"a2": "La sección determina qué días\ny a qué horas tomas tus clases\n, por ejemplo, \"LM1\" la L y la\nM te dice que las clases son los\nlunes y miercoles y el 1\nte dice que empiezan a las 1:00 PM.",
+	"a2": "La sección determina qué días\ny a qué horas tomas tus clases,\npor ejemplo, \"LM1\" la L y la\nM te dice que las clases son los\nlunes y miercoles y el 1\nte dice que empiezan a las 1:00 PM.",
 	
 	"help": "Ayuda",
 	"notice": "*No toque Tera Term\nmientras use esta aplicación*",
