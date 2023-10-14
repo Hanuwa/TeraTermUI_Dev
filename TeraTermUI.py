@@ -231,7 +231,7 @@ class TeraTermUI(customtkinter.CTk):
         self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(20, 20))
         self.log_in.configure(state="disabled")
         self.slideshow_frame = ImageSlideshow(self, 'slideshow', interval=5, width=300, height=150)
-        self.intro_box = customtkinter.CTkTextbox(self, height=120, width=400)
+        self.intro_box = CustomTextBox(self, height=120, width=400)
         self.intro_box.insert("0.0", "Welcome to the Tera Term UI Application!\n\n" +
                               "The purpose of this application"
                               " is to facilitate the process enrolling and dropping classes, "
@@ -5125,6 +5125,31 @@ class CustomButton(customtkinter.CTkButton):
         self.is_pressed = False
 
 
+class CustomTextBox(customtkinter.CTkTextbox):
+    def __init__(self, master=None, **kwargs):
+        super().__init__(master, **kwargs)
+        self.auto_scroll = True
+
+        # Auto-scrolling logic
+        self.update_text()
+
+        # Event binding
+        self.bind("<Button-1>", self.stop_autoscroll)
+
+    def update_text(self):
+        if self.auto_scroll:
+            _, yview_fraction = self.yview()
+            if yview_fraction >= 1.0:
+                self.yview_moveto(0)  # Reset to the top
+            else:
+                self.yview_scroll(1, "units")  # Scroll down 1 pixel
+
+            self.after(7500, self.update_text)  # Adjust the speed here
+
+    def stop_autoscroll(self, event):
+        self.auto_scroll = False
+
+
 class CustomEntry(customtkinter.CTkEntry):
     def __init__(self, master, teraterm_ui_instance, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
@@ -5371,4 +5396,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
