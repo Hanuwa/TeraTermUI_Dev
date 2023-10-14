@@ -448,6 +448,8 @@ class TeraTermUI(customtkinter.CTk):
         self.translations_cache = {}
         appdata_path = os.getenv("APPDATA")
         self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
+        self.en_path = os.path.join(appdata_path, "TeraTermUI/english.json")
+        self.es_path = os.path.join(appdata_path, "TeraTermUI/spanish.json")
         self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
         atexit.register(self.cleanup_temp)
         atexit.register(self.restore_original_font, self.teraterm_file)
@@ -455,6 +457,10 @@ class TeraTermUI(customtkinter.CTk):
             db_path = "database.db"
             if not os.path.isfile(db_path):
                 raise Exception("Database file not found.")
+            en_path = "english.json"
+            es_path = "spanish.json"
+            if not os.path.isfile(en_path) or not os.path.isfile(es_path):
+                raise Exception("Language file not found.")
             self.connection = sqlite3.connect(db_path, check_same_thread=False)
             self.cursor = self.connection.cursor()
             self.save = self.cursor.execute("SELECT class, section, semester, action FROM save_classes"
@@ -530,13 +536,25 @@ class TeraTermUI(customtkinter.CTk):
             self.mainloop()
             self.after(0, self.set_focus_to_tkinter)
         except Exception as e:
+            db_path = "database.db"
+            en_path = "english.json"
+            es_path = "spanish.json"
             print(f"An unexpected error occurred: {e}")
-            if language_id & 0xFF == SPANISH:
-                messagebox.showerror("Error", "¡Error Fatal! Problema en inicializar la base de datos.\n"
-                                              "Es posible que necesite reinstalar la aplicación")
-            else:
-                messagebox.showerror("Error", "Fatal Error! Failed to initialize database.\n"
-                                              "Might need to reinstall the application")
+            if not os.path.isfile(db_path):
+                if language_id & 0xFF == SPANISH:
+                    messagebox.showerror("Error", "¡Error Fatal! Problema en inicializar la base de datos.\n"
+                                                  "Es posible que necesite reinstalar la aplicación")
+                else:
+                    messagebox.showerror("Error", "Fatal Error! Failed to initialize database.\n"
+                                                  "Might need to reinstall the application")
+            if not os.path.isfile(en_path) or not os.path.isfile(es_path):
+                if language_id & 0xFF == SPANISH:
+                    messagebox.showerror("Error", "¡Error Fatal! Problema en inicializar "
+                                                  "los archivos de lenguajes.\nEs posible que necesite reinstalar"
+                                                  " la aplicación")
+                else:
+                    messagebox.showerror("Error", "Fatal Error! Failed to initialize language files.\n"
+                                                  "Might need to reinstall the application")
             exit(1)
 
         # Asks the user if they want to update to the latest version of the application
