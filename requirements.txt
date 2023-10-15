@@ -37,9 +37,9 @@ Nuitka==1.8.4
 oauthlib==3.2.2
 ordered-set==4.1.0
 packaging==23.2
-Pillow==10.0.1
+Pillow==10.1.0
 protobuf==4.24.4
-psutil==5.9.5
+psutil==5.9.6
 py7zr==0.20.6
 pyasn1==0.5.0
 pyasn1-modules==0.3.0
