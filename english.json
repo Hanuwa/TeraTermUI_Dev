@@ -123,7 +123,7 @@
 	"fix_title": "\nFix the program not executing things properly",
 	"fix": "        Fix it",
 	"fix_messagebox_title": "Fix", 
-	"fix_messagebox": "This button is only made to fix the issue mentioned, are you sure you want to do it?",
+	"fix_messagebox": "This button should only be used to fix the issue mentioned, are you sure you want to do it?\n\nMight be better restarting application",
 	"fix_after": "The problem is usually caused because\nof user interacting directly\nwith Tera Term",
 	
 	"error": "Error",
