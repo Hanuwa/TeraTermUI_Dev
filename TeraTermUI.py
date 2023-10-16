@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 10/14/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 10/15/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -409,7 +409,7 @@ class TeraTermUI(customtkinter.CTk):
         self.auto_enroll_tooltip = None
 
         # Top level window management, flags and counters
-        self.DEFAULT_SEMESTER = "C31"
+        self.DEFAULT_SEMESTER = "C32"
         self.welcome = False
         self.error_occurred = False
         self.can_edit = False
@@ -610,7 +610,7 @@ class TeraTermUI(customtkinter.CTk):
             if hasattr(self, "check_idle_thread") and self.check_idle_thread is not None \
                     and self.check_idle_thread.is_alive():
                 self.stop_check_idle.set()
-                self.check_idle_thread.join()
+                self.check_idle_thread.join(timeout=5)
             if TeraTermUI.checkIfProcessRunning("ttermpro") and \
                     TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT") \
                     and self.checkbox_state:
@@ -754,6 +754,7 @@ class TeraTermUI(customtkinter.CTk):
             self.error_occurred = True
         finally:
             task_done.set()
+            ctypes.windll.user32.BlockInput(False)
             lang = self.language_menu.get()
             translation = self.load_language(lang)
             if self.error_occurred:
@@ -1022,6 +1023,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
             finally:
                 task_done.set()
+                ctypes.windll.user32.BlockInput(False)
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 if self.error_occurred:
@@ -1139,6 +1141,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
             finally:
                 task_done.set()
+                ctypes.windll.user32.BlockInput(False)
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 if self.error_occurred:
@@ -1512,6 +1515,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
             finally:
                 task_done.set()
+                ctypes.windll.user32.BlockInput(False)
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 if not self.error_auto_enroll:
@@ -2001,6 +2005,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
             finally:
                 task_done.set()
+                ctypes.windll.user32.BlockInput(False)
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 if self.error_occurred:
@@ -2100,6 +2105,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
             finally:
                 task_done.set()
+                ctypes.windll.user32.BlockInput(False)
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 if self.error_occurred:
@@ -2158,6 +2164,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
             finally:
                 task_done.set()
+                ctypes.windll.user32.BlockInput(False)
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 if self.error_occurred:
@@ -2266,6 +2273,7 @@ class TeraTermUI(customtkinter.CTk):
             self.error_occurred = True
         finally:
             task_done.set()
+            ctypes.windll.user32.BlockInput(False)
             if self.server_status == "Maintenance message found" or self.server_status == "Timeout":
                 self.after(3500, self.go_back_event)
             elif self.error_occurred:
@@ -2421,9 +2429,10 @@ class TeraTermUI(customtkinter.CTk):
             print("An error occurred: ", e)
             self.error_occurred = True
         finally:
+            task_done.set()
+            ctypes.windll.user32.BlockInput(False)
             lang = self.language_menu.get()
             translation = self.load_language(lang)
-            task_done.set()
             if self.error_occurred:
                 self.destroy_windows()
                 if not dont_close:
@@ -2777,6 +2786,7 @@ class TeraTermUI(customtkinter.CTk):
         self.other_tab = translation["other_tab"]
 
     def change_semester(self):
+        self.focus_set()
         for i in range(1, self.a_counter + 1):
             self.m_semester_entry[i].configure(state="normal")
             self.m_semester_entry[i].set("")
@@ -2939,6 +2949,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
             finally:
                 task_done.set()
+                ctypes.windll.user32.BlockInput(False)
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 if self.error_occurred:
@@ -3183,7 +3194,8 @@ class TeraTermUI(customtkinter.CTk):
             self.e_section_entry = CustomEntry(self.tabview.tab(self.enroll_tab), self, placeholder_text="LM1")
             self.e_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab), text="Semester")
             self.e_semester_entry = CustomComboBox(self.tabview.tab(self.enroll_tab), self,
-                                                   values=["C31", "C32", "C33", "C41", "C42", "C43"])
+                                                   values=["C31", "C32", "C33", "C41", "C42", "C43"],
+                                                   command=lambda value: self.set_focus())
             self.e_semester_entry.set(self.DEFAULT_SEMESTER)
             self.radio_var = tk.StringVar()
             self.register = customtkinter.CTkRadioButton(master=self.tabview.tab(self.enroll_tab), text="Register",
@@ -3208,7 +3220,8 @@ class TeraTermUI(customtkinter.CTk):
             self.s_semester = customtkinter.CTkLabel(self.search_scrollbar, text="Semester")
             self.s_semester_entry = CustomComboBox(self.search_scrollbar, self,
                                                    values=["B91", "B92", "B93", "C01", "C02", "C03", "C11",
-                                                           "C12", "C13", "C21", "C22", "C23", "C31"], width=80)
+                                                           "C12", "C13", "C21", "C22", "C23", "C31"],
+                                                   command=lambda value: self.set_focus(), width=80)
             self.s_semester_entry.set(self.DEFAULT_SEMESTER)
             self.show_all = customtkinter.CTkCheckBox(self.search_scrollbar, text="Show All?",
                                                       onvalue="on", offvalue="off", command=self.set_focus)
@@ -3234,12 +3247,13 @@ class TeraTermUI(customtkinter.CTk):
                                                      "1VE (Academic Record)", "3DD (Scholarship Payment Record)",
                                                      "409 (Account Balance)", "683 (Academic Evaluation)",
                                                      "1PL (Basic Personal Data)", "4CM (Tuition Calculation)",
-                                                     "4SP (Apply for Extension)", "SO (Sign out)"], width=141)
+                                                     "4SP (Apply for Extension)", "SO (Sign out)"],
+                                             command=lambda value: self.set_focus(), width=141)
             self.menu_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab), text="Semester")
             self.menu_semester_entry = CustomComboBox(self.tabview.tab(self.other_tab), self,
                                                       values=["B91", "B92", "B93", "C01", "C02", "C03",
                                                               "C11", "C12", "C13", "C21", "C22", "C23", "C31"],
-                                                      width=141)
+                                                      command=lambda value: self.set_focus(), width=141)
             self.menu_semester_entry.set(self.DEFAULT_SEMESTER)
             self.menu_submit = CustomButton(master=self.tabview.tab(self.other_tab), border_width=2, text="Submit",
                                             text_color=("gray10", "#DCE4EE"), command=self.option_menu_event_handler,
@@ -4305,6 +4319,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
             finally:
                 task_done.set()
+                ctypes.windll.user32.BlockInput(False)
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 if self.error_occurred:
@@ -4327,8 +4342,8 @@ class TeraTermUI(customtkinter.CTk):
     def check_idle(self):
         self.idle_num_check = 0
         while self.is_idle_thread_running and not self.stop_check_idle.is_set():
-            with self.lock_thread:
-                if time.time() - self.last_activity >= 300:
+            if time.time() - self.last_activity >= 300:
+                with self.lock_thread:
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         self.unbind("<Return>")
                         self.focus_set()
@@ -4339,7 +4354,6 @@ class TeraTermUI(customtkinter.CTk):
                         if term_window.isMinimized:
                             term_window.restore()
                         self.uprbay_window.wait("visible", timeout=10)
-                        self.unfocus_tkinter()
                         if self.idle_num_check == 0:
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             send_keys("{ENTER}")
