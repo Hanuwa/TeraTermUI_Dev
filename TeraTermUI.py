@@ -5317,6 +5317,8 @@ class ImageSlideshow:
         self.interval = interval
         self.width = width
         self.height = height
+        self.image_files = []
+        self.current_image = None
 
         self.load_images()
         self.index = 0  # Added index to keep track of the current position in the list
@@ -5349,28 +5351,35 @@ class ImageSlideshow:
 
     def load_images(self):
         image_files = [f for f in os.listdir(self.image_folder) if f.endswith(('png', 'gif', 'jpg', 'jpeg'))]
-        self.images = [
-            customtkinter.CTkImage(
-                light_image=Image.open(os.path.join(self.image_folder, f)).resize((self.width * 2, self.height * 2)),
-                size=(self.width, self.height))
-            for f in sorted(image_files)
-        ]
+        self.image_files = sorted(image_files)
 
     def show_image(self):
+        # Delete the previous image from memory
+        if hasattr(self, 'current_image'):
+            del self.current_image
+            gc.collect()
+
+        # Load and show the current image
+        filepath = os.path.join(self.image_folder, self.image_files[self.index])
+        self.current_image = customtkinter.CTkImage(
+            light_image=Image.open(filepath).resize((self.width * 2, self.height * 2)),
+            size=(self.width, self.height)
+        )
+        self.label.configure(image=self.current_image)
+
         self.slideshow_frame.after_cancel(self.after_id)  # Cancel the existing timer
-        self.label.configure(image=self.images[self.index])  # Show the current image
         self.reset_timer()  # Reset the timer after showing the image
 
     def cycle_images(self):
-        self.index = (self.index + 1) % len(self.images)  # Advance to the next image in the list
+        self.index = (self.index + 1) % len(self.image_files)  # Advance to the next image in the list
         self.show_image()  # Show the new image and reset the timer
 
     def prev_image(self):
-        self.index = (self.index - 1) % len(self.images)  # Decrease index and wrap around if needed
+        self.index = (self.index - 1) % len(self.image_files)  # Decrease index and wrap around if needed
         self.show_image()  # Show the new image and reset the timer
 
     def next_image(self):
-        self.index = (self.index + 1) % len(self.images)  # Increase index and wrap around if needed
+        self.index = (self.index + 1) % len(self.image_files)  # Increase index and wrap around if needed
         self.show_image()  # Show the new image and reset the timer
 
     def pause_cycle(self):
