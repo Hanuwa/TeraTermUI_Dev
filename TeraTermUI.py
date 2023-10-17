@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 10/15/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 10/16/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -157,20 +157,7 @@ class TeraTermUI(customtkinter.CTk):
         self.is_banned_flag = False
         self.connection_error = False
 
-        self.images = {
-            "folder": customtkinter.CTkImage(light_image=Image.open("images/folder.png"), size=(18, 18)),
-            "fix": customtkinter.CTkImage(light_image=Image.open("images/fix.png"), size=(15, 15)),
-            "tera_term": Image.open("images/tera-term.ico"),
-            "error": customtkinter.CTkImage(light_image=Image.open("images/error.png"), size=(100, 100)),
-            "information": customtkinter.CTkImage(light_image=Image.open("images/info.png"), size=(100, 100)),
-            "success": customtkinter.CTkImage(light_image=Image.open("images/success.png"), size=(200, 150)),
-            "status": customtkinter.CTkImage(light_image=Image.open("images/home.png"), size=(20, 20)),
-            "help": customtkinter.CTkImage(light_image=Image.open("images/setting.png"), size=(18, 18)),
-            "uprb": customtkinter.CTkImage(light_image=Image.open("images/uprb.jpg"), size=(300, 100)),
-            "lock": customtkinter.CTkImage(light_image=Image.open("images/lock.png"), size=(75, 75)),
-            "update": customtkinter.CTkImage(light_image=Image.open("images/update.png"), size=(15, 15)),
-            "link": customtkinter.CTkImage(light_image=Image.open("images/link.png"), size=(15, 15)),
-        }
+        self.image_cache = {}
 
         # path for tesseract application
         self.zip_path = os.path.join(os.path.dirname(__file__), "Tesseract-OCR.7z")
@@ -190,10 +177,10 @@ class TeraTermUI(customtkinter.CTk):
         self.logo_label = customtkinter.CTkLabel(self.sidebar_frame, text="Tera Term UI",
                                                  font=customtkinter.CTkFont(size=20, weight="bold"))
         self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
-        self.status_button = CustomButton(self.sidebar_frame, text="     Status", image=self.images["status"],
+        self.status_button = CustomButton(self.sidebar_frame, text="     Status", image=self.get_image("status"),
                                           command=self.status_button_event, anchor="w")
         self.status_button.grid(row=1, column=0, padx=20, pady=10)
-        self.help_button = CustomButton(self.sidebar_frame, text="       Help", image=self.images["help"],
+        self.help_button = CustomButton(self.sidebar_frame, text="       Help", image=self.get_image("help"),
                                         command=self.help_button_event, anchor="w")
         self.help_button.grid(row=2, column=0, padx=20, pady=10)
         self.scaling_label = customtkinter.CTkLabel(self.sidebar_frame, text="Language, Appearance and \n\n "
@@ -230,7 +217,7 @@ class TeraTermUI(customtkinter.CTk):
                                    command=self.login_event_handler)
         self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(20, 20))
         self.log_in.configure(state="disabled")
-        self.slideshow_frame = ImageSlideshow(self, 'slideshow', interval=5, width=300, height=150)
+        self.slideshow_frame = ImageSlideshow(self, "slideshow", interval=5, width=300, height=150)
         self.intro_box = CustomTextBox(self, height=120, width=400)
         self.intro_box.insert("0.0", "Welcome to the Tera Term UI Application!\n\n" +
                               "The purpose of this application"
@@ -270,7 +257,7 @@ class TeraTermUI(customtkinter.CTk):
         self.title_login = customtkinter.CTkLabel(master=self.authentication_frame,
                                                   text="Connected to the server successfully",
                                                   font=customtkinter.CTkFont(size=20, weight="bold"))
-        self.uprb_image = self.images["uprb"]
+        self.uprb_image = self.get_image("uprb")
         self.uprb_image_grid = CustomButton(self.authentication_frame, text="", image=self.uprb_image,
                                             command=self.uprb_event, fg_color="transparent", hover=False)
         self.disclaimer = customtkinter.CTkLabel(master=self.authentication_frame, text="Authentication required")
@@ -820,6 +807,8 @@ class TeraTermUI(customtkinter.CTk):
         self.code_entry.configure(placeholder_text="####")
         self.ssn_entry.configure(show="*")
         self.code_entry.configure(show="*")
+        self.unload_image("lock")
+        self.unload_image("uprb")
         self.student_frame.grid_forget()
         self.s_buttons_frame.grid_forget()
 
@@ -2462,6 +2451,7 @@ class TeraTermUI(customtkinter.CTk):
             self.username_entry.grid(row=3, column=0, padx=(60, 0), pady=(0, 10))
         self.back.grid(row=4, column=0, padx=(0, 10), pady=(0, 0))
         self.student.grid(row=4, column=1, padx=(10, 0), pady=(0, 0))
+        self.get_image("uprb")
         self.language_menu.configure(state="disabled")
         self.slideshow_frame.pause_cycle()
         self.host.grid_forget()
@@ -3146,7 +3136,7 @@ class TeraTermUI(customtkinter.CTk):
             self.title_student = customtkinter.CTkLabel(master=self.student_frame,
                                                         text="Information to enter the System",
                                                         font=customtkinter.CTkFont(size=20, weight="bold"))
-            self.lock = self.images["lock"]
+            self.lock = self.get_image("lock")
             self.lock_grid = CustomButton(self.student_frame, text="", image=self.lock, command=self.lock_event,
                                           fg_color="transparent", hover=False)
             self.ssn = customtkinter.CTkLabel(master=self.student_frame, text="Social Security Number ")
@@ -3960,14 +3950,19 @@ class TeraTermUI(customtkinter.CTk):
         self.error.attributes("-topmost", True)
         self.error.resizable(False, False)
         self.error.after(256, lambda: self.error.iconbitmap("images/tera-term.ico"))
-        my_image = self.images["error"]
+        my_image = self.get_image("error")
         image = customtkinter.CTkLabel(self.error, text="", image=my_image)
         image.pack(padx=10, pady=20)
         error_msg = customtkinter.CTkLabel(self.error,
                                            text=error_msg_text,
                                            font=customtkinter.CTkFont(size=15, weight="bold"))
         error_msg.pack(side="top", fill="both", expand=True, padx=10, pady=20)
-        self.error.bind("<Escape>", lambda event: self.error.destroy())
+        self.error.protocol("WM_DELETE_WINDOW", self.on_error_window_close)
+        self.error.bind("<Escape>", lambda event: self.on_error_window_close())
+
+    def on_error_window_close(self):
+        self.unload_image("error")
+        self.error.destroy()
 
     # success window pop up message
     def show_success_message(self, width, height, success_msg_text):
@@ -3992,14 +3987,19 @@ class TeraTermUI(customtkinter.CTk):
         self.success.attributes("-topmost", True)
         self.success.resizable(False, False)
         self.success.after(256, lambda: self.success.iconbitmap("images/tera-term.ico"))
-        my_image = self.images["success"]
+        my_image = self.get_image("success")
         image = customtkinter.CTkLabel(self.success, text="", image=my_image)
         image.pack(padx=10, pady=10)
         success_msg = customtkinter.CTkLabel(self.success, text=success_msg_text,
                                              font=customtkinter.CTkFont(size=15, weight="bold"))
         success_msg.pack(side="top", fill="both", expand=True, padx=10, pady=20)
-        self.success.after(3500, lambda: self.success.destroy())
-        self.success.bind("<Escape>", lambda event: self.success.destroy())
+        self.success.after(3500, lambda: self.on_success_window_close())
+        self.success.protocol("WM_DELETE_WINDOW", self.on_success_window_close)
+        self.success.bind("<Escape>", lambda event: self.on_success_window_close())
+
+    def on_success_window_close(self):
+        self.unload_image("success")
+        self.success.destroy()
 
     # Pop window that shows the user more context on why they couldn't enroll their classes
     def show_enrollment_error_information(self):
@@ -4032,13 +4032,18 @@ class TeraTermUI(customtkinter.CTk):
         self.information.title(translation["information_title"])
         self.information.resizable(False, False)
         self.information.after(256, lambda: self.information.iconbitmap("images/tera-term.ico"))
-        my_image = self.images["information"]
+        my_image = self.get_image("information")
         image = customtkinter.CTkLabel(self.information, text="", image=my_image)
         image.pack(padx=10, pady=10)
         information_msg = customtkinter.CTkLabel(self.information, text=success_msg_text,
                                                  font=customtkinter.CTkFont(size=15, weight="bold"))
         information_msg.pack(side="top", fill="both", expand=True, padx=10, pady=20)
-        self.information.bind("<Escape>", lambda event: self.information.destroy())
+        self.information.protocol("WM_DELETE_WINDOW", self.on_information_window_close)
+        self.information.bind("<Escape>", lambda event: self.on_information_window_close())
+
+    def on_information_window_close(self):
+        self.unload_image("information")
+        self.information.destroy()
 
     # function that changes the theme of the application
     def change_appearance_mode_event(self, new_appearance_mode: str):
@@ -4550,18 +4555,18 @@ class TeraTermUI(customtkinter.CTk):
         self.feedbackSend.pack()
         checkUpdateText = customtkinter.CTkLabel(scrollable_frame, text=translation["update_title"])
         checkUpdateText.pack(pady=5)
-        checkUpdate = CustomButton(scrollable_frame, border_width=2, image=self.images["update"],
+        checkUpdate = CustomButton(scrollable_frame, border_width=2, image=self.get_image("update"),
                                    text=translation["update"], anchor="w", text_color=("gray10", "#DCE4EE"),
                                    command=self.update_app)
         checkUpdate.pack()
         website = customtkinter.CTkLabel(scrollable_frame, text=translation["website"])
         website.pack(pady=5)
-        link = CustomButton(scrollable_frame, border_width=2, image=self.images["link"], text=translation["link"],
+        link = CustomButton(scrollable_frame, border_width=2, image=self.get_image("link"), text=translation["link"],
                             anchor="w", text_color=("gray10", "#DCE4EE"), command=self.github_event)
         link.pack()
         notaso = customtkinter.CTkLabel(scrollable_frame, text=translation["notaso_title"])
         notaso.pack(pady=5)
-        notasoLink = CustomButton(scrollable_frame, border_width=2, image=self.images["link"],
+        notasoLink = CustomButton(scrollable_frame, border_width=2, image=self.get_image("link"),
                                   text=translation["notaso_link"], anchor="w", text_color=("gray10", "#DCE4EE"),
                                   command=self.notaso_event)
         notasoLink.pack()
@@ -4573,7 +4578,13 @@ class TeraTermUI(customtkinter.CTk):
                    [translation["q2"], translation["a2"]]]
         faq = ctktable.CTkTable(scrollable_frame, row=3, column=2, values=qaTable)
         faq.pack(expand=True, fill="both", padx=20, pady=20)
-        self.status.bind("<Escape>", lambda event: self.status.destroy())
+        self.status.protocol("WM_DELETE_WINDOW", self.on_status_window_close)
+        self.status.bind("<Escape>", lambda event: self.on_status_window_close())
+
+    def on_status_window_close(self):
+        self.unload_image("update")
+        self.unload_image("link")
+        self.status.destroy()
 
     # Function to call the Google Sheets API
     def call_sheets_api(self, values):
@@ -4737,6 +4748,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # Function that lets user select where their Tera Term application is located
     def change_location_event(self):
+        self.slideshow_frame.pause_cycle()
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         filename = filedialog.askopenfilename(initialdir="C:/",
@@ -4760,6 +4772,7 @@ class TeraTermUI(customtkinter.CTk):
             self.show_success_message(350, 265, translation["tera_term_success"])
             self.edit_teraterm_ini(self.teraterm_file)
         self.help.lift()
+        self.slideshow_frame.resume_cycle()
 
     # disables scrolling for the class list
     def disable_scroll(self, event):
@@ -4883,7 +4896,7 @@ class TeraTermUI(customtkinter.CTk):
         termsTable.pack(expand=True, fill="both", padx=20, pady=20)
         filesText = customtkinter.CTkLabel(scrollable_frame, text=translation["files_title"])
         filesText.pack()
-        files = CustomButton(scrollable_frame, border_width=2, image=self.images["folder"],
+        files = CustomButton(scrollable_frame, border_width=2, image=self.get_image("folder"),
                              text=translation["files_button"], anchor="w", text_color=("gray10", "#DCE4EE"),
                              command=self.change_location_event)
         files.pack(pady=5)
@@ -4894,7 +4907,7 @@ class TeraTermUI(customtkinter.CTk):
         self.disableIdle.pack()
         fixText = customtkinter.CTkLabel(scrollable_frame, text=translation["fix_title"])
         fixText.pack()
-        fix = CustomButton(scrollable_frame, border_width=2, image=self.images["fix"], text=translation["fix"],
+        fix = CustomButton(scrollable_frame, border_width=2, image=self.get_image("fix"), text=translation["fix"],
                            anchor="w", text_color=("gray10", "#DCE4EE"), command=self.fix_execution_event_handler)
         fix.pack(pady=5)
         idle = self.cursor.execute("SELECT idle FROM user_data").fetchall()
@@ -4904,7 +4917,13 @@ class TeraTermUI(customtkinter.CTk):
         self.class_list.bind("<<ListboxSelect>>", self.show_class_code)
         self.class_list.bind("<MouseWheel>", self.disable_scroll)
         self.search_box.bind("<KeyRelease>", self.search_classes)
-        self.help.bind("<Escape>", lambda event: self.help.destroy())
+        self.help.protocol("WM_DELETE_WINDOW", self.on_help_window_close)
+        self.help.bind("<Escape>", lambda event: self.on_help_window_close())
+
+    def on_help_window_close(self):
+        self.unload_image("folder")
+        self.unload_image("fix")
+        self.help.destroy()
 
     # Gets the latest release of the application on GitHub
     def get_latest_release(self):
@@ -5062,6 +5081,47 @@ class TeraTermUI(customtkinter.CTk):
             self.success.destroy()
         if self.information and self.information.winfo_exists():
             self.information.destroy()
+
+    def get_image(self, image_name):
+        if image_name not in self.image_cache:
+            if image_name == "folder":
+                self.image_cache["folder"] = customtkinter.CTkImage(light_image=Image.open("images/folder.png"),
+                                                                    size=(18, 18))
+            elif image_name == "fix":
+                self.image_cache["fix"] = customtkinter.CTkImage(light_image=Image.open("images/fix.png"),
+                                                                 size=(15, 15))
+            elif image_name == "error":
+                self.image_cache["error"] = customtkinter.CTkImage(light_image=Image.open("images/error.png"),
+                                                                   size=(100, 100))
+            elif image_name == "information":
+                self.image_cache["information"] = customtkinter.CTkImage(light_image=Image.open("images/info.png"),
+                                                                         size=(100, 100))
+            elif image_name == "success":
+                self.image_cache["success"] = customtkinter.CTkImage(light_image=Image.open("images/success.png"),
+                                                                     size=(200, 150))
+            elif image_name == "status":
+                self.image_cache["status"] = customtkinter.CTkImage(light_image=Image.open("images/home.png"),
+                                                                    size=(20, 20))
+            elif image_name == "help":
+                self.image_cache["help"] = customtkinter.CTkImage(light_image=Image.open("images/setting.png"),
+                                                                  size=(18, 18))
+            elif image_name == "uprb":
+                self.image_cache["uprb"] = customtkinter.CTkImage(light_image=Image.open("images/uprb.jpg"),
+                                                                  size=(300, 100))
+            elif image_name == "lock":
+                self.image_cache["lock"] = customtkinter.CTkImage(light_image=Image.open("images/lock.png"),
+                                                                  size=(75, 75))
+            elif image_name == "update":
+                self.image_cache["update"] = customtkinter.CTkImage(light_image=Image.open("images/update.png"),
+                                                                    size=(15, 15))
+            elif image_name == "link":
+                self.image_cache["link"] = customtkinter.CTkImage(light_image=Image.open("images/link.png"),
+                                                                  size=(15, 15))
+        return self.image_cache.get(image_name)
+
+    def unload_image(self, image_name):
+        if image_name in self.image_cache:
+            del self.image_cache[image_name]
 
     # checks if there is no problems with the information in the entries
     def check_format(self):
