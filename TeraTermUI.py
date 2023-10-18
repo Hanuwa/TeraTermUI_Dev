@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 10/16/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 10/17/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -50,6 +50,7 @@ import uuid
 import webbrowser
 import win32gui
 import winsound
+from collections import deque
 from contextlib import closing
 from Cryptodome.Hash import HMAC, SHA256
 from Cryptodome.Cipher import AES
@@ -218,7 +219,7 @@ class TeraTermUI(customtkinter.CTk):
         self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(20, 20))
         self.log_in.configure(state="disabled")
         self.slideshow_frame = ImageSlideshow(self, "slideshow", interval=5, width=300, height=150)
-        self.intro_box = CustomTextBox(self, height=120, width=400)
+        self.intro_box = CustomTextBox(self, read_only=True, height=120, width=400)
         self.intro_box.insert("0.0", "Welcome to the Tera Term UI Application!\n\n" +
                               "The purpose of this application"
                               " is to facilitate the process enrolling and dropping classes, "
@@ -574,6 +575,9 @@ class TeraTermUI(customtkinter.CTk):
                 del dates_list, date, current_date
 
         self.after(100, update_app)
+        self.after(0, self.unload_image("uprb"))
+        self.after(0, self.unload_image("status"))
+        self.after(0, self.unload_image("help"))
         del user_data_fields, results, SPANISH, language_id, \
             scaling_factor, screen_width, screen_height, width, height, x, y, db_path
         gc.collect()
@@ -808,7 +812,6 @@ class TeraTermUI(customtkinter.CTk):
         self.ssn_entry.configure(show="*")
         self.code_entry.configure(show="*")
         self.unload_image("lock")
-        self.unload_image("uprb")
         self.student_frame.grid_forget()
         self.s_buttons_frame.grid_forget()
 
@@ -2451,7 +2454,6 @@ class TeraTermUI(customtkinter.CTk):
             self.username_entry.grid(row=3, column=0, padx=(60, 0), pady=(0, 10))
         self.back.grid(row=4, column=0, padx=(0, 10), pady=(0, 0))
         self.student.grid(row=4, column=1, padx=(10, 0), pady=(0, 0))
-        self.get_image("uprb")
         self.language_menu.configure(state="disabled")
         self.slideshow_frame.pause_cycle()
         self.host.grid_forget()
@@ -2521,6 +2523,7 @@ class TeraTermUI(customtkinter.CTk):
             self.enrolled_classes_list.clear()
             self.dropped_classes_list.clear()
             self.slideshow_frame.resume_cycle()
+            self.intro_box.reset_autoscroll()
             self.run_fix = False
             self.in_student_frame = False
             self.in_enroll_frame = False
@@ -4547,8 +4550,9 @@ class TeraTermUI(customtkinter.CTk):
         title.pack()
         version = customtkinter.CTkLabel(scrollable_frame, text=translation["app_version"])
         version.pack()
-        self.feedbackText = customtkinter.CTkTextbox(scrollable_frame, wrap="word", border_spacing=8, width=300,
-                                                     height=170, fg_color=("#ffffff", "#111111"))
+        self.feedbackText = CustomTextBox(scrollable_frame, enable_autoscroll=False,
+                                          wrap="word", border_spacing=8, width=300, height=170,
+                                          fg_color=("#ffffff", "#111111"))
         self.feedbackText.pack(pady=10)
         self.feedbackSend = CustomButton(scrollable_frame, border_width=2, text=translation["feedback"],
                                          text_color=("gray10", "#DCE4EE"), command=self.start_feedback_thread)
@@ -4578,6 +4582,7 @@ class TeraTermUI(customtkinter.CTk):
                    [translation["q2"], translation["a2"]]]
         faq = ctktable.CTkTable(scrollable_frame, row=3, column=2, values=qaTable)
         faq.pack(expand=True, fill="both", padx=20, pady=20)
+        scrollable_frame.bind("<Button-1>", lambda event: scrollable_frame.focus_set())
         self.status.protocol("WM_DELETE_WINDOW", self.on_status_window_close)
         self.status.bind("<Escape>", lambda event: self.on_status_window_close())
 
@@ -4917,6 +4922,7 @@ class TeraTermUI(customtkinter.CTk):
         self.class_list.bind("<<ListboxSelect>>", self.show_class_code)
         self.class_list.bind("<MouseWheel>", self.disable_scroll)
         self.search_box.bind("<KeyRelease>", self.search_classes)
+        scrollable_frame.bind("<Button-1>", lambda event: scrollable_frame.focus_set())
         self.help.protocol("WM_DELETE_WINDOW", self.on_help_window_close)
         self.help.bind("<Escape>", lambda event: self.on_help_window_close())
 
@@ -5216,37 +5222,162 @@ class CustomButton(customtkinter.CTkButton):
 
 
 class CustomTextBox(customtkinter.CTkTextbox):
-    def __init__(self, master=None, **kwargs):
+    def __init__(self, master=None, enable_autoscroll=True, read_only=False, **kwargs):
         super().__init__(master, **kwargs)
-        self.auto_scroll = True
+        self.auto_scroll = enable_autoscroll
+        self.after_id = None
 
-        # Auto-scrolling logic
-        self.update_text()
+        if self.auto_scroll:
+            self.update_text()
 
         # Event binding
         self.bind("<Button-1>", self.stop_autoscroll)
         self.bind("<MouseWheel>", self.stop_autoscroll)
 
+        initial_state = self.get("1.0", "end-1c")
+        self._undo_stack = deque([initial_state], maxlen=50)
+        self._redo_stack = deque(maxlen=50)
+
+        # Bind Control-Z to undo and Control-Y to redo
+        self.bind("<Control-z>", self.undo)
+        self.bind("<Control-y>", self.redo)
+        self.bind("<Control-v>", self.paste)
+        self.bind("<Button-2>", self.select_all)
+        if self.auto_scroll:
+            self.bind("<Control-a>", self.select_all)
+
+        # Update the undo stack every time the Entry content changes
+        self.bind("<KeyRelease>", self.update_undo_stack)
+
+        # Context Menu
+        self.context_menu = tk.Menu(self, tearoff=0, bg="#f0f0f0", fg="#333333", font=("Arial", 10))
+        if not self.auto_scroll:
+            self.context_menu.add_command(label="Cut", command=self.cut)
+            self.context_menu.add_command(label="Paste", command=self.paste)
+        self.context_menu.add_command(label="Copy", command=self.copy)
+        self.context_menu.add_command(label="Select All", command=self.select_all)
+        self.is_text_selected = False
+        self.bind("<Button-3>", self.show_menu)
+
+        self.read_only = read_only
+        if self.read_only:
+            self.bind("<Key>", self.readonly)
+
     def update_text(self):
+        if self.after_id:
+            self.after_cancel(self.after_id)
+
         if self.auto_scroll:
             _, yview_fraction = self.yview()
             if yview_fraction >= 1.0:
                 self.yview_moveto(0)  # Reset to the top
             else:
                 self.yview_scroll(1, "units")  # Scroll down 1 pixel
-
-            self.after(7500, self.update_text)  # Adjust the speed here
+            self.after_id = self.after(8000, self.update_text)  # Store the ID
 
     def stop_autoscroll(self, event):
         self.auto_scroll = False
+
+    def reset_autoscroll(self):
+        if self.after_id:
+            self.after_cancel(self.after_id)
+        self.update_text()
+        self.yview_moveto(0)
+
+    def update_undo_stack(self, event=None):
+        current_text = self.get("1.0", "end-1c")
+        if current_text != self._undo_stack[-1]:
+            self._undo_stack.append(current_text)
+            self._redo_stack.clear()
+
+    def undo(self, event=None):
+        if len(self._undo_stack) > 1:
+            self._redo_stack.append(self._undo_stack.pop())
+            self.delete("1.0", "end")
+            self.insert("1.0", self._undo_stack[-1])
+
+    def redo(self, event=None):
+        if self._redo_stack:
+            redo_text = self._redo_stack.pop()
+            self._undo_stack.append(redo_text)
+            self.delete("1.0", "end")
+            self.insert("1.0", redo_text)
+
+    def show_menu(self, event):
+        self.stop_autoscroll(event=None)
+        self.context_menu.post(event.x_root, event.y_root)
+        self.focus_set()
+        self.mark_set(tk.INSERT, "end")
+
+    def cut(self):
+        try:
+            selected_text = self.selection_get()  # Attempt to get selected text
+            current_text = self.get("1.0", "end-1c")  # Existing text in the Text widget
+            self._undo_stack.append(current_text)  # Save the current state to undo stack
+
+            self.clipboard_clear()
+            self.clipboard_append(selected_text)
+            self.delete(tk.SEL_FIRST, tk.SEL_LAST)
+
+            new_text = self.get("1.0", "end-1c")
+            self._undo_stack.append(new_text)
+
+            # Optionally, clear the redo stack
+            self._redo_stack = []
+
+        except tk.TclError:
+            print("No text selected to cut.")  # Log or inform the user accordingly
+
+    def copy(self):
+        try:
+            selected_text = self.selection_get()  # Attempt to get selected text
+            self.clipboard_clear()
+            self.clipboard_append(selected_text)
+        except tk.TclError:
+            print("No text selected to copy.")  # Log or inform the user accordingly
+
+    def paste(self, event=None):
+        try:
+            clipboard_text = self.clipboard_get()  # Get text from clipboard
+            current_text = self.get("1.0", "end-1c")  # Existing text in the Text widget
+            self._undo_stack.append(current_text)  # Save the current state to undo stack
+
+            try:
+                start_index = self.index(tk.SEL_FIRST)
+                end_index = self.index(tk.SEL_LAST)
+                self.delete(start_index, end_index)  # Remove selected text if any
+            except tk.TclError:
+                pass  # Nothing selected, which is fine
+
+            self.insert(tk.INSERT, clipboard_text)  # Insert the clipboard text
+            self._redo_stack = []  # Clear redo stack when a new operation is done
+        except tk.TclError:
+            pass  # Clipboard empty or other issue
+
+    def select_all(self, event=None):
+        self.focus_set()
+        self.mark_set(tk.INSERT, "end")
+        if not self.is_text_selected:
+            self.tag_add(tk.SEL, "1.0", tk.END)
+            self.mark_set(tk.INSERT, "1.0")
+            self.see(tk.INSERT)
+            self.is_text_selected = True  # Set the flag to True when text is selected
+        else:
+            self.tag_remove(tk.SEL, "1.0", tk.END)  # Remove selection
+            self.is_text_selected = False  # Reset the flag when text is unselected
+
+    def readonly(self, event):
+        if event.keysym not in ("Control_R", "Control_L", "c"):
+            return "break"
 
 
 class CustomEntry(customtkinter.CTkEntry):
     def __init__(self, master, teraterm_ui_instance, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
 
-        self._undo_stack = []
-        self._redo_stack = []
+        initial_state = self.get()
+        self._undo_stack = deque([initial_state], maxlen=25)
+        self._redo_stack = deque(maxlen=25)
 
         self.teraterm_ui = teraterm_ui_instance
         self.bind("<FocusIn>", self.disable_slider_keys)
@@ -5255,8 +5386,20 @@ class CustomEntry(customtkinter.CTkEntry):
         # Bind Control-Z to undo and Control-Y to redo
         self.bind("<Control-z>", self.undo)
         self.bind("<Control-y>", self.redo)
+        self.bind("<Control-v>", self.paste)
+        self.bind("<Button-2>", self.select_all)
+
         # Update the undo stack every time the Entry content changes
         self.bind("<KeyRelease>", self.update_undo_stack)
+
+        # Context Menu
+        self.context_menu = tk.Menu(self, tearoff=0, bg="#f0f0f0", fg="#333333", font=("Arial", 10))
+        self.context_menu.add_command(label="Cut", command=self.cut)
+        self.context_menu.add_command(label="Copy", command=self.copy)
+        self.context_menu.add_command(label="Paste", command=self.paste)
+        self.context_menu.add_command(label="Select All", command=self.select_all)
+        self.is_text_selected = False
+        self.bind("<Button-3>", self.show_menu)
 
     def disable_slider_keys(self, event=None):
         self.teraterm_ui.move_slider_left_enabled = False
@@ -5274,31 +5417,102 @@ class CustomEntry(customtkinter.CTkEntry):
 
     def update_undo_stack(self, event=None):
         current_text = self.get()
-        if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1]):
+        if current_text != self._undo_stack[-1]:
             self._undo_stack.append(current_text)
-        self._redo_stack = []
+            self._redo_stack.clear()  # Clear the redo stack whenever a new change is made
 
     def undo(self, event=None):
         if len(self._undo_stack) > 1:
-            last_text = self._undo_stack.pop()
-            self._redo_stack.append(last_text)
+            self._redo_stack.append(self._undo_stack.pop())
             self.delete(0, "end")
             self.insert(0, self._undo_stack[-1])
 
     def redo(self, event=None):
-        if len(self._redo_stack) > 0:
+        if self._redo_stack:
             redo_text = self._redo_stack.pop()
             self._undo_stack.append(redo_text)
             self.delete(0, "end")
             self.insert(0, redo_text)
+
+    def show_menu(self, event):
+        self.context_menu.post(event.x_root, event.y_root)
+        self.focus_set()
+        self.icursor(tk.END)
+
+    def cut(self):
+        try:
+            selected_text = self.selection_get()  # Attempt to get selected text
+            current_text = self.get()  # Existing text in the Entry widget
+
+            # Save the current state to undo stack
+            self._undo_stack.append(current_text)
+
+            # Perform the cut operation
+            self.clipboard_clear()
+            self.clipboard_append(selected_text)
+            self.delete(tk.SEL_FIRST, tk.SEL_LAST)
+
+            # Update the undo stack with the new state
+            new_text = self.get()
+            self._undo_stack.append(new_text)
+
+            # Optionally, clear the redo stack
+            self._redo_stack = []
+
+        except tk.TclError:
+            print("No text selected to cut.")  # Log or inform the user accordingly
+
+    def copy(self):
+        try:
+            selected_text = self.selection_get()  # Attempt to get selected text
+            self.clipboard_clear()
+            self.clipboard_append(selected_text)
+        except tk.TclError:
+            print("No text selected to copy.")  # Log or inform the user accordingly
+
+    def paste(self, event=None):
+        current_text = self.get()  # Existing text in the Entry widget
+
+        # Save the current state to undo stack
+        if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1]):
+            self._undo_stack.append(current_text)
+
+        try:
+            clipboard_text = self.clipboard_get()  # Get text from clipboard
+            try:
+                start_index = self.index(tk.SEL_FIRST)
+                end_index = self.index(tk.SEL_LAST)
+                self.delete(start_index, end_index)  # Remove selected text if any
+            except tk.TclError:
+                pass  # Nothing selected, which is fine
+
+            self.insert(tk.INSERT, clipboard_text)  # Insert the clipboard text
+            # Update undo stack here, after paste operation
+            new_text = self.get()
+            self._undo_stack.append(new_text)
+            self._redo_stack = []
+        except tk.TclError:
+            pass  # Clipboard empty or other issue
+
+    def select_all(self, event=None):
+        self.focus_set()
+        self.icursor(tk.END)
+        if not self.is_text_selected:
+            self.select_range(0, "end")  # Select text from start to end
+            self.icursor("end")  # Move cursor to the end
+            self.is_text_selected = True  # Set the flag to True when text is selected
+        else:
+            self.select_clear()  # Clear the selection
+            self.is_text_selected = False  # Reset the flag when text is unselected
 
 
 class CustomComboBox(customtkinter.CTkComboBox):
     def __init__(self, master, teraterm_ui_instance, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
 
-        self._undo_stack = []
-        self._redo_stack = []
+        initial_state = self.get()
+        self._undo_stack = deque([initial_state], maxlen=25)
+        self._redo_stack = deque(maxlen=25)
 
         self.teraterm_ui = teraterm_ui_instance
         self.bind("<FocusIn>", self.disable_slider_keys)
@@ -5307,6 +5521,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
         # Bind Control-Z to undo and Control-Y to redo
         self.bind("<Control-z>", self.undo)
         self.bind("<Control-y>", self.redo)
+
         # Update the undo stack every time the Entry content changes
         self.bind("<KeyRelease>", self.update_undo_stack)
 
@@ -5326,9 +5541,9 @@ class CustomComboBox(customtkinter.CTkComboBox):
 
     def update_undo_stack(self, event=None):
         current_text = self.get()
-        if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1]):
+        if current_text != self._undo_stack[-1]:
             self._undo_stack.append(current_text)
-        self._redo_stack = []
+            self._redo_stack.clear()  # Clear the redo stack whenever a new change is made
 
     def undo(self, event=None):
         if len(self._undo_stack) > 1:
@@ -5338,7 +5553,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
             self.set(self._undo_stack[-1])
 
     def redo(self, event=None):
-        if len(self._redo_stack) > 0:
+        if self._redo_stack:
             redo_text = self._redo_stack.pop()
             self._undo_stack.append(redo_text)
             self.set("")
