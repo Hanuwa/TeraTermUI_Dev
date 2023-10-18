@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 10/17/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 10/18/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -432,6 +432,9 @@ class TeraTermUI(customtkinter.CTk):
         self.location = "C:/Program Files (x86)/teraterm/ttermpro.exe"
         self.teraterm_file = "C:/Program Files (x86)/teraterm/TERATERM.ini"
         self.original_font = None
+        # performs some operations in a separate thread when application starts up
+        self.boot_up_thread = threading.Thread(target=self.boot_up, args=(self.teraterm_file,))
+        self.boot_up_thread.start()
         # Database
         self.translations_cache = {}
         appdata_path = os.getenv("APPDATA")
@@ -537,45 +540,10 @@ class TeraTermUI(customtkinter.CTk):
                                                   "Might need to reinstall the application")
             exit(1)
 
-        # Asks the user if they want to update to the latest version of the application
-        def update_app():
-            translation = self.load_language(self.language_menu.get())
-            current_date = datetime.today().strftime("%Y-%m-%d")
-            date = self.cursor.execute("SELECT date FROM user_data WHERE date IS NOT NULL").fetchall()
-            dates_list = [record[0] for record in date]
-            if current_date not in dates_list:
-                try:
-                    latest_version = self.get_latest_release()
-                    if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION) and results["welcome"]:
-                        winsound.PlaySound("sounds/update.wav", winsound.SND_ASYNC)
-                        msg = CTkMessagebox(master=self, title=translation["update_popup_title"],
-                                            message=translation["update_popup_message"],
-                                            icon="question", option_1=translation["option_1"],
-                                            option_2=translation["option_2"], option_3=translation["option_3"],
-                                            icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                                            hover_color=("darkred", "darkblue", "darkblue"))
-                        response = msg.get()
-                        if response[0] == "Yes" or response[0] == "Sí":
-                            webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
-                        resultDate = self.cursor.execute("SELECT date FROM user_data").fetchall()
-                        if len(resultDate) == 0:
-                            self.cursor.execute("INSERT INTO user_data (date) VALUES (?)", (current_date,))
-                        elif len(resultDate) == 1:
-                            self.cursor.execute("UPDATE user_data SET date=?", (current_date,))
-                        self.connection.commit()
-                except requests.exceptions.RequestException as err:
-                    print(f"Error occurred while fetching latest release information: {err}")
-                    print("Please check your internet connection and try again.")
-                del dates_list, date, current_date
-
-        self.after(500, update_app)
-        self.after(100, self.set_focus_to_tkinter)
         self.after(0, self.unload_image("uprb"))
         self.after(0, self.unload_image("status"))
         self.after(0, self.unload_image("help"))
-        # performs some operations in a separate thread when application starts up
-        self.boot_up_thread = threading.Thread(target=self.boot_up, args=(self.teraterm_file,))
-        self.boot_up_thread.start()
+        self.after(100, self.set_focus_to_tkinter)
         self.mainloop()
         del user_data_fields, results, SPANISH, language_id, \
             scaling_factor, screen_width, screen_height, width, height, x, y, db_path
@@ -766,14 +734,14 @@ class TeraTermUI(customtkinter.CTk):
         self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 20))
         self.t_buttons_frame.grid_columnconfigure(1, weight=2)
         self.title_enroll.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-        self.e_classes.grid(row=1, column=1, padx=(32, 0), pady=(0, 0), sticky="w")
+        self.e_classes.grid(row=1, column=1, padx=(30, 0), pady=(0, 0), sticky="w")
         self.e_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         if lang == "English":
-            self.e_section.grid(row=2, column=1, padx=(21, 0), pady=(20, 0), sticky="w")
+            self.e_section.grid(row=2, column=1, padx=(19, 0), pady=(20, 0), sticky="w")
         elif lang == "Español":
-            self.e_section.grid(row=2, column=1, padx=(18, 0), pady=(20, 0), sticky="w")
+            self.e_section.grid(row=2, column=1, padx=(16, 0), pady=(20, 0), sticky="w")
         self.e_section_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
-        self.e_semester.grid(row=3, column=1, padx=(9, 0), pady=(20, 0), sticky="w")
+        self.e_semester.grid(row=3, column=1, padx=(7, 0), pady=(20, 0), sticky="w")
         self.e_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
         self.register.grid(row=4, column=1, padx=(65, 0), pady=(20, 0), sticky="w")
         self.drop.grid(row=4, column=1, padx=(0, 25), pady=(20, 0), sticky="e")
@@ -792,11 +760,11 @@ class TeraTermUI(customtkinter.CTk):
         self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
         self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         if lang == "English":
-            self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
+            self.menu.grid(row=2, column=1, padx=(33, 0), pady=(10, 0), sticky="w")
         elif lang == "Español":
-            self.menu.grid(row=2, column=1, padx=(24, 0), pady=(10, 0), sticky="w")
+            self.menu.grid(row=2, column=1, padx=(22, 0), pady=(10, 0), sticky="w")
         self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-        self.menu_semester.grid(row=3, column=1, padx=(9, 0), pady=(20, 0), sticky="w")
+        self.menu_semester.grid(row=3, column=1, padx=(7, 0), pady=(20, 0), sticky="w")
         self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
         self.menu_submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
         self.back_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
@@ -2559,14 +2527,14 @@ class TeraTermUI(customtkinter.CTk):
         self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 20))
         self.t_buttons_frame.grid_columnconfigure(1, weight=2)
         self.title_enroll.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-        self.e_classes.grid(row=1, column=1, padx=(32, 0), pady=(0, 0), sticky="w")
+        self.e_classes.grid(row=1, column=1, padx=(30, 0), pady=(0, 0), sticky="w")
         self.e_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         if lang == "English":
-            self.e_section.grid(row=2, column=1, padx=(21, 0), pady=(20, 0), sticky="w")
+            self.e_section.grid(row=2, column=1, padx=(19, 0), pady=(20, 0), sticky="w")
         elif lang == "Español":
-            self.e_section.grid(row=2, column=1, padx=(18, 0), pady=(20, 0), sticky="w")
+            self.e_section.grid(row=2, column=1, padx=(16, 0), pady=(20, 0), sticky="w")
         self.e_section_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
-        self.e_semester.grid(row=3, column=1, padx=(9, 0), pady=(20, 0), sticky="w")
+        self.e_semester.grid(row=3, column=1, padx=(7, 0), pady=(20, 0), sticky="w")
         self.e_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
         self.register.grid(row=4, column=1, padx=(65, 0), pady=(20, 0), sticky="w")
         self.drop.grid(row=4, column=1, padx=(0, 25), pady=(20, 0), sticky="e")
@@ -2596,11 +2564,11 @@ class TeraTermUI(customtkinter.CTk):
         self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
         self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         if lang == "English":
-            self.menu.grid(row=2, column=1, padx=(35, 0), pady=(10, 0), sticky="w")
+            self.menu.grid(row=2, column=1, padx=(33, 0), pady=(10, 0), sticky="w")
         elif lang == "Español":
-            self.menu.grid(row=2, column=1, padx=(24, 0), pady=(10, 0), sticky="w")
+            self.menu.grid(row=2, column=1, padx=(22, 0), pady=(10, 0), sticky="w")
         self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-        self.menu_semester.grid(row=3, column=1, padx=(9, 0), pady=(20, 0), sticky="w")
+        self.menu_semester.grid(row=3, column=1, padx=(7, 0), pady=(20, 0), sticky="w")
         self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0), sticky="n")
         if self._1VE_screen:
             self.menu_submit.configure(width=100)
@@ -3826,6 +3794,7 @@ class TeraTermUI(customtkinter.CTk):
             unzip_tesseract = False
             self.tesseract_unzipped = True
 
+        # backup for config file of tera term
         if TeraTermUI.is_file_in_directory("ttermpro.exe", r"C:/Program Files (x86)/teraterm"):
             backup_path = self.app_temp_dir / "TERATERM.ini.bak"
             if not os.path.exists(backup_path):
@@ -3835,6 +3804,7 @@ class TeraTermUI(customtkinter.CTk):
                 except FileNotFoundError:
                     print("Tera Term Probably not installed\n"
                           "or installed in a different location from the default")
+
             # Edits the font that tera term uses to "Lucida Console" to mitigate the chance of the OCR mistaking words
             if not self.can_edit:
                 try:
@@ -3878,6 +3848,25 @@ class TeraTermUI(customtkinter.CTk):
                 print(f"Error occurred during unzipping: {str(e)}")
                 self.tesseract_unzipped = False
 
+        # Check for update for the application
+        current_date = datetime.today().strftime("%Y-%m-%d")
+        date = self.cursor.execute("SELECT date FROM user_data WHERE date IS NOT NULL").fetchall()
+        dates_list = [record[0] for record in date]
+        if current_date not in dates_list:
+            try:
+                latest_version = self.get_latest_release()
+                if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION) and not self.welcome:
+                    self.after(0, self.update_app)
+                resultDate = self.cursor.execute("SELECT date FROM user_data").fetchall()
+                if len(resultDate) == 0:
+                    self.cursor.execute("INSERT INTO user_data (date) VALUES (?)", (current_date,))
+                elif len(resultDate) == 1:
+                    self.cursor.execute("UPDATE user_data SET date=?", (current_date,))
+                self.connection.commit()
+            except requests.exceptions.RequestException as err:
+                print(f"Error occurred while fetching latest release information: {err}")
+                print("Please check your internet connection and try again.")
+
         # Generating user_id to ban user from sending feedback if needed
         # If the file doesn't already exist, generate a new UUID and write it to the file
         user_path = Path(self.app_temp_dir) / "user_id.zip"
@@ -3913,8 +3902,22 @@ class TeraTermUI(customtkinter.CTk):
             print(f"Failed to load credentials: {str(e)}")
             self.credentials = None
             self.disable_feedback = True
-        del tesseract_dir_path, tesseract_dir, backup_path, line, lines, credentials_dict, user_path
+        del tesseract_dir_path, tesseract_dir, backup_path, line, lines, credentials_dict, user_path, dates_list, \
+            date, current_date
         gc.collect()
+
+    def update_app(self):
+        translation = self.load_language(self.language_menu.get())
+        winsound.PlaySound("sounds/update.wav", winsound.SND_ASYNC)
+        msg = CTkMessagebox(master=self, title=translation["update_popup_title"],
+                            message=translation["update_popup_message"],
+                            icon="question", option_1=translation["option_1"],
+                            option_2=translation["option_2"], option_3=translation["option_3"],
+                            icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                            hover_color=("darkred", "darkblue", "darkblue"))
+        response = msg.get()
+        if response[0] == "Yes" or response[0] == "Sí":
+            webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
 
     # Deletes Tesseract OCR and tera term config file from the temp folder
     def cleanup_temp(self):
@@ -4217,7 +4220,7 @@ class TeraTermUI(customtkinter.CTk):
             webbrowser.open(url)
 
     # will tell the user that there's a new update available for the application
-    def update_app(self):
+    def check_update_app(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         latest_version = self.get_latest_release()
@@ -4560,7 +4563,7 @@ class TeraTermUI(customtkinter.CTk):
         checkUpdateText.pack(pady=5)
         checkUpdate = CustomButton(scrollable_frame, border_width=2, image=self.get_image("update"),
                                    text=translation["update"], anchor="w", text_color=("gray10", "#DCE4EE"),
-                                   command=self.update_app)
+                                   command=self.check_update_app)
         checkUpdate.pack()
         website = customtkinter.CTkLabel(scrollable_frame, text=translation["website"])
         website.pack(pady=5)
@@ -5711,4 +5714,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
