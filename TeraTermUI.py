@@ -515,12 +515,6 @@ class TeraTermUI(customtkinter.CTk):
                 # enables closing app keyboard input event
                 self.bind("<Escape>", lambda event: self.on_closing())
 
-            # performs some operations in a separate thread when application starts up
-            self.boot_up_thread = threading.Thread(target=self.boot_up, args=(self.teraterm_file,))
-            self.boot_up_thread.start()
-
-            self.mainloop()
-            self.after(0, self.set_focus_to_tkinter)
         except Exception as e:
             db_path = "database.db"
             en_path = "english.json"
@@ -553,7 +547,7 @@ class TeraTermUI(customtkinter.CTk):
                 try:
                     latest_version = self.get_latest_release()
                     if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION) and results["welcome"]:
-                        winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                        winsound.PlaySound("sounds/update.wav", winsound.SND_ASYNC)
                         msg = CTkMessagebox(master=self, title=translation["update_popup_title"],
                                             message=translation["update_popup_message"],
                                             icon="question", option_1=translation["option_1"],
@@ -574,10 +568,15 @@ class TeraTermUI(customtkinter.CTk):
                     print("Please check your internet connection and try again.")
                 del dates_list, date, current_date
 
-        self.after(100, update_app)
+        self.after(500, update_app)
+        self.after(100, self.set_focus_to_tkinter)
         self.after(0, self.unload_image("uprb"))
         self.after(0, self.unload_image("status"))
         self.after(0, self.unload_image("help"))
+        # performs some operations in a separate thread when application starts up
+        self.boot_up_thread = threading.Thread(target=self.boot_up, args=(self.teraterm_file,))
+        self.boot_up_thread.start()
+        self.mainloop()
         del user_data_fields, results, SPANISH, language_id, \
             scaling_factor, screen_width, screen_height, width, height, x, y, db_path
         gc.collect()
@@ -4224,7 +4223,7 @@ class TeraTermUI(customtkinter.CTk):
         latest_version = self.get_latest_release()
         if not self.connection_error:
             if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION):
-                winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                winsound.PlaySound("sounds/update.wav", winsound.SND_ASYNC)
                 msg = CTkMessagebox(master=self, title=translation["update_popup_title"],
                                     message=translation["update_popup_message"],
                                     icon="question",
@@ -5711,3 +5710,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
