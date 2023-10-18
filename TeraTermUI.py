@@ -5354,6 +5354,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
             pass  # Clipboard empty or other issue
 
     def select_all(self, event=None):
+        self.stop_autoscroll(event=None)
         self.focus_set()
         self.mark_set(tk.INSERT, "end")
         if not self.is_text_selected:
