@@ -956,6 +956,13 @@ class TeraTermUI(customtkinter.CTk):
                                             if not self.enrollment_error_check:
                                                 self.after(2500, self.show_enrollment_error_information)
                                                 self.enrollment_error_check = True
+                                        else:
+                                            self.after(0, self.show_error_message, 300, 210,
+                                                      translation["failed_enroll"])
+                                            if not self.enrollment_error_check:
+                                                self.after(2500, self.show_enrollment_error_information)
+                                                self.enrollment_error_check = True
+                                            
                                     self.set_focus_to_tkinter()
                             else:
                                 if not classes or not section or not semester:
