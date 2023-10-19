@@ -873,8 +873,8 @@ class TeraTermUI(customtkinter.CTk):
                                 enrolled_classes = "ENROLLED"
                                 count_enroll = text_output.count(enrolled_classes)
                                 if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output and \
-                                        "VUELVA LUEGO" not in text_output and "REGISTRATION DATA" in text_output and \
-                                        count_enroll != 15:
+                                    "VUELVA LUEGO" not in text_output and "REGISTRATION DATA" in text_output and \
+                                    count_enroll != 15:
                                     self.e_counter = 0
                                     send_keys("{TAB 2}")
                                     for i in range(count_enroll, 0, -1):
@@ -958,11 +958,11 @@ class TeraTermUI(customtkinter.CTk):
                                                 self.enrollment_error_check = True
                                         else:
                                             self.after(0, self.show_error_message, 300, 210,
-                                                      translation["failed_enroll"])
+                                                       translation["failed_enroll"])
                                             if not self.enrollment_error_check:
                                                 self.after(2500, self.show_enrollment_error_information)
                                                 self.enrollment_error_check = True
-                                            
+
                                     self.set_focus_to_tkinter()
                             else:
                                 if not classes or not section or not semester:
@@ -5721,3 +5721,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
