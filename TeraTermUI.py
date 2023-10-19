@@ -873,8 +873,8 @@ class TeraTermUI(customtkinter.CTk):
                                 enrolled_classes = "ENROLLED"
                                 count_enroll = text_output.count(enrolled_classes)
                                 if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output and \
-                                    "VUELVA LUEGO" not in text_output and "REGISTRATION DATA" in text_output and \
-                                    count_enroll != 15:
+                                        "VUELVA LUEGO" not in text_output and "REGISTRATION DATA" in text_output and \
+                                        count_enroll != 15:
                                     self.e_counter = 0
                                     send_keys("{TAB 2}")
                                     for i in range(count_enroll, 0, -1):
@@ -4467,7 +4467,7 @@ class TeraTermUI(customtkinter.CTk):
 
     async def test_connection(self, lang):
         translation = self.load_language(lang)
-        urls = ["http://www.google.com/", "http://www.bing.com/", "http://www.yahoo.com/"]
+        urls = ["https://www.google.com/", "https://www.bing.com/", "https://www.yahoo.com/"]
         async with aiohttp.ClientSession() as session:
             tasks = [TeraTermUI.fetch(session, url) for url in urls]
             results = await asyncio.gather(*tasks)
@@ -5721,4 +5721,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
