@@ -213,6 +213,7 @@
 	"download_tera_term": "Tera Term tiene que estar instalado en su computadora para poder usar esta aplicación, ¿desea instalarlo?",
 	"no_internet": "¡Error! No Conectado al internet",
 	"uprb_down": "¡Error! El servidor de la UPRB\nestá actualmente caído",
+	"unexpected_error": "Error inesperado y raro, no se pudo iniciar Tera Term, por favor, intente iniciar sesión nuevamente\n\n(Se agradecería mucho informar sobre el problema)",
 	
 	"feedback_unavailable": "¡Error! Mandar comentarios no esta disponible ahora mismo",
 	"submit_feedback": "¿Estás preparado para mandar to comentario?\n\n(EL ENVÍO ES COMPLETAMENTE ANÓNIMO)",
