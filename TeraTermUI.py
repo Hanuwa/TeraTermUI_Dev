@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 10/18/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 10/19/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -2392,8 +2392,19 @@ class TeraTermUI(customtkinter.CTk):
                     self.after(0, self.show_error_message, 300, 215, translation["invalid_host"])
             self.show_sidebar_windows()
         except Exception as e:
-            print("An error occurred: ", e)
-            self.error_occurred = True
+            lang = self.language_menu.get()
+            translation = self.load_language(lang)
+            error_message = str(e)
+            if "catching classes that do not inherit from BaseException is not allowed" in error_message:
+                print("Caught the specific error message: ", error_message)
+                self.destroy_windows()
+                winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                CTkMessagebox(master=self, title=translation["automation_error_title"],
+                              message=translation["unexpected_error"], icon="error", button_width=380)
+            else:
+                print("An error occurred:", error_message)
+                self.error_occurred = True
+
         finally:
             task_done.set()
             ctypes.windll.user32.BlockInput(False)
@@ -2403,11 +2414,13 @@ class TeraTermUI(customtkinter.CTk):
                 self.destroy_windows()
                 if not dont_close:
                     winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                    subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
-                                   check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                CTkMessagebox(master=self, title="Error Information",
-                              message=translation["tera_term_forced_to_close"],
-                              icon="warning", button_width=380)
+                    try:
+                        subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
+                                       check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    except subprocess.CalledProcessError:
+                        print("Could not terminate ttermpro.exe.")
+                CTkMessagebox(master=self, title=translation["automation_error_title"],
+                              message=translation["tera_term_forced_to_close"], icon="warning", button_width=380)
                 self.error_occurred = False
 
     def login_frame(self):
@@ -3131,6 +3144,10 @@ class TeraTermUI(customtkinter.CTk):
             self.ssn_entry.bind("<Control-c>", lambda e: "break")
             self.code_entry.bind("<Command-c>", lambda e: "break")
             self.code_entry.bind("<Control-c>", lambda e: "break")
+            self.ssn_entry.bind("<Command-C>", lambda e: "break")
+            self.ssn_entry.bind("<Control-C>", lambda e: "break")
+            self.code_entry.bind("<Command-C>", lambda e: "break")
+            self.code_entry.bind("<Control-C>", lambda e: "break")
             self.system = CustomButton(master=self.s_buttons_frame, border_width=2, text="Enter",
                                        text_color=("gray10", "#DCE4EE"), command=self.tuition_event_handler)
             self.back_student = CustomButton(master=self.s_buttons_frame, fg_color="transparent", border_width=2,
@@ -3492,6 +3509,10 @@ class TeraTermUI(customtkinter.CTk):
             self.ssn_entry.unbind("<Control-c>")
             self.code_entry.unbind("<Command-c>")
             self.code_entry.unbind("<Control-c>")
+            self.ssn_entry.unbind("<Command-C>")
+            self.ssn_entry.unbind("<Control-C>")
+            self.code_entry.unbind("<Command-C>")
+            self.code_entry.unbind("<Control-C>")
             self.ssn_entry.configure(show="")
             self.code_entry.configure(show="")
         elif show == "off":
@@ -3499,6 +3520,10 @@ class TeraTermUI(customtkinter.CTk):
             self.ssn_entry.bind("<Control-c>", lambda e: "break")
             self.code_entry.bind("<Command-c>", lambda e: "break")
             self.code_entry.bind("<Control-c>", lambda e: "break")
+            self.ssn_entry.bind("<Command-C>", lambda e: "break")
+            self.ssn_entry.bind("<Control-C>", lambda e: "break")
+            self.code_entry.bind("<Command-C>", lambda e: "break")
+            self.code_entry.bind("<Control-C>", lambda e: "break")
             self.ssn_entry.configure(show="*")
             self.code_entry.configure(show="*")
 
@@ -5249,11 +5274,13 @@ class CustomTextBox(customtkinter.CTkTextbox):
 
         # Bind Control-Z to undo and Control-Y to redo
         self.bind("<Control-z>", self.undo)
+        self.bind("<Control-Z>", self.undo)
         self.bind("<Control-y>", self.redo)
-        self.bind("<Control-v>", self.paste)
+        self.bind("<Control-Y>", self.redo)
         self.bind("<Button-2>", self.select_all)
         if self.auto_scroll:
             self.bind("<Control-a>", self.select_all)
+            self.bind("<Control-A>", self.select_all)
 
         # Update the undo stack every time the Entry content changes
         self.bind("<KeyRelease>", self.update_undo_stack)
@@ -5395,7 +5422,9 @@ class CustomEntry(customtkinter.CTkEntry):
 
         # Bind Control-Z to undo and Control-Y to redo
         self.bind("<Control-z>", self.undo)
+        self.bind("<Control-Z>", self.undo)
         self.bind("<Control-y>", self.redo)
+        self.bind("<Control-Y>", self.redo)
         self.bind("<Control-v>", self.paste)
         self.bind("<Button-2>", self.select_all)
 
@@ -5530,7 +5559,9 @@ class CustomComboBox(customtkinter.CTkComboBox):
 
         # Bind Control-Z to undo and Control-Y to redo
         self.bind("<Control-z>", self.undo)
+        self.bind("<Control-Z>", self.undo)
         self.bind("<Control-y>", self.redo)
+        self.bind("<Control-Y>", self.redo)
 
         # Update the undo stack every time the Entry content changes
         self.bind("<KeyRelease>", self.update_undo_stack)
