@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 10/19/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 10/20/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -2167,83 +2167,85 @@ class TeraTermUI(customtkinter.CTk):
 
     # Authentication required frame, where user is asked to input his username
     def student_event(self, task_done):
-        try:
-            self.focus_set()
-            self.destroy_windows()
-            self.hide_sidebar_windows()
-            self.unbind("<Return>")
-            username = self.username_entry.get().replace(" ", "").lower()
-            lang = self.language_menu.get()
-            translation = self.load_language(lang)
-            if asyncio.run(self.test_connection(lang)) and self.check_server():
-                if TeraTermUI.checkIfProcessRunning("ttermpro"):
-                    if username == "students":
-                        self.unfocus_tkinter()
-                        ctypes.windll.user32.BlockInput(True)
-                        term_window = gw.getWindowsWithTitle("SSH Authentication")[0]
-                        if term_window.isMinimized:
-                            term_window.restore()
-                        self.uprbay_window.wait("visible", timeout=10)
-                        user = self.uprb.UprbayTeraTermVt.child_window(title="User name:",
-                                                                       control_type="Edit").wrapper_object()
-                        user.set_text(username)
-                        check = self.uprb.UprbayTeraTermVt.child_window(title="Remember password in memory",
-                                                                        control_type="CheckBox")
-                        if check.get_toggle_state() == 0:
-                            check.click()
-                        self.uprb.UprbayTeraTermVt.child_window(title="Use plain password to log in",
-                                                                control_type="RadioButton").click()
-                        self.hide_loading_screen()
-                        okConn2 = self.uprb.UprbayTeraTermVt.child_window(title="OK",
-                                                                          control_type="Button").wrapper_object()
-                        okConn2.click()
-                        self.show_loading_screen_again()
-                        self.server_status = self.wait_for_prompt("return to continue", "REGRESE PRONTO")
-                        if self.server_status == "Maintenance message found":
-                            def server_closed():
-                                self.unbind("<Return>")
-                                self.back.configure(state="disabled")
-                                self.student.configure(state="disabled")
-                                winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                                CTkMessagebox(title=translation["server_maintenance_title"],
-                                              message=translation["server_maintenance"],
-                                              icon="cancel",
-                                              button_width=380)
-                                self.error_occurred = True
-
-                            self.after(0, server_closed)
-                        elif self.server_status == "Prompt found":
-                            send_keys("{ENTER 3}")
-                            self.bind("<Return>", lambda event: self.tuition_event_handler())
-                            self.after(0, self.student_info_frame)
-                            self.in_student_frame = True
-                            self.set_focus_to_tkinter()
-                        elif self.server_status == "Timeout":
-                            def timeout():
-                                winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                                CTkMessagebox(title="Error", message=translation["timeout_server"],
-                                              icon="cancel",
-                                              button_width=380)
-                                self.error_occurred = True
-
-                            self.after(0, timeout)
-                    elif username != "students":
+        with self.lock_thread:
+            try:
+                self.focus_set()
+                self.destroy_windows()
+                self.hide_sidebar_windows()
+                self.unbind("<Return>")
+                username = self.username_entry.get().replace(" ", "").lower()
+                lang = self.language_menu.get()
+                translation = self.load_language(lang)
+                if asyncio.run(self.test_connection(lang)) and self.check_server():
+                    if TeraTermUI.checkIfProcessRunning("ttermpro"):
+                        if username == "students":
+                            self.unfocus_tkinter()
+                            ctypes.windll.user32.BlockInput(True)
+                            term_window = gw.getWindowsWithTitle("SSH Authentication")[0]
+                            if term_window.isMinimized:
+                                term_window.restore()
+                            self.uprbay_window.wait("visible", timeout=10)
+                            user = self.uprb.UprbayTeraTermVt.child_window(title="User name:",
+                                                                           control_type="Edit").wrapper_object()
+                            user.set_text(username)
+                            check = self.uprb.UprbayTeraTermVt.child_window(title="Remember password in memory",
+                                                                            control_type="CheckBox")
+                            if check.get_toggle_state() == 0:
+                                check.click()
+                            self.uprb.UprbayTeraTermVt.child_window(title="Use plain password to log in",
+                                                                    control_type="RadioButton").click()
+                            self.hide_loading_screen()
+                            okConn2 = self.uprb.UprbayTeraTermVt.child_window(title="OK",
+                                                                              control_type="Button").wrapper_object()
+                            okConn2.click()
+                            self.show_loading_screen_again()
+                            self.server_status = self.wait_for_prompt(
+                                "return to continue", "REGRESE PRONTO")
+                            if self.server_status == "Maintenance message found":
+                                def server_closed():
+                                    self.unbind("<Return>")
+                                    self.back.configure(state="disabled")
+                                    self.student.configure(state="disabled")
+                                    winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                                    CTkMessagebox(title=translation["server_maintenance_title"],
+                                                  message=translation["server_maintenance"],
+                                                  icon="cancel",
+                                                  button_width=380)
+                                    self.error_occurred = True
+    
+                                self.after(0, server_closed)
+                            elif self.server_status == "Prompt found":
+                                send_keys("{ENTER 3}")
+                                self.bind("<Return>", lambda event: self.tuition_event_handler())
+                                self.after(0, self.student_info_frame)
+                                self.in_student_frame = True
+                                self.set_focus_to_tkinter()
+                            elif self.server_status == "Timeout":
+                                def timeout():
+                                    winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                                    CTkMessagebox(title="Error", message=translation["timeout_server"],
+                                                  icon="cancel",
+                                                  button_width=380)
+                                    self.error_occurred = True
+    
+                                self.after(0, timeout)
+                        elif username != "students":
+                            self.bind("<Return>", lambda event: self.student_event_handler())
+                            self.after(0, self.show_error_message, 300, 215, translation["invalid_username"])
+                    else:
                         self.bind("<Return>", lambda event: self.student_event_handler())
-                        self.after(0, self.show_error_message, 300, 215, translation["invalid_username"])
-                else:
-                    self.bind("<Return>", lambda event: self.student_event_handler())
-                    self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
-            self.show_sidebar_windows()
-        except Exception as e:
-            print("An error occurred: ", e)
-            self.error_occurred = True
-        finally:
-            task_done.set()
-            ctypes.windll.user32.BlockInput(False)
-            if self.server_status == "Maintenance message found" or self.server_status == "Timeout":
-                self.after(3500, self.go_back_event)
-            elif self.error_occurred:
-                self.after(0, self.go_back_event)
+                        self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+                self.show_sidebar_windows()
+            except Exception as e:
+                print("An error occurred: ", e)
+                self.error_occurred = True
+            finally:
+                task_done.set()
+                ctypes.windll.user32.BlockInput(False)
+                if self.server_status == "Maintenance message found" or self.server_status == "Timeout":
+                    self.after(3500, self.go_back_event)
+                elif self.error_occurred:
+                    self.after(0, self.go_back_event)
 
     def student_info_frame(self):
         lang = self.language_menu.get()
@@ -2282,146 +2284,148 @@ class TeraTermUI(customtkinter.CTk):
     # Checks if host entry is true
     def login_event(self, task_done):
         dont_close = False
-        try:
-            self.focus_set()
-            self.destroy_windows()
-            self.hide_sidebar_windows()
-            self.unbind("<Return>")
-            timeout_counter = 0
-            skip = False
-            lang = self.language_menu.get()
-            translation = self.load_language(lang)
-            host = self.host_entry.get().replace(" ", "").lower()
-            if asyncio.run(self.test_connection(lang)) and self.check_server():
-                if host == "uprbay.uprb.edu" or host == "uprbayuprbedu":
-                    if TeraTermUI.checkIfProcessRunning("ttermpro"):
-                        while not self.tesseract_unzipped:
-                            time.sleep(1)
-                            timeout_counter += 1
-                            if timeout_counter > 5:
-                                skip = True
-                                break
-                        if (TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
-                                and not TeraTermUI.window_exists("SSH Authentication") and not skip):
-                            term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
-                            dont_close = True
-                            if term_window.isMinimized:
-                                term_window.restore()
-                            screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                            screenshot_thread.start()
-                            screenshot_thread.join()
-                            text_output = self.capture_screenshot()
-                            if (("MENU DE OPCIONES" in text_output or "STUDENTS REQ/DROP" in text_output or "HOLD FLAGS"
-                                 in text_output or "PROGRAMA DE CLASES" in text_output or "ACADEMIC STATISTICS" in
-                                 text_output or "SNAPSHOT" in text_output or "SOLICITUD DE PRORROGA" in text_output
-                                 or "LISTA DE SECCIONES") and "IDENTIFICACION PERSONAL" not in text_output):
-                                self.uprb = Application(backend="uia").connect(title="uprbay.uprb.edu - Tera Term VT",
-                                                                               timeout=10)
-                                self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                                self.uprbay_window.wait("visible", timeout=10)
-                                self.after(0, self.initialization_student)
-                                self.after(0, self.initialization_class)
-                                self.after(0, self.initialization_multiple)
-                                self.after(0, self.tuition_frame)
-                                self.passed = True
-                                self.reset_activity_timer(None)
-                                self.start_check_idle_thread()
-                                self.in_student_frame = False
-                                self.run_fix = True
-                                self.language_menu.configure(state="disabled")
-                                self.slideshow_frame.pause_cycle()
-                                self.host.grid_forget()
-                                self.host_entry.grid_forget()
-                                self.log_in.grid_forget()
-                                self.intro_box.grid_forget()
-                                self.introduction.grid_forget()
-                                self.slideshow_frame.grid_forget()
-                                self.switch_tab()
-                                self.set_focus_to_tkinter()
+        with self.lock_thread:
+            try:
+                self.focus_set()
+                self.destroy_windows()
+                self.hide_sidebar_windows()
+                self.unbind("<Return>")
+                timeout_counter = 0
+                skip = False
+                lang = self.language_menu.get()
+                translation = self.load_language(lang)
+                host = self.host_entry.get().replace(" ", "").lower()
+                if asyncio.run(self.test_connection(lang)) and self.check_server():
+                    if host == "uprbay.uprb.edu" or host == "uprbayuprbedu":
+                        if TeraTermUI.checkIfProcessRunning("ttermpro"):
+                            while not self.tesseract_unzipped:
+                                time.sleep(1)
+                                timeout_counter += 1
+                                if timeout_counter > 5:
+                                    skip = True
+                                    break
+                            if (TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
+                                    and not TeraTermUI.window_exists("SSH Authentication") and not skip):
+                                term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
+                                dont_close = True
+                                if term_window.isMinimized:
+                                    term_window.restore()
+                                screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                                screenshot_thread.start()
+                                screenshot_thread.join()
+                                text_output = self.capture_screenshot()
+                                if (("MENU DE OPCIONES" in text_output or "STUDENTS REQ/DROP" in text_output or 
+                                     "HOLD FLAGS" in text_output or "PROGRAMA DE CLASES" in text_output or 
+                                     "ACADEMIC STATISTICS" in text_output or "SNAPSHOT" in text_output or 
+                                     "SOLICITUD DE PRORROGA" in text_output or "LISTA DE SECCIONES") and 
+                                        "IDENTIFICACION PERSONAL" not in text_output):
+                                    self.uprb = Application(backend="uia").connect(
+                                        title="uprbay.uprb.edu - Tera Term VT", timeout=10)
+                                    self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
+                                    self.uprbay_window.wait("visible", timeout=10)
+                                    self.after(0, self.initialization_student)
+                                    self.after(0, self.initialization_class)
+                                    self.after(0, self.initialization_multiple)
+                                    self.after(0, self.tuition_frame)
+                                    self.passed = True
+                                    self.reset_activity_timer(None)
+                                    self.start_check_idle_thread()
+                                    self.in_student_frame = False
+                                    self.run_fix = True
+                                    self.language_menu.configure(state="disabled")
+                                    self.slideshow_frame.pause_cycle()
+                                    self.host.grid_forget()
+                                    self.host_entry.grid_forget()
+                                    self.log_in.grid_forget()
+                                    self.intro_box.grid_forget()
+                                    self.introduction.grid_forget()
+                                    self.slideshow_frame.grid_forget()
+                                    self.switch_tab()
+                                    self.set_focus_to_tkinter()
+                                else:
+                                    self.bind("<Return>", lambda event: self.login_event_handler())
+                                    self.after(0, self.show_error_message, 450, 265,
+                                               translation["tera_term_already_running"])
                             else:
                                 self.bind("<Return>", lambda event: self.login_event_handler())
                                 self.after(0, self.show_error_message, 450, 265,
                                            translation["tera_term_already_running"])
                         else:
-                            self.bind("<Return>", lambda event: self.login_event_handler())
-                            self.after(0, self.show_error_message, 450, 265,
-                                       translation["tera_term_already_running"])
-                    else:
-                        try:
-                            ctypes.windll.user32.BlockInput(True)
-                            if self.download or self.teraterm_not_found:
-                                self.edit_teraterm_ini(self.teraterm_file)
-                            self.uprb = Application(backend="uia").start(self.location) \
-                                .connect(title="Tera Term - [disconnected] VT", timeout=10)
-                            disconnected = self.uprb.window(title="Tera Term - [disconnected] VT")
-                            disconnected.wait("visible", timeout=10)
-                            hostText = \
-                                self.uprb.TeraTermDisconnectedVt.child_window(title="Host:",
-                                                                              control_type="Edit").wrapper_object()
-                            hostText.set_text("uprbay.uprb.edu")
-                            self.hide_loading_screen()
-                            okConn = \
-                                self.uprb.TeraTermDisconnectedVt.child_window(title="OK",
-                                                                              control_type="Button").wrapper_object()
-                            okConn.click()
-                            self.show_loading_screen_again()
-                            self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                            self.uprbay_window.wait("visible", timeout=10)
-                            if self.uprbay_window.child_window(title="Continue", control_type="Button").exists(
-                                    timeout=1):
+                            try:
+                                ctypes.windll.user32.BlockInput(True)
+                                if self.download or self.teraterm_not_found:
+                                    self.edit_teraterm_ini(self.teraterm_file)
+                                self.uprb = Application(backend="uia").start(self.location) \
+                                    .connect(title="Tera Term - [disconnected] VT", timeout=10)
+                                disconnected = self.uprb.window(title="Tera Term - [disconnected] VT")
+                                disconnected.wait("visible", timeout=10)
+                                hostText = \
+                                    self.uprb.TeraTermDisconnectedVt.child_window(title="Host:",
+                                                                                  control_type="Edit").wrapper_object()
+                                hostText.set_text("uprbay.uprb.edu")
                                 self.hide_loading_screen()
-                                continue_button = \
-                                    self.uprbay_window.child_window(title="Continue",
-                                                                    control_type="Button").wrapper_object()
-                                continue_button.click()
+                                okConn = \
+                                    self.uprb.TeraTermDisconnectedVt.child_window(
+                                        title="OK", control_type="Button").wrapper_object()
+                                okConn.click()
                                 self.show_loading_screen_again()
-                            ctypes.windll.user32.BlockInput(False)
-                            self.bind("<Return>", lambda event: self.student_event_handler())
-                            self.after(0, self.login_frame)
-                            self.set_focus_to_tkinter()
-                        except Exception as e:
-                            if e.__class__.__name__ == "AppStartError":
-                                self.bind("<Return>", lambda event: self.login_event_handler())
-                                self.after(0, self.show_error_message, 425, 330,
-                                           translation["tera_term_failed_to_start"])
-                                if not self.download:
-                                    self.after(3500, self.download_teraterm)
-                                    self.download = True
-                elif host != "uprbay.uprb.edu":
-                    self.bind("<Return>", lambda event: self.login_event_handler())
-                    self.after(0, self.show_error_message, 300, 215, translation["invalid_host"])
-            self.show_sidebar_windows()
-        except Exception as e:
-            lang = self.language_menu.get()
-            translation = self.load_language(lang)
-            error_message = str(e)
-            if "catching classes that do not inherit from BaseException is not allowed" in error_message:
-                print("Caught the specific error message: ", error_message)
-                self.destroy_windows()
-                winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                CTkMessagebox(master=self, title=translation["automation_error_title"],
-                              message=translation["unexpected_error"], icon="error", button_width=380)
-            else:
-                print("An error occurred:", error_message)
-                self.error_occurred = True
-
-        finally:
-            task_done.set()
-            ctypes.windll.user32.BlockInput(False)
-            lang = self.language_menu.get()
-            translation = self.load_language(lang)
-            if self.error_occurred:
-                self.destroy_windows()
-                if not dont_close:
+                                self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
+                                self.uprbay_window.wait("visible", timeout=10)
+                                if self.uprbay_window.child_window(title="Continue", control_type="Button").exists(
+                                        timeout=1):
+                                    self.hide_loading_screen()
+                                    continue_button = \
+                                        self.uprbay_window.child_window(title="Continue",
+                                                                        control_type="Button").wrapper_object()
+                                    continue_button.click()
+                                    self.show_loading_screen_again()
+                                ctypes.windll.user32.BlockInput(False)
+                                self.bind("<Return>", lambda event: self.student_event_handler())
+                                self.after(0, self.login_frame)
+                                self.set_focus_to_tkinter()
+                            except Exception as e:
+                                if e.__class__.__name__ == "AppStartError":
+                                    self.bind("<Return>", lambda event: self.login_event_handler())
+                                    self.after(0, self.show_error_message, 425, 330,
+                                               translation["tera_term_failed_to_start"])
+                                    if not self.download:
+                                        self.after(3500, self.download_teraterm)
+                                        self.download = True
+                    elif host != "uprbay.uprb.edu":
+                        self.bind("<Return>", lambda event: self.login_event_handler())
+                        self.after(0, self.show_error_message, 300, 215, translation["invalid_host"])
+                self.show_sidebar_windows()
+            except Exception as e:
+                lang = self.language_menu.get()
+                translation = self.load_language(lang)
+                error_message = str(e)
+                if "catching classes that do not inherit from BaseException is not allowed" in error_message:
+                    print("Caught the specific error message: ", error_message)
+                    self.destroy_windows()
                     winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                    try:
-                        subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
-                                       check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                    except subprocess.CalledProcessError:
-                        print("Could not terminate ttermpro.exe.")
-                CTkMessagebox(master=self, title=translation["automation_error_title"],
-                              message=translation["tera_term_forced_to_close"], icon="warning", button_width=380)
-                self.error_occurred = False
+                    CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                  message=translation["unexpected_error"], icon="error", button_width=380)
+                else:
+                    print("An error occurred:", error_message)
+                    self.error_occurred = True
+    
+            finally:
+                task_done.set()
+                ctypes.windll.user32.BlockInput(False)
+                lang = self.language_menu.get()
+                translation = self.load_language(lang)
+                if self.error_occurred:
+                    self.destroy_windows()
+                    if not dont_close:
+                        winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                        try:
+                            subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
+                                           check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        except subprocess.CalledProcessError:
+                            print("Could not terminate ttermpro.exe.")
+                    CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                  message=translation["tera_term_forced_to_close"], icon="warning", button_width=380)
+                    self.error_occurred = False
 
     def login_frame(self):
         lang = self.language_menu.get()
@@ -5752,3 +5756,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
