@@ -213,6 +213,7 @@
 	"download_tera_term": "Tera Term must be installed in your computer in order to use this application do you wish to download it?",
 	"no_internet": "Error! Not Connected to the internet",
 	"uprb_down": "Error! UPRB server is currently down",
+	"unexpected_error": "Unexpected and rare error, failed to start tera term, please, try to log-in again\n\n(Reporting the issue is really appreciated)",
 	
 	"feedback_unavailable": "Error! Feedback submission not currently available",
 	"submit_feedback": "Are you ready to submit your feedback?\n\n(SUBMISSION IS COMPLETELY ANONYMOUS)",
