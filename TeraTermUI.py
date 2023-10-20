@@ -2212,7 +2212,7 @@ class TeraTermUI(customtkinter.CTk):
                                                   icon="cancel",
                                                   button_width=380)
                                     self.error_occurred = True
-    
+
                                 self.after(0, server_closed)
                             elif self.server_status == "Prompt found":
                                 send_keys("{ENTER 3}")
@@ -2227,7 +2227,7 @@ class TeraTermUI(customtkinter.CTk):
                                                   icon="cancel",
                                                   button_width=380)
                                     self.error_occurred = True
-    
+
                                 self.after(0, timeout)
                         elif username != "students":
                             self.bind("<Return>", lambda event: self.student_event_handler())
@@ -2314,10 +2314,10 @@ class TeraTermUI(customtkinter.CTk):
                                 screenshot_thread.start()
                                 screenshot_thread.join()
                                 text_output = self.capture_screenshot()
-                                if (("MENU DE OPCIONES" in text_output or "STUDENTS REQ/DROP" in text_output or 
-                                     "HOLD FLAGS" in text_output or "PROGRAMA DE CLASES" in text_output or 
-                                     "ACADEMIC STATISTICS" in text_output or "SNAPSHOT" in text_output or 
-                                     "SOLICITUD DE PRORROGA" in text_output or "LISTA DE SECCIONES") and 
+                                if (("MENU DE OPCIONES" in text_output or "STUDENTS REQ/DROP" in text_output or
+                                     "HOLD FLAGS" in text_output or "PROGRAMA DE CLASES" in text_output or
+                                     "ACADEMIC STATISTICS" in text_output or "SNAPSHOT" in text_output or
+                                     "SOLICITUD DE PRORROGA" in text_output or "LISTA DE SECCIONES") and
                                         "IDENTIFICACION PERSONAL" not in text_output):
                                     self.uprb = Application(backend="uia").connect(
                                         title="uprbay.uprb.edu - Tera Term VT", timeout=10)
@@ -2405,10 +2405,10 @@ class TeraTermUI(customtkinter.CTk):
                     winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                     CTkMessagebox(master=self, title=translation["automation_error_title"],
                                   message=translation["unexpected_error"], icon="error", button_width=380)
+                    self.error_occurred = False
                 else:
                     print("An error occurred:", error_message)
                     self.error_occurred = True
-    
             finally:
                 task_done.set()
                 ctypes.windll.user32.BlockInput(False)
@@ -2417,12 +2417,12 @@ class TeraTermUI(customtkinter.CTk):
                 if self.error_occurred:
                     self.destroy_windows()
                     if not dont_close:
-                        winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                         try:
                             subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
                                            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         except subprocess.CalledProcessError:
                             print("Could not terminate ttermpro.exe.")
+                    winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                     CTkMessagebox(master=self, title=translation["automation_error_title"],
                                   message=translation["tera_term_forced_to_close"], icon="warning", button_width=380)
                     self.error_occurred = False
@@ -5756,4 +5756,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
