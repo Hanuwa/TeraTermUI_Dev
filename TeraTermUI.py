@@ -1461,7 +1461,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.after(0, self.submit_multiple_event_handler)
                                         self.error_auto_enroll = True
                                     else:
-                                        self.after(0, self.show_error_message, 312, 210,
+                                        self.after(0, self.show_error_message, 315, 210,
                                                    translation["failed_enroll_multiple"])
                                         if not self.enrollment_error_check:
                                             self.after(2500, self.show_enrollment_error_information)
