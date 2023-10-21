@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 10/20/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 10/21/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -957,7 +957,7 @@ class TeraTermUI(customtkinter.CTk):
                                                 self.after(2500, self.show_enrollment_error_information)
                                                 self.enrollment_error_check = True
                                         else:
-                                            self.after(0, self.show_error_message, 300, 210,
+                                            self.after(0, self.show_error_message, 312, 210,
                                                        translation["failed_enroll"])
                                             if not self.enrollment_error_check:
                                                 self.after(2500, self.show_enrollment_error_information)
@@ -1461,7 +1461,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.after(0, self.submit_multiple_event_handler)
                                         self.error_auto_enroll = True
                                     else:
-                                        self.after(0, self.show_error_message, 300, 210,
+                                        self.after(0, self.show_error_message, 312, 210,
                                                    translation["failed_enroll_multiple"])
                                         if not self.enrollment_error_check:
                                             self.after(2500, self.show_enrollment_error_information)
