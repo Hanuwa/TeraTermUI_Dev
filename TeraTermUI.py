@@ -1146,6 +1146,7 @@ class TeraTermUI(customtkinter.CTk):
                                                   title=translation["dialog_title"])
             dialog.geometry(f"{int(x) + 512}+{int(y + 225)}")
             dialog.after(201, lambda: dialog.iconbitmap("images/tera-term.ico"))
+            dialog.bind("<Escape>", lambda event: dialog.destroy())
             dialog_input = dialog.get_input()
             if dialog_input is not None:
                 dialog_input = dialog_input.replace(" ", "").upper()
