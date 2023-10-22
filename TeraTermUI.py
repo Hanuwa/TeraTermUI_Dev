@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 10/21/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 10/22/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -770,6 +770,7 @@ class TeraTermUI(customtkinter.CTk):
         self.back_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
         self.show_classes.grid(row=4, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         self.multiple.grid(row=4, column=2, padx=(10, 0), pady=(0, 0), sticky="e")
+        self.load_saved_classes()
         self.tabview.set(self.enroll_tab)
         self.bind("<Control-Tab>", lambda event: self.tab_switcher())
         self.ssn_entry.delete(0, "end")
@@ -781,6 +782,38 @@ class TeraTermUI(customtkinter.CTk):
         self.unload_image("lock")
         self.student_frame.grid_forget()
         self.s_buttons_frame.grid_forget()
+
+    def load_saved_classes(self):
+        lang = self.language_menu.get()
+        reverse_language_mapping = {
+            "English": {
+                "Register": "Register",
+                "Drop": "Drop"
+            },
+            "Español": {
+                "Register": "Registra",
+                "Drop": "Baja"
+            }
+        }
+        if self.saveCheck and self.saveCheck[0][0] == "Yes":
+            self.save_data.select()
+        if self.save:
+            num_rows = len(self.save)
+            for index, row in enumerate(self.save, start=1):
+                class_value = row[0]
+                section_value = row[1]
+                semester_value = row[2]
+                register_value = row[3]
+
+                display_register_value = reverse_language_mapping.get(lang, {}).get(register_value, "UNKNOWN")
+                if index <= num_rows:
+                    self.m_classes_entry[index - 1].insert(0, class_value)
+                    self.m_section_entry[index - 1].insert(0, section_value)
+                    if index == 1:
+                        self.m_semester_entry[index - 1].set(semester_value)
+                    self.m_register_menu[index - 1].set(display_register_value)
+                else:
+                    break
 
     def submit_event_handler(self):
         msg = None
@@ -957,7 +990,7 @@ class TeraTermUI(customtkinter.CTk):
                                                 self.after(2500, self.show_enrollment_error_information)
                                                 self.enrollment_error_check = True
                                         else:
-                                            self.after(0, self.show_error_message, 312, 210,
+                                            self.after(0, self.show_error_message, 315, 210,
                                                        translation["failed_enroll"])
                                             if not self.enrollment_error_check:
                                                 self.after(2500, self.show_enrollment_error_information)
@@ -1285,6 +1318,11 @@ class TeraTermUI(customtkinter.CTk):
         self.tabview.grid_forget()
         self.t_buttons_frame.grid_forget()
 
+    def detect_change(self):
+        check = self.save_data.get()
+        if check == "on":
+            self.save_data.deselect()
+
     def submit_multiple_event_handler(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
@@ -1461,7 +1499,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.after(0, self.submit_multiple_event_handler)
                                         self.error_auto_enroll = True
                                     else:
-                                        self.after(0, self.show_error_message, 315, 210,
+                                        self.after(0, self.show_error_message, 330, 210,
                                                    translation["failed_enroll_multiple"])
                                         if not self.enrollment_error_check:
                                             self.after(2500, self.show_enrollment_error_information)
@@ -2772,6 +2810,7 @@ class TeraTermUI(customtkinter.CTk):
 
     def change_semester(self):
         self.focus_set()
+        self.detect_change()
         for i in range(1, self.a_counter + 1):
             self.m_semester_entry[i].configure(state="normal")
             self.m_semester_entry[i].set("")
@@ -3313,7 +3352,8 @@ class TeraTermUI(customtkinter.CTk):
                                                             command=lambda value: self.change_semester()))
                 self.m_semester_entry[i].set(self.DEFAULT_SEMESTER)
                 self.m_register_menu.append(customtkinter.CTkOptionMenu(master=self.multiple_frame,
-                                                                        values=["Register", "Drop"]))
+                                                                        values=["Register", "Drop"],
+                                                                        command=lambda value: self.detect_change()))
                 self.m_register_menu[i].set("Choose")
             self.m_add = CustomButton(master=self.m_button_frame, border_width=2, text="+",
                                       text_color=("gray10", "#DCE4EE"), command=self.add_event, height=40, width=50,
@@ -3343,25 +3383,6 @@ class TeraTermUI(customtkinter.CTk):
                                                                             " you selected at the exact time\n"
                                                                             " the enrollment process becomes\n"
                                                                             " available for you", bg_color="#1E90FF")
-            if self.saveCheck:
-                if self.saveCheck[0][0] == "Yes":
-                    self.save_data.select()
-            if self.save:
-                num_rows = len(self.save)
-                for index, row in enumerate(self.save, start=1):
-                    class_value = row[0]
-                    section_value = row[1]
-                    semester_value = row[2]
-                    register_value = row[3]
-
-                    if index <= num_rows:
-                        self.m_classes_entry[index - 1].insert(0, class_value)
-                        self.m_section_entry[index - 1].insert(0, section_value)
-                        if index == 1:
-                            self.m_semester_entry[index - 1].set(semester_value)
-                        self.m_register_menu[index - 1].set(register_value)
-                    else:
-                        break
 
     # saves the information to the database when the app closes
     def save_user_data(self):
