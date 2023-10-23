@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 10/22/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 10/23/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -787,16 +787,18 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         reverse_language_mapping = {
             "English": {
-                "Register": "Register",
-                "Drop": "Drop"
+                "Registra": "Register",
+                "Baja": "Drop"
             },
             "Español": {
                 "Register": "Registra",
                 "Drop": "Baja"
             }
         }
+
         if self.saveCheck and self.saveCheck[0][0] == "Yes":
             self.save_data.select()
+
         if self.save:
             num_rows = len(self.save)
             for index, row in enumerate(self.save, start=1):
@@ -805,7 +807,16 @@ class TeraTermUI(customtkinter.CTk):
                 semester_value = row[2]
                 register_value = row[3]
 
-                display_register_value = reverse_language_mapping.get(lang, {}).get(register_value, "UNKNOWN")
+                is_english = register_value in reverse_language_mapping["English"].values()
+                is_spanish = register_value in reverse_language_mapping["Español"].values()
+
+                if (lang == "English" and is_spanish):
+                    display_register_value = reverse_language_mapping["English"].get(register_value, "UNKNOWN")
+                elif (lang == "Español" and is_english):
+                    display_register_value = reverse_language_mapping["Español"].get(register_value, "UNKNOWN")
+                else:
+                    display_register_value = register_value
+
                 if index <= num_rows:
                     self.m_classes_entry[index - 1].insert(0, class_value)
                     self.m_section_entry[index - 1].insert(0, section_value)
@@ -3386,6 +3397,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # saves the information to the database when the app closes
     def save_user_data(self):
+        # Define the values for each field
         field_values = {
             "welcome": "Checked",
             "host": "uprbay.uprb.edu",
@@ -3394,19 +3406,19 @@ class TeraTermUI(customtkinter.CTk):
             "scaling": self.scaling_optionemenu.get(),
             "exit": self.checkbox_state,
         }
-        for field, value in field_values.items():
-            # for 'host' field, only update or insert when host is "uprbay.uprb.edu"
-            if field == "host" and (self.host_entry.get().replace(" ", "").lower() != "uprbay.uprb.edu" and
-                                    self.host_entry.get().replace(" ", "").lower() != "uprbayuprbedu"):
-                continue
-            result = self.cursor.execute(f"SELECT {field} FROM user_data").fetchone()
-            if result is None:
-                self.cursor.execute(f"INSERT INTO user_data ({field}) VALUES (?)", (value,))
-            elif result[0] != value:
-                self.cursor.execute(f"UPDATE user_data SET {field} = ? ", (value,))
-        with closing(sqlite3.connect("database.db")) as connection:
-            with closing(connection.cursor()) as self.cursor:
-                self.connection.commit()
+        # Check if a row already exists
+        row_exists = self.cursor.execute("SELECT COUNT(*) FROM user_data").fetchone()[0]
+        if row_exists == 0:
+            # No row exists, so insert a new one
+            placeholders = ", ".join("?" * len(field_values))
+            fields = ", ".join(field_values.keys())
+            self.cursor.execute(f"INSERT INTO user_data ({fields}) VALUES ({placeholders})",
+                                tuple(field_values.values()))
+        else:
+            # A row exists, so update it
+            update_fields = ", ".join([f"{field} = ?" for field in field_values.keys()])
+            self.cursor.execute(f"UPDATE user_data SET {update_fields}", tuple(field_values.values()))
+        self.connection.commit()
 
     # saves class information for another session
     def save_classes(self):
@@ -3908,18 +3920,19 @@ class TeraTermUI(customtkinter.CTk):
 
         # Check for update for the application
         current_date = datetime.today().strftime("%Y-%m-%d")
-        date = self.cursor.execute("SELECT date FROM user_data WHERE date IS NOT NULL").fetchall()
+        date = self.cursor.execute("SELECT update_date FROM user_data WHERE update_date IS NOT NULL").fetchall()
         dates_list = [record[0] for record in date]
         if current_date not in dates_list:
             try:
                 latest_version = self.get_latest_release()
                 if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION) and not self.welcome:
                     self.after(0, self.update_app)
-                resultDate = self.cursor.execute("SELECT date FROM user_data").fetchall()
+                resultDate = self.cursor.execute("SELECT update_date FROM user_data").fetchall()
                 if len(resultDate) == 0:
-                    self.cursor.execute("INSERT INTO user_data (date) VALUES (?)", (current_date,))
+                    self.cursor.execute("INSERT INTO user_data (update_date) VALUES (?)",
+                                        (current_date,))
                 elif len(resultDate) == 1:
-                    self.cursor.execute("UPDATE user_data SET date=?", (current_date,))
+                    self.cursor.execute("UPDATE user_data SET update_date=?", (current_date,))
                 self.connection.commit()
             except requests.exceptions.RequestException as err:
                 print(f"Error occurred while fetching latest release information: {err}")
@@ -4745,7 +4758,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.is_banned_flag = True
         if not self.disable_feedback and not self.is_banned:
             current_date = datetime.today().strftime("%Y-%m-%d")
-            date = self.cursor.execute("SELECT date FROM user_data WHERE date IS NOT NULL").fetchall()
+            date = self.cursor.execute("SELECT feedback_date FROM user_data WHERE feedback_date IS NOT NULL").fetchall()
             dates_list = [record[0] for record in date]
             if current_date not in dates_list:
                 feedback = self.feedbackText.get("1.0", customtkinter.END).strip()
@@ -4761,11 +4774,13 @@ class TeraTermUI(customtkinter.CTk):
                                               message=translation["feedback_success"], button_width=380)
 
                             self.after(0, show_success)
-                            resultDate = self.cursor.execute("SELECT date FROM user_data").fetchall()
+                            resultDate = self.cursor.execute("SELECT feedback_date FROM user_data").fetchall()
                             if len(resultDate) == 0:
-                                self.cursor.execute("INSERT INTO user_data (date) VALUES (?)", (current_date,))
+                                self.cursor.execute("INSERT INTO user_data (feedback_date) VALUES (?)",
+                                                    (current_date,))
                             elif len(resultDate) == 1:
-                                self.cursor.execute("UPDATE user_data SET date=?", (current_date,))
+                                self.cursor.execute("UPDATE user_data SET feedback_date=?",
+                                                    (current_date,))
                             self.connection.commit()
                             self.feedbackText.delete("1.0", customtkinter.END)
                         else:
