@@ -2159,6 +2159,7 @@ class TeraTermUI(customtkinter.CTk):
                             term_window.restore()
                         self.uprbay_window.wait("visible", timeout=10)
                         send_keys("{ENTER}")
+                        self.uprb.window().menu_select("Edit")
                         self.uprb.window().menu_select("Edit->Select screen")
                         self.uprb.UprbayTeraTermVt.type_keys("%c")
                         self.uprbay_window.click_input(button="left")
