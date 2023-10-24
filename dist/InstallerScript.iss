@@ -45,11 +45,14 @@ Name: "teraterm"; Description: "{cm:teraterm}"; GroupDescription: "Additional in
 
 [Files]
 Source: "{#MyAppPath}\TeraTermUI_installer\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyAppPath}\database.db"; DestDir: "{userappdata}\TeraTermUI"; Flags: onlyifdoesntexist 
-Source: "{#MyAppPath}\feedback.zip"; DestDir: "{userappdata}\TeraTermUI"; Flags: onlyifdoesntexist
+Source: "{#MyAppPath}\database.db"; DestDir: "{commonappdata}\TeraTermUI"; Flags: onlyifdoesntexist; Permissions: everyone-modify
+Source: "{#MyAppPath}\feedback.zip"; DestDir: "{commonappdata}\TeraTermUI"; Flags: onlyifdoesntexist; Permissions: everyone-modify
 Source: "{#MyAppPath}\TeraTermUI_installer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#MyAppPath}\teraterm-4.106.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
+
+[Dirs]
+Name: "{commonappdata}\TeraTermUI"; Permissions: everyone-modify; Flags: uninsneveruninstall
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
