@@ -567,17 +567,14 @@ class TeraTermUI(customtkinter.CTk):
             if hasattr(self, "check_idle_thread") and self.check_idle_thread is not None \
                     and self.check_idle_thread.is_alive():
                 self.stop_check_idle.set()
-                self.check_idle_thread.join(timeout=5)
-            if TeraTermUI.checkIfProcessRunning("ttermpro") and \
-                    TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT") \
-                    and self.checkbox_state:
-                uprb = Application(backend="uia").connect(title="uprbay.uprb.edu - Tera Term VT", timeout=10)
-                uprb.kill(soft=False)
-            elif TeraTermUI.checkIfProcessRunning("ttermpro") and \
-                    TeraTermUI.window_exists("Tera Term - [disconnected] VT") \
-                    and self.checkbox_state:
-                subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
-                               check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if self.checkbox_state:
+                if TeraTermUI.checkIfProcessRunning("ttermpro"):
+                    if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
+                        uprb = Application(backend="uia").connect(title="uprbay.uprb.edu - Tera Term VT", timeout=10)
+                        uprb.kill(soft=False)
+                    elif TeraTermUI.window_exists("Tera Term - [disconnected] VT"):
+                        subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
+                                       check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             self.save_user_data()
             self.destroy()
             exit(0)
