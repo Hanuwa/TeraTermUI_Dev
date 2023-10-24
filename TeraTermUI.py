@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 10/23/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 10/24/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -51,7 +51,6 @@ import webbrowser
 import win32gui
 import winsound
 from collections import deque
-from contextlib import closing
 from Cryptodome.Hash import HMAC, SHA256
 from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import pad, unpad
@@ -437,7 +436,7 @@ class TeraTermUI(customtkinter.CTk):
         self.boot_up_thread.start()
         # Database
         self.translations_cache = {}
-        appdata_path = os.getenv("APPDATA")
+        appdata_path = os.environ.get("PROGRAMDATA")
         self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
         self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
         atexit.register(self.cleanup_temp)
@@ -543,7 +542,7 @@ class TeraTermUI(customtkinter.CTk):
         self.after(0, self.unload_image("uprb"))
         self.after(0, self.unload_image("status"))
         self.after(0, self.unload_image("help"))
-        self.after(100, self.set_focus_to_tkinter)
+        self.after(350, self.set_focus_to_tkinter)
         self.mainloop()
         del user_data_fields, results, SPANISH, language_id, \
             scaling_factor, screen_width, screen_height, width, height, x, y, db_path
@@ -650,8 +649,8 @@ class TeraTermUI(customtkinter.CTk):
                         code = self.code_entry.get().replace(" ", "")
                         ssn_enc = aes_encrypt_then_mac(str(ssn), aes_key, iv, mac_key)
                         code_enc = aes_encrypt_then_mac(str(code), aes_key, iv, mac_key)
-                        if re.match("^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", ssn) and code.isdigit() \
-                                and len(code) == 4:
+                        if (re.match("^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", ssn)
+                                and code.isdigit() and len(code) == 4):
                             secure_delete(ssn)
                             secure_delete(code)
                             ctypes.windll.user32.BlockInput(True)
@@ -2696,7 +2695,7 @@ class TeraTermUI(customtkinter.CTk):
 
         # Load the translations from the file and store them in the cache
         if filename:
-            with open(filename, "r", encoding='utf-8') as f:
+            with open(filename, "r", encoding="utf-8") as f:
                 translations = json.load(f)
             self.translations_cache[lang] = translations
             # Return the newly loaded translations
@@ -3259,8 +3258,8 @@ class TeraTermUI(customtkinter.CTk):
                                                width=80)
             self.s_semester = customtkinter.CTkLabel(self.search_scrollbar, text="Semester")
             self.s_semester_entry = CustomComboBox(self.search_scrollbar, self,
-                                                   values=["B91", "B92", "B93", "C01", "C02", "C03", "C11",
-                                                           "C12", "C13", "C21", "C22", "C23", "C31"],
+                                                   values=["C01", "C02", "C03", "C11", "C12", "C13", "C21", "C22",
+                                                           "C23", "C31", "C32", "C33", "C41", "C42", "C43"],
                                                    command=lambda value: self.set_focus(), width=80)
             self.s_semester_entry.set(self.DEFAULT_SEMESTER)
             self.show_all = customtkinter.CTkCheckBox(self.search_scrollbar, text="Show All?",
@@ -3291,8 +3290,8 @@ class TeraTermUI(customtkinter.CTk):
                                              command=lambda value: self.set_focus(), width=141)
             self.menu_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab), text="Semester")
             self.menu_semester_entry = CustomComboBox(self.tabview.tab(self.other_tab), self,
-                                                      values=["B91", "B92", "B93", "C01", "C02", "C03",
-                                                              "C11", "C12", "C13", "C21", "C22", "C23", "C31"],
+                                                      values=["C01", "C02", "C03", "C11", "C12", "C13", "C21", "C22",
+                                                              "C23", "C31", "C32", "C33", "C41", "C42", "C43"],
                                                       command=lambda value: self.set_focus(), width=141)
             self.menu_semester_entry.set(self.DEFAULT_SEMESTER)
             self.menu_submit = CustomButton(master=self.tabview.tab(self.other_tab), border_width=2, text="Submit",
@@ -3621,7 +3620,7 @@ class TeraTermUI(customtkinter.CTk):
             screenshot = pyautogui.screenshot(region=(x, y, width, height))
             if self.loading_screen.winfo_exists():
                 self.show_loading_screen_again()
-            screenshot = screenshot.convert('L')
+            screenshot = screenshot.convert("L")
             screenshot = ImageOps.autocontrast(screenshot, cutoff=5)
             # screenshot.save("screenshot.png")
             custom_config = r"--oem 3 --psm 11"
@@ -3657,14 +3656,14 @@ class TeraTermUI(customtkinter.CTk):
         gray = colors.Color(0.7, 0.7, 0.7)  # Lighter gray
         # Define the table style
         style = TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), blue),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 14),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('BACKGROUND', (0, 1), (-1, -1), gray),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ("BACKGROUND", (0, 0), (-1, 0), blue),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, 0), 14),
+            ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+            ("BACKGROUND", (0, 1), (-1, -1), gray),
+            ("GRID", (0, 0), (-1, -1), 1, colors.black)
         ])
         table.setStyle(style)
         # Add a header paragraph with the class name
@@ -3697,7 +3696,7 @@ class TeraTermUI(customtkinter.CTk):
         # Open a dialog for the user to choose the save location and filename
         filepath = filedialog.asksaveasfilename(title=translation["save_pdf"],
                                                 defaultextension=".pdf", initialdir=downloads,
-                                                filetypes=[('PDF Files', '*.pdf')],
+                                                filetypes=[("PDF Files", "*.pdf")],
                                                 initialfile=f"{class_name}_class_data.pdf")
         if not filepath:
             # User cancelled the dialog, stop the function
@@ -3713,35 +3712,35 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language(lang)
         modified_data = []
         for item in data:
-            if 'TIMES' in item:
-                times_parts = item['TIMES'].split('-')
+            if "TIMES" in item:
+                times_parts = item["TIMES"].split("-")
                 if len(times_parts) == 2:
                     start, end = times_parts
-                    start = start.lstrip('0')
-                    end = end.lstrip('0')
+                    start = start.lstrip("0")
+                    end = end.lstrip("0")
                     start = start[:-4] + ":" + start[-4:-2] + " " + start[-2:]
                     end = end[:-4] + ":" + end[-4:-2] + " " + end[-2:]
-                    item['TIMES'] = '\n'.join([start, end])
+                    item["TIMES"] = "\n".join([start, end])
                 else:
-                    item['TIMES'] = item['TIMES'].lstrip('0')
+                    item["TIMES"] = item["TIMES"].lstrip("0")
 
-            if 'INSTRUCTOR' in item:
-                parts = item['INSTRUCTOR'].split(',')
-                item['INSTRUCTOR'] = '\n'.join(parts)
+            if "INSTRUCTOR" in item:
+                parts = item["INSTRUCTOR"].split(",")
+                item["INSTRUCTOR"] = "\n".join(parts)
 
             modified_data.append(item)
 
-        headers = ['SEC', 'M', 'CRED', 'DAYS', 'TIMES', 'AV', 'INSTRUCTOR']
+        headers = ["SEC", "M","CRED", "DAYS", "TIMES", "AV", "INSTRUCTOR"]
 
         table_values = [headers]
         for item in modified_data:
-            row = [item.get(header, '') for header in headers]
+            row = [item.get(header, "") for header in headers]
             table_values.append(row)
 
         num_rows = len(modified_data) + 1
 
         # Update the display_class every time, irrespective of whether the table dimensions have changed or not.
-        if hasattr(self, 'display_class') and self.display_class is not None:
+        if hasattr(self, "display_class") and self.display_class is not None:
             self.display_class.grid_forget()
             del self.display_class
 
@@ -3749,8 +3748,8 @@ class TeraTermUI(customtkinter.CTk):
                                                     font=customtkinter.CTkFont(size=15, weight="bold", underline=True))
         self.display_class.grid(row=2, column=1, padx=(0, 0), pady=(8, 0), sticky="n")
 
-        if not hasattr(self, 'table') or self.table is None or num_rows != self.table_rows:
-            if hasattr(self, 'table') and self.table is not None:
+        if not hasattr(self, "table") or self.table is None or num_rows != self.table_rows:
+            if hasattr(self, "table") and self.table is not None:
                 self.table.grid_forget()
                 del self.table
 
@@ -3766,13 +3765,13 @@ class TeraTermUI(customtkinter.CTk):
                 self.table.edit_column(i, width=55)
             self.table.edit_column(5, width=55)
             tooltip_messages = {
-                'SEC': translation["tooltip_sec"],
-                'M': translation["tooltip_m"],
-                'CRED': translation["tooltip_cred"],
-                'DAYS': translation["tooltip_days"],
-                'TIMES': translation["tooltip_times"],
-                'AV': translation["tooltip_av"],
-                'INSTRUCTOR': translation["tooltip_instructor"],
+                "SEC": translation["tooltip_sec"],
+                "M": translation["tooltip_m"],
+                "CRED": translation["tooltip_cred"],
+                "DAYS": translation["tooltip_days"],
+                "TIMES": translation["tooltip_times"],
+                "AV": translation["tooltip_av"],
+                "INSTRUCTOR": translation["tooltip_instructor"],
             }
             for i, header in enumerate(headers):
                 cell = self.table.get_cell(0, i)
@@ -3817,10 +3816,10 @@ class TeraTermUI(customtkinter.CTk):
             match = pattern.search(line)
             if match:
                 instructor = match.group(7)
-                instructor = re.sub(r'\bN\b', '', instructor)  # remove standalone 'N'
-                instructor = re.sub(r'\bFULL\b', '', instructor)  # remove standalone 'FULL'
-                instructor = re.sub(r'\bRSVD\b', '', instructor)  # remove standalone 'RSVD'
-                instructor = re.sub(r'\bRSTR\b', '', instructor)  # remove standalone 'RSTR'
+                instructor = re.sub(r"\bN\b", "", instructor)  # remove standalone 'N'
+                instructor = re.sub(r"\bFULL\b", "", instructor)  # remove standalone 'FULL'
+                instructor = re.sub(r"\bRSVD\b", "", instructor)  # remove standalone 'RSVD'
+                instructor = re.sub(r"\bRSTR\b", "", instructor)  # remove standalone 'RSTR'
                 instructor = instructor.strip()  # remove leading and trailing whitespace
                 data.append({
                     "SEC": match.group(1),
@@ -4545,8 +4544,8 @@ class TeraTermUI(customtkinter.CTk):
     def set_focus_to_tkinter(self):
         tk_handle = win32gui.FindWindow(None, "Tera Term UI")
         win32gui.SetForegroundWindow(tk_handle)
-        self.focus_force()
         self.lift()
+        self.focus_force()
         self.attributes("-topmost", 1)
         self.after_idle(self.attributes, "-topmost", 0)
 
@@ -4576,7 +4575,7 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<space>", lambda event: self.spacebar_event())
             enroll_frame.bind("<Button-1>", lambda event: enroll_frame.focus_set())
         elif self.tabview.get() == self.search_tab:
-            if hasattr(self, 'table') and self.table is not None:
+            if hasattr(self, "table") and self.table is not None:
                 self.display_class.grid_forget()
                 self.table.grid_forget()
                 self.download_pdf.grid_forget()
@@ -5685,11 +5684,11 @@ class ImageSlideshow:
         self.label.bind("<Button-1>", lambda event: self.focus_set())
         self.label.grid(row=0, column=1)
 
-        self.arrow_left = CustomButton(self.slideshow_frame, text='<', command=self.prev_image, width=25)
+        self.arrow_left = CustomButton(self.slideshow_frame, text="<", command=self.prev_image, width=25)
         self.arrow_left.bind("<Button-1>", lambda event: self.focus_set())
         self.arrow_left.grid(row=0, column=0)
 
-        self.arrow_right = CustomButton(self.slideshow_frame, text='>', command=self.next_image, width=25)
+        self.arrow_right = CustomButton(self.slideshow_frame, text=">", command=self.next_image, width=25)
         self.arrow_right.bind("<Button-1>", lambda event: self.focus_set())
         self.arrow_right.grid(row=0, column=2)
 
@@ -5708,12 +5707,12 @@ class ImageSlideshow:
         self.slideshow_frame.grid_forget()
 
     def load_images(self):
-        image_files = [f for f in os.listdir(self.image_folder) if f.endswith(('png', 'gif', 'jpg', 'jpeg'))]
+        image_files = [f for f in os.listdir(self.image_folder) if f.endswith(("png", "gif", "jpg", "jpeg"))]
         self.image_files = sorted(image_files)
 
     def show_image(self):
         # Delete the previous image from memory
-        if hasattr(self, 'current_image'):
+        if hasattr(self, "current_image"):
             del self.current_image
             gc.collect()
 
@@ -5776,7 +5775,7 @@ def get_window_rect(hwnd):
 
 
 def main():
-    appdata_folder = os.path.join(os.getenv("APPDATA"), "TeraTermUI")
+    appdata_folder = os.path.join(os.getenv("PROGRAMDATA"), "TeraTermUI")
     lock_file = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])), "app_lock.lock")
     lock_file_appdata = os.path.join(appdata_folder, "app_lock.lock")
     file_lock = FileLock(lock_file, timeout=10)
