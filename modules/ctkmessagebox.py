@@ -437,6 +437,9 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         elif hasattr(self, 'option_text_2') and self.option_text_2:
             self.button_event(self.option_text_2)
 
+    def close_messagebox(self):
+        self.button_event(event=None)
+
     def fade_in(self):
         for i in range(0,110,10):
             if not self.winfo_exists():
