@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 10/24/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 10/25/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -156,6 +156,7 @@ class TeraTermUI(customtkinter.CTk):
         self.block_window = None
         self.is_banned_flag = False
         self.connection_error = False
+        self.exit = None
 
         self.image_cache = {}
 
@@ -272,7 +273,7 @@ class TeraTermUI(customtkinter.CTk):
                                  hover_color="#4E4F50", text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
         self.back_tooltip = CTkToolTip(self.back, message="Go back to the main menu\n"
                                                           "of the application", bg_color="#A9A9A9", alpha=0.90)
-
+        
         # Student Information
         self.init_student = False
         self.in_student_frame = False
@@ -552,15 +553,15 @@ class TeraTermUI(customtkinter.CTk):
     def on_closing(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        msg = CTkMessagebox(master=self, title=translation["exit"], message=translation["exit_message"],
-                            icon="question", option_1=translation["close_tera_term"],
-                            option_2=translation["option_2"], option_3=translation["option_3"], icon_size=(65, 65),
-                            button_color=("#c30101", "#c30101", "#145DA0"), option_1_type="checkbox",
-                            hover_color=("darkred", "darkred", "darkblue"))
+        self.exit = CTkMessagebox(master=self, title=translation["exit"], message=translation["exit_message"],
+                                  icon="question", option_1=translation["close_tera_term"],
+                                  option_2=translation["option_2"], option_3=translation["option_3"],
+                                  icon_size=(65, 65), button_color=("#c30101", "#c30101", "#145DA0"),
+                                  option_1_type="checkbox", hover_color=("darkred", "darkred", "darkblue"))
         on_exit = self.cursor.execute("SELECT exit FROM user_data").fetchall()
         if on_exit[0][0] == "1":
-            msg.check_checkbox()
-        response, self.checkbox_state = msg.get()
+            self.exit.check_checkbox()
+        response, self.checkbox_state = self.exit.get()
         if response == "Yes" or response == "Sí":
             if hasattr(self, "boot_up_thread") and self.boot_up_thread.is_alive():
                 self.boot_up_thread.join()
@@ -717,6 +718,7 @@ class TeraTermUI(customtkinter.CTk):
                 CTkMessagebox(master=self, title=translation["automation_error_title"],
                               message=translation["automation_error"],
                               icon="warning", button_width=380)
+                self.bind("<Return>", lambda event: self.tuition_event_handler())
                 self.error_occurred = False
 
     def tuition_frame(self):
@@ -1111,6 +1113,7 @@ class TeraTermUI(customtkinter.CTk):
                                 elif lang == "Español":
                                     self.after(0, self.show_error_message, 310, 215,
                                                "Error! Clase: " + classes + " \nno se encontro")
+                                self.search_function_counter += 1
                             elif "INVALID ACTION" in text_output or "INVALID TERM SELECTION" in text_output:
                                 self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -2449,10 +2452,14 @@ class TeraTermUI(customtkinter.CTk):
                 if "catching classes that do not inherit from BaseException is not allowed" in error_message:
                     print("Caught the specific error message: ", error_message)
                     self.destroy_windows()
-                    winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                    CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                  message=translation["unexpected_error"], icon="error", button_width=380)
+
+                    def rare_error():
+                        winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                        CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                      message=translation["unexpected_error"], icon="warning", button_width=380)
+                        self.bind("<Return>", lambda event: self.login_event_handler())
                     self.error_occurred = False
+                    self.after(0, rare_error)
                 else:
                     print("An error occurred:", error_message)
                     self.error_occurred = True
@@ -2472,6 +2479,7 @@ class TeraTermUI(customtkinter.CTk):
                     winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                     CTkMessagebox(master=self, title=translation["automation_error_title"],
                                   message=translation["tera_term_forced_to_close"], icon="warning", button_width=380)
+                    self.bind("<Return>", lambda event: self.login_event_handler())
                     self.error_occurred = False
 
     def login_frame(self):
@@ -2520,7 +2528,8 @@ class TeraTermUI(customtkinter.CTk):
             self.uprb.kill(soft=True)
         elif TeraTermUI.checkIfProcessRunning("ttermpro") and (
                 self.error_occurred or (response and (response[0] == "Yes" or response[0] == "Sí"))):
-            subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"])
+            subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
+                           check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if self.error_occurred or (response and (response[0] == "Yes" or response[0] == "Sí")):
             self.stop_idle_thread()
             self.reset_activity_timer(None)
@@ -3008,6 +3017,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.started_auto_enroll = True
                 self.after(5000, self.submit_multiple_event_handler)
                 self.after(5000, self.end_countdown)
+                if TeraTermUI.window_exists("Exit"):
+                    self.after(5000, self.exit.close_messagebox)
                 return
             else:
                 hours, remainder = divmod(total_seconds, 3600)
@@ -3113,7 +3124,7 @@ class TeraTermUI(customtkinter.CTk):
         x = (screen_width - width * scaling_factor) / 2
         y = (screen_height - height * scaling_factor) / 2
         self.timer_window = customtkinter.CTkToplevel(self)
-        self.timer_window.title(translation["loading"])
+        self.timer_window.title(translation["auto_enroll"])
         self.timer_window.geometry(f"{width}x{height}+{int(x) + 130}+{int(y)}")
         self.timer_window.attributes("-alpha", 0.90)
         self.timer_window.resizable(False, False)
@@ -3727,7 +3738,7 @@ class TeraTermUI(customtkinter.CTk):
 
             modified_data.append(item)
 
-        headers = ["SEC", "M","CRED", "DAYS", "TIMES", "AV", "INSTRUCTOR"]
+        headers = ["SEC", "M", "CRED", "DAYS", "TIMES", "AV", "INSTRUCTOR"]
 
         table_values = [headers]
         for item in modified_data:
@@ -4427,6 +4438,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.focus_set()
                         self.hide_sidebar_windows()
                         self.destroy_windows()
+                        if TeraTermUI.window_exists("Exit"):
+                            self.exit.close_messagebox()
                         ctypes.windll.user32.BlockInput(True)
                         term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                         if term_window.isMinimized:
