@@ -273,7 +273,7 @@ class TeraTermUI(customtkinter.CTk):
                                  hover_color="#4E4F50", text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
         self.back_tooltip = CTkToolTip(self.back, message="Go back to the main menu\n"
                                                           "of the application", bg_color="#A9A9A9", alpha=0.90)
-        
+
         # Student Information
         self.init_student = False
         self.in_student_frame = False
@@ -4425,6 +4425,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.idle[0][0] != "Disabled":
             self.is_idle_thread_running = True
             self.check_idle_thread = threading.Thread(target=self.check_idle)
+            self.check_idle_thread.daemon = True
             self.check_idle_thread.start()
 
     # Checks if the user is idle for 5 minutes and does some action so that Tera Term doesn't close by itself
