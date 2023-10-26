@@ -119,6 +119,8 @@
 	"files_button": "       Find",
 	"idle_title": "\nDisables the functionality that prevents Tera Term\nfrom closing automatically because of inactivity",
 	"idle": "Disable Anti-Idle",
+	"audio_title": "\nMute audio and sound effects of the application",
+	"audio": "Mute Audio",
 	"fix_title": "\nFix the program not executing things properly",
 	"fix": "        Fix it",
 	"fix_messagebox_title": "Fix", 
