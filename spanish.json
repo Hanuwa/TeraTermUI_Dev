@@ -119,6 +119,8 @@
 	"files_button": "     Buscar",
 	"idle_title": "\nDesactiva la funcionalidad que previene que Tera Term\nse cierre automáticamente por inactividad",
 	"idle": "Desactiva Anti-Inactivo",
+	"audio_title": "\nSilenciar el audio y los efectos de sonido de la aplicación",
+	"audio": "Silenciar Audio",
 	"fix_title": "\nArreglar el programa que no ejecuta \nlas cosas correctamente",
 	"fix": "     Arreglalo",
 	"fix_messagebox_title": "Arreglar", 
