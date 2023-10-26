@@ -1163,6 +1163,7 @@ class TeraTermUI(customtkinter.CTk):
                     else:
                         self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
                 self.show_sidebar_windows()
+                self.set_focus_to_tkinter()
             except Exception as e:
                 print("An error occurred: ", e)
                 self.error_occurred = True
@@ -2217,6 +2218,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.error_occurred = False
                 self.bind("<Return>", lambda event: self.search_event_handler())
                 self.show_sidebar_windows()
+                self.set_focus_to_tkinter()
 
     # disable these buttons if the user changed screen
     def disable_go_next_buttons(self):
