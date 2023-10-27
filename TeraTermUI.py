@@ -444,7 +444,7 @@ class TeraTermUI(customtkinter.CTk):
         atexit.register(self.restore_original_font, self.teraterm_file)
         try:
             db_path = "database.db"
-            if not os.path.exists(db_path):
+            if not os.path.isfile(db_path):
                 raise Exception("Database file not found.")
             en_path = "english.json"
             es_path = "spanish.json"
