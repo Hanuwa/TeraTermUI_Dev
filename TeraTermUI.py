@@ -548,7 +548,7 @@ class TeraTermUI(customtkinter.CTk):
         self.after(0, self.unload_image("uprb"))
         self.after(0, self.unload_image("status"))
         self.after(0, self.unload_image("help"))
-        self.after(2000, self.set_focus_to_tkinter)
+        self.after(100, self.set_focus_to_tkinter)
         del user_data_fields, results, SPANISH, language_id, \
             scaling_factor, screen_width, screen_height, width, height, x, y, db_path
         gc.collect()
