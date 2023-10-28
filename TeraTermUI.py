@@ -1572,7 +1572,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # changes to the respective screen the user chooses
     def option_menu_event(self, task_done):
-        with ((self.lock_thread)):
+        with self.lock_thread:
             try:
                 self.automation_preparations()
                 menu = self.menu_entry.get()
@@ -2049,7 +2049,6 @@ class TeraTermUI(customtkinter.CTk):
                 task_done.set()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
-                print(self.focus_or_not)
                 if self.focus_or_not:
                     self.set_focus_to_tkinter()
                 else:
@@ -3599,7 +3598,7 @@ class TeraTermUI(customtkinter.CTk):
                                                          height=15, width=230, indeterminate_speed=1.5)
         self.progress_bar.pack(pady=1)
         self.progress_bar.start()
-        self.attributes('-disabled', True)
+        self.attributes("-disabled", True)
         return self.loading_screen
 
     # hides the loading screen
@@ -3613,9 +3612,9 @@ class TeraTermUI(customtkinter.CTk):
     # tells the loading screen when it should stop and close
     def update_loading_screen(self, loading_screen, task_done):
         if task_done.is_set():
+            self.attributes("-disabled", False)
             self.hide_loading_screen()
             self.progress_bar.stop()
-            self.attributes('-disabled', False)
             loading_screen.destroy()
         else:
             self.after(100, self.update_loading_screen, loading_screen, task_done)
