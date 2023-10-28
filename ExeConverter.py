@@ -219,8 +219,8 @@ for version in versions:
                                 'with open(self.ath, "rb"):')
             data = data.replace('archive = pyzipper.AESZipFile(self.SERVICE_ACCOUNT_FILE)',
                                 'archive = pyzipper.AESZipFile(self.ath)')
-            data = data.replace('FileLock(lock_file, timeout=10)',
-                                'FileLock(lock_file_appdata, timeout=10)')
+            data = data.replace('FileLock(lock_file, timeout=0)',
+                                'FileLock(lock_file_appdata, timeout=0)')
             print(Fore.GREEN + "Successfully started installer version\n" + Style.RESET_ALL)
         else:
             script = "portable"
@@ -234,8 +234,8 @@ for version in versions:
                                 'with open(self.SERVICE_ACCOUNT_FILE, "rb"):')
             data = data.replace('archive = pyzipper.AESZipFile(self.ath)',
                                 'archive = pyzipper.AESZipFile(self.SERVICE_ACCOUNT_FILE)')
-            data = data.replace('FileLock(lock_file_appdata, timeout=10)',
-                                'FileLock(lock_file, timeout=10)')
+            data = data.replace('FileLock(lock_file_appdata, timeout=0)',
+                                'FileLock(lock_file, timeout=0)')
             print(Fore.GREEN + "Successfully started portable version\n" + Style.RESET_ALL)
 
         with open(project_directory+r"\TeraTermUI.py", 'w', encoding='utf-8') as file:
