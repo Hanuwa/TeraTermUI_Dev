@@ -5946,10 +5946,10 @@ def main():
     appdata_folder = os.path.join(os.getenv("PROGRAMDATA"), "TeraTermUI")
     lock_file = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])), "app_lock.lock")
     lock_file_appdata = os.path.join(appdata_folder, "app_lock.lock")
-    file_lock = FileLock(lock_file, timeout=10)
+    file_lock = FileLock(lock_file, timeout=0)
 
     try:
-        with file_lock.acquire(poll_interval=0.1):
+        with file_lock.acquire():
             app = TeraTermUI()
             app.after(1, lambda: app.iconbitmap("images/tera-term.ico"))
             app.mainloop()
