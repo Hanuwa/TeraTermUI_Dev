@@ -548,7 +548,7 @@ class TeraTermUI(customtkinter.CTk):
         self.after(0, self.unload_image("uprb"))
         self.after(0, self.unload_image("status"))
         self.after(0, self.unload_image("help"))
-        self.after(100, self.set_focus_to_tkinter)
+        self.after(150, self.set_focus_to_tkinter)
         del user_data_fields, results, SPANISH, language_id, \
             scaling_factor, screen_width, screen_height, width, height, x, y, db_path
         gc.collect()
@@ -3209,6 +3209,26 @@ class TeraTermUI(customtkinter.CTk):
                 self.m_register_menu[i].configure(state="normal")
             self.m_semester_entry[0].configure(state="normal")
 
+    @staticmethod
+    def get_current_monitor(tk_x, tk_y):
+        from screeninfo import get_monitors
+
+        for monitor in get_monitors():
+            if (monitor.x <= tk_x < monitor.x + monitor.width and
+                    monitor.y <= tk_y < monitor.y + monitor.height):
+                return monitor
+        return None  # If for some reason no monitor is found
+
+    @staticmethod
+    def get_window_monitor(window_x, window_y):
+        from screeninfo import get_monitors
+
+        for monitor in get_monitors():
+            if monitor.x <= window_x <= monitor.x + monitor.width and \
+                    monitor.y <= window_y <= monitor.y + monitor.height:
+                return monitor
+        return None
+
     def move_window(self):
         try:
             window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
@@ -3218,10 +3238,20 @@ class TeraTermUI(customtkinter.CTk):
         # Get Tkinter window's current position
         tk_x = self.winfo_x()
         tk_y = self.winfo_y()
+        # Identify which monitor the Tkinter window and Tera Term window are in
+        tk_monitor = TeraTermUI.get_window_monitor(tk_x, tk_y)
+        tera_monitor = TeraTermUI.get_window_monitor(window.left, window.top)
+        print(f"Tkinter window is on monitor {tk_monitor} at position ({tk_x}, {tk_y}).")
+        print(f"Tera Term window is on monitor {tera_monitor} at position ({window.left}, {window.top}).")
+        # If they're not on the same monitor, don't move the Tera Term window
+        if tk_monitor != tera_monitor:
+            print("Windows are on different monitors. Not moving Tera Term window.")
+            return
         # Calculate the target position for the Tera Term window with an offset
-        offset = 10  # Adjust this offset as needed
-        target_x = tk_x + offset
-        target_y = tk_y
+        offset_x = 10
+        offset_y = 10
+        target_x = tk_x + offset_x
+        target_y = tk_y + offset_y
         # Get current position of the Tera Term window
         current_x, current_y = window.left, window.top
         # Step size and delay time
@@ -3233,12 +3263,10 @@ class TeraTermUI(customtkinter.CTk):
                 current_x += min(step_size, target_x - current_x)
             elif current_x > target_x:
                 current_x -= min(step_size, current_x - target_x)
-
             if current_y < target_y:
                 current_y += min(step_size, target_y - current_y)
             elif current_y > target_y:
                 current_y -= min(step_size, current_y - target_y)
-
             window.moveTo(current_x, current_y)
             time.sleep(delay_time)
 
