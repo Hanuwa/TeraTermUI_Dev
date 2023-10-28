@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 10/27/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 10/28/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -148,7 +148,6 @@ class TeraTermUI(customtkinter.CTk):
         self.previous_table_values = None
         self.table_rows = None
         self.is_banned = None
-        self.block_window = None
         self.exit = None
         self.dialog = None
         self.dialog_input = None
@@ -3600,9 +3599,7 @@ class TeraTermUI(customtkinter.CTk):
                                                          height=15, width=230, indeterminate_speed=1.5)
         self.progress_bar.pack(pady=1)
         self.progress_bar.start()
-        self.block_window = customtkinter.CTkToplevel()
-        self.block_window.attributes("-alpha", 0.0)
-        self.block_window.grab_set()
+        self.attributes('-disabled', True)
         return self.loading_screen
 
     # hides the loading screen
@@ -3618,7 +3615,7 @@ class TeraTermUI(customtkinter.CTk):
         if task_done.is_set():
             self.hide_loading_screen()
             self.progress_bar.stop()
-            self.block_window.destroy()
+            self.attributes('-disabled', False)
             loading_screen.destroy()
         else:
             self.after(100, self.update_loading_screen, loading_screen, task_done)
