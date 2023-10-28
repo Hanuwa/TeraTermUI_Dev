@@ -3210,16 +3210,6 @@ class TeraTermUI(customtkinter.CTk):
             self.m_semester_entry[0].configure(state="normal")
 
     @staticmethod
-    def get_current_monitor(tk_x, tk_y):
-        from screeninfo import get_monitors
-
-        for monitor in get_monitors():
-            if (monitor.x <= tk_x < monitor.x + monitor.width and
-                    monitor.y <= tk_y < monitor.y + monitor.height):
-                return monitor
-        return None  # If for some reason no monitor is found
-
-    @staticmethod
     def get_window_monitor(window_x, window_y):
         from screeninfo import get_monitors
 
@@ -5961,3 +5951,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
