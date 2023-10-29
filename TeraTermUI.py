@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 10/28/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 10/29/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -144,7 +144,9 @@ class TeraTermUI(customtkinter.CTk):
         self.help_minimized = None
         self.checkbox_state = None
         self.get_class_for_pdf = None
+        self.get_semester_for_pdf = None
         self.download_pdf = None
+        self.tooltip = None
         self.previous_table_values = None
         self.table_rows = None
         self.is_banned = None
@@ -1075,8 +1077,8 @@ class TeraTermUI(customtkinter.CTk):
                                 self.uprbay_window.click_input(button="left")
                                 self.show_loading_screen_again()
                                 copy = clipboard.paste()
-                                data, course_found, invalid_action = TeraTermUI.extract_class_data(copy)
-                                if data or course_found or invalid_action:
+                                data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
+                                if data or course_found or invalid_action or y_n_found:
                                     self.search_function_counter = 1
                             if self.search_function_counter == 0:
                                 self.uprb.UprbayTeraTermVt.type_keys(classes)
@@ -1124,8 +1126,9 @@ class TeraTermUI(customtkinter.CTk):
                                 self.uprbay_window.click_input(button="left")
                                 self.show_loading_screen_again()
                                 copy = clipboard.paste()
-                                data, course_found, invalid_action = TeraTermUI.extract_class_data(copy)
+                                data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
                                 self.get_class_for_pdf = self.s_classes_entry.get().replace(" ", "").upper()
+                                self.get_semester_for_pdf = self.s_semester_entry.get().upper().replace(" ", "")
                                 self.after(0, self.display_data, data)
                                 self.clipboard_clear()
                         else:
@@ -2186,7 +2189,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.uprbay_window.click_input(button="left")
                         self.show_loading_screen_again()
                         copy = clipboard.paste()
-                        data, course_found, invalid_action = TeraTermUI.extract_class_data(copy)
+                        data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
                         self.after(0, self.display_data, data)
                         self.clipboard_clear()
                         self.reset_activity_timer(None)
@@ -2574,7 +2577,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(15, 15))
             self.disable_go_next_buttons()
             self.introduction.grid(row=0, column=1, columnspan=2, padx=(20, 0), pady=(20, 0))
-            self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(20, 20))
+            self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(15, 15))
             self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(20, 20))
             self.intro_box.grid(row=1, column=1, padx=(20, 0), pady=(0, 150))
             self.slideshow_frame.grid(row=1, column=1, padx=(20, 0), pady=(140, 0))
@@ -3726,14 +3729,14 @@ class TeraTermUI(customtkinter.CTk):
                 return
 
     # creates pdf of the table containing for the searched class
-    def create_pdf(self, data, filename, class_name):
+    def create_pdf(self, data, filename, class_name, semester):
         from reportlab.lib import colors
         from reportlab.lib.pagesizes import letter
         from reportlab.lib.styles import getSampleStyleSheet
-        from reportlab.platypus import SimpleDocTemplate, Table, \
-            TableStyle, Paragraph, Spacer
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 
-        header = None
+        semester_header = None
+        class_header = None
         lang = self.language_menu.get()
         pdf = SimpleDocTemplate(
             filename,
@@ -3754,46 +3757,118 @@ class TeraTermUI(customtkinter.CTk):
             ("BACKGROUND", (0, 1), (-1, -1), gray),
             ("GRID", (0, 0), (-1, -1), 1, colors.black)
         ])
+
         table.setStyle(style)
-        # Add a header paragraph with the class name
+        # Get sample styles
         styles = getSampleStyleSheet()
-        header_style = styles["Heading1"]
-        header_style.alignment = 1  # Center alignment
+        # Create and style the "Semester" header
+        semester_style = styles["Heading1"]
+        semester_style.alignment = 1
         if lang == "English":
-            header = Paragraph(f"Class: {class_name}", header_style)
+            semester_header = Paragraph(f"Semester: {semester}", semester_style)
         elif lang == "Español":
-            header = Paragraph(f"Clase: {class_name}", header_style)
-        # Add some space between the header and the table
+            semester_header = Paragraph(f"Semestre: {semester}", semester_style)
+        # Create and style the "Class" header
+        class_style = styles["Heading2"]
+        class_style.alignment = 1
+        if lang == "English":
+            class_header = Paragraph(f"<u>Class: {class_name}</u>", class_style)
+        elif lang == "Español":
+            class_header = Paragraph(f"<u>Clase: {class_name}</u>", class_style)
+        # Add some space between the headers and the table
+        smaller_space = Spacer(1, -15)
         space = Spacer(1, 20)
-        # Add the header, space, and table to the elements to be added to the PDF
-        elems = [header, space, table]
+        # Add the headers, space, and table to the elements to be added to the PDF
+        elems = [semester_header, smaller_space, class_header, space, table]
         # Create the PDF
         pdf.build(elems)
+
+    def merge_pdfs(self, paths, output):
+        from PyPDF2 import PdfReader, PdfWriter
+
+        pdf_writer = PdfWriter()
+        for path in paths:
+            pdf_reader = PdfReader(path)
+            for page_num in range(len(pdf_reader.pages)):
+                page = pdf_reader.pages[page_num]
+                pdf_writer.add_page(page)
+        with open(output, "wb") as out:
+            pdf_writer.write(out)
 
     # function for the user to download the created pdf to their computer
     def download_as_pdf(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        # Get the class name from the user input
+
+        # Get the class name and table data
         class_name = self.get_class_for_pdf
-        # Gather the table data
+        semester = self.get_semester_for_pdf
         data = self.table.get()
-        # Get the path to the user's home directory
+
+        # Define where the PDF will be saved
         home = os.path.expanduser("~")
-        # Append "Downloads" to the home directory path
         downloads = os.path.join(home, "Downloads")
-        # Open a dialog for the user to choose the save location and filename
-        filepath = filedialog.asksaveasfilename(title=translation["save_pdf"],
-                                                defaultextension=".pdf", initialdir=downloads,
-                                                filetypes=[("PDF Files", "*.pdf")],
-                                                initialfile=f"{class_name}_class_data.pdf")
+        filepath = filedialog.asksaveasfilename(
+            title=translation["save_pdf"],
+            defaultextension=".pdf",
+            initialdir=downloads,
+            filetypes=[("PDF Files", "*.pdf")],
+            initialfile=f"{semester}_{class_name}_{translation['class_data']}.pdf"
+        )
+
+        # Check if user cancelled the file dialog
         if not filepath:
-            # User cancelled the dialog, stop the function
             return
+
+        # Check if the file already exists
+        file_exists = os.path.exists(filepath)
+
+        # Create a temporary PDF for the new data
+        temp_filepath = "temp_file.pdf"
+        self.create_pdf(data, temp_filepath, class_name, semester)
+
+        # If file exists, merge the PDFs and rename to 'class_data.pdf'
+        if file_exists:
+            self.merge_pdfs([filepath, temp_filepath], filepath)
+            os.remove(temp_filepath)
+            new_filepath = os.path.join(os.path.dirname(filepath), f"{semester}_{translation['class_data']}.pdf")
+            os.rename(filepath, new_filepath)
+
+        # If the file doesn't exist, rename the temp file to the chosen filepath
         else:
-            self.show_success_message(350, 265, translation["pdf_save_success"])
-        # Call create_pdf with the chosen filepath
-        self.create_pdf(data, filepath, class_name)
+            os.rename(temp_filepath, filepath)
+
+        self.show_success_message(350, 265, translation["pdf_save_success"])
+
+    def copy_cell_data_to_clipboard(self, value):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        self.clipboard_clear()
+        self.clipboard_append(value)
+        self.update()
+
+        # Close existing tooltip if any
+        if self.tooltip:
+            self.tooltip.destroy()
+
+        # Create new tooltip
+        x, y = self.winfo_pointerxy()
+        self.tooltip = tk.Toplevel(self)  # Update this line to set the tooltip variable
+        self.tooltip.wm_overrideredirect(True)
+        self.tooltip.config(bg='#145DA0')
+        self.tooltip.wm_geometry(f"+{x + 20}+{y + 20}")
+
+        label = tk.Label(self.tooltip, text=translation["clipboard"],
+                         bg="#145DA0", fg="#fff", font=("Arial", 10, "bold"))
+        label.pack(padx=5, pady=5)
+
+        # Auto-destroy after 2 seconds and reset the tooltip variable
+        self.tooltip.after(1500, self.destroy_tooltip)
+
+    def destroy_tooltip(self):
+        if self.tooltip:
+            self.tooltip.destroy()
+            self.tooltip = None
 
     # dipslays the extracted data into a table
     def display_data(self, data):
@@ -3847,7 +3922,9 @@ class TeraTermUI(customtkinter.CTk):
                 column=len(headers),
                 row=num_rows,
                 values=table_values,
-                header_color="#145DA0"
+                header_color="#145DA0",
+                hover_color="#339CFF",
+                command=self.copy_cell_data_to_clipboard,
             )
             self.table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
             for i in range(4):
@@ -3887,6 +3964,7 @@ class TeraTermUI(customtkinter.CTk):
         data = []
         course_found = False
         invalid_action = False
+        y_n_found = False
 
         for i, line in enumerate(lines):
             if "INVALID ACTION" in line:
@@ -3896,6 +3974,11 @@ class TeraTermUI(customtkinter.CTk):
                 text_next_to_course = line.split("COURSE NOT IN COURSE TERM FILE")[-1].strip()
                 if text_next_to_course:
                     course_found = True
+
+            if "ALL (Y/N):" in line:
+                y_n_value = line.split("ALL (Y/N):")[-1].strip()
+                if y_n_value in ["Y", "N"]:
+                    y_n_found = True
 
         pattern = re.compile(
             r"(\w+)\s+(\w)\s+LEC\s+(\d+\.\d+)\s+(\w+)\s+([\dAMP\-TBA]+)\s+([\d\s]+)?\s+.*?\s*([NFUL\s]*.*)"
@@ -3919,7 +4002,7 @@ class TeraTermUI(customtkinter.CTk):
                     "AV": match.group(6).strip() if match.group(6) else "0",
                     "INSTRUCTOR": instructor
                 })
-        return data, course_found, invalid_action
+        return data, course_found, invalid_action, y_n_found
 
     # checks whether the program can continue it's normal execution or if the server is on maintenance
     def wait_for_prompt(self, prompt_text, maintenance_text, timeout=15):
