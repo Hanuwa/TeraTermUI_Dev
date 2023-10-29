@@ -1232,7 +1232,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.after(0, self.show_error_message, 300, 215, translation["invalid_semester"])
                     else:
                         self.focus_or_not = True
-                        self.after(0, self.show_error_message,300, 215, translation["tera_term_not_running"])
+                        self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
         except Exception as e:
             print("An error occurred: ", e)
             self.error_occurred = True
@@ -3827,8 +3827,11 @@ class TeraTermUI(customtkinter.CTk):
         temp_filepath = "temp_file.pdf"
         self.create_pdf(data, temp_filepath, class_name, semester)
 
+        original_file_name = os.path.splitext(os.path.basename(filepath))[0]
+        new_file_name = f"{semester}_{class_name}_{translation['class_data']}"
+
         # If file exists, merge the PDFs and rename to 'class_data.pdf'
-        if file_exists:
+        if file_exists and original_file_name != new_file_name:
             self.merge_pdfs([filepath, temp_filepath], filepath)
             os.remove(temp_filepath)
             new_filepath = os.path.join(os.path.dirname(filepath), f"{semester}_{translation['class_data']}.pdf")
@@ -3836,6 +3839,8 @@ class TeraTermUI(customtkinter.CTk):
 
         # If the file doesn't exist, rename the temp file to the chosen filepath
         else:
+            if file_exists:
+                os.remove(filepath)
             os.rename(temp_filepath, filepath)
 
         self.show_success_message(350, 265, translation["pdf_save_success"])
@@ -6030,4 +6035,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
