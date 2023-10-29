@@ -203,9 +203,9 @@ class TeraTermUI(customtkinter.CTk):
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
         self.introduction.grid(row=0, column=1, columnspan=2, padx=(20, 0), pady=(20, 0))
         self.host = customtkinter.CTkLabel(self, text="Host ")
-        self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(20, 20))
+        self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(15, 15))
         self.host_entry = CustomEntry(self, self, placeholder_text="myhost.example.edu")
-        self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(20, 20))
+        self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(15, 15))
         self.host_tooltip = CTkToolTip(self.host_entry, message="Enter the name of the server\n of the university",
                                        bg_color="#1E90FF")
         self.log_in = CustomButton(self, border_width=2, text="Log-In", text_color=("gray10", "#DCE4EE"),
@@ -2569,9 +2569,9 @@ class TeraTermUI(customtkinter.CTk):
             self.initialization_class()
             self.initialization_multiple()
             if lang == "Español":
-                self.host.grid(row=2, column=0, columnspan=2, padx=(5, 0), pady=(20, 20))
+                self.host.grid(row=2, column=0, columnspan=2, padx=(5, 0), pady=(15, 15))
             elif lang == "English":
-                self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(20, 20))
+                self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(15, 15))
             self.disable_go_next_buttons()
             self.introduction.grid(row=0, column=1, columnspan=2, padx=(20, 0), pady=(20, 0))
             self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(20, 20))
@@ -2839,9 +2839,9 @@ class TeraTermUI(customtkinter.CTk):
         if self.enroll_tab != translation["enroll_tab"]:
             self.after(1000, self.rename_tabs)
         if lang == "English":
-            self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(20, 20))
+            self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(15, 15))
         elif lang == "Español":
-            self.host.grid(row=2, column=0, columnspan=2, padx=(5, 0), pady=(20, 20))
+            self.host.grid(row=2, column=0, columnspan=2, padx=(5, 0), pady=(15, 15))
 
     def rename_tabs(self):
         lang = self.language_menu.get()
