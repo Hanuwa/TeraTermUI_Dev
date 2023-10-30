@@ -17,7 +17,7 @@ customtkinter==5.2.1
 darkdetect==0.8.0
 EasyProcess==1.1
 entrypoint2==1.1
-filelock==3.13.0
+filelock==3.13.1
 frozenlist==1.4.0
 google==3.0.0
 google-api-core==2.12.0
