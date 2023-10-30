@@ -1127,7 +1127,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.show_loading_screen_again()
                                 copy = clipboard.paste()
                                 data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
-                                self.get_class_for_pdf = self.s_classes_entry.get().replace(" ", "").upper()
+                                self.get_class_for_pdf = self.s_classes_entry.get().upper().replace(" ", "")
                                 self.get_semester_for_pdf = self.s_semester_entry.get().upper().replace(" ", "")
                                 self.after(0, self.display_data, data)
                                 self.clipboard_clear()
@@ -1200,7 +1200,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.automation_preparations()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
-                dialog_input = self.dialog_input.replace(" ", "").upper()
+                dialog_input = self.dialog_input.upper().replace(" ", "")
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
                         if re.fullmatch("^[A-Z][0-9]{2}$", dialog_input, flags=re.IGNORECASE):
@@ -3916,10 +3916,14 @@ class TeraTermUI(customtkinter.CTk):
 
         num_rows = len(modified_data) + 1
 
-        # Update the display_class every time, irrespective of whether the table dimensions have changed or not.
+        # Update the class and pdf  every time, irrespective of whether the table dimensions have changed or not.
         if hasattr(self, "display_class") and self.display_class is not None:
             self.display_class.grid_forget()
             del self.display_class
+
+        if hasattr(self, "download_pdf") and self.download_pdf is not None:
+            self.download_pdf.grid_forget()
+            del self.download_pdf
 
         self.display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_pdf,
                                                     font=customtkinter.CTkFont(size=15, weight="bold", underline=True))
