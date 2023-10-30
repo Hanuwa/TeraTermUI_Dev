@@ -67,7 +67,7 @@ from pywinauto.application import Application
 from pywinauto.keyboard import send_keys
 from tkinter import filedialog
 from tkinter import messagebox
-from PIL import Image, ImageOps
+from PIL import Image
 
 # from collections import deque
 # from memory_profiler import profile
@@ -77,8 +77,14 @@ customtkinter.set_default_color_theme("blue")
 
 
 class TeraTermUI(customtkinter.CTk):
-    def __init__(self):
+    def __init__(self, fade_duration=50):
         super().__init__()
+        # Fade attributes
+        self.fade_duration = fade_duration
+        self.alpha = 0.0
+        self.fade_direction = 1
+        self.after_idle(self._start_fade_in)
+
         self.title("Tera Term UI")
         # determines screen size to put application in the middle of the screen
         width = 910
@@ -549,7 +555,7 @@ class TeraTermUI(customtkinter.CTk):
         self.after(0, self.unload_image("uprb"))
         self.after(0, self.unload_image("status"))
         self.after(0, self.unload_image("help"))
-        self.after(150, self.set_focus_to_tkinter)
+        self.after(0, self.set_focus_to_tkinter)
         del user_data_fields, results, SPANISH, language_id, \
             scaling_factor, screen_width, screen_height, width, height, x, y, db_path
         gc.collect()
@@ -4783,8 +4789,6 @@ class TeraTermUI(customtkinter.CTk):
 
     # Set focus on the UI application window
     def set_focus_to_tkinter(self):
-        tk_handle = win32gui.FindWindow(None, "Tera Term UI")
-        win32gui.SetForegroundWindow(tk_handle)
         self.lift()
         self.focus_force()
         self.attributes("-topmost", 1)
@@ -5530,6 +5534,18 @@ class TeraTermUI(customtkinter.CTk):
         self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
         return True
 
+    def _start_fade_in(self):
+        self.fade_direction = 1
+        self._fade()
+
+    def _fade(self):
+        self.alpha += self.fade_direction / self.fade_duration
+        self.attributes("-alpha", self.alpha)
+        if 0 < self.alpha < 1:
+            self.after(5, self._fade)  # Adjust the update interval
+        elif self.alpha <= 0:
+            self.destroy()
+
 
 class CustomButton(customtkinter.CTkButton):
     def __init__(self, master=None, command=None, **kwargs):
@@ -5927,7 +5943,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
 
 
 class SmoothFadeToplevel(customtkinter.CTkToplevel):
-    def __init__(self, fade_duration=25, *args, **kwargs):
+    def __init__(self, fade_duration=30, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fade_duration = fade_duration
         self.alpha = 0.0
