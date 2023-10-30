@@ -107,6 +107,10 @@ shutil.copy2(project_directory + r"\TeraTermUI.py", program_backup)
 signal.signal(signal.SIGTERM, terminate_process)
 signal.signal(signal.SIGINT, terminate_process)
 
+version_file_path = os.path.join(project_directory, "VERSION.txt")
+with open(version_file_path, "w") as file:
+    file.write(update)
+
 try:
     if os.path.exists(output_directory):
         shutil.rmtree(output_directory)
@@ -117,10 +121,10 @@ try:
         if os.path.isfile(src):
             shutil.copy2(src, dst)
     # Open the inno script to overwrite it
-    file_path = os.path.join(output_directory, "InstallerScript.iss")
-    with open(file_path, "r") as file:
+    inno_file_path = os.path.join(output_directory, "InstallerScript.iss")
+    with open(inno_file_path, "r") as file:
         lines = file.readlines()
-    with open(file_path, "w") as file:
+    with open(inno_file_path, "w") as file:
         for line in lines:
             if line.startswith("#define MyAppVersion"):
                 line = '#define MyAppVersion "' + update_without_v + '"\n'
@@ -128,7 +132,6 @@ try:
                 line = '#define MyAppPath "' + output_directory + '"\n'
             elif line.startswith("OutputBaseFilename="):
                 line = 'OutputBaseFilename="TeraTermUI_64-bit_Installer-' + update + '"\n'
-            # Write the line back to the file
             file.write(line)
     print(Fore.GREEN + "\nSuccessfully created distribution directory\n" + Style.RESET_ALL)
 except KeyboardInterrupt as e:
