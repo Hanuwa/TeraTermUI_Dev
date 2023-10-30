@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 10/29/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 10/30/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -2839,6 +2839,14 @@ class TeraTermUI(customtkinter.CTk):
         self.save_data_tooltip.configure(message=translation["save_data_tooltip"])
         self.auto_enroll_tooltip.configure(message=translation["auto_enroll_tooltip"])
         self.search_next_page_tooltip.configure(message=translation["search_next_page_tooltip"])
+        for entry in [self.host_entry, self.username_entry, self.ssn_entry, self.code_entry,
+                      self.e_classes_entry, self.e_section_entry, self.s_classes_entry,
+                      self.m_section_entry, self.intro_box]:
+            if isinstance(entry, list):
+                for sub_entry in entry:
+                    sub_entry.lang = lang
+            else:
+                entry.lang = lang
         if self.enroll_tab != translation["enroll_tab"]:
             self.after(1000, self.rename_tabs)
         if lang == "English":
@@ -4881,6 +4889,7 @@ class TeraTermUI(customtkinter.CTk):
                     [translation["q2"], translation["a2"]]]
         faq = ctktable.CTkTable(scrollable_frame, row=3, column=2, values=qa_table)
         faq.pack(expand=True, fill="both", padx=20, pady=20)
+        self.feedbackText.lang = lang
         scrollable_frame.bind("<Button-1>", lambda event: scrollable_frame.focus_set())
         self.status.protocol("WM_DELETE_WINDOW", self.on_status_window_close)
         self.status.bind("<Escape>", lambda event: self.on_status_window_close())
@@ -5240,6 +5249,7 @@ class TeraTermUI(customtkinter.CTk):
         if audio:
             if audio[0][0] == "Disabled":
                 self.disableAudio.select()
+        self.search_box.lang = lang
         self.class_list.bind("<<ListboxSelect>>", self.show_class_code)
         self.class_list.bind("<MouseWheel>", self.disable_scroll)
         self.search_box.bind("<KeyRelease>", self.search_classes)
@@ -5539,9 +5549,10 @@ class CustomButton(customtkinter.CTkButton):
 
 
 class CustomTextBox(customtkinter.CTkTextbox):
-    def __init__(self, master=None, enable_autoscroll=True, read_only=False, **kwargs):
+    def __init__(self, master=None, enable_autoscroll=True, read_only=False, lang=None, **kwargs):
         super().__init__(master, **kwargs)
         self.auto_scroll = enable_autoscroll
+        self.lang = lang
         self.after_id = None
 
         if self.auto_scroll:
@@ -5572,8 +5583,9 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.context_menu = tk.Menu(self, tearoff=0, bg="#f0f0f0", fg="#333333", font=("Arial", 10))
         if not self.auto_scroll:
             self.context_menu.add_command(label="Cut", command=self.cut)
-            self.context_menu.add_command(label="Paste", command=self.paste)
         self.context_menu.add_command(label="Copy", command=self.copy)
+        if not self.auto_scroll:
+            self.context_menu.add_command(label="Paste", command=self.paste)
         self.context_menu.add_command(label="Select All", command=self.select_all)
         self.is_text_selected = False
         self.bind("<Button-3>", self.show_menu)
@@ -5623,6 +5635,17 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.insert("1.0", redo_text)
 
     def show_menu(self, event):
+        current_label = self.context_menu.entrycget(0, "label")
+        if self.lang == "English" and current_label != "Cut":
+            self.context_menu.entryconfigure(0, label="Cut")
+            self.context_menu.entryconfigure(1, label="Copy")
+            self.context_menu.entryconfigure(2, label="Paste")
+            self.context_menu.entryconfigure(3, label="Select All")
+        elif self.lang == "Español" and current_label != "Cortar":
+            self.context_menu.entryconfigure(0, label="Cortar")
+            self.context_menu.entryconfigure(1, label="Copiar")
+            self.context_menu.entryconfigure(2, label="Pegar")
+            self.context_menu.entryconfigure(3, label="Seleccionar todo")
         self.stop_autoscroll(event=None)
         self.context_menu.post(event.x_root, event.y_root)
         self.focus_set()
@@ -5693,12 +5716,13 @@ class CustomTextBox(customtkinter.CTkTextbox):
 
 
 class CustomEntry(customtkinter.CTkEntry):
-    def __init__(self, master, teraterm_ui_instance, *args, **kwargs):
+    def __init__(self, master, teraterm_ui_instance, lang=None, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
 
         initial_state = self.get()
         self._undo_stack = deque([initial_state], maxlen=25)
         self._redo_stack = deque(maxlen=25)
+        self.lang = lang
 
         self.teraterm_ui = teraterm_ui_instance
         self.bind("<FocusIn>", self.disable_slider_keys)
@@ -5757,6 +5781,17 @@ class CustomEntry(customtkinter.CTkEntry):
             self.insert(0, redo_text)
 
     def show_menu(self, event):
+        current_label = self.context_menu.entrycget(0, "label")
+        if self.lang == "English" and current_label != "Cut":
+            self.context_menu.entryconfigure(0, label="Cut")
+            self.context_menu.entryconfigure(1, label="Copy")
+            self.context_menu.entryconfigure(2, label="Paste")
+            self.context_menu.entryconfigure(3, label="Select All")
+        elif self.lang == "Español" and current_label != "Cortar":
+            self.context_menu.entryconfigure(0, label="Cortar")
+            self.context_menu.entryconfigure(1, label="Copiar")
+            self.context_menu.entryconfigure(2, label="Pegar")
+            self.context_menu.entryconfigure(3, label="Seleccionar todo")
         self.context_menu.post(event.x_root, event.y_root)
         self.focus_set()
         self.icursor(tk.END)
