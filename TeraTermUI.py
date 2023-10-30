@@ -2942,13 +2942,13 @@ class TeraTermUI(customtkinter.CTk):
                                     self.auto_enroll_bool = False
                                     return
                             else:
-                                if "LISTA DE SECCIONES" not in text_output:
+                                if "LISTA DE SECCIONES" not in text_output and "INVALID ACTION" in text_output:
                                     self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
                                     self.reset_activity_timer(None)
-                                    self.after(0, self.show_error_message, 300, 215,
-                                               translation["failed_to_find_date"])
+                                self.after(0, self.show_error_message, 300, 215,
+                                           translation["failed_to_find_date"])
                                 self.auto_enroll.deselect()
                                 self.auto_enroll_bool = False
                                 return
@@ -3709,13 +3709,16 @@ class TeraTermUI(customtkinter.CTk):
             x, y, right, bottom = get_window_rect(hwnd)
             width = right - x
             height = bottom - y
+            crop_margin = (1, 8, 8, 1)
             if self.loading_screen.winfo_exists():
                 self.hide_loading_screen()
             screenshot = pyautogui.screenshot(region=(x, y, width, height))
             if self.loading_screen.winfo_exists():
                 self.show_loading_screen_again()
+            screenshot = screenshot.crop(
+                (crop_margin[0], crop_margin[1], width - crop_margin[2], height - crop_margin[3]))
             screenshot = screenshot.convert("L")
-            screenshot = ImageOps.autocontrast(screenshot, cutoff=5)
+            screenshot = screenshot.resize((screenshot.width * 2, screenshot.height * 2), resample=Image.BICUBIC)
             # screenshot.save("screenshot.png")
             custom_config = r"--oem 3 --psm 11"
             text = pytesseract.image_to_string(screenshot, config=custom_config)
