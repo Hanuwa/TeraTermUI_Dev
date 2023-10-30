@@ -77,7 +77,7 @@ customtkinter.set_default_color_theme("blue")
 
 
 class TeraTermUI(customtkinter.CTk):
-    def __init__(self, fade_duration=50):
+    def __init__(self, fade_duration=30):
         super().__init__()
         # Fade attributes
         self.fade_duration = fade_duration
@@ -4223,7 +4223,7 @@ class TeraTermUI(customtkinter.CTk):
         window_geometry = f"{width}x{height}+{center_x + 100}+{center_y - 20}"
         if not self.disable_audio:
             winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-        self.error = customtkinter.CTkToplevel(self)
+        self.error = SmoothFadeToplevel(fade_duration=10)
         self.error.title("Error")
         self.error.geometry(window_geometry)
         self.error.attributes("-topmost", True)
@@ -4261,7 +4261,7 @@ class TeraTermUI(customtkinter.CTk):
         window_geometry = f"{width}x{height}+{center_x + 100}+{center_y - 20}"
         if not self.disable_audio:
             winsound.PlaySound("sounds/success.wav", winsound.SND_ASYNC)
-        self.success = customtkinter.CTkToplevel()
+        self.success = SmoothFadeToplevel(fade_duration=10)
         self.success.geometry(window_geometry)
         self.success.title(translation["success_title"])
         self.success.attributes("-topmost", True)
@@ -4309,7 +4309,7 @@ class TeraTermUI(customtkinter.CTk):
         window_geometry = f"{width}x{height}+{center_x + 100}+{center_y - 20}"
         if not self.disable_audio:
             winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-        self.information = customtkinter.CTkToplevel()
+        self.information = SmoothFadeToplevel(fade_duration=10)
         self.information.geometry(window_geometry)
         self.information.title(translation["information_title"])
         self.information.resizable(False, False)
@@ -4846,7 +4846,6 @@ class TeraTermUI(customtkinter.CTk):
         if self.status and self.status.winfo_exists():
             self.status.lift()
             return
-        self.focus_set()
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         self.status = SmoothFadeToplevel()
@@ -4901,6 +4900,7 @@ class TeraTermUI(customtkinter.CTk):
         faq = ctktable.CTkTable(scrollable_frame, row=3, column=2, values=qa_table)
         faq.pack(expand=True, fill="both", padx=20, pady=20)
         self.feedbackText.lang = lang
+        self.status.focus_set()
         scrollable_frame.bind("<Button-1>", lambda event: scrollable_frame.focus_set())
         self.status.protocol("WM_DELETE_WINDOW", self.on_status_window_close)
         self.status.bind("<Escape>", lambda event: self.on_status_window_close())
@@ -5108,7 +5108,9 @@ class TeraTermUI(customtkinter.CTk):
             self.connection.commit()
             self.show_success_message(350, 265, translation["tera_term_success"])
             self.edit_teraterm_ini(self.teraterm_file)
-        self.help.lift()
+            self.after(4000, self.help.lift)
+        if not re.search("ttermpro.exe", filename):
+            self.help.lift()
         self.slideshow_frame.resume_cycle()
 
     # disables scrolling for the class list
@@ -5173,7 +5175,6 @@ class TeraTermUI(customtkinter.CTk):
         if self.help and self.help.winfo_exists():
             self.help.lift()
             return
-        self.focus_set()
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         bg_color = "#0e95eb"
@@ -5261,6 +5262,7 @@ class TeraTermUI(customtkinter.CTk):
             if audio[0][0] == "Disabled":
                 self.disableAudio.select()
         self.search_box.lang = lang
+        self.help.focus_set()
         self.class_list.bind("<<ListboxSelect>>", self.show_class_code)
         self.class_list.bind("<MouseWheel>", self.disable_scroll)
         self.search_box.bind("<KeyRelease>", self.search_classes)
