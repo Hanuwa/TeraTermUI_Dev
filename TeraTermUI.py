@@ -429,6 +429,7 @@ class TeraTermUI(customtkinter.CTk):
         self.check_update = False
         self.disable_audio = False
         self.focus_or_not = False
+        self.changed_location = False
         self.a_counter = 0
         self.m_counter = 0
         self.e_counter = 0
@@ -4280,6 +4281,9 @@ class TeraTermUI(customtkinter.CTk):
     def on_success_window_close(self):
         self.unload_image("success")
         self.success.destroy()
+        if self.help and self.help.winfo_exists() and self.changed_location:
+            self.after(250, self.help.lift)
+            self.changed_location = False
 
     # Pop window that shows the user more context on why they couldn't enroll their classes
     def show_enrollment_error_information(self):
@@ -5095,6 +5099,7 @@ class TeraTermUI(customtkinter.CTk):
             self.location = filename
             directory, filename = os.path.split(filename)
             self.teraterm_file = directory + "/TERATERM.ini"
+            self.changed_location = True
             location = self.cursor.execute("SELECT location FROM user_data").fetchall()
             teraterm_config = self.cursor.execute("SELECT config FROM user_data").fetchall()
             if len(location) == 0:
@@ -5108,7 +5113,6 @@ class TeraTermUI(customtkinter.CTk):
             self.connection.commit()
             self.show_success_message(350, 265, translation["tera_term_success"])
             self.edit_teraterm_ini(self.teraterm_file)
-            self.after(4000, self.help.lift)
         if not re.search("ttermpro.exe", filename):
             self.help.lift()
         self.slideshow_frame.resume_cycle()
