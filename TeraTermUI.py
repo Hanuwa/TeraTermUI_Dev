@@ -77,7 +77,7 @@ customtkinter.set_default_color_theme("blue")
 
 
 class TeraTermUI(customtkinter.CTk):
-    def __init__(self, fade_duration=30):
+    def __init__(self, fade_duration=5):
         super().__init__()
         # Fade attributes
         self.fade_duration = fade_duration
