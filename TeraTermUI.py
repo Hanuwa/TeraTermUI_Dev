@@ -44,7 +44,6 @@ import tempfile
 import threading
 import tkinter as tk
 import time
-import uuid
 import webbrowser
 import win32gui
 import winsound
@@ -439,6 +438,7 @@ class TeraTermUI(customtkinter.CTk):
         appdata_path = os.environ.get("PROGRAMDATA")
         self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
         self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
+        self.portable = True
         atexit.register(self.cleanup_temp)
         atexit.register(self.restore_original_font, self.teraterm_file)
         try:
@@ -4168,16 +4168,18 @@ class TeraTermUI(customtkinter.CTk):
     def cleanup_temp(self):
         tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
         backup_file_path = Path(self.app_temp_dir) / "TERATERM.ini.bak"
-        if tesseract_dir == Path(self.app_temp_dir) / "Tesseract-OCR" and tesseract_dir.exists():
+        if tesseract_dir.exists():
             for _ in range(10):  # Retry up to 10 times
                 try:
                     shutil.rmtree(tesseract_dir)
                     break  # If the directory was deleted successfully, exit the loop
                 except PermissionError:
                     time.sleep(1)  # Wait for 1 second before the next attempt
-            # Delete the 'TERATERM.ini.bak' file
-            if backup_file_path.exists():
-                os.remove(backup_file_path)
+        # Delete the 'TERATERM.ini.bak' file
+        if backup_file_path.exists():
+            os.remove(backup_file_path)
+        if self.portable:
+            shutil.rmtree(self.app_temp_dir)
 
     # error window pop up message
     def show_error_message(self, width, height, error_msg_text):
