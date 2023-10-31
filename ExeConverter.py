@@ -186,7 +186,7 @@ try:
     # Check current state of the script to decide the order of versions
     with open(project_directory+r"\TeraTermUI.py", 'r', encoding='utf-8') as file:
         data = file.read()
-    if 'if not os.path.isfile(db_path):' in data:
+    if 'self.portable = True' in data:
         versions = ['installer', 'portable']
     else:
         versions = ['portable', 'installer']
@@ -212,6 +212,8 @@ for version in versions:
         # Replace old text with new text for portable and installer versions
         if version == 'installer':
             script = "installer"
+            data = data.replace('self.portable = True',
+                                'self.portable = False')
             data = data.replace('if not os.path.isfile(db_path):',
                                 'if not os.path.exists(self.db_path):')
             data = data.replace('self.connection = sqlite3.connect(db_path, check_same_thread=False)',
@@ -227,6 +229,8 @@ for version in versions:
             print(Fore.GREEN + "Successfully started installer version\n" + Style.RESET_ALL)
         else:
             script = "portable"
+            data = data.replace('self.portable = False',
+                                'self.portable = True')
             data = data.replace('if not os.path.exists(self.db_path):',
                                 'if not os.path.isfile(db_path):')
             data = data.replace('self.connection = sqlite3.connect(self.db_path, check_same_thread=False)',
