@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 10/30/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 10/31/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -77,14 +77,8 @@ customtkinter.set_default_color_theme("blue")
 
 
 class TeraTermUI(customtkinter.CTk):
-    def __init__(self, fade_duration=5):
+    def __init__(self):
         super().__init__()
-        # Fade attributes
-        self.fade_duration = fade_duration
-        self.alpha = 0.0
-        self.fade_direction = 1
-        self.after_idle(self._start_fade_in)
-
         self.title("Tera Term UI")
         # determines screen size to put application in the middle of the screen
         width = 910
@@ -126,7 +120,6 @@ class TeraTermUI(customtkinter.CTk):
 
         # Instance variables not yet needed but defined
         # to avoid the instance attribute defined outside __init__ warning
-        self.user_id = None
         self.uprbay_window = None
         self.uprb = None
         self.table = None
@@ -155,7 +148,6 @@ class TeraTermUI(customtkinter.CTk):
         self.tooltip = None
         self.previous_table_values = None
         self.table_rows = None
-        self.is_banned = None
         self.exit = None
         self.dialog = None
         self.dialog_input = None
@@ -424,7 +416,6 @@ class TeraTermUI(customtkinter.CTk):
         self.in_multiple_screen = False
         self.started_auto_enroll = False
         self.error_auto_enroll = False
-        self.is_banned_flag = False
         self.connection_error = False
         self.check_update = False
         self.disable_audio = False
@@ -4140,26 +4131,6 @@ class TeraTermUI(customtkinter.CTk):
                 print(f"Error occurred while fetching latest release information: {err}")
                 print("Please check your internet connection and try again.")
 
-        # Generating user_id to ban user from sending feedback if needed
-        # If the file doesn't already exist, generate a new UUID and write it to the file
-        user_path = Path(self.app_temp_dir) / "user_id.zip"
-        if not user_path.is_file():
-            user_id = str(uuid.uuid4())
-            # Create a new password-protected zip archive and add the text file to it
-            with pyzipper.AESZipFile(user_path, "w", encryption=pyzipper.WZ_AES) as zf:
-                zf.setpassword(self.FEEDBACK.encode())
-                zf.writestr("user_id.txt", user_id)
-
-        # Read the user_id from the text file in the password-protected zip archive
-        try:
-            with pyzipper.AESZipFile(user_path, "r") as zf:
-                zf.setpassword(self.FEEDBACK.encode())
-                with zf.open("user_id.txt") as f:
-                    self.user_id = f.read().decode().strip()
-        except Exception as e:
-            print(f"Failed to read user_id: {str(e)}")
-            self.disable_feedback = True
-
         # Reads from the feedback.json file to connect to Google's Sheets Api for user feedback
         try:
             with open(self.SERVICE_ACCOUNT_FILE, "rb"):
@@ -4175,7 +4146,7 @@ class TeraTermUI(customtkinter.CTk):
             print(f"Failed to load credentials: {str(e)}")
             self.credentials = None
             self.disable_feedback = True
-        del tesseract_dir_path, tesseract_dir, backup_path, line, lines, credentials_dict, user_path, dates_list, \
+        del tesseract_dir_path, tesseract_dir, backup_path, line, lines, credentials_dict, dates_list, \
             date, current_date
         gc.collect()
 
@@ -4929,7 +4900,7 @@ class TeraTermUI(customtkinter.CTk):
                                 discoveryServiceUrl=DISCOVERY_SERVICE_URL)
             now = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
             body = {
-                "values": [[now, self.user_id, values[0][0]]]
+                "values": [[now, values[0][0]]]
             }
 
             try:
@@ -4944,74 +4915,29 @@ class TeraTermUI(customtkinter.CTk):
         else:
             self.connection_error = True
 
-    def is_user_banned(self, user_id):
-        from googleapiclient.discovery import build
-
-        lang = self.language_menu.get()
-        if asyncio.run(self.test_connection(lang)):
-            self.connection_error = False
-            try:
-                service = build("sheets", "v4", credentials=self.credentials)
-            except:
-                DISCOVERY_SERVICE_URL = "https://sheets.googleapis.com/$discovery/rest?version=v4"
-                service = build("sheets", "v4", credentials=self.credentials,
-                                discoveryServiceUrl=DISCOVERY_SERVICE_URL)
-            try:
-                # Get all values in column A from the banned users spreadsheet
-                result = service.spreadsheets().values().get(
-                    spreadsheetId=self.SPREADSHEET_BANNED_ID, range=self.RANGE_NAME).execute()
-                values = result.get("values", [])
-                # Check if the user_id is in the values
-                flat_values = [item for sublist in values for item in sublist]
-                if user_id in flat_values:
-                    return True
-                else:
-                    return False
-            except HttpError as error:
-                print(f"An error occurred: {error}")
-                return False
-        else:
-            self.connection_error = True
-
     def start_feedback_thread(self):
-        timeout_counter = 0
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         self.feedbackSend.configure(state="disabled")
-        while self.user_id is None:
-            time.sleep(1)
-            timeout_counter += 1
-            if timeout_counter > 5:
-                break
-        if self.user_id is None:
-            if not self.disable_audio:
-                winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-            CTkMessagebox(title="Error", message=translation["feedback_unavailable"],
-                          icon="cancel", button_width=380)
+        msg = CTkMessagebox(master=self, title="Submit",
+                            message=translation["submit_feedback"],
+                            icon="question",
+                            option_1=translation["option_1"], option_2=translation["option_2"],
+                            option_3=translation["option_3"], icon_size=(65, 65),
+                            button_color=("#c30101", "#145DA0", "#145DA0"),
+                            hover_color=("darkred", "darkblue", "darkblue"))
+        response = msg.get()
+        if response[0] == "Yes" or response[0] == "Sí":
+            feedback_thread = threading.Thread(target=self.submit_feedback)
+            feedback_thread.start()
         else:
-            msg = CTkMessagebox(master=self, title="Submit",
-                                message=translation["submit_feedback"],
-                                icon="question",
-                                option_1=translation["option_1"], option_2=translation["option_2"],
-                                option_3=translation["option_3"], icon_size=(65, 65),
-                                button_color=("#c30101", "#145DA0", "#145DA0"),
-                                hover_color=("darkred", "darkblue", "darkblue"))
-            response = msg.get()
-            if response[0] == "Yes" or response[0] == "Sí":
-                feedback_thread = threading.Thread(target=self.submit_feedback)
-                feedback_thread.start()
-            else:
-                self.feedbackSend.configure(state="normal")
+            self.feedbackSend.configure(state="normal")
 
     # Submits feedback from the user to a Google sheet
     def submit_feedback(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        if not self.is_banned_flag:
-            self.is_banned = self.is_user_banned(self.user_id)
-            if not self.connection_error:
-                self.is_banned_flag = True
-        if not self.disable_feedback and not self.is_banned:
+        if not self.disable_feedback:
             current_date = datetime.today().strftime("%Y-%m-%d")
             date = self.cursor.execute("SELECT feedback_date FROM user_data WHERE feedback_date IS NOT NULL").fetchall()
             dates_list = [record[0] for record in date]
@@ -5539,18 +5465,6 @@ class TeraTermUI(customtkinter.CTk):
 
         self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
         return True
-
-    def _start_fade_in(self):
-        self.fade_direction = 1
-        self._fade()
-
-    def _fade(self):
-        self.alpha += self.fade_direction / self.fade_duration
-        self.attributes("-alpha", self.alpha)
-        if 0 < self.alpha < 1:
-            self.after(5, self._fade)  # Adjust the update interval
-        elif self.alpha <= 0:
-            self.destroy()
 
 
 class CustomButton(customtkinter.CTkButton):
@@ -6099,3 +6013,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
