@@ -19,7 +19,6 @@
 
 import asyncio
 import atexit
-import clipboard
 import ctypes
 import customtkinter
 import gc
@@ -29,6 +28,7 @@ import os
 import psutil
 import py7zr
 import pygetwindow as gw
+import pyperclip
 import pytz
 import pyzipper
 import pytesseract
@@ -1074,7 +1074,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.hide_loading_screen()
                                 self.uprbay_window.click_input(button="left")
                                 self.show_loading_screen_again()
-                                copy = clipboard.paste()
+                                copy = pyperclip.paste()
                                 data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
                                 if data or course_found or invalid_action or y_n_found:
                                     self.search_function_counter = 1
@@ -1123,7 +1123,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.hide_loading_screen()
                                 self.uprbay_window.click_input(button="left")
                                 self.show_loading_screen_again()
-                                copy = clipboard.paste()
+                                copy = pyperclip.paste()
                                 data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
                                 self.get_class_for_pdf = self.s_classes_entry.get().upper().replace(" ", "")
                                 self.get_semester_for_pdf = self.s_semester_entry.get().upper().replace(" ", "")
@@ -2186,7 +2186,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.hide_loading_screen()
                         self.uprbay_window.click_input(button="left")
                         self.show_loading_screen_again()
-                        copy = clipboard.paste()
+                        copy = pyperclip.paste()
                         data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
                         self.after(0, self.display_data, data)
                         self.clipboard_clear()
