@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 10/31/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 11/1/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -121,8 +121,6 @@ class TeraTermUI(customtkinter.CTk):
         # to avoid the instance attribute defined outside __init__ warning
         self.uprbay_window = None
         self.uprb = None
-        self.table = None
-        self.display_class = None
         self.server_status = None
         self.timer_window = None
         self.timer_label = None
@@ -145,8 +143,6 @@ class TeraTermUI(customtkinter.CTk):
         self.get_semester_for_pdf = None
         self.download_pdf = None
         self.tooltip = None
-        self.previous_table_values = None
-        self.table_rows = None
         self.exit = None
         self.dialog = None
         self.dialog_input = None
@@ -396,6 +392,14 @@ class TeraTermUI(customtkinter.CTk):
         self.can_edit = False
         self.enrolled_classes_list = {}
         self.dropped_classes_list = {}
+        self.class_table_pairs = []
+        self.current_table_index = -1
+        self.table_count = None
+        self.table = None
+        self.current_class = None
+        self.previous_button = None
+        self.next_button = None
+        self.remove_button = None
         self.disable_feedback = False
         self.auto_enroll_bool = False
         self.countdown_running = False
@@ -3738,81 +3742,88 @@ class TeraTermUI(customtkinter.CTk):
                 return
 
     # creates pdf of the table containing for the searched class
-    def create_pdf(self, data, filename, class_name, semester):
+    def create_pdf(self, data_list, classes_list, filepath, semesters_list):
         from reportlab.lib import colors
         from reportlab.lib.pagesizes import letter
         from reportlab.lib.styles import getSampleStyleSheet
-        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
 
         semester_header = None
         class_header = None
         lang = self.language_menu.get()
         pdf = SimpleDocTemplate(
-            filename,
+            filepath,
             pagesize=letter
         )
-        table = Table(data)
-        # Custom Colors
-        blue = colors.Color(0, 0.5, 0.75)  # Lighter blue
-        gray = colors.Color(0.7, 0.7, 0.7)  # Lighter gray
-        # Define the table style
-        style = TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), blue),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTSIZE", (0, 0), (-1, 0), 14),
-            ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
-            ("BACKGROUND", (0, 1), (-1, -1), gray),
-            ("GRID", (0, 0), (-1, -1), 1, colors.black)
-        ])
+        elems = []
+        for idx, data in enumerate(data_list):
+            current_class_name = classes_list[idx]  # Get the current class name
+            current_semester = semesters_list[idx]  # Get the current semester
+            table = Table(data)
+            # Custom Colors
+            blue = colors.Color(0, 0.5, 0.75)  # Lighter blue
+            gray = colors.Color(0.7, 0.7, 0.7)  # Lighter gray
+            # Define the table style
+            style = TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), blue),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, 0), 14),
+                ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+                ("BACKGROUND", (0, 1), (-1, -1), gray),
+                ("GRID", (0, 0), (-1, -1), 1, colors.black)
+            ])
 
-        table.setStyle(style)
-        # Get sample styles
-        styles = getSampleStyleSheet()
-        # Create and style the "Semester" header
-        semester_style = styles["Heading1"]
-        semester_style.alignment = 1
-        if lang == "English":
-            semester_header = Paragraph(f"Semester: {semester}", semester_style)
-        elif lang == "Español":
-            semester_header = Paragraph(f"Semestre: {semester}", semester_style)
-        # Create and style the "Class" header
-        class_style = styles["Heading2"]
-        class_style.alignment = 1
-        if lang == "English":
-            class_header = Paragraph(f"<u>Class: {class_name}</u>", class_style)
-        elif lang == "Español":
-            class_header = Paragraph(f"<u>Clase: {class_name}</u>", class_style)
-        # Add some space between the headers and the table
-        smaller_space = Spacer(1, -15)
-        space = Spacer(1, 20)
-        # Add the headers, space, and table to the elements to be added to the PDF
-        elems = [semester_header, smaller_space, class_header, space, table]
+            table.setStyle(style)
+            # Get sample styles
+            styles = getSampleStyleSheet()
+            # Create and style the "Semester" header
+            semester_style = styles["Heading1"]
+            semester_style.alignment = 1
+            if lang == "English":
+                semester_header = Paragraph(f"Semester: {current_semester}", semester_style)
+            elif lang == "Español":
+                semester_header = Paragraph(f"Semestre: {current_semester}", semester_style)
+            # Create and style the "Class" header
+            class_style = styles["Heading2"]
+            class_style.alignment = 1
+            if lang == "English":
+                class_header = Paragraph(f"<u>Class: {current_class_name}</u>", class_style)
+            elif lang == "Español":
+                class_header = Paragraph(f"<u>Clase: {current_class_name}</u>", class_style)
+            # Add some space between the headers and the table
+            smaller_space = Spacer(1, -15)
+            space = Spacer(1, 20)
+            # Add the headers, space, and table to the elements for this table
+            table_elems = [semester_header, smaller_space, class_header, space, table, PageBreak()]
+            # Add the elements for this table to the master list
+            elems.extend(table_elems)
         # Create the PDF
         pdf.build(elems)
-
-    def merge_pdfs(self, paths, output):
-        from PyPDF2 import PdfReader, PdfWriter
-
-        pdf_writer = PdfWriter()
-        for path in paths:
-            pdf_reader = PdfReader(path)
-            for page_num in range(len(pdf_reader.pages)):
-                page = pdf_reader.pages[page_num]
-                pdf_writer.add_page(page)
-        with open(output, "wb") as out:
-            pdf_writer.write(out)
 
     # function for the user to download the created pdf to their computer
     def download_as_pdf(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
 
-        # Get the class name and table data
-        class_name = self.get_class_for_pdf
-        semester = self.get_semester_for_pdf
-        data = self.table.get()
+        classes_list = []
+        data = []
+        semester_list = []
+
+        # Loop through each table in self.class_table_pairs
+        for display_class, table, semester in self.class_table_pairs:
+            class_name = display_class.cget("text")
+            table_data = table.get()
+
+            classes_list.append(class_name)
+            data.append(table_data)
+            semester_list.append(semester)
+
+        if len(self.class_table_pairs) == 1:
+            initial_file_name = f"{semester_list[0]}_{classes_list[0]}_{translation['class_data']}.pdf"
+        else:
+            initial_file_name = f"{semester_list[0]}_{translation['classes_data']}.pdf"
 
         # Define where the PDF will be saved
         home = os.path.expanduser("~")
@@ -3822,36 +3833,14 @@ class TeraTermUI(customtkinter.CTk):
             defaultextension=".pdf",
             initialdir=downloads,
             filetypes=[("PDF Files", "*.pdf")],
-            initialfile=f"{semester}_{class_name}_{translation['class_data']}.pdf"
+            initialfile=initial_file_name
         )
 
         # Check if user cancelled the file dialog
         if not filepath:
             return
 
-        # Check if the file already exists
-        file_exists = os.path.exists(filepath)
-
-        # Create a temporary PDF for the new data
-        temp_filepath = "temp_file.pdf"
-        self.create_pdf(data, temp_filepath, class_name, semester)
-
-        original_file_name = os.path.splitext(os.path.basename(filepath))[0]
-        new_file_name = f"{semester}_{class_name}_{translation['class_data']}"
-
-        # If file exists, merge the PDFs and rename to 'class_data.pdf'
-        if file_exists and original_file_name != new_file_name:
-            self.merge_pdfs([filepath, temp_filepath], filepath)
-            os.remove(temp_filepath)
-            new_filepath = os.path.join(os.path.dirname(filepath), f"{semester}_{translation['class_data']}.pdf")
-            os.rename(filepath, new_filepath)
-
-        # If the file doesn't exist, rename the temp file to the chosen filepath
-        else:
-            if file_exists:
-                os.remove(filepath)
-            os.rename(temp_filepath, filepath)
-
+        self.create_pdf(data, classes_list, filepath, semester_list)
         self.show_success_message(350, 265, translation["pdf_save_success"])
 
     def copy_cell_data_to_clipboard(self, value):
@@ -3884,7 +3873,7 @@ class TeraTermUI(customtkinter.CTk):
             self.tooltip.destroy()
             self.tooltip = None
 
-    # dipslays the extracted data into a table
+    # displays the extracted data into a table
     def display_data(self, data):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
@@ -3909,71 +3898,179 @@ class TeraTermUI(customtkinter.CTk):
             modified_data.append(item)
 
         headers = ["SEC", "M", "CRED", "DAYS", "TIMES", "AV", "INSTRUCTOR"]
-
-        table_values = [headers]
-        for item in modified_data:
-            row = [item.get(header, "") for header in headers]
-            table_values.append(row)
-
+        table_values = [headers] + [[item.get(header, "") for header in headers] for item in modified_data]
         num_rows = len(modified_data) + 1
 
-        # Update the class and pdf  every time, irrespective of whether the table dimensions have changed or not.
-        if hasattr(self, "display_class") and self.display_class is not None:
-            self.display_class.grid_forget()
-            del self.display_class
+        new_table = ctktable.CTkTable(
+            self.search_scrollbar,
+            column=len(headers),
+            row=num_rows,
+            values=table_values,
+            header_color="#145DA0",
+            hover_color="#339CFF",
+            command=self.copy_cell_data_to_clipboard,
+        )
+        for i in range(4):
+            new_table.edit_column(i, width=55)
+        new_table.edit_column(5, width=55)
+        tooltip_messages = {
+            "SEC": translation["tooltip_sec"],
+            "M": translation["tooltip_m"],
+            "CRED": translation["tooltip_cred"],
+            "DAYS": translation["tooltip_days"],
+            "TIMES": translation["tooltip_times"],
+            "AV": translation["tooltip_av"],
+            "INSTRUCTOR": translation["tooltip_instructor"],
+        }
+        for i, header in enumerate(headers):
+            cell = new_table.get_cell(0, i)
+            tooltip_message = tooltip_messages[header]
+            tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#A9A9A9", alpha=0.90)
+        self.table = new_table
 
-        if hasattr(self, "download_pdf") and self.download_pdf is not None:
-            self.download_pdf.grid_forget()
-            del self.download_pdf
+        display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_pdf,
+                                               font=customtkinter.CTkFont(size=15, weight="bold", underline=True))
+        if self.table_count is None:
+            table_count_label = f" {len(self.class_table_pairs)}/6"
+            self.table_count = customtkinter.CTkLabel(self.search_scrollbar, text=table_count_label)
+            self.previous_button = CustomButton(self.search_scrollbar, text=translation["previous"],
+                                                command=self.show_previous_table)
+            self.next_button = CustomButton(self.search_scrollbar, text=translation["next"],
+                                            command=self.show_next_table)
+            self.remove_button = CustomButton(self.search_scrollbar, text=translation["remove"], hover_color="darkred",
+                                              fg_color="red", command=self.remove_current_table)
+            self.download_pdf = CustomButton(self.search_scrollbar, text=translation["pdf_save_as"],
+                                             hover_color="#173518", fg_color="#2e6930", command=self.download_as_pdf)
+            table_count = CTkToolTip(self.table_count, message=translation["table_count_tooltip"], bg_color="#A9A9A9",
+                                     alpha=0.90)
+            previous_button_tooltip = CTkToolTip(self.previous_button, message=translation["previous_tooltip"],
+                                                 bg_color="#1E90FF")
+            next_button_tooltip = CTkToolTip(self.next_button, message=translation["next_tooltip"],
+                                             bg_color="#1E90FF")
+            remove_button_tooltip = CTkToolTip(self.remove_button, message=translation["remove_tooltip"],
+                                               bg_color="red")
+            download_pdf_tooltip = CTkToolTip(self.download_pdf, message=translation["download_pdf_tooltip"],
+                                              bg_color="green")
 
-        self.display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_pdf,
-                                                    font=customtkinter.CTkFont(size=15, weight="bold", underline=True))
-        self.display_class.grid(row=2, column=1, padx=(0, 0), pady=(8, 0), sticky="n")
+        duplicate_index = self.find_duplicate(display_class, self.get_semester_for_pdf)
+        if duplicate_index is not None:
+            self.current_table_index = duplicate_index
+            self.display_current_table()
+            return
 
-        if not hasattr(self, "table") or self.table is None or num_rows != self.table_rows:
-            if hasattr(self, "table") and self.table is not None:
-                self.table.grid_forget()
-                del self.table
+        self.class_table_pairs.append((display_class, new_table, self.get_semester_for_pdf))
+        self.current_table_index = len(self.class_table_pairs) - 1
 
-            self.table = ctktable.CTkTable(
-                self.search_scrollbar,
-                column=len(headers),
-                row=num_rows,
-                values=table_values,
-                header_color="#145DA0",
-                hover_color="#339CFF",
-                command=self.copy_cell_data_to_clipboard,
-            )
-            self.table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
-            for i in range(4):
-                self.table.edit_column(i, width=55)
-            self.table.edit_column(5, width=55)
-            tooltip_messages = {
-                "SEC": translation["tooltip_sec"],
-                "M": translation["tooltip_m"],
-                "CRED": translation["tooltip_cred"],
-                "DAYS": translation["tooltip_days"],
-                "TIMES": translation["tooltip_times"],
-                "AV": translation["tooltip_av"],
-                "INSTRUCTOR": translation["tooltip_instructor"],
-            }
-            for i, header in enumerate(headers):
-                cell = self.table.get_cell(0, i)
-                tooltip_message = tooltip_messages[header]
-                tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#A9A9A9", alpha=0.90)
-            self.previous_table_values = table_values
-            self.table_rows = num_rows
+        if len(self.class_table_pairs) > 6:
+            display_class_to_remove, table_to_remove, _ = self.class_table_pairs[0]
+            self.after(0, display_class_to_remove.destroy)
+            self.after(0, table_to_remove.destroy)
+            del self.class_table_pairs[0]
+            self.current_table_index = max(0, self.current_table_index - 1)
+            self.table_count.configure(text_color=("black", "white"))
+
+        self.display_current_table()
+
+        new_table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
+        self.table_count.grid(row=4, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+        if len(self.class_table_pairs) > 1:
+            self.previous_button.grid(row=5, column=1, padx=(0, 300), pady=(10, 0), sticky="n")
+            self.next_button.grid(row=5, column=1, padx=(300, 0), pady=(10, 0), sticky="n")
+        if len(self.class_table_pairs) <= 1:
+            self.previous_button.grid_forget()
+            self.remove_button.grid_forget()
+            self.next_button.grid_forget()
+        self.remove_button.grid(row=5, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+        self.download_pdf.grid(row=6, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+        self.update_buttons()
+        table_count_label = f"{translation['table_count']} {len(self.class_table_pairs)}/6"
+        self.table_count.configure(text=table_count_label)
+        if len(self.class_table_pairs) == 6:
+            self.table_count.configure(text_color="red")
+
+    def find_duplicate(self, new_display_class, new_semester):
+        for index, (display_class, table, semester) in enumerate(self.class_table_pairs):
+            if display_class.cget("text") == new_display_class.cget("text") and semester == new_semester:
+                return index
+        return None
+
+    def display_current_table(self):
+        # Hide all tables and display_classes
+        for display_class, table, semester in self.class_table_pairs:
+            display_class.grid_forget()
+            table.grid_forget()
+
+        # Show the current display_class and table
+        display_class, table, semester = self.class_table_pairs[self.current_table_index]
+        display_class.grid(row=2, column=1, padx=(0, 0), pady=(8, 0), sticky="n")
+        table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
+        self.current_class = display_class
+
+    def update_buttons(self):
+        if self.current_table_index == 0:
+            self.previous_button.configure(state="disabled")
         else:
-            for i, (new_row, old_row) in enumerate(zip(table_values, self.previous_table_values)):
-                for j, (new_value, old_value) in enumerate(zip(new_row, old_row)):
-                    if new_value != old_value:
-                        self.table.insert(i, j, new_value)
-            self.previous_table_values = table_values
-            self.update_idletasks()
+            self.previous_button.configure(state="normal")
 
-        self.download_pdf = CustomButton(self.search_scrollbar, text=translation["pdf_save_as"],
-                                         command=self.download_as_pdf)
-        self.download_pdf.grid(row=3, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+        if self.current_table_index == len(self.class_table_pairs) - 1:
+            self.next_button.configure(state="disabled")
+        else:
+            self.next_button.configure(state="normal")
+
+    def show_previous_table(self):
+        if self.current_table_index > 0:
+            self.current_table_index -= 1
+            self.display_current_table()
+            self.update_buttons()
+            self.search_scrollbar.scroll_to_top()
+
+    def show_next_table(self):
+        if self.current_table_index < len(self.class_table_pairs) - 1:
+            self.current_table_index += 1
+            self.display_current_table()
+            self.update_buttons()
+            self.search_scrollbar.scroll_to_top()
+
+    def remove_current_table(self):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        # Step 1: Remove the selected table
+        if len(self.class_table_pairs) == 0:
+            return
+
+        display_class, table, semester = self.class_table_pairs[self.current_table_index]
+        display_class.grid_forget()
+        display_class.grid_forget()
+        table.grid_forget()
+        self.after(0, display_class.destroy)
+        self.after(0, table.destroy)
+        if len(self.class_table_pairs) == 6:
+            self.table_count.configure(text_color=("black", "white"))
+        del self.class_table_pairs[self.current_table_index]
+
+        # Step 2: Update the table count
+        table_count_label = f"{translation['table_count']} {len(self.class_table_pairs)}/6"
+        self.table_count.configure(text=table_count_label)
+
+        # Step 3: Hide all GUI elements if no tables are left
+        if len(self.class_table_pairs) == 1:
+            self.previous_button.grid_forget()
+            self.next_button.grid_forget()
+
+        elif len(self.class_table_pairs) == 0:
+            self.table = None
+            self.current_class = None
+            self.table_count.grid_forget()
+            self.remove_button.grid_forget()
+            self.download_pdf.grid_forget()
+            self.search_scrollbar.scroll_to_top()
+            return
+
+        # Step 4: Show the previous table
+        self.current_table_index = max(0, self.current_table_index - 1)
+        self.display_current_table()
+        self.update_buttons()
+        self.search_scrollbar.scroll_to_top()
 
     # extracts the text from the searched class to get the important information
     @staticmethod
@@ -4022,7 +4119,7 @@ class TeraTermUI(customtkinter.CTk):
                 })
         return data, course_found, invalid_action, y_n_found
 
-    # checks whether the program can continue it's normal execution or if the server is on maintenance
+    # checks whether the program can continue its normal execution or if the server is on maintenance
     def wait_for_prompt(self, prompt_text, maintenance_text, timeout=15):
         start_time = time.time()
         while True:
@@ -4798,9 +4895,14 @@ class TeraTermUI(customtkinter.CTk):
             enroll_frame.bind("<Button-1>", lambda event: enroll_frame.focus_set())
         elif self.tabview.get() == self.search_tab:
             if hasattr(self, "table") and self.table is not None:
-                self.display_class.grid_forget()
+                self.current_class.grid_forget()
                 self.table.grid_forget()
+                self.table_count.grid_forget()
+                self.previous_button.grid_forget()
+                self.next_button.grid_forget()
+                self.remove_button.grid_forget()
                 self.download_pdf.grid_forget()
+                self.search_scrollbar.scroll_to_top()
                 self.after(350, self.load_table)
             self.in_enroll_frame = False
             self.in_search_frame = True
@@ -4814,9 +4916,23 @@ class TeraTermUI(customtkinter.CTk):
             other_frame.bind("<Button-1>", lambda event: other_frame.focus_set())
 
     def load_table(self):
-        self.display_class.grid(row=2, column=1, padx=(0, 0), pady=(8, 0), sticky="n")
-        self.table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
-        self.download_pdf.grid(row=3, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        if hasattr(self, "table") and self.table is not None:
+            self.current_class.grid(row=2, column=1, padx=(0, 0), pady=(8, 0), sticky="n")
+            self.table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
+            self.table_count.grid(row=4, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+            if len(self.class_table_pairs) > 1:
+                self.previous_button.grid(row=5, column=1, padx=(0, 300), pady=(10, 0), sticky="n")
+                self.next_button.grid(row=5, column=1, padx=(300, 0), pady=(10, 0), sticky="n")
+            if len(self.class_table_pairs) <= 1:
+                self.previous_button.grid_forget()
+                self.remove_button.grid_forget()
+                self.next_button.grid_forget()
+            self.remove_button.grid(row=5, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+            self.download_pdf.grid(row=6, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+            table_count_label = f"{translation['table_count']} {len(self.class_table_pairs)}/6"
+            self.table_count.configure(text=table_count_label)
 
     # Creates the status window
     def status_button_event(self):
