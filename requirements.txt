@@ -7,7 +7,7 @@ Brotli==1.1.0
 cachetools==5.3.2
 certifi==2023.7.22
 cffi==1.16.0
-charset-normalizer==3.3.1
+charset-normalizer==3.3.2
 colorama==0.4.6
 comtypes==1.2.0
 CTkMessagebox==2.5
@@ -18,8 +18,8 @@ entrypoint2==1.1
 filelock==3.13.1
 frozenlist==1.4.0
 google-api-core==2.12.0
-google-api-python-client==2.105.0
-google-auth==2.23.3
+google-api-python-client==2.106.0
+google-auth==2.23.4
 google-auth-httplib2==0.1.1
 google-auth-oauthlib==1.1.0
 googleapis-common-protos==1.61.0
@@ -49,7 +49,6 @@ pycryptodomex==3.19.0
 PyGetWindow==0.0.9
 PyMsgBox==1.0.9
 pyparsing==3.1.1
-PyPDF2==3.0.1
 pyperclip==1.8.2
 pyppmd==1.0.0
 PyRect==0.2.0
