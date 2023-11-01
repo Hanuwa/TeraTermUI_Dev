@@ -202,6 +202,7 @@
 	"class_data": "data_clase",
 	"classes_data": "data_clases",
 	"pdf_save_as": "Guardar como PDF",
+	"download_pdf_tooltip": "Descargar un PDF lleno de todas las tablas\nbuscadas actualmente y sus datos",
 	"pdf_save_success": "El PDF ha sido guardado éxitosamente",
 	"clipboard": "¡Copiado!",
 	"tooltip_sec": "Sección",
@@ -233,5 +234,13 @@
 	
 	"enroll_tab": "Matricular",
 	"search_tab": "Buscar",
-	"other_tab": "Otros"
+	"other_tab": "Otros",
+	"table_count": "Conteo de Tablas:",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "remove": "Eliminar",
+    "table_count_tooltip": "Solo se pueden tener hasta\n6 tablas de clases a la vez.\nEsto mantendrá un registro\nde cuántas clases ya tienes",
+    "previous_tooltip": "Volver a la tabla\nbuscada anteriormente",
+    "next_tooltip": "Ir a la siguiente tabla",
+    "remove_tooltip": "Elimina la tabla\nque estás viendo actualmente"
 }
