@@ -202,6 +202,7 @@
 	"class_data": "class_data",
 	"classes_data": "classes_data",
 	"pdf_save_as": "Save as PDF",
+	"download_pdf_tooltip": "Download a PDF filled with all the currently\nsearched tables and their data",
 	"pdf_save_success": "PDF has been saved successfully",
 	"clipboard": "Copied!",
 	"tooltip_sec": "Section",
@@ -233,5 +234,13 @@
 	
 	"enroll_tab": "Enroll",
 	"search_tab": "Search",
-	"other_tab": "Other"
+	"other_tab": "Other",
+	"table_count": "Table Count:",
+	"previous": "Previous",
+	"next": "Next",
+	"remove": "Remove",
+	"table_count_tooltip": "Can only have up to\n6 tables of classes at once.\nThis will keep track of how many\nclasses you got already",
+	"previous_tooltip": "Go back to the\npreviously searched table",
+	"next_tooltip": "Go to the next table",
+	"remove_tooltip": "Removes the table\nyou are currently seeing"
 }
