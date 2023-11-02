@@ -72,7 +72,7 @@ begin
     if WizardIsTaskSelected('teraterm') then
     begin
       // Run the teraterm installer without any prompt
-      if not Exec(ExpandConstant('{tmp}\teraterm-4.106.exe'), '/SILENT', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
+      if not Exec(ExpandConstant('{tmp}\teraterm-4.107.exe'), '/SILENT', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
       begin
         // Handle the error. For example, show a message to the user.
         MsgBox('Tera Term installation failed.', mbError, MB_OK);
