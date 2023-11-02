@@ -167,7 +167,7 @@ class TeraTermUI(customtkinter.CTk):
         self.status_button = CustomButton(self.sidebar_frame, text="     Status", image=self.get_image("status"),
                                           command=self.status_button_event, anchor="w")
         self.status_tooltip = CTkToolTip(self.status_button, message="See the status and the state\n"
-                                                                     " of the application",  bg_color="#1E90FF")
+                                                                     " of the application", bg_color="#1E90FF")
         self.status_button.grid(row=1, column=0, padx=20, pady=10)
         self.help_button = CustomButton(self.sidebar_frame, text="       Help", image=self.get_image("help"),
                                         command=self.help_button_event, anchor="w")
@@ -176,6 +176,11 @@ class TeraTermUI(customtkinter.CTk):
         self.help_button.grid(row=2, column=0, padx=20, pady=10)
         self.scaling_label = customtkinter.CTkLabel(self.sidebar_frame, text="Language, Appearance and \n\n "
                                                                              "UI Scaling:", anchor="w")
+        self.scaling_label_tooltip = CTkToolTip(self.scaling_label, message="Change the language, the theme\nand"
+                                                                            " the scaling of the widgets of the "
+                                                                            "application\nthese settings are saved so"
+                                                                            " next time\nyou log-in you wont have to"
+                                                                            " reconfigured them", bg_color="#1E90FF")
         self.scaling_label.grid(row=5, column=0, padx=20, pady=(10, 10))
         self.language_menu = customtkinter.CTkOptionMenu(self.sidebar_frame, values=["English", "Español"],
                                                          command=self.change_language_event, corner_radius=15)
@@ -558,7 +563,7 @@ class TeraTermUI(customtkinter.CTk):
         self.after(0, self.unload_image("status"))
         self.after(0, self.unload_image("help"))
         self.after(0, self.set_focus_to_tkinter)
-        del user_data_fields, results, SPANISH, language_id, scaling_factor, screen_width, screen_height, width,\
+        del user_data_fields, results, SPANISH, language_id, scaling_factor, screen_width, screen_height, width, \
             height, x, y, db_path
         gc.collect()
 
@@ -1887,7 +1892,6 @@ class TeraTermUI(customtkinter.CTk):
                                     if "TERM OUTDATED" not in text_output and \
                                             "NO PUEDE REALIZAR CAMBIOS" not in text_output and \
                                             "INVALID TERM SELECTION" not in text_output:
-
                                         def go_next_grid():
                                             self.go_next_4CM.configure(state="normal")
                                             self.go_next_1VE.grid_forget()
@@ -2661,11 +2665,26 @@ class TeraTermUI(customtkinter.CTk):
 
         # Load the translations from the file and store them in the cache
         if filename:
-            with open(filename, "r", encoding="utf-8") as f:
-                translations = json.load(f)
-            self.translations_cache[lang] = translations
-            # Return the newly loaded translations
-            return translations
+            try:
+                with open(filename, "r", encoding="utf-8") as f:
+                    translations = json.load(f)
+                self.translations_cache[lang] = translations
+                return translations
+            except Exception as e:
+                print("An error occurred: ", e)
+                if lang == "English":
+                    messagebox.showerror("Error",
+                                         "A critical error occurred while loading the languages.\n"
+                                         "Might need to reinstall the program.\n\n"
+                                         "The application will now exit.")
+                elif lang == "Español":
+                    messagebox.showerror("Error",
+                                         "Ocurrió un error crítico al cargar los idiomas.\n"
+                                         "Puede ser que sea necesario reinstalar el programa.\n\n"
+                                         "La aplicación se cerrará ahora.")
+                # Exit the application
+                self.destroy()
+                exit(1)
 
         # If the language is not supported, return an empty dictionary or raise an exception
         return {}
@@ -2695,6 +2714,7 @@ class TeraTermUI(customtkinter.CTk):
         self.log_in.configure(text=translation["log_in"])
         self.host_tooltip.configure(message=translation["host_tooltip"])
         self.status_tooltip.configure(message=translation["status_tooltip"])
+        self.scaling_label_tooltip.configure(message=translation["option_label_tooltip"])
         self.help_tooltip.configure(message=translation["help_tooltip"])
         for entry in [self.host_entry, self.intro_box]:
             entry.lang = lang
@@ -3135,7 +3155,7 @@ class TeraTermUI(customtkinter.CTk):
             self.back_tooltip = CTkToolTip(self.back, message=translation["back_tooltip"], bg_color="#A9A9A9",
                                            alpha=0.90)
             self.username_entry.lang = lang
-            self.authentication_frame .bind("<Button-1>", lambda event: self.focus_set())
+            self.authentication_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.a_buttons_frame.bind("<Button-1>", lambda event: self.focus_set())
 
     def destroy_auth(self):
@@ -3472,8 +3492,8 @@ class TeraTermUI(customtkinter.CTk):
                                                 command=self.submit_multiple_event_handler, height=40, width=70)
             self.save_data = customtkinter.CTkCheckBox(master=self.save_frame, text=translation["save_data"],
                                                        command=self.save_classes, onvalue="on", offvalue="off")
-            self.save_data_tooltip = CTkToolTip(self.save_data,
-                                                message=translation["save_data_tooltip"])
+            self.save_data_tooltip = CTkToolTip(self.save_data, message=translation["save_data_tooltip"],
+                                                bg_color="#1E90FF")
             self.auto_enroll = customtkinter.CTkSwitch(master=self.auto_frame, text=translation["auto_enroll"],
                                                        onvalue="on", offvalue="off",
                                                        command=self.auto_enroll_event_handler)
@@ -4502,7 +4522,7 @@ class TeraTermUI(customtkinter.CTk):
 
     def notaso_event(self):
         self.focus_set()
-        webbrowser.open("https://notaso.com")
+        webbrowser.open("https://notaso.com/universities/uprb")
 
     # opens UPRB main page
     def uprb_event(self):
@@ -4529,7 +4549,7 @@ class TeraTermUI(customtkinter.CTk):
                             hover_color=("darkred", "darkblue", "darkblue"))
         response = msg.get()
         if response[0] == "Yes" or response[0] == "Sí":
-            webbrowser.open("https://osdn.net/projects/ttssh2/releases/")
+            webbrowser.open("https://osdn.net/projects/ttssh2/releases")
 
     # links to each correspondant curriculum that the user chooses
     @staticmethod
@@ -6153,4 +6173,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
