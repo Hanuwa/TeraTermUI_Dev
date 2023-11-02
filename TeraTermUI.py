@@ -101,7 +101,6 @@ class TeraTermUI(customtkinter.CTk):
         # GitHub information for feedback
         self.SERVICE_ACCOUNT_FILE = "feedback.zip"
         self.SPREADSHEET_ID = "1ffJLgp8p-goOlxC10OFEu0JefBgQDsgEo_suis4k0Pw"
-        self.SPREADSHEET_BANNED_ID = "1JGDSyB-tE7gH5ozZ1MBlr9uMGcAWRgN7CyqK-QDQRxg"
         self.RANGE_NAME = "Sheet1!A:A"
         os.environ["Feedback"] = "F_QL^B#O_/r9|Rl0i=x),;!@en|V5qR%W(9;2^+f=lRPcw!+4"
         self.FEEDBACK = os.getenv("Feedback")
@@ -6154,3 +6153,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
