@@ -244,5 +244,6 @@
     "table_count_tooltip": "Solo se pueden tener hasta\n6 tablas de clases a la vez.\nEsto mantendrá un registro\nde cuántas clases ya tienes",
     "previous_tooltip": "Volver a la tabla\nbuscada anteriormente",
     "next_tooltip": "Ir a la siguiente tabla",
-    "remove_tooltip": "Elimina la tabla\nque estás viendo actualmente"
+    "remove_tooltip": "Elimina la tabla\nque estás viendo actualmente",
+	"failed_to_find_update": "No se encontraron actualizaciones,\ninténtalo de nuevo más tarde o\nconsulta la página web del programa"
 }
