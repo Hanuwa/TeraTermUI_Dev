@@ -98,7 +98,7 @@ else:
     update = "v" + update_without_v
 versions = ['installer', 'portable']
 output_directory = os.path.join(r"C:/Users/" + username + "/OneDrive/Documentos", "TeraTermUI_" + update)
-upx_command = r"upx --ultra-brute " + output_directory + r"\TeraTermUI.dist\TeraTermUI.exe"
+upx_command = r"upx --brute " + output_directory + r"\TeraTermUI.dist\TeraTermUI.exe"
 
 # If process gets abruptly interrupted, load backup file
 program_backup = project_directory + r"\TeraTermUI.BAK.py"
