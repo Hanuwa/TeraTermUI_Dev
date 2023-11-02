@@ -48,7 +48,7 @@ Source: "{#MyAppPath}\TeraTermUI_installer\{#MyAppExeName}"; DestDir: "{app}"; F
 Source: "{#MyAppPath}\database.db"; DestDir: "{commonappdata}\TeraTermUI"; Flags: onlyifdoesntexist; Permissions: everyone-modify
 Source: "{#MyAppPath}\feedback.zip"; DestDir: "{commonappdata}\TeraTermUI"; Flags: onlyifdoesntexist; Permissions: everyone-modify
 Source: "{#MyAppPath}\TeraTermUI_installer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#MyAppPath}\teraterm-4.106.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
+Source: "{#MyAppPath}\teraterm-4.107.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Dirs]
