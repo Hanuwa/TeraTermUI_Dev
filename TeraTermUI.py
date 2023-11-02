@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 11/1/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 11/2/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -47,7 +47,7 @@ import time
 import webbrowser
 import win32gui
 import winsound
-from collections import deque
+from collections import deque, defaultdict
 from contextlib import closing
 from Cryptodome.Hash import HMAC, SHA256
 from Cryptodome.Cipher import AES
@@ -734,6 +734,7 @@ class TeraTermUI(customtkinter.CTk):
 
     def tuition_frame(self):
         lang = self.language_menu.get()
+        self.initialization_multiple()
         self.tabview.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 85))
         self.tabview.tab(self.enroll_tab).grid_columnconfigure(1, weight=2)
         self.tabview.tab(self.search_tab).grid_columnconfigure(1, weight=2)
@@ -778,9 +779,6 @@ class TeraTermUI(customtkinter.CTk):
         self.back_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
         self.show_classes.grid(row=4, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         self.multiple.grid(row=4, column=2, padx=(10, 0), pady=(0, 0), sticky="e")
-        if not self.init_multiple:
-            self.tabview.set(self.enroll_tab)
-        self.initialization_multiple()
         self.bind("<Control-Tab>", lambda event: self.tab_switcher())
         self.destroy_student()
 
@@ -3798,6 +3796,32 @@ class TeraTermUI(customtkinter.CTk):
         # Create the PDF
         pdf.build(elems)
 
+    def merge_tables(self, classes_list, data_list, semesters_list):
+        grouped_data = defaultdict(lambda: [])
+        merged_data_list = []
+        merged_classes_list = []
+        merged_semesters_list = []
+
+        # Group Data and Merge Tables
+        for class_name, data, semester in zip(classes_list, data_list, semesters_list):
+            grouped_data[(class_name, semester)].append(data)
+
+        for (class_name, semester), tables in grouped_data.items():
+            merged_table = []
+            if len(tables) > 1:
+                headers = tables[0][0]  # Assuming the first row of the first table is the header
+                merged_table.append(headers)  # Add headers only once
+                for table in tables:
+                    merged_table.extend(table[1:])  # Skip header after first table
+            else:
+                merged_table = tables[0]  # Only one table, no merge needed, keep headers
+
+            merged_data_list.append(merged_table)
+            merged_classes_list.append(class_name)
+            merged_semesters_list.append(semester)
+
+        return merged_classes_list, merged_data_list, merged_semesters_list
+
     # function for the user to download the created pdf to their computer
     def download_as_pdf(self):
         lang = self.language_menu.get()
@@ -3836,6 +3860,7 @@ class TeraTermUI(customtkinter.CTk):
         if not filepath:
             return
 
+        classes_list, data, semester_list = self.merge_tables(classes_list, data, semester_list)
         self.create_pdf(data, classes_list, filepath, semester_list)
         self.show_success_message(350, 265, translation["pdf_save_success"])
 
