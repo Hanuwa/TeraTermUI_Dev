@@ -516,6 +516,9 @@ class TeraTermUI(customtkinter.CTk):
                     try:
                         self.check_update = True
                         latest_version = self.get_latest_release()
+                        if latest_version is None:
+                            print("No latest release found. Starting app with the current version.")
+                            latest_version = self.USER_APP_VERSION
                         if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION):
                             self.after(1000, self.update_app)
                         result_date = self.cursor.execute("SELECT update_date FROM user_data").fetchall()
@@ -4598,6 +4601,12 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language(lang)
         latest_version = self.get_latest_release()
         if not self.connection_error:
+            if latest_version is None:
+                print("No latest release found. Starting app with the current version.")
+                winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                CTkMessagebox(master=self, title="Error", icon="cancel",
+                              message=translation["failed_to_find_update"], button_width=380)
+                return
             if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION):
                 if not self.disable_audio:
                     winsound.PlaySound("sounds/update.wav", winsound.SND_ASYNC)
