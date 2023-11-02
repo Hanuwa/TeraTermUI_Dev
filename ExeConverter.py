@@ -171,6 +171,7 @@ try:
     connection = sqlite3.connect(r"C:\Users" + "\\" + username + r"\PycharmProjects\TeraTermUI\database.db")
     cursor = connection.cursor()
     cursor.execute("DELETE FROM user_data")
+    cursor.execute("DELETE FROM save_classes")
     connection.commit()
 except KeyboardInterrupt as e:
     shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
