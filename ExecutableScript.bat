@@ -7,7 +7,7 @@ REM  --> Check for permissions
 REM --> If error flag set, we do not have admin.
 if '%errorlevel%' NEQ '0' (
     echo Requesting administrative privileges...
-    timeout /t 3 /nobreak >nul
+    timeout /t 2 /nobreak >nul
     goto UACPrompt
 ) else ( goto gotAdmin )
 
