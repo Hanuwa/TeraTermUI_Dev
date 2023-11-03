@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 11/2/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 11/3/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -404,7 +404,6 @@ class TeraTermUI(customtkinter.CTk):
         self.information = None
         self.run_fix = False
         self.teraterm_not_found = False
-        self.idle = None
         self.passed = False
         self.tesseract_unzipped = False
         self.in_multiple_screen = False
@@ -450,12 +449,11 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Escape>", lambda event: self.on_closing())
             self.save = self.cursor.execute("SELECT class, section, semester, action FROM save_classes"
                                             " WHERE class IS NOT NULL").fetchall()
-            self.saveCheck = self.cursor.execute('SELECT "check" FROM save_classes'
-                                                 ' WHERE "check" IS NOT NULL').fetchall()
+            self.saveCheck = self.cursor.execute('SELECT "check" FROM save_classes').fetchone()
             user_data_fields = ["location", "host", "language", "appearance", "scaling", "welcome", "config", "audio"]
             results = {}
             for field in user_data_fields:
-                query_user = f"SELECT {field} FROM user_data WHERE {field} IS NOT NULL"
+                query_user = f"SELECT {field} FROM user_data"
                 result = self.cursor.execute(query_user).fetchone()
                 results[field] = result[0] if result else None
             if results["host"]:
@@ -500,12 +498,13 @@ class TeraTermUI(customtkinter.CTk):
                     self.help_button.configure(state="normal")
                     self.log_in.configure(state="normal")
                     self.bind("<Return>", lambda event: self.login_event_handler())
-                    welcome = self.cursor.execute("SELECT welcome FROM user_data").fetchall()
-                    if len(welcome) == 0:
+                    row_exists_in_welcome = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+                    if not row_exists_in_welcome:
                         self.cursor.execute("INSERT INTO user_data (welcome) VALUES (?)", ("Checked",))
-                    elif len(welcome) == 1:
+                    else:
                         self.cursor.execute("UPDATE user_data SET welcome=?", ("Checked",))
                     self.connection.commit()
+                    del row_exists_in_welcome, translation
 
                 self.after(3500, show_message_box)
             else:
@@ -514,9 +513,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.bind("<Return>", lambda event: self.login_event_handler())
                 # Check for update for the application
                 current_date = datetime.today().strftime("%Y-%m-%d")
-                date = self.cursor.execute("SELECT update_date FROM user_data WHERE update_date IS NOT NULL").fetchall()
-                dates_list = [record[0] for record in date]
-                if current_date not in dates_list:
+                date_record = self.cursor.execute("SELECT update_date FROM user_data").fetchone()
+                if date_record is None or date_record[0] != current_date:
                     try:
                         self.check_update = True
                         latest_version = self.get_latest_release()
@@ -525,17 +523,18 @@ class TeraTermUI(customtkinter.CTk):
                             latest_version = self.USER_APP_VERSION
                         if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION):
                             self.after(1000, self.update_app)
-                        result_date = self.cursor.execute("SELECT update_date FROM user_data").fetchall()
-                        if len(result_date) == 0:
+                        row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+                        if not row_exists:
                             self.cursor.execute("INSERT INTO user_data (update_date) VALUES (?)",
                                                 (current_date,))
-                        elif len(result_date) == 1:
+                        else:
                             self.cursor.execute("UPDATE user_data SET update_date=?", (current_date,))
                         self.connection.commit()
                     except requests.exceptions.RequestException as err:
                         print(f"Error occurred while fetching latest release information: {err}")
                         print("Please check your internet connection and try again.")
-                del date, current_date, dates_list
+                    del latest_version, row_exists
+                del current_date, date_record
 
         except Exception as e:
             db_path = "database.db"
@@ -564,7 +563,7 @@ class TeraTermUI(customtkinter.CTk):
         self.after(0, self.unload_image("help"))
         self.after(0, self.set_focus_to_tkinter)
         del user_data_fields, results, SPANISH, language_id, scaling_factor, screen_width, screen_height, width, \
-            height, x, y, db_path
+            height, x, y, db_path, en_path, es_path
         gc.collect()
 
     # function that when the user tries to close the application a confirm dialog opens up
@@ -576,10 +575,9 @@ class TeraTermUI(customtkinter.CTk):
                                   option_2=translation["option_2"], option_3=translation["option_3"],
                                   icon_size=(65, 65), button_color=("#c30101", "#c30101", "#145DA0"),
                                   option_1_type="checkbox", hover_color=("darkred", "darkred", "darkblue"))
-        on_exit = self.cursor.execute("SELECT exit FROM user_data").fetchall()
-        if on_exit and len(on_exit[0]) > 0:
-            if on_exit[0][0] == "1":
-                self.exit.check_checkbox()
+        on_exit = self.cursor.execute("SELECT exit FROM user_data").fetchone()
+        if on_exit and on_exit[0] is not None and on_exit[0] == "1":
+            self.exit.check_checkbox()
         response, self.checkbox_state = self.exit.get()
         if response == "Yes" or response == "Sí":
             if hasattr(self, "boot_up_thread") and self.boot_up_thread.is_alive():
@@ -801,13 +799,17 @@ class TeraTermUI(customtkinter.CTk):
                 "Drop": "Baja"
             }
         }
+        save = self.cursor.execute("SELECT class, section, semester, action FROM save_classes"
+                                   " WHERE class IS NOT NULL").fetchall()
+        save_check = self.cursor.execute('SELECT "check" FROM save_classes').fetchone()
 
-        if self.saveCheck and self.saveCheck[0][0] == "Yes":
-            self.save_data.select()
+        if save_check and save_check[0] is not None:
+            if save_check[0] == "Yes":
+                self.save_data.select()
 
-        if self.save:
-            num_rows = len(self.save)
-            for index, row in enumerate(self.save, start=1):
+        if save:
+            num_rows = len(save)
+            for index, row in enumerate(save, start=1):
                 class_value = row[0]
                 section_value = row[1]
                 semester_value = row[2]
@@ -2736,20 +2738,21 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         self.focus_set()
-        idle = self.cursor.execute("SELECT idle FROM user_data").fetchall()
-        if idle[0][0] != "Disabled":
-            if self.auto_enroll.get() == "on":
-                msg = CTkMessagebox(master=self, title=translation["submit"],
-                                    message=translation["enroll_multiple"],
-                                    icon="images/submit.png",
-                                    option_1=translation["option_1"], option_2=translation["option_2"],
-                                    option_3=translation["option_3"],
-                                    icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                                    hover_color=("darkred", "darkblue", "darkblue"))
-                response = msg.get()
-                if response[0] != "Yes" and response[0] != "Sí":
-                    self.auto_enroll.deselect()
-                    return
+        idle = self.cursor.execute("SELECT idle FROM user_data").fetchone()
+        if idle and idle[0] is not None:
+            if idle[0] != "Disabled":
+                if self.auto_enroll.get() == "on":
+                    msg = CTkMessagebox(master=self, title=translation["submit"],
+                                        message=translation["enroll_multiple"],
+                                        icon="images/submit.png",
+                                        option_1=translation["option_1"], option_2=translation["option_2"],
+                                        option_3=translation["option_3"],
+                                        icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                        hover_color=("darkred", "darkblue", "darkblue"))
+                    response = msg.get()
+                    if response[0] != "Yes" and response[0] != "Sí":
+                        self.auto_enroll.deselect()
+                        return
             task_done = threading.Event()
             loading_screen = self.show_loading_screen()
             self.update_loading_screen(loading_screen, task_done)
@@ -3536,6 +3539,7 @@ class TeraTermUI(customtkinter.CTk):
     def save_classes(self):
         save = self.save_data.get()
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         if save == "on":
             # Clear existing data from the table
             self.cursor.execute("DELETE FROM save_classes")
@@ -3562,37 +3566,19 @@ class TeraTermUI(customtkinter.CTk):
                                         (class_value, section_value, semester_value, register_value, "Yes"))
                     self.connection.commit()
             if is_empty:
-                if lang == "English":
-                    self.show_error_message(330, 255, "No classes were saved\n"
-                                                      " due to missing information")
-                elif lang == "Español":
-                    self.show_error_message(330, 255, "No se guardaron clases debido\n"
-                                                      " a que falta información")
+                self.show_error_message(330, 255, translation["failed_saved_lack_info"])
                 self.save_data.deselect()
-            if is_invalid_format:
-                if lang == "English":
-                    self.show_error_message(330, 255, "No classes were saved\n"
-                                                      " due to incorrect information")
-                elif lang == "Español":
-                    self.show_error_message(330, 255, "No se guardaron clases debido\n"
-                                                      " a que la información está incorrecta")
+            elif is_invalid_format:
+                self.show_error_message(330, 255, translation["failed_saved_invalid_info"])
                 self.save_data.deselect()
             else:
                 self.cursor.execute("SELECT COUNT(*) FROM save_classes")
                 row_count = self.cursor.fetchone()[0]
                 if row_count == 0:  # Check the counter after the loop
-                    if lang == "English":
-                        self.show_error_message(330, 255, "No classes were saved\n"
-                                                          " due to incorrect information")
-                    elif lang == "Español":
-                        self.show_error_message(330, 255, "No se guardaron clases debido\n"
-                                                          " a información incorrecta")
+                    self.show_error_message(330, 255, translation["failed_saved_invalid_info"])
                     self.save_data.deselect()
                 else:
-                    if lang == "English":
-                        self.show_success_message(350, 265, "Saved classes successfully")
-                    elif lang == "Español":
-                        self.show_success_message(350, 265, "Clases guardadas con éxito")
+                    self.show_success_message(350, 265, translation["saved_classes_success"])
         if save == "off":
             self.cursor.execute("DELETE FROM save_classes")
             self.connection.commit()
@@ -3818,7 +3804,8 @@ class TeraTermUI(customtkinter.CTk):
         # Create the PDF
         pdf.build(elems)
 
-    def merge_tables(self, classes_list, data_list, semesters_list):
+    @staticmethod
+    def merge_tables(classes_list, data_list, semesters_list):
         grouped_data = defaultdict(lambda: [])
         merged_data_list = []
         merged_classes_list = []
@@ -3882,7 +3869,7 @@ class TeraTermUI(customtkinter.CTk):
         if not filepath:
             return
 
-        classes_list, data, semester_list = self.merge_tables(classes_list, data, semester_list)
+        classes_list, data, semester_list = TeraTermUI.merge_tables(classes_list, data, semester_list)
         self.create_pdf(data, classes_list, filepath, semester_list)
         self.show_success_message(350, 265, translation["pdf_save_success"])
 
@@ -3968,7 +3955,7 @@ class TeraTermUI(customtkinter.CTk):
         for i, header in enumerate(headers):
             cell = new_table.get_cell(0, i)
             tooltip_message = tooltip_messages[header]
-            tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#A9A9A9", alpha=0.90)
+            CTkToolTip(cell, message=tooltip_message, bg_color="#A9A9A9", alpha=0.90)
         self.table = new_table
 
         display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_pdf,
@@ -3984,16 +3971,11 @@ class TeraTermUI(customtkinter.CTk):
                                               fg_color="red", command=self.remove_current_table)
             self.download_pdf = CustomButton(self.search_scrollbar, text=translation["pdf_save_as"],
                                              hover_color="#173518", fg_color="#2e6930", command=self.download_as_pdf)
-            table_count = CTkToolTip(self.table_count, message=translation["table_count_tooltip"], bg_color="#A9A9A9",
-                                     alpha=0.90)
-            previous_button_tooltip = CTkToolTip(self.previous_button, message=translation["previous_tooltip"],
-                                                 bg_color="#1E90FF")
-            next_button_tooltip = CTkToolTip(self.next_button, message=translation["next_tooltip"],
-                                             bg_color="#1E90FF")
-            remove_button_tooltip = CTkToolTip(self.remove_button, message=translation["remove_tooltip"],
-                                               bg_color="red")
-            download_pdf_tooltip = CTkToolTip(self.download_pdf, message=translation["download_pdf_tooltip"],
-                                              bg_color="green")
+            CTkToolTip(self.table_count, message=translation["table_count_tooltip"], bg_color="#A9A9A9", alpha=0.90)
+            CTkToolTip(self.previous_button, message=translation["previous_tooltip"], bg_color="#1E90FF")
+            CTkToolTip(self.next_button, message=translation["next_tooltip"], bg_color="#1E90FF")
+            CTkToolTip(self.remove_button, message=translation["remove_tooltip"], bg_color="red")
+            CTkToolTip(self.download_pdf, message=translation["download_pdf_tooltip"], bg_color="green")
 
         if self.ignore:
             duplicate_index = self.find_duplicate(display_class, self.get_semester_for_pdf)
@@ -4187,9 +4169,9 @@ class TeraTermUI(customtkinter.CTk):
 
     # Necessary things to do while the application is booting, gets done on a separate thread
     def boot_up(self, file_path):
-        tesseract_thread = threading.Thread(target=self.setup_tesseract).start()
-        config_thread = threading.Thread(target=self.backup_and_config_ini, args=(file_path,)).start()
-        feedback_thread = threading.Thread(target=self.setup_feedback).start()
+        threading.Thread(target=self.setup_tesseract).start()
+        threading.Thread(target=self.backup_and_config_ini, args=(file_path,)).start()
+        threading.Thread(target=self.setup_feedback).start()
 
     def setup_tesseract(self):
         # If Tesseract-OCR already in the temp folder dont unzip
@@ -4744,12 +4726,13 @@ class TeraTermUI(customtkinter.CTk):
 
     # Starts the check for idle thread
     def start_check_idle_thread(self):
-        idle = self.cursor.execute("SELECT idle FROM user_data").fetchall()
-        if idle[0][0] != "Disabled":
-            self.is_idle_thread_running = True
-            self.check_idle_thread = threading.Thread(target=self.check_idle)
-            self.check_idle_thread.daemon = True
-            self.check_idle_thread.start()
+        idle = self.cursor.execute("SELECT idle FROM user_data").fetchone()
+        if idle and idle[0] is not None:
+            if idle[0] != "Disabled":
+                self.is_idle_thread_running = True
+                self.check_idle_thread = threading.Thread(target=self.check_idle)
+                self.check_idle_thread.daemon = True
+                self.check_idle_thread.start()
 
     # Checks if the user is idle for 5 minutes and does some action so that Tera Term doesn't close by itself
     def check_idle(self):
@@ -4814,19 +4797,18 @@ class TeraTermUI(customtkinter.CTk):
 
     # Disables check_idle functionality
     def disable_enable_idle(self):
+        row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
         if self.disableIdle.get() == "on":
-            idle = self.cursor.execute("SELECT idle FROM user_data").fetchall()
-            if len(idle) == 0:
+            if not row_exists:
                 self.cursor.execute("INSERT INTO user_data (idle) VALUES (?)", ("Disabled",))
-            elif len(idle) == 1:
+            else:
                 self.cursor.execute("UPDATE user_data SET idle=?", ("Disabled",))
             self.reset_activity_timer(None)
             self.stop_idle_thread()
-        if self.disableIdle.get() == "off":
-            idle = self.cursor.execute("SELECT idle FROM user_data").fetchall()
-            if len(idle) == 0:
+        elif self.disableIdle.get() == "off":
+            if not row_exists:
                 self.cursor.execute("INSERT INTO user_data (idle) VALUES (?)", ("Enabled",))
-            elif len(idle) == 1:
+            else:
                 self.cursor.execute("UPDATE user_data SET idle=?", ("Enabled",))
             if self.auto_enroll is not None:
                 self.auto_enroll.configure(state="normal")
@@ -4848,21 +4830,20 @@ class TeraTermUI(customtkinter.CTk):
                     self.switch_tab()
                 self.show_sidebar_windows()
                 ctypes.windll.user32.BlockInput(False)
-            self.connection.commit()
+        self.connection.commit()
 
     def disable_enable_audio(self):
+        row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
         if self.disableAudio.get() == "on":
-            audio = self.cursor.execute("SELECT audio FROM user_data").fetchall()
-            if len(audio) == 0:
+            if not row_exists:
                 self.cursor.execute("INSERT INTO user_data (audio) VALUES (?)", ("Disabled",))
-            elif len(audio) == 1:
+            else:
                 self.cursor.execute("UPDATE user_data SET audio=?", ("Disabled",))
             self.disable_audio = True
-        if self.disableAudio.get() == "off":
-            audio = self.cursor.execute("SELECT audio FROM user_data").fetchall()
-            if len(audio) == 0:
+        elif self.disableAudio.get() == "off":
+            if not row_exists:
                 self.cursor.execute("INSERT INTO user_data (audio) VALUES (?)", ("Enabled",))
-            elif len(audio) == 1:
+            else:
                 self.cursor.execute("UPDATE user_data SET audio=?", ("Enabled",))
             self.disable_audio = False
         self.connection.commit()
@@ -5099,9 +5080,8 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language(lang)
         if not self.disable_feedback:
             current_date = datetime.today().strftime("%Y-%m-%d")
-            date = self.cursor.execute("SELECT feedback_date FROM user_data WHERE feedback_date IS NOT NULL").fetchall()
-            dates_list = [record[0] for record in date]
-            if current_date not in dates_list:
+            date_record = self.cursor.execute("SELECT feedback_date FROM user_data").fetchone()
+            if date_record is None or date_record[0] != current_date:
                 feedback = self.feedbackText.get("1.0", customtkinter.END).strip()
                 word_count = len(feedback.split())
                 if word_count < 1000:
@@ -5116,11 +5096,11 @@ class TeraTermUI(customtkinter.CTk):
                                               message=translation["feedback_success"], button_width=380)
 
                             self.after(0, show_success)
-                            result_date = self.cursor.execute("SELECT feedback_date FROM user_data").fetchall()
-                            if len(result_date) == 0:
+                            row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+                            if not row_exists:
                                 self.cursor.execute("INSERT INTO user_data (feedback_date) VALUES (?)",
                                                     (current_date,))
-                            elif len(result_date) == 1:
+                            else:
                                 self.cursor.execute("UPDATE user_data SET feedback_date=?",
                                                     (current_date,))
                             self.connection.commit()
@@ -5186,15 +5166,14 @@ class TeraTermUI(customtkinter.CTk):
             directory, filename = os.path.split(filename)
             self.teraterm_file = directory + "/TERATERM.ini"
             self.changed_location = True
-            location = self.cursor.execute("SELECT location FROM user_data").fetchall()
-            teraterm_config = self.cursor.execute("SELECT config FROM user_data").fetchall()
-            if len(location) == 0:
-                self.cursor.execute("INSERT INTO user_data (location) VALUES (?)", (self.location,))
-            elif len(location) == 1:
+            row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+            if not row_exists:
+                self.cursor.execute(
+                    "INSERT INTO user_data (location, config) VALUES (?, ?)",
+                    (self.location, self.teraterm_file)
+                )
+            else:
                 self.cursor.execute("UPDATE user_data SET location=?", (self.location,))
-            if len(teraterm_config) == 0:
-                self.cursor.execute("INSERT INTO user_data (config) VALUES (?)", (self.teraterm_file,))
-            elif len(teraterm_config) == 1:
                 self.cursor.execute("UPDATE user_data SET config=?", (self.teraterm_file,))
             self.connection.commit()
             self.show_success_message(350, 265, translation["tera_term_success"])
@@ -5219,6 +5198,7 @@ class TeraTermUI(customtkinter.CTk):
     # list of classes available for all departments in the university
     def search_classes(self, event):
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         self.class_list.delete(0, tk.END)  # always clear the list box first
         search_term = self.search_box.get().strip().lower()
         if search_term == "" or len(search_term) == 0:  # if the search term is empty, do not return any records
@@ -5233,10 +5213,7 @@ class TeraTermUI(customtkinter.CTk):
         results = self.cursor.execute(query).fetchall()
         if not results:  # if there are no results, display a message
             self.class_list.delete(0, tk.END)
-            if lang == "English":
-                self.class_list.insert(tk.END, "NO RESULTS FOUND")
-            elif lang == "Español":
-                self.class_list.insert(tk.END, "NO SE ENCONTRARON RESULTADOS")
+            self.class_list.insert(tk.END, translation["no_results"])
         else:
             for row in results:
                 self.class_list.insert(tk.END, row[0])
@@ -5244,6 +5221,7 @@ class TeraTermUI(customtkinter.CTk):
     # query for searching for either class code or name
     def show_class_code(self, event):
         lang = self.language_menu.get()
+        translation = self.load_language(lang)
         selection = self.class_list.curselection()
         if len(selection) == 0:
             return
@@ -5252,10 +5230,7 @@ class TeraTermUI(customtkinter.CTk):
         result = self.cursor.execute(query, (selected_class, selected_class)).fetchone()
         if result is None:
             self.class_list.delete(0, tk.END)
-            if lang == "English":
-                self.class_list.insert(tk.END, "NO RESULTS FOUND")
-            elif lang == "Español":
-                self.class_list.insert(tk.END, "NO SE ENCONTRARON RESULTADOS")
+            self.class_list.insert(tk.END, translation["no_results"])
         else:
             self.search_box.delete(0, tk.END)
             self.search_box.insert(0, result[0])
@@ -5343,13 +5318,13 @@ class TeraTermUI(customtkinter.CTk):
         fix = CustomButton(scrollable_frame, border_width=2, image=self.get_image("fix"), text=translation["fix"],
                            anchor="w", text_color=("gray10", "#DCE4EE"), command=self.fix_execution_event_handler)
         fix.pack(pady=5)
-        idle = self.cursor.execute("SELECT idle FROM user_data").fetchall()
-        audio = self.cursor.execute("SELECT audio FROM user_data").fetchall()
-        if idle:
-            if idle[0][0] == "Disabled":
+        idle = self.cursor.execute("SELECT idle FROM user_data").fetchone()
+        audio = self.cursor.execute("SELECT audio FROM user_data").fetchone()
+        if idle and idle[0] is not None:
+            if idle[0] == "Disabled":
                 self.disableIdle.select()
-        if audio:
-            if audio[0][0] == "Disabled":
+        if audio and audio[0] is not None:
+            if audio[0] == "Disabled":
                 self.disableAudio.select()
         self.search_box.lang = lang
         self.help.focus_set()
