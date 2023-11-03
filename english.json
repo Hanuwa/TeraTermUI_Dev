@@ -200,6 +200,7 @@
 	"failed_saved_invalid_info": "No classes were saved\ndue to incorrect information",
 	"saved_classes_success": "Saved classes successfully",
 	"loading": "Loading...",
+	"searching_exe": "Searching...",
 	"tesseract_error": "Fatal Error! Might need to\nreinstall application",
 	"save_pdf": "Select where do you want to save your PDF file",
 	"class_data": "class_data",
