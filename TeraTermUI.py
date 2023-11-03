@@ -391,6 +391,7 @@ class TeraTermUI(customtkinter.CTk):
         self.previous_button = None
         self.next_button = None
         self.remove_button = None
+        self.renamed_tabs = None
         self.disable_feedback = False
         self.auto_enroll_bool = False
         self.countdown_running = False
@@ -785,6 +786,15 @@ class TeraTermUI(customtkinter.CTk):
         self.show_classes.grid(row=4, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         self.multiple.grid(row=4, column=2, padx=(10, 0), pady=(0, 0), sticky="e")
         self.bind("<Control-Tab>", lambda event: self.tab_switcher())
+        if self.renamed_tabs is not None:
+            if self.renamed_tabs == self.enroll_tab:
+                self.tabview.set(self.enroll_tab)
+            elif self.renamed_tabs == self.search_tab:
+                self.tabview.set(self.search_tab)
+            elif self.renamed_tabs == self.other_tab:
+                self.tabview.set(self.other_tab)
+            self.renamed_tabs = None
+            self.after(0, self.switch_tab)
         self.destroy_student()
 
     def load_saved_classes(self):
@@ -921,7 +931,8 @@ class TeraTermUI(customtkinter.CTk):
                                 enrolled_classes = "ENROLLED"
                                 count_enroll = text_output.count(enrolled_classes)
                                 if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output and \
-                                        "VUELVA LUEGO" not in text_output and "REGISTRATION DATA" in text_output and \
+                                        "VUELVA LUEGO" not in text_output and "TERMINO LA MATRICULA" \
+                                        not in text_output and "REGISTRATION DATA" in text_output and \
                                         count_enroll != 15:
                                     self.e_counter = 0
                                     send_keys("{TAB 2}")
@@ -992,7 +1003,8 @@ class TeraTermUI(customtkinter.CTk):
                                         self.after(0, self.show_error_message, 300, 215,
                                                    translation["invalid_semester"])
                                     else:
-                                        if "VUELVA LUEGO" not in text_output:
+                                        if "VUELVA LUEGO" not in text_output and "TERMINO LA MATRICULA" \
+                                                not in text_output:
                                             self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                             send_keys("{ENTER}")
@@ -1426,8 +1438,8 @@ class TeraTermUI(customtkinter.CTk):
                             enrolled_classes = "ENROLLED"
                             count_enroll = text_output.count(enrolled_classes)
                             if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output and \
-                                    "VUELVA LUEGO" not in text_output and "REGISTRATION DATA" \
-                                    in text_output and count_enroll != 15:
+                                    "VUELVA LUEGO" not in text_output and "TERMINO LA MATRICULA" not in text_output \
+                                    and "REGISTRATION DATA" in text_output and count_enroll != 15:
                                 self.e_counter = 0
                                 self.m_counter = 0
                                 send_keys("{TAB 2}")
@@ -1529,7 +1541,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(0, self.show_error_message, 300, 215,
                                                translation["invalid_semester"])
                                 else:
-                                    if "VUELVA LUEGO" not in text_output:
+                                    if "VUELVA LUEGO" not in text_output and "TERMINO LA MATRICULA" not in text_output:
                                         self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                         send_keys("{ENTER}")
@@ -2724,6 +2736,97 @@ class TeraTermUI(customtkinter.CTk):
             self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(15, 15))
         elif lang == "Español":
             self.host.grid(row=2, column=0, columnspan=2, padx=(5, 0), pady=(15, 15))
+        if self.init_multiple:
+            self.title_enroll.configure(text=translation["title_enroll"])
+            self.e_classes.configure(text=translation["class"])
+            self.e_section.configure(text=translation["section"])
+            self.e_semester.configure(text=translation["semester"])
+            self.register.configure(text=translation["register"])
+            self.drop.configure(text=translation["drop"])
+            self.title_search.configure(text=translation["title_search"])
+            self.s_classes.configure(text=translation["class"])
+            self.s_semester.configure(text=translation["semester"])
+            self.show_all.configure(text=translation["show_all"])
+            self.title_menu.configure(text=translation["explanation_menu"])
+            self.explanation6.configure(text=translation["title_menu"])
+            self.menu.configure(text=translation["menu"])
+            self.menu_entry.configure(values=[translation["SRM"], translation["004"], translation["1GP"],
+                                              translation["118"], translation["1VE"], translation["3DD"],
+                                              translation["409"], translation["683"], translation["1PL"],
+                                              translation["4CM"], translation["4SP"], translation["SO"]])
+            self.menu_entry.set(translation["SRM"])
+            self.menu_semester.configure(text=translation["semester"])
+            self.menu_submit.configure(text=translation["submit"])
+            self.go_next_1VE.configure(text=translation["go_next"])
+            self.go_next_1GP.configure(text=translation["go_next"])
+            self.go_next_409.configure(text=translation["go_next"])
+            self.go_next_683.configure(text=translation["go_next"])
+            self.go_next_4CM.configure(text=translation["go_next"])
+            self.search_next_page.configure(text=translation["search_next_page"])
+            self.submit.configure(text=translation["submit"])
+            self.search.configure(text=translation["search"])
+            self.show_classes.configure(text=translation["show_my_classes"])
+            self.back_classes.configure(text=translation["back"])
+            self.multiple.configure(text=translation["multiple"])
+            self.explanation7.configure(text=translation["title_multiple"])
+            self.m_class.configure(text=translation["class"])
+            self.m_section.configure(text=translation["section"])
+            self.m_semester.configure(text=translation["semester"])
+            self.m_choice.configure(text=translation["choice"])
+            self.back_multiple.configure(text=translation["back"])
+            self.submit_multiple.configure(text=translation["submit"])
+            for i in range(6):
+                self.m_register_menu[i].configure(values=[translation["register"], translation["drop"]])
+                if self.m_register_menu[i].get() == "Choose":
+                    self.m_register_menu[i].set(translation["choose"])
+                elif self.m_register_menu[i].get() == "Register":
+                    self.m_register_menu[i].set(translation["register"])
+                elif self.m_register_menu[i].get() == "Drop":
+                    self.m_register_menu[i].set(translation["drop"])
+            self.auto_enroll.configure(text=translation["auto_enroll"])
+            self.save_data.configure(text=translation["save_data"])
+            self.register_tooltip.configure(message=translation["register_tooltip"])
+            self.drop_tooltip.configure(message=translation["drop_tooltip"])
+            self.back_classes_tooltip.configure(message=translation["back_tooltip"])
+            self.back_multiple_tooltip.configure(message=translation["back_multiple"])
+            self.show_all_tooltip.configure(message=translation["show_all_tooltip"])
+            self.show_classes_tooltip.configure(message=translation["show_classes_tooltip"])
+            self.m_add_tooltip.configure(message=translation["add_tooltip"])
+            self.m_remove_tooltip.configure(message=translation["remove_tooltip"])
+            self.multiple_tooltip.configure(message=translation["multiple_tooltip"])
+            self.save_data_tooltip.configure(message=translation["save_data_tooltip"])
+            self.auto_enroll_tooltip.configure(message=translation["auto_enroll_tooltip"])
+            self.search_next_page_tooltip.configure(message=translation["search_next_page_tooltip"])
+            for entry in [self.e_classes_entry, self.e_section_entry, self.s_classes_entry, self.m_classes_entry,
+                          self.m_section_entry]:
+                if isinstance(entry, list):
+                    for sub_entry in entry:
+                        sub_entry.lang = lang
+                else:
+                    entry.lang = lang
+            if self.table is not None:
+                self.previous_button.configure(text=translation["previous"])
+                self.next_button.configure(text=translation["next"])
+                self.remove_button.configure(text=translation["remove"])
+                self.download_pdf.configure(text=translation["pdf_save_as"])
+                self.table_count_tooltip.configure(message=translation["table_count_tooltip"])
+                self.previous_button_tooltip.configure(message=translation["previous_tooltip"])
+                self.next_button_tooltip.configure(message=translation["next_tooltip"])
+                self.remove_button_tooltip.configure(message=translation["remove_tooltip"])
+                self.download_pdf_tooltip.configure(message=translation["download_pdf_tooltip"])
+            if self.enroll_tab != translation["enroll_tab"]:
+                self.after(1000, self.rename_tabs)
+
+    def rename_tabs(self):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        self.renamed_tabs = self.tabview.get()
+        self.tabview.rename(self.enroll_tab, translation["enroll_tab"])
+        self.enroll_tab = translation["enroll_tab"]
+        self.tabview.rename(self.search_tab, translation["search_tab"])
+        self.search_tab = translation["search_tab"]
+        self.tabview.rename(self.other_tab, translation["other_tab"])
+        self.other_tab = translation["other_tab"]
 
     def change_semester(self):
         self.focus_set()
@@ -2795,7 +2898,7 @@ class TeraTermUI(customtkinter.CTk):
                                 parts = sliced_text.split(":", 1)
                                 match = re.search(r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}", parts[1])
                                 if match:
-                                    date_time_string = match.group()
+                                    date_time_string = "11/3/2023 2:35"  # match.group()
                                     date_time_string += " AM"
                                 else:
                                     self.after(0, self.show_error_message, 300, 215,
@@ -3971,11 +4074,16 @@ class TeraTermUI(customtkinter.CTk):
                                               fg_color="red", command=self.remove_current_table)
             self.download_pdf = CustomButton(self.search_scrollbar, text=translation["pdf_save_as"],
                                              hover_color="#173518", fg_color="#2e6930", command=self.download_as_pdf)
-            CTkToolTip(self.table_count, message=translation["table_count_tooltip"], bg_color="#A9A9A9", alpha=0.90)
-            CTkToolTip(self.previous_button, message=translation["previous_tooltip"], bg_color="#1E90FF")
-            CTkToolTip(self.next_button, message=translation["next_tooltip"], bg_color="#1E90FF")
-            CTkToolTip(self.remove_button, message=translation["remove_tooltip"], bg_color="red")
-            CTkToolTip(self.download_pdf, message=translation["download_pdf_tooltip"], bg_color="green")
+            self.table_count_tooltip = CTkToolTip(self.table_count, message=translation["table_count_tooltip"],
+                                                  bg_color="#A9A9A9", alpha=0.90)
+            self.previous_button_tooltip = CTkToolTip(self.previous_button, message=translation["previous_tooltip"],
+                                                      bg_color="#1E90FF")
+            self.next_button_tooltip = CTkToolTip(self.next_button, message=translation["next_tooltip"],
+                                                  bg_color="#1E90FF")
+            self.remove_button_tooltip = CTkToolTip(self.remove_button, message=translation["remove_tooltip"],
+                                                    bg_color="red")
+            self.download_pdf_tooltip = CTkToolTip(self.download_pdf, message=translation["download_pdf_tooltip"],
+                                                   bg_color="green")
 
         if self.ignore:
             duplicate_index = self.find_duplicate(display_class, self.get_semester_for_pdf)
@@ -4123,7 +4231,7 @@ class TeraTermUI(customtkinter.CTk):
                     y_n_found = True
 
         pattern = re.compile(
-            r"(\w+)\s+(\w)\s+LEC\s+(\d+\.\d+)\s+(\w+)\s+([\dAMP\-TBA]+)\s+([\d\s]+)?\s+.*?\s*([NFUL\s]*.*)"
+            r"(\w+)\s+(\w)\s+(?:LEC|LAB)\s+(\d+\.\d+)\s+(\w+)\s+([\dAMP\-TBA]+)\s+([\d\s]+)?\s+.*?\s*([NFUL\s]*.*)"
         )
 
         for line in lines:
@@ -5480,9 +5588,10 @@ class TeraTermUI(customtkinter.CTk):
     # Makes the sidebar reappear again
     def show_sidebar_windows(self):
         if self.status is not None and self.status.winfo_exists() and not self.status_minimized:
-            self.status.deiconify()
+            self.status.iconify()
+
         if self.help is not None and self.help.winfo_exists() and not self.help_minimized:
-            self.help.deiconify()
+            self.help.iconify()
 
     # When the user performs an action to do something in tera term it destroys windows that might get in the way
     def destroy_windows(self):
