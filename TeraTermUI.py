@@ -4237,7 +4237,8 @@ class TeraTermUI(customtkinter.CTk):
                     y_n_found = True
 
         pattern = re.compile(
-            r"(\w+)\s+(\w)\s+(?:LEC|LAB)\s+(\d+\.\d+)\s+(\w+)\s+([\dAMP\-TBA]+)\s+([\d\s]+)?\s+.*?\s*([NFUL\s]*.*)"
+            r"(\w+)\s+(\w)\s+(?:LEC|LAB|INT|PRA|SEM)\s+(\d+\.\d+)\s+(\w+)\s+([\dAMP\-TBA]+)\s+([\d\s]+)?\s+.*?\s*(["
+            r"NFUL\s]*.*)"
         )
 
         for line in lines:
