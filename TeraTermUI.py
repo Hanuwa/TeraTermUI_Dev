@@ -60,7 +60,7 @@ from customtkinter import ctktable
 from datetime import datetime, timedelta
 from filelock import FileLock, Timeout
 from pathlib import Path
-from pywinauto.application import Application
+from pywinauto.application import Application, AppStartError
 from pywinauto.keyboard import send_keys
 from tkinter import filedialog
 from tkinter import messagebox
@@ -415,6 +415,7 @@ class TeraTermUI(customtkinter.CTk):
         self.disable_audio = False
         self.focus_or_not = False
         self.changed_location = False
+        self.auto_search = False
         self.a_counter = 0
         self.m_counter = 0
         self.e_counter = 0
@@ -424,6 +425,7 @@ class TeraTermUI(customtkinter.CTk):
         # default location of Tera Term
         self.location = "C:/Program Files (x86)/teraterm/ttermpro.exe"
         self.teraterm_file = "C:/Program Files (x86)/teraterm/TERATERM.ini"
+        self.teraterm_directory = "C:/Program Files (x86)/teraterm"
         self.original_font = None
         # Storing translations for languages in cache to reuse
         self.translations_cache = {}
@@ -434,8 +436,6 @@ class TeraTermUI(customtkinter.CTk):
         self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
         self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
         self.portable = True
-        atexit.register(self.cleanup_temp)
-        atexit.register(self.restore_original_font, self.teraterm_file)
         try:
             db_path = "database.db"
             if not os.path.isfile(db_path):
@@ -451,7 +451,8 @@ class TeraTermUI(customtkinter.CTk):
             self.save = self.cursor.execute("SELECT class, section, semester, action FROM save_classes"
                                             " WHERE class IS NOT NULL").fetchall()
             self.saveCheck = self.cursor.execute('SELECT "check" FROM save_classes').fetchone()
-            user_data_fields = ["location", "host", "language", "appearance", "scaling", "welcome", "config", "audio"]
+            user_data_fields = ["location", "config", "directory", "host", "language",
+                                "appearance", "scaling", "welcome", "audio"]
             results = {}
             for field in user_data_fields:
                 query_user = f"SELECT {field} FROM user_data"
@@ -462,9 +463,10 @@ class TeraTermUI(customtkinter.CTk):
             if results["location"]:
                 if results["location"] != self.location:
                     self.location = results["location"]
-            if results["config"]:
-                if results["config"] != self.teraterm_file:
+            if results["directory"] and results["config"]:
+                if results["directory"] != self.teraterm_directory and results["config"] != self.teraterm_file:
                     self.teraterm_file = results["config"]
+                    self.teraterm_directory = results["directory"]
                     self.edit_teraterm_ini(self.teraterm_file)
                     self.can_edit = True
             if language_id & 0xFF == SPANISH:
@@ -504,7 +506,6 @@ class TeraTermUI(customtkinter.CTk):
                         self.cursor.execute("INSERT INTO user_data (welcome) VALUES (?)", ("Checked",))
                     else:
                         self.cursor.execute("UPDATE user_data SET welcome=?", ("Checked",))
-                    self.connection.commit()
                     del row_exists_in_welcome, translation
 
                 self.after(3500, show_message_box)
@@ -559,6 +560,8 @@ class TeraTermUI(customtkinter.CTk):
                                                   "Might need to reinstall the application")
             exit(1)
 
+        atexit.register(self.cleanup_temp)
+        atexit.register(self.restore_original_font, self.teraterm_file)
         self.after(0, self.unload_image("uprb"))
         self.after(0, self.unload_image("status"))
         self.after(0, self.unload_image("help"))
@@ -2358,14 +2361,14 @@ class TeraTermUI(customtkinter.CTk):
                                 self.bind("<Return>", lambda event: self.student_event_handler())
                                 self.after(0, self.initialization_auth)
                                 self.after(100, self.login_frame)
-                            except Exception as e:
-                                if e.__class__.__name__ == "AppStartError":
-                                    self.bind("<Return>", lambda event: self.login_event_handler())
-                                    self.after(0, self.show_error_message, 425, 330,
-                                               translation["tera_term_failed_to_start"])
-                                    if not self.download:
-                                        self.after(3500, self.download_teraterm)
-                                        self.download = True
+                            except AppStartError as e:
+                                print("An error occurred: ", e)
+                                self.bind("<Return>", lambda event: self.login_event_handler())
+                                self.after(0, self.show_error_message, 425, 330,
+                                           translation["tera_term_failed_to_start"])
+                                if not self.download:
+                                    self.after(3500, self.download_teraterm)
+                                    self.download = True
                     elif host != "uprbay.uprb.edu":
                         self.bind("<Return>", lambda event: self.login_event_handler())
                         self.after(0, self.show_error_message, 300, 215, translation["invalid_host"])
@@ -3711,6 +3714,9 @@ class TeraTermUI(customtkinter.CTk):
         self.loading_screen.after(256, lambda: self.loading_screen.iconbitmap(self.icon_path))
         loading = customtkinter.CTkLabel(self.loading_screen, text=translation["loading"],
                                          font=customtkinter.CTkFont(size=20, weight="bold"))
+        if self.auto_search:
+            loading.configure(text=translation["searching_exe"])
+            self.auto_search = False
         loading.pack(pady=(48, 12))
         self.progress_bar = customtkinter.CTkProgressBar(self.loading_screen, mode="indeterminate",
                                                          height=15, width=230, indeterminate_speed=1.5)
@@ -4309,7 +4315,7 @@ class TeraTermUI(customtkinter.CTk):
 
     def backup_and_config_ini(self, file_path):
         # backup for config file of tera term
-        if TeraTermUI.is_file_in_directory("ttermpro.exe", r"C:/Program Files (x86)/teraterm"):
+        if TeraTermUI.is_file_in_directory("ttermpro.exe", self.teraterm_directory):
             backup_path = self.app_temp_dir / "TERATERM.ini.bak"
             if not os.path.exists(backup_path):
                 backup_path = os.path.join(self.app_temp_dir, os.path.basename(file_path) + ".bak")
@@ -4337,18 +4343,17 @@ class TeraTermUI(customtkinter.CTk):
                     # Write lines once
                     with open(file_path, "w") as file:
                         file.writelines(lines)
+                    del line, lines
                 except FileNotFoundError:
                     return
                 except IOError as e:  # Replace with the specific exceptions you want to catch
                     print(f"Error occurred: {e}")
                     print("Restoring from backup...")
                     shutil.copyfile(backup_path, file_path)
+                del backup_path
 
         else:
             self.teraterm_not_found = True
-
-        del backup_path, line, lines
-        gc.collect()
 
     def setup_feedback(self):
         from google.oauth2 import service_account
@@ -4398,9 +4403,8 @@ class TeraTermUI(customtkinter.CTk):
                 except PermissionError:
                     time.sleep(1)  # Wait for 1 second before the next attempt
         # Delete the 'TERATERM.ini.bak' file
-        if backup_file_path.exists():
+        if backup_file_path.exists() and not TeraTermUI.checkIfProcessRunning("ttermpro"):
             os.remove(backup_file_path)
-        if self.portable:
             shutil.rmtree(self.app_temp_dir)
 
     # error window pop up message
@@ -5261,28 +5265,109 @@ class TeraTermUI(customtkinter.CTk):
                 self.after(0, show_error)
         self.feedbackSend.configure(state="normal")
 
-    # Function that lets user select where their Tera Term application is located
-    def change_location_event(self):
-        self.slideshow_frame.pause_cycle()
+    @staticmethod
+    def find_ttermpro():
+        # Prioritize common installation directories
+        common_paths = [
+            "C:/Program Files/",
+            "C:/Users/*/AppData/Local/Programs/",
+        ]
+
+        # Function to search within a given path to a certain depth
+        def search_within_path(search_root, depth=5):
+            for root, dirs, files in os.walk(search_root, topdown=True):
+                # If we've reached the maximum depth, stop descending
+                if root[len(search_root):].count(os.sep) >= depth:
+                    del dirs[:]
+                else:
+                    dirs[:] = [d for d in dirs if
+                               d not in ['Recycler', 'Recycled', 'System Volume Information', '$RECYCLE.BIN']]
+
+                for file in files:
+                    if file.lower() == "ttermpro.exe":
+                        return os.path.join(root, file)
+            return None
+        for path in common_paths:
+            result = search_within_path(os.path.expandvars(path))
+            if result:
+                return result
+        # If not found, search the entire C drive with a limited depth
+        return search_within_path("C:/")
+
+    def change_location_auto_handler(self):
+        lang = self.language_menu.get()
+        message_english = "Do you want to automatically search for Tera Term on the C drive?\n\n" \
+                          "Might take a while and make app unresponsive for a bit"
+        message_spanish = "¿Desea buscar automáticamente Tera Term en la unidad C?\n\n" \
+                          "Podría tardar un poco y hacer que la aplicación no responda durante ese tiempo."
+        message = message_english if lang == "English" else message_spanish
+        if messagebox.askyesno("Tera Term", message):
+            self.auto_search = True
+            task_done = threading.Event()
+            loading_screen = self.show_loading_screen()
+            self.update_loading_screen(loading_screen, task_done)
+            event_thread = threading.Thread(target=self.change_location_event, args=(task_done,))
+            event_thread.start()
+        else:
+            self.manually_change_location()
+
+    # Automatically tries to find where the Tera Term application is located
+    def change_location_event(self, task_done):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        filename = filedialog.askopenfilename(initialdir="C:/",
-                                              title=translation["select_tera_term"],
-                                              filetypes=(("Tera Term", "*ttermpro.exe"),))
-        if re.search("ttermpro.exe", filename):
-            self.location = filename
-            directory, filename = os.path.split(filename)
-            self.teraterm_file = directory + "/TERATERM.ini"
-            self.changed_location = True
+        tera_term_path = TeraTermUI.find_ttermpro()
+        if tera_term_path:
+            self.location = tera_term_path.replace('\\', '/')
+            directory, filename = os.path.split(self.location)
+            self.teraterm_directory = directory
+            self.teraterm_file = self.teraterm_directory + "/TERATERM.ini"
             row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
             if not row_exists:
                 self.cursor.execute(
-                    "INSERT INTO user_data (location, config) VALUES (?, ?)",
-                    (self.location, self.teraterm_file)
+                    "INSERT INTO user_data (location, config, directory) VALUES (?, ?)",
+                    (self.location, self.teraterm_file, self.teraterm_directory)
                 )
             else:
                 self.cursor.execute("UPDATE user_data SET location=?", (self.location,))
                 self.cursor.execute("UPDATE user_data SET config=?", (self.teraterm_file,))
+                self.cursor.execute("UPDATE user_data SET directory=?", (self.teraterm_directory,))
+            self.connection.commit()
+            task_done.set()
+            self.after(0, self.show_success_message, 350, 265, translation["tera_term_success"])
+            self.edit_teraterm_ini(self.teraterm_file)
+        else:
+            task_done.set()
+            message_english = ("Tera Term executable was not found on the C drive.\n\n"
+                               "the application is proabbly not installed\nor it's located on another drive")
+            message_spanish = ("No se encontró el ejecutable de Tera Term en la unidad C.\n\n"
+                               "Probablemente no tiene la aplicación instalada\no está localizada en otra unidad")
+            message = message_english if lang == "English" else message_spanish
+            messagebox.showinfo("Tera Term", message)
+            self.manually_change_location()
+
+    # Function that lets user select where their Tera Term application is located
+    def manually_change_location(self):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        self.slideshow_frame.pause_cycle()
+        filename = filedialog.askopenfilename(initialdir="C:/",
+                                              title=translation["select_tera_term"],
+                                              filetypes=(("Tera Term", "*ttermpro.exe"),))
+        if re.search("ttermpro.exe", filename):
+            self.location = filename.replace('\\', '/')
+            directory, filename = os.path.split(self.location)
+            self.teraterm_directory = directory
+            self.teraterm_file = self.teraterm_directory + "/TERATERM.ini"
+            row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+            if not row_exists:
+                self.cursor.execute(
+                    "INSERT INTO user_data (location, config, directory) VALUES (?, ?)",
+                    (self.location, self.teraterm_file, self.teraterm_directory)
+                )
+            else:
+                self.cursor.execute("UPDATE user_data SET location=?", (self.location,))
+                self.cursor.execute("UPDATE user_data SET config=?", (self.teraterm_file,))
+                self.cursor.execute("UPDATE user_data SET directory=?", (self.teraterm_directory,))
             self.connection.commit()
             self.show_success_message(350, 265, translation["tera_term_success"])
             self.edit_teraterm_ini(self.teraterm_file)
@@ -5409,7 +5494,7 @@ class TeraTermUI(customtkinter.CTk):
         files_text.pack()
         files = CustomButton(scrollable_frame, border_width=2, image=self.get_image("folder"),
                              text=translation["files_button"], anchor="w", text_color=("gray10", "#DCE4EE"),
-                             command=self.change_location_event)
+                             command=self.change_location_auto_handler)
         files.pack(pady=5)
         disable_idle_text = customtkinter.CTkLabel(scrollable_frame, text=translation["idle_title"])
         disable_idle_text.pack()
@@ -5493,7 +5578,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # Edits the font that tera term uses to "Terminal" to mitigate the chance of the OCR mistaking words
     def edit_teraterm_ini(self, file_path):
-        if TeraTermUI.is_file_in_directory("ttermpro.exe", r"C:/Program Files (x86)/teraterm"):
+        if TeraTermUI.is_file_in_directory("ttermpro.exe", self.teraterm_directory):
             backup_path = self.app_temp_dir / "TERATERM.ini.bak"
             if not os.path.exists(backup_path):
                 backup_path = os.path.join(self.app_temp_dir, os.path.basename(file_path) + ".bak")
