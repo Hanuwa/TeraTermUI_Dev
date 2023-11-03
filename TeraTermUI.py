@@ -2898,7 +2898,7 @@ class TeraTermUI(customtkinter.CTk):
                                 parts = sliced_text.split(":", 1)
                                 match = re.search(r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}", parts[1])
                                 if match:
-                                    date_time_string = "11/3/2023 2:35"  # match.group()
+                                    date_time_string = match.group()
                                     date_time_string += " AM"
                                 else:
                                     self.after(0, self.show_error_message, 300, 215,
@@ -6257,3 +6257,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
