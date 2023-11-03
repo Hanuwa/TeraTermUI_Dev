@@ -200,6 +200,7 @@
 	"failed_saved_invalid_info": "No se guardaron clases debido\na información incorrecta",
 	"saved_classes_success": "Clases guardadas con éxito",
 	"loading": "Procesando...",
+	"searching_exe": "Buscando...",
 	"tesseract_error": "¡Error Fatal! Es posible que necesite\nreinstalar la aplicación",
 	"save_pdf": "Selecciona donde deseas guardar tu archivo PDF",
 	"class_data": "data_clase",
