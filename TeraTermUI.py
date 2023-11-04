@@ -448,9 +448,6 @@ class TeraTermUI(customtkinter.CTk):
             self.cursor = self.connection.cursor()
             self.protocol("WM_DELETE_WINDOW", self.on_closing)
             self.bind("<Escape>", lambda event: self.on_closing())
-            self.save = self.cursor.execute("SELECT class, section, semester, action FROM save_classes"
-                                            " WHERE class IS NOT NULL").fetchall()
-            self.saveCheck = self.cursor.execute('SELECT "check" FROM save_classes').fetchone()
             user_data_fields = ["location", "config", "directory", "host", "language",
                                 "appearance", "scaling", "welcome", "audio"]
             results = {}
@@ -839,7 +836,9 @@ class TeraTermUI(customtkinter.CTk):
                     display_register_value = register_value
 
                 if index <= num_rows:
+                    self.m_classes_entry[index - 1].delete(0, "end")
                     self.m_classes_entry[index - 1].insert(0, class_value)
+                    self.m_section_entry[index - 1].delete(0, "end")
                     self.m_section_entry[index - 1].insert(0, section_value)
                     if index == 1:
                         self.m_semester_entry[index - 1].set(semester_value)
@@ -2859,18 +2858,18 @@ class TeraTermUI(customtkinter.CTk):
                     if response[0] != "Yes" and response[0] != "Sí":
                         self.auto_enroll.deselect()
                         return
-            task_done = threading.Event()
-            loading_screen = self.show_loading_screen()
-            self.update_loading_screen(loading_screen, task_done)
-            event_thread = threading.Thread(target=self.auto_enroll_event, args=(task_done,))
-            event_thread.start()
-        else:
-            if not self.disable_audio:
-                winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-            CTkMessagebox(master=self, title="Auto-Enroll", icon="cancel", button_width=380,
-                          message=translation["auto_enroll_idle"])
-            self.auto_enroll.deselect()
-            self.auto_enroll.configure(state="disabled")
+                task_done = threading.Event()
+                loading_screen = self.show_loading_screen()
+                self.update_loading_screen(loading_screen, task_done)
+                event_thread = threading.Thread(target=self.auto_enroll_event, args=(task_done,))
+                event_thread.start()
+            else:
+                if not self.disable_audio:
+                    winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                CTkMessagebox(master=self, title="Auto-Enroll", icon="cancel", button_width=380,
+                              message=translation["auto_enroll_idle"])
+                self.auto_enroll.deselect()
+                self.auto_enroll.configure(state="disabled")
 
     # Auto-Enroll classes
     def auto_enroll_event(self, task_done):
@@ -2932,14 +2931,14 @@ class TeraTermUI(customtkinter.CTk):
                             is_past_date = current_date > your_date
                             is_future_date = current_date < your_date
                             is_next_date = (your_date.date() - current_date.date() == timedelta(days=1))
-                            is_time_difference_within_6_hours = \
-                                timedelta(hours=6, minutes=15) >= time_difference >= timedelta()
+                            is_time_difference_within_8_hours = \
+                                timedelta(hours=8, minutes=15) >= time_difference >= timedelta()
                             is_more_than_one_day = (your_date.date() - current_date.date() > timedelta(days=1))
                             is_current_time_ahead = current_date.time() > your_date.time()
-                            is_current_time_6_hours_ahead = time_difference >= timedelta(hours=-6)
+                            is_current_time_8_hours_ahead = time_difference >= timedelta(hours=-8)
                             # Comparing Dates
-                            if (is_same_date and is_time_difference_within_6_hours) or \
-                                    (is_next_date and is_time_difference_within_6_hours):
+                            if (is_same_date and is_time_difference_within_8_hours) or \
+                                    (is_next_date and is_time_difference_within_8_hours):
                                 self.countdown_running = True
                                 self.after(0, self.disable_enable_gui)
                                 # Create timer window
@@ -2950,7 +2949,7 @@ class TeraTermUI(customtkinter.CTk):
                                 # Start the countdown
                                 self.after(100, self.countdown, your_date)
                             elif is_past_date or (is_same_date and is_current_time_ahead):
-                                if is_current_time_6_hours_ahead:
+                                if is_current_time_8_hours_ahead:
                                     self.running_countdown = customtkinter.BooleanVar()
                                     self.running_countdown.set(True)
                                     self.started_auto_enroll = True
@@ -2962,10 +2961,10 @@ class TeraTermUI(customtkinter.CTk):
                                     self.auto_enroll_bool = False
                                     self.auto_enroll.deselect()
                             elif (is_future_date or is_more_than_one_day) or \
-                                    (is_same_date and not is_time_difference_within_6_hours) or \
-                                    (is_next_date and not is_time_difference_within_6_hours):
+                                    (is_same_date and not is_time_difference_within_8_hours) or \
+                                    (is_next_date and not is_time_difference_within_8_hours):
                                 self.after(0, self.show_error_message, 320, 235,
-                                           translation["date_not_within_6_hours"])
+                                           translation["date_not_within_8_hours"])
                                 self.auto_enroll_bool = False
                                 self.auto_enroll.deselect()
                             if "INVALID ACTION" in text_output:
@@ -3612,10 +3611,10 @@ class TeraTermUI(customtkinter.CTk):
             self.m_button_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.save_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.auto_frame.bind("<Button-1>", lambda event: self.focus_set())
-            self.load_saved_classes()
             for entry in [self.m_classes_entry, self.m_section_entry]:
                 for sub_entry in entry:
                     sub_entry.lang = lang
+        self.load_saved_classes()
 
     # saves the information to the database when the app closes
     def save_user_data(self):
@@ -3655,9 +3654,9 @@ class TeraTermUI(customtkinter.CTk):
             # Iterate over the added entries based on self.a_counter
             for index in range(self.a_counter + 1):
                 # Get the values from the entry fields and option menus
-                class_value = self.m_classes_entry[index].get()
-                section_value = self.m_section_entry[index].get()
-                semester_value = self.m_semester_entry[index].get()
+                class_value = self.m_classes_entry[index].get().upper()
+                section_value = self.m_section_entry[index].get().upper()
+                semester_value = self.m_semester_entry[index].get().upper()
                 register_value = self.m_register_menu[index].get()
                 if not class_value or not section_value or not semester_value or register_value in ("Choose", "Escoge"):
                     is_empty = True  # Set the flag if any field is empty or register is not selected
@@ -5270,6 +5269,7 @@ class TeraTermUI(customtkinter.CTk):
     def find_ttermpro():
         # Prioritize common installation directories
         common_paths = [
+            "C:/Program Files (x86)/",
             "C:/Program Files/",
             "C:/Users/*/AppData/Local/Programs/",
         ]
@@ -5282,7 +5282,7 @@ class TeraTermUI(customtkinter.CTk):
                     del dirs[:]
                 else:
                     dirs[:] = [d for d in dirs if
-                               d not in ['Recycler', 'Recycled', 'System Volume Information', '$RECYCLE.BIN']]
+                               d not in ["Recycler", "Recycled", "System Volume Information", "$RECYCLE.BIN"]]
 
                 for file in files:
                     if file.lower() == "ttermpro.exe":
@@ -5339,7 +5339,7 @@ class TeraTermUI(customtkinter.CTk):
         else:
             task_done.set()
             message_english = ("Tera Term executable was not found on the C drive.\n\n"
-                               "the application is proabbly not installed\nor it's located on another drive")
+                               "the application is probably not installed\nor it's located on another drive")
             message_spanish = ("No se encontró el ejecutable de Tera Term en la unidad C.\n\n"
                                "Probablemente no tiene la aplicación instalada\no está localizada en otra unidad")
             message = message_english if lang == "English" else message_spanish
