@@ -1,7 +1,7 @@
 # TeraTermUI_Dev
 Dev Environment for Tera Term UI
 
-**Important** modules of ctkmessagebox.py, ctk_input_dialog.py and ctk_toplevel.py are included here because they have some modifications,
+**Important** modules of "**ctkmessagebox.py, ctk_input_dialog.py, ctk_scrollable_frame.py, ctk_tabview.py and ctk_toplevel.py**" are included here because they have some modifications,
 make sure to also put ctk_table.py on the customtkinter folder.
 
 Priorities of the development of the application is working on improving the UI since it's  a bit too simple and not polished,
