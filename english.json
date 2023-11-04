@@ -193,7 +193,7 @@
 	"auto_enroll_idle": "Anti-Idle must be enabled in order for you to use Auto-Enroll",
 	"failed_to_find_date": "Couldn't find enrollment date",
 	"date_past": "The enrollment date already passed",
-	"date_not_within_6_hours": "Auto-Enroll only available\nthe same day of enrollment\nand within a 6 hour margin",
+	"date_not_within_8_hours": "Auto-Enroll only available\nthe same day of enrollment\nand within a 8 hour margin",
 	"performing_auto_enroll": "performing auto-enrollment now...",
 	"auto_enroll_activated": "\nAuto-Enrollment activated",
 	"failed_saved_lack_info": "No classes were saved\ndue to missing information",
