@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 11/3/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 11/4/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -139,6 +139,11 @@ class TeraTermUI(customtkinter.CTk):
         self.get_class_for_pdf = None
         self.get_semester_for_pdf = None
         self.download_pdf = None
+        self.table_count_tooltip = None
+        self.previous_button_tooltip = None
+        self.next_button_tooltip = None
+        self.remove_button_tooltip = None
+        self.download_pdf_tooltip = None
         self.tooltip = None
         self.exit = None
         self.dialog = None
@@ -4148,7 +4153,9 @@ class TeraTermUI(customtkinter.CTk):
         display_class, table, semester = self.class_table_pairs[self.current_table_index]
         display_class.grid(row=2, column=1, padx=(0, 0), pady=(8, 0), sticky="n")
         table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
+        self.table = table
         self.current_class = display_class
+        self.after(0, self.set_focus)
 
     def update_buttons(self):
         if self.current_table_index == 0:
@@ -4208,6 +4215,7 @@ class TeraTermUI(customtkinter.CTk):
             self.remove_button.grid_forget()
             self.download_pdf.grid_forget()
             self.search_scrollbar.scroll_to_top()
+            self.after(0, self.set_focus)
             return
 
         # Step 4: Show the previous table
@@ -5051,7 +5059,7 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<space>")
             self.bind("<Return>", lambda event: self.option_menu_event_handler())
             other_frame.bind("<Button-1>", lambda event: other_frame.focus_set())
-        self.focus_set()
+        self.after(0, self.focus_set)
 
     def load_table(self):
         lang = self.language_menu.get()
