@@ -416,6 +416,7 @@ class TeraTermUI(customtkinter.CTk):
         self.focus_or_not = False
         self.changed_location = False
         self.auto_search = False
+        self.main_menu = True
         self.a_counter = 0
         self.m_counter = 0
         self.e_counter = 0
@@ -2432,6 +2433,7 @@ class TeraTermUI(customtkinter.CTk):
             self.username_entry.grid(row=3, column=0, padx=(60, 0), pady=(0, 10))
         self.back.grid(row=4, column=0, padx=(0, 10), pady=(0, 0))
         self.student.grid(row=4, column=1, padx=(10, 0), pady=(0, 0))
+        self.main_menu = False
         self.language_menu.configure(state="disabled")
         self.slideshow_frame.pause_cycle()
         self.host.grid_forget()
@@ -2473,6 +2475,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.after(0, self.initialization_class)
                 self.after(0, self.initialization_multiple)
                 self.after(100, self.tuition_frame)
+                self.main_menu = False
                 self.passed = True
                 self.reset_activity_timer(None)
                 self.start_check_idle_thread()
@@ -2558,6 +2561,7 @@ class TeraTermUI(customtkinter.CTk):
             self.in_student_frame = False
             self.in_enroll_frame = False
             self.in_search_frame = False
+            self.main_menu = True
             if self.error_occurred:
                 self.destroy_windows()
                 if (self.server_status != "Maintenance message found" and self.server_status != "Timeout") \
@@ -5296,21 +5300,22 @@ class TeraTermUI(customtkinter.CTk):
         return search_within_path("C:/")
 
     def change_location_auto_handler(self):
-        lang = self.language_menu.get()
-        message_english = "Do you want to automatically search for Tera Term on the C drive?\n\n" \
-                          "Might take a while and make app unresponsive for a bit"
-        message_spanish = "¿Desea buscar automáticamente Tera Term en la unidad C?\n\n" \
-                          "Podría tardar un poco y hacer que la aplicación no responda durante ese tiempo."
-        message = message_english if lang == "English" else message_spanish
-        if messagebox.askyesno("Tera Term", message):
-            self.auto_search = True
-            task_done = threading.Event()
-            loading_screen = self.show_loading_screen()
-            self.update_loading_screen(loading_screen, task_done)
-            event_thread = threading.Thread(target=self.change_location_event, args=(task_done,))
-            event_thread.start()
-        else:
-            self.manually_change_location()
+        if self.main_menu:
+            lang = self.language_menu.get()
+            message_english = "Do you want to automatically search for Tera Term on the C drive?\n\n" \
+                              "Might take a while and make app unresponsive for a bit"
+            message_spanish = "¿Desea buscar automáticamente Tera Term en la unidad C?\n\n" \
+                              "Podría tardar un poco y hacer que la aplicación no responda durante ese tiempo."
+            message = message_english if lang == "English" else message_spanish
+            if messagebox.askyesno("Tera Term", message):
+                self.auto_search = True
+                task_done = threading.Event()
+                loading_screen = self.show_loading_screen()
+                self.update_loading_screen(loading_screen, task_done)
+                event_thread = threading.Thread(target=self.change_location_event, args=(task_done,))
+                event_thread.start()
+            else:
+                self.manually_change_location()
 
     # Automatically tries to find where the Tera Term application is located
     def change_location_event(self, task_done):
