@@ -2857,32 +2857,31 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language(lang)
         self.focus_set()
         idle = self.cursor.execute("SELECT idle FROM user_data").fetchone()
-        if idle and idle[0] is not None:
-            if idle[0] != "Disabled":
-                if self.auto_enroll.get() == "on":
-                    msg = CTkMessagebox(master=self, title=translation["submit"],
-                                        message=translation["enroll_multiple"],
-                                        icon="images/submit.png",
-                                        option_1=translation["option_1"], option_2=translation["option_2"],
-                                        option_3=translation["option_3"],
-                                        icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                                        hover_color=("darkred", "darkblue", "darkblue"))
-                    response = msg.get()
-                    if response[0] != "Yes" and response[0] != "Sí":
-                        self.auto_enroll.deselect()
-                        return
-                task_done = threading.Event()
-                loading_screen = self.show_loading_screen()
-                self.update_loading_screen(loading_screen, task_done)
-                event_thread = threading.Thread(target=self.auto_enroll_event, args=(task_done,))
-                event_thread.start()
-            else:
-                if not self.disable_audio:
-                    winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                CTkMessagebox(master=self, title="Auto-Enroll", icon="cancel", button_width=380,
-                              message=translation["auto_enroll_idle"])
-                self.auto_enroll.deselect()
-                self.auto_enroll.configure(state="disabled")
+        if idle[0] != "Disabled":
+            if self.auto_enroll.get() == "on":
+                msg = CTkMessagebox(master=self, title=translation["submit"],
+                                    message=translation["enroll_multiple"],
+                                    icon="images/submit.png",
+                                    option_1=translation["option_1"], option_2=translation["option_2"],
+                                    option_3=translation["option_3"],
+                                    icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                    hover_color=("darkred", "darkblue", "darkblue"))
+                response = msg.get()
+                if response[0] != "Yes" and response[0] != "Sí":
+                    self.auto_enroll.deselect()
+                    return
+            task_done = threading.Event()
+            loading_screen = self.show_loading_screen()
+            self.update_loading_screen(loading_screen, task_done)
+            event_thread = threading.Thread(target=self.auto_enroll_event, args=(task_done,))
+            event_thread.start()
+        else:
+            if not self.disable_audio:
+                winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+            CTkMessagebox(master=self, title="Auto-Enroll", icon="cancel", button_width=380,
+                          message=translation["auto_enroll_idle"])
+            self.auto_enroll.deselect()
+            self.auto_enroll.configure(state="disabled")
 
     # Auto-Enroll classes
     def auto_enroll_event(self, task_done):
@@ -4855,12 +4854,11 @@ class TeraTermUI(customtkinter.CTk):
     # Starts the check for idle thread
     def start_check_idle_thread(self):
         idle = self.cursor.execute("SELECT idle FROM user_data").fetchone()
-        if idle and idle[0] is not None:
-            if idle[0] != "Disabled":
-                self.is_idle_thread_running = True
-                self.check_idle_thread = threading.Thread(target=self.check_idle)
-                self.check_idle_thread.daemon = True
-                self.check_idle_thread.start()
+        if idle[0] != "Disabled":
+            self.is_idle_thread_running = True
+            self.check_idle_thread = threading.Thread(target=self.check_idle)
+            self.check_idle_thread.daemon = True
+            self.check_idle_thread.start()
 
     # Checks if the user is idle for 5 minutes and does some action so that Tera Term doesn't close by itself
     def check_idle(self):
