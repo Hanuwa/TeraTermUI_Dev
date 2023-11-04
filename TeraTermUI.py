@@ -1077,7 +1077,10 @@ class TeraTermUI(customtkinter.CTk):
     def search_event(self, task_done):
         with self.lock_thread:
             try:
-                self.automation_preparations()
+                self.focus_set()
+                self.destroy_windows()
+                self.hide_sidebar_windows()
+                self.unbind("<Return>")
                 classes = self.s_classes_entry.get().upper().replace(" ", "")
                 semester = self.s_semester_entry.get().upper().replace(" ", "")
                 show_all = self.show_all.get()
@@ -1185,7 +1188,6 @@ class TeraTermUI(customtkinter.CTk):
                                   icon="warning", button_width=380)
                     self.error_occurred = False
                 self.bind("<Return>", lambda event: self.search_event_handler())
-                ctypes.windll.user32.BlockInput(False)
 
     def search_next_page_layout(self):
         self.search_next_page_status = True
@@ -2137,7 +2139,10 @@ class TeraTermUI(customtkinter.CTk):
         with self.lock_thread:
             try:
                 lang = self.language_menu.get()
-                self.automation_preparations()
+                self.focus_set()
+                self.destroy_windows()
+                self.hide_sidebar_windows()
+                self.unbind("<Return>")
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
                         term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
@@ -2183,7 +2188,6 @@ class TeraTermUI(customtkinter.CTk):
                                   icon="warning", button_width=380)
                     self.error_occurred = False
                 self.bind("<Return>", lambda event: self.search_event_handler())
-                ctypes.windll.user32.BlockInput(False)
 
     # disable these buttons if the user changed screen
     def disable_go_next_buttons(self):
@@ -5300,6 +5304,7 @@ class TeraTermUI(customtkinter.CTk):
                     if file.lower() == "ttermpro.exe":
                         return os.path.join(root, file)
             return None
+
         for path in common_paths:
             result = search_within_path(os.path.expandvars(path))
             if result:
@@ -6356,4 +6361,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
