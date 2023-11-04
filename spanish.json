@@ -193,7 +193,7 @@
 	"auto_enroll_idle": "Anti-Inactivo tiene que estar activado para usar la Auto-Matrícula",
 	"failed_to_find_date": "No se pudo encontrar\nla fecha de matricula",
 	"date_past": "La fecha de matricula ya pasó",
-	"date_not_within_6_hours": "Auto-Matrícula solo disponible\nel mismo día de la matrícula\ny dentro de un margen de 6 horas",
+	"date_not_within_8_hours": "Auto-Matrícula solo disponible\nel mismo día de la matrícula\ny dentro de un margen de 8 horas",
 	"performing_auto_enroll": "ejecutando auto-matrícula ahora...",
 	"auto_enroll_activated": "\nAuto-Matrícula ha sido activado",
 	"failed_saved_lack_info": "No se guardaron clases debido\na que falta información",
