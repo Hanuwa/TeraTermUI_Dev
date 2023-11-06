@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 11/4/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 11/6/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -127,6 +127,7 @@ class TeraTermUI(customtkinter.CTk):
         self.progress_bar = None
         self.check_idle_thread = None
         self.idle_num_check = None
+        self.idle_warning = None
         self.feedbackText = None
         self.feedbackSend = None
         self.search_box = None
@@ -3442,7 +3443,6 @@ class TeraTermUI(customtkinter.CTk):
             # Second Tab
             self.search_scrollbar = customtkinter.CTkScrollableFrame(master=self.tabview.tab(self.search_tab),
                                                                      corner_radius=10, width=600, height=293)
-            self.search_scrollbar.bind("<Button-1>", lambda event: self.search_scrollbar.focus_set())
             self.title_search = customtkinter.CTkLabel(self.search_scrollbar,
                                                        text=translation["title_search"],
                                                        font=customtkinter.CTkFont(size=20, weight="bold"))
@@ -4862,14 +4862,20 @@ class TeraTermUI(customtkinter.CTk):
 
     # Checks if the user is idle for 5 minutes and does some action so that Tera Term doesn't close by itself
     def check_idle(self):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
         self.idle_num_check = 0
         while self.is_idle_thread_running and not self.stop_check_idle.is_set():
             if time.time() - self.last_activity >= 300:
                 with self.lock_thread:
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
+                        lang = self.language_menu.get()
+                        translation = self.load_language(lang)
                         self.automation_preparations()
-                        if TeraTermUI.window_exists("Exit"):
+                        if TeraTermUI.window_exists(translation["exit"]):
                             self.exit.close_messagebox()
+                        if TeraTermUI.window_exists(translation["idle_warning_title"]):
+                            self.idle_warning.close_messagebox()
                         term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                         if term_window.isMinimized:
                             term_window.restore()
@@ -4897,6 +4903,16 @@ class TeraTermUI(customtkinter.CTk):
                             self.idle_num_check += 1
                         if self.countdown_running:
                             self.idle_num_check = 1
+                        if self.idle_num_check == 11:
+                            def idle_warning():
+                                if not self.disable_audio:
+                                    winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                                self.idle_warning = CTkMessagebox(master=self, title=translation["idle_warning_title"],
+                                                                  message=translation["idle_warning"], button_width=380)
+                                response = self.idle_warning.get()[0]
+                                if response == "OK":
+                                    self.idle_num_check = 0
+                            self.after(0, idle_warning)
                         if self.in_multiple_screen:
                             self.set_focus_to_tkinter()
                             self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
@@ -4908,7 +4924,7 @@ class TeraTermUI(customtkinter.CTk):
                         ctypes.windll.user32.BlockInput(False)
                     else:
                         self.stop_check_idle.is_set()
-            if self.idle_num_check == 6:
+            if self.idle_num_check == 12:
                 break
             time.sleep(3)
 
@@ -5018,8 +5034,8 @@ class TeraTermUI(customtkinter.CTk):
 
     # Set focus on Tera Term window
     def unfocus_tkinter(self):
-        pywinauto_handle = self.uprb.top_window().handle
-        win32gui.SetForegroundWindow(pywinauto_handle)
+        term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
+        term_window.activate()
 
     def tab_switcher(self):
         if self.tabview.get() == self.enroll_tab:
@@ -5055,6 +5071,7 @@ class TeraTermUI(customtkinter.CTk):
             self.in_search_frame = True
             self.bind("<Return>", lambda event: self.search_event_handler())
             self.bind("<space>", lambda event: self.spacebar_event())
+            self.search_scrollbar.bind("<Button-1>", lambda event: self.search_scrollbar.focus_set())
         elif self.tabview.get() == self.other_tab:
             self.in_enroll_frame = False
             self.in_search_frame = False
@@ -6359,3 +6376,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
