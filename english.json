@@ -123,7 +123,7 @@
 	"idle_title": "\nDisables the functionality that prevents Tera Term\nfrom closing automatically because of inactivity",
 	"idle": "Disable Anti-Idle",
 	"idle_warning_title": "Anti-Idle Warning",
-	"idle_warning": "Reached the limit of consecutive times the Anti-Idle has been used.\n\nIf you do not click the 'OK' button the Anti-Idle will be disabled",
+	"idle_warning": "Reached the limit of consecutive times the Anti-Idle has been used.\n\nIf you do not click the 'OK' button, the Anti-Idle will be disabled",
 	"audio_title": "\nMute audio and sound effects of the application",
 	"audio": "Mute Audio",
 	"fix_title": "\nFix the program not executing things properly",
