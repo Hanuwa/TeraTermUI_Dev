@@ -4029,23 +4029,41 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language(lang)
         modified_data = []
         for item in data:
-            if "TIMES" in item:
-                times_parts = item["TIMES"].split("-")
+            days = item["DAYS"].split(", ")
+            times = item["TIMES"].split(", ")
+            first = True  # Flag to identify the first day and time
+
+            # Split instructor name for the first entry
+            if "INSTRUCTOR" in item:
+                parts = item["INSTRUCTOR"].split(",")
+                item["INSTRUCTOR"] = "\n".join(parts)
+
+            for day, time in zip(days, times):
+                if first:
+                    # For the first day and time, keep the item details intact but remove additional days and times
+                    modified_item = item.copy()
+                    modified_item["DAYS"] = day
+                    modified_item["TIMES"] = time
+                    first = False  # Unset the flag after the first iteration
+                else:
+                    # For additional days and times, create a new item with only the day and time
+                    modified_item = {key: '' for key in item}  # Initialize all keys with empty strings
+                    modified_item["DAYS"] = day
+                    modified_item["TIMES"] = time
+
+                # Process times to have proper format for each entry
+                times_parts = modified_item["TIMES"].split("-")
                 if len(times_parts) == 2:
                     start, end = times_parts
                     start = start.lstrip("0")
                     end = end.lstrip("0")
                     start = start[:-4] + ":" + start[-4:-2] + " " + start[-2:]
                     end = end[:-4] + ":" + end[-4:-2] + " " + end[-2:]
-                    item["TIMES"] = "\n".join([start, end])
+                    modified_item["TIMES"] = "\n".join([start, end])
                 else:
-                    item["TIMES"] = item["TIMES"].lstrip("0")
+                    modified_item["TIMES"] = modified_item["TIMES"].lstrip("0")
 
-            if "INSTRUCTOR" in item:
-                parts = item["INSTRUCTOR"].split(",")
-                item["INSTRUCTOR"] = "\n".join(parts)
-
-            modified_data.append(item)
+                modified_data.append(modified_item)
 
         headers = ["SEC", "M", "CRED", "DAYS", "TIMES", "AV", "INSTRUCTOR"]
         table_values = [headers] + [[item.get(header, "") for header in headers] for item in modified_data]
@@ -4235,6 +4253,7 @@ class TeraTermUI(customtkinter.CTk):
         course_found = False
         invalid_action = False
         y_n_found = False
+        current_section = None
 
         for i, line in enumerate(lines):
             if "INVALID ACTION" in line:
@@ -4250,29 +4269,48 @@ class TeraTermUI(customtkinter.CTk):
                 if y_n_value in ["Y", "N"]:
                     y_n_found = True
 
+        # Regex pattern to match the course entries
         pattern = re.compile(
-            r"(\w+)\s+(\w)\s+(?:LEC|LAB|INT|PRA|SEM)\s+(\d+\.\d+)\s+(\w+)\s+([\dAMP\-TBA]+)\s+([\d\s]+)?\s+.*?\s*(["
+            r"(\w+)\s+(\w)\s+(LEC|LAB|INT|PRA|SEM)\s+(\d+\.\d+)\s+(\w+)\s+([\dAMP\-TBA]+)\s+([\d\s]+)?\s+.*?\s*(["
             r"NFUL\s]*.*)"
         )
 
+        # Regex pattern to match additional time slots
+        time_pattern = re.compile(
+            r"^(\s+)(\w{2})\s+([\dAMP\-]+)\s*$"
+        )
+
         for line in lines:
-            match = pattern.search(line)
-            if match:
-                instructor = match.group(7)
-                instructor = re.sub(r"\bN\b", "", instructor)  # remove standalone 'N'
-                instructor = re.sub(r"\bFULL\b", "", instructor)  # remove standalone 'FULL'
-                instructor = re.sub(r"\bRSVD\b", "", instructor)  # remove standalone 'RSVD'
-                instructor = re.sub(r"\bRSTR\b", "", instructor)  # remove standalone 'RSTR'
-                instructor = instructor.strip()  # remove leading and trailing whitespace
-                data.append({
-                    "SEC": match.group(1),
-                    "M": match.group(2),
-                    "CRED": match.group(3),
-                    "DAYS": match.group(4),
-                    "TIMES": match.group(5),
-                    "AV": match.group(6).strip() if match.group(6) else "0",
-                    "INSTRUCTOR": instructor
-                })
+            if "LEC" in line or "LAB" in line or "INT" in line or "PRA" in line or "SEM" in line:
+                match = pattern.search(line)
+                if match:
+                    instructor = match.group(8)
+                    instructor = re.sub(r"\bN\b", "", instructor)  # remove standalone 'N'
+                    instructor = re.sub(r"\bFULL\b", "", instructor)  # remove standalone 'FULL'
+                    instructor = re.sub(r"\bRSVD\b", "", instructor)  # remove standalone 'RSVD'
+                    instructor = re.sub(r"\bRSTR\b", "", instructor)  # remove standalone 'RSTR'
+                    instructor = instructor.strip()  # remove leading and trailing whitespace
+                    current_section = {
+                        "SEC": match.group(1),
+                        "M": match.group(2),
+                        "CRED": match.group(4),
+                        "DAYS": [match.group(5)],
+                        "TIMES": [match.group(6)],
+                        "AV": match.group(7).strip() if match.group(7) else "0",
+                        "INSTRUCTOR": instructor
+                    }
+                    data.append(current_section)
+            else:
+                time_match = time_pattern.search(line)
+                if time_match and current_section:
+                    current_section["DAYS"].append(time_match.group(2))
+                    current_section["TIMES"].append(time_match.group(3))
+
+        # Combine days and times into single strings
+        for section in data:
+            section['DAYS'] = ', '.join(section['DAYS'])
+            section['TIMES'] = ', '.join(section['TIMES'])
+
         return data, course_found, invalid_action, y_n_found
 
     # checks whether the program can continue its normal execution or if the server is on maintenance
