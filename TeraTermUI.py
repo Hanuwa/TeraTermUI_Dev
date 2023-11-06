@@ -4081,7 +4081,7 @@ class TeraTermUI(customtkinter.CTk):
         display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_pdf,
                                                font=customtkinter.CTkFont(size=15, weight="bold", underline=True))
         if self.table_count is None:
-            table_count_label = f" {len(self.class_table_pairs)}/6"
+            table_count_label = f" {len(self.class_table_pairs)}/10"
             self.table_count = customtkinter.CTkLabel(self.search_scrollbar, text=table_count_label)
             self.previous_button = CustomButton(self.search_scrollbar, text=translation["previous"],
                                                 command=self.show_previous_table)
@@ -4113,7 +4113,7 @@ class TeraTermUI(customtkinter.CTk):
         self.class_table_pairs.append((display_class, new_table, self.get_semester_for_pdf))
         self.current_table_index = len(self.class_table_pairs) - 1
 
-        if len(self.class_table_pairs) > 6:
+        if len(self.class_table_pairs) > 10:
             display_class_to_remove, table_to_remove, _ = self.class_table_pairs[0]
             self.after(0, display_class_to_remove.destroy)
             self.after(0, table_to_remove.destroy)
@@ -4135,9 +4135,9 @@ class TeraTermUI(customtkinter.CTk):
         self.remove_button.grid(row=5, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
         self.download_pdf.grid(row=6, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
         self.update_buttons()
-        table_count_label = f"{translation['table_count']} {len(self.class_table_pairs)}/6"
+        table_count_label = f"{translation['table_count']} {len(self.class_table_pairs)}/10"
         self.table_count.configure(text=table_count_label)
-        if len(self.class_table_pairs) == 6:
+        if len(self.class_table_pairs) == 10:
             self.table_count.configure(text_color="red")
 
     def find_duplicate(self, new_display_class, new_semester):
@@ -4198,12 +4198,12 @@ class TeraTermUI(customtkinter.CTk):
         table.grid_forget()
         self.after(0, display_class.destroy)
         self.after(0, table.destroy)
-        if len(self.class_table_pairs) == 6:
+        if len(self.class_table_pairs) == 10:
             self.table_count.configure(text_color=("black", "white"))
         del self.class_table_pairs[self.current_table_index]
 
         # Step 2: Update the table count
-        table_count_label = f"{translation['table_count']} {len(self.class_table_pairs)}/6"
+        table_count_label = f"{translation['table_count']} {len(self.class_table_pairs)}/10"
         self.table_count.configure(text=table_count_label)
 
         # Step 3: Hide all GUI elements if no tables are left
@@ -5079,7 +5079,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.next_button.grid_forget()
             self.remove_button.grid(row=5, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
             self.download_pdf.grid(row=6, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-            table_count_label = f"{translation['table_count']} {len(self.class_table_pairs)}/6"
+            table_count_label = f"{translation['table_count']} {len(self.class_table_pairs)}/10"
             self.table_count.configure(text=table_count_label)
 
     # Creates the status window
