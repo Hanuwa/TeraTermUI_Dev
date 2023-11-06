@@ -4236,6 +4236,8 @@ class TeraTermUI(customtkinter.CTk):
             self.remove_button.grid_forget()
             self.download_pdf.grid_forget()
             self.search_scrollbar.scroll_to_top()
+            self.after(0, display_class.destroy)
+            self.after(0, table.destroy)
             self.after(0, self.set_focus)
             return
 
@@ -5104,7 +5106,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.remove_button.grid_forget()
                 self.download_pdf.grid_forget()
                 self.search_scrollbar.scroll_to_top()
-                self.after(350, self.load_table)
+                self.after(100, self.load_table)
             self.in_enroll_frame = False
             self.in_search_frame = True
             self.bind("<Return>", lambda event: self.search_event_handler())
