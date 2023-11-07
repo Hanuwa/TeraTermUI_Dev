@@ -954,7 +954,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(classes)
                                     self.uprb.UprbayTeraTermVt.type_keys(section)
                                     send_keys("{ENTER}")
-                                    time.sleep(1.5)
+                                    time.sleep(1.7)
                                     screenshot_thread = threading.Thread(target=self.capture_screenshot)
                                     screenshot_thread.start()
                                     screenshot_thread.join()
@@ -991,12 +991,12 @@ class TeraTermUI(customtkinter.CTk):
                                             self.after(0, self.show_success_message, 350, 265,
                                                        translation["success_dropped"])
                                         if self.e_counter + self.m_counter == 15:
-                                            time.sleep(3.2)
                                             self.submit.configure(state="disabled")
                                             self.multiple.configure(state="disabled")
-                                            self.after(0, self.show_information_message, 350, 265,
+                                            self.after(2500, self.show_information_message, 350, 265,
                                                        translation["enrollment_limit"])
                                     else:
+                                        self.after(1500, self.show_enrollment_error_information, text)
                                         self.after(0, self.show_error_message, 320, 235,
                                                    translation["failed_enroll"])
                                 else:
@@ -1470,7 +1470,7 @@ class TeraTermUI(customtkinter.CTk):
                                         send_keys("{ENTER}")
                                     else:
                                         send_keys("{TAB}")
-                                time.sleep(1.5)
+                                time.sleep(1.7)
                                 screenshot_thread = threading.Thread(target=self.capture_screenshot)
                                 screenshot_thread.start()
                                 screenshot_thread.join()
@@ -1500,6 +1500,7 @@ class TeraTermUI(customtkinter.CTk):
                                                     del self.enrolled_classes_list[sec]
                                                 if sec not in self.dropped_classes_list:
                                                     self.dropped_classes_list[sec] = cls
+                                    self.after(2500, self.show_enrollment_error_information, text)
                                     if "CONFIRMED" in text and "DROPPED" in text:
                                         send_keys("{ENTER}")
                                         self.after(0, self.show_success_message, 350, 265,
@@ -1511,21 +1512,11 @@ class TeraTermUI(customtkinter.CTk):
                                     elif "DROPPED" in text and "CONFIRMED" not in text:
                                         self.after(0, self.show_success_message, 350, 265,
                                                    translation["dropped_multiple_success"])
-                                    if "INVALID COURSE ID" in text or "COURSE RESERVED" in text or "COURSE CLOSED" in \
-                                            text or "CRS ALRDY TAKEN/PASSED" in text or "Closed by Spec-Prog" in text \
-                                            or "ILLEGAL DROP-NOT ENR" in text or "NEW COURSE,NO FUNCTION" in text or \
-                                            "PRESENTLY ENROLLED" in text or "R/TC" in text:
-                                        for i in range(self.a_counter + 1, 0, -1):
-                                            if self.enrolled_classes_list:
-                                                self.enrolled_classes_list.popitem()
-                                            if self.dropped_classes_list:
-                                                self.dropped_classes_list.popitem()
                                     if self.e_counter + self.m_counter == 15:
                                         self.go_back_event2()
                                         self.submit.configure(state="disabled")
                                         self.multiple.configure(state="disabled")
-                                        time.sleep(3.2)
-                                        self.after(0, self.show_information_message, 350, 265,
+                                        self.after(2500, self.show_information_message, 350, 265,
                                                    translation["enrollment_limit"])
                                     for i in range(self.a_counter + 1):
                                         self.m_classes_entry[i].delete(0, "end")
@@ -1538,6 +1529,7 @@ class TeraTermUI(customtkinter.CTk):
                                 else:
                                     self.after(0, self.show_error_message, 320, 235,
                                                translation["failed_enroll_multiple"])
+                                    self.after(2500, self.show_enrollment_error_information, text)
                                     self.m_counter = self.m_counter - self.a_counter - 1
                                     self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                             else:
@@ -1982,26 +1974,7 @@ class TeraTermUI(customtkinter.CTk):
                                                        "Error! No se pudo entrar"
                                                        "\n a la pantalla" + self.menu_entry.get())
                                 case "SO":
-                                    self.hide_loading_screen()
-                                    msg = CTkMessagebox(master=self, title=translation["error"],
-                                                        message=translation["error_message"],
-                                                        option_1=translation["option_1"],
-                                                        option_2=translation["option_2"],
-                                                        option_3=translation["option_3"],
-                                                        icon_size=(65, 65),
-                                                        button_color=("#c30101", "#145DA0", "#145DA0"),
-                                                        hover_color=("darkred", "darkblue", "darkblue"))
-                                    response = msg.get()
-                                    self.show_loading_screen_again()
-                                    if TeraTermUI.checkIfProcessRunning("ttermpro") and response[0] == "Yes" \
-                                            or response[0] == "Sí":
-                                        self.uprb.UprbayTeraTermVt.type_keys("SO")
-                                        send_keys("{ENTER}")
-                                    if not TeraTermUI.checkIfProcessRunning("ttermpro") and response[0] == "Yes" \
-                                            or response[0] == "Sí":
-                                        self.focus_or_not = True
-                                        self.after(0, self.show_error_message, 350, 265,
-                                                   translation["tera_term_not_running"])
+                                    self.after(0, self.sign_out)
                         else:
                             if not semester or not menu:
                                 self.after(0, self.show_error_message, 350, 230,
@@ -2037,6 +2010,28 @@ class TeraTermUI(customtkinter.CTk):
                     self.error_occurred = False
                 self.bind("<Return>", lambda event: self.option_menu_event_handler())
                 ctypes.windll.user32.BlockInput(False)
+
+    def sign_out(self):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        msg = CTkMessagebox(master=self, title=translation["so_title"],
+                            message=translation["so_message"],
+                            option_1=translation["option_1"],
+                            option_2=translation["option_2"],
+                            option_3=translation["option_3"],
+                            icon_size=(65, 65),
+                            button_color=("#c30101", "#145DA0", "#145DA0"),
+                            hover_color=("darkred", "darkblue", "darkblue"))
+        response = msg.get()
+        if TeraTermUI.checkIfProcessRunning("ttermpro") and response[0] == "Yes" \
+                or response[0] == "Sí":
+            self.uprb.UprbayTeraTermVt.type_keys("SO")
+            send_keys("{ENTER}")
+        if not TeraTermUI.checkIfProcessRunning("ttermpro") and response[0] == "Yes" \
+                or response[0] == "Sí":
+            self.focus_or_not = True
+            self.after(0, self.show_error_message, 350, 265,
+                       translation["tera_term_not_running"])
 
     def go_next_page_handler(self):
         task_done = threading.Event()
@@ -4544,14 +4539,44 @@ class TeraTermUI(customtkinter.CTk):
             self.changed_location = False
 
     # Pop window that shows the user more context on why they couldn't enroll their classes
-    def show_enrollment_error_information(self):
+    def show_enrollment_error_information(self, text="Error"):
         self.destroy_windows()
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        if not self.disable_audio:
-            winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-        CTkMessagebox(master=self, title=translation["automation_error_title"],
-                      message=translation["enrollment_error"], button_width=380)
+        error_messages = {
+            "INVALID COURSE ID": "INVALID COURSE ID",
+            "COURSE RESERVED": "COURSE RESERVED",
+            "COURSE CLOSED": "COURSE CLOSED",
+            "CRS ALRDY TAKEN/PASSED": "CRS ALRDY TAKEN/PASSED",
+            "Closed by Spec-Prog": "Closed by Spec-Prog",
+            "ILLEGAL DROP-NOT ENR": "ILLEGAL DROP-NOT ENR",
+            "NEW COURSE,NO FUNCTION": "NEW COURSE,NO FUNCTION",
+            "PRESENTLY ENROLLED": "PRESENTLY ENROLLED",
+            "R/TC": "R/TC"
+        }
+        # List to hold all error messages found in the text
+        found_errors = []
+        # Check each error message
+        for code in error_messages:
+            if code in text:
+                found_errors.append(error_messages[code])
+        # If errors were found, show them, otherwise show a default message
+        if found_errors:
+            error_message_str = ", ".join(found_errors)
+            if not self.disable_audio:
+                winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+            CTkMessagebox(master=self, title=translation["automation_error_title"], icon="cancel",
+                          message=translation["specific_enrollment_error"] + error_message_str, button_width=380)
+            for i in range(self.a_counter + 1, 0, -1):
+                if self.enrolled_classes_list:
+                    self.enrolled_classes_list.popitem()
+                if self.dropped_classes_list:
+                    self.dropped_classes_list.popitem()
+        else:
+            if not self.disable_audio:
+                winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+            CTkMessagebox(master=self, title=translation["automation_error_title"],
+                          message=translation["enrollment_error"], button_width=380)
 
     # important information window pop up message
     def show_information_message(self, width, height, success_msg_text):
@@ -6420,4 +6445,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
