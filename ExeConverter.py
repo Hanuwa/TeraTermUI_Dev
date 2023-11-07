@@ -98,7 +98,6 @@ else:
     update = "v" + update_without_v
 versions = ['installer', 'portable']
 output_directory = os.path.join(r"C:/Users/" + username + "/OneDrive/Documentos", "TeraTermUI_" + update)
-upx_command = r"upx --brute " + output_directory + r"\TeraTermUI.dist\TeraTermUI.exe"
 
 # If process gets abruptly interrupted, load backup file
 program_backup = project_directory + r"\TeraTermUI.BAK.py"
@@ -271,20 +270,6 @@ for version in versions:
         shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
         os.remove(program_backup)
         print(Fore.RED + f"Failed to create executable with Nuitka: {e}\n" + Style.RESET_ALL)
-        sys.exit(1)
-
-    try:
-        subprocess.run(upx_command, shell=True, check=True)
-        print(Fore.GREEN + "Successfully completed UPX script\n" + Style.RESET_ALL)
-    except KeyboardInterrupt as e:
-        shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
-        os.remove(program_backup)
-        print(Fore.RED + f"Failed to compress executable with UPX: {e}\n" + Style.RESET_ALL)
-        sys.exit(1)
-    except Exception as e:
-        shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
-        os.remove(program_backup)
-        print(Fore.RED + f"Failed to compress executable with UPX: {e}\n" + Style.RESET_ALL)
         sys.exit(1)
 
     if script == "installer":
