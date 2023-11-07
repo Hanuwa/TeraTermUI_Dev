@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 11/6/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 11/7/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -944,7 +944,7 @@ class TeraTermUI(customtkinter.CTk):
                                         not in text_output and "REGISTRATION DATA" in text_output and \
                                         count_enroll != 15:
                                     self.e_counter = 0
-                                    send_keys("{TAB 2}")
+                                    send_keys("{TAB 3}")
                                     for i in range(count_enroll, 0, -1):
                                         send_keys("{TAB 2}")
                                     if choice == "Register":
@@ -954,6 +954,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(classes)
                                     self.uprb.UprbayTeraTermVt.type_keys(section)
                                     send_keys("{ENTER}")
+                                    time.sleep(1.5)
                                     screenshot_thread = threading.Thread(target=self.capture_screenshot)
                                     screenshot_thread.start()
                                     screenshot_thread.join()
@@ -1424,7 +1425,7 @@ class TeraTermUI(customtkinter.CTk):
                 sections = []
                 semester = self.m_semester_entry[0].get().upper().replace(" ", "")
                 choices = []
-                for i in range(self.a_counter):
+                for i in range(self.a_counter + 1):
                     classes.append(self.m_classes_entry[i].get().upper().replace(" ", ""))
                     sections.append(self.m_section_entry[i].get().upper().replace(" ", ""))
                     choices.append(self.m_register_menu[i].get())
@@ -1453,7 +1454,7 @@ class TeraTermUI(customtkinter.CTk):
                                     and "REGISTRATION DATA" in text_output and count_enroll != 15:
                                 self.e_counter = 0
                                 self.m_counter = 0
-                                send_keys("{TAB 2}")
+                                send_keys("{TAB 3}")
                                 for i in range(count_enroll, 0, -1):
                                     self.e_counter += 1
                                     send_keys("{TAB 2}")
@@ -1469,6 +1470,7 @@ class TeraTermUI(customtkinter.CTk):
                                         send_keys("{ENTER}")
                                     else:
                                         send_keys("{TAB}")
+                                time.sleep(1.5)
                                 screenshot_thread = threading.Thread(target=self.capture_screenshot)
                                 screenshot_thread.start()
                                 screenshot_thread.join()
@@ -1484,7 +1486,7 @@ class TeraTermUI(customtkinter.CTk):
                                         (self.m_register_menu[i].get(), i,
                                          self.m_section_entry[i].get().upper().replace(" ", ""),
                                          self.m_classes_entry[i].get().upper().replace(" ", ""))
-                                        for i in range(self.a_counter)
+                                        for i in range(self.a_counter + 1)
                                     ]
                                     for c, cnt, sec, cls in choice:
                                         if sec:
@@ -1525,7 +1527,7 @@ class TeraTermUI(customtkinter.CTk):
                                         time.sleep(3.2)
                                         self.after(0, self.show_information_message, 350, 265,
                                                    translation["enrollment_limit"])
-                                    for i in range(self.a_counter):
+                                    for i in range(self.a_counter + 1):
                                         self.m_classes_entry[i].delete(0, "end")
                                         self.m_section_entry[i].delete(0, "end")
                                     for i in range(6):
