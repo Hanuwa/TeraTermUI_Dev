@@ -3033,14 +3033,16 @@ class TeraTermUI(customtkinter.CTk):
                 self.started_auto_enroll = True
                 self.after(5000, self.submit_multiple_event_handler)
                 self.after(5000, self.end_countdown)
-                if TeraTermUI.window_exists("Exit"):
+                if TeraTermUI.window_exists(translation["exit"]):
                     self.after(5000, self.exit.close_messagebox)
                 return
             else:
                 hours, remainder = divmod(total_seconds, 3600)
-                minutes, _ = divmod(remainder, 60)
+                minutes, seconds = divmod(remainder, 60)
                 # If more than an hour remains
                 if hours > 0:
+                    if seconds > 0:
+                        minutes += 1
                     if lang == "English":
                         if minutes == 0:
                             self.timer_label.configure(
@@ -3079,7 +3081,7 @@ class TeraTermUI(customtkinter.CTk):
 
                 else:  # When there's less than an hour remaining
                     # If there's a part of minute left, consider it as a whole minute
-                    if _ > 0:
+                    if seconds > 0:
                         minutes += 1
                     if lang == "English":
                         if minutes >= 60:
