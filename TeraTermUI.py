@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 11/7/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 11/8/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -147,6 +147,7 @@ class TeraTermUI(customtkinter.CTk):
         self.download_pdf_tooltip = None
         self.tooltip = None
         self.exit = None
+        self.is_exit_dialog_open = False
         self.dialog = None
         self.dialog_input = None
 
@@ -576,6 +577,9 @@ class TeraTermUI(customtkinter.CTk):
 
     # function that when the user tries to close the application a confirm dialog opens up
     def on_closing(self):
+        if hasattr(self, 'is_exit_dialog_open') and self.is_exit_dialog_open:
+            return
+        self.is_exit_dialog_open = True
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         self.exit = CTkMessagebox(master=self, title=translation["exit"], message=translation["exit_message"],
@@ -587,6 +591,7 @@ class TeraTermUI(customtkinter.CTk):
         if on_exit and on_exit[0] is not None and on_exit[0] == "1":
             self.exit.check_checkbox()
         response, self.checkbox_state = self.exit.get()
+        self.is_exit_dialog_open = False
         if response == "Yes" or response == "Sí":
             if hasattr(self, "boot_up_thread") and self.boot_up_thread.is_alive():
                 self.boot_up_thread.join()
@@ -4675,9 +4680,9 @@ class TeraTermUI(customtkinter.CTk):
                 self.show_event()
             elif self.in_enroll_frame:
                 choice = self.radio_var.get()
-                if choice == "Register":
+                if choice == "Register" or choice == "Registra":
                     self.drop.select()
-                elif choice == "Drop":
+                elif choice == "Drop" or choice == "Baja":
                     self.register.select()
             elif self.in_search_frame:
                 check = self.show_all.get()
