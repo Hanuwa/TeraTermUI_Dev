@@ -996,7 +996,7 @@ class TeraTermUI(customtkinter.CTk):
                                             self.after(2500, self.show_information_message, 350, 265,
                                                        translation["enrollment_limit"])
                                     else:
-                                        self.after(1500, self.show_enrollment_error_information, text)
+                                        self.after(2500, self.show_enrollment_error_information, text)
                                         self.after(0, self.show_error_message, 320, 235,
                                                    translation["failed_enroll"])
                                 else:
@@ -1518,14 +1518,6 @@ class TeraTermUI(customtkinter.CTk):
                                         self.multiple.configure(state="disabled")
                                         self.after(2500, self.show_information_message, 350, 265,
                                                    translation["enrollment_limit"])
-                                    for i in range(self.a_counter + 1):
-                                        self.m_classes_entry[i].delete(0, "end")
-                                        self.m_section_entry[i].delete(0, "end")
-                                    for i in range(6):
-                                        self.m_classes_entry[i].configure(
-                                            placeholder_text=self.placeholder_texts_classes[i])
-                                        self.m_section_entry[i].configure(
-                                            placeholder_text=self.placeholder_texts_sections[i])
                                 else:
                                     self.after(0, self.show_error_message, 320, 235,
                                                translation["failed_enroll_multiple"])
@@ -2945,7 +2937,7 @@ class TeraTermUI(customtkinter.CTk):
                                 timedelta(hours=8, minutes=15) >= time_difference >= timedelta()
                             is_more_than_one_day = (your_date.date() - current_date.date() > timedelta(days=1))
                             is_current_time_ahead = current_date.time() > your_date.time()
-                            is_current_time_8_hours_ahead = time_difference >= timedelta(hours=-8)
+                            is_current_time_24_hours_ahead = time_difference >= timedelta(hours=-24)
                             # Comparing Dates
                             if (is_same_date and is_time_difference_within_8_hours) or \
                                     (is_next_date and is_time_difference_within_8_hours):
@@ -2959,7 +2951,7 @@ class TeraTermUI(customtkinter.CTk):
                                 # Start the countdown
                                 self.after(100, self.countdown, your_date)
                             elif is_past_date or (is_same_date and is_current_time_ahead):
-                                if is_current_time_8_hours_ahead:
+                                if is_current_time_24_hours_ahead:
                                     self.running_countdown = customtkinter.BooleanVar()
                                     self.running_countdown.set(True)
                                     self.started_auto_enroll = True
@@ -4572,11 +4564,22 @@ class TeraTermUI(customtkinter.CTk):
                     self.enrolled_classes_list.popitem()
                 if self.dropped_classes_list:
                     self.dropped_classes_list.popitem()
+            self.unfocus_tkinter()
         else:
+            for i in range(self.a_counter + 1):
+                self.m_classes_entry[i].delete(0, "end")
+                self.m_section_entry[i].delete(0, "end")
+            for i in range(6):
+                self.m_classes_entry[i].configure(
+                    placeholder_text=self.placeholder_texts_classes[i])
+                self.m_section_entry[i].configure(
+                    placeholder_text=self.placeholder_texts_sections[i])
+        if self.enrollment_error_check:
             if not self.disable_audio:
                 winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
             CTkMessagebox(master=self, title=translation["automation_error_title"],
                           message=translation["enrollment_error"], button_width=380)
+            self.unfocus_tkinter()
 
     # important information window pop up message
     def show_information_message(self, width, height, success_msg_text):
