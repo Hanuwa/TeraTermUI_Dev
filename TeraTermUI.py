@@ -2027,7 +2027,7 @@ class TeraTermUI(customtkinter.CTk):
                 or response[0] == "Sí":
             self.uprb.UprbayTeraTermVt.type_keys("SO")
             send_keys("{ENTER}")
-        if not TeraTermUI.checkIfProcessRunning("ttermpro") and response[0] == "Yes" \
+        elif not TeraTermUI.checkIfProcessRunning("ttermpro") and response[0] == "Yes" \
                 or response[0] == "Sí":
             self.focus_or_not = True
             self.after(0, self.show_error_message, 350, 265,
@@ -6445,3 +6445,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
