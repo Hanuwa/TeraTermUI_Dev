@@ -862,37 +862,42 @@ class TeraTermUI(customtkinter.CTk):
         msg = None
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        choice = self.radio_var.get().lower()
+        choice = self.radio_var.get()
         self.focus_set()
         if lang == "English":
-            msg = CTkMessagebox(master=self, title="Submit",
-                                message="Are you sure you are ready " + choice + " this class?"
-                                                                                 "\n\nWARNING: Make sure the "
-                                                                                 "information is correct",
-                                icon="images/submit.png",
-                                option_1=translation["option_1"], option_2=translation["option_2"],
-                                option_3=translation["option_3"],
-                                icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                                hover_color=("darkred", "darkblue", "darkblue"))
-        elif lang == "Español":
             if choice == "register":
-                choice = "registra"
-                msg = CTkMessagebox(master=self, title="Someter",
-                                    message="¿Estás preparado para " + choice + "r esta clase?"
-                                                                                "\n\nWARNING: Asegúrese de que la "
-                                                                                "información está correcta",
+                msg = CTkMessagebox(master=self, title="Submit",
+                                    message="Are you sure you are ready " + translation["register"].lower() +
+                                            " this class?\n\nWARNING: Make sure the information is correct",
                                     icon="images/submit.png",
                                     option_1=translation["option_1"], option_2=translation["option_2"],
                                     option_3=translation["option_3"],
                                     icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
                                     hover_color=("darkred", "darkblue", "darkblue"))
-            if choice == "drop":
-                choice = "baja"
+            elif choice == "drop":
+                msg = CTkMessagebox(master=self, title="Submit",
+                                    message="Are you sure you are ready " + translation[
+                                        "drop"].lower() + " this class?\n\nWARNING: Make sure the information "
+                                                          "is correct",
+                                    icon="images/submit.png",
+                                    option_1=translation["option_1"], option_2=translation["option_2"],
+                                    option_3=translation["option_3"],
+                                    icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                    hover_color=("darkred", "darkblue", "darkblue"))
+        elif lang == "Español":
+            if choice == "register":
                 msg = CTkMessagebox(master=self, title="Someter",
-                                    message="¿Estás preparado para darle de " + choice + " a esta clase?"
-                                                                                         "\n\nWARNING: Asegúrese de "
-                                                                                         "que la información está "
-                                                                                         "correcta",
+                                    message="¿Estás preparado para " + translation["register"].lower() + "r esta clase?"
+                                            "\n\nWARNING: Asegúrese de que la información está correcta",
+                                    icon="images/submit.png",
+                                    option_1=translation["option_1"], option_2=translation["option_2"],
+                                    option_3=translation["option_3"],
+                                    icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                                    hover_color=("darkred", "darkblue", "darkblue"))
+            elif choice == "drop":
+                msg = CTkMessagebox(master=self, title="Someter",
+                                    message="¿Estás preparado para darle de " + translation["drop"].lower() +
+                                            " a esta clase?\n\nWARNING: Asegúrese de que la información está correcta",
                                     icon="images/submit.png",
                                     option_1=translation["option_1"], option_2=translation["option_2"],
                                     option_3=translation["option_3"],
@@ -919,9 +924,9 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language(lang)
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
-                        if (choice == "Register" and classes not in
+                        if (choice == "register" and classes not in
                             self.enrolled_classes_list.values() and section not in self.enrolled_classes_list) \
-                                or (choice == "Drop" and classes
+                                or (choice == "drop" and classes
                                     not in self.dropped_classes_list.values() and section
                                     not in self.dropped_classes_list):
                             if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE)
@@ -952,9 +957,9 @@ class TeraTermUI(customtkinter.CTk):
                                     send_keys("{TAB 3}")
                                     for i in range(count_enroll, 0, -1):
                                         send_keys("{TAB 2}")
-                                    if choice == "Register":
+                                    if choice == "register":
                                         self.uprb.UprbayTeraTermVt.type_keys("R")
-                                    elif choice == "Drop":
+                                    elif choice == "drop":
                                         self.uprb.UprbayTeraTermVt.type_keys("D")
                                     self.uprb.UprbayTeraTermVt.type_keys(classes)
                                     self.uprb.UprbayTeraTermVt.type_keys(section)
@@ -976,7 +981,7 @@ class TeraTermUI(customtkinter.CTk):
                                             self.e_counter -= 1
                                         for i in range(count_enroll, 0, -1):
                                             self.e_counter += 1
-                                        if choice == "Register":
+                                        if choice == "register":
                                             send_keys("{ENTER}")
                                             if section in self.dropped_classes_list:
                                                 del self.dropped_classes_list[section]
@@ -986,7 +991,7 @@ class TeraTermUI(customtkinter.CTk):
                                                 del self.enrolled_classes_list[section]
                                             self.after(0, self.show_success_message, 350, 265,
                                                        translation["success_enrolled"])
-                                        elif choice == "Drop":
+                                        elif choice == "drop":
                                             if section in self.enrolled_classes_list:
                                                 del self.enrolled_classes_list[section]
                                             if section not in self.dropped_classes_list:
@@ -3427,11 +3432,11 @@ class TeraTermUI(customtkinter.CTk):
             self.e_semester_entry.set(self.DEFAULT_SEMESTER)
             self.radio_var = tk.StringVar()
             self.register = customtkinter.CTkRadioButton(master=self.tabview.tab(self.enroll_tab),
-                                                         text=translation["register"], value=translation["register"],
+                                                         text=translation["register"], value="register",
                                                          variable=self.radio_var, command=self.set_focus)
             self.register_tooltip = CTkToolTip(self.register, message=translation["register_tooltip"])
             self.drop = customtkinter.CTkRadioButton(master=self.tabview.tab(self.enroll_tab), text=translation["drop"],
-                                                     value=translation["drop"], variable=self.radio_var,
+                                                     value="drop", variable=self.radio_var,
                                                      command=self.set_focus)
             self.drop_tooltip = CTkToolTip(self.drop, message=translation["drop_tooltip"])
             self.register.select()
@@ -4680,9 +4685,9 @@ class TeraTermUI(customtkinter.CTk):
                 self.show_event()
             elif self.in_enroll_frame:
                 choice = self.radio_var.get()
-                if choice == "Register" or choice == "Registra":
+                if choice == "register":
                     self.drop.select()
-                elif choice == "Drop" or choice == "Baja":
+                elif choice == "drop":
                     self.register.select()
             elif self.in_search_frame:
                 check = self.show_all.get()
@@ -4989,6 +4994,7 @@ class TeraTermUI(customtkinter.CTk):
                                 response = self.idle_warning.get()[0]
                                 if response == "OK":
                                     self.idle_num_check = 0
+
                             self.after(0, idle_warning)
                         if self.in_multiple_screen:
                             self.set_focus_to_tkinter()
@@ -6453,4 +6459,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
+
