@@ -63,7 +63,7 @@
 	"drop_tooltip": "Darle de baja a la clase",
 	"username_tooltip": "La universidad requiere esto \npara entrar y acceder\nnel sistema",
 	"ssn_tooltip": "Requerido para iniciar sesión,\nla información se encripta",
-	"code_tooltip": "Código de 4 dígitos incluido en\nel correo electrónico del\nnticket de pre-matrícula",
+	"code_tooltip": "Código de 4 dígitos incluido en\nel correo electrónico del\nticket de su pre-matrícula",
 	"back_tooltip": "Volver al menú principal\nde la aplicación",
 	"back_multiple": "Volver a la pantalla\nnanterior",
 	"show_all_tooltip": "Muestre todas las secciones\no solamente las que están\n abiertas",
