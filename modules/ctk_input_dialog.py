@@ -23,7 +23,8 @@ class CTkInputDialog(CTkToplevel):
                  entry_fg_color: Optional[Union[str, Tuple[str, str]]] = None,
                  entry_border_color: Optional[Union[str, Tuple[str, str]]] = None,
                  entry_text_color: Optional[Union[str, Tuple[str, str]]] = None,
-
+                 ok_text: str = 'Ok',
+                 cancel_text: str = 'Cancel',
                  title: str = "CTkDialog",
                  font: Optional[Union[tuple, CTkFont]] = None,
                  text: str = "CTkDialog"):
@@ -44,6 +45,8 @@ class CTkInputDialog(CTkToplevel):
         self._title = title
         self._text = text
         self._font = font
+        self._ok_text = ok_text
+        self._cancel_text = cancel_text
 
         self.title(self._title)
         self.lift()  # lift window on top
@@ -80,7 +83,7 @@ class CTkInputDialog(CTkToplevel):
                                     fg_color=self._button_fg_color,
                                     hover_color=self._button_hover_color,
                                     text_color=self._button_text_color,
-                                    text='Ok',
+                                    text=self._ok_text,
                                     font=self._font,
                                     command=self._ok_event)
         self._ok_button.grid(row=2, column=0, columnspan=1, padx=(20, 10), pady=(0, 20), sticky="ew")
@@ -91,7 +94,7 @@ class CTkInputDialog(CTkToplevel):
                                         fg_color=self._button_fg_color,
                                         hover_color=self._button_hover_color,
                                         text_color=self._button_text_color,
-                                        text='Cancel',
+                                        text=self._cancel_text,
                                         font=self._font,
                                         command=self._cancel_event)
         self._cancel_button.grid(row=2, column=1, columnspan=1, padx=(10, 20), pady=(0, 20), sticky="ew")
