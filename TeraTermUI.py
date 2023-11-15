@@ -3888,7 +3888,6 @@ class TeraTermUI(customtkinter.CTk):
             # screenshot.save("screenshot.png")
             custom_config = r"--oem 3 --psm 11"
             text = pytesseract.image_to_string(screenshot, config=custom_config)
-            print(text)
             return text
         else:
             try:
