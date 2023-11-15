@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 11/14/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 11/15/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1316,7 +1316,7 @@ class TeraTermUI(customtkinter.CTk):
                 CTkMessagebox(master=self, title=translation["automation_error_title"],
                               message=translation["automation_error"],
                               icon="warning", button_width=380)
-                self.bind("<Return>", lambda event: self.tuition_event_handler())
+                self.switch_tab()
                 self.error_occurred = False
             ctypes.windll.user32.BlockInput(False)
 
@@ -4520,6 +4520,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.change_section_entries.append(None)
                 pad_y = 45
         self.my_classes_frame.grid(row=0, column=1)
+        self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
         self.my_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
         self.modify_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
 
@@ -4802,7 +4803,7 @@ class TeraTermUI(customtkinter.CTk):
                                   message=translation["automation_error"],
                                   icon="warning", button_width=380)
                     self.error_occurred = False
-                self.bind("<Return>", lambda event: self.submit_event_handler())
+                self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
                 ctypes.windll.user32.BlockInput(False)
 
     def refresh_table(self):
