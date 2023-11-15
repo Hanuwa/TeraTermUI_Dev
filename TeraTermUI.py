@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 11/8/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 11/14/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -383,6 +383,23 @@ class TeraTermUI(customtkinter.CTk):
         self.auto_enroll = None
         self.auto_enroll_tooltip = None
 
+        # My Classes
+        self.enrolled_rows = None
+        self.enrolled_classes_data = None
+        self.my_classes_frame = None
+        self.title_my_classes = None
+        self.total_credits_label = None
+        self.submit_my_classes = None
+        self.modify_classes_frame = None
+        self.back_my_classes = None
+        self.enrolled_classes_table = None
+        self.change_section_entries = None
+        self.mod_selection_list = None
+        self.mod_selection = None
+        self.change_section_entry = None
+        self.modify_classes_title = None
+        self.last_course_code = None
+
         # Top level window management, flags and counters
         self.DEFAULT_SEMESTER = "C32"
         self.ignore = True
@@ -403,6 +420,7 @@ class TeraTermUI(customtkinter.CTk):
         self.auto_enroll_bool = False
         self.countdown_running = False
         self.enrollment_error_check = False
+        self.modify_error_check = False
         self.download = False
         self.status = None
         self.help = None
@@ -964,7 +982,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(classes)
                                     self.uprb.UprbayTeraTermVt.type_keys(section)
                                     send_keys("{ENTER}")
-                                    time.sleep(1.7)
+                                    time.sleep(1.5)
                                     screenshot_thread = threading.Thread(target=self.capture_screenshot)
                                     screenshot_thread.start()
                                     screenshot_thread.join()
@@ -1220,7 +1238,8 @@ class TeraTermUI(customtkinter.CTk):
         dialog_x = main_window_x + (main_window_width - dialog_width) / 2
         dialog_y = main_window_y + (main_window_height - dialog_height) / 2
         self.dialog = customtkinter.CTkInputDialog(text=translation["dialog_message"],
-                                                   title=translation["dialog_title"])
+                                                   title=translation["dialog_title"], ok_text=translation["submit"],
+                                                   cancel_text=translation["option_1"])
         self.dialog.geometry("+%d+%d" % (dialog_x + 75, dialog_y + 60))
         self.dialog.after(201, lambda: self.dialog.iconbitmap(self.icon_path))
         self.dialog.bind("<Escape>", lambda event: self.dialog.destroy())
@@ -1260,8 +1279,17 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread.start()
                             screenshot_thread.join()
                             text_output = self.capture_screenshot()
+                            self.uprb.window().menu_select("Edit")
+                            self.uprb.window().menu_select("Edit->Select screen")
+                            self.uprb.UprbayTeraTermVt.type_keys("%c")
+                            self.hide_loading_screen()
+                            self.uprbay_window.click_input(button="left")
+                            self.show_loading_screen_again()
+                            copy = pyperclip.paste()
+                            enrolled_classes, total_credits = self.extract_my_enrolled_classes(copy)
+                            self.after(0, self.display_enrolled_data, enrolled_classes, total_credits)
+                            self.tabview.grid_forget()
                             if "INVALID TERM SELECTION" in text_output or "INVALID ACTION" in text_output:
-                                self.focus_or_not = True
                                 self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                 send_keys("{ENTER}")
@@ -1269,10 +1297,8 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(0, self.show_error_message, 300, 215, translation["invalid_semester"])
 
                         else:
-                            self.focus_or_not = True
                             self.after(0, self.show_error_message, 300, 215, translation["invalid_semester"])
                     else:
-                        self.focus_or_not = True
                         self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
         except Exception as e:
             print("An error occurred: ", e)
@@ -1281,13 +1307,8 @@ class TeraTermUI(customtkinter.CTk):
             task_done.set()
             lang = self.language_menu.get()
             translation = self.load_language(lang)
-            if self.focus_or_not:
-                self.set_focus_to_tkinter()
-            else:
-                self.unfocus_tkinter()
-            self.switch_tab()
+            self.set_focus_to_tkinter()
             self.show_sidebar_windows()
-            self.focus_or_not = False
             if self.error_occurred:
                 self.destroy_windows()
                 if not self.disable_audio:
@@ -1396,6 +1417,11 @@ class TeraTermUI(customtkinter.CTk):
         self.auto_enroll.grid(row=0, column=0, padx=(0, 0), pady=(0, 0))
         self.tabview.grid_forget()
         self.t_buttons_frame.grid_forget()
+        if self.enrolled_rows is not None:
+            self.my_classes_frame.grid_forget()
+            self.modify_classes_frame.grid_forget()
+            self.back_my_classes.grid_forget()
+            self.after(0, self.destroy_enrolled_frame)
 
     def detect_change(self):
         check = self.save_data.get()
@@ -1480,7 +1506,7 @@ class TeraTermUI(customtkinter.CTk):
                                         send_keys("{ENTER}")
                                     else:
                                         send_keys("{TAB}")
-                                time.sleep(1.7)
+                                time.sleep(1.5)
                                 screenshot_thread = threading.Thread(target=self.capture_screenshot)
                                 screenshot_thread.start()
                                 screenshot_thread.join()
@@ -2590,7 +2616,6 @@ class TeraTermUI(customtkinter.CTk):
         self.bind("<Control-Tab>", lambda event: self.tab_switcher())
         self.switch_tab()
         lang = self.language_menu.get()
-        self.in_multiple_screen = False
         self.tabview.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 85))
         self.tabview.tab(self.enroll_tab).grid_columnconfigure(1, weight=2)
         self.tabview.tab(self.search_tab).grid_columnconfigure(1, weight=2)
@@ -2678,6 +2703,12 @@ class TeraTermUI(customtkinter.CTk):
         self.m_button_frame.grid_forget()
         self.save_frame.grid_forget()
         self.auto_frame.grid_forget()
+        if not self.in_multiple_screen:
+            self.my_classes_frame.grid_forget()
+            self.modify_classes_frame.grid_forget()
+            self.back_my_classes.grid_forget()
+            self.after(0, self.destroy_enrolled_frame)
+        self.in_multiple_screen = False
 
     def load_language(self, lang):
         # Check if the translations for the requested language are in the cache
@@ -3555,6 +3586,16 @@ class TeraTermUI(customtkinter.CTk):
             self._4CM_screen = False
             self.search_next_page_status = False
 
+    def initialization_my_classes(self):
+        if not self.init_my_classes:
+            lang = self.language_menu.get()
+            translation = self.load_language(lang)
+            self.my_classes_frame = customtkinter.CTkScrollableFrame(self,
+                                                                     corner_radius=10, width=600, height=293)
+            self.title_my_classes = customtkinter.CTkLabel(self.my_classes_frame,
+                                                           text=translation["title_search"],
+                                                           font=customtkinter.CTkFont(size=20, weight="bold"))
+
     def initialization_multiple(self):
         # Multiple Classes Enrollment
         if not self.init_multiple:
@@ -3834,7 +3875,7 @@ class TeraTermUI(customtkinter.CTk):
             x, y, right, bottom = get_window_rect(hwnd)
             width = right - x
             height = bottom - y
-            crop_margin = (1, 8, 8, 1)
+            crop_margin = (3, 8, 8, 3)
             if self.loading_screen.winfo_exists():
                 self.hide_loading_screen()
             screenshot = pyautogui.screenshot(region=(x, y, width, height))
@@ -3843,10 +3884,11 @@ class TeraTermUI(customtkinter.CTk):
             screenshot = screenshot.crop(
                 (crop_margin[0], crop_margin[1], width - crop_margin[2], height - crop_margin[3]))
             screenshot = screenshot.convert("L")
-            screenshot = screenshot.resize((screenshot.width * 2, screenshot.height * 2), resample=Image.BICUBIC)
+            # screenshot = screenshot.resize((screenshot.width * 2, screenshot.height * 2), resample=Image.BICUBIC)
             # screenshot.save("screenshot.png")
             custom_config = r"--oem 3 --psm 11"
             text = pytesseract.image_to_string(screenshot, config=custom_config)
+            print(text)
             return text
         else:
             try:
@@ -4277,12 +4319,10 @@ class TeraTermUI(customtkinter.CTk):
             r"(\w+)\s+(\w)\s+(LEC|LAB|INT|PRA|SEM)\s+(\d+\.\d+)\s+(\w+)\s+([\dAMP\-TBA]+)\s+([\d\s]+)?\s+.*?\s*(["
             r"NFUL\s]*.*)"
         )
-
         # Regex pattern to match additional time slots
         time_pattern = re.compile(
             r"^(\s+)(\w{2})\s+([\dAMP\-]+)\s*$"
         )
-
         for line in lines:
             if "LEC" in line or "LAB" in line or "INT" in line or "PRA" in line or "SEM" in line:
                 match = pattern.search(line)
@@ -4308,13 +4348,497 @@ class TeraTermUI(customtkinter.CTk):
                 if time_match and current_section:
                     current_section["DAYS"].append(time_match.group(2))
                     current_section["TIMES"].append(time_match.group(3))
-
         # Combine days and times into single strings
         for section in data:
             section['DAYS'] = ', '.join(section['DAYS'])
             section['TIMES'] = ', '.join(section['TIMES'])
 
         return data, course_found, invalid_action, y_n_found
+
+    def extract_my_enrolled_classes(self, text):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        # Define a pattern to match the relevant class information, including optional additional DIAS and HORAS
+        class_pattern = re.compile(
+            r"E\s+(\w+)\s+P\s+(.+?)\s+SS\s+(?:\w+\s+)?(\w+)\s+(\d{4}\w{2}-"
+            r"\d{4}\w{2})\s+(\w+)\s+(\w+)(?:\s+(\w+)\s+(\d{4}\w{2}-\d{4}\w{2}))?"
+        )
+
+        # Find all matches in the text
+        matches = class_pattern.findall(text)
+
+        # Structure the data into a list of dictionaries
+        enrolled_classes = []
+        for match in matches:
+            curso_formatted = f"{match[0][:4]}-{match[0][4:8]}-{match[0][8:]}"
+            time_str = match[3]
+            start_time, end_time = time_str.split("-")
+            start_time = start_time.lstrip("0")
+            end_time = end_time.lstrip("0")
+            start_time = f"{start_time[:-4]}:{start_time[-4:-2]} {start_time[-2:]}"
+            end_time = f"{end_time[:-4]}:{end_time[-4:-2]} {end_time[-2:]}"
+            formatted_time = f"{start_time}\n{end_time}"
+
+            class_info = {
+                "COURSE": curso_formatted,
+                "DAYS": match[2],
+                "TIMES": formatted_time,
+                "BUILD": match[4],
+                "ROOM": match[5]
+            }
+            enrolled_classes.append(class_info)
+
+            # Check for and add a new entry for additional DIAS and HORAS
+            if match[6] and match[7]:
+                additional_time_str = match[7]
+                additional_start_time, additional_end_time = additional_time_str.split('-')
+                additional_start_time = additional_start_time.lstrip('0')
+                additional_end_time = additional_end_time.lstrip('0')
+                additional_start_time = f"{additional_start_time[:-4]}:{additional_start_time[-4:-2]} {additional_start_time[-2:]}"
+                additional_end_time = f"{additional_end_time[:-4]}:{additional_end_time[-4:-2]} {additional_end_time[-2:]}"
+                additional_formatted_time = f"{additional_start_time}\n{additional_end_time}"
+
+                additional_class_info = {
+                    "COURSE": "",  # Empty or some identifier if needed
+                    "DAYS": match[6],
+                    "TIMES": additional_formatted_time,
+                    "BUILD": "",
+                    "ROOM": ""
+                }
+                enrolled_classes.append(additional_class_info)
+
+        # Search for total credits
+        credits_pattern = re.compile(r'CREDITOS TOTAL:\s+(\d+\.\d+)')
+        credits_match = credits_pattern.search(text)
+        total_credits = credits_match.group(1) if credits_match else "0.00"
+
+        return enrolled_classes, total_credits
+
+    def display_enrolled_data(self, data, creds):
+        if self.enrolled_rows is not None:
+            self.destroy_enrolled_frame()
+        # Define the headers for the table based on the keys from enrolled_classes
+        headers = ["COURSE", "DAYS", "TIMES", "BUILD", "ROOM"]
+
+        # Create the table values, starting with headers
+        table_values = [headers] + [[cls.get(header, "") for header in headers] for cls in data]
+
+        # Calculate the number of rows
+        self.enrolled_rows = len(data) + 1
+        self.enrolled_classes_data = data
+
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        semester = self.dialog_input.upper().replace(" ", "")
+        self.my_classes_frame = customtkinter.CTkScrollableFrame(self,
+                                                                 corner_radius=10, width=620, height=320)
+        self.title_my_classes = customtkinter.CTkLabel(self.my_classes_frame,
+                                                       text=translation["my_classes"] + semester,
+                                                       font=customtkinter.CTkFont(size=20, weight="bold"))
+        self.total_credits_label = customtkinter.CTkLabel(self.my_classes_frame,
+                                                          text=translation["total_creds"] + creds)
+        self.submit_my_classes = CustomButton(self.my_classes_frame, border_width=2,
+                                              text=translation["submit"], text_color=("gray10", "#DCE4EE"),
+                                              command=self.submit_modify_classes_handler)
+        CTkToolTip(self.submit_my_classes, alpha=0.90, bg_color="#1E90FF", message=translation["submit_modify_tooltip"])
+        self.modify_classes_frame = customtkinter.CTkFrame(self.my_classes_frame)
+        self.back_my_classes = CustomButton(master=self.t_buttons_frame, fg_color="transparent", border_width=2,
+                                            text=translation["back"], hover_color="#4E4F50",
+                                            text_color=("gray10", "#DCE4EE"), command=self.go_back_event2)
+        CTkToolTip(self.back_my_classes, alpha=0.90, bg_color="#A9A9A9", message=translation["back_multiple"])
+        self.modify_classes_title = customtkinter.CTkLabel(self.modify_classes_frame,
+                                                           text=translation["mod_classes_title"])
+        self.back_classes.grid_forget()
+        self.back_my_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
+
+        # Create the table widget
+        self.enrolled_classes_table = ctktable.CTkTable(
+            self.my_classes_frame,
+            column=len(headers),
+            row=self.enrolled_rows,
+            values=table_values,
+            header_color="#145DA0",
+            hover_color="#339CFF",
+            command=self.copy_cell_data_to_clipboard,
+        )
+        column_widths = {
+            "COURSE": 100,
+            "DAYS": 50,
+            "TIMES": 150,
+            "BUILD": 50,
+            "ROOM": 50
+        }
+        tooltip_messages = {
+            "COURSE": translation["tooltip_course"],
+            "DAYS": translation["tooltip_days"],
+            "TIMES": translation["tooltip_times"],
+            "BUILD": translation["tooltip_build"],
+            "ROOM": translation["tooltip_croom"]
+        }
+
+        for i, header in enumerate(headers):
+            self.enrolled_classes_table.edit_column(i, width=column_widths[header])
+            cell = self.enrolled_classes_table.get_cell(0, i)
+            tooltip_message = tooltip_messages[header]
+            CTkToolTip(cell, message=tooltip_message, bg_color="#A9A9A9", alpha=0.90)
+
+        self.my_classes_frame.grid(row=0, column=1)
+        self.title_my_classes.grid(row=1, column=1, padx=(180, 0), pady=(10, 10))
+        self.enrolled_classes_table.grid(row=2, column=1, pady=(0, 5))
+        self.total_credits_label.grid(row=3, column=1, padx=(180, 0), pady=(0, 15))
+        self.submit_my_classes.grid(row=4, column=1, padx=(180, 0))
+        self.modify_classes_frame.grid(row=2, column=2, sticky="nw", padx=10)
+        self.modify_classes_title.grid(row=0, column=0, padx=(0, 30), pady=(0, 30))
+
+        self.change_section_entries = []
+        self.mod_selection_list = []
+        pad_y = 9
+
+        for row_index in range(self.enrolled_rows - 1):
+            if row_index == 0:
+                pad_y = 30
+            if self.enrolled_classes_data[row_index]["COURSE"] != "":
+                self.mod_selection = customtkinter.CTkOptionMenu(self.modify_classes_frame,
+                                                                 values=[translation["choose"], translation["drop"],
+                                                                         translation["section"]], width=80,
+                                                                 command=lambda value, index=row_index:
+                                                                 self.modify_enrolled_classes(value, index))
+                self.change_section_entry = CustomEntry(self.modify_classes_frame, self,
+                                                        placeholder_text=self.placeholder_texts_sections[row_index],
+                                                        width=50)
+                self.mod_selection.grid(row=row_index, column=0, padx=(0, 100), pady=(pad_y, 0))
+                self.change_section_entry.grid(row=row_index, column=0, padx=(50, 0), pady=(pad_y, 0))
+                CTkToolTip(self.mod_selection, alpha=0.90, bg_color="#1E90FF",
+                           message=translation["mod_selection"])
+                CTkToolTip(self.change_section_entry, alpha=0.90, bg_color="#1E90FF",
+                           message=translation["change_section_entry"])
+                self.change_section_entry.configure(state="disabled")
+                self.mod_selection_list.append(self.mod_selection)
+                self.change_section_entries.append(self.change_section_entry)
+                pad_y = 9
+            else:
+                self.mod_selection_list.append(None)
+                self.change_section_entries.append(None)
+                pad_y = 45
+        self.my_classes_frame.grid(row=0, column=1)
+        self.my_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
+        self.modify_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
+
+    def destroy_enrolled_frame(self):
+        self.my_classes_frame.grid_forget()
+        self.modify_classes_frame.grid_forget()
+        self.my_classes_frame.unbind("<Button-1>")
+        self.modify_classes_frame.unbind("<Button-1>")
+        self.back_my_classes.grid_forget()
+        self.my_classes_frame.destroy()
+        self.modify_classes_frame.destroy()
+        self.enrolled_classes_table.destroy()
+        self.title_my_classes.destroy()
+        self.total_credits_label.destroy()
+        self.submit_my_classes.destroy()
+        self.back_my_classes.destroy()
+        self.total_credits_label.destroy()
+        self.modify_classes_title.destroy()
+        for widget in self.mod_selection_list:
+            if widget is not None:
+                widget.destroy()
+        for entry in self.change_section_entries:
+            if entry is not None:
+                entry.destroy()
+        self.change_section_entries = None
+        self.mod_selection_list = None
+        self.enrolled_rows = None
+        self.last_course_code = None
+
+    def modify_enrolled_classes(self, mod, row_index):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        entry = self.change_section_entries[row_index]
+        self.focus_set()
+        if entry is not None:
+            if mod == translation["section"]:
+                entry.configure(state="normal")
+            elif mod == translation["drop"] or mod == translation["choose"]:
+                entry.configure(state="disabled")
+
+    def submit_modify_classes_handler(self):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        self.focus_set()
+        msg = CTkMessagebox(master=self, title=translation["submit"],
+                            message=translation["submit_modify"],
+                            icon="images/submit.png",
+                            option_1=translation["option_1"], option_2=translation["option_2"],
+                            option_3=translation["option_3"],
+                            icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                            hover_color=("darkred", "darkblue", "darkblue"))
+        response = msg.get()
+        if response[0] == "Yes" or response[0] == "Sí":
+            task_done = threading.Event()
+            loading_screen = self.show_loading_screen()
+            self.update_loading_screen(loading_screen, task_done)
+            event_thread = threading.Thread(target=self.submit_modify_classes, args=(task_done,))
+            event_thread.start()
+
+    def submit_modify_classes(self, task_done):
+        with self.lock_thread:
+            try:
+                self.automation_preparations()
+                lang = self.language_menu.get()
+                translation = self.load_language(lang)
+                dialog_input = self.dialog_input.upper().replace(" ", "")
+                show_error = False
+                first_loop = True
+                section_closed = False
+                if asyncio.run(self.test_connection(lang)) and self.check_server():
+                    if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
+                        not_all_choose = False
+                        section_pattern = True
+                        for row_index in range(self.enrolled_rows - 1):
+                            mod_selection = self.mod_selection_list[row_index]
+                            change_section_entry = self.change_section_entries[row_index]
+                            if mod_selection is not None and change_section_entry is not None:
+                                mod = mod_selection.get()
+                                section = change_section_entry.get().upper().replace(" ", "")
+                                if mod != translation["choose"]:
+                                    not_all_choose = True
+                                if mod == translation["section"] and not re.fullmatch("^[A-Z]{2}1$", section):
+                                    section_pattern = False
+                        if not_all_choose and section_pattern:
+                            term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
+                            if term_window.isMinimized:
+                                term_window.restore()
+                            self.uprbay_window.wait("visible", timeout=10)
+                            self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                            send_keys("{ENTER}")
+                            self.uprb.UprbayTeraTermVt.type_keys("1S4")
+                            self.uprb.UprbayTeraTermVt.type_keys(dialog_input)
+                            send_keys("{ENTER}")
+                            self.reset_activity_timer(None)
+                            self.after(0, self.disable_go_next_buttons)
+                            screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                            screenshot_thread.start()
+                            screenshot_thread.join()
+                            text_output = self.capture_screenshot()
+                            enrolled_classes = "ENROLLED"
+                            count_enroll = text_output.count(enrolled_classes)
+                            if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output and \
+                                    "VUELVA LUEGO" not in text_output and "TERMINO LA MATRICULA" \
+                                    not in text_output and "REGISTRATION DATA" in text_output:
+                                dropped_rows = []
+                                for row_index in range(self.enrolled_rows - 1):
+                                    mod_selection = self.mod_selection_list[row_index]
+                                    change_section_entry = self.change_section_entries[row_index]
+                                    if mod_selection is not None and change_section_entry is not None:
+                                        mod = self.mod_selection_list[row_index].get()
+                                        section = self.change_section_entries[row_index].get().upper().replace(" ", "")
+
+                                        course_code = self.enrolled_classes_data[row_index]["COURSE"].replace('-', '')
+                                        course_code_no_section = self.enrolled_classes_data[row_index][
+                                                                     "COURSE"].replace('-', '')[:8]
+                                    if (mod == translation["drop"] or mod == translation["section"]) and \
+                                            (course_code != self.last_course_code):
+                                        if not first_loop:
+                                            time.sleep(1.5)
+                                            screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                                            screenshot_thread.start()
+                                            screenshot_thread.join()
+                                            text_output = self.capture_screenshot()
+                                            enrolled_classes = "ENROLLED"
+                                            count_enroll = text_output.count(enrolled_classes)
+                                        first_loop = False
+                                        send_keys("{TAB 3}")
+                                        for i in range(count_enroll, 0, -1):
+                                            send_keys("{TAB 2}")
+                                        self.uprb.UprbayTeraTermVt.type_keys("D")
+                                        self.uprb.UprbayTeraTermVt.type_keys(course_code)
+                                        send_keys("{ENTER 3}")
+                                        if mod == translation["section"]:
+                                            screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                                            screenshot_thread.start()
+                                            screenshot_thread.join()
+                                            text_output = self.capture_screenshot()
+                                            enrolled_classes = "ENROLLED"
+                                            count_enroll = text_output.count(enrolled_classes)
+                                            send_keys("{TAB 3}")
+                                            for i in range(count_enroll, 0, -1):
+                                                send_keys("{TAB 2}")
+                                            self.uprb.UprbayTeraTermVt.type_keys("R")
+                                            self.uprb.UprbayTeraTermVt.type_keys(course_code_no_section)
+                                            self.uprb.UprbayTeraTermVt.type_keys(section)
+                                            send_keys("{ENTER}")
+                                            screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                                            screenshot_thread.start()
+                                            screenshot_thread.join()
+                                            text_output = self.capture_screenshot()
+                                            send_keys("{ENTER}")
+                                            if "INVALID COURSE ID" in text_output or "COURSE CLOSED" in text_output:
+                                                show_error = True
+                                                screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                                                screenshot_thread.start()
+                                                screenshot_thread.join()
+                                                text_output = self.capture_screenshot()
+                                                enrolled_classes = "ENROLLED"
+                                                count_enroll = text_output.count(enrolled_classes)
+                                                send_keys("{TAB 3}")
+                                                for i in range(count_enroll, 0, -1):
+                                                    send_keys("{TAB 2}")
+                                                self.uprb.UprbayTeraTermVt.type_keys("R")
+                                                self.uprb.UprbayTeraTermVt.type_keys(course_code)
+                                                send_keys("{ENTER}")
+                                                screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                                                screenshot_thread.start()
+                                                screenshot_thread.join()
+                                                text_output = self.capture_screenshot()
+                                                if "COURSE CLOSED" in text_output:
+                                                    section_closed = True
+                                            else:
+                                                if mod == translation["section"]:
+                                                    course_code = self.enrolled_classes_data[row_index]["COURSE"]
+                                                    new_course_code = course_code[:10] + section
+                                                    self.enrolled_classes_data[row_index]["COURSE"] = new_course_code
+                                        if mod == translation["drop"]:
+                                            dropped_rows.append(row_index)
+                                            if mod_selection is not None:
+                                                mod_selection.destroy()
+                                            if change_section_entry is not None:
+                                                change_section_entry.destroy()
+                                        self.last_course_code = course_code
+                                send_keys("{ENTER}")
+                                time.sleep(1.5)
+                                screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                                screenshot_thread.start()
+                                screenshot_thread.join()
+                                text_output = self.capture_screenshot()
+                                self.reset_activity_timer(None)
+                                if "CONFIRMED" in text_output:
+                                    send_keys("{ENTER}")
+                                if "DROPPED" in text_output:
+                                    send_keys("{ENTER}")
+                                for row_index in reversed(dropped_rows):
+                                    del self.mod_selection_list[row_index]
+                                    del self.change_section_entries[row_index]
+                                    del self.enrolled_classes_data[row_index]
+                                self.after(0, self.refresh_table)
+                                if show_error and not section_closed:
+                                    self.after(0, self.show_error_message, 320, 240,
+                                               translation["failed_change_section"])
+
+                                    def explanation():
+                                        self.destroy_windows()
+                                        if not self.disable_audio:
+                                            winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                                        CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                                      icon="cancel",
+                                                      message=translation["failed_change_section_exp"],
+                                                      button_width=380)
+
+                                    self.after(2500, explanation)
+                                if section_closed:
+                                    self.after(0, self.show_error_message, 320, 240,
+                                               translation["failed_change_section"])
+
+                                    def explanation():
+                                        self.destroy_windows()
+                                        if not self.disable_audio:
+                                            winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                                        CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                                      icon="cancel",
+                                                      message=translation["section_closed"],
+                                                      button_width=380)
+
+                                    self.after(2500, explanation)
+
+                                else:
+                                    self.after(0, self.show_success_message, 350, 265,
+                                               translation["success_modify"])
+                            else:
+                                if "INVALID TERM SELECTION" in text_output:
+                                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
+                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                                    send_keys("{ENTER}")
+                                    self.reset_activity_timer(None)
+                                    self.after(0, self.show_error_message, 300, 215,
+                                               translation["invalid_semester"])
+                                else:
+                                    if "VUELVA LUEGO" not in text_output and "TERMINO LA MATRICULA" \
+                                            not in text_output:
+                                        self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
+                                        self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                                        send_keys("{ENTER}")
+                                        self.reset_activity_timer(None)
+                                        self.after(0, self.show_error_message, 315, 225,
+                                                   translation["failed_modify"])
+                                        if not self.modify_error_check:
+                                            self.after(3500, self.show_modify_classes_information)
+                                            self.modify_error_check = True
+                                    else:
+                                        self.after(0, self.show_error_message, 315, 225,
+                                                   translation["failed_modify"])
+                                        if not self.modify_error_check:
+                                            self.after(3500, self.show_modify_classes_information)
+                                            self.modify_error_check = True
+
+                        else:
+                            if not not_all_choose:
+                                self.after(0, self.show_error_message, 360, 230,
+                                           translation["choose_error"])
+                            elif not section_pattern:
+                                self.after(0, self.show_error_message, 360, 240,
+                                           translation["section_format_error"])
+            except Exception as e:
+                print("An error occurred: ", e)
+                self.error_occurred = True
+            finally:
+                task_done.set()
+                lang = self.language_menu.get()
+                translation = self.load_language(lang)
+                self.set_focus_to_tkinter()
+                self.show_sidebar_windows()
+                if self.error_occurred:
+                    self.destroy_windows()
+                    if not self.disable_audio:
+                        winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                    CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                  message=translation["automation_error"],
+                                  icon="warning", button_width=380)
+                    self.error_occurred = False
+                self.bind("<Return>", lambda event: self.submit_event_handler())
+                ctypes.windll.user32.BlockInput(False)
+
+    def refresh_table(self):
+        # Clear the existing table
+        if hasattr(self, 'enrolled_classes_table'):
+            self.enrolled_classes_table.destroy()
+
+        # Create the table values, starting with headers
+        headers = ["COURSE", "DAYS", "TIMES", "BUILD", "ROOM"]
+        table_values = [headers] + [[cls.get(header, "") for header in headers] for cls in self.enrolled_classes_data]
+
+        # Recreate the table with the updated values
+        self.enrolled_classes_table = ctktable.CTkTable(
+            self.my_classes_frame,
+            column=len(headers),
+            row=len(self.enrolled_classes_data) + 1,
+            values=table_values,
+            header_color="#145DA0",
+            hover_color="#339CFF",
+            command=self.copy_cell_data_to_clipboard,
+        )
+        column_widths = {
+            "COURSE": 100,
+            "DAYS": 50,
+            "TIMES": 150,
+            "BUILD": 50,
+            "ROOM": 50
+        }
+
+        for i, header in enumerate(headers):
+            self.enrolled_classes_table.edit_column(i, width=column_widths[header])
+
+        self.total_credits_label.grid_forget()
+        self.enrolled_classes_table.grid(row=2, column=1, pady=(0, 20))
+        self.submit_my_classes.grid(row=3, column=1, padx=(180, 0))
 
     # checks whether the program can continue its normal execution or if the server is on maintenance
     def wait_for_prompt(self, prompt_text, maintenance_text, timeout=15):
@@ -4554,6 +5078,7 @@ class TeraTermUI(customtkinter.CTk):
             "ILLEGAL DROP-NOT ENR": "ILLEGAL DROP-NOT ENR",
             "NEW COURSE,NO FUNCTION": "NEW COURSE,NO FUNCTION",
             "PRESENTLY ENROLLED": "PRESENTLY ENROLLED",
+            "COURSE IN PROGRESS": "COURSE IN PROGRESS",
             "R/TC": "R/TC"
         }
         # List to hold all error messages found in the text
@@ -4589,6 +5114,17 @@ class TeraTermUI(customtkinter.CTk):
                 winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
             CTkMessagebox(master=self, title=translation["automation_error_title"],
                           message=translation["enrollment_error"], button_width=380)
+            self.unfocus_tkinter()
+
+    def show_modify_classes_information(self):
+        self.destroy_windows()
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        if self.modify_error_check:
+            if not self.disable_audio:
+                winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+            CTkMessagebox(master=self, title=translation["automation_error_title"],
+                          message=translation["modify_error"], button_width=380)
             self.unfocus_tkinter()
 
     # important information window pop up message
@@ -6459,4 +6995,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
