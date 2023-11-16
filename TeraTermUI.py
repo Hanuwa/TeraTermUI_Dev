@@ -1237,9 +1237,8 @@ class TeraTermUI(customtkinter.CTk):
         dialog_height = 300
         dialog_x = main_window_x + (main_window_width - dialog_width) / 2
         dialog_y = main_window_y + (main_window_height - dialog_height) / 2
-        self.dialog = customtkinter.CTkInputDialog(text=translation["dialog_message"],
-                                                   title=translation["dialog_title"], ok_text=translation["submit"],
-                                                   cancel_text=translation["option_1"])
+        self.dialog = SmoothFadeInputDialog(text=translation["dialog_message"], title=translation["dialog_title"],
+                                            ok_text=translation["submit"], cancel_text=translation["option_1"])
         self.dialog.geometry("+%d+%d" % (dialog_x + 75, dialog_y + 60))
         self.dialog.after(201, lambda: self.dialog.iconbitmap(self.icon_path))
         self.dialog.bind("<Escape>", lambda event: self.dialog.destroy())
@@ -6853,6 +6852,31 @@ class CustomComboBox(customtkinter.CTkComboBox):
 
 class SmoothFadeToplevel(customtkinter.CTkToplevel):
     def __init__(self, fade_duration=30, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fade_duration = fade_duration
+        self.alpha = 0.0
+        self.fade_direction = 1  # 1 for fade-in, -1 for fade-out
+        self.after_idle(self._start_fade_in)
+
+    def _start_fade_in(self):
+        self.fade_direction = 1
+        self._fade()
+
+    def _fade(self):
+        self.alpha += self.fade_direction / self.fade_duration
+        self.attributes("-alpha", self.alpha)
+        if 0 < self.alpha < 1:
+            self.after(5, self._fade)  # Adjust the update interval to make the fade-in faster
+        elif self.alpha <= 0:
+            self.destroy()
+
+    def button_event(self, event=None):
+        self.fade_direction = -1
+        self._fade()
+
+
+class SmoothFadeInputDialog(customtkinter.CTkInputDialog):
+    def __init__(self, fade_duration=15, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fade_duration = fade_duration
         self.alpha = 0.0
