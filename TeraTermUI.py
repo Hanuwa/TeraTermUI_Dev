@@ -1257,7 +1257,10 @@ class TeraTermUI(customtkinter.CTk):
     def my_classes_event(self, task_done):
         try:
             with self.lock_thread:
-                self.automation_preparations()
+                self.focus_set()
+                self.destroy_windows()
+                self.hide_sidebar_windows()
+                self.unbind("<Return>")
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 dialog_input = self.dialog_input.upper().replace(" ", "")
@@ -1286,7 +1289,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprbay_window.click_input(button="left")
                             self.show_loading_screen_again()
                             copy = pyperclip.paste()
-                            enrolled_classes, total_credits = self.extract_my_enrolled_classes(copy)
+                            enrolled_classes, total_credits = TeraTermUI.extract_my_enrolled_classes(copy)
                             self.after(0, self.display_enrolled_data, enrolled_classes, total_credits)
                             self.tabview.grid_forget()
                             if "INVALID TERM SELECTION" in text_output or "INVALID ACTION" in text_output:
@@ -1318,7 +1321,6 @@ class TeraTermUI(customtkinter.CTk):
                               icon="warning", button_width=380)
                 self.switch_tab()
                 self.error_occurred = False
-            ctypes.windll.user32.BlockInput(False)
 
     # function that adds new entries
     def add_event(self):
@@ -2025,7 +2027,7 @@ class TeraTermUI(customtkinter.CTk):
                 if self.focus_or_not:
                     self.set_focus_to_tkinter()
                 else:
-                    self.unfocus_tkinter()
+                    TeraTermUI.unfocus_tkinter()
                 self.show_sidebar_windows()
                 self.focus_or_not = False
                 if self.error_occurred:
@@ -2077,7 +2079,7 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language(lang)
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
-                        self.unfocus_tkinter()
+                        TeraTermUI.unfocus_tkinter()
                         if self._1VE_screen:
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
@@ -2140,7 +2142,7 @@ class TeraTermUI(customtkinter.CTk):
                 if self.focus_or_not:
                     self.set_focus_to_tkinter()
                 else:
-                    self.unfocus_tkinter()
+                    TeraTermUI.unfocus_tkinter()
                 self.show_sidebar_windows()
                 if self.error_occurred:
                     self.destroy_windows()
@@ -2175,7 +2177,7 @@ class TeraTermUI(customtkinter.CTk):
                         if term_window.isMinimized:
                             term_window.restore()
                         self.uprbay_window.wait("visible", timeout=10)
-                        self.unfocus_tkinter()
+                        TeraTermUI.unfocus_tkinter()
                         send_keys("{ENTER}")
                         self.uprb.window().menu_select("Edit")
                         self.uprb.window().menu_select("Edit->Select screen")
@@ -4354,9 +4356,8 @@ class TeraTermUI(customtkinter.CTk):
 
         return data, course_found, invalid_action, y_n_found
 
-    def extract_my_enrolled_classes(self, text):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+    @staticmethod
+    def extract_my_enrolled_classes(text):
         # Define a pattern to match the relevant class information, including optional additional DIAS and HORAS
         class_pattern = re.compile(
             r"E\s+(\w+)\s+P\s+(.+?)\s+SS\s+(?:\w+\s+)?(\w+)\s+(\d{4}\w{2}-"
@@ -4393,8 +4394,10 @@ class TeraTermUI(customtkinter.CTk):
                 additional_start_time, additional_end_time = additional_time_str.split('-')
                 additional_start_time = additional_start_time.lstrip('0')
                 additional_end_time = additional_end_time.lstrip('0')
-                additional_start_time = f"{additional_start_time[:-4]}:{additional_start_time[-4:-2]} {additional_start_time[-2:]}"
-                additional_end_time = f"{additional_end_time[:-4]}:{additional_end_time[-4:-2]} {additional_end_time[-2:]}"
+                additional_start_time = (f"{additional_start_time[:-4]}:{additional_start_time[-4:-2]}"
+                                         f" {additional_start_time[-2:]}")
+                additional_end_time = (f"{additional_end_time[:-4]}:{additional_end_time[-4:-2]}"
+                                       f" {additional_end_time[-2:]}")
                 additional_formatted_time = f"{additional_start_time}\n{additional_end_time}"
 
                 additional_class_info = {
@@ -5099,7 +5102,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.enrolled_classes_list.popitem()
                 if self.dropped_classes_list:
                     self.dropped_classes_list.popitem()
-            self.unfocus_tkinter()
+            TeraTermUI.unfocus_tkinter()
         else:
             for i in range(self.a_counter + 1):
                 self.m_classes_entry[i].delete(0, "end")
@@ -5114,7 +5117,7 @@ class TeraTermUI(customtkinter.CTk):
                 winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
             CTkMessagebox(master=self, title=translation["automation_error_title"],
                           message=translation["enrollment_error"], button_width=380)
-            self.unfocus_tkinter()
+            TeraTermUI.unfocus_tkinter()
 
     def show_modify_classes_information(self):
         self.destroy_windows()
@@ -5125,7 +5128,7 @@ class TeraTermUI(customtkinter.CTk):
                 winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
             CTkMessagebox(master=self, title=translation["automation_error_title"],
                           message=translation["modify_error"], button_width=380)
-            self.unfocus_tkinter()
+            TeraTermUI.unfocus_tkinter()
 
     # important information window pop up message
     def show_information_message(self, width, height, success_msg_text):
@@ -5431,7 +5434,7 @@ class TeraTermUI(customtkinter.CTk):
                 if term_window.isMinimized:
                     term_window.restore()
                 self.uprbay_window.wait("visible", timeout=10)
-                self.unfocus_tkinter()
+                TeraTermUI.unfocus_tkinter()
                 send_keys("{TAB}")
                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                 self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
@@ -5513,7 +5516,7 @@ class TeraTermUI(customtkinter.CTk):
                             term_window.minimize()
                             self.after(0, self.disable_go_next_buttons)
                         elif self.idle_num_check > 0:
-                            self.unfocus_tkinter()
+                            TeraTermUI.unfocus_tkinter()
                             send_keys("{TAB 2}")
                             term_window.minimize()
                         self.last_activity = time.time()
@@ -5652,7 +5655,8 @@ class TeraTermUI(customtkinter.CTk):
         self.after_idle(self.attributes, "-topmost", 0)
 
     # Set focus on Tera Term window
-    def unfocus_tkinter(self):
+    @staticmethod
+    def unfocus_tkinter():
         term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
         term_window.activate()
 
