@@ -6706,6 +6706,9 @@ class CustomEntry(customtkinter.CTkEntry):
             self.insert(0, redo_text)
 
     def show_menu(self, event):
+        if self.cget("state") == "disabled":
+            return
+
         current_label = self.context_menu.entrycget(0, "label")
         if self.lang == "English" and current_label != "Cut":
             self.context_menu.entryconfigure(0, label="Cut")
