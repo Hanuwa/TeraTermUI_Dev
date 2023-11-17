@@ -7015,6 +7015,14 @@ def get_window_rect(hwnd):
     return rect.left, rect.top, rect.right, rect.bottom
 
 
+def bring_to_front(window_title):
+    try:
+        win = gw.getWindowsWithTitle(window_title)[0]
+        win.activate()
+    except IndexError:
+        print("Window not found.")
+
+
 def main():
     appdata_folder = os.path.join(os.getenv("PROGRAMDATA"), "TeraTermUI")
     lock_file = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])), "app_lock.lock")
@@ -7027,6 +7035,7 @@ def main():
             app.after(1, lambda: app.iconbitmap("images/tera-term.ico"))
             app.mainloop()
     except Timeout:
+        bring_to_front("Tera Term UI")
         sys.exit(1)
     except KeyboardInterrupt:
         sys.exit(0)
