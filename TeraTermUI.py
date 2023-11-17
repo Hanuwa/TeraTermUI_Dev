@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 11/15/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 11/16/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -2130,6 +2130,9 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(0, self.show_error_message, 310, 225, translation["unknown_error"])
                             else:
                                 self.go_next_4CM.configure(state="disabled")
+                    else:
+                        self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+
             except Exception as e:
                 print("An error occurred: ", e)
                 self.error_occurred = True
@@ -2166,6 +2169,7 @@ class TeraTermUI(customtkinter.CTk):
         with self.lock_thread:
             try:
                 lang = self.language_menu.get()
+                translation = self.load_language(lang)
                 self.focus_set()
                 self.destroy_windows()
                 self.hide_sidebar_windows()
@@ -2197,6 +2201,8 @@ class TeraTermUI(customtkinter.CTk):
                         if "MORE SECTIONS" not in text_output:
                             self.search_next_page.configure(state="disabled")
                             self.search_next_page_status = False
+                    else:
+                        self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             except Exception as e:
                 print("An error occurred: ", e)
                 self.error_occurred = True
@@ -4788,6 +4794,8 @@ class TeraTermUI(customtkinter.CTk):
                             elif not section_pattern:
                                 self.after(0, self.show_error_message, 360, 240,
                                            translation["section_format_error"])
+                    else:
+                        self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             except Exception as e:
                 print("An error occurred: ", e)
                 self.error_occurred = True
