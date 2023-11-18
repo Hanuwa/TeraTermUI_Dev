@@ -3909,9 +3909,12 @@ class TeraTermUI(customtkinter.CTk):
             crop_margin = (3, 8, 8, 3)
             if self.loading_screen.winfo_exists():
                 self.hide_loading_screen()
+            original_position = pyautogui.position()
+            pyautogui.moveTo(pyautogui.size().width - 50, pyautogui.size().height - 50)
             screenshot = pyautogui.screenshot(region=(x, y, width, height))
             if self.loading_screen.winfo_exists():
                 self.show_loading_screen_again()
+            pyautogui.moveTo(original_position.x, original_position.y)
             screenshot = screenshot.crop(
                 (crop_margin[0], crop_margin[1], width - crop_margin[2], height - crop_margin[3]))
             screenshot = screenshot.convert("L")
