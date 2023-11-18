@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 11/16/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 11/17/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -139,6 +139,7 @@ class TeraTermUI(customtkinter.CTk):
         self.checkbox_state = None
         self.get_class_for_pdf = None
         self.get_semester_for_pdf = None
+        self.show_all_sections = None
         self.download_pdf = None
         self.table_count_tooltip = None
         self.previous_button_tooltip = None
@@ -1189,6 +1190,7 @@ class TeraTermUI(customtkinter.CTk):
                                 data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
                                 self.get_class_for_pdf = self.s_classes_entry.get().upper().replace(" ", "")
                                 self.get_semester_for_pdf = self.s_semester_entry.get().upper().replace(" ", "")
+                                self.show_all_sections = self.show_all.get()
                                 self.after(0, self.display_data, data)
                                 self.clipboard_clear()
                         else:
@@ -1281,17 +1283,18 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread.start()
                             screenshot_thread.join()
                             text_output = self.capture_screenshot()
-                            self.uprb.window().menu_select("Edit")
-                            self.uprb.window().menu_select("Edit->Select screen")
-                            self.uprb.UprbayTeraTermVt.type_keys("%c")
-                            self.hide_loading_screen()
-                            self.uprbay_window.click_input(button="left")
-                            self.show_loading_screen_again()
-                            copy = pyperclip.paste()
-                            enrolled_classes, total_credits = TeraTermUI.extract_my_enrolled_classes(copy)
-                            self.after(0, self.display_enrolled_data, enrolled_classes, total_credits)
-                            self.tabview.grid_forget()
-                            if "INVALID TERM SELECTION" in text_output or "INVALID ACTION" in text_output:
+                            if "INVALID TERM SELECTION" not in text_output and "INVALID ACTION" not in text_output:
+                                self.uprb.window().menu_select("Edit")
+                                self.uprb.window().menu_select("Edit->Select screen")
+                                self.uprb.UprbayTeraTermVt.type_keys("%c")
+                                self.hide_loading_screen()
+                                self.uprbay_window.click_input(button="left")
+                                self.show_loading_screen_again()
+                                copy = pyperclip.paste()
+                                enrolled_classes, total_credits = TeraTermUI.extract_my_enrolled_classes(copy)
+                                self.after(0, self.display_enrolled_data, enrolled_classes, total_credits)
+                                self.tabview.grid_forget()
+                            else:
                                 self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                 send_keys("{ENTER}")
@@ -4010,7 +4013,7 @@ class TeraTermUI(customtkinter.CTk):
         semester_list = []
 
         # Loop through each table in self.class_table_pairs
-        for display_class, table, semester in self.class_table_pairs:
+        for display_class, table, semester, show in self.class_table_pairs:
             class_name = display_class.cget("text")
             table_data = table.get()
 
@@ -4170,18 +4173,18 @@ class TeraTermUI(customtkinter.CTk):
                                                    bg_color="green")
 
         if self.ignore:
-            duplicate_index = self.find_duplicate(display_class, self.get_semester_for_pdf)
+            duplicate_index = self.find_duplicate(display_class, self.get_semester_for_pdf, self.show_all_sections)
             if duplicate_index is not None:
                 self.current_table_index = duplicate_index
                 self.display_current_table()
                 return
         self.ignore = True
 
-        self.class_table_pairs.append((display_class, new_table, self.get_semester_for_pdf))
+        self.class_table_pairs.append((display_class, new_table, self.get_semester_for_pdf, self.show_all_sections))
         self.current_table_index = len(self.class_table_pairs) - 1
 
         if len(self.class_table_pairs) > 10:
-            display_class_to_remove, table_to_remove, _ = self.class_table_pairs[0]
+            display_class_to_remove, table_to_remove, _, _ = self.class_table_pairs[0]
             self.after(0, display_class_to_remove.destroy)
             self.after(0, table_to_remove.destroy)
             del self.class_table_pairs[0]
@@ -4207,20 +4210,23 @@ class TeraTermUI(customtkinter.CTk):
         if len(self.class_table_pairs) == 10:
             self.table_count.configure(text_color="red")
 
-    def find_duplicate(self, new_display_class, new_semester):
-        for index, (display_class, table, semester) in enumerate(self.class_table_pairs):
-            if display_class.cget("text") == new_display_class.cget("text") and semester == new_semester:
+    def find_duplicate(self, new_display_class, new_semester, show_all_sections_state):
+        for index, (display_class, table, semester, existing_show_all_sections_state) in enumerate(
+                self.class_table_pairs):
+            if (display_class.cget("text") == new_display_class.cget("text") and
+                    semester == new_semester and
+                    existing_show_all_sections_state == show_all_sections_state):
                 return index
         return None
 
     def display_current_table(self):
         # Hide all tables and display_classes
-        for display_class, table, semester in self.class_table_pairs:
+        for display_class, table, semester, show in self.class_table_pairs:
             display_class.grid_forget()
             table.grid_forget()
 
         # Show the current display_class and table
-        display_class, table, semester = self.class_table_pairs[self.current_table_index]
+        display_class, table, semester, show = self.class_table_pairs[self.current_table_index]
         display_class.grid(row=2, column=1, padx=(0, 0), pady=(8, 0), sticky="n")
         table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
         self.table = table
@@ -4259,7 +4265,7 @@ class TeraTermUI(customtkinter.CTk):
         if len(self.class_table_pairs) == 0:
             return
 
-        display_class, table, semester = self.class_table_pairs[self.current_table_index]
+        display_class, table, semester, show = self.class_table_pairs[self.current_table_index]
         display_class.grid_forget()
         display_class.grid_forget()
         table.grid_forget()
@@ -4365,8 +4371,8 @@ class TeraTermUI(customtkinter.CTk):
     def extract_my_enrolled_classes(text):
         # Define a pattern to match the relevant class information, including optional additional DIAS and HORAS
         class_pattern = re.compile(
-            r"E\s+(\w+)\s+P\s+(.+?)\s+SS\s+(?:\w+\s+)?(\w+)\s+(\d{4}\w{2}-"
-            r"\d{4}\w{2})\s+(\w+)\s+(\w+)(?:\s+(\w+)\s+(\d{4}\w{2}-\d{4}\w{2}))?"
+            r"\b\w\s+(\w+)\s+(.+?)\s+\w+\s+[A-FI-NPW]*\s+(\w+)\s+(\d{4}\w{2}-\d{4}\w{2})"
+            r"\s+(\w+)\s+(\w+)(?:\s+(\w+)\s+(\d{4}\w{2}-\d{4}\w{2}))?"
         )
 
         # Find all matches in the text
@@ -4505,13 +4511,19 @@ class TeraTermUI(customtkinter.CTk):
             if row_index == 0:
                 pad_y = 30
             if self.enrolled_classes_data[row_index]["COURSE"] != "":
+                if row_index < len(self.placeholder_texts_sections):
+                    placeholder_text = self.placeholder_texts_sections[row_index]
+                else:
+                    extra_placeholder_text = ["KJ1", "LJ1", "KI1", "LI1", "VM1", "JM1"]
+                    index_in_extra = (row_index - len(self.placeholder_texts_sections)) % len(extra_placeholder_text)
+                    placeholder_text = extra_placeholder_text[index_in_extra]
                 self.mod_selection = customtkinter.CTkOptionMenu(self.modify_classes_frame,
                                                                  values=[translation["choose"], translation["drop"],
                                                                          translation["section"]], width=80,
                                                                  command=lambda value, index=row_index:
                                                                  self.modify_enrolled_classes(value, index))
                 self.change_section_entry = CustomEntry(self.modify_classes_frame, self,
-                                                        placeholder_text=self.placeholder_texts_sections[row_index],
+                                                        placeholder_text=placeholder_text,
                                                         width=50)
                 self.mod_selection.grid(row=row_index, column=0, padx=(0, 100), pady=(pad_y, 0))
                 self.change_section_entry.grid(row=row_index, column=0, padx=(50, 0), pady=(pad_y, 0))
