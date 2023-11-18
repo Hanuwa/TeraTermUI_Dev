@@ -168,7 +168,7 @@
 	"missing_info": "¡Error! Le falta información de la\nclase que deseas matricular",
 	"class_format_error": "¡Error! Formato Incorrecto de la Clase",
 	"section_format_error": "¡Error! Formato Incorrecto de la Sección",
-	"choose_error": "¡Error! Debe elegir si\ndar de baja una clase o cambiar su sección",
+	"choose_error": "¡Error! Debe elegir si dar de baja\nuna clase o cambiar su sección",
 	"semester_format_error": "¡Error! Formato Incorrecto del Semestre",
 	"already_enrolled": "¡Error! Ya la clase o la sección\nestá registrada",
 	"already_dropped": "¡Error! Ya se dio de baja\nde esa clase o sección",
