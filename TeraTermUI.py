@@ -759,14 +759,16 @@ class TeraTermUI(customtkinter.CTk):
             self.set_focus_to_tkinter()
             self.show_sidebar_windows()
             if self.error_occurred:
-                self.destroy_windows()
-                if not self.disable_audio:
-                    winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                CTkMessagebox(master=self, title=translation["automation_error_title"],
-                              message=translation["automation_error"],
-                              icon="warning", button_width=380)
-                self.bind("<Return>", lambda event: self.tuition_event_handler())
-                self.error_occurred = False
+                def error_automation():
+                    self.destroy_windows()
+                    if not self.disable_audio:
+                        winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                    CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                  message=translation["automation_error"],
+                                  icon="warning", button_width=380)
+                    self.bind("<Return>", lambda event: self.tuition_event_handler())
+                    self.error_occurred = False
+                self.after(0, error_automation)
             ctypes.windll.user32.BlockInput(False)
 
     def tuition_frame(self):
@@ -1087,13 +1089,15 @@ class TeraTermUI(customtkinter.CTk):
                 self.set_focus_to_tkinter()
                 self.show_sidebar_windows()
                 if self.error_occurred:
-                    self.destroy_windows()
-                    if not self.disable_audio:
-                        winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                  message=translation["automation_error"],
-                                  icon="warning", button_width=380)
-                    self.error_occurred = False
+                    def error_automation():
+                        self.destroy_windows()
+                        if not self.disable_audio:
+                            winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                        CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                      message=translation["automation_error"],
+                                      icon="warning", button_width=380)
+                        self.error_occurred = False
+                    self.after(0, error_automation)
                 self.bind("<Return>", lambda event: self.submit_event_handler())
                 ctypes.windll.user32.BlockInput(False)
 
@@ -1213,13 +1217,15 @@ class TeraTermUI(customtkinter.CTk):
                 self.set_focus_to_tkinter()
                 self.show_sidebar_windows()
                 if self.error_occurred:
-                    self.destroy_windows()
-                    if not self.disable_audio:
-                        winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                  message=translation["automation_error"],
-                                  icon="warning", button_width=380)
-                    self.error_occurred = False
+                    def error_automation():
+                        self.destroy_windows()
+                        if not self.disable_audio:
+                            winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                        CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                      message=translation["automation_error"],
+                                      icon="warning", button_width=380)
+                        self.error_occurred = False
+                    self.after(0, error_automation)
                 self.bind("<Return>", lambda event: self.search_event_handler())
                 ctypes.windll.user32.BlockInput(False)
 
@@ -1258,8 +1264,8 @@ class TeraTermUI(customtkinter.CTk):
 
     # function for seeing the classes you are currently enrolled for
     def my_classes_event(self, task_done):
-        try:
-            with self.lock_thread:
+        with self.lock_thread:
+            try:
                 self.automation_preparations()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
@@ -1305,25 +1311,27 @@ class TeraTermUI(customtkinter.CTk):
                             self.after(0, self.show_error_message, 300, 215, translation["invalid_semester"])
                     else:
                         self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
-        except Exception as e:
-            print("An error occurred: ", e)
-            self.error_occurred = True
-        finally:
-            task_done.set()
-            lang = self.language_menu.get()
-            translation = self.load_language(lang)
-            self.set_focus_to_tkinter()
-            self.show_sidebar_windows()
-            if self.error_occurred:
-                self.destroy_windows()
-                if not self.disable_audio:
-                    winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                CTkMessagebox(master=self, title=translation["automation_error_title"],
-                              message=translation["automation_error"],
-                              icon="warning", button_width=380)
-                self.switch_tab()
-                self.error_occurred = False
-            ctypes.windll.user32.BlockInput(False)
+            except Exception as e:
+                print("An error occurred: ", e)
+                self.error_occurred = True
+            finally:
+                task_done.set()
+                lang = self.language_menu.get()
+                translation = self.load_language(lang)
+                self.set_focus_to_tkinter()
+                self.show_sidebar_windows()
+                if self.error_occurred:
+                    def error_automation():
+                        self.destroy_windows()
+                        if not self.disable_audio:
+                            winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                        CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                      message=translation["automation_error"],
+                                      icon="warning", button_width=380)
+                        self.switch_tab()
+                        self.error_occurred = False
+                    self.after(0, error_automation)
+                ctypes.windll.user32.BlockInput(False)
 
     # function that adds new entries
     def add_event(self):
@@ -1613,13 +1621,15 @@ class TeraTermUI(customtkinter.CTk):
                 if not self.error_auto_enroll:
                     self.started_auto_enroll = False
                 if self.error_occurred:
-                    self.destroy_windows()
-                    if not self.disable_audio:
-                        winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                  message=translation["automation_error"],
-                                  icon="question", button_width=380)
-                    self.error_occurred = False
+                    def error_automation():
+                        self.destroy_windows()
+                        if not self.disable_audio:
+                            winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                        CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                      message=translation["automation_error"],
+                                      icon="question", button_width=380)
+                        self.error_occurred = False
+                    self.after(0, error_automation)
                 self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                 ctypes.windll.user32.BlockInput(False)
 
@@ -2034,13 +2044,15 @@ class TeraTermUI(customtkinter.CTk):
                 self.show_sidebar_windows()
                 self.focus_or_not = False
                 if self.error_occurred:
-                    self.destroy_windows()
-                    if not self.disable_audio:
-                        winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                  message=translation["automation_error"],
-                                  icon="warning", button_width=380)
-                    self.error_occurred = False
+                    def error_automation():
+                        self.destroy_windows()
+                        if not self.disable_audio:
+                            winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                        CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                      message=translation["automation_error"],
+                                      icon="warning", button_width=380)
+                        self.error_occurred = False
+                    self.after(0, error_automation)
                 self.bind("<Return>", lambda event: self.option_menu_event_handler())
                 ctypes.windll.user32.BlockInput(False)
 
@@ -2151,13 +2163,15 @@ class TeraTermUI(customtkinter.CTk):
                     TeraTermUI.unfocus_tkinter()
                 self.show_sidebar_windows()
                 if self.error_occurred:
-                    self.destroy_windows()
-                    if not self.disable_audio:
-                        winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                  message=translation["automation_error"],
-                                  icon="warning", button_width=380)
-                    self.error_occurred = False
+                    def error_automation():
+                        self.destroy_windows()
+                        if not self.disable_audio:
+                            winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                        CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                      message=translation["automation_error"],
+                                      icon="warning", button_width=380)
+                        self.error_occurred = False
+                    self.after(0, error_automation)
                 self.bind("<Return>", lambda event: self.option_menu_event_handler())
                 ctypes.windll.user32.BlockInput(False)
 
@@ -2216,13 +2230,15 @@ class TeraTermUI(customtkinter.CTk):
                 self.set_focus_to_tkinter()
                 self.show_sidebar_windows()
                 if self.error_occurred:
-                    self.destroy_windows()
-                    if not self.disable_audio:
-                        winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                  message=translation["automation_error"],
-                                  icon="warning", button_width=380)
-                    self.error_occurred = False
+                    def error_automation():
+                        self.destroy_windows()
+                        if not self.disable_audio:
+                            winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                        CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                      message=translation["automation_error"],
+                                      icon="warning", button_width=380)
+                        self.error_occurred = False
+                    self.after(0, error_automation)
                 self.bind("<Return>", lambda event: self.search_event_handler())
                 ctypes.windll.user32.BlockInput(False)
 
@@ -2447,19 +2463,21 @@ class TeraTermUI(customtkinter.CTk):
                 self.set_focus_to_tkinter()
                 self.show_sidebar_windows()
                 if self.error_occurred:
-                    self.destroy_windows()
-                    if not dont_close:
-                        try:
-                            subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
-                                           check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                        except subprocess.CalledProcessError:
-                            print("Could not terminate ttermpro.exe.")
-                    if not self.disable_audio:
-                        winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                    CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                  message=translation["tera_term_forced_to_close"], icon="warning", button_width=380)
-                    self.bind("<Return>", lambda event: self.login_event_handler())
-                    self.error_occurred = False
+                    def error_automation():
+                        self.destroy_windows()
+                        if not dont_close:
+                            try:
+                                subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
+                                               check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            except subprocess.CalledProcessError:
+                                print("Could not terminate ttermpro.exe.")
+                        if not self.disable_audio:
+                            winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                        CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                      message=translation["tera_term_forced_to_close"], icon="warning", button_width=380)
+                        self.bind("<Return>", lambda event: self.login_event_handler())
+                        self.error_occurred = False
+                    self.after(0, error_automation)
                 ctypes.windll.user32.BlockInput(False)
 
     def login_frame(self):
@@ -3049,13 +3067,15 @@ class TeraTermUI(customtkinter.CTk):
                 self.set_focus_to_tkinter()
                 self.show_sidebar_windows()
                 if self.error_occurred:
-                    self.destroy_windows()
-                    if not self.disable_audio:
-                        winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    CTkMessagebox(master=self, title=translation["server_maintenance_title"],
-                                  message=translation["server_maintenance"],
-                                  icon="warning", button_width=380)
-                    self.error_occurred = False
+                    def error_automation():
+                        self.destroy_windows()
+                        if not self.disable_audio:
+                            winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                        CTkMessagebox(master=self, title=translation["server_maintenance_title"],
+                                      message=translation["server_maintenance"],
+                                      icon="warning", button_width=380)
+                        self.error_occurred = False
+                    self.after(0, error_automation)
                 self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                 ctypes.windll.user32.BlockInput(False)
 
@@ -4819,13 +4839,15 @@ class TeraTermUI(customtkinter.CTk):
                 self.set_focus_to_tkinter()
                 self.show_sidebar_windows()
                 if self.error_occurred:
-                    self.destroy_windows()
-                    if not self.disable_audio:
-                        winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                  message=translation["automation_error"],
-                                  icon="warning", button_width=380)
-                    self.error_occurred = False
+                    def error_automation():
+                        self.destroy_windows()
+                        if not self.disable_audio:
+                            winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                        CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                      message=translation["automation_error"],
+                                      icon="warning", button_width=380)
+                        self.error_occurred = False
+                    self.after(0, error_automation)
                 self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
                 ctypes.windll.user32.BlockInput(False)
 
@@ -5483,13 +5505,15 @@ class TeraTermUI(customtkinter.CTk):
                 self.show_sidebar_windows()
                 translation = self.load_language(lang)
                 if self.error_occurred:
-                    self.destroy_windows()
-                    if not self.disable_audio:
-                        winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                  message=translation["automation_error"],
-                                  icon="warning", button_width=380)
-                    self.error_occurred = False
+                    def error_automation():
+                        self.destroy_windows()
+                        if not self.disable_audio:
+                            winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                        CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                      message=translation["automation_error"],
+                                      icon="warning", button_width=380)
+                        self.error_occurred = False
+                    self.after(0, error_automation)
                 ctypes.windll.user32.BlockInput(False)
 
     # Starts the check for idle thread
