@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 11/17/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 11/18/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1108,10 +1108,7 @@ class TeraTermUI(customtkinter.CTk):
     def search_event(self, task_done):
         with self.lock_thread:
             try:
-                self.focus_set()
-                self.destroy_windows()
-                self.hide_sidebar_windows()
-                self.unbind("<Return>")
+                self.automation_preparations()
                 classes = self.s_classes_entry.get().upper().replace(" ", "")
                 semester = self.s_semester_entry.get().upper().replace(" ", "")
                 show_all = self.show_all.get()
@@ -1131,12 +1128,14 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys(semester)
                             send_keys("{ENTER}")
                             if self.passed and self.search_function_counter == 0:
+                                ctypes.windll.user32.BlockInput(False)
                                 self.uprb.window().menu_select("Edit")
                                 self.uprb.window().menu_select("Edit->Select screen")
                                 self.uprb.UprbayTeraTermVt.type_keys("%c")
                                 self.hide_loading_screen()
                                 self.uprbay_window.click_input(button="left")
                                 self.show_loading_screen_again()
+                                ctypes.windll.user32.BlockInput(True)
                                 copy = pyperclip.paste()
                                 data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
                                 if data or course_found or invalid_action or y_n_found:
@@ -1179,6 +1178,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(0, self.show_error_message, 320, 235, translation["failed_to_search"])
                                 self.search_function_counter += 1
                             else:
+                                ctypes.windll.user32.BlockInput(False)
                                 self.search_function_counter += 1
                                 self.uprb.window().menu_select("Edit")
                                 self.uprb.window().menu_select("Edit->Select screen")
@@ -1186,6 +1186,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.hide_loading_screen()
                                 self.uprbay_window.click_input(button="left")
                                 self.show_loading_screen_again()
+                                ctypes.windll.user32.BlockInput(True)
                                 copy = pyperclip.paste()
                                 data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
                                 self.get_class_for_pdf = self.s_classes_entry.get().upper().replace(" ", "")
@@ -1220,6 +1221,7 @@ class TeraTermUI(customtkinter.CTk):
                                   icon="warning", button_width=380)
                     self.error_occurred = False
                 self.bind("<Return>", lambda event: self.search_event_handler())
+                ctypes.windll.user32.BlockInput(False)
 
     def search_next_page_layout(self):
         self.search_next_page_status = True
@@ -1258,10 +1260,7 @@ class TeraTermUI(customtkinter.CTk):
     def my_classes_event(self, task_done):
         try:
             with self.lock_thread:
-                self.focus_set()
-                self.destroy_windows()
-                self.hide_sidebar_windows()
-                self.unbind("<Return>")
+                self.automation_preparations()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 dialog_input = self.dialog_input.upper().replace(" ", "")
@@ -1284,12 +1283,14 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread.join()
                             text_output = self.capture_screenshot()
                             if "INVALID TERM SELECTION" not in text_output and "INVALID ACTION" not in text_output:
+                                ctypes.windll.user32.BlockInput(False)
                                 self.uprb.window().menu_select("Edit")
                                 self.uprb.window().menu_select("Edit->Select screen")
                                 self.uprb.UprbayTeraTermVt.type_keys("%c")
                                 self.hide_loading_screen()
                                 self.uprbay_window.click_input(button="left")
                                 self.show_loading_screen_again()
+                                ctypes.windll.user32.BlockInput(True)
                                 copy = pyperclip.paste()
                                 enrolled_classes, total_credits = TeraTermUI.extract_my_enrolled_classes(copy)
                                 self.after(0, self.display_enrolled_data, enrolled_classes, total_credits)
@@ -1300,7 +1301,6 @@ class TeraTermUI(customtkinter.CTk):
                                 send_keys("{ENTER}")
                                 self.reset_activity_timer(None)
                                 self.after(0, self.show_error_message, 300, 215, translation["invalid_semester"])
-
                         else:
                             self.after(0, self.show_error_message, 300, 215, translation["invalid_semester"])
                     else:
@@ -1323,6 +1323,7 @@ class TeraTermUI(customtkinter.CTk):
                               icon="warning", button_width=380)
                 self.switch_tab()
                 self.error_occurred = False
+            ctypes.windll.user32.BlockInput(False)
 
     # function that adds new entries
     def add_event(self):
@@ -2173,10 +2174,7 @@ class TeraTermUI(customtkinter.CTk):
             try:
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
-                self.focus_set()
-                self.destroy_windows()
-                self.hide_sidebar_windows()
-                self.unbind("<Return>")
+                self.automation_preparations()
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
                         term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
@@ -2185,12 +2183,14 @@ class TeraTermUI(customtkinter.CTk):
                         self.uprbay_window.wait("visible", timeout=10)
                         TeraTermUI.unfocus_tkinter()
                         send_keys("{ENTER}")
+                        ctypes.windll.user32.BlockInput(False)
                         self.uprb.window().menu_select("Edit")
                         self.uprb.window().menu_select("Edit->Select screen")
                         self.uprb.UprbayTeraTermVt.type_keys("%c")
                         self.hide_loading_screen()
                         self.uprbay_window.click_input(button="left")
                         self.show_loading_screen_again()
+                        ctypes.windll.user32.BlockInput(True)
                         copy = pyperclip.paste()
                         data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
                         self.ignore = False
@@ -2224,6 +2224,7 @@ class TeraTermUI(customtkinter.CTk):
                                   icon="warning", button_width=380)
                     self.error_occurred = False
                 self.bind("<Return>", lambda event: self.search_event_handler())
+                ctypes.windll.user32.BlockInput(False)
 
     # disable these buttons if the user changed screen
     def disable_go_next_buttons(self):
