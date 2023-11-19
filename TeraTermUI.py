@@ -475,6 +475,7 @@ class TeraTermUI(customtkinter.CTk):
             self.cursor = self.connection.cursor()
             self.protocol("WM_DELETE_WINDOW", self.on_closing)
             self.bind("<Escape>", lambda event: self.on_closing())
+            self.bind("<Alt-F4>", lambda event: self.direct_close())
             user_data_fields = ["location", "config", "directory", "host", "language",
                                 "appearance", "scaling", "welcome", "audio"]
             results = {}
@@ -628,6 +629,16 @@ class TeraTermUI(customtkinter.CTk):
                         subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
                                        check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             exit(0)
+
+    def direct_close(self):
+        if hasattr(self, "boot_up_thread") and self.boot_up_thread.is_alive():
+            self.boot_up_thread.join()
+        if hasattr(self, "check_idle_thread") and self.check_idle_thread is not None \
+                and self.check_idle_thread.is_alive():
+            self.stop_check_idle.set()
+        self.save_user_data()
+        self.destroy()
+        exit(0)
 
     def tuition_event_handler(self):
         task_done = threading.Event()
