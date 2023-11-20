@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 11/18/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 11/19/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -203,6 +203,7 @@ class TeraTermUI(customtkinter.CTk):
         self.scaling_optionemenu.set(100)
         self.scaling_tooltip = CTkToolTip(self.scaling_optionemenu, message=str(self.scaling_optionemenu.get()) + "%",
                                           bg_color="#1E90FF")
+        self.current_scaling = self.scaling_optionemenu.get()
         self.scaling_optionemenu.grid(row=8, column=0, padx=20, pady=(10, 20))
         self.bind("<Left>", self.move_slider_left)
         self.bind("<Right>", self.move_slider_right)
@@ -509,6 +510,7 @@ class TeraTermUI(customtkinter.CTk):
                 if results["scaling"] != 100.0:
                     self.scaling_optionemenu.set(float(results["scaling"]))
                     self.change_scaling_event(float(results["scaling"]))
+                    self.current_scaling = self.scaling_optionemenu.get()
             if results["audio"] == "Disabled":
                 self.disable_audio = True
             if not results["welcome"]:
@@ -5296,10 +5298,16 @@ class TeraTermUI(customtkinter.CTk):
 
     # function that lets your increase/decrease the scaling of the GUI
     def change_scaling_event(self, new_scaling: float):
-        self.focus_set()
         new_scaling_float = new_scaling / 100
+        if new_scaling_float == self.current_scaling:
+            return
+
+        self.scaling_tooltip.hide()
+        self.focus_set()
         customtkinter.set_widget_scaling(new_scaling_float)
-        self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
+        self.scaling_tooltip.configure(message=f"{new_scaling}%")
+        self.current_scaling = new_scaling_float
+        self.scaling_tooltip.show()
 
     # opens GitHub page
     def github_event(self):
