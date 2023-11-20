@@ -1,3 +1,5 @@
+import tkinter as tk
+
 from typing import Union, Tuple, Optional
 
 from .widgets import CTkLabel
@@ -6,6 +8,7 @@ from .widgets import CTkButton
 from .widgets.theme import ThemeManager
 from .ctk_toplevel import CTkToplevel
 from .widgets.font import CTkFont
+from collections import deque
 
 
 class CTkInputDialog(CTkToplevel):
@@ -69,34 +72,34 @@ class CTkInputDialog(CTkToplevel):
                                font=self._font)
         self._label.grid(row=0, column=0, columnspan=2, padx=20, pady=20, sticky="ew")
 
-        self._entry = CTkEntry(master=self,
-                               width=230,
-                               fg_color=self._entry_fg_color,
-                               border_color=self._entry_border_color,
-                               text_color=self._entry_text_color,
-                               font=self._font)
+        self._entry = CustomEntry(self, self,
+                                  width=230,
+                                  fg_color=self._entry_fg_color,
+                                  border_color=self._entry_border_color,
+                                  text_color=self._entry_text_color,
+                                  font=self._font)
         self._entry.grid(row=1, column=0, columnspan=2, padx=20, pady=(0, 20), sticky="ew")
 
-        self._ok_button = CTkButton(master=self,
-                                    width=100,
-                                    border_width=0,
-                                    fg_color=self._button_fg_color,
-                                    hover_color=self._button_hover_color,
-                                    text_color=self._button_text_color,
-                                    text=self._ok_text,
-                                    font=self._font,
-                                    command=self._ok_event)
+        self._ok_button = CustomButton(master=self,
+                                       width=100,
+                                       border_width=0,
+                                       fg_color=self._button_fg_color,
+                                       hover_color=self._button_hover_color,
+                                       text_color=self._button_text_color,
+                                       text=self._ok_text,
+                                       font=self._font,
+                                       command=self._ok_event)
         self._ok_button.grid(row=2, column=0, columnspan=1, padx=(20, 10), pady=(0, 20), sticky="ew")
 
-        self._cancel_button = CTkButton(master=self,
-                                        width=100,
-                                        border_width=0,
-                                        fg_color=self._button_fg_color,
-                                        hover_color=self._button_hover_color,
-                                        text_color=self._button_text_color,
-                                        text=self._cancel_text,
-                                        font=self._font,
-                                        command=self._cancel_event)
+        self._cancel_button = CustomButton(master=self,
+                                            width=100,
+                                            border_width=0,
+                                            fg_color=self._button_fg_color,
+                                            hover_color=self._button_hover_color,
+                                            text_color=self._button_text_color,
+                                            text=self._cancel_text,
+                                            font=self._font,
+                                            command=self._cancel_event)
         self._cancel_button.grid(row=2, column=1, columnspan=1, padx=(10, 20), pady=(0, 20), sticky="ew")
 
         self.after(150, lambda: self._entry.focus())  # set focus to entry with slight delay, otherwise it won't work
@@ -118,3 +121,187 @@ class CTkInputDialog(CTkToplevel):
     def get_input(self):
         self.master.wait_window(self)
         return self._user_input
+
+class CustomButton(CTkButton):
+    def __init__(self, master=None, command=None, **kwargs):
+        super().__init__(master, cursor="hand2", **kwargs)
+        self.is_pressed = False
+        self.click_command = command
+        self.bind("<ButtonPress-1>", self.on_button_down)
+        self.bind("<ButtonRelease-1>", self.on_button_up)
+
+    def on_button_down(self, event):
+        if self.cget("state") == "disabled":
+            return
+        self.is_pressed = True
+
+    def on_button_up(self, event):
+        if self.cget("state") == "disabled":
+            return
+        width = self.winfo_width()
+        height = self.winfo_height()
+        if self.is_pressed and 0 <= event.x <= width and 0 <= event.y <= height:
+            if self.click_command:
+                self.click_command()
+        self.is_pressed = False
+
+class CustomEntry(CTkEntry):
+    def __init__(self, master, teraterm_ui_instance, lang=None, *args, **kwargs):
+        super().__init__(master, *args, **kwargs)
+
+        initial_state = self.get()
+        self._undo_stack = deque([initial_state], maxlen=25)
+        self._redo_stack = deque(maxlen=25)
+        self.lang = lang
+
+        self.teraterm_ui = teraterm_ui_instance
+        self.bind("<FocusIn>", self.disable_slider_keys)
+        self.bind("<FocusOut>", self.enable_slider_keys)
+
+        # Bind Control-Z to undo and Control-Y to redo
+        self.bind("<Control-z>", self.undo)
+        self.bind("<Control-Z>", self.undo)
+        self.bind("<Control-y>", self.redo)
+        self.bind("<Control-Y>", self.redo)
+        self.bind("<Button-2>", self.select_all)
+
+        # Update the undo stack every time the Entry content changes
+        self.bind("<KeyRelease>", self.update_undo_stack)
+
+        # Context Menu
+        self.context_menu = tk.Menu(self, tearoff=0, bg="#f0f0f0", fg="#333333", font=("Arial", 10))
+        self.context_menu.add_command(label="Cut", command=self.cut)
+        self.context_menu.add_command(label="Copy", command=self.copy)
+        self.context_menu.add_command(label="Paste", command=self.paste)
+        self.context_menu.add_command(label="Select All", command=self.select_all)
+        self.is_text_selected = False
+        self.bind("<Button-3>", self.show_menu)
+
+    def disable_slider_keys(self, event=None):
+        self.teraterm_ui.move_slider_left_enabled = False
+        self.teraterm_ui.move_slider_right_enabled = False
+        self.teraterm_ui.spacebar_enabled = False
+        self.teraterm_ui.up_arrow_key_enabled = False
+        self.teraterm_ui.down_arrow_key_enabled = False
+
+    def enable_slider_keys(self, event=None):
+        self.teraterm_ui.move_slider_left_enabled = True
+        self.teraterm_ui.move_slider_right_enabled = True
+        self.teraterm_ui.spacebar_enabled = True
+        self.teraterm_ui.up_arrow_key_enabled = True
+        self.teraterm_ui.down_arrow_key_enabled = True
+
+    def update_undo_stack(self, event=None):
+        current_text = self.get()
+        if current_text != self._undo_stack[-1]:
+            self._undo_stack.append(current_text)
+            self._redo_stack.clear()  # Clear the redo stack whenever a new change is made
+
+    def undo(self, event=None):
+        if len(self._undo_stack) > 1:
+            self._redo_stack.append(self._undo_stack.pop())
+            self.delete(0, "end")
+            self.insert(0, self._undo_stack[-1])
+
+    def redo(self, event=None):
+        if self._redo_stack:
+            redo_text = self._redo_stack.pop()
+            self._undo_stack.append(redo_text)
+            self.delete(0, "end")
+            self.insert(0, redo_text)
+
+    def show_menu(self, event):
+        if self.cget("state") == "disabled":
+            return
+
+        current_label = self.context_menu.entrycget(0, "label")
+        if self.lang == "English" and current_label != "Cut":
+            self.context_menu.entryconfigure(0, label="Cut")
+            self.context_menu.entryconfigure(1, label="Copy")
+            self.context_menu.entryconfigure(2, label="Paste")
+            self.context_menu.entryconfigure(3, label="Select All")
+        elif self.lang == "Español" and current_label != "Cortar":
+            self.context_menu.entryconfigure(0, label="Cortar")
+            self.context_menu.entryconfigure(1, label="Copiar")
+            self.context_menu.entryconfigure(2, label="Pegar")
+            self.context_menu.entryconfigure(3, label="Seleccionar todo")
+        self.context_menu.post(event.x_root, event.y_root)
+        self.focus_set()
+        self.icursor(tk.END)
+
+    def cut(self):
+        try:
+            selected_text = self.selection_get()  # Attempt to get selected text
+            current_text = self.get()  # Existing text in the Entry widget
+
+            # Save the current state to undo stack
+            self._undo_stack.append(current_text)
+
+            # Perform the cut operation
+            self.clipboard_clear()
+            self.clipboard_append(selected_text)
+            self.delete(tk.SEL_FIRST, tk.SEL_LAST)
+
+            # Update the undo stack with the new state
+            new_text = self.get()
+            self._undo_stack.append(new_text)
+
+            # Optionally, clear the redo stack
+            self._redo_stack = []
+
+        except tk.TclError:
+            print("No text selected to cut.")  # Log or inform the user accordingly
+
+    def copy(self):
+        try:
+            selected_text = self.selection_get()  # Attempt to get selected text
+            self.clipboard_clear()
+            self.clipboard_append(selected_text)
+        except tk.TclError:
+            print("No text selected to copy.")  # Log or inform the user accordingly
+
+    def paste(self, event=None):
+        current_text = self.get()  # Existing text in the Entry widget
+
+        # Save the current state to undo stack
+        if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1]):
+            self._undo_stack.append(current_text)
+
+        try:
+            clipboard_text = self.clipboard_get()  # Get text from clipboard
+            try:
+                start_index = self.index(tk.SEL_FIRST)
+                end_index = self.index(tk.SEL_LAST)
+                self.delete(start_index, end_index)  # Remove selected text if any
+            except tk.TclError:
+                pass  # Nothing selected, which is fine
+
+            self.insert(tk.INSERT, clipboard_text)  # Insert the clipboard text
+            # Update undo stack here, after paste operation
+            new_text = self.get()
+            self._undo_stack.append(new_text)
+            self._redo_stack = []
+        except tk.TclError:
+            pass  # Clipboard empty or other issue
+
+    def select_all(self, event=None):
+        self.focus_set()
+        self.icursor(tk.END)
+        try:
+            # Check if any text is currently selected
+            if self.selection_get():
+                # Clear the selection if text is already selected
+                self.select_clear()
+            else:
+                # Select all text if nothing is selected
+                self.select_range(0, "end")
+                self.icursor("end")
+        except tk.TclError:
+            # No text was selected, so select all
+            self.select_range(0, "end")
+            self.icursor("end")
+
+    def on_click(self, event=None):
+        # Reset the is_text_selected flag to False when the entry is clicked
+        self.is_text_selected = False
+        
