@@ -175,7 +175,7 @@
 	"failed_to_search": "Error! Failed to search class!",
 	"missing_info_search": "Error! Missing information about\nthe class you want to search",
 	"dialog_title": "Show My Classes",
-	"dialog_message": "Enter the semester:",
+	"dialog_message": "Enter the Semester:",
 	"add_no_semester": "Error! Must enter \n\nthe semester",
 	"add_invalid_semester": "Error! Must enter \n\na valid semester",
 	"enroll_multiple": "Are you sure you are ready to submit the classes?\n\nWARNING: Make sure the information is correct",
