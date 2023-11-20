@@ -88,6 +88,7 @@ class TeraTermUI(customtkinter.CTk):
         self.geometry(f"{width}x{height}+{int(x) + 130}+{int(y + 50)}")
         self.icon_path = "images/tera-term.ico"
         self.iconbitmap(self.icon_path)
+        self.bind("<Button-3>", lambda event: self.focus_set())
 
         # creates a thread separate from the main application for check_idle and to monitor cpu usage
         self.last_activity = time.time()
@@ -3629,16 +3630,6 @@ class TeraTermUI(customtkinter.CTk):
             self._683_screen = False
             self._4CM_screen = False
             self.search_next_page_status = False
-
-    def initialization_my_classes(self):
-        if not self.init_my_classes:
-            lang = self.language_menu.get()
-            translation = self.load_language(lang)
-            self.my_classes_frame = customtkinter.CTkScrollableFrame(self,
-                                                                     corner_radius=10, width=600, height=293)
-            self.title_my_classes = customtkinter.CTkLabel(self.my_classes_frame,
-                                                           text=translation["title_search"],
-                                                           font=customtkinter.CTkFont(size=20, weight="bold"))
 
     def initialization_multiple(self):
         # Multiple Classes Enrollment
