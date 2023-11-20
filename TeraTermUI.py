@@ -639,7 +639,7 @@ class TeraTermUI(customtkinter.CTk):
         if hasattr(self, "check_idle_thread") and self.check_idle_thread is not None \
                 and self.check_idle_thread.is_alive():
             self.stop_check_idle.set()
-        self.save_user_data()
+        self.save_user_data(include_exit=False)
         self.destroy()
         exit(0)
 
@@ -2463,8 +2463,6 @@ class TeraTermUI(customtkinter.CTk):
                             winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                         CTkMessagebox(master=self, title=translation["automation_error_title"],
                                       message=translation["unexpected_error"], icon="warning", button_width=380)
-                        self.bind("<Return>", lambda event: self.login_event_handler())
-
                     self.error_occurred = False
                     self.after(0, rare_error)
                 else:
@@ -2488,7 +2486,8 @@ class TeraTermUI(customtkinter.CTk):
                         if not self.disable_audio:
                             winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                         CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                      message=translation["tera_term_forced_to_close"], icon="warning", button_width=380)
+                                      message=translation["tera_term_forced_to_close"], icon="warning",
+                                      button_width=380)
                         self.bind("<Return>", lambda event: self.login_event_handler())
                         self.error_occurred = False
                     self.after(0, error_automation)
@@ -3706,7 +3705,7 @@ class TeraTermUI(customtkinter.CTk):
         self.load_saved_classes()
 
     # saves the information to the database when the app closes
-    def save_user_data(self):
+    def save_user_data(self, include_exit=True):
         # Define the values for each field
         field_values = {
             "host": "uprbay.uprb.edu",
@@ -3716,6 +3715,9 @@ class TeraTermUI(customtkinter.CTk):
             "exit": self.checkbox_state,
         }
         for field, value in field_values.items():
+            # Skip 'exit' field if include_exit is False
+            if field == "exit" and not include_exit:
+                continue
             # for 'host' field, only update or insert when host is "uprbay.uprb.edu"
             if field == "host" and (self.host_entry.get().replace(" ", "").lower() != "uprbay.uprb.edu" and
                                     self.host_entry.get().replace(" ", "").lower() != "uprbayuprbedu"):
@@ -5840,6 +5842,7 @@ class TeraTermUI(customtkinter.CTk):
         self.feedbackText.lang = lang
         self.status.focus_set()
         scrollable_frame.bind("<Button-1>", lambda event: scrollable_frame.focus_set())
+        scrollable_frame.bind("<Button-3>", lambda event: scrollable_frame.focus_set())
         self.status.protocol("WM_DELETE_WINDOW", self.on_status_window_close)
         self.status.bind("<Escape>", lambda event: self.on_status_window_close())
 
@@ -6239,6 +6242,7 @@ class TeraTermUI(customtkinter.CTk):
         self.class_list.bind("<MouseWheel>", self.disable_scroll)
         self.search_box.bind("<KeyRelease>", self.search_classes)
         scrollable_frame.bind("<Button-1>", lambda event: scrollable_frame.focus_set())
+        scrollable_frame.bind("<Button-3>", lambda event: scrollable_frame.focus_set())
         self.help.protocol("WM_DELETE_WINDOW", self.on_help_window_close)
         self.help.bind("<Escape>", lambda event: self.on_help_window_close())
 
@@ -7113,4 +7117,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
+
