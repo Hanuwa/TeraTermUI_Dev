@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 11/19/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 11/20/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -3215,7 +3215,7 @@ class TeraTermUI(customtkinter.CTk):
         screen_height = self.winfo_screenheight()
         x = (screen_width - width * scaling_factor) / 2
         y = (screen_height - height * scaling_factor) / 2
-        self.timer_window = customtkinter.CTkToplevel(self)
+        self.timer_window = SmoothFadeToplevel(fade_duration=15)
         self.timer_window.title(translation["auto_enroll"])
         self.timer_window.geometry(f"{width}x{height}+{int(x) + 130}+{int(y)}")
         self.timer_window.attributes("-alpha", 0.90)
@@ -3919,7 +3919,7 @@ class TeraTermUI(customtkinter.CTk):
             x, y, right, bottom = get_window_rect(hwnd)
             width = right - x
             height = bottom - y
-            crop_margin = (3, 8, 8, 3)
+            crop_margin = (0, 10, 10, 2)
             if self.loading_screen.winfo_exists():
                 self.hide_loading_screen()
             original_position = pyautogui.position()
