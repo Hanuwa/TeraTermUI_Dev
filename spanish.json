@@ -175,7 +175,7 @@
 	"failed_to_search": "¡Error! ¡Problema al buscar la clase!",
 	"missing_info_search": "¡Error! Le falta información de la\nclase que deseas buscar",
 	"dialog_title": "Enseñar Mis Classes",
-	"dialog_message": "Escriba el semestre:",
+	"dialog_message": "Escriba el Semestre:",
 	"add_no_semester": "¡Error! Debe escribir el\n\nsemestre",
 	"add_invalid_semester": "¡Error! Debe escribir\n\nun semestre válido",
 	"enroll_multiple": "¿Estás preparado para someter las clases?\n\nWARNING: Asegúrese de que la información está correcta",
