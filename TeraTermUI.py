@@ -6695,14 +6695,24 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.stop_autoscroll(event=None)
         self.focus_set()
         self.mark_set(tk.INSERT, "end")
-        if not self.is_text_selected:
-            self.tag_add(tk.SEL, "1.0", tk.END)
-            self.mark_set(tk.INSERT, "1.0")
-            self.see(tk.INSERT)
-            self.is_text_selected = True  # Set the flag to True when text is selected
-        else:
-            self.tag_remove(tk.SEL, "1.0", tk.END)  # Remove selection
-            self.is_text_selected = False  # Reset the flag when text is unselected
+        try:
+            # Check if any text is currently selected
+            if self.tag_ranges(tk.SEL):
+                # Clear the selection if text is already selected
+                self.tag_remove(tk.SEL, "1.0", tk.END)
+                self.is_text_selected = False
+            else:
+                # Select all text if nothing is selected
+                self.tag_add(tk.SEL, "1.0", tk.END)
+                self.mark_set(tk.INSERT, "1.0")
+                self.see(tk.INSERT)
+                self.is_text_selected = True
+        except tk.TclError:
+            pass  # Handle any exceptions if needed
+
+    def on_click(self, event=None):
+        # Reset the is_text_selected flag to False when the textbox is clicked
+        self.is_text_selected = False
 
     @staticmethod
     def readonly(event):
@@ -6852,13 +6862,23 @@ class CustomEntry(customtkinter.CTkEntry):
     def select_all(self, event=None):
         self.focus_set()
         self.icursor(tk.END)
-        if not self.is_text_selected:
-            self.select_range(0, "end")  # Select text from start to end
-            self.icursor("end")  # Move cursor to the end
-            self.is_text_selected = True  # Set the flag to True when text is selected
-        else:
-            self.select_clear()  # Clear the selection
-            self.is_text_selected = False  # Reset the flag when text is unselected
+        try:
+            # Check if any text is currently selected
+            if self.selection_get():
+                # Clear the selection if text is already selected
+                self.select_clear()
+            else:
+                # Select all text if nothing is selected
+                self.select_range(0, "end")
+                self.icursor("end")
+        except tk.TclError:
+            # No text was selected, so select all
+            self.select_range(0, "end")
+            self.icursor("end")
+
+    def on_click(self, event=None):
+        # Reset the is_text_selected flag to False when the entry is clicked
+        self.is_text_selected = False
 
 
 class CustomComboBox(customtkinter.CTkComboBox):
