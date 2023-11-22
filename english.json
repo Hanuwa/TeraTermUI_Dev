@@ -11,6 +11,7 @@
 	"default": "System",
 	"introduction": "UPRB Enrollment Process",
 	"host": "Host",
+	"host_placeholder": "myhost.example.edu",
 	"log_in": "Log-In",
 	"title_auth": "Connected to the server successfully",
 	"disclaimer": "Authentication required",
