@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 11/20/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 11/21/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -5799,8 +5799,8 @@ class TeraTermUI(customtkinter.CTk):
         self.status.title(translation["status"])
         self.status.after(256, lambda: self.status.iconbitmap(self.icon_path))
         self.status.resizable(False, False)
-        scrollable_frame = customtkinter.CTkScrollableFrame(self.status, width=475, height=280,
-                                                            fg_color=("#e6e6e6", "#222222"))
+        scrollable_frame = CustomScrollableFrame(self.status, width=475, height=280,
+                                                 fg_color=("#e6e6e6", "#222222"))
         scrollable_frame.pack()
         title = customtkinter.CTkLabel(scrollable_frame, text=translation["status_title"],
                                        font=customtkinter.CTkFont(size=20, weight="bold"))
@@ -6538,6 +6538,28 @@ class CustomButton(customtkinter.CTkButton):
         self.is_pressed = False
 
 
+class CustomScrollableFrame(customtkinter.CTkScrollableFrame):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _mouse_wheel_all(self, event):
+        # Get the currently focused widget
+        focused_widget = self.focus_get()
+
+        # Check if the focused widget is a CustomTextBox and if it has focus
+        if isinstance(focused_widget, tk.Text):
+            # Get mouse position relative to the focused widget
+            mouse_x = focused_widget.winfo_pointerx() - focused_widget.winfo_rootx()
+            mouse_y = focused_widget.winfo_pointery() - focused_widget.winfo_rooty()
+
+            # Check if the mouse is over the focused widget
+            if 0 <= mouse_x < focused_widget.winfo_width() and 0 <= mouse_y < focused_widget.winfo_height():
+                return  # Do not scroll if the mouse is over a CustomTextBox
+
+        # Otherwise, perform the normal scroll action
+        super()._mouse_wheel_all(event)
+
+
 class CustomTextBox(customtkinter.CTkTextbox):
     def __init__(self, master=None, enable_autoscroll=True, read_only=False, lang=None, **kwargs):
         super().__init__(master, **kwargs)
@@ -7117,4 +7139,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
