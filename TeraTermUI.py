@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 11/21/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 11/22/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -77,18 +77,6 @@ class TeraTermUI(customtkinter.CTk):
     def __init__(self):
         super().__init__()
         self.title("Tera Term UI")
-        # determines screen size to put application in the middle of the screen
-        width = 910
-        height = 485
-        scaling_factor = self.tk.call("tk", "scaling")
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        x = (screen_width - width * scaling_factor) / 2
-        y = (screen_height - height * scaling_factor) / 2
-        self.geometry(f"{width}x{height}+{int(x) + 130}+{int(y + 50)}")
-        self.icon_path = "images/tera-term.ico"
-        self.iconbitmap(self.icon_path)
-        self.bind("<Button-3>", lambda event: self.focus_set())
 
         # creates a thread separate from the main application for check_idle and to monitor cpu usage
         self.last_activity = time.time()
@@ -210,21 +198,26 @@ class TeraTermUI(customtkinter.CTk):
         self.bind("<Right>", self.move_slider_right)
 
         # create main entry
-        self.introduction = customtkinter.CTkLabel(self, text="UPRB Enrollment Process",
+        self.home_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
+        self.home_frame.bind("<Button-1>", lambda event: self.focus_set())
+        self.home_frame.grid(row=0, column=1, rowspan=5, columnspan=5, padx=(0, 0), pady=(0, 0))
+        self.introduction = customtkinter.CTkLabel(self.home_frame, text="UPRB Enrollment Process",
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
         self.introduction.grid(row=0, column=1, columnspan=2, padx=(20, 0), pady=(20, 0))
-        self.host = customtkinter.CTkLabel(self, text="Host ")
-        self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(15, 15))
-        self.host_entry = CustomEntry(self, self, placeholder_text="myhost.example.edu")
+        self.host = customtkinter.CTkLabel(self.home_frame, text="Host")
+        self.host.grid(row=2, column=1, padx=(0, 170), pady=(15, 15))
+        self.host_entry = CustomEntry(self.home_frame, self, placeholder_text="myhost.example.edu")
         self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(15, 15))
         self.host_tooltip = CTkToolTip(self.host_entry, message="Enter the name of the server\n of the university",
                                        bg_color="#1E90FF")
-        self.log_in = CustomButton(self, border_width=2, text="Log-In", text_color=("gray10", "#DCE4EE"),
+        self.log_in = CustomButton(self.home_frame, border_width=2, text="Log-In", text_color=("gray10", "#DCE4EE"),
                                    command=self.login_event_handler)
-        self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(20, 20))
+        self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(15, 15))
         self.log_in.configure(state="disabled")
-        self.slideshow_frame = ImageSlideshow(self, "slideshow", interval=5, width=300, height=150)
-        self.intro_box = CustomTextBox(self, read_only=True, height=120, width=400)
+        self.slideshow_frame = ImageSlideshow(self.home_frame, "slideshow", interval=5, width=300,
+                                              height=150)
+        self.slideshow_frame.grid(row=1, column=1, padx=(20, 0), pady=(140, 0))
+        self.intro_box = CustomTextBox(self.home_frame, read_only=True, height=120, width=400)
         self.intro_box.insert("0.0", "Welcome to the Tera Term UI Application!\n\n" +
                               "The purpose of this application"
                               " is to facilitate the process enrolling and dropping classes, "
@@ -253,7 +246,19 @@ class TeraTermUI(customtkinter.CTk):
                               "")
         self.intro_box.configure(state="disabled", wrap="word", border_spacing=7)
         self.intro_box.grid(row=1, column=1, padx=(20, 0), pady=(0, 150))
-        self.slideshow_frame.grid(row=1, column=1, padx=(20, 0), pady=(140, 0))
+
+        # determines screen size to put application in the middle of the screen
+        width = 910
+        height = 485
+        scaling_factor = self.tk.call("tk", "scaling")
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        x = (screen_width - width * scaling_factor) / 2
+        y = (screen_height - height * scaling_factor) / 2
+        self.geometry(f"{width}x{height}+{int(x) + 130}+{int(y + 50)}")
+        self.icon_path = "images/tera-term.ico"
+        self.iconbitmap(self.icon_path)
+        self.bind("<Button-3>", lambda event: self.focus_set())
 
         # Authentication Screen
         self.init_auth = False
@@ -2512,13 +2517,8 @@ class TeraTermUI(customtkinter.CTk):
         self.student.grid(row=4, column=1, padx=(10, 0), pady=(0, 0))
         self.main_menu = False
         self.language_menu.configure(state="disabled")
+        self.home_frame.grid_forget()
         self.slideshow_frame.pause_cycle()
-        self.host.grid_forget()
-        self.host_entry.grid_forget()
-        self.log_in.grid_forget()
-        self.intro_box.grid_forget()
-        self.introduction.grid_forget()
-        self.slideshow_frame.grid_forget()
 
     def login_to_existent_connection(self):
         timeout_counter = 0
@@ -2559,13 +2559,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.in_student_frame = False
                 self.run_fix = True
                 self.language_menu.configure(state="disabled")
+                self.home_frame.grid_forget()
                 self.slideshow_frame.pause_cycle()
-                self.host.grid_forget()
-                self.host_entry.grid_forget()
-                self.log_in.grid_forget()
-                self.intro_box.grid_forget()
-                self.introduction.grid_forget()
-                self.slideshow_frame.grid_forget()
                 self.switch_tab()
                 self.move_window()
             else:
@@ -2606,13 +2601,14 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<Down>")
             self.unbind("<Control-Tab>")
             self.bind("<Return>", lambda event: self.login_event_handler())
-            if lang == "Español":
-                self.host.grid(row=2, column=0, columnspan=2, padx=(5, 0), pady=(15, 15))
-            elif lang == "English":
-                self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(15, 15))
+            self.home_frame.grid(row=0, column=1, rowspan=5, columnspan=5, padx=(0, 0), pady=(10, 0))
+            if lang == "English":
+                self.host.grid(row=2, column=1, padx=(0, 170), pady=(15, 15))
+            elif lang == "Español":
+                self.host.grid(row=2, column=1, padx=(0, 190), pady=(15, 15))
             self.introduction.grid(row=0, column=1, columnspan=2, padx=(20, 0), pady=(20, 0))
             self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(15, 15))
-            self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(20, 20))
+            self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(15, 15))
             self.intro_box.grid(row=1, column=1, padx=(20, 0), pady=(0, 150))
             self.slideshow_frame.grid(row=1, column=1, padx=(20, 0), pady=(140, 0))
             self.destroy_auth()
@@ -2813,6 +2809,7 @@ class TeraTermUI(customtkinter.CTk):
             self.appearance_mode_optionemenu.set(translation["default"])
         self.introduction.configure(text=translation["introduction"])
         self.host.configure(text=translation["host"])
+        self.host_entry.configure(placeholder_text=translation["host_placeholder"])
         self.log_in.configure(text=translation["log_in"])
         self.host_tooltip.configure(message=translation["host_tooltip"])
         self.status_tooltip.configure(message=translation["status_tooltip"])
@@ -2821,9 +2818,9 @@ class TeraTermUI(customtkinter.CTk):
         for entry in [self.host_entry, self.intro_box]:
             entry.lang = lang
         if lang == "English":
-            self.host.grid(row=2, column=0, columnspan=2, padx=(30, 0), pady=(15, 15))
+            self.host.grid(row=2, column=1, padx=(0, 170), pady=(15, 15))
         elif lang == "Español":
-            self.host.grid(row=2, column=0, columnspan=2, padx=(5, 0), pady=(15, 15))
+            self.host.grid(row=2, column=1, padx=(0, 190), pady=(15, 15))
         if self.init_multiple:
             self.title_enroll.configure(text=translation["title_enroll"])
             self.e_classes.configure(text=translation["class"])
@@ -7139,3 +7136,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+     
