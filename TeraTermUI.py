@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 11/22/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 11/24/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -117,12 +117,12 @@ class TeraTermUI(customtkinter.CTk):
         self.check_idle_thread = None
         self.idle_num_check = None
         self.idle_warning = None
-        self.feedbackText = None
-        self.feedbackSend = None
+        self.feedback_text = None
+        self.feedback_send = None
         self.search_box = None
         self.class_list = None
-        self.disableIdle = None
-        self.disableAudio = None
+        self.disable_idle = None
+        self.disable_audio = None
         self.status_minimized = None
         self.help_minimized = None
         self.checkbox_state = None
@@ -407,6 +407,43 @@ class TeraTermUI(customtkinter.CTk):
         self.change_section_entry = None
         self.modify_classes_title = None
         self.last_course_code = None
+
+        # Status Window
+        self.status_frame = None
+        self.status_title = None
+        self.version = None
+        self.feedback_text = None
+        self.feedback_send = None
+        self.check_update_text = None
+        self.check_update_btn = None
+        self.website = None
+        self.website_link = None
+        self.notaso = None
+        self.notaso_link = None
+        self.faq = None
+        self.faq_text = None
+        self.qa_table = None
+
+        # Help Window
+        self.help_frame = None
+        self.help_title = None
+        self.notice = None
+        self.searchbox_text = None
+        self.search_box = None
+        self.class_list = None
+        self.curriculum_text = None
+        self.curriculum = None
+        self.terms_text = None
+        self.terms = None
+        self.terms_table = None
+        self.files_text = None
+        self.files = None
+        self.disable_idle_text = None
+        self.disable_idle = None
+        self.disable_audio_text = None
+        self.disable_audio_val = None
+        self.fix_text = None
+        self.fix = None
 
         # Top level window management, flags and counters
         self.DEFAULT_SEMESTER = "C32"
@@ -787,6 +824,7 @@ class TeraTermUI(customtkinter.CTk):
                                   icon="warning", button_width=380)
                     self.bind("<Return>", lambda event: self.tuition_event_handler())
                     self.error_occurred = False
+
                 self.after(0, error_automation)
             ctypes.windll.user32.BlockInput(False)
 
@@ -1116,6 +1154,7 @@ class TeraTermUI(customtkinter.CTk):
                                       message=translation["automation_error"],
                                       icon="warning", button_width=380)
                         self.error_occurred = False
+
                     self.after(0, error_automation)
                 self.bind("<Return>", lambda event: self.submit_event_handler())
                 ctypes.windll.user32.BlockInput(False)
@@ -1244,6 +1283,7 @@ class TeraTermUI(customtkinter.CTk):
                                       message=translation["automation_error"],
                                       icon="warning", button_width=380)
                         self.error_occurred = False
+
                     self.after(0, error_automation)
                 self.bind("<Return>", lambda event: self.search_event_handler())
                 ctypes.windll.user32.BlockInput(False)
@@ -1349,6 +1389,7 @@ class TeraTermUI(customtkinter.CTk):
                                       icon="warning", button_width=380)
                         self.switch_tab()
                         self.error_occurred = False
+
                     self.after(0, error_automation)
                 ctypes.windll.user32.BlockInput(False)
 
@@ -1648,6 +1689,7 @@ class TeraTermUI(customtkinter.CTk):
                                       message=translation["automation_error"],
                                       icon="question", button_width=380)
                         self.error_occurred = False
+
                     self.after(0, error_automation)
                 self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                 ctypes.windll.user32.BlockInput(False)
@@ -2071,6 +2113,7 @@ class TeraTermUI(customtkinter.CTk):
                                       message=translation["automation_error"],
                                       icon="warning", button_width=380)
                         self.error_occurred = False
+
                     self.after(0, error_automation)
                 self.bind("<Return>", lambda event: self.option_menu_event_handler())
                 ctypes.windll.user32.BlockInput(False)
@@ -2190,6 +2233,7 @@ class TeraTermUI(customtkinter.CTk):
                                       message=translation["automation_error"],
                                       icon="warning", button_width=380)
                         self.error_occurred = False
+
                     self.after(0, error_automation)
                 self.bind("<Return>", lambda event: self.option_menu_event_handler())
                 ctypes.windll.user32.BlockInput(False)
@@ -2257,6 +2301,7 @@ class TeraTermUI(customtkinter.CTk):
                                       message=translation["automation_error"],
                                       icon="warning", button_width=380)
                         self.error_occurred = False
+
                     self.after(0, error_automation)
                 self.bind("<Return>", lambda event: self.search_event_handler())
                 ctypes.windll.user32.BlockInput(False)
@@ -2468,6 +2513,7 @@ class TeraTermUI(customtkinter.CTk):
                             winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                         CTkMessagebox(master=self, title=translation["automation_error_title"],
                                       message=translation["unexpected_error"], icon="warning", button_width=380)
+
                     self.error_occurred = False
                     self.after(0, rare_error)
                 else:
@@ -2495,6 +2541,7 @@ class TeraTermUI(customtkinter.CTk):
                                       button_width=380)
                         self.bind("<Return>", lambda event: self.login_event_handler())
                         self.error_occurred = False
+
                     self.after(0, error_automation)
                 ctypes.windll.user32.BlockInput(False)
 
@@ -2821,6 +2868,55 @@ class TeraTermUI(customtkinter.CTk):
             self.host.grid(row=2, column=1, padx=(0, 170), pady=(15, 15))
         elif lang == "Español":
             self.host.grid(row=2, column=1, padx=(0, 190), pady=(15, 15))
+        if self.status is not None and self.status.winfo_exists():
+            self.status.title(translation["status"])
+            self.status_title.configure(text=translation["status_title"])
+            self.version.configure(text=translation["app_version"])
+            self.feedback_send.configure(text=translation["feedback"])
+            self.check_update_text.configure(text=translation["update_title"])
+            self.check_update_btn.configure(text=translation["update"])
+            self.website.configure(text=translation["website"])
+            self.website_link.configure(text=translation["link"])
+            self.notaso.configure(text=translation["notaso_title"])
+            self.notaso_link.configure(text=translation["notaso_link"])
+            self.faq_text .configure(text=translation["faq"])
+            self.qa_table = [[translation["q"], translation["a"]],
+                             [translation["q1"], translation["a1"]],
+                             [translation["q2"], translation["a2"]]]
+            self.faq.configure(values=self.qa_table)
+            self.feedback_text.lang = lang
+        if self.help is not None and self.help.winfo_exists():
+            self.help.title(translation["help"])
+            self.help_title.configure(text=translation["help"])
+            self.notice.configure(text=translation["notice"])
+            self.searchbox_text.configure(text=translation["searchbox_title"])
+            self.search_box.configure(placeholder_text=translation["searchbox"])
+            self.curriculum_text.configure(text=translation["curriculums_title"])
+            self.curriculum.set(translation["dep"])
+            self.curriculum.configure(values=[translation["dep"], translation["acc"], translation["finance"],
+                                              translation["management"], translation["mark"], translation["g_biology"],
+                                              translation["h_biology"], translation["c_science"], translation["it"],
+                                              translation["s_science"], translation["physical"], translation["elec"],
+                                              translation["equip"], translation["peda"], translation["che"],
+                                              translation["nur"], translation["office"], translation["engi"]])
+            self.terms_text.configure(text=translation["terms_title"])
+            self.terms = [[translation["terms_year"], translation["terms_term"]],
+                          ["2019", "B91, B92, B93"],
+                          ["2020", "C01, C02, C03"],
+                          ["2021", "C11, C12, C13"],
+                          ["2022", "C21, C22, C23"],
+                          ["2023", "C31, C32, C33"],
+                          [translation["semester"], translation["seasons"]]]
+            self.terms_table.configure(values=self.terms)
+            self.files_text.configure(text=translation["files_title"])
+            self.files.configure(text=translation["files_button"])
+            self.disable_idle_text.configure(text=translation["idle_title"])
+            self.disable_idle.configure(text=translation["idle"])
+            self.disable_audio_text.configure(text=translation["audio_title"])
+            self.disable_audio_val.configure(text=translation["audio"])
+            self.fix_text.configure(text=translation["fix_title"])
+            self.fix.configure(text=translation["fix"])
+            self.search_box.lang = lang
         if self.init_multiple:
             self.title_enroll.configure(text=translation["title_enroll"])
             self.e_classes.configure(text=translation["class"])
@@ -3085,6 +3181,7 @@ class TeraTermUI(customtkinter.CTk):
                                       message=translation["server_maintenance"],
                                       icon="warning", button_width=380)
                         self.error_occurred = False
+
                     self.after(0, error_automation)
                 self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                 ctypes.windll.user32.BlockInput(False)
@@ -4853,6 +4950,7 @@ class TeraTermUI(customtkinter.CTk):
                                       message=translation["automation_error"],
                                       icon="warning", button_width=380)
                         self.error_occurred = False
+
                     self.after(0, error_automation)
                 self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
                 ctypes.windll.user32.BlockInput(False)
@@ -5525,6 +5623,7 @@ class TeraTermUI(customtkinter.CTk):
                                       message=translation["automation_error"],
                                       icon="warning", button_width=380)
                         self.error_occurred = False
+
                     self.after(0, error_automation)
                 ctypes.windll.user32.BlockInput(False)
 
@@ -5618,14 +5717,14 @@ class TeraTermUI(customtkinter.CTk):
     # Disables check_idle functionality
     def disable_enable_idle(self):
         row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
-        if self.disableIdle.get() == "on":
+        if self.disable_idle.get() == "on":
             if not row_exists:
                 self.cursor.execute("INSERT INTO user_data (idle) VALUES (?)", ("Disabled",))
             else:
                 self.cursor.execute("UPDATE user_data SET idle=?", ("Disabled",))
             self.reset_activity_timer(None)
             self.stop_idle_thread()
-        elif self.disableIdle.get() == "off":
+        elif self.disable_idle.get() == "off":
             if not row_exists:
                 self.cursor.execute("INSERT INTO user_data (idle) VALUES (?)", ("Enabled",))
             else:
@@ -5654,13 +5753,13 @@ class TeraTermUI(customtkinter.CTk):
 
     def disable_enable_audio(self):
         row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
-        if self.disableAudio.get() == "on":
+        if self.disable_audio_val.get() == "on":
             if not row_exists:
                 self.cursor.execute("INSERT INTO user_data (audio) VALUES (?)", ("Disabled",))
             else:
                 self.cursor.execute("UPDATE user_data SET audio=?", ("Disabled",))
             self.disable_audio = True
-        elif self.disableAudio.get() == "off":
+        elif self.disable_audio_val.get() == "off":
             if not row_exists:
                 self.cursor.execute("INSERT INTO user_data (audio) VALUES (?)", ("Enabled",))
             else:
@@ -5778,14 +5877,47 @@ class TeraTermUI(customtkinter.CTk):
             table_count_label = f"{translation['table_count']} {len(self.class_table_pairs)}/10"
             self.table_count.configure(text=table_count_label)
 
+    def status_widgets(self):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        self.status_frame = CustomScrollableFrame(self.status, width=475, height=280,
+                                                  fg_color=("#e6e6e6", "#222222"))
+        self.status_title = customtkinter.CTkLabel(self.status_frame, text=translation["status_title"],
+                                                   font=customtkinter.CTkFont(size=20, weight="bold"))
+        self.version = customtkinter.CTkLabel(self.status_frame, text=translation["app_version"])
+        self.feedback_text = CustomTextBox(self.status_frame, enable_autoscroll=False,
+                                           wrap="word", border_spacing=8, width=300, height=170,
+                                           fg_color=("#ffffff", "#111111"))
+        self.feedback_send = CustomButton(self.status_frame, border_width=2, text=translation["feedback"],
+                                          text_color=("gray10", "#DCE4EE"), command=self.start_feedback_thread)
+        self.check_update_text = customtkinter.CTkLabel(self.status_frame, text=translation["update_title"])
+        self.check_update_btn = CustomButton(self.status_frame, border_width=2, image=self.get_image("update"),
+                                             text=translation["update"], anchor="w", text_color=("gray10", "#DCE4EE"),
+                                             command=self.check_update_app)
+        self.website = customtkinter.CTkLabel(self.status_frame, text=translation["website"])
+        self.website_link = CustomButton(self.status_frame, border_width=2, image=self.get_image("link"),
+                                         text=translation["link"], anchor="w", text_color=("gray10", "#DCE4EE"),
+                                         command=self.github_event)
+        self.notaso = customtkinter.CTkLabel(self.status_frame, text=translation["notaso_title"])
+        self.notaso_link = CustomButton(self.status_frame, border_width=2, image=self.get_image("link"),
+                                        text=translation["notaso_link"], anchor="w", text_color=("gray10", "#DCE4EE"),
+                                        command=self.notaso_event)
+        self.faq_text = customtkinter.CTkLabel(self.status_frame, text=translation["faq"],
+                                               font=customtkinter.CTkFont(size=15, weight="bold"))
+        self.qa_table = [[translation["q"], translation["a"]],
+                         [translation["q1"], translation["a1"]],
+                         [translation["q2"], translation["a2"]]]
+
     # Creates the status window
     def status_button_event(self):
         if self.status and self.status.winfo_exists():
             self.status.lift()
+            self.status.focus_set()
             return
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         self.status = SmoothFadeToplevel()
+        self.status_widgets()
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         scaling_factor = self.tk.call("tk", "scaling")
@@ -5796,50 +5928,24 @@ class TeraTermUI(customtkinter.CTk):
         self.status.title(translation["status"])
         self.status.after(256, lambda: self.status.iconbitmap(self.icon_path))
         self.status.resizable(False, False)
-        scrollable_frame = CustomScrollableFrame(self.status, width=475, height=280,
-                                                 fg_color=("#e6e6e6", "#222222"))
-        scrollable_frame.pack()
-        title = customtkinter.CTkLabel(scrollable_frame, text=translation["status_title"],
-                                       font=customtkinter.CTkFont(size=20, weight="bold"))
-        title.pack()
-        version = customtkinter.CTkLabel(scrollable_frame, text=translation["app_version"])
-        version.pack()
-        self.feedbackText = CustomTextBox(scrollable_frame, enable_autoscroll=False,
-                                          wrap="word", border_spacing=8, width=300, height=170,
-                                          fg_color=("#ffffff", "#111111"))
-        self.feedbackText.pack(pady=10)
-        self.feedbackSend = CustomButton(scrollable_frame, border_width=2, text=translation["feedback"],
-                                         text_color=("gray10", "#DCE4EE"), command=self.start_feedback_thread)
-        self.feedbackSend.pack()
-        check_update_text = customtkinter.CTkLabel(scrollable_frame, text=translation["update_title"])
-        check_update_text.pack(pady=5)
-        check_update = CustomButton(scrollable_frame, border_width=2, image=self.get_image("update"),
-                                    text=translation["update"], anchor="w", text_color=("gray10", "#DCE4EE"),
-                                    command=self.check_update_app)
-        check_update.pack()
-        website = customtkinter.CTkLabel(scrollable_frame, text=translation["website"])
-        website.pack(pady=5)
-        link = CustomButton(scrollable_frame, border_width=2, image=self.get_image("link"), text=translation["link"],
-                            anchor="w", text_color=("gray10", "#DCE4EE"), command=self.github_event)
-        link.pack()
-        notaso = customtkinter.CTkLabel(scrollable_frame, text=translation["notaso_title"])
-        notaso.pack(pady=5)
-        notaso_link = CustomButton(scrollable_frame, border_width=2, image=self.get_image("link"),
-                                   text=translation["notaso_link"], anchor="w", text_color=("gray10", "#DCE4EE"),
-                                   command=self.notaso_event)
-        notaso_link.pack()
-        faq_text = customtkinter.CTkLabel(scrollable_frame, text=translation["faq"],
-                                          font=customtkinter.CTkFont(size=15, weight="bold"))
-        faq_text.pack()
-        qa_table = [[translation["q"], translation["a"]],
-                    [translation["q1"], translation["a1"]],
-                    [translation["q2"], translation["a2"]]]
-        faq = ctktable.CTkTable(scrollable_frame, row=3, column=2, values=qa_table)
-        faq.pack(expand=True, fill="both", padx=20, pady=20)
-        self.feedbackText.lang = lang
+        self.status_frame.pack()
+        self.status_title.pack()
+        self.version.pack()
+        self.feedback_text.pack(pady=10)
+        self.feedback_send.pack()
+        self.check_update_text.pack(pady=5)
+        self.check_update_btn.pack()
+        self.website.pack(pady=5)
+        self.website_link.pack()
+        self.notaso.pack(pady=5)
+        self.notaso_link.pack()
+        self.faq_text.pack()
+        self.faq = ctktable.CTkTable(self.status_frame, row=3, column=2, values=self.qa_table)
+        self.faq.pack(expand=True, fill="both", padx=20, pady=20)
+        self.feedback_text.lang = lang
         self.status.focus_set()
-        scrollable_frame.bind("<Button-1>", lambda event: scrollable_frame.focus_set())
-        scrollable_frame.bind("<Button-3>", lambda event: scrollable_frame.focus_set())
+        self.status_frame.bind("<Button-1>", lambda event: self.status_frame.focus_set())
+        self.status_frame.bind("<Button-3>", lambda event: self.status_frame.focus_set())
         self.status.protocol("WM_DELETE_WINDOW", self.on_status_window_close)
         self.status.bind("<Escape>", lambda event: self.on_status_window_close())
 
@@ -5882,7 +5988,7 @@ class TeraTermUI(customtkinter.CTk):
     def start_feedback_thread(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        self.feedbackSend.configure(state="disabled")
+        self.feedback_send.configure(state="disabled")
         msg = CTkMessagebox(master=self, title="Submit",
                             message=translation["submit_feedback"],
                             icon="question",
@@ -5895,7 +6001,7 @@ class TeraTermUI(customtkinter.CTk):
             feedback_thread = threading.Thread(target=self.submit_feedback)
             feedback_thread.start()
         else:
-            self.feedbackSend.configure(state="normal")
+            self.feedback_send.configure(state="normal")
 
     # Submits feedback from the user to a Google sheet
     def submit_feedback(self):
@@ -5905,10 +6011,10 @@ class TeraTermUI(customtkinter.CTk):
             current_date = datetime.today().strftime("%Y-%m-%d")
             date_record = self.cursor.execute("SELECT feedback_date FROM user_data").fetchone()
             if date_record is None or date_record[0] != current_date:
-                feedback = self.feedbackText.get("1.0", customtkinter.END).strip()
+                feedback = self.feedback_text.get("1.0", customtkinter.END).strip()
                 word_count = len(feedback.split())
                 if word_count < 1000:
-                    feedback = self.feedbackText.get("1.0", customtkinter.END).strip()
+                    feedback = self.feedback_text.get("1.0", customtkinter.END).strip()
                     if feedback:
                         result = self.call_sheets_api([[feedback]])
                         if result:
@@ -5927,7 +6033,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.cursor.execute("UPDATE user_data SET feedback_date=?",
                                                     (current_date,))
                             self.connection.commit()
-                            self.feedbackText.delete("1.0", customtkinter.END)
+                            self.feedback_text.delete("1.0", customtkinter.END)
                         else:
                             if not self.connection_error:
                                 def show_error():
@@ -5974,7 +6080,7 @@ class TeraTermUI(customtkinter.CTk):
                                   icon="cancel", button_width=380)
 
                 self.after(0, show_error)
-        self.feedbackSend.configure(state="normal")
+        self.feedback_send.configure(state="normal")
 
     @staticmethod
     def find_ttermpro():
@@ -6142,17 +6248,68 @@ class TeraTermUI(customtkinter.CTk):
             self.search_box.delete(0, tk.END)
             self.search_box.insert(0, result[0])
 
-    # Creates the Help window
-    def help_button_event(self):
-        if self.help and self.help.winfo_exists():
-            self.help.lift()
-            return
+    def help_widgets(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         bg_color = "#0e95eb"
         fg_color = "#333333"
         listbox_font = ("Arial", 11)
+        self.help_frame = customtkinter.CTkScrollableFrame(self.help, width=475, height=280,
+                                                           fg_color=("#e6e6e6", "#222222"))
+        self.help_title = customtkinter.CTkLabel(self.help_frame, text=translation["help"],
+                                                 font=customtkinter.CTkFont(size=20, weight="bold"))
+        self.notice = customtkinter.CTkLabel(self.help_frame, text=translation["notice"],
+                                             font=customtkinter.CTkFont(weight="bold", underline=True))
+        self.searchbox_text = customtkinter.CTkLabel(self.help_frame, text=translation["searchbox_title"])
+        self.search_box = CustomEntry(self.help_frame, self, placeholder_text=translation["searchbox"])
+        self.class_list = tk.Listbox(self.help_frame, width=35, bg=bg_color, fg=fg_color, font=listbox_font)
+        self.curriculum_text = customtkinter.CTkLabel(self.help_frame, text=translation["curriculums_title"])
+        self.curriculum = customtkinter.CTkOptionMenu(self.help_frame,
+                                                      values=[translation["dep"], translation["acc"],
+                                                              translation["finance"], translation["management"],
+                                                              translation["mark"], translation["g_biology"],
+                                                              translation["h_biology"], translation["c_science"],
+                                                              translation["it"], translation["s_science"],
+                                                              translation["physical"], translation["elec"],
+                                                              translation["equip"], translation["peda"],
+                                                              translation["che"], translation["nur"],
+                                                              translation["office"], translation["engi"]],
+                                                      command=TeraTermUI.curriculums, height=30, width=150)
+        self.terms_text = customtkinter.CTkLabel(self.help_frame, text=translation["terms_title"],
+                                                 font=customtkinter.CTkFont(weight="bold", size=15))
+        self.terms = [[translation["terms_year"], translation["terms_term"]],
+                      ["2019", "B91, B92, B93"],
+                      ["2020", "C01, C02, C03"],
+                      ["2021", "C11, C12, C13"],
+                      ["2022", "C21, C22, C23"],
+                      ["2023", "C31, C32, C33"],
+                      [translation["semester"], translation["seasons"]]]
+        self.terms_table = ctktable.CTkTable(self.help_frame, column=2, row=7, values=self.terms)
+        self.files_text = customtkinter.CTkLabel(self.help_frame, text=translation["files_title"])
+        self.files = CustomButton(self.help_frame, border_width=2, image=self.get_image("folder"),
+                                  text=translation["files_button"], anchor="w", text_color=("gray10", "#DCE4EE"),
+                                  command=self.change_location_auto_handler)
+        self.disable_idle_text = customtkinter.CTkLabel(self.help_frame, text=translation["idle_title"])
+        self.disable_idle = customtkinter.CTkSwitch(self.help_frame, text=translation["idle"], onvalue="on",
+                                                    offvalue="off", command=self.disable_enable_idle)
+        self.disable_audio_text = customtkinter.CTkLabel(self.help_frame, text=translation["audio_title"])
+        self.disable_audio_val = customtkinter.CTkSwitch(self.help_frame, text=translation["audio"], onvalue="on",
+                                                         offvalue="off", command=self.disable_enable_audio)
+        self.fix_text = customtkinter.CTkLabel(self.help_frame, text=translation["fix_title"])
+        self.fix = CustomButton(self.help_frame, border_width=2, image=self.get_image("fix"),
+                                text=translation["fix"], anchor="w", text_color=("gray10", "#DCE4EE"),
+                                command=self.fix_execution_event_handler)
+
+    # Creates the Help window
+    def help_button_event(self):
+        if self.help and self.help.winfo_exists():
+            self.help.lift()
+            self.help.focus_set()
+            return
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
         self.help = SmoothFadeToplevel()
+        self.help_widgets()
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         scaling_factor = self.tk.call("tk", "scaling")
@@ -6163,83 +6320,39 @@ class TeraTermUI(customtkinter.CTk):
         self.help.title(translation["help"])
         self.help.after(256, lambda: self.help.iconbitmap(self.icon_path))
         self.help.resizable(False, False)
-        scrollable_frame = customtkinter.CTkScrollableFrame(self.help, width=475, height=280,
-                                                            fg_color=("#e6e6e6", "#222222"))
-        scrollable_frame.pack()
-        title = customtkinter.CTkLabel(scrollable_frame, text=translation["help"],
-                                       font=customtkinter.CTkFont(size=20, weight="bold"))
-        title.pack()
-        notice = customtkinter.CTkLabel(scrollable_frame, text=translation["notice"],
-                                        font=customtkinter.CTkFont(weight="bold", underline=True))
-        notice.pack()
-        searchbox_text = customtkinter.CTkLabel(scrollable_frame, text=translation["searchbox_title"])
-        searchbox_text.pack()
-        self.search_box = CustomEntry(scrollable_frame, self, placeholder_text=translation["searchbox"])
+        self.help_frame.pack()
+        self.help_title.pack()
+        self.notice.pack()
+        self.searchbox_text.pack()
         self.search_box.pack(pady=10)
-        self.class_list = tk.Listbox(scrollable_frame, width=35, bg=bg_color, fg=fg_color, font=listbox_font)
         self.class_list.pack()
-        curriculum_text = customtkinter.CTkLabel(scrollable_frame, text=translation["curriculums_title"])
-        curriculum_text.pack()
-        curriculum = customtkinter.CTkOptionMenu(scrollable_frame,
-                                                 values=[translation["dep"], translation["acc"],
-                                                         translation["finance"], translation["management"],
-                                                         translation["mark"], translation["g_biology"],
-                                                         translation["h_biology"], translation["c_science"],
-                                                         translation["it"], translation["s_science"],
-                                                         translation["physical"], translation["elec"],
-                                                         translation["equip"], translation["peda"],
-                                                         translation["che"], translation["nur"],
-                                                         translation["office"], translation["engi"]],
-                                                 command=TeraTermUI.curriculums, height=30, width=150)
-        curriculum.pack(pady=5)
-        terms_text = customtkinter.CTkLabel(scrollable_frame, text=translation["terms_title"],
-                                            font=customtkinter.CTkFont(weight="bold", size=15))
-        terms_text.pack()
-        terms = [[translation["terms_year"], translation["terms_term"]],
-                 ["2019", "B91, B92, B93"],
-                 ["2020", "C01, C02, C03"],
-                 ["2021", "C11, C12, C13"],
-                 ["2022", "C21, C22, C23"],
-                 ["2023", "C31, C32, C33"],
-                 [translation["semester"], translation["seasons"]]]
-        terms_table = ctktable.CTkTable(scrollable_frame, column=2, row=7, values=terms)
-        terms_table.pack(expand=True, fill="both", padx=20, pady=20)
-        files_text = customtkinter.CTkLabel(scrollable_frame, text=translation["files_title"])
-        files_text.pack()
-        files = CustomButton(scrollable_frame, border_width=2, image=self.get_image("folder"),
-                             text=translation["files_button"], anchor="w", text_color=("gray10", "#DCE4EE"),
-                             command=self.change_location_auto_handler)
-        files.pack(pady=5)
-        disable_idle_text = customtkinter.CTkLabel(scrollable_frame, text=translation["idle_title"])
-        disable_idle_text.pack()
-        self.disableIdle = customtkinter.CTkSwitch(scrollable_frame, text=translation["idle"], onvalue="on",
-                                                   offvalue="off", command=self.disable_enable_idle)
-        self.disableIdle.pack()
-        disable_audio_text = customtkinter.CTkLabel(scrollable_frame, text=translation["audio_title"])
-        disable_audio_text.pack()
-        self.disableAudio = customtkinter.CTkSwitch(scrollable_frame, text=translation["audio"], onvalue="on",
-                                                    offvalue="off", command=self.disable_enable_audio)
-        self.disableAudio.pack()
-        fix_text = customtkinter.CTkLabel(scrollable_frame, text=translation["fix_title"])
-        fix_text.pack()
-        fix = CustomButton(scrollable_frame, border_width=2, image=self.get_image("fix"), text=translation["fix"],
-                           anchor="w", text_color=("gray10", "#DCE4EE"), command=self.fix_execution_event_handler)
-        fix.pack(pady=5)
+        self.curriculum_text.pack()
+        self.curriculum.pack(pady=5)
+        self.terms_text.pack()
+        self.terms_table.pack(expand=True, fill="both", padx=20, pady=20)
+        self.files_text.pack()
+        self.files.pack(pady=5)
+        self.disable_idle_text.pack()
+        self.disable_idle.pack()
+        self.disable_audio_text.pack()
+        self.disable_audio_val.pack()
+        self.fix_text.pack()
+        self.fix.pack(pady=5)
         idle = self.cursor.execute("SELECT idle FROM user_data").fetchone()
         audio = self.cursor.execute("SELECT audio FROM user_data").fetchone()
         if idle and idle[0] is not None:
             if idle[0] == "Disabled":
-                self.disableIdle.select()
+                self.disable_idle.select()
         if audio and audio[0] is not None:
             if audio[0] == "Disabled":
-                self.disableAudio.select()
+                self.disable_audio_val.select()
         self.search_box.lang = lang
         self.help.focus_set()
         self.class_list.bind("<<ListboxSelect>>", self.show_class_code)
         self.class_list.bind("<MouseWheel>", self.disable_scroll)
         self.search_box.bind("<KeyRelease>", self.search_classes)
-        scrollable_frame.bind("<Button-1>", lambda event: scrollable_frame.focus_set())
-        scrollable_frame.bind("<Button-3>", lambda event: scrollable_frame.focus_set())
+        self.help_frame.bind("<Button-1>", lambda event: self.help_frame.focus_set())
+        self.help_frame.bind("<Button-3>", lambda event: self.help_frame.focus_set())
         self.help.protocol("WM_DELETE_WINDOW", self.on_help_window_close)
         self.help.bind("<Escape>", lambda event: self.on_help_window_close())
 
@@ -7136,4 +7249,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-     
+
