@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 11/24/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 11/25/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -491,6 +491,7 @@ class TeraTermUI(customtkinter.CTk):
         self.m_counter = 0
         self.e_counter = 0
         self.search_function_counter = 0
+        self.last_switch_time = 0
         SPANISH = 0x0A
         language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
         # default location of Tera Term
@@ -5824,6 +5825,11 @@ class TeraTermUI(customtkinter.CTk):
         term_window.activate()
 
     def tab_switcher(self):
+        current_time = time.time()
+        if hasattr(self, "last_switch_time") and current_time - self.last_switch_time < 0.2:
+            return
+        self.last_switch_time = current_time
+
         if self.tabview.get() == self.enroll_tab:
             self.tabview.set(self.search_tab)
         elif self.tabview.get() == self.search_tab:
