@@ -1189,8 +1189,8 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys("1CS")
                             self.uprb.UprbayTeraTermVt.type_keys(semester)
                             send_keys("{ENTER}")
+                            clipboard_content = self.clipboard_get()
                             if self.passed and self.search_function_counter == 0:
-                                clipboard_content = self.clipboard_get()
                                 ctypes.windll.user32.BlockInput(False)
                                 self.uprb.window().menu_select("Edit")
                                 self.uprb.window().menu_select("Edit->Select screen")
