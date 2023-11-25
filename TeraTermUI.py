@@ -1190,7 +1190,13 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys("1CS")
                             self.uprb.UprbayTeraTermVt.type_keys(semester)
                             send_keys("{ENTER}")
-                            clipboard_content = self.clipboard_get()
+                            clipboard_content = None
+                            try:
+                                clipboard_content = self.clipboard_get()
+                            except tk.TclError:
+                                print("Clipboard contains non-text data, possibly an image or other formats")
+                            except Exception as e:
+                                print("Error handling clipboard content:", e)
                             if self.passed and self.search_function_counter == 0:
                                 ctypes.windll.user32.BlockInput(False)
                                 self.uprb.window().menu_select("Edit")
@@ -1258,7 +1264,8 @@ class TeraTermUI(customtkinter.CTk):
                                 self.show_all_sections = self.show_all.get()
                                 self.after(0, self.display_data, data)
                                 self.clipboard_clear()
-                                self.clipboard_append(clipboard_content)
+                                if clipboard_content is not None:
+                                    self.clipboard_append(clipboard_content)
                         else:
                             if not classes or not semester:
                                 self.after(0, self.show_error_message, 350, 230, translation["missing_info_search"])
@@ -1351,7 +1358,13 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread.join()
                             text_output = self.capture_screenshot()
                             if "INVALID TERM SELECTION" not in text_output and "INVALID ACTION" not in text_output:
-                                clipboard_content = self.clipboard_get()
+                                clipboard_content = None
+                                try:
+                                    clipboard_content = self.clipboard_get()
+                                except tk.TclError:
+                                    print("Clipboard contains non-text data, possibly an image or other formats")
+                                except Exception as e:
+                                    print("Error handling clipboard content:", e)
                                 ctypes.windll.user32.BlockInput(False)
                                 self.uprb.window().menu_select("Edit")
                                 self.uprb.window().menu_select("Edit->Select screen")
@@ -1364,7 +1377,8 @@ class TeraTermUI(customtkinter.CTk):
                                 enrolled_classes, total_credits = TeraTermUI.extract_my_enrolled_classes(copy)
                                 self.after(0, self.display_enrolled_data, enrolled_classes, total_credits)
                                 self.clipboard_clear()
-                                self.clipboard_append(clipboard_content)
+                                if clipboard_content is not None:
+                                    self.clipboard_append(clipboard_content)
                                 self.tabview.grid_forget()
                             else:
                                 self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
@@ -2266,7 +2280,13 @@ class TeraTermUI(customtkinter.CTk):
                         self.uprbay_window.wait("visible", timeout=10)
                         TeraTermUI.unfocus_tkinter()
                         send_keys("{ENTER}")
-                        clipboard_content = self.clipboard_get()
+                        clipboard_content = None
+                        try:
+                            clipboard_content = self.clipboard_get()
+                        except tk.TclError:
+                            print("Clipboard contains non-text data, possibly an image or other formats")
+                        except Exception as e:
+                            print("Error handling clipboard content:", e)
                         ctypes.windll.user32.BlockInput(False)
                         self.uprb.window().menu_select("Edit")
                         self.uprb.window().menu_select("Edit->Select screen")
@@ -2280,7 +2300,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.ignore = False
                         self.after(0, self.display_data, data)
                         self.clipboard_clear()
-                        self.clipboard_append(clipboard_content)
+                        if clipboard_content is not None:
+                            self.clipboard_append(clipboard_content)
                         self.reset_activity_timer(None)
                         screenshot_thread = threading.Thread(target=self.capture_screenshot)
                         screenshot_thread.start()
