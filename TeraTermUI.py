@@ -512,8 +512,8 @@ class TeraTermUI(customtkinter.CTk):
             db_path = "database.db"
             if not os.path.isfile(db_path):
                 raise Exception("Database file not found.")
-            en_path = "english.json"
-            es_path = "spanish.json"
+            en_path = "translations/english.json"
+            es_path = "translations/spanish.json"
             if not os.path.isfile(en_path) or not os.path.isfile(es_path):
                 raise Exception("Language file not found.")
             self.connection = sqlite3.connect(db_path, check_same_thread=False)
@@ -611,8 +611,8 @@ class TeraTermUI(customtkinter.CTk):
 
         except Exception as e:
             db_path = "database.db"
-            en_path = "english.json"
-            es_path = "spanish.json"
+            en_path = "translations/english.json"
+            es_path = "translations/spanish.json"
             print(f"An unexpected error occurred: {e}")
             if not os.path.exists(db_path):
                 if language_id & 0xFF == SPANISH:
@@ -2849,9 +2849,9 @@ class TeraTermUI(customtkinter.CTk):
         # If the translations are not in the cache, identify the filename
         filename = None
         if lang == "English":
-            filename = "english.json"
+            filename = "translations/english.json"
         elif lang == "Español":
-            filename = "spanish.json"
+            filename = "translations/spanish.json"
 
         # Load the translations from the file and store them in the cache
         if filename:
