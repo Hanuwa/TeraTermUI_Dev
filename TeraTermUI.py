@@ -1199,12 +1199,16 @@ class TeraTermUI(customtkinter.CTk):
                                 print("Error handling clipboard content:", e)
                             if self.passed and self.search_function_counter == 0:
                                 ctypes.windll.user32.BlockInput(False)
-                                self.uprb.window().menu_select("Edit")
-                                self.uprb.window().menu_select("Edit->Select screen")
+                                edit_menu = self.uprbay_window.child_window(title="Edit", control_type="MenuItem")
+                                edit_menu.invoke()
+                                select_screen_item = edit_menu.child_window(title="Select screen",
+                                                                            control_type="MenuItem")
+                                select_screen_item.invoke()
                                 self.uprb.UprbayTeraTermVt.type_keys("%c")
-                                self.hide_loading_screen()
-                                self.uprbay_window.click_input(button="left")
-                                self.show_loading_screen_again()
+                                edit_menu.invoke()
+                                cancel_select_item = edit_menu.child_window(title="Cancel selection",
+                                                                            control_type="MenuItem")
+                                cancel_select_item.invoke()
                                 ctypes.windll.user32.BlockInput(True)
                                 copy = pyperclip.paste()
                                 data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
@@ -1250,12 +1254,16 @@ class TeraTermUI(customtkinter.CTk):
                             else:
                                 ctypes.windll.user32.BlockInput(False)
                                 self.search_function_counter += 1
-                                self.uprb.window().menu_select("Edit")
-                                self.uprb.window().menu_select("Edit->Select screen")
+                                edit_menu = self.uprbay_window.child_window(title="Edit", control_type="MenuItem")
+                                edit_menu.invoke()
+                                select_screen_item = edit_menu.child_window(title="Select screen",
+                                                                            control_type="MenuItem")
+                                select_screen_item.invoke()
                                 self.uprb.UprbayTeraTermVt.type_keys("%c")
-                                self.hide_loading_screen()
-                                self.uprbay_window.click_input(button="left")
-                                self.show_loading_screen_again()
+                                edit_menu.invoke()
+                                cancel_select_item = edit_menu.child_window(title="Cancel selection",
+                                                                            control_type="MenuItem")
+                                cancel_select_item.invoke()
                                 ctypes.windll.user32.BlockInput(True)
                                 copy = pyperclip.paste()
                                 data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
@@ -1366,12 +1374,16 @@ class TeraTermUI(customtkinter.CTk):
                                 except Exception as e:
                                     print("Error handling clipboard content:", e)
                                 ctypes.windll.user32.BlockInput(False)
-                                self.uprb.window().menu_select("Edit")
-                                self.uprb.window().menu_select("Edit->Select screen")
+                                edit_menu = self.uprbay_window.child_window(title="Edit", control_type="MenuItem")
+                                edit_menu.invoke()
+                                select_screen_item = edit_menu.child_window(title="Select screen",
+                                                                            control_type="MenuItem")
+                                select_screen_item.invoke()
                                 self.uprb.UprbayTeraTermVt.type_keys("%c")
-                                self.hide_loading_screen()
-                                self.uprbay_window.click_input(button="left")
-                                self.show_loading_screen_again()
+                                edit_menu.invoke()
+                                cancel_select_item = edit_menu.child_window(title="Cancel selection",
+                                                                            control_type="MenuItem")
+                                cancel_select_item.invoke()
                                 ctypes.windll.user32.BlockInput(True)
                                 copy = pyperclip.paste()
                                 enrolled_classes, total_credits = TeraTermUI.extract_my_enrolled_classes(copy)
@@ -2288,12 +2300,16 @@ class TeraTermUI(customtkinter.CTk):
                         except Exception as e:
                             print("Error handling clipboard content:", e)
                         ctypes.windll.user32.BlockInput(False)
-                        self.uprb.window().menu_select("Edit")
-                        self.uprb.window().menu_select("Edit->Select screen")
+                        edit_menu = self.uprbay_window.child_window(title="Edit", control_type="MenuItem")
+                        edit_menu.invoke()
+                        select_screen_item = edit_menu.child_window(title="Select screen",
+                                                                    control_type="MenuItem")
+                        select_screen_item.invoke()
                         self.uprb.UprbayTeraTermVt.type_keys("%c")
-                        self.hide_loading_screen()
-                        self.uprbay_window.click_input(button="left")
-                        self.show_loading_screen_again()
+                        edit_menu.invoke()
+                        cancel_select_item = edit_menu.child_window(title="Cancel selection",
+                                                                    control_type="MenuItem")
+                        cancel_select_item.invoke()
                         ctypes.windll.user32.BlockInput(True)
                         copy = pyperclip.paste()
                         data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
