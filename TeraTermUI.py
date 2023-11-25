@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 11/25/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 11/24/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1190,6 +1190,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys(semester)
                             send_keys("{ENTER}")
                             if self.passed and self.search_function_counter == 0:
+                                clipboard_content = self.clipboard_get()
                                 ctypes.windll.user32.BlockInput(False)
                                 self.uprb.window().menu_select("Edit")
                                 self.uprb.window().menu_select("Edit->Select screen")
@@ -1256,6 +1257,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.show_all_sections = self.show_all.get()
                                 self.after(0, self.display_data, data)
                                 self.clipboard_clear()
+                                self.clipboard_append(clipboard_content)
                         else:
                             if not classes or not semester:
                                 self.after(0, self.show_error_message, 350, 230, translation["missing_info_search"])
@@ -1348,6 +1350,7 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread.join()
                             text_output = self.capture_screenshot()
                             if "INVALID TERM SELECTION" not in text_output and "INVALID ACTION" not in text_output:
+                                clipboard_content = self.clipboard_get()
                                 ctypes.windll.user32.BlockInput(False)
                                 self.uprb.window().menu_select("Edit")
                                 self.uprb.window().menu_select("Edit->Select screen")
@@ -1360,6 +1363,7 @@ class TeraTermUI(customtkinter.CTk):
                                 enrolled_classes, total_credits = TeraTermUI.extract_my_enrolled_classes(copy)
                                 self.after(0, self.display_enrolled_data, enrolled_classes, total_credits)
                                 self.clipboard_clear()
+                                self.clipboard_append(clipboard_content)
                                 self.tabview.grid_forget()
                             else:
                                 self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
@@ -2261,6 +2265,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.uprbay_window.wait("visible", timeout=10)
                         TeraTermUI.unfocus_tkinter()
                         send_keys("{ENTER}")
+                        clipboard_content = self.clipboard_get()
                         ctypes.windll.user32.BlockInput(False)
                         self.uprb.window().menu_select("Edit")
                         self.uprb.window().menu_select("Edit->Select screen")
@@ -2274,6 +2279,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.ignore = False
                         self.after(0, self.display_data, data)
                         self.clipboard_clear()
+                        self.clipboard_append(clipboard_content)
                         self.reset_activity_timer(None)
                         screenshot_thread = threading.Thread(target=self.capture_screenshot)
                         screenshot_thread.start()
@@ -4173,6 +4179,7 @@ class TeraTermUI(customtkinter.CTk):
     def copy_cell_data_to_clipboard(self, value):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
+        self.set_focus()
         self.clipboard_clear()
         self.clipboard_append(value)
         self.update()
