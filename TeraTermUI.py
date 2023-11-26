@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 11/25/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 11/26/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -813,8 +813,8 @@ class TeraTermUI(customtkinter.CTk):
             task_done.set()
             lang = self.language_menu.get()
             translation = self.load_language(lang)
-            self.set_focus_to_tkinter()
-            self.show_sidebar_windows()
+            self.after(0, self.set_focus_to_tkinter)
+            self.after(0, self.show_sidebar_windows)
             if self.error_occurred:
                 def error_automation():
                     self.destroy_windows()
@@ -1144,8 +1144,8 @@ class TeraTermUI(customtkinter.CTk):
                 task_done.set()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
-                self.set_focus_to_tkinter()
-                self.show_sidebar_windows()
+                self.after(0, self.set_focus_to_tkinter)
+                self.after(0, self.show_sidebar_windows)
                 if self.error_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -1290,8 +1290,8 @@ class TeraTermUI(customtkinter.CTk):
                 task_done.set()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
-                self.set_focus_to_tkinter()
-                self.show_sidebar_windows()
+                self.after(0, self.set_focus_to_tkinter)
+                self.after(0, self.show_sidebar_windows)
                 if self.error_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -1409,8 +1409,8 @@ class TeraTermUI(customtkinter.CTk):
                 task_done.set()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
-                self.set_focus_to_tkinter()
-                self.show_sidebar_windows()
+                self.after(0, self.set_focus_to_tkinter)
+                self.after(0, self.show_sidebar_windows)
                 if self.error_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -1708,8 +1708,8 @@ class TeraTermUI(customtkinter.CTk):
                 task_done.set()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
-                self.set_focus_to_tkinter()
-                self.show_sidebar_windows()
+                self.after(0, self.set_focus_to_tkinter)
+                self.after(0, self.show_sidebar_windows)
                 if not self.error_auto_enroll:
                     self.started_auto_enroll = False
                 if self.error_occurred:
@@ -2131,10 +2131,10 @@ class TeraTermUI(customtkinter.CTk):
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 if self.focus_or_not:
-                    self.set_focus_to_tkinter()
+                    self.after(0, self.set_focus_to_tkinter)
                 else:
-                    TeraTermUI.unfocus_tkinter()
-                self.show_sidebar_windows()
+                    self.after(0, TeraTermUI.unfocus_tkinter)
+                self.after(0, self.show_sidebar_windows)
                 self.focus_or_not = False
                 if self.error_occurred:
                     def error_automation():
@@ -2252,10 +2252,10 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language(lang)
                 self.reset_activity_timer(None)
                 if self.focus_or_not:
-                    self.set_focus_to_tkinter()
+                    self.after(0, self.set_focus_to_tkinter)
                 else:
-                    TeraTermUI.unfocus_tkinter()
-                self.show_sidebar_windows()
+                    self.after(0, TeraTermUI.unfocus_tkinter)
+                self.after(0, self.show_sidebar_windows)
                 if self.error_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -2335,8 +2335,8 @@ class TeraTermUI(customtkinter.CTk):
                 task_done.set()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
-                self.set_focus_to_tkinter()
-                self.show_sidebar_windows()
+                self.after(0, self.set_focus_to_tkinter)
+                self.after(0, self.show_sidebar_windows)
                 if self.error_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -2449,8 +2449,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
             finally:
                 task_done.set()
-                self.set_focus_to_tkinter()
-                self.show_sidebar_windows()
+                self.after(0, self.set_focus_to_tkinter)
+                self.after(0, self.show_sidebar_windows)
                 if self.server_status == "Maintenance message found" or self.server_status == "Timeout":
                     self.after(3500, self.go_back_event)
                 elif self.error_occurred:
@@ -2568,8 +2568,8 @@ class TeraTermUI(customtkinter.CTk):
                 task_done.set()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
-                self.set_focus_to_tkinter()
-                self.show_sidebar_windows()
+                self.after(0, self.set_focus_to_tkinter)
+                self.after(0, self.show_sidebar_windows)
                 if self.error_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -3215,8 +3215,8 @@ class TeraTermUI(customtkinter.CTk):
                 task_done.set()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
-                self.set_focus_to_tkinter()
-                self.show_sidebar_windows()
+                self.after(0, self.set_focus_to_tkinter)
+                self.after(0, self.show_sidebar_windows)
                 if self.error_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -3414,13 +3414,28 @@ class TeraTermUI(customtkinter.CTk):
             self.m_semester_entry[0].configure(state="normal")
 
     @staticmethod
-    def get_window_monitor(window_x, window_y):
+    def get_window_monitor(window_x, window_y, window_width=None, window_height=None):
         from screeninfo import get_monitors
 
+        # If width and height are not provided, assume a small window size
+        if window_width is None:
+            window_width = 10
+        if window_height is None:
+            window_height = 10
+
         for monitor in get_monitors():
-            if monitor.x <= window_x <= monitor.x + monitor.width and \
-                    monitor.y <= window_y <= monitor.y + monitor.height:
-                return monitor
+            corners = [
+                (window_x, window_y),
+                (window_x + window_width, window_y),
+                (window_x, window_y + window_height),
+                (window_x + window_width, window_y + window_height)
+            ]
+
+            for (x, y) in corners:
+                if monitor.x <= x <= monitor.x + monitor.width and \
+                        monitor.y <= y <= monitor.y + monitor.height:
+                    return monitor
+
         return None
 
     def move_window(self):
@@ -3433,8 +3448,8 @@ class TeraTermUI(customtkinter.CTk):
         tk_x = self.winfo_x()
         tk_y = self.winfo_y()
         # Identify which monitor the Tkinter window and Tera Term window are in
-        tk_monitor = TeraTermUI.get_window_monitor(tk_x, tk_y)
-        tera_monitor = TeraTermUI.get_window_monitor(window.left, window.top)
+        tk_monitor = TeraTermUI.get_window_monitor(tk_x, tk_y, self.winfo_width(), self.winfo_height())
+        tera_monitor = TeraTermUI.get_window_monitor(window.left, window.top, window.width, window.height)
         print(f"Tkinter window is on monitor {tk_monitor} at position ({tk_x}, {tk_y}).")
         print(f"Tera Term window is on monitor {tera_monitor} at position ({window.left}, {window.top}).")
         # If they're not on the same monitor, don't move the Tera Term window
@@ -4985,8 +5000,8 @@ class TeraTermUI(customtkinter.CTk):
                 task_done.set()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
-                self.set_focus_to_tkinter()
-                self.show_sidebar_windows()
+                self.after(0, self.set_focus_to_tkinter)
+                self.after(0, self.show_sidebar_windows)
                 if self.error_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -5656,9 +5671,9 @@ class TeraTermUI(customtkinter.CTk):
             finally:
                 task_done.set()
                 lang = self.language_menu.get()
-                self.set_focus_to_tkinter()
-                self.switch_tab()
-                self.show_sidebar_windows()
+                self.after(0, self.set_focus_to_tkinter)
+                self.after(0, self.switch_tab)
+                self.after(0, self.show_sidebar_windows)
                 translation = self.load_language(lang)
                 if self.error_occurred:
                     def error_automation():
