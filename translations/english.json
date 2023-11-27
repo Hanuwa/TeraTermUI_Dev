@@ -270,5 +270,6 @@
 	"previous_tooltip": "Go back to the\npreviously searched table",
 	"next_tooltip": "Go to the next table",
 	"remove_tooltip": "Removes the table\nyou are currently seeing",
-	"failed_to_find_update": "Failed to find any updates,\ntry again later or check\nthe program's website"
+	"failed_to_find_update": "Failed to find any updates,\ntry again later or check\nthe program's website",
+	"exec_time": "NOTICE\n\nConsider closing any application\nthat might be using a lot of resources.\nTask too longer to perform than expected"
 }
