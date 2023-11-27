@@ -2471,7 +2471,7 @@ class TeraTermUI(customtkinter.CTk):
         self.tooltip.config(bg="#FFD700")
         self.tooltip.wm_geometry(f"+{main_window_x + 20}+{main_window_y + 20}")
         label = tk.Label(self.tooltip, text=translation["exec_time"],
-                         bg="#FFD700", fg="#000", font=("Verdana", 10, "bold"))
+                         bg="#FFD700", fg="#000", font=("Verdana", 11, "bold"))
         label.pack(padx=5, pady=5)
         self.tooltip.after(10000, self.destroy_tooltip)
         self.tooltip.bind("<Button-1>", lambda e: self.destroy_tooltip())
