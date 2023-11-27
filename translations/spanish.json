@@ -270,5 +270,6 @@
     "previous_tooltip": "Volver a la tabla\nbuscada anteriormente",
     "next_tooltip": "Ir a la siguiente tabla",
     "remove_tooltip": "Elimina la tabla\nque estás viendo actualmente",
-	"failed_to_find_update": "No se encontraron actualizaciones,\ninténtalo de nuevo más tarde o\nconsulta la página web del programa"
+	"failed_to_find_update": "No se encontraron actualizaciones,\ninténtalo de nuevo más tarde o\nconsulta la página web del programa",
+	"exec_time": "AVISO\n\nConsidere cerrar cualquier aplicación\nque esté utilizando muchos recursos.\nLa tarea tardó más de lo esperado en realizarse"
 }
