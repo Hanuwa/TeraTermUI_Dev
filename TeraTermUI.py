@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 11/27/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 11/28/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -62,7 +62,9 @@ from datetime import datetime, timedelta
 from filelock import FileLock, Timeout
 from pathlib import Path
 from pywinauto.application import Application, AppStartError
+from pywinauto.findwindows import ElementNotFoundError
 from pywinauto.keyboard import send_keys
+from pywinauto import timings
 from tkinter import filedialog
 from tkinter import messagebox
 from PIL import Image
@@ -82,7 +84,8 @@ def measure_time(threshold):
             result = func(self, *args, **kwargs)
             end_time = time.time()
             elapsed_time = end_time - start_time
-            if elapsed_time > threshold:
+            print(f"Elapsed time: {elapsed_time:.2f} seconds")
+            if elapsed_time > threshold or TeraTermUI.checkIfProcessRunning("EpicGamesLauncher"):
                 self.after(0, self.notice_user)
             return result
         return wrapper
@@ -624,7 +627,6 @@ class TeraTermUI(customtkinter.CTk):
                         print("Please check your internet connection and try again.")
                     del latest_version, row_exists
                 del current_date, date_record
-
         except Exception as e:
             db_path = "database.db"
             en_path = "translations/english.json"
@@ -632,8 +634,8 @@ class TeraTermUI(customtkinter.CTk):
             print(f"An unexpected error occurred: {e}")
             if not os.path.exists(db_path):
                 if language_id & 0xFF == SPANISH:
-                    messagebox.showerror("Error", "¡Error Fatal! Problema en inicializar la base de datos.\n"
-                                                  "Es posible que necesite reinstalar la aplicación")
+                    messagebox.showerror("Error", "¡Error Fatal! Problema en inicializar la base de"
+                                                  " datos.\nEs posible que necesite reinstalar la aplicación")
                 else:
                     messagebox.showerror("Error", "Fatal Error! Failed to initialize database.\n"
                                                   "Might need to reinstall the application")
@@ -811,15 +813,6 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     self.bind("<Return>", lambda event: self.tuition_event_handler())
                     self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
-
-                    def server_maintenance():
-                        self.destroy_windows()
-                        if not self.disable_audio:
-                            winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                        CTkMessagebox(title=translation["server_maintenance_title"],
-                                      message=translation["server_maintenance"], button_width=380)
-
-                    self.after(2500, server_maintenance)
             else:
                 self.bind("<Return>", lambda event: self.tuition_event_handler())
         except Exception as e:
@@ -829,8 +822,8 @@ class TeraTermUI(customtkinter.CTk):
             task_done.set()
             lang = self.language_menu.get()
             translation = self.load_language(lang)
-            self.after(0, self.set_focus_to_tkinter)
-            self.after(0, self.show_sidebar_windows)
+            self.after(50, self.set_focus_to_tkinter)
+            self.after(50, self.show_sidebar_windows)
             if self.error_occurred:
                 def error_automation():
                     self.destroy_windows()
@@ -1160,8 +1153,8 @@ class TeraTermUI(customtkinter.CTk):
                 task_done.set()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
-                self.after(0, self.set_focus_to_tkinter)
-                self.after(0, self.show_sidebar_windows)
+                self.after(50, self.set_focus_to_tkinter)
+                self.after(50, self.show_sidebar_windows)
                 if self.error_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -1215,7 +1208,7 @@ class TeraTermUI(customtkinter.CTk):
                                 print("Error handling clipboard content:", e)
                             if self.passed and self.search_function_counter == 0:
                                 ctypes.windll.user32.BlockInput(False)
-                                self.automate_copy()
+                                self.automate_copy_class_data()
                                 ctypes.windll.user32.BlockInput(True)
                                 copy = pyperclip.paste()
                                 data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
@@ -1261,7 +1254,7 @@ class TeraTermUI(customtkinter.CTk):
                             else:
                                 ctypes.windll.user32.BlockInput(False)
                                 self.search_function_counter += 1
-                                self.automate_copy()
+                                self.automate_copy_class_data()
                                 ctypes.windll.user32.BlockInput(True)
                                 copy = pyperclip.paste()
                                 data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
@@ -1288,8 +1281,8 @@ class TeraTermUI(customtkinter.CTk):
                 task_done.set()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
-                self.after(0, self.set_focus_to_tkinter)
-                self.after(0, self.show_sidebar_windows)
+                self.after(50, self.set_focus_to_tkinter)
+                self.after(50, self.show_sidebar_windows)
                 if self.error_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -1372,7 +1365,7 @@ class TeraTermUI(customtkinter.CTk):
                                 except Exception as e:
                                     print("Error handling clipboard content:", e)
                                 ctypes.windll.user32.BlockInput(False)
-                                self.automate_copy()
+                                self.automate_copy_class_data()
                                 ctypes.windll.user32.BlockInput(True)
                                 copy = pyperclip.paste()
                                 enrolled_classes, total_credits = TeraTermUI.extract_my_enrolled_classes(copy)
@@ -1398,8 +1391,8 @@ class TeraTermUI(customtkinter.CTk):
                 task_done.set()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
-                self.after(0, self.set_focus_to_tkinter)
-                self.after(0, self.show_sidebar_windows)
+                self.after(50, self.set_focus_to_tkinter)
+                self.after(50, self.show_sidebar_windows)
                 if self.error_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -1697,8 +1690,8 @@ class TeraTermUI(customtkinter.CTk):
                 task_done.set()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
-                self.after(0, self.set_focus_to_tkinter)
-                self.after(0, self.show_sidebar_windows)
+                self.after(50, self.set_focus_to_tkinter)
+                self.after(50, self.show_sidebar_windows)
                 if not self.error_auto_enroll:
                     self.started_auto_enroll = False
                 if self.error_occurred:
@@ -2120,10 +2113,10 @@ class TeraTermUI(customtkinter.CTk):
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 if self.focus_or_not:
-                    self.after(0, self.set_focus_to_tkinter)
+                    self.after(50, self.set_focus_to_tkinter)
                 else:
-                    self.after(0, TeraTermUI.unfocus_tkinter)
-                self.after(0, self.show_sidebar_windows)
+                    self.after(50, TeraTermUI.unfocus_tkinter)
+                self.after(50, self.show_sidebar_windows)
                 self.focus_or_not = False
                 if self.error_occurred:
                     def error_automation():
@@ -2241,10 +2234,10 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language(lang)
                 self.reset_activity_timer(None)
                 if self.focus_or_not:
-                    self.after(0, self.set_focus_to_tkinter)
+                    self.after(50, self.set_focus_to_tkinter)
                 else:
-                    self.after(0, TeraTermUI.unfocus_tkinter)
-                self.after(0, self.show_sidebar_windows)
+                    self.after(50, TeraTermUI.unfocus_tkinter)
+                self.after(50, self.show_sidebar_windows)
                 if self.error_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -2289,7 +2282,7 @@ class TeraTermUI(customtkinter.CTk):
                         except Exception as e:
                             print("Error handling clipboard content:", e)
                         ctypes.windll.user32.BlockInput(False)
-                        self.automate_copy()
+                        self.automate_copy_class_data()
                         ctypes.windll.user32.BlockInput(True)
                         copy = pyperclip.paste()
                         data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
@@ -2315,8 +2308,8 @@ class TeraTermUI(customtkinter.CTk):
                 task_done.set()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
-                self.after(0, self.set_focus_to_tkinter)
-                self.after(0, self.show_sidebar_windows)
+                self.after(50, self.set_focus_to_tkinter)
+                self.after(50, self.show_sidebar_windows)
                 if self.error_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -2429,8 +2422,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
             finally:
                 task_done.set()
-                self.after(0, self.set_focus_to_tkinter)
-                self.after(0, self.show_sidebar_windows)
+                self.after(50, self.set_focus_to_tkinter)
+                self.after(50, self.show_sidebar_windows)
                 if self.server_status == "Maintenance message found" or self.server_status == "Timeout":
                     self.after(3500, self.go_back_event)
                 elif self.error_occurred:
@@ -2463,6 +2456,7 @@ class TeraTermUI(customtkinter.CTk):
     def notice_user(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
+        text = None
         main_window_x = self.winfo_x()
         main_window_y = self.winfo_y()
         self.tooltip = tk.Toplevel(self)
@@ -2470,10 +2464,14 @@ class TeraTermUI(customtkinter.CTk):
         self.tooltip.attributes("-topmost", True)
         self.tooltip.config(bg="#FFD700")
         self.tooltip.wm_geometry(f"+{main_window_x + 20}+{main_window_y + 20}")
-        label = tk.Label(self.tooltip, text=translation["exec_time"],
+        if TeraTermUI.checkIfProcessRunning("EpicGamesLauncher"):
+            text = translation["epic_games"]
+        else:
+            text = translation["exec_time"]
+        label = tk.Label(self.tooltip, text=text,
                          bg="#FFD700", fg="#000", font=("Verdana", 11, "bold"))
         label.pack(padx=5, pady=5)
-        self.tooltip.after(10000, self.destroy_tooltip)
+        self.tooltip.after(12500, self.destroy_tooltip)
         self.tooltip.bind("<Button-1>", lambda e: self.destroy_tooltip())
         self.tooltip.bind("<Button-2>", lambda e: self.destroy_tooltip())
         self.tooltip.bind("<Button-3>", lambda e: self.destroy_tooltip())
@@ -2567,8 +2565,8 @@ class TeraTermUI(customtkinter.CTk):
                 task_done.set()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
-                self.after(0, self.set_focus_to_tkinter)
-                self.after(0, self.show_sidebar_windows)
+                self.after(50, self.set_focus_to_tkinter)
+                self.after(50, self.show_sidebar_windows)
                 if self.error_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -2923,7 +2921,7 @@ class TeraTermUI(customtkinter.CTk):
             self.website_link.configure(text=translation["link"])
             self.notaso.configure(text=translation["notaso_title"])
             self.notaso_link.configure(text=translation["notaso_link"])
-            self.faq_text .configure(text=translation["faq"])
+            self.faq_text.configure(text=translation["faq"])
             self.qa_table = [[translation["q"], translation["a"]],
                              [translation["q1"], translation["a1"]],
                              [translation["q2"], translation["a2"]]]
@@ -3214,8 +3212,8 @@ class TeraTermUI(customtkinter.CTk):
                 task_done.set()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
-                self.after(0, self.set_focus_to_tkinter)
-                self.after(0, self.show_sidebar_windows)
+                self.after(50, self.set_focus_to_tkinter)
+                self.after(50, self.show_sidebar_windows)
                 if self.error_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -4368,7 +4366,7 @@ class TeraTermUI(customtkinter.CTk):
         self.current_table_index = len(self.class_table_pairs) - 1
 
         if len(self.class_table_pairs) > 10:
-            display_class_to_remove, table_to_remove, _, _ = self.class_table_pairs[0]
+            display_class_to_remove, table_to_remove, semester, show = self.class_table_pairs[0]
             self.after(0, display_class_to_remove.destroy)
             self.after(0, table_to_remove.destroy)
             del self.class_table_pairs[0]
@@ -4486,31 +4484,39 @@ class TeraTermUI(customtkinter.CTk):
         self.update_buttons()
         self.search_scrollbar.scroll_to_top()
 
-    @staticmethod
-    def try_invoke_menu_item(menu_item, retries=5, delay=1):
-        for attempt in range(retries):
-            try:
-                menu_item.invoke()
-                return True
-            except Exception as e:
-                if attempt < retries - 1:
-                    time.sleep(delay)
-                else:
-                    print("An error occurred: ", e)
-                    raise Exception("Edit menu is not accessible")
+    def automate_copy_class_data(self):
+        import pyautogui
 
-    def automate_copy(self):
-        edit_menu = self.uprb.UprbayTeraTermVt.child_window(
-            title="Edit", control_type="MenuItem", visible_only=False)
-        TeraTermUI.try_invoke_menu_item(edit_menu)
-        select_screen_item = edit_menu.child_window(
-            title="Select screen", control_type="MenuItem", visible_only=False)
-        TeraTermUI.try_invoke_menu_item(select_screen_item)
+        max_retries = 3
+        original_timeout = timings.Timings.window_find_timeout
+        original_retry = timings.Timings.window_find_retry
+        for attempt in range(max_retries):
+            try:
+                timings.Timings.window_find_timeout = 0.5
+                timings.Timings.window_find_retry = 0.1
+                self.uprb.window().menu_select("Edit")
+                edit_menu = self.uprb.UprbayTeraTermVt.child_window(
+                    title="Edit", control_type="MenuItem", visible_only=False)
+                select_screen_item = edit_menu.child_window(
+                    title="Select screen", control_type="MenuItem", top_level_only=False)
+                select_screen_item.invoke()
+                break
+            except ElementNotFoundError as e:
+                print(f"An error occurred: {e}")
+                if attempt < max_retries - 1:
+                    pass
+                else:
+                    print("Max retries reached, raising exception.")
+                    raise
+            finally:
+                timings.Timings.window_find_timeout = original_timeout
+                timings.Timings.window_find_retry = original_retry
         self.uprb.UprbayTeraTermVt.type_keys("%c")
-        TeraTermUI.try_invoke_menu_item(edit_menu)
-        cancel_select_item = edit_menu.child_window(
-            title="Cancel selection", control_type="MenuItem", visible_only=False)
-        TeraTermUI.try_invoke_menu_item(cancel_select_item)
+        self.hide_loading_screen()
+        original_position = pyautogui.position()
+        self.uprbay_window.click_input(button="left")
+        pyautogui.moveTo(original_position.x, original_position.y)
+        self.show_loading_screen_again()
 
     # extracts the text from the searched class to get the important information
     @staticmethod
@@ -5025,8 +5031,8 @@ class TeraTermUI(customtkinter.CTk):
                 task_done.set()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
-                self.after(0, self.set_focus_to_tkinter)
-                self.after(0, self.show_sidebar_windows)
+                self.after(50, self.set_focus_to_tkinter)
+                self.after(50, self.show_sidebar_windows)
                 if self.error_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -5184,13 +5190,13 @@ class TeraTermUI(customtkinter.CTk):
                     credentials_dict,
                     scopes=["https://www.googleapis.com/auth/spreadsheets"]
                 )
+                del credentials_dict
+                gc.collect()
+
         except Exception as e:
             print(f"Failed to load credentials: {str(e)}")
             self.credentials = None
             self.disable_feedback = True
-
-        del credentials_dict
-        gc.collect()
 
     def update_app(self):
         translation = self.load_language(self.language_menu.get())
@@ -5698,9 +5704,9 @@ class TeraTermUI(customtkinter.CTk):
             finally:
                 task_done.set()
                 lang = self.language_menu.get()
-                self.after(0, self.set_focus_to_tkinter)
-                self.after(0, self.switch_tab)
-                self.after(0, self.show_sidebar_windows)
+                self.after(50, self.set_focus_to_tkinter)
+                self.after(50, self.switch_tab)
+                self.after(50, self.show_sidebar_windows)
                 translation = self.load_language(lang)
                 if self.error_occurred:
                     def error_automation():
@@ -7342,4 +7348,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
