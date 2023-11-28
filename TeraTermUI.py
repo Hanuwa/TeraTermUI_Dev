@@ -4494,9 +4494,9 @@ class TeraTermUI(customtkinter.CTk):
             try:
                 timings.Timings.window_find_timeout = 0.5
                 timings.Timings.window_find_retry = 0.1
-                self.uprb.window().menu_select("Edit")
                 edit_menu = self.uprb.UprbayTeraTermVt.child_window(
                     title="Edit", control_type="MenuItem", visible_only=False)
+                edit_menu.invoke()
                 select_screen_item = edit_menu.child_window(
                     title="Select screen", control_type="MenuItem", top_level_only=False)
                 select_screen_item.invoke()
