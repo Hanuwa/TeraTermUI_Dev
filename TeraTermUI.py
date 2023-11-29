@@ -3129,7 +3129,7 @@ class TeraTermUI(customtkinter.CTk):
                                     date_time_string = match.group()
                                     date_time_string += " AM"
                                 else:
-                                    self.after(0, self.show_error_message, 300, 215,
+                                    self.after(60, self.show_error_message, 300, 215,
                                                translation["failed_to_find_date"])
                                     self.auto_enroll.deselect()
                                     self.auto_enroll_bool = False
@@ -3140,7 +3140,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
                                     self.reset_activity_timer(None)
-                                self.after(0, self.show_error_message, 300, 215,
+                                self.after(60, self.show_error_message, 300, 215,
                                            translation["failed_to_find_date"])
                                 self.auto_enroll.deselect()
                                 self.auto_enroll_bool = False
@@ -3182,14 +3182,14 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(0, self.submit_multiple_event_handler)
                                     self.after(0, self.end_countdown)
                                 else:
-                                    self.after(0, self.show_error_message, 300, 215,
+                                    self.after(60, self.show_error_message, 300, 215,
                                                translation["date_past"])
                                     self.auto_enroll_bool = False
                                     self.auto_enroll.deselect()
                             elif (is_future_date or is_more_than_one_day) or \
                                     (is_same_date and not is_time_difference_within_8_hours) or \
                                     (is_next_date and not is_time_difference_within_8_hours):
-                                self.after(0, self.show_error_message, 320, 235,
+                                self.after(60, self.show_error_message, 320, 235,
                                            translation["date_not_within_8_hours"])
                                 self.auto_enroll_bool = False
                                 self.auto_enroll.deselect()
