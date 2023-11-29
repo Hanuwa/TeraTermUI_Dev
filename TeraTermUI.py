@@ -86,7 +86,7 @@ def measure_time(threshold):
             elapsed_time = end_time - start_time
             print(f"Elapsed time: {elapsed_time:.2f} seconds")
             if elapsed_time > threshold or TeraTermUI.checkIfProcessRunning("EpicGamesLauncher"):
-                self.after(0, self.notice_user)
+                self.after(60, self.notice_user)
             return result
         return wrapper
     return decorator
@@ -790,7 +790,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.bind("<Return>", lambda event: self.tuition_event_handler())
                                 if "PASS" in text_output:
                                     send_keys("{TAB 2}")
-                                self.after(0, self.show_error_message, 300, 215, translation["error_ssn"])
+                                self.after(60, self.show_error_message, 300, 215, translation["error_ssn"])
                             elif "ID NOT ON FILE" not in text_output or "PASS" not in text_output:
                                 self.reset_activity_timer(None)
                                 self.start_check_idle_thread()
@@ -808,13 +808,13 @@ class TeraTermUI(customtkinter.CTk):
                                 self.switch_tab()
                         else:
                             self.bind("<Return>", lambda event: self.tuition_event_handler())
-                            self.after(0, self.show_error_message, 300, 215, translation["error_ssn"])
+                            self.after(60, self.show_error_message, 300, 215, translation["error_ssn"])
                     except ValueError:
                         self.bind("<Return>", lambda event: self.tuition_event_handler())
-                        self.after(0, self.show_error_message, 300, 215, translation["error_ssn"])
+                        self.after(60, self.show_error_message, 300, 215, translation["error_ssn"])
                 else:
                     self.bind("<Return>", lambda event: self.tuition_event_handler())
-                    self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+                    self.after(60, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             else:
                 self.bind("<Return>", lambda event: self.tuition_event_handler())
         except Exception as e:
@@ -837,7 +837,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.bind("<Return>", lambda event: self.tuition_event_handler())
                     self.error_occurred = False
 
-                self.after(0, error_automation)
+                self.after(60, error_automation)
             ctypes.windll.user32.BlockInput(False)
 
     def tuition_frame(self):
@@ -1079,7 +1079,7 @@ class TeraTermUI(customtkinter.CTk):
                                                 self.enrolled_classes_list[section] = classes
                                             elif section in self.enrolled_classes_list:
                                                 del self.enrolled_classes_list[section]
-                                            self.after(0, self.show_success_message, 350, 265,
+                                            self.after(60, self.show_success_message, 350, 265,
                                                        translation["success_enrolled"])
                                         elif choice == "drop":
                                             if section in self.enrolled_classes_list:
@@ -1088,7 +1088,7 @@ class TeraTermUI(customtkinter.CTk):
                                                 self.dropped_classes_list[section] = classes
                                             elif section in self.dropped_classes_list:
                                                 del self.dropped_classes_list[section]
-                                            self.after(0, self.show_success_message, 350, 265,
+                                            self.after(60, self.show_success_message, 350, 265,
                                                        translation["success_dropped"])
                                         if self.e_counter + self.m_counter == 15:
                                             self.submit.configure(state="disabled")
@@ -1097,20 +1097,20 @@ class TeraTermUI(customtkinter.CTk):
                                                        translation["enrollment_limit"])
                                     else:
                                         self.after(2500, self.show_enrollment_error_information, text)
-                                        self.after(0, self.show_error_message, 320, 235,
+                                        self.after(60, self.show_error_message, 320, 235,
                                                    translation["failed_enroll"])
                                 else:
                                     if count_enroll == 15:
                                         self.submit.configure(state="disabled")
                                         self.submit_multiple.configure(sate="disabled")
-                                        self.after(0, self.show_information_message, 350, 265,
+                                        self.after(60, self.show_information_message, 350, 265,
                                                    translation["enrollment_limit"])
                                     if "INVALID TERM SELECTION" in text_output:
                                         self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                         send_keys("{ENTER}")
                                         self.reset_activity_timer(None)
-                                        self.after(0, self.show_error_message, 300, 215,
+                                        self.after(60, self.show_error_message, 300, 215,
                                                    translation["invalid_semester"])
                                     else:
                                         if "USO INTERNO" not in text_output and "TERMINO LA MATRICULA" \
@@ -1119,35 +1119,35 @@ class TeraTermUI(customtkinter.CTk):
                                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                             send_keys("{ENTER}")
                                             self.reset_activity_timer(None)
-                                            self.after(0, self.show_error_message, 300, 210,
+                                            self.after(60, self.show_error_message, 300, 210,
                                                        translation["failed_enroll"])
                                             if not self.enrollment_error_check:
                                                 self.after(2500, self.show_enrollment_error_information)
                                                 self.enrollment_error_check = True
                                         else:
-                                            self.after(0, self.show_error_message, 315, 210,
+                                            self.after(60, self.show_error_message, 315, 210,
                                                        translation["failed_enroll"])
                                             if not self.enrollment_error_check:
                                                 self.after(2500, self.show_enrollment_error_information)
                                                 self.enrollment_error_check = True
                             else:
                                 if not classes or not section or not semester:
-                                    self.after(0, self.show_error_message, 350, 230, translation["missing_info"])
+                                    self.after(60, self.show_error_message, 350, 230, translation["missing_info"])
                                 elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE):
-                                    self.after(0, self.show_error_message, 360, 230, translation["class_format_error"])
+                                    self.after(60, self.show_error_message, 360, 230, translation["class_format_error"])
                                 elif not re.fullmatch("^[A-Z]{2}1$", section, flags=re.IGNORECASE):
-                                    self.after(0, self.show_error_message, 360, 230,
+                                    self.after(60, self.show_error_message, 360, 230,
                                                translation["section_format_error"])
                                 elif not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE):
-                                    self.after(0, self.show_error_message, 360, 230,
+                                    self.after(60, self.show_error_message, 360, 230,
                                                translation["semester_format_error"])
                         else:
                             if classes in self.enrolled_classes_list.values() or section in self.enrolled_classes_list:
-                                self.after(0, self.show_error_message, 335, 240, translation["already_enrolled"])
+                                self.after(60, self.show_error_message, 335, 240, translation["already_enrolled"])
                             if classes in self.dropped_classes_list.values() or section in self.dropped_classes_list:
-                                self.after(0, self.show_error_message, 335, 240, translation["already_dropped"])
+                                self.after(60, self.show_error_message, 335, 240, translation["already_dropped"])
                     else:
-                        self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+                        self.after(60, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             except Exception as e:
                 print("An error occurred: ", e)
                 self.error_occurred = True
@@ -1167,7 +1167,7 @@ class TeraTermUI(customtkinter.CTk):
                                       icon="warning", button_width=380)
                         self.error_occurred = False
 
-                    self.after(0, error_automation)
+                    self.after(60, error_automation)
                 self.bind("<Return>", lambda event: self.submit_event_handler())
                 ctypes.windll.user32.BlockInput(False)
 
@@ -1237,10 +1237,10 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(0, self.search_next_page_layout)
                             if "COURSE NOT IN" in text_output:
                                 if lang == "English":
-                                    self.after(0, self.show_error_message, 300, 215,
+                                    self.after(60, self.show_error_message, 300, 215,
                                                "Error! Course: " + classes + " not found")
                                 elif lang == "Español":
-                                    self.after(0, self.show_error_message, 310, 215,
+                                    self.after(60, self.show_error_message, 310, 215,
                                                "Error! Clase: " + classes + " \nno se encontro")
                                 self.search_function_counter += 1
                             elif "INVALID ACTION" in text_output or "INVALID TERM SELECTION" in text_output:
@@ -1249,9 +1249,9 @@ class TeraTermUI(customtkinter.CTk):
                                 send_keys("{ENTER}")
                                 self.reset_activity_timer(None)
                                 if "INVALID TERM SELECTION" in text_output:
-                                    self.after(0, self.show_error_message, 320, 235, translation["invalid_semester"])
+                                    self.after(60, self.show_error_message, 320, 235, translation["invalid_semester"])
                                 if "INVALID ACTION" in text_output:
-                                    self.after(0, self.show_error_message, 320, 235, translation["failed_to_search"])
+                                    self.after(60, self.show_error_message, 320, 235, translation["failed_to_search"])
                                 self.search_function_counter += 1
                             else:
                                 ctypes.windll.user32.BlockInput(False)
@@ -1263,19 +1263,19 @@ class TeraTermUI(customtkinter.CTk):
                                 self.get_class_for_pdf = self.s_classes_entry.get().upper().replace(" ", "")
                                 self.get_semester_for_pdf = self.s_semester_entry.get().upper().replace(" ", "")
                                 self.show_all_sections = self.show_all.get()
-                                self.after(0, self.display_data, data)
+                                self.after(60, self.display_data, data)
                                 self.clipboard_clear()
                                 if clipboard_content is not None:
                                     self.clipboard_append(clipboard_content)
                         else:
                             if not classes or not semester:
-                                self.after(0, self.show_error_message, 350, 230, translation["missing_info_search"])
+                                self.after(60, self.show_error_message, 350, 230, translation["missing_info_search"])
                             elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE):
-                                self.after(0, self.show_error_message, 360, 230, translation["class_format_error"])
+                                self.after(60, self.show_error_message, 360, 230, translation["class_format_error"])
                             elif not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE):
-                                self.after(0, self.show_error_message, 360, 230, translation["semester_format_error"])
+                                self.after(60, self.show_error_message, 360, 230, translation["semester_format_error"])
                     else:
-                        self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+                        self.after(60, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             except Exception as e:
                 print("An error occurred: ", e)
                 self.error_occurred = True
@@ -1295,7 +1295,7 @@ class TeraTermUI(customtkinter.CTk):
                                       icon="warning", button_width=380)
                         self.error_occurred = False
 
-                    self.after(0, error_automation)
+                    self.after(60, error_automation)
                 self.bind("<Return>", lambda event: self.search_event_handler())
                 ctypes.windll.user32.BlockInput(False)
 
@@ -1371,7 +1371,7 @@ class TeraTermUI(customtkinter.CTk):
                                 ctypes.windll.user32.BlockInput(True)
                                 copy = pyperclip.paste()
                                 enrolled_classes, total_credits = TeraTermUI.extract_my_enrolled_classes(copy)
-                                self.after(0, self.display_enrolled_data, enrolled_classes, total_credits)
+                                self.after(60, self.display_enrolled_data, enrolled_classes, total_credits)
                                 self.clipboard_clear()
                                 if clipboard_content is not None:
                                     self.clipboard_append(clipboard_content)
@@ -1381,11 +1381,11 @@ class TeraTermUI(customtkinter.CTk):
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                 send_keys("{ENTER}")
                                 self.reset_activity_timer(None)
-                                self.after(0, self.show_error_message, 300, 215, translation["invalid_semester"])
+                                self.after(60, self.show_error_message, 300, 215, translation["invalid_semester"])
                         else:
-                            self.after(0, self.show_error_message, 300, 215, translation["invalid_semester"])
+                            self.after(60, self.show_error_message, 300, 215, translation["invalid_semester"])
                     else:
-                        self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+                        self.after(60, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             except Exception as e:
                 print("An error occurred: ", e)
                 self.error_occurred = True
@@ -1406,7 +1406,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.switch_tab()
                         self.error_occurred = False
 
-                    self.after(0, error_automation)
+                    self.after(60, error_automation)
                 ctypes.windll.user32.BlockInput(False)
 
     # function that adds new entries
@@ -1510,7 +1510,7 @@ class TeraTermUI(customtkinter.CTk):
             self.my_classes_frame.grid_forget()
             self.modify_classes_frame.grid_forget()
             self.back_my_classes.grid_forget()
-            self.after(0, self.destroy_enrolled_frame)
+            self.after(60, self.destroy_enrolled_frame)
 
     def detect_change(self):
         check = self.save_data.get()
@@ -1628,14 +1628,14 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(2500, self.show_enrollment_error_information, text)
                                     if "CONFIRMED" in text and "DROPPED" in text:
                                         send_keys("{ENTER}")
-                                        self.after(0, self.show_success_message, 350, 265,
+                                        self.after(60, self.show_success_message, 350, 265,
                                                    translation["enrolled_dropped_multiple_success"])
                                     elif "CONFIRMED" in text and "DROPPED" not in text:
                                         send_keys("{ENTER}")
-                                        self.after(0, self.show_success_message, 350, 265,
+                                        self.after(60, self.show_success_message, 350, 265,
                                                    translation["enrolled_multiple_success"])
                                     elif "DROPPED" in text and "CONFIRMED" not in text:
-                                        self.after(0, self.show_success_message, 350, 265,
+                                        self.after(60, self.show_success_message, 350, 265,
                                                    translation["dropped_multiple_success"])
                                     if self.e_counter + self.m_counter == 15:
                                         self.go_back_event2()
@@ -1644,7 +1644,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.after(2500, self.show_information_message, 350, 265,
                                                    translation["enrollment_limit"])
                                 else:
-                                    self.after(0, self.show_error_message, 320, 235,
+                                    self.after(60, self.show_error_message, 320, 235,
                                                translation["failed_enroll_multiple"])
                                     self.after(2500, self.show_enrollment_error_information, text)
                                     self.m_counter = self.m_counter - self.a_counter - 1
@@ -1653,14 +1653,14 @@ class TeraTermUI(customtkinter.CTk):
                                 if count_enroll == 15:
                                     self.submit.configure(state="disabled")
                                     self.submit_multiple.configure(sate="disabled")
-                                    self.after(0, self.show_information_message, 350, 265,
+                                    self.after(60, self.show_information_message, 350, 265,
                                                translation["enrollment_limit"])
                                 if "INVALID TERM SELECTION" in text_output:
                                     self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
                                     self.reset_activity_timer(None)
-                                    self.after(0, self.show_error_message, 300, 215,
+                                    self.after(60, self.show_error_message, 300, 215,
                                                translation["invalid_semester"])
                                 else:
                                     if "USO INTERNO" not in text_output and "TERMINO LA MATRICULA" not in text_output:
@@ -1669,20 +1669,20 @@ class TeraTermUI(customtkinter.CTk):
                                         send_keys("{ENTER}")
                                         self.reset_activity_timer(None)
                                     if "INVALID ACTION" in text_output and self.started_auto_enroll:
-                                        self.after(0, self.submit_multiple_event_handler)
+                                        self.after(60, self.submit_multiple_event_handler)
                                         self.error_auto_enroll = True
                                     else:
-                                        self.after(0, self.show_error_message, 330, 210,
+                                        self.after(60, self.show_error_message, 330, 210,
                                                    translation["failed_enroll_multiple"])
                                         if not self.enrollment_error_check:
                                             self.after(2500, self.show_enrollment_error_information)
                                             self.enrollment_error_check = True
                         else:
-                            self.after(0, self.show_error_message, 320, 235,
+                            self.after(60, self.show_error_message, 320, 235,
                                        translation["max_enroll"])
                             self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                     else:
-                        self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+                        self.after(60, self.show_error_message, 300, 215, translation["tera_term_not_running"])
                     self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                 self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
             except Exception as e:
@@ -1706,7 +1706,7 @@ class TeraTermUI(customtkinter.CTk):
                                       icon="question", button_width=380)
                         self.error_occurred = False
 
-                    self.after(0, error_automation)
+                    self.after(60, error_automation)
                 self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                 ctypes.windll.user32.BlockInput(False)
 
@@ -1815,7 +1815,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                         send_keys("{ENTER}")
                                         self.reset_activity_timer(None)
-                                        self.after(0, self.show_error_message, 300, 215,
+                                        self.after(60, self.show_error_message, 300, 215,
                                                    translation["invalid_semester"])
                                 case "118":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -1835,7 +1835,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                         send_keys("{ENTER}")
                                         self.reset_activity_timer(None)
-                                        self.after(0, self.show_error_message, 300, 215,
+                                        self.after(60, self.show_error_message, 300, 215,
                                                    translation["invalid_semester"])
                                 case "1VE":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -1863,7 +1863,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.uprb.UprbayTeraTermVt.type_keys("004")
                                         self.uprb.UprbayTeraTermVt.type_keys(semester)
                                         send_keys("{ENTER}")
-                                        self.after(0, self.show_information_message, 310, 225,
+                                        self.after(60, self.show_information_message, 310, 225,
                                                    translation["hold_flag"])
                                     if "INVALID TERM SELECTION" in text_output:
                                         self.focus_or_not = True
@@ -1871,7 +1871,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                         send_keys("{ENTER}")
                                         self.reset_activity_timer(None)
-                                        self.after(0, self.show_error_message, 300, 215,
+                                        self.after(60, self.show_error_message, 300, 215,
                                                    translation["invalid_semester"])
                                     if "CONFLICT" not in text_output or "INVALID TERM SELECTION" not in text_output:
                                         def go_next_grid():
@@ -1905,7 +1905,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                         send_keys("{ENTER}")
                                         self.reset_activity_timer(None)
-                                        self.after(0, self.show_error_message, 300, 215,
+                                        self.after(60, self.show_error_message, 300, 215,
                                                    translation["invalid_semester"])
                                 case "409":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -1947,7 +1947,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                         send_keys("{ENTER}")
                                         self.reset_activity_timer(None)
-                                        self.after(0, self.show_error_message, 300, 215,
+                                        self.after(60, self.show_error_message, 300, 215,
                                                    translation["invalid_semester"])
                                 case "683":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -1977,7 +1977,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.focus_or_not = True
                                         self.uprb.UprbayTeraTermVt.type_keys("004")
                                         send_keys("{ENTER}")
-                                        self.after(0, self.show_information_message, 310, 225,
+                                        self.after(60, self.show_information_message, 310, 225,
                                                    translation["hold_flag"])
                                     if "CONFLICT" not in text_output:
                                         def go_next_grid():
@@ -2010,11 +2010,11 @@ class TeraTermUI(customtkinter.CTk):
                                             send_keys("{ENTER}")
                                             self.reset_activity_timer(None)
                                         if lang == "English":
-                                            self.after(0, self.show_error_message, 325, 240,
+                                            self.after(60, self.show_error_message, 325, 240,
                                                        "Error! Failed to enter\n " + self.menu_entry.get()
                                                        + " screen")
                                         elif lang == "Español":
-                                            self.after(0, self.show_error_message, 325, 240,
+                                            self.after(60, self.show_error_message, 325, 240,
                                                        "¡Error! No se pudo entrar \n a la pantalla" +
                                                        self.menu_entry.get())
                                 case "4CM":
@@ -2061,10 +2061,10 @@ class TeraTermUI(customtkinter.CTk):
                                             send_keys("{ENTER}")
                                             self.reset_activity_timer(None)
                                         if lang == "English":
-                                            self.after(0, self.show_error_message, 325, 240,
+                                            self.after(60, self.show_error_message, 325, 240,
                                                        "Error! Failed to enter\n " + self.menu_entry.get() + " screen")
                                         elif lang == "Español":
-                                            self.after(0, self.show_error_message, 325, 240,
+                                            self.after(60, self.show_error_message, 325, 240,
                                                        "Error! No se pudo entrar"
                                                        "\n a la pantalla" + self.menu_entry.get())
                                 case "4SP":
@@ -2087,26 +2087,26 @@ class TeraTermUI(customtkinter.CTk):
                                             send_keys("{ENTER}")
                                             self.reset_activity_timer(None)
                                         if lang == "English":
-                                            self.after(0, self.show_error_message, 325, 240,
+                                            self.after(60, self.show_error_message, 325, 240,
                                                        "Error! Failed to enter\n " + self.menu_entry.get() + " screen")
                                         elif lang == "Español":
-                                            self.after(0, self.show_error_message, 325, 240,
+                                            self.after(60, self.show_error_message, 325, 240,
                                                        "Error! No se pudo entrar"
                                                        "\n a la pantalla" + self.menu_entry.get())
                                 case "SO":
-                                    self.after(0, self.sign_out)
+                                    self.after(60, self.sign_out)
                         else:
                             if not semester or not menu:
-                                self.after(0, self.show_error_message, 350, 230,
+                                self.after(60, self.show_error_message, 350, 230,
                                            translation["menu_missing_info"])
                             elif not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE):
-                                self.after(0, self.show_error_message, 360, 230,
+                                self.after(60, self.show_error_message, 360, 230,
                                            translation["semester_format_error"])
                             elif menu not in menu_dict.values():
-                                self.after(0, self.show_error_message, 340, 230,
+                                self.after(60, self.show_error_message, 340, 230,
                                            translation["menu_code_error"])
                     else:
-                        self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+                        self.after(60, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             except Exception as e:
                 print("An error occurred: ", e)
                 self.error_occurred = True
@@ -2130,7 +2130,7 @@ class TeraTermUI(customtkinter.CTk):
                                       icon="warning", button_width=380)
                         self.error_occurred = False
 
-                    self.after(0, error_automation)
+                    self.after(60, error_automation)
                 self.bind("<Return>", lambda event: self.option_menu_event_handler())
                 ctypes.windll.user32.BlockInput(False)
 
@@ -2153,7 +2153,7 @@ class TeraTermUI(customtkinter.CTk):
         elif not TeraTermUI.checkIfProcessRunning("ttermpro") and response[0] == "Yes" \
                 or response[0] == "Sí":
             self.focus_or_not = True
-            self.after(0, self.show_error_message, 350, 265,
+            self.after(60, self.show_error_message, 350, 265,
                        translation["tera_term_not_running"])
 
     def go_next_page_handler(self):
@@ -2221,11 +2221,11 @@ class TeraTermUI(customtkinter.CTk):
                             text_output = self.capture_screenshot()
                             if "RATE NOT ON ARFILE" in text_output:
                                 self.focus_or_not = True
-                                self.after(0, self.show_error_message, 310, 225, translation["unknown_error"])
+                                self.after(60, self.show_error_message, 310, 225, translation["unknown_error"])
                             else:
                                 self.go_next_4CM.configure(state="disabled")
                     else:
-                        self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+                        self.after(60, self.show_error_message, 300, 215, translation["tera_term_not_running"])
 
             except Exception as e:
                 print("An error occurred: ", e)
@@ -2250,7 +2250,7 @@ class TeraTermUI(customtkinter.CTk):
                                       icon="warning", button_width=380)
                         self.error_occurred = False
 
-                    self.after(0, error_automation)
+                    self.after(60, error_automation)
                 self.bind("<Return>", lambda event: self.option_menu_event_handler())
                 ctypes.windll.user32.BlockInput(False)
 
@@ -2289,7 +2289,7 @@ class TeraTermUI(customtkinter.CTk):
                         copy = pyperclip.paste()
                         data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
                         self.ignore = False
-                        self.after(0, self.display_data, data)
+                        self.after(60, self.display_data, data)
                         self.clipboard_clear()
                         if clipboard_content is not None:
                             self.clipboard_append(clipboard_content)
@@ -2302,7 +2302,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.search_next_page.configure(state="disabled")
                             self.search_next_page_status = False
                     else:
-                        self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+                        self.after(60, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             except Exception as e:
                 print("An error occurred: ", e)
                 self.error_occurred = True
@@ -2322,7 +2322,7 @@ class TeraTermUI(customtkinter.CTk):
                                       icon="warning", button_width=380)
                         self.error_occurred = False
 
-                    self.after(0, error_automation)
+                    self.after(60, error_automation)
                 self.bind("<Return>", lambda event: self.search_event_handler())
                 ctypes.windll.user32.BlockInput(False)
 
@@ -2393,7 +2393,7 @@ class TeraTermUI(customtkinter.CTk):
                                                   button_width=380)
                                     self.error_occurred = True
 
-                                self.after(0, server_closed)
+                                self.after(60, server_closed)
                             elif self.server_status == "Prompt found":
                                 send_keys("{ENTER 3}")
                                 self.move_window()
@@ -2410,13 +2410,13 @@ class TeraTermUI(customtkinter.CTk):
                                                   button_width=380)
                                     self.error_occurred = True
 
-                                self.after(0, timeout)
+                                self.after(60, timeout)
                         elif username != "students":
                             self.bind("<Return>", lambda event: self.student_event_handler())
-                            self.after(0, self.show_error_message, 300, 215, translation["invalid_username"])
+                            self.after(60, self.show_error_message, 300, 215, translation["invalid_username"])
                     else:
                         self.bind("<Return>", lambda event: self.student_event_handler())
-                        self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+                        self.after(60, self.show_error_message, 300, 215, translation["tera_term_not_running"])
                 else:
                     self.bind("<Return>", lambda event: self.student_event_handler())
             except Exception as e:
@@ -2534,14 +2534,14 @@ class TeraTermUI(customtkinter.CTk):
                             except AppStartError as e:
                                 print("An error occurred: ", e)
                                 self.bind("<Return>", lambda event: self.login_event_handler())
-                                self.after(0, self.show_error_message, 425, 330,
+                                self.after(60, self.show_error_message, 425, 330,
                                            translation["tera_term_failed_to_start"])
                                 if not self.download:
                                     self.after(3500, self.download_teraterm)
                                     self.download = True
                     elif host != "uprbay.uprb.edu":
                         self.bind("<Return>", lambda event: self.login_event_handler())
-                        self.after(0, self.show_error_message, 300, 215, translation["invalid_host"])
+                        self.after(60, self.show_error_message, 300, 215, translation["invalid_host"])
                 else:
                     self.bind("<Return>", lambda event: self.login_event_handler())
             except Exception as e:
@@ -2559,7 +2559,7 @@ class TeraTermUI(customtkinter.CTk):
                                       message=translation["unexpected_error"], icon="warning", button_width=380)
 
                     self.error_occurred = False
-                    self.after(0, rare_error)
+                    self.after(60, rare_error)
                 else:
                     print("An error occurred:", error_message)
                     self.error_occurred = True
@@ -2586,7 +2586,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.bind("<Return>", lambda event: self.login_event_handler())
                         self.error_occurred = False
 
-                    self.after(0, error_automation)
+                    self.after(60, error_automation)
                 ctypes.windll.user32.BlockInput(False)
 
     def login_frame(self):
@@ -2656,11 +2656,11 @@ class TeraTermUI(customtkinter.CTk):
                 self.move_window()
             else:
                 self.bind("<Return>", lambda event: self.login_event_handler())
-                self.after(0, self.show_error_message, 450, 265,
+                self.after(60, self.show_error_message, 450, 265,
                            translation["tera_term_already_running"])
         else:
             self.bind("<Return>", lambda event: self.login_event_handler())
-            self.after(0, self.show_error_message, 450, 265,
+            self.after(60, self.show_error_message, 450, 265,
                        translation["tera_term_already_running"])
 
     # function that lets user go back to the initial screen
@@ -2836,7 +2836,7 @@ class TeraTermUI(customtkinter.CTk):
             self.my_classes_frame.grid_forget()
             self.modify_classes_frame.grid_forget()
             self.back_my_classes.grid_forget()
-            self.after(0, self.destroy_enrolled_frame)
+            self.after(60, self.destroy_enrolled_frame)
         self.in_multiple_screen = False
 
     def load_language(self, lang):
@@ -3168,7 +3168,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.countdown_running = True
                                 self.after(0, self.disable_enable_gui)
                                 # Create timer window
-                                self.after(0, self.create_timer_window)
+                                self.after(60, self.create_timer_window)
                                 # Create a BooleanVar to control the countdown loop
                                 self.running_countdown = customtkinter.BooleanVar()
                                 self.running_countdown.set(True)
@@ -3179,8 +3179,8 @@ class TeraTermUI(customtkinter.CTk):
                                     self.running_countdown = customtkinter.BooleanVar()
                                     self.running_countdown.set(True)
                                     self.started_auto_enroll = True
-                                    self.after(0, self.submit_multiple_event_handler)
-                                    self.after(0, self.end_countdown)
+                                    self.after(60, self.submit_multiple_event_handler)
+                                    self.after(60, self.end_countdown)
                                 else:
                                     self.after(60, self.show_error_message, 300, 215,
                                                translation["date_past"])
@@ -3198,9 +3198,9 @@ class TeraTermUI(customtkinter.CTk):
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                 send_keys("{ENTER}")
                                 self.reset_activity_timer(None)
-                                self.after(0, self.bring_back_timer_window)
+                                self.after(60, self.bring_back_timer_window)
                         else:
-                            self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+                            self.after(60, self.show_error_message, 300, 215, translation["tera_term_not_running"])
                             self.auto_enroll_bool = False
                             self.auto_enroll.deselect()
                 elif self.auto_enroll.get() == "off":
@@ -3210,7 +3210,7 @@ class TeraTermUI(customtkinter.CTk):
                     # If the countdown is running, stop it and destroy the timer window
                     if hasattr(self, "running_countdown") and self.running_countdown \
                             is not None and self.running_countdown.get():
-                        self.after(0, self.end_countdown)
+                        self.after(60, self.end_countdown)
             except Exception as e:
                 print("An error occurred: ", e)
                 self.error_occurred = True
@@ -3230,7 +3230,7 @@ class TeraTermUI(customtkinter.CTk):
                                       icon="warning", button_width=380)
                         self.error_occurred = False
 
-                    self.after(0, error_automation)
+                    self.after(60, error_automation)
                 self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                 ctypes.windll.user32.BlockInput(False)
 
@@ -4052,7 +4052,7 @@ class TeraTermUI(customtkinter.CTk):
                 return True
         except (socket.timeout, ConnectionRefusedError, OSError):
             # the connection attempt failed
-            self.after(0, self.show_error_message, 300, 215, translation["uprb_down"])
+            self.after(60, self.show_error_message, 300, 215, translation["uprb_down"])
             return False
 
     # captures a screenshot of tera term and performs OCR
@@ -4099,7 +4099,7 @@ class TeraTermUI(customtkinter.CTk):
             except Exception as e:
                 print(f"Error occurred during unzipping: {str(e)}")
                 self.tesseract_unzipped = False
-                self.after(0, self.show_error_message, 320, 225, translation["tesseract_error"])
+                self.after(60, self.show_error_message, 320, 225, translation["tesseract_error"])
                 return
 
     # creates pdf of the table containing for the searched class
@@ -4373,8 +4373,8 @@ class TeraTermUI(customtkinter.CTk):
 
         if len(self.class_table_pairs) > 10:
             display_class_to_remove, table_to_remove, semester, show = self.class_table_pairs[0]
-            self.after(0, display_class_to_remove.destroy)
-            self.after(0, table_to_remove.destroy)
+            self.after(60, display_class_to_remove.destroy)
+            self.after(60, table_to_remove.destroy)
             del self.class_table_pairs[0]
             self.current_table_index = max(0, self.current_table_index - 1)
             self.table_count.configure(text_color=("black", "white"))
@@ -4457,8 +4457,8 @@ class TeraTermUI(customtkinter.CTk):
         display_class.grid_forget()
         display_class.grid_forget()
         table.grid_forget()
-        self.after(0, display_class.destroy)
-        self.after(0, table.destroy)
+        self.after(60, display_class.destroy)
+        self.after(60, table.destroy)
         if len(self.class_table_pairs) == 10:
             self.table_count.configure(text_color=("black", "white"))
         del self.class_table_pairs[self.current_table_index]
@@ -4479,8 +4479,8 @@ class TeraTermUI(customtkinter.CTk):
             self.remove_button.grid_forget()
             self.download_pdf.grid_forget()
             self.search_scrollbar.scroll_to_top()
-            self.after(0, display_class.destroy)
-            self.after(0, table.destroy)
+            self.after(60, display_class.destroy)
+            self.after(60, table.destroy)
             self.after(0, self.set_focus)
             return
 
@@ -4961,9 +4961,9 @@ class TeraTermUI(customtkinter.CTk):
                                     del self.mod_selection_list[row_index]
                                     del self.change_section_entries[row_index]
                                     del self.enrolled_classes_data[row_index]
-                                self.after(0, self.refresh_table)
+                                self.after(60, self.refresh_table)
                                 if show_error and not section_closed:
-                                    self.after(0, self.show_error_message, 320, 240,
+                                    self.after(60, self.show_error_message, 320, 240,
                                                translation["failed_change_section"])
 
                                     def explanation():
@@ -4977,7 +4977,7 @@ class TeraTermUI(customtkinter.CTk):
 
                                     self.after(2500, explanation)
                                 if section_closed:
-                                    self.after(0, self.show_error_message, 320, 240,
+                                    self.after(60, self.show_error_message, 320, 240,
                                                translation["failed_change_section"])
 
                                     def explanation():
@@ -4992,7 +4992,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(2500, explanation)
 
                                 else:
-                                    self.after(0, self.show_success_message, 350, 265,
+                                    self.after(60, self.show_success_message, 350, 265,
                                                translation["success_modify"])
                             else:
                                 if "INVALID TERM SELECTION" in text_output:
@@ -5000,7 +5000,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
                                     self.reset_activity_timer(None)
-                                    self.after(0, self.show_error_message, 300, 215,
+                                    self.after(60, self.show_error_message, 300, 215,
                                                translation["invalid_semester"])
                                 else:
                                     if "USO INTERNO" not in text_output and "TERMINO LA MATRICULA" \
@@ -5009,13 +5009,13 @@ class TeraTermUI(customtkinter.CTk):
                                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                         send_keys("{ENTER}")
                                         self.reset_activity_timer(None)
-                                        self.after(0, self.show_error_message, 315, 225,
+                                        self.after(60, self.show_error_message, 315, 225,
                                                    translation["failed_modify"])
                                         if not self.modify_error_check:
                                             self.after(3500, self.show_modify_classes_information)
                                             self.modify_error_check = True
                                     else:
-                                        self.after(0, self.show_error_message, 315, 225,
+                                        self.after(60, self.show_error_message, 315, 225,
                                                    translation["failed_modify"])
                                         if not self.modify_error_check:
                                             self.after(3500, self.show_modify_classes_information)
@@ -5023,13 +5023,13 @@ class TeraTermUI(customtkinter.CTk):
 
                         else:
                             if not not_all_choose:
-                                self.after(0, self.show_error_message, 360, 230,
+                                self.after(60, self.show_error_message, 360, 230,
                                            translation["choose_error"])
                             elif not section_pattern:
-                                self.after(0, self.show_error_message, 360, 240,
+                                self.after(60, self.show_error_message, 360, 240,
                                            translation["section_format_error"])
                     else:
-                        self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+                        self.after(60, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             except Exception as e:
                 print("An error occurred: ", e)
                 self.error_occurred = True
@@ -5049,7 +5049,7 @@ class TeraTermUI(customtkinter.CTk):
                                       icon="warning", button_width=380)
                         self.error_occurred = False
 
-                    self.after(0, error_automation)
+                    self.after(60, error_automation)
                 self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
                 ctypes.windll.user32.BlockInput(False)
 
@@ -5701,7 +5701,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                     send_keys("{ENTER}")
                     self.reset_activity_timer(None)
-                self.after(0, self.show_information_message, 370, 250,
+                self.after(60, self.show_information_message, 370, 250,
                            translation["fix_after"])
             except Exception as e:
                 print("An error occurred: ", e)
@@ -5723,7 +5723,7 @@ class TeraTermUI(customtkinter.CTk):
                                       icon="warning", button_width=380)
                         self.error_occurred = False
 
-                    self.after(0, error_automation)
+                    self.after(60, error_automation)
                 ctypes.windll.user32.BlockInput(False)
 
     # Starts the check for idle thread
@@ -5788,7 +5788,7 @@ class TeraTermUI(customtkinter.CTk):
                                 if response == "OK":
                                     self.idle_num_check = 0
 
-                            self.after(0, idle_warning)
+                            self.after(60, idle_warning)
                         if self.in_multiple_screen:
                             self.set_focus_to_tkinter()
                             self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
@@ -5896,7 +5896,7 @@ class TeraTermUI(customtkinter.CTk):
             results = await asyncio.gather(*tasks)
         connected = any(results)
         if not connected and not self.check_update:
-            self.after(0, self.show_error_message, 300, 215, translation["no_internet"])
+            self.after(60, self.show_error_message, 300, 215, translation["no_internet"])
         if self.check_update:
             self.check_update = False
         return connected
@@ -6128,7 +6128,7 @@ class TeraTermUI(customtkinter.CTk):
                                 CTkMessagebox(title=translation["success_title"], icon="check",
                                               message=translation["feedback_success"], button_width=380)
 
-                            self.after(0, show_success)
+                            self.after(60, show_success)
                             row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
                             if not row_exists:
                                 self.cursor.execute("INSERT INTO user_data (feedback_date) VALUES (?)",
@@ -6147,7 +6147,7 @@ class TeraTermUI(customtkinter.CTk):
                                                   message=translation["feedback_error"],
                                                   icon="cancel", button_width=380)
 
-                                self.after(0, show_error)
+                                self.after(60, show_error)
                     else:
                         if not self.connection_error:
                             def show_error():
@@ -6156,7 +6156,7 @@ class TeraTermUI(customtkinter.CTk):
                                 CTkMessagebox(title="Error", message=translation["feedback_empty"],
                                               icon="cancel", button_width=380)
 
-                            self.after(0, show_error)
+                            self.after(60, show_error)
                 else:
                     if not self.connection_error:
                         def show_error():
@@ -6165,7 +6165,7 @@ class TeraTermUI(customtkinter.CTk):
                             CTkMessagebox(title="Error", message=translation["feedback_1000"],
                                           icon="cancel", button_width=380)
 
-                        self.after(0, show_error)
+                        self.after(60, show_error)
             else:
                 if not self.connection_error:
                     def show_error():
@@ -6174,7 +6174,7 @@ class TeraTermUI(customtkinter.CTk):
                         CTkMessagebox(title="Error", message=translation["feedback_day"],
                                       icon="cancel", button_width=380)
 
-                    self.after(0, show_error)
+                    self.after(60, show_error)
         else:
             if not self.connection_error:
                 def show_error():
@@ -6183,7 +6183,7 @@ class TeraTermUI(customtkinter.CTk):
                     CTkMessagebox(title="Error", message=translation["feedback_unavailable"],
                                   icon="cancel", button_width=380)
 
-                self.after(0, show_error)
+                self.after(60, show_error)
         self.feedback_send.configure(state="normal")
 
     @staticmethod
@@ -6257,7 +6257,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.cursor.execute("UPDATE user_data SET directory=?", (self.teraterm_directory,))
             self.connection.commit()
             task_done.set()
-            self.after(0, self.show_success_message, 350, 265, translation["tera_term_success"])
+            self.after(60, self.show_success_message, 350, 265, translation["tera_term_success"])
             self.edit_teraterm_ini(self.teraterm_file)
         else:
             task_done.set()
@@ -6706,19 +6706,19 @@ class TeraTermUI(customtkinter.CTk):
 
         # Display error messages or proceed if no errors
         if error_msg_short:
-            self.after(0, self.show_error_message, 345, 235, error_msg_short)
+            self.after(60, self.show_error_message, 345, 235, error_msg_short)
             if self.auto_enroll_bool:
                 self.auto_enroll_bool = False
                 self.auto_enroll.deselect()
             return False
         elif error_msg_medium:
-            self.after(0, self.show_error_message, 355, 240, error_msg_medium)
+            self.after(60, self.show_error_message, 355, 240, error_msg_medium)
             if self.auto_enroll_bool:
                 self.auto_enroll_bool = False
                 self.auto_enroll.deselect()
             return False
         elif error_msg_long:
-            self.after(0, self.show_error_message, 390, 245, error_msg_long)
+            self.after(60, self.show_error_message, 390, 245, error_msg_long)
             if self.auto_enroll_bool:
                 self.auto_enroll_bool = False
                 self.auto_enroll.deselect()
