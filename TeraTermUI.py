@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 11/28/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 11/29/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -96,6 +96,18 @@ class TeraTermUI(customtkinter.CTk):
     def __init__(self):
         super().__init__()
         self.title("Tera Term UI")
+        # determines screen size to put application in the middle of the screen
+        width = 910
+        height = 485
+        scaling_factor = self.tk.call("tk", "scaling")
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        x = (screen_width - width * scaling_factor) / 2
+        y = (screen_height - height * scaling_factor) / 2
+        self.geometry(f"{width}x{height}+{int(x) + 130}+{int(y + 50)}")
+        self.icon_path = "images/tera-term.ico"
+        self.iconbitmap(self.icon_path)
+        self.bind("<Button-3>", lambda event: self.focus_set())
 
         # creates a thread separate from the main application for check_idle and to monitor cpu usage
         self.last_activity = time.time()
@@ -265,19 +277,6 @@ class TeraTermUI(customtkinter.CTk):
                               "")
         self.intro_box.configure(state="disabled", wrap="word", border_spacing=7)
         self.intro_box.grid(row=1, column=1, padx=(20, 0), pady=(0, 150))
-
-        # determines screen size to put application in the middle of the screen
-        width = 910
-        height = 485
-        scaling_factor = self.tk.call("tk", "scaling")
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        x = (screen_width - width * scaling_factor) / 2
-        y = (screen_height - height * scaling_factor) / 2
-        self.geometry(f"{width}x{height}+{int(x) + 130}+{int(y + 50)}")
-        self.icon_path = "images/tera-term.ico"
-        self.iconbitmap(self.icon_path)
-        self.bind("<Button-3>", lambda event: self.focus_set())
 
         # Authentication Screen
         self.init_auth = False
@@ -570,7 +569,10 @@ class TeraTermUI(customtkinter.CTk):
                     self.appearance_mode_optionemenu.set(results["appearance"])
                     self.change_appearance_mode_event(results["appearance"])
             if results["scaling"]:
-                if results["scaling"] != 100.0:
+                if float(results["scaling"]) != 100.0:
+                    x = (screen_width - width * scaling_factor) / 2
+                    y = (screen_height - height * scaling_factor) / 2
+                    self.geometry(f"{width}x{height}+{int(x) + 130}+{int(y + 50)}")
                     self.scaling_optionemenu.set(float(results["scaling"]))
                     self.change_scaling_event(float(results["scaling"]))
                     self.current_scaling = self.scaling_optionemenu.get()
@@ -1038,7 +1040,7 @@ class TeraTermUI(customtkinter.CTk):
                                 enrolled_classes = "ENROLLED"
                                 count_enroll = text_output.count(enrolled_classes)
                                 if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output and \
-                                        "VUELVA LUEGO" not in text_output and "TERMINO LA MATRICULA" \
+                                        "USO INTERNO" not in text_output and "TERMINO LA MATRICULA" \
                                         not in text_output and "REGISTRATION DATA" in text_output and \
                                         count_enroll != 15:
                                     self.e_counter = 0
@@ -1111,7 +1113,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.after(0, self.show_error_message, 300, 215,
                                                    translation["invalid_semester"])
                                     else:
-                                        if "VUELVA LUEGO" not in text_output and "TERMINO LA MATRICULA" \
+                                        if "USO INTERNO" not in text_output and "TERMINO LA MATRICULA" \
                                                 not in text_output:
                                             self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -1573,7 +1575,7 @@ class TeraTermUI(customtkinter.CTk):
                             enrolled_classes = "ENROLLED"
                             count_enroll = text_output.count(enrolled_classes)
                             if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output and \
-                                    "VUELVA LUEGO" not in text_output and "TERMINO LA MATRICULA" not in text_output \
+                                    "USO INTERNO" not in text_output and "TERMINO LA MATRICULA" not in text_output \
                                     and "REGISTRATION DATA" in text_output and count_enroll != 15:
                                 self.e_counter = 0
                                 self.m_counter = 0
@@ -1661,7 +1663,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(0, self.show_error_message, 300, 215,
                                                translation["invalid_semester"])
                                 else:
-                                    if "VUELVA LUEGO" not in text_output and "TERMINO LA MATRICULA" not in text_output:
+                                    if "USO INTERNO" not in text_output and "TERMINO LA MATRICULA" not in text_output:
                                         self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                         send_keys("{ENTER}")
@@ -3110,13 +3112,17 @@ class TeraTermUI(customtkinter.CTk):
                             send_keys("{ENTER}")
                             self.after(0, self.disable_go_next_buttons)
                             self.reset_activity_timer(None)
+                            ctypes.windll.user32.BlockInput(False)
+                            self.automate_copy_class_data()
+                            ctypes.windll.user32.BlockInput(True)
                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
                             screenshot_thread.start()
                             screenshot_thread.join()
                             text_output = self.capture_screenshot()
-                            turno_index = text_output.find("TURNO MATRICULA:")
+                            copy = pyperclip.paste()
+                            turno_index = copy.find("TURNO MATRICULA:")
                             if turno_index != -1:
-                                sliced_text = text_output[turno_index:]
+                                sliced_text = copy[turno_index:]
                                 parts = sliced_text.split(":", 1)
                                 match = re.search(r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}", parts[1])
                                 if match:
@@ -4063,7 +4069,7 @@ class TeraTermUI(customtkinter.CTk):
             x, y, right, bottom = get_window_rect(hwnd)
             width = right - x
             height = bottom - y
-            crop_margin = (0, 10, 10, 2)
+            crop_margin = (2, 10, 10, 2)
             if self.loading_screen.winfo_exists():
                 self.hide_loading_screen()
             original_position = pyautogui.position()
@@ -4859,7 +4865,7 @@ class TeraTermUI(customtkinter.CTk):
                             enrolled_classes = "ENROLLED"
                             count_enroll = text_output.count(enrolled_classes)
                             if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output and \
-                                    "VUELVA LUEGO" not in text_output and "TERMINO LA MATRICULA" \
+                                    "USO INTERNO" not in text_output and "TERMINO LA MATRICULA" \
                                     not in text_output and "REGISTRATION DATA" in text_output:
                                 dropped_rows = []
                                 for row_index in range(self.enrolled_rows - 1):
@@ -4997,7 +5003,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(0, self.show_error_message, 300, 215,
                                                translation["invalid_semester"])
                                 else:
-                                    if "VUELVA LUEGO" not in text_output and "TERMINO LA MATRICULA" \
+                                    if "USO INTERNO" not in text_output and "TERMINO LA MATRICULA" \
                                             not in text_output:
                                         self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -5341,7 +5347,7 @@ class TeraTermUI(customtkinter.CTk):
                 if self.dropped_classes_list:
                     self.dropped_classes_list.popitem()
             TeraTermUI.unfocus_tkinter()
-        else:
+        if not found_errors and text != "Error":
             for i in range(self.a_counter + 1):
                 self.m_classes_entry[i].delete(0, "end")
                 self.m_section_entry[i].delete(0, "end")
@@ -5355,7 +5361,6 @@ class TeraTermUI(customtkinter.CTk):
                 winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
             CTkMessagebox(master=self, title=translation["automation_error_title"],
                           message=translation["enrollment_error"], button_width=380)
-            TeraTermUI.unfocus_tkinter()
 
     def show_modify_classes_information(self):
         self.destroy_windows()
