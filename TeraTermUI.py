@@ -3112,16 +3112,17 @@ class TeraTermUI(customtkinter.CTk):
                             send_keys("{ENTER}")
                             self.after(0, self.disable_go_next_buttons)
                             self.reset_activity_timer(None)
-                            ctypes.windll.user32.BlockInput(False)
-                            self.automate_copy_class_data()
-                            ctypes.windll.user32.BlockInput(True)
                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
                             screenshot_thread.start()
                             screenshot_thread.join()
                             text_output = self.capture_screenshot()
-                            copy = pyperclip.paste()
-                            turno_index = copy.find("TURNO MATRICULA:")
-                            if turno_index != -1:
+                            if "OPCIONES PARA EL ESTUDIANTE" in text_output or "BALANCE CTA" in text_output or \
+                                    "PANTALLAS MATRICULA" in text_output or "PANTALLAS GENERALES" in text_output:
+                                ctypes.windll.user32.BlockInput(False)
+                                self.automate_copy_class_data()
+                                ctypes.windll.user32.BlockInput(True)
+                                copy = pyperclip.paste()
+                                turno_index = copy.find("TURNO MATRICULA:")
                                 sliced_text = copy[turno_index:]
                                 parts = sliced_text.split(":", 1)
                                 match = re.search(r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}", parts[1])
@@ -3134,6 +3135,60 @@ class TeraTermUI(customtkinter.CTk):
                                     self.auto_enroll.deselect()
                                     self.auto_enroll_bool = False
                                     return
+                                date_time_string = re.sub(r"[^a-zA-Z0-9:/ ]", "", date_time_string)
+                                date_time_naive = datetime.strptime(date_time_string, "%m/%d/%Y %I:%M %p")
+                                puerto_rico_tz = pytz.timezone("America/Puerto_Rico")
+                                your_date = puerto_rico_tz.localize(date_time_naive, is_dst=None)
+                                # Get current datetime
+                                current_date = datetime.now(puerto_rico_tz)
+                                time_difference = your_date - current_date
+                                # Dates
+                                is_same_date = (current_date.date() == your_date.date())
+                                is_past_date = current_date > your_date
+                                is_future_date = current_date < your_date
+                                is_next_date = (your_date.date() - current_date.date() == timedelta(days=1))
+                                is_time_difference_within_8_hours = \
+                                    timedelta(hours=8, minutes=15) >= time_difference >= timedelta()
+                                is_more_than_one_day = (your_date.date() - current_date.date() > timedelta(days=1))
+                                is_current_time_ahead = current_date.time() > your_date.time()
+                                is_current_time_24_hours_ahead = time_difference >= timedelta(hours=-24)
+                                # Comparing Dates
+                                if (is_same_date and is_time_difference_within_8_hours) or \
+                                        (is_next_date and is_time_difference_within_8_hours):
+                                    self.countdown_running = True
+                                    self.after(0, self.disable_enable_gui)
+                                    # Create timer window
+                                    self.after(0, self.create_timer_window)
+                                    # Create a BooleanVar to control the countdown loop
+                                    self.running_countdown = customtkinter.BooleanVar()
+                                    self.running_countdown.set(True)
+                                    # Start the countdown
+                                    self.after(100, self.countdown, your_date)
+                                elif is_past_date or (is_same_date and is_current_time_ahead):
+                                    if is_current_time_24_hours_ahead:
+                                        self.running_countdown = customtkinter.BooleanVar()
+                                        self.running_countdown.set(True)
+                                        self.started_auto_enroll = True
+                                        self.after(0, self.submit_multiple_event_handler)
+                                        self.after(0, self.end_countdown)
+                                    else:
+                                        self.after(0, self.show_error_message, 300, 215,
+                                                   translation["date_past"])
+                                        self.auto_enroll_bool = False
+                                        self.auto_enroll.deselect()
+                                elif (is_future_date or is_more_than_one_day) or \
+                                        (is_same_date and not is_time_difference_within_8_hours) or \
+                                        (is_next_date and not is_time_difference_within_8_hours):
+                                    self.after(0, self.show_error_message, 320, 235,
+                                               translation["date_not_within_8_hours"])
+                                    self.auto_enroll_bool = False
+                                    self.auto_enroll.deselect()
+                                if "INVALID ACTION" in text_output:
+                                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
+                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                                    send_keys("{ENTER}")
+                                    self.reset_activity_timer(None)
+                                    self.after(0, self.bring_back_timer_window)
                             else:
                                 if "LISTA DE SECCIONES" not in text_output and "INVALID ACTION" in text_output:
                                     self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
@@ -3144,61 +3199,6 @@ class TeraTermUI(customtkinter.CTk):
                                            translation["failed_to_find_date"])
                                 self.auto_enroll.deselect()
                                 self.auto_enroll_bool = False
-                                return
-                            date_time_string = re.sub(r"[^a-zA-Z0-9:/ ]", "", date_time_string)
-                            date_time_naive = datetime.strptime(date_time_string, "%m/%d/%Y %I:%M %p")
-                            puerto_rico_tz = pytz.timezone("America/Puerto_Rico")
-                            your_date = puerto_rico_tz.localize(date_time_naive, is_dst=None)
-                            # Get current datetime
-                            current_date = datetime.now(puerto_rico_tz)
-                            time_difference = your_date - current_date
-                            # Dates
-                            is_same_date = (current_date.date() == your_date.date())
-                            is_past_date = current_date > your_date
-                            is_future_date = current_date < your_date
-                            is_next_date = (your_date.date() - current_date.date() == timedelta(days=1))
-                            is_time_difference_within_8_hours = \
-                                timedelta(hours=8, minutes=15) >= time_difference >= timedelta()
-                            is_more_than_one_day = (your_date.date() - current_date.date() > timedelta(days=1))
-                            is_current_time_ahead = current_date.time() > your_date.time()
-                            is_current_time_24_hours_ahead = time_difference >= timedelta(hours=-24)
-                            # Comparing Dates
-                            if (is_same_date and is_time_difference_within_8_hours) or \
-                                    (is_next_date and is_time_difference_within_8_hours):
-                                self.countdown_running = True
-                                self.after(0, self.disable_enable_gui)
-                                # Create timer window
-                                self.after(0, self.create_timer_window)
-                                # Create a BooleanVar to control the countdown loop
-                                self.running_countdown = customtkinter.BooleanVar()
-                                self.running_countdown.set(True)
-                                # Start the countdown
-                                self.after(100, self.countdown, your_date)
-                            elif is_past_date or (is_same_date and is_current_time_ahead):
-                                if is_current_time_24_hours_ahead:
-                                    self.running_countdown = customtkinter.BooleanVar()
-                                    self.running_countdown.set(True)
-                                    self.started_auto_enroll = True
-                                    self.after(0, self.submit_multiple_event_handler)
-                                    self.after(0, self.end_countdown)
-                                else:
-                                    self.after(0, self.show_error_message, 300, 215,
-                                               translation["date_past"])
-                                    self.auto_enroll_bool = False
-                                    self.auto_enroll.deselect()
-                            elif (is_future_date or is_more_than_one_day) or \
-                                    (is_same_date and not is_time_difference_within_8_hours) or \
-                                    (is_next_date and not is_time_difference_within_8_hours):
-                                self.after(0, self.show_error_message, 320, 235,
-                                           translation["date_not_within_8_hours"])
-                                self.auto_enroll_bool = False
-                                self.auto_enroll.deselect()
-                            if "INVALID ACTION" in text_output:
-                                self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                send_keys("{ENTER}")
-                                self.reset_activity_timer(None)
-                                self.after(0, self.bring_back_timer_window)
                         else:
                             self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
                             self.auto_enroll_bool = False
@@ -3207,7 +3207,6 @@ class TeraTermUI(customtkinter.CTk):
                     self.countdown_running = False
                     self.auto_enroll_bool = False
                     self.after(0, self.disable_enable_gui)
-                    # If the countdown is running, stop it and destroy the timer window
                     if hasattr(self, "running_countdown") and self.running_countdown \
                             is not None and self.running_countdown.get():
                         self.after(0, self.end_countdown)
@@ -3245,7 +3244,13 @@ class TeraTermUI(customtkinter.CTk):
         if self.running_countdown.get():
             if total_seconds <= 0:
                 # Call enrollment function here
-                self.timer_label.configure(text=translation["performing_auto_enroll"])
+                self.timer_label.configure(text=translation["performing_auto_enroll"], text_color="#32CD32",
+                                           font=customtkinter.CTkFont(size=17))
+                self.timer_label.pack(pady=30)
+                self.timer_window.lift()
+                self.timer_window.focus_force()
+                self.timer_window.attributes("-topmost", 1)
+                self.cancel_button.pack_forget()
                 self.started_auto_enroll = True
                 self.after(5000, self.submit_multiple_event_handler)
                 self.after(5000, self.end_countdown)
@@ -5914,7 +5919,10 @@ class TeraTermUI(customtkinter.CTk):
         elif self.information and self.information.winfo_exists():
             self.information.focus_set()
         elif self.timer_window and self.timer_window.winfo_exists():
-            self.timer_window.focus_set()
+            self.timer_window.lift()
+            self.timer_window.focus_force()
+            self.timer_window.attributes("-topmost", 1)
+            self.timer_window.after_idle(self.timer_window.attributes, "-topmost", 0)
 
     # Set focus on Tera Term window
     @staticmethod
