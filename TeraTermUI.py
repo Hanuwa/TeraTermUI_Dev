@@ -557,7 +557,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.teraterm_directory = results["directory"]
                     self.edit_teraterm_ini(self.teraterm_file)
                     self.can_edit = True
-            if language_id & 0xFF == SPANISH:
+            if not results["language"] and language_id & 0xFF == SPANISH:
                 self.language_menu.set("Español")
                 self.change_language_event(lang="Español")
             if results["language"]:
