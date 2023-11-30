@@ -1031,7 +1031,6 @@ class TeraTermUI(customtkinter.CTk):
                                 self.uprb.UprbayTeraTermVt.type_keys("1S4")
                                 self.uprb.UprbayTeraTermVt.type_keys(semester)
                                 send_keys("{ENTER}")
-                                self.reset_activity_timer(None)
                                 self.after(0, self.disable_go_next_buttons)
                                 screenshot_thread = threading.Thread(target=self.capture_screenshot)
                                 screenshot_thread.start()
@@ -1227,7 +1226,6 @@ class TeraTermUI(customtkinter.CTk):
                             elif show_all == "off":
                                 self.uprb.UprbayTeraTermVt.type_keys("N")
                             send_keys("{ENTER}")
-                            self.reset_activity_timer(None)
                             self.after(0, self.disable_go_next_buttons)
                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
                             screenshot_thread.start()
@@ -1352,7 +1350,6 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys("1CP")
                             self.uprb.UprbayTeraTermVt.type_keys(dialog_input)
                             send_keys("{ENTER}")
-                            self.reset_activity_timer(None)
                             self.after(0, self.disable_go_next_buttons)
                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
                             screenshot_thread.start()
@@ -1764,7 +1761,6 @@ class TeraTermUI(customtkinter.CTk):
                                 case "SRM":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
-                                    self.reset_activity_timer(None)
                                     self.after(0, self.disable_go_next_buttons)
                                 case "004":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -1772,7 +1768,6 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys("004")
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     send_keys("{ENTER}")
-                                    self.reset_activity_timer(None)
                                     self.after(0, self.disable_go_next_buttons)
                                 case "1GP":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -1780,7 +1775,6 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys("1GP")
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     send_keys("{ENTER}")
-                                    self.reset_activity_timer(None)
                                     self.after(0, self.disable_go_next_buttons)
                                     screenshot_thread = threading.Thread(target=self.capture_screenshot)
                                     screenshot_thread.start()
@@ -1823,7 +1817,6 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys("118")
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     send_keys("{ENTER}")
-                                    self.reset_activity_timer(None)
                                     self.after(0, self.disable_go_next_buttons)
                                     screenshot_thread = threading.Thread(target=self.capture_screenshot)
                                     screenshot_thread.start()
@@ -1893,7 +1886,6 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys("3DD")
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     send_keys("{ENTER}")
-                                    self.reset_activity_timer(None)
                                     self.after(0, self.disable_go_next_buttons)
                                     screenshot_thread = threading.Thread(target=self.capture_screenshot)
                                     screenshot_thread.start()
@@ -1995,7 +1987,6 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys("1PL")
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     send_keys("{ENTER}")
-                                    self.reset_activity_timer(None)
                                     self.after(0, self.disable_go_next_buttons)
                                     screenshot_thread = threading.Thread(target=self.capture_screenshot)
                                     screenshot_thread.start()
@@ -2073,7 +2064,6 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys("4SP")
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     send_keys("{ENTER}")
-                                    self.reset_activity_timer(None)
                                     self.after(0, self.disable_go_next_buttons)
                                     screenshot_thread = threading.Thread(target=self.capture_screenshot)
                                     screenshot_thread.start()
@@ -2341,6 +2331,7 @@ class TeraTermUI(customtkinter.CTk):
             self._683_screen = False
             self._4CM_screen = False
             self.search_next_page_status = False
+        self.reset_activity_timer(None)
 
     def student_event_handler(self):
         task_done = threading.Event()
@@ -3111,7 +3102,6 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             send_keys("{ENTER}")
                             self.after(0, self.disable_go_next_buttons)
-                            self.reset_activity_timer(None)
                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
                             screenshot_thread.start()
                             screenshot_thread.join()
@@ -4861,7 +4851,6 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys("1S4")
                             self.uprb.UprbayTeraTermVt.type_keys(dialog_input)
                             send_keys("{ENTER}")
-                            self.reset_activity_timer(None)
                             self.after(0, self.disable_go_next_buttons)
                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
                             screenshot_thread.start()
