@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 11/29/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 11/30/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -3107,7 +3107,12 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread.join()
                             text_output = self.capture_screenshot()
                             if "OPCIONES PARA EL ESTUDIANTE" in text_output or "BALANCE CTA" in text_output or \
-                                    "PANTALLAS MATRICULA" in text_output or "PANTALLAS GENERALES" in text_output:
+                                    "PANTALLAS MATRICULA" in text_output or "PANTALLAS GENERALES" in text_output or \
+                                    "LISTA DE SECCIONES" in text_output:
+                                if "LISTA DE SECCIONES" in text_output:
+                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                                    send_keys("{ENTER}")
+                                    self.reset_activity_timer(None)
                                 ctypes.windll.user32.BlockInput(False)
                                 self.automate_copy_class_data()
                                 ctypes.windll.user32.BlockInput(True)
@@ -3173,18 +3178,14 @@ class TeraTermUI(customtkinter.CTk):
                                                translation["date_not_within_8_hours"])
                                     self.auto_enroll_bool = False
                                     self.auto_enroll.deselect()
-                                if "INVALID ACTION" in text_output:
+                                if ("INVALID ACTION" in text_output and "PANTALLAS MATRICULA" in text_output) or \
+                                   ("LISTA DE SECCIONES" in text_output and "COURSE NOT" in text_output):
                                     self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
                                     self.reset_activity_timer(None)
                                     self.after(0, self.bring_back_timer_window)
                             else:
-                                if "LISTA DE SECCIONES" not in text_output and "INVALID ACTION" in text_output:
-                                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                    send_keys("{ENTER}")
-                                    self.reset_activity_timer(None)
                                 self.after(0, self.show_error_message, 300, 215,
                                            translation["failed_to_find_date"])
                                 self.auto_enroll.deselect()
@@ -4068,7 +4069,12 @@ class TeraTermUI(customtkinter.CTk):
             if self.loading_screen.winfo_exists():
                 self.hide_loading_screen()
             original_position = pyautogui.position()
-            pyautogui.moveTo(pyautogui.size().width - 50, pyautogui.size().height - 50)
+            screen_width, screen_height = pyautogui.size()
+            offset = 25
+            target_x = screen_width - offset
+            target_y = screen_height - offset
+            pyautogui.moveTo(target_x, target_y)
+            pyautogui.moveTo(target_x, target_y)
             screenshot = pyautogui.screenshot(region=(x, y, width, height))
             if self.loading_screen.winfo_exists():
                 self.show_loading_screen_again()
