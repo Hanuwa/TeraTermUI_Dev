@@ -4073,12 +4073,17 @@ class TeraTermUI(customtkinter.CTk):
             offset = 25
             target_x = screen_width - offset
             target_y = screen_height - offset
-            pyautogui.moveTo(target_x, target_y)
-            pyautogui.moveTo(target_x, target_y)
+            try:
+                pyautogui.moveTo(target_x, target_y)
+            except pyautogui.FailSafeException as e:
+                print("An error occurred:", e)
             screenshot = pyautogui.screenshot(region=(x, y, width, height))
             if self.loading_screen.winfo_exists():
                 self.show_loading_screen_again()
-            pyautogui.moveTo(original_position.x, original_position.y)
+            try:
+                pyautogui.moveTo(original_position.x, original_position.y)
+            except pyautogui.FailSafeException as e:
+                print("An error occurred:", e)
             screenshot = screenshot.crop(
                 (crop_margin[0], crop_margin[1], width - crop_margin[2], height - crop_margin[3]))
             screenshot = screenshot.convert("L")
@@ -4522,7 +4527,10 @@ class TeraTermUI(customtkinter.CTk):
         self.hide_loading_screen()
         original_position = pyautogui.position()
         self.uprbay_window.click_input(button="left")
-        pyautogui.moveTo(original_position.x, original_position.y)
+        try:
+            pyautogui.moveTo(original_position.x, original_position.y)
+        except pyautogui.FailSafeException as e:
+            print("An error occurred:", e)
         self.show_loading_screen_again()
 
     # extracts the text from the searched class to get the important information
