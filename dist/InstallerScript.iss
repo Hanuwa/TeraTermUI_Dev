@@ -51,8 +51,8 @@ Source: "{#MyAppPath}\TeraTermUI_installer\*"; DestDir: "{app}"; Flags: ignoreve
 Source: "{#MyAppPath}\teraterm-4.107.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
-[Dirs]
-Name: "{commonappdata}\TeraTermUI"; Permissions: everyone-modify; Flags: uninsneveruninstall
+[UninstallDelete]
+Type: filesandordirs; Name: "{commonappdata}\TeraTermUI"
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
