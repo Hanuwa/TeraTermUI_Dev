@@ -6823,10 +6823,10 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.bind("<Control-Z>", self.undo)
         self.bind("<Control-y>", self.redo)
         self.bind("<Control-Y>", self.redo)
+        
         self.bind("<Button-2>", self.select_all)
-        if self.auto_scroll:
-            self.bind("<Control-a>", self.select_all)
-            self.bind("<Control-A>", self.select_all)
+        self.bind("<Control-a>", self.select_all)
+        self.bind("<Control-A>", self.select_all)
 
         # Update the undo stack every time the Entry content changes
         self.bind("<KeyRelease>", self.update_undo_stack)
@@ -6996,7 +6996,10 @@ class CustomEntry(customtkinter.CTkEntry):
         self.bind("<Control-Z>", self.undo)
         self.bind("<Control-y>", self.redo)
         self.bind("<Control-Y>", self.redo)
+
         self.bind("<Button-2>", self.select_all)
+        self.bind("<Control-a>", self.select_all)
+        self.bind("<Control-A>", self.select_all)
 
         # Update the undo stack every time the Entry content changes
         self.bind("<KeyRelease>", self.update_undo_stack)
