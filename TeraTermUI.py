@@ -1318,7 +1318,7 @@ class TeraTermUI(customtkinter.CTk):
         self.dialog = SmoothFadeInputDialog(text=translation["dialog_message"], title=translation["dialog_title"],
                                             ok_text=translation["submit"], cancel_text=translation["option_1"])
         self.dialog.geometry("+%d+%d" % (dialog_x + 75, dialog_y + 60))
-        self.dialog.after(201, lambda: self.dialog.iconbitmap(self.icon_path))
+        self.dialog.iconbitmap(self.icon_path)
         self.dialog.bind("<Escape>", lambda event: self.dialog.destroy())
         self.dialog_input = self.dialog.get_input()
         if self.dialog_input is not None:
@@ -3358,7 +3358,7 @@ class TeraTermUI(customtkinter.CTk):
         self.timer_window.geometry(f"{width}x{height}+{int(x) + 130}+{int(y)}")
         self.timer_window.attributes("-alpha", 0.90)
         self.timer_window.resizable(False, False)
-        self.timer_window.after(256, lambda: self.timer_window.iconbitmap(self.icon_path))
+        self.timer_window.iconbitmap(self.icon_path)
         self.message_label = customtkinter.CTkLabel(self.timer_window,
                                                     font=customtkinter.CTkFont(
                                                         size=20, weight="bold"),
@@ -3954,7 +3954,7 @@ class TeraTermUI(customtkinter.CTk):
         self.loading_screen.geometry(f"{width}x{height}+{center_x + 105}+{center_y}")
         self.loading_screen.attributes("-topmost", True, "-alpha", 0.90)
         self.loading_screen.resizable(False, False)
-        self.loading_screen.after(256, lambda: self.loading_screen.iconbitmap(self.icon_path))
+        self.loading_screen.iconbitmap(self.icon_path)
         loading = customtkinter.CTkLabel(self.loading_screen, text=translation["loading"],
                                          font=customtkinter.CTkFont(size=20, weight="bold"))
         if self.auto_search:
@@ -5263,7 +5263,7 @@ class TeraTermUI(customtkinter.CTk):
         self.error.geometry(window_geometry)
         self.error.attributes("-topmost", True)
         self.error.resizable(False, False)
-        self.error.after(256, lambda: self.error.iconbitmap(self.icon_path))
+        self.error.iconbitmap(self.icon_path)
         my_image = self.get_image("error")
         image = customtkinter.CTkLabel(self.error, text="", image=my_image)
         image.pack(padx=10, pady=20)
@@ -5301,7 +5301,7 @@ class TeraTermUI(customtkinter.CTk):
         self.success.title(translation["success_title"])
         self.success.attributes("-topmost", True)
         self.success.resizable(False, False)
-        self.success.after(256, lambda: self.success.iconbitmap(self.icon_path))
+        self.success.iconbitmap(self.icon_path)
         my_image = self.get_image("success")
         image = customtkinter.CTkLabel(self.success, text="", image=my_image)
         image.pack(padx=10, pady=10)
@@ -5403,7 +5403,7 @@ class TeraTermUI(customtkinter.CTk):
         self.information.geometry(window_geometry)
         self.information.title(translation["information_title"])
         self.information.resizable(False, False)
-        self.information.after(256, lambda: self.information.iconbitmap(self.icon_path))
+        self.information.iconbitmap(self.icon_path)
         my_image = self.get_image("information")
         image = customtkinter.CTkLabel(self.information, text="", image=my_image)
         image.pack(padx=10, pady=10)
@@ -6049,7 +6049,7 @@ class TeraTermUI(customtkinter.CTk):
         window_geometry = f"{475}x{280}+{x_position + 130}+{y_position + 18}"
         self.status.geometry(window_geometry)
         self.status.title(translation["status"])
-        self.status.after(256, lambda: self.status.iconbitmap(self.icon_path))
+        self.status.iconbitmap(self.icon_path)
         self.status.resizable(False, False)
         self.status_frame.pack()
         self.status_title.pack()
@@ -6441,7 +6441,7 @@ class TeraTermUI(customtkinter.CTk):
         window_geometry = f"{475}x{280}+{x_position + 130}+{y_position + 18}"
         self.help.geometry(window_geometry)
         self.help.title(translation["help"])
-        self.help.after(256, lambda: self.help.iconbitmap(self.icon_path))
+        self.help.iconbitmap(self.icon_path)
         self.help.resizable(False, False)
         self.help_frame.pack()
         self.help_title.pack()
