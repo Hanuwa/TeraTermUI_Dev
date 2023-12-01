@@ -6807,6 +6807,13 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.bind("<Button-1>", self.stop_autoscroll)
         self.bind("<MouseWheel>", self.stop_autoscroll)
 
+        if hasattr(self, '_y_scrollbar'):
+            self._y_scrollbar.bind("<Button-1>", self.stop_autoscroll)
+            self._y_scrollbar.bind("<B1-Motion>", self.stop_autoscroll)
+        if hasattr(self, '_x_scrollbar'):
+            self._x_scrollbar.bind("<Button-1>", self.stop_autoscroll)
+            self._x_scrollbar.bind("<B1-Motion>", self.stop_autoscroll)
+
         initial_state = self.get("1.0", "end-1c")
         self._undo_stack = deque([initial_state], maxlen=50)
         self._redo_stack = deque(maxlen=50)
@@ -6832,7 +6839,6 @@ class CustomTextBox(customtkinter.CTkTextbox):
         if not self.auto_scroll:
             self.context_menu.add_command(label="Paste", command=self.paste)
         self.context_menu.add_command(label="Select All", command=self.select_all)
-        self.is_text_selected = False
         self.bind("<Button-3>", self.show_menu)
 
         self.read_only = read_only
@@ -6853,6 +6859,9 @@ class CustomTextBox(customtkinter.CTkTextbox):
 
     def stop_autoscroll(self, event):
         self.auto_scroll = False
+        if self.after_id:
+            self.after_cancel(self.after_id)
+            self.after_id = None
 
     def reset_autoscroll(self):
         if self.after_id:
@@ -6880,6 +6889,8 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.insert("1.0", redo_text)
 
     def show_menu(self, event):
+        self.focus_set()
+        self.stop_autoscroll(event=None)
         current_label = self.context_menu.entrycget(0, "label")
         if self.lang == "English" and current_label != "Cut":
             self.context_menu.entryconfigure(0, label="Cut")
@@ -6891,12 +6902,11 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.context_menu.entryconfigure(1, label="Copiar")
             self.context_menu.entryconfigure(2, label="Pegar")
             self.context_menu.entryconfigure(3, label="Seleccionar todo")
-        self.stop_autoscroll(event=None)
         self.context_menu.post(event.x_root, event.y_root)
-        self.focus_set()
         self.mark_set(tk.INSERT, "end")
 
     def cut(self):
+        self.focus_set()
         try:
             selected_text = self.selection_get()  # Attempt to get selected text
             current_text = self.get("1.0", "end-1c")  # Existing text in the Text widget
@@ -6916,6 +6926,8 @@ class CustomTextBox(customtkinter.CTkTextbox):
             print("No text selected to cut.")  # Log or inform the user accordingly
 
     def copy(self):
+        self.focus_set()
+        self.stop_autoscroll(event=None)
         try:
             selected_text = self.selection_get()  # Attempt to get selected text
             self.clipboard_clear()
@@ -6924,6 +6936,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
             print("No text selected to copy.")  # Log or inform the user accordingly
 
     def paste(self, event=None):
+        self.focus_set()
         try:
             clipboard_text = self.clipboard_get()  # Get text from clipboard
             current_text = self.get("1.0", "end-1c")  # Existing text in the Text widget
@@ -6942,27 +6955,22 @@ class CustomTextBox(customtkinter.CTkTextbox):
             pass  # Clipboard empty or other issue
 
     def select_all(self, event=None):
-        self.stop_autoscroll(event=None)
         self.focus_set()
+        self.stop_autoscroll(event=None)
         self.mark_set(tk.INSERT, "end")
         try:
             # Check if any text is currently selected
             if self.tag_ranges(tk.SEL):
                 # Clear the selection if text is already selected
                 self.tag_remove(tk.SEL, "1.0", tk.END)
-                self.is_text_selected = False
             else:
                 # Select all text if nothing is selected
                 self.tag_add(tk.SEL, "1.0", tk.END)
                 self.mark_set(tk.INSERT, "1.0")
                 self.see(tk.INSERT)
-                self.is_text_selected = True
         except tk.TclError:
             pass  # Handle any exceptions if needed
-
-    def on_click(self, event=None):
-        # Reset the is_text_selected flag to False when the textbox is clicked
-        self.is_text_selected = False
+        return "break"
 
     @staticmethod
     def readonly(event):
@@ -6999,7 +7007,6 @@ class CustomEntry(customtkinter.CTkEntry):
         self.context_menu.add_command(label="Copy", command=self.copy)
         self.context_menu.add_command(label="Paste", command=self.paste)
         self.context_menu.add_command(label="Select All", command=self.select_all)
-        self.is_text_selected = False
         self.bind("<Button-3>", self.show_menu)
 
     def disable_slider_keys(self, event=None):
@@ -7039,6 +7046,7 @@ class CustomEntry(customtkinter.CTkEntry):
         if self.cget("state") == "disabled":
             return
 
+        self.focus_set()
         current_label = self.context_menu.entrycget(0, "label")
         if self.lang == "English" and current_label != "Cut":
             self.context_menu.entryconfigure(0, label="Cut")
@@ -7051,10 +7059,10 @@ class CustomEntry(customtkinter.CTkEntry):
             self.context_menu.entryconfigure(2, label="Pegar")
             self.context_menu.entryconfigure(3, label="Seleccionar todo")
         self.context_menu.post(event.x_root, event.y_root)
-        self.focus_set()
         self.icursor(tk.END)
 
     def cut(self):
+        self.focus_set()
         try:
             selected_text = self.selection_get()  # Attempt to get selected text
             current_text = self.get()  # Existing text in the Entry widget
@@ -7078,6 +7086,7 @@ class CustomEntry(customtkinter.CTkEntry):
             print("No text selected to cut.")  # Log or inform the user accordingly
 
     def copy(self):
+        self.focus_set()
         try:
             selected_text = self.selection_get()  # Attempt to get selected text
             self.clipboard_clear()
@@ -7086,6 +7095,7 @@ class CustomEntry(customtkinter.CTkEntry):
             print("No text selected to copy.")  # Log or inform the user accordingly
 
     def paste(self, event=None):
+        self.focus_set()
         current_text = self.get()  # Existing text in the Entry widget
 
         # Save the current state to undo stack
@@ -7110,11 +7120,14 @@ class CustomEntry(customtkinter.CTkEntry):
             pass  # Clipboard empty or other issue
 
     def select_all(self, event=None):
+        if self.cget("state") == "disabled":
+            return
+
         self.focus_set()
         self.icursor(tk.END)
         try:
             # Check if any text is currently selected
-            if self.selection_get():
+            if self.select_present():
                 # Clear the selection if text is already selected
                 self.select_clear()
             else:
@@ -7125,10 +7138,7 @@ class CustomEntry(customtkinter.CTkEntry):
             # No text was selected, so select all
             self.select_range(0, "end")
             self.icursor("end")
-
-    def on_click(self, event=None):
-        # Reset the is_text_selected flag to False when the entry is clicked
-        self.is_text_selected = False
+        return "break"
 
 
 class CustomComboBox(customtkinter.CTkComboBox):
