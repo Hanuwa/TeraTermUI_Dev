@@ -2447,27 +2447,28 @@ class TeraTermUI(customtkinter.CTk):
         self.destroy_auth()
 
     def notice_user(self):
-        if not self.error.winfo_exists():
-            lang = self.language_menu.get()
-            translation = self.load_language(lang)
-            main_window_x = self.winfo_x()
-            main_window_y = self.winfo_y()
-            self.tooltip = tk.Toplevel(self)
-            self.tooltip.wm_overrideredirect(True)
-            self.tooltip.attributes("-topmost", True)
-            self.tooltip.config(bg="#FFD700")
-            self.tooltip.wm_geometry(f"+{main_window_x + 20}+{main_window_y + 20}")
-            if TeraTermUI.checkIfProcessRunning("EpicGamesLauncher"):
-                text = translation["epic_games"]
-            else:
-                text = translation["exec_time"]
-            label = tk.Label(self.tooltip, text=text,
-                             bg="#FFD700", fg="#000", font=("Verdana", 11, "bold"))
-            label.pack(padx=5, pady=5)
-            self.tooltip.after(12500, self.destroy_tooltip)
-            self.tooltip.bind("<Button-1>", lambda e: self.destroy_tooltip())
-            self.tooltip.bind("<Button-2>", lambda e: self.destroy_tooltip())
-            self.tooltip.bind("<Button-3>", lambda e: self.destroy_tooltip())
+        if self.error and self.error.winfo_exists():
+            return
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        main_window_x = self.winfo_x()
+        main_window_y = self.winfo_y()
+        self.tooltip = tk.Toplevel(self)
+        self.tooltip.wm_overrideredirect(True)
+        self.tooltip.attributes("-topmost", True)
+        self.tooltip.config(bg="#FFD700")
+        self.tooltip.wm_geometry(f"+{main_window_x + 20}+{main_window_y + 20}")
+        if TeraTermUI.checkIfProcessRunning("EpicGamesLauncher"):
+            text = translation["epic_games"]
+        else:
+            text = translation["exec_time"]
+        label = tk.Label(self.tooltip, text=text,
+                         bg="#FFD700", fg="#000", font=("Verdana", 11, "bold"))
+        label.pack(padx=5, pady=5)
+        self.tooltip.after(12500, self.destroy_tooltip)
+        self.tooltip.bind("<Button-1>", lambda e: self.destroy_tooltip())
+        self.tooltip.bind("<Button-2>", lambda e: self.destroy_tooltip())
+        self.tooltip.bind("<Button-3>", lambda e: self.destroy_tooltip())
 
     def login_event_handler(self):
         task_done = threading.Event()
