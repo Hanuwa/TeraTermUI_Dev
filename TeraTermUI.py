@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 11/30/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 12/1/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -86,7 +86,7 @@ def measure_time(threshold):
             elapsed_time = end_time - start_time
             print(f"Elapsed time: {elapsed_time:.2f} seconds")
             if elapsed_time > threshold or TeraTermUI.checkIfProcessRunning("EpicGamesLauncher"):
-                self.after(0, self.notice_user)
+                self.after(350, self.notice_user)
             return result
         return wrapper
     return decorator
@@ -2447,27 +2447,27 @@ class TeraTermUI(customtkinter.CTk):
         self.destroy_auth()
 
     def notice_user(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
-        text = None
-        main_window_x = self.winfo_x()
-        main_window_y = self.winfo_y()
-        self.tooltip = tk.Toplevel(self)
-        self.tooltip.wm_overrideredirect(True)
-        self.tooltip.attributes("-topmost", True)
-        self.tooltip.config(bg="#FFD700")
-        self.tooltip.wm_geometry(f"+{main_window_x + 20}+{main_window_y + 20}")
-        if TeraTermUI.checkIfProcessRunning("EpicGamesLauncher"):
-            text = translation["epic_games"]
-        else:
-            text = translation["exec_time"]
-        label = tk.Label(self.tooltip, text=text,
-                         bg="#FFD700", fg="#000", font=("Verdana", 11, "bold"))
-        label.pack(padx=5, pady=5)
-        self.tooltip.after(12500, self.destroy_tooltip)
-        self.tooltip.bind("<Button-1>", lambda e: self.destroy_tooltip())
-        self.tooltip.bind("<Button-2>", lambda e: self.destroy_tooltip())
-        self.tooltip.bind("<Button-3>", lambda e: self.destroy_tooltip())
+        if not self.error.winfo_exists():
+            lang = self.language_menu.get()
+            translation = self.load_language(lang)
+            main_window_x = self.winfo_x()
+            main_window_y = self.winfo_y()
+            self.tooltip = tk.Toplevel(self)
+            self.tooltip.wm_overrideredirect(True)
+            self.tooltip.attributes("-topmost", True)
+            self.tooltip.config(bg="#FFD700")
+            self.tooltip.wm_geometry(f"+{main_window_x + 20}+{main_window_y + 20}")
+            if TeraTermUI.checkIfProcessRunning("EpicGamesLauncher"):
+                text = translation["epic_games"]
+            else:
+                text = translation["exec_time"]
+            label = tk.Label(self.tooltip, text=text,
+                             bg="#FFD700", fg="#000", font=("Verdana", 11, "bold"))
+            label.pack(padx=5, pady=5)
+            self.tooltip.after(12500, self.destroy_tooltip)
+            self.tooltip.bind("<Button-1>", lambda e: self.destroy_tooltip())
+            self.tooltip.bind("<Button-2>", lambda e: self.destroy_tooltip())
+            self.tooltip.bind("<Button-3>", lambda e: self.destroy_tooltip())
 
     def login_event_handler(self):
         task_done = threading.Event()
