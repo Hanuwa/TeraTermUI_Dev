@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 12/1/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 12/2/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -69,7 +69,6 @@ from tkinter import filedialog
 from tkinter import messagebox
 from PIL import Image
 
-# from collections import deque
 # from memory_profiler import profile
 
 customtkinter.set_appearance_mode("System")
@@ -4274,47 +4273,10 @@ class TeraTermUI(customtkinter.CTk):
     def display_data(self, data):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        modified_data = []
-        for item in data:
-            days = item["DAYS"].split(", ")
-            times = item["TIMES"].split(", ")
-            first = True  # Flag to identify the first day and time
-
-            # Split instructor name for the first entry
-            if "INSTRUCTOR" in item:
-                parts = item["INSTRUCTOR"].split(",")
-                item["INSTRUCTOR"] = "\n".join(parts)
-
-            for day, time in zip(days, times):
-                if first:
-                    # For the first day and time, keep the item details intact but remove additional days and times
-                    modified_item = item.copy()
-                    modified_item["DAYS"] = day
-                    modified_item["TIMES"] = time
-                    first = False  # Unset the flag after the first iteration
-                else:
-                    # For additional days and times, create a new item with only the day and time
-                    modified_item = {key: '' for key in item}  # Initialize all keys with empty strings
-                    modified_item["DAYS"] = day
-                    modified_item["TIMES"] = time
-
-                # Process times to have proper format for each entry
-                times_parts = modified_item["TIMES"].split("-")
-                if len(times_parts) == 2:
-                    start, end = times_parts
-                    start = start.lstrip("0")
-                    end = end.lstrip("0")
-                    start = start[:-4] + ":" + start[-4:-2] + " " + start[-2:]
-                    end = end[:-4] + ":" + end[-4:-2] + " " + end[-2:]
-                    modified_item["TIMES"] = "\n".join([start, end])
-                else:
-                    modified_item["TIMES"] = modified_item["TIMES"].lstrip("0")
-
-                modified_data.append(modified_item)
-
+        spec_data = TeraTermUI.specific_class_data(data)
         headers = ["SEC", "M", "CRED", "DAYS", "TIMES", "AV", "INSTRUCTOR"]
-        table_values = [headers] + [[item.get(header, "") for header in headers] for item in modified_data]
-        num_rows = len(modified_data) + 1
+        table_values = [headers] + [[item.get(header, "") for header in headers] for item in spec_data]
+        num_rows = len(spec_data) + 1
 
         new_table = ctktable.CTkTable(
             self.search_scrollbar,
@@ -4533,6 +4495,48 @@ class TeraTermUI(customtkinter.CTk):
         except pyautogui.FailSafeException as e:
             print("An error occurred:", e)
         self.show_loading_screen_again()
+
+    @staticmethod
+    def specific_class_data(data):
+        modified_data = []
+        for item in data:
+            days = item["DAYS"].split(", ")
+            times = item["TIMES"].split(", ")
+            first = True  # Flag to identify the first day and time
+
+            # Split instructor name for the first entry
+            if "INSTRUCTOR" in item:
+                parts = item["INSTRUCTOR"].split(",")
+                item["INSTRUCTOR"] = "\n".join(parts)
+
+            for day, time in zip(days, times):
+                if first:
+                    # For the first day and time, keep the item details intact but remove additional days and times
+                    modified_item = item.copy()
+                    modified_item["DAYS"] = day
+                    modified_item["TIMES"] = time
+                    first = False  # Unset the flag after the first iteration
+                else:
+                    # For additional days and times, create a new item with only the day and time
+                    modified_item = {key: '' for key in item}  # Initialize all keys with empty strings
+                    modified_item["DAYS"] = day
+                    modified_item["TIMES"] = time
+
+                # Process times to have proper format for each entry
+                times_parts = modified_item["TIMES"].split("-")
+                if len(times_parts) == 2:
+                    start, end = times_parts
+                    start = start.lstrip("0")
+                    end = end.lstrip("0")
+                    start = start[:-4] + ":" + start[-4:-2] + " " + start[-2:]
+                    end = end[:-4] + ":" + end[-4:-2] + " " + end[-2:]
+                    modified_item["TIMES"] = "\n".join([start, end])
+                else:
+                    modified_item["TIMES"] = modified_item["TIMES"].lstrip("0")
+
+                modified_data.append(modified_item)
+
+        return modified_data
 
     # extracts the text from the searched class to get the important information
     @staticmethod
