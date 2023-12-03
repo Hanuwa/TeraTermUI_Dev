@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 12/2/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 12/3/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -7023,6 +7023,8 @@ class CustomEntry(customtkinter.CTkEntry):
         self.context_menu.add_command(label="Copy", command=self.copy)
         self.context_menu.add_command(label="Paste", command=self.paste)
         self.context_menu.add_command(label="Select All", command=self.select_all)
+        self.bind("<Control-v>", self.paste)
+        self.bind("<Control-V>", self.paste)
         self.bind("<Button-3>", self.show_menu)
 
     def disable_slider_keys(self, event=None):
@@ -7112,14 +7114,18 @@ class CustomEntry(customtkinter.CTkEntry):
 
     def paste(self, event=None):
         self.focus_set()
-        current_text = self.get()  # Existing text in the Entry widget
-
-        # Save the current state to undo stack
-        if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1]):
-            self._undo_stack.append(current_text)
-
         try:
             clipboard_text = self.clipboard_get()  # Get text from clipboard
+            max_paste_length = 1000  # Set a limit for the max paste length
+            if len(clipboard_text) > max_paste_length:
+                clipboard_text = clipboard_text[:max_paste_length]  # Truncate to max length
+                print("Pasted content truncated to maximum length.")
+
+            current_text = self.get()  # Existing text in the Entry widget
+            # Save the current state to undo stack
+            if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1]):
+                self._undo_stack.append(current_text)
+
             try:
                 start_index = self.index(tk.SEL_FIRST)
                 end_index = self.index(tk.SEL_LAST)
@@ -7128,12 +7134,14 @@ class CustomEntry(customtkinter.CTkEntry):
                 pass  # Nothing selected, which is fine
 
             self.insert(tk.INSERT, clipboard_text)  # Insert the clipboard text
+
             # Update undo stack here, after paste operation
             new_text = self.get()
             self._undo_stack.append(new_text)
             self._redo_stack = []
         except tk.TclError:
             pass  # Clipboard empty or other issue
+        return "break"
 
     def select_all(self, event=None):
         if self.cget("state") == "disabled":
@@ -7178,6 +7186,9 @@ class CustomComboBox(customtkinter.CTkComboBox):
         # Update the undo stack every time the Entry content changes
         self.bind("<KeyRelease>", self.update_undo_stack)
 
+        self.bind("<Control-v>", self.paste)
+        self.bind("<Control-V>", self.paste)
+
     def disable_slider_keys(self, event=None):
         self.teraterm_ui.move_slider_left_enabled = False
         self.teraterm_ui.move_slider_right_enabled = False
@@ -7211,6 +7222,30 @@ class CustomComboBox(customtkinter.CTkComboBox):
             self._undo_stack.append(redo_text)
             self.set("")
             self.set(redo_text)
+
+    def paste(self, event=None):
+        self.focus_set()
+        try:
+            clipboard_text = self.clipboard_get()  # Get text from clipboard
+            max_paste_length = 1000  # Set a limit for the max paste length
+            if len(clipboard_text) > max_paste_length:
+                clipboard_text = clipboard_text[:max_paste_length]  # Truncate to max length
+                print("Pasted content truncated to maximum length.")
+
+            current_text = self.get()  # Existing text in the Entry widget
+            # Save the current state to undo stack
+            if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1]):
+                self._undo_stack.append(current_text)
+
+            self.set(clipboard_text)
+
+            # Update undo stack here, after paste operation
+            new_text = self.get()
+            self._undo_stack.append(new_text)
+            self._redo_stack = []
+        except tk.TclError:
+            pass  # Clipboard empty or other issue
+        return "break"
 
 
 class SmoothFadeToplevel(customtkinter.CTkToplevel):
