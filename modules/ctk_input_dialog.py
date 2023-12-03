@@ -171,7 +171,10 @@ class CustomEntry(CTkEntry):
         self.bind("<Control-Z>", self.undo)
         self.bind("<Control-y>", self.redo)
         self.bind("<Control-Y>", self.redo)
+
         self.bind("<Button-2>", self.select_all)
+        self.bind("<Control-a>", self.select_all)
+        self.bind("<Control-A>", self.select_all)
 
         # Update the undo stack every time the Entry content changes
         self.bind("<KeyRelease>", self.update_undo_stack)
@@ -182,7 +185,8 @@ class CustomEntry(CTkEntry):
         self.context_menu.add_command(label="Copy", command=self.copy)
         self.context_menu.add_command(label="Paste", command=self.paste)
         self.context_menu.add_command(label="Select All", command=self.select_all)
-        self.is_text_selected = False
+        self.bind("<Control-v>", self.paste)
+        self.bind("<Control-V>", self.paste)
         self.bind("<Button-3>", self.show_menu)
 
     def disable_slider_keys(self, event=None):
@@ -222,6 +226,7 @@ class CustomEntry(CTkEntry):
         if self.cget("state") == "disabled":
             return
 
+        self.focus_set()
         current_label = self.context_menu.entrycget(0, "label")
         if self.lang == "English" and current_label != "Cut":
             self.context_menu.entryconfigure(0, label="Cut")
@@ -234,10 +239,10 @@ class CustomEntry(CTkEntry):
             self.context_menu.entryconfigure(2, label="Pegar")
             self.context_menu.entryconfigure(3, label="Seleccionar todo")
         self.context_menu.post(event.x_root, event.y_root)
-        self.focus_set()
         self.icursor(tk.END)
 
     def cut(self):
+        self.focus_set()
         try:
             selected_text = self.selection_get()  # Attempt to get selected text
             current_text = self.get()  # Existing text in the Entry widget
@@ -261,6 +266,7 @@ class CustomEntry(CTkEntry):
             print("No text selected to cut.")  # Log or inform the user accordingly
 
     def copy(self):
+        self.focus_set()
         try:
             selected_text = self.selection_get()  # Attempt to get selected text
             self.clipboard_clear()
@@ -269,14 +275,19 @@ class CustomEntry(CTkEntry):
             print("No text selected to copy.")  # Log or inform the user accordingly
 
     def paste(self, event=None):
-        current_text = self.get()  # Existing text in the Entry widget
-
-        # Save the current state to undo stack
-        if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1]):
-            self._undo_stack.append(current_text)
-
+        self.focus_set()
         try:
             clipboard_text = self.clipboard_get()  # Get text from clipboard
+            max_paste_length = 1000  # Set a limit for the max paste length
+            if len(clipboard_text) > max_paste_length:
+                clipboard_text = clipboard_text[:max_paste_length]  # Truncate to max length
+                print("Pasted content truncated to maximum length.")
+
+            current_text = self.get()  # Existing text in the Entry widget
+            # Save the current state to undo stack
+            if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1]):
+                self._undo_stack.append(current_text)
+
             try:
                 start_index = self.index(tk.SEL_FIRST)
                 end_index = self.index(tk.SEL_LAST)
@@ -285,19 +296,24 @@ class CustomEntry(CTkEntry):
                 pass  # Nothing selected, which is fine
 
             self.insert(tk.INSERT, clipboard_text)  # Insert the clipboard text
+
             # Update undo stack here, after paste operation
             new_text = self.get()
             self._undo_stack.append(new_text)
             self._redo_stack = []
         except tk.TclError:
             pass  # Clipboard empty or other issue
+        return "break"
 
     def select_all(self, event=None):
+        if self.cget("state") == "disabled":
+            return
+
         self.focus_set()
         self.icursor(tk.END)
         try:
             # Check if any text is currently selected
-            if self.selection_get():
+            if self.select_present():
                 # Clear the selection if text is already selected
                 self.select_clear()
             else:
@@ -308,8 +324,5 @@ class CustomEntry(CTkEntry):
             # No text was selected, so select all
             self.select_range(0, "end")
             self.icursor("end")
+        return "break"
 
-    def on_click(self, event=None):
-        # Reset the is_text_selected flag to False when the entry is clicked
-        self.is_text_selected = False
-        
