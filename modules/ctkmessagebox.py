@@ -520,22 +520,34 @@ class CTkMessagebox(customtkinter.CTkToplevel):
 
 class CustomButton(customtkinter.CTkButton):
     def __init__(self, master=None, command=None, **kwargs):
-        super().__init__(master, cursor="hand2", **kwargs)  # Set cursor here
+        super().__init__(master, cursor="hand2", **kwargs)
         self.is_pressed = False
         self.click_command = command
         self.bind("<ButtonPress-1>", self.on_button_down)
         self.bind("<ButtonRelease-1>", self.on_button_up)
+        self.bind("<Enter>", self.on_enter)
+        self.bind("<Leave>", self.on_leave)
 
     def on_button_down(self, event):
+        if self.cget("state") == "disabled":
+            return
         self.is_pressed = True
 
     def on_button_up(self, event):
+        if self.cget("state") == "disabled":
+            return
         width = self.winfo_width()
         height = self.winfo_height()
         if self.is_pressed and 0 <= event.x <= width and 0 <= event.y <= height:
             if self.click_command:
                 self.click_command()
         self.is_pressed = False
+
+    def on_enter(self, event):
+        self.configure(cursor="hand2")
+
+    def on_leave(self, event):
+        self.configure(cursor="")
 
 if __name__ == "__main__":
     app = CTkMessagebox()
