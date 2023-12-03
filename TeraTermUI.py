@@ -6759,6 +6759,8 @@ class CustomButton(customtkinter.CTkButton):
         self.click_command = command
         self.bind("<ButtonPress-1>", self.on_button_down)
         self.bind("<ButtonRelease-1>", self.on_button_up)
+        self.bind("<Enter>", self.on_enter)
+        self.bind("<Leave>", self.on_leave)
 
     def on_button_down(self, event):
         if self.cget("state") == "disabled":
@@ -6774,6 +6776,12 @@ class CustomButton(customtkinter.CTkButton):
             if self.click_command:
                 self.click_command()
         self.is_pressed = False
+
+    def on_enter(self, event):
+        self.configure(cursor="hand2")
+
+    def on_leave(self, event):
+        self.configure(cursor="")
 
 
 class CustomScrollableFrame(customtkinter.CTkScrollableFrame):
