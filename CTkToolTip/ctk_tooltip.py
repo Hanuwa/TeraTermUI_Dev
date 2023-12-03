@@ -177,8 +177,23 @@ class CTkToolTip(Toplevel):
             self.destroy()
 
         if self.status == "inside" and time.time() - self.last_moved >= self.delay:
-            self.status = "visible"
-            self.deiconify()
+            # Check if the mouse is still within the widget's boundaries
+            if self._is_mouse_inside_widget():
+                self.status = "visible"
+                self.deiconify()
+            else:
+                self.on_leave()
+
+    def _is_mouse_inside_widget(self) -> bool:
+        """
+        Checks if the mouse is inside the widget's area.
+        """
+        x, y = self.widget.winfo_pointerxy()
+        widget_coords = (self.widget.winfo_rootx(), self.widget.winfo_rooty(),
+                         self.widget.winfo_rootx() + self.widget.winfo_width(),
+                         self.widget.winfo_rooty() + self.widget.winfo_height())
+
+        return widget_coords[0] < x < widget_coords[2] and widget_coords[1] < y < widget_coords[3]
 
     def hide(self) -> None:
         """
@@ -210,3 +225,4 @@ class CTkToolTip(Toplevel):
 
         self.messageVar.set(message)
         self.message_label.configure(**kwargs)
+        
