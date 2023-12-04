@@ -87,7 +87,9 @@ def measure_time(threshold):
             if elapsed_time > threshold or TeraTermUI.checkIfProcessRunning("EpicGamesLauncher"):
                 self.after(350, self.notice_user)
             return result
+
         return wrapper
+
     return decorator
 
 
@@ -3179,7 +3181,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.auto_enroll_bool = False
                                     self.auto_enroll.deselect()
                                 if ("INVALID ACTION" in text_output and "PANTALLAS MATRICULA" in text_output) or \
-                                   ("LISTA DE SECCIONES" in text_output and "COURSE NOT" in text_output):
+                                        ("LISTA DE SECCIONES" in text_output and "COURSE NOT" in text_output):
                                     self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
@@ -6249,15 +6251,18 @@ class TeraTermUI(customtkinter.CTk):
             message_spanish = "¿Desea buscar automáticamente Tera Term en la unidad C?\n\n" \
                               "Podría tardar un poco y hacer que la aplicación no responda durante ese tiempo."
             message = message_english if lang == "English" else message_spanish
-            if messagebox.askyesno("Tera Term", message):
+            response = messagebox.askyesnocancel("Tera Term", message)
+            if response is True:
                 self.auto_search = True
                 task_done = threading.Event()
                 loading_screen = self.show_loading_screen()
                 self.update_loading_screen(loading_screen, task_done)
                 event_thread = threading.Thread(target=self.change_location_event, args=(task_done,))
                 event_thread.start()
-            else:
+            elif response is False:
                 self.manually_change_location()
+            else:
+                self.help.lift()
 
     # Automatically tries to find where the Tera Term application is located
     def change_location_event(self, task_done):
@@ -6836,7 +6841,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.bind("<Control-Z>", self.undo)
         self.bind("<Control-y>", self.redo)
         self.bind("<Control-Y>", self.redo)
-        
+
         self.bind("<Button-2>", self.select_all)
         self.bind("<Control-a>", self.select_all)
         self.bind("<Control-A>", self.select_all)
