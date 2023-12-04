@@ -5324,6 +5324,7 @@ class TeraTermUI(customtkinter.CTk):
         self.success.destroy()
         if self.help and self.help.winfo_exists() and self.changed_location:
             self.after(250, self.help.lift)
+            self.after(260, self.help.focus_set)
             self.changed_location = False
 
     # Pop window that shows the user more context on why they couldn't enroll their classes
@@ -6263,6 +6264,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.manually_change_location()
             else:
                 self.help.lift()
+                self.help.focus_set()
 
     # Automatically tries to find where the Tera Term application is located
     def change_location_event(self, task_done):
@@ -6286,6 +6288,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.cursor.execute("UPDATE user_data SET directory=?", (self.teraterm_directory,))
             self.connection.commit()
             task_done.set()
+            self.changed_location = True
             self.after(0, self.show_success_message, 350, 265, translation["tera_term_success"])
             self.edit_teraterm_ini(self.teraterm_file)
         else:
@@ -6322,10 +6325,12 @@ class TeraTermUI(customtkinter.CTk):
                 self.cursor.execute("UPDATE user_data SET config=?", (self.teraterm_file,))
                 self.cursor.execute("UPDATE user_data SET directory=?", (self.teraterm_directory,))
             self.connection.commit()
+            self.changed_location = True
             self.show_success_message(350, 265, translation["tera_term_success"])
             self.edit_teraterm_ini(self.teraterm_file)
         if not re.search("ttermpro.exe", filename):
             self.help.lift()
+            self.help.focus_set()
         self.slideshow_frame.resume_cycle()
 
     # disables scrolling for the class list
