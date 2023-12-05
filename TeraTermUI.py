@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 12/3/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 12/4/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -6042,6 +6042,10 @@ class TeraTermUI(customtkinter.CTk):
     # Creates the status window
     def status_button_event(self):
         if self.status and self.status.winfo_exists():
+            windows_status = gw.getWindowsWithTitle("Status") + gw.getWindowsWithTitle("Estado")
+            self.status_minimized = windows_status[0].isMinimized
+            if self.status_minimized:
+                self.status.deiconify()
             self.status.lift()
             self.status.focus_set()
             return
@@ -6441,6 +6445,10 @@ class TeraTermUI(customtkinter.CTk):
     # Creates the Help window
     def help_button_event(self):
         if self.help and self.help.winfo_exists():
+            windows_help = gw.getWindowsWithTitle("Help") + gw.getWindowsWithTitle("Ayuda")
+            self.help_minimized = windows_help[0].isMinimized
+            if self.help_minimized:
+                self.help.deiconify()
             self.help.lift()
             self.help.focus_set()
             return
