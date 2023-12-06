@@ -186,7 +186,7 @@ class CTkTable(customtkinter.CTkFrame):
         self.update_data()
         data = self.data[row,column]
         if self.command: self.command(data)
-        
+
     def update_data(self):
         """ update the data when values are changes """
         for i in self.frame:
@@ -201,7 +201,38 @@ class CTkTable(customtkinter.CTkFrame):
             for j in range(self.columns):
                 row_data.append(self.data[i,j]["value"])
             self.values.append(row_data)
-            
+
+    def update_headers(self, new_headers):
+        """
+        Update the headers of the table with a list of new header values.
+
+        Args:
+            new_headers (list): A list of new header values.
+        """
+        if self.orient == "horizontal":
+            # Update the headers in the first row
+            for j in range(self.columns):
+                self.frame[0, j].configure(text=new_headers[j])
+        else:
+            # Update the headers in the first column
+            for i in range(self.rows):
+                self.frame[i, 0].configure(text=new_headers[i])
+
+    def update_text(self, row, column, new_text):
+        """
+        Update the text of a specific cell in the table.
+
+        Args:
+            row (int): The row index of the cell.
+            column (int): The column index of the cell.
+            new_text (str): The new text to set for the cell.
+        """
+        if 0 <= row < self.rows and 0 <= column < self.columns:
+            # Check if the cell exists within the table boundaries
+            cell = self.frame[row, column]
+            cell.configure(text=new_text)
+            self.update_data()
+
     def edit_row(self, row, value=None, **kwargs):
         """ edit all parameters of a single row """
         for i in range(self.columns):
@@ -260,7 +291,7 @@ class CTkTable(customtkinter.CTkFrame):
         self.columns+=1
         self.draw_table(**kwargs)
         self.update_data()
-        
+
     def delete_row(self, index=None):
         """ delete a particular row """
         if index is None or index>=len(self.values):
