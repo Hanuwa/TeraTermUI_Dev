@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 12/4/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 12/6/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -473,6 +473,7 @@ class TeraTermUI(customtkinter.CTk):
         self.dropped_classes_list = None
         self.class_table_pairs = []
         self.current_table_index = -1
+        self.table_tooltips = {}
         self.table_count = None
         self.table = None
         self.current_class = None
@@ -1201,6 +1202,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys("1CS")
                             self.uprb.UprbayTeraTermVt.type_keys(semester)
                             send_keys("{ENTER}")
+                            self.after(0, self.disable_go_next_buttons)
                             clipboard_content = None
                             try:
                                 clipboard_content = self.clipboard_get()
@@ -1209,6 +1211,22 @@ class TeraTermUI(customtkinter.CTk):
                             except Exception as e:
                                 print("Error handling clipboard content:", e)
                             if self.passed and self.search_function_counter == 0:
+                                screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                                screenshot_thread.start()
+                                screenshot_thread.join()
+                                text_output = self.capture_screenshot()
+                                if "INVALID ACTION" in text_output and not "LISTA DE SECCIONES" in text_output:
+                                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
+                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                                    send_keys("{ENTER}")
+                                    self.reset_activity_timer(None)
+                                    self.after(0, self.show_error_message, 320, 235, translation["failed_to_search"])
+                                    return
+                                elif "INVALID ACTION" in text_output and "LISTA DE SECCIONES" in text_output or \
+                                        "COURSE NOT" in text_output:
+                                    self.search_function_counter = 1
+                                    self.after(0, self.show_error_message, 320, 235, translation["failed_to_search"])
+                                    return
                                 ctypes.windll.user32.BlockInput(False)
                                 self.automate_copy_class_data()
                                 ctypes.windll.user32.BlockInput(True)
@@ -1227,7 +1245,6 @@ class TeraTermUI(customtkinter.CTk):
                             elif show_all == "off":
                                 self.uprb.UprbayTeraTermVt.type_keys("N")
                             send_keys("{ENTER}")
-                            self.after(0, self.disable_go_next_buttons)
                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
                             screenshot_thread.start()
                             screenshot_thread.join()
@@ -1368,7 +1385,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.automate_copy_class_data()
                                 ctypes.windll.user32.BlockInput(True)
                                 copy = pyperclip.paste()
-                                enrolled_classes, total_credits = TeraTermUI.extract_my_enrolled_classes(copy)
+                                enrolled_classes, total_credits = self.extract_my_enrolled_classes(copy)
                                 self.after(0, self.display_enrolled_data, enrolled_classes, total_credits)
                                 self.clipboard_clear()
                                 if clipboard_content is not None:
@@ -2871,6 +2888,30 @@ class TeraTermUI(customtkinter.CTk):
         # If the language is not supported, return an empty dictionary or raise an exception
         return {}
 
+    def update_table_headers_tooltips(self):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        tooltip_messages = {
+            translation["sec"]: translation["tooltip_sec"],
+            translation["m"]: translation["tooltip_m"],
+            translation["cred"]: translation["tooltip_cred"],
+            translation["days"]: translation["tooltip_days"],
+            translation["times"]: translation["tooltip_times"],
+            translation["av"]: translation["tooltip_av"],
+            translation["instructor"]: translation["tooltip_instructor"],
+        }
+        new_headers = [translation["sec"], translation["m"], translation["cred"],
+                       translation["days"], translation["times"], translation["av"],
+                       translation["instructor"]]
+
+        for display_class, table, semester, show in self.class_table_pairs:
+            table.update_headers(new_headers)
+            for i, new_header in enumerate(new_headers):
+                tooltip_message = tooltip_messages[new_header]
+                header_cell = table.get_cell(0, i)
+                if header_cell in self.table_tooltips:
+                    self.table_tooltips[header_cell].configure(message=tooltip_message)
+
     # function for changing language
     def change_language_event(self, lang):
         translation = self.load_language(lang)
@@ -2955,6 +2996,7 @@ class TeraTermUI(customtkinter.CTk):
             self.fix.configure(text=translation["fix"])
             self.search_box.lang = lang
         if self.init_multiple:
+            self.update_table_headers_tooltips()
             self.title_enroll.configure(text=translation["title_enroll"])
             self.e_classes.configure(text=translation["class"])
             self.e_section.configure(text=translation["section"])
@@ -4276,9 +4318,17 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         spec_data = TeraTermUI.specific_class_data(data)
-        headers = ["SEC", "M", "CRED", "DAYS", "TIMES", "AV", "INSTRUCTOR"]
-        table_values = [headers] + [[item.get(header, "") for header in headers] for item in spec_data]
-        num_rows = len(spec_data) + 1
+        original_headers = ["SEC", "M", "CRED", "DAYS", "TIMES", "AV", "INSTRUCTOR"]
+        headers = [translation["sec"], translation["m"], translation["cred"],
+                   translation["days"], translation["times"], translation["av"],
+                   translation["instructor"]]
+        header_mapping = dict(zip(original_headers, headers))
+        modified_data = []
+        for item in spec_data:
+            modified_item = {header_mapping[key]: value for key, value in item.items() if key in header_mapping}
+            modified_data.append(modified_item)
+        table_values = [headers] + [[item.get(header, "") for header in headers] for item in modified_data]
+        num_rows = len(modified_data) + 1
 
         new_table = ctktable.CTkTable(
             self.search_scrollbar,
@@ -4293,18 +4343,20 @@ class TeraTermUI(customtkinter.CTk):
             new_table.edit_column(i, width=55)
         new_table.edit_column(5, width=55)
         tooltip_messages = {
-            "SEC": translation["tooltip_sec"],
-            "M": translation["tooltip_m"],
-            "CRED": translation["tooltip_cred"],
-            "DAYS": translation["tooltip_days"],
-            "TIMES": translation["tooltip_times"],
-            "AV": translation["tooltip_av"],
-            "INSTRUCTOR": translation["tooltip_instructor"],
+            translation["sec"]: translation["tooltip_sec"],
+            translation["m"]: translation["tooltip_m"],
+            translation["cred"]: translation["tooltip_cred"],
+            translation["days"]: translation["tooltip_days"],
+            translation["times"]: translation["tooltip_times"],
+            translation["av"]: translation["tooltip_av"],
+            translation["instructor"]: translation["tooltip_instructor"],
         }
         for i, header in enumerate(headers):
             cell = new_table.get_cell(0, i)
             tooltip_message = tooltip_messages[header]
             CTkToolTip(cell, message=tooltip_message, bg_color="#A9A9A9", alpha=0.90)
+            tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#A9A9A9", alpha=0.90)
+            self.table_tooltips[cell] = tooltip
         self.table = new_table
 
         display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_pdf,
@@ -4605,12 +4657,13 @@ class TeraTermUI(customtkinter.CTk):
 
         return data, course_found, invalid_action, y_n_found
 
-    @staticmethod
-    def extract_my_enrolled_classes(text):
+    def extract_my_enrolled_classes(self, text):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
         # Define a pattern to match the relevant class information, including optional additional DIAS and HORAS
         class_pattern = re.compile(
-            r"\b\w\s+(\w+)\s+(.+?)\s+\w+\s+[A-FI-NPW]*\s+(\w+)\s+(\d{4}\w{2}-\d{4}\w{2})"
-            r"\s+(\w+)\s+(\w+)(?:\s+(\w+)\s+(\d{4}\w{2}-\d{4}\w{2}))?"
+            r"\b\w\s+(\w+)\s+(.+?)\s+\w+\s+([A-FI-NPW]*)\s+(\w+)\s+(\d{4}\w{2}-\d{4}\w{2})"
+            r"\s+(\w+)\s+(\w+)\s*(?:\s+(\w+)\s+(\d{4}\w{2}-\d{4}\w{2}))?"
         )
 
         # Find all matches in the text
@@ -4620,26 +4673,25 @@ class TeraTermUI(customtkinter.CTk):
         enrolled_classes = []
         for match in matches:
             curso_formatted = f"{match[0][:4]}-{match[0][4:8]}-{match[0][8:]}"
-            time_str = match[3]
+            time_str = match[4]
             start_time, end_time = time_str.split("-")
             start_time = start_time.lstrip("0")
             end_time = end_time.lstrip("0")
             start_time = f"{start_time[:-4]}:{start_time[-4:-2]} {start_time[-2:]}"
             end_time = f"{end_time[:-4]}:{end_time[-4:-2]} {end_time[-2:]}"
             formatted_time = f"{start_time}\n{end_time}"
-
             class_info = {
-                "COURSE": curso_formatted,
-                "DAYS": match[2],
-                "TIMES": formatted_time,
-                "BUILD": match[4],
-                "ROOM": match[5]
+                translation["course"]: curso_formatted,
+                translation["grade"]: match[2],
+                translation["days"]: match[3],
+                translation["times"]: formatted_time,
+                translation["room"]: match[6]
             }
             enrolled_classes.append(class_info)
 
             # Check for and add a new entry for additional DIAS and HORAS
-            if match[6] and match[7]:
-                additional_time_str = match[7]
+            if match[7] and match[8]:
+                additional_time_str = match[8]
                 additional_start_time, additional_end_time = additional_time_str.split('-')
                 additional_start_time = additional_start_time.lstrip('0')
                 additional_end_time = additional_end_time.lstrip('0')
@@ -4650,11 +4702,11 @@ class TeraTermUI(customtkinter.CTk):
                 additional_formatted_time = f"{additional_start_time}\n{additional_end_time}"
 
                 additional_class_info = {
-                    "COURSE": "",  # Empty or some identifier if needed
-                    "DAYS": match[6],
-                    "TIMES": additional_formatted_time,
-                    "BUILD": "",
-                    "ROOM": ""
+                    translation["course"]: "",  # Empty or some identifier
+                    translation["grade"]: "",
+                    translation["days"]: match[7],
+                    translation["times"]: additional_formatted_time,
+                    translation["room"]: ""
                 }
                 enrolled_classes.append(additional_class_info)
 
@@ -4666,20 +4718,19 @@ class TeraTermUI(customtkinter.CTk):
         return enrolled_classes, total_credits
 
     def display_enrolled_data(self, data, creds):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
         if self.enrolled_rows is not None:
             self.destroy_enrolled_frame()
         # Define the headers for the table based on the keys from enrolled_classes
-        headers = ["COURSE", "DAYS", "TIMES", "BUILD", "ROOM"]
-
+        headers = [translation["course"], translation["grade"], translation["days"],
+                   translation["times"], translation["room"]]
         # Create the table values, starting with headers
         table_values = [headers] + [[cls.get(header, "") for header in headers] for cls in data]
-
         # Calculate the number of rows
         self.enrolled_rows = len(data) + 1
         self.enrolled_classes_data = data
 
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
         semester = self.dialog_input.upper().replace(" ", "")
         self.my_classes_frame = customtkinter.CTkScrollableFrame(self,
                                                                  corner_radius=10, width=620, height=320)
@@ -4713,18 +4764,18 @@ class TeraTermUI(customtkinter.CTk):
             command=self.copy_cell_data_to_clipboard,
         )
         column_widths = {
-            "COURSE": 100,
-            "DAYS": 50,
-            "TIMES": 150,
-            "BUILD": 50,
-            "ROOM": 50
+            translation["course"]: 100,
+            translation["grade"]: 50,
+            translation["days"]: 50,
+            translation["times"]: 150,
+            translation["room"]: 50
         }
         tooltip_messages = {
-            "COURSE": translation["tooltip_course"],
-            "DAYS": translation["tooltip_days"],
-            "TIMES": translation["tooltip_times"],
-            "BUILD": translation["tooltip_build"],
-            "ROOM": translation["tooltip_croom"]
+            translation["course"]: translation["tooltip_course"],
+            translation["grade"]: translation["tooltip_grd"],
+            translation["days"]: translation["tooltip_days"],
+            translation["times"]: translation["tooltip_times"],
+            translation["room"]: translation["tooltip_croom"]
         }
 
         for i, header in enumerate(headers):
@@ -4748,7 +4799,7 @@ class TeraTermUI(customtkinter.CTk):
         for row_index in range(self.enrolled_rows - 1):
             if row_index == 0:
                 pad_y = 30
-            if self.enrolled_classes_data[row_index]["COURSE"] != "":
+            if self.enrolled_classes_data[row_index][translation["course"]] != "":
                 if row_index < len(self.placeholder_texts_sections):
                     placeholder_text = self.placeholder_texts_sections[row_index]
                 else:
@@ -4890,9 +4941,10 @@ class TeraTermUI(customtkinter.CTk):
                                         mod = self.mod_selection_list[row_index].get()
                                         section = self.change_section_entries[row_index].get().upper().replace(" ", "")
 
-                                        course_code = self.enrolled_classes_data[row_index]["COURSE"].replace('-', '')
+                                        course_code = self.enrolled_classes_data[row_index][
+                                            translation["course"]].replace('-', '')
                                         course_code_no_section = self.enrolled_classes_data[row_index][
-                                                                     "COURSE"].replace('-', '')[:8]
+                                                                     translation["course"]].replace('-', '')[:8]
                                     if (mod == translation["drop"] or mod == translation["section"]) and \
                                             (course_code != self.last_course_code):
                                         if not first_loop:
@@ -4951,9 +5003,11 @@ class TeraTermUI(customtkinter.CTk):
                                                     section_closed = True
                                             else:
                                                 if mod == translation["section"]:
-                                                    course_code = self.enrolled_classes_data[row_index]["COURSE"]
+                                                    course_code = self.enrolled_classes_data[row_index][
+                                                        translation["course"]]
                                                     new_course_code = course_code[:10] + section
-                                                    self.enrolled_classes_data[row_index]["COURSE"] = new_course_code
+                                                    self.enrolled_classes_data[row_index][
+                                                        translation["course"]] = new_course_code
                                         if mod == translation["drop"]:
                                             dropped_rows.append(row_index)
                                             if mod_selection is not None:
@@ -5069,12 +5123,15 @@ class TeraTermUI(customtkinter.CTk):
                 ctypes.windll.user32.BlockInput(False)
 
     def refresh_table(self):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
         # Clear the existing table
         if hasattr(self, 'enrolled_classes_table'):
             self.enrolled_classes_table.destroy()
 
         # Create the table values, starting with headers
-        headers = ["COURSE", "DAYS", "TIMES", "BUILD", "ROOM"]
+        headers = [translation["course"], translation["grade"], translation["days"],
+                   translation["times"], translation["room"]]
         table_values = [headers] + [[cls.get(header, "") for header in headers] for cls in self.enrolled_classes_data]
 
         # Recreate the table with the updated values
@@ -5088,11 +5145,11 @@ class TeraTermUI(customtkinter.CTk):
             command=self.copy_cell_data_to_clipboard,
         )
         column_widths = {
-            "COURSE": 100,
-            "DAYS": 50,
-            "TIMES": 150,
-            "BUILD": 50,
-            "ROOM": 50
+            translation["course"]: 100,
+            translation["grade"]: 50,
+            translation["days"]: 150,
+            translation["times"]: 50,
+            translation["room"]: 50
         }
 
         for i, header in enumerate(headers):
