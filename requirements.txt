@@ -71,5 +71,5 @@ soupsieve==2.5
 texttable==1.7.0
 uritemplate==4.1.1
 urllib3==2.1.0
-yarl==1.9.3
+yarl==1.9.4
 zstandard==0.22.0
