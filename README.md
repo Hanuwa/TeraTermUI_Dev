@@ -1,6 +1,8 @@
 # TeraTermUI_Dev
 Dev Environment for Tera Term UI
 
+**Python Version:** "3.11.7"
+
 **Important** modules of "**ctkmessagebox.py, ctk_input_dialog.py, ctk_scrollable_frame.py, ctk_tabview.py and ctk_toplevel.py**" are included here because they have some modifications,
 make sure to also put ctk_table.py on the customtkinter folder.
 
