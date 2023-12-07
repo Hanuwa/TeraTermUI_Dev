@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 12/6/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 12/7/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -291,7 +291,7 @@ class TeraTermUI(customtkinter.CTk):
         self.username = None
         self.username_entry = None
         self.username_tooltip = None
-        self.student = None
+        self.auth = None
         self.back = None
         self.back_tooltip = None
 
@@ -303,9 +303,9 @@ class TeraTermUI(customtkinter.CTk):
         self.title_student = None
         self.lock = None
         self.lock_grid = None
-        self.ssn = None
-        self.ssn_entry = None
-        self.ssn_tooltip = None
+        self.student_id = None
+        self.student_id_entry = None
+        self.student_id_tooltip = None
         self.code = None
         self.code_entry = None
         self.code_tooltip = None
@@ -708,15 +708,15 @@ class TeraTermUI(customtkinter.CTk):
         self.destroy()
         exit(0)
 
-    def tuition_event_handler(self):
+    def student_event_handler(self):
         task_done = threading.Event()
         loading_screen = self.show_loading_screen()
         self.update_loading_screen(loading_screen, task_done)
-        event_thread = threading.Thread(target=self.tuition_event, args=(task_done,))
+        event_thread = threading.Thread(target=self.student_event, args=(task_done,))
         event_thread.start()
 
     # Enrolling/Searching classes Frame
-    def tuition_event(self, task_done):
+    def student_event(self, task_done):
         try:
             self.automation_preparations()
             lang = self.language_menu.get()
@@ -766,21 +766,23 @@ class TeraTermUI(customtkinter.CTk):
             if asyncio.run(self.test_connection(lang)) and self.check_server():
                 if TeraTermUI.checkIfProcessRunning("ttermpro"):
                     try:
-                        ssn = self.ssn_entry.get().replace(" ", "")
-                        ssn = ssn.replace("-", "")
+                        student_id = self.student_id_entry.get().replace(" ", "")
+                        student_id = student_id.replace("-", "")
                         code = self.code_entry.get().replace(" ", "")
-                        ssn_enc = aes_encrypt_then_mac(str(ssn), aes_key, iv, mac_key)
+                        student_id_enc = aes_encrypt_then_mac(str(student_id), aes_key, iv, mac_key)
                         code_enc = aes_encrypt_then_mac(str(code), aes_key, iv, mac_key)
-                        if (re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", ssn)
-                                and code.isdigit() and len(code) == 4):
-                            secure_delete(ssn)
+                        if ((re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", student_id) or
+                             re.match(r"^\d{9}$", student_id)) and code.isdigit() and len(code) == 4):
+                            secure_delete(student_id)
                             secure_delete(code)
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
                             self.uprbay_window.wait("visible", timeout=10)
+                            TeraTermUI.unfocus_tkinter()
+                            send_keys("{TAB}")
                             self.uprb.UprbayTeraTermVt.type_keys(
-                                aes_decrypt_and_verify_mac(ssn_enc, aes_key, iv, mac_key))
+                                aes_decrypt_and_verify_mac(student_id_enc, aes_key, iv, mac_key))
                             self.uprb.UprbayTeraTermVt.type_keys(
                                 aes_decrypt_and_verify_mac(code_enc, aes_key, iv, mac_key))
                             send_keys("{ENTER}")
@@ -788,37 +790,40 @@ class TeraTermUI(customtkinter.CTk):
                             screenshot_thread.start()
                             screenshot_thread.join()
                             text_output = self.capture_screenshot()
-                            if "ID NOT ON FILE" in text_output or "PASS" in text_output:
-                                self.bind("<Return>", lambda event: self.tuition_event_handler())
-                                if "PASS" in text_output:
-                                    send_keys("{TAB 2}")
-                                self.after(0, self.show_error_message, 300, 215, translation["error_ssn"])
-                            elif "ID NOT ON FILE" not in text_output or "PASS" not in text_output:
+                            if "SIGN-IN" in text_output:
                                 self.reset_activity_timer(None)
                                 self.start_check_idle_thread()
                                 self.after(0, self.initialization_class)
-                                self.after(100, self.tuition_frame)
+                                self.after(100, self.student_info_frame)
                                 self.run_fix = True
                                 self.in_student_frame = False
-                                secure_delete(ssn_enc)
+                                secure_delete(student_id_enc)
                                 secure_delete(code_enc)
                                 secure_delete(aes_key)
                                 secure_delete(mac_key)
                                 secure_delete(iv)
-                                del ssn, code, ssn_enc, code_enc, aes_key, mac_key
+                                del student_id, code, student_id_enc, code_enc, aes_key, mac_key
                                 gc.collect()
                                 self.switch_tab()
+                            else:
+                                self.bind("<Return>", lambda event: self.student_event_handler())
+                                if "ON FILE" in text_output:
+                                    send_keys("{TAB 3}")
+                                if "PIN NUMBER" in text_output:
+                                    send_keys("{TAB 2}")
+
+                                self.after(0, self.show_error_message, 300, 215, translation["error_student_id"])
                         else:
-                            self.bind("<Return>", lambda event: self.tuition_event_handler())
-                            self.after(0, self.show_error_message, 300, 215, translation["error_ssn"])
+                            self.bind("<Return>", lambda event: self.student_event_handler())
+                            self.after(0, self.show_error_message, 300, 215, translation["error_student_id"])
                     except ValueError:
-                        self.bind("<Return>", lambda event: self.tuition_event_handler())
-                        self.after(0, self.show_error_message, 300, 215, translation["error_ssn"])
+                        self.bind("<Return>", lambda event: self.student_event_handler())
+                        self.after(0, self.show_error_message, 300, 215, translation["error_student_id"])
                 else:
-                    self.bind("<Return>", lambda event: self.tuition_event_handler())
+                    self.bind("<Return>", lambda event: self.student_event_handler())
                     self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             else:
-                self.bind("<Return>", lambda event: self.tuition_event_handler())
+                self.bind("<Return>", lambda event: self.student_event_handler())
         except Exception as e:
             print("An error occurred: ", e)
             self.error_occurred = True
@@ -836,13 +841,13 @@ class TeraTermUI(customtkinter.CTk):
                     CTkMessagebox(master=self, title=translation["automation_error_title"],
                                   message=translation["automation_error"],
                                   icon="warning", button_width=380)
-                    self.bind("<Return>", lambda event: self.tuition_event_handler())
+                    self.bind("<Return>", lambda event: self.student_event_handler())
                     self.error_occurred = False
 
                 self.after(0, error_automation)
             ctypes.windll.user32.BlockInput(False)
 
-    def tuition_frame(self):
+    def student_info_frame(self):
         lang = self.language_menu.get()
         self.initialization_multiple()
         self.tabview.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 85))
@@ -2351,15 +2356,15 @@ class TeraTermUI(customtkinter.CTk):
             self.search_next_page_status = False
         self.reset_activity_timer(None)
 
-    def student_event_handler(self):
+    def auth_event_handler(self):
         task_done = threading.Event()
         loading_screen = self.show_loading_screen()
         self.update_loading_screen(loading_screen, task_done)
-        event_thread = threading.Thread(target=self.student_event, args=(task_done,))
+        event_thread = threading.Thread(target=self.auth_event, args=(task_done,))
         event_thread.start()
 
     # Authentication required frame, where user is asked to input his username
-    def student_event(self, task_done):
+    def auth_event(self, task_done):
         with self.lock_thread:
             try:
                 self.automation_preparations()
@@ -2393,7 +2398,7 @@ class TeraTermUI(customtkinter.CTk):
                                 def server_closed():
                                     self.unbind("<Return>")
                                     self.back.configure(state="disabled")
-                                    self.student.configure(state="disabled")
+                                    self.auth.configure(state="disabled")
                                     if not self.disable_audio:
                                         winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                                     CTkMessagebox(title=translation["server_maintenance_title"],
@@ -2406,9 +2411,9 @@ class TeraTermUI(customtkinter.CTk):
                             elif self.server_status == "Prompt found":
                                 send_keys("{ENTER 3}")
                                 self.move_window()
-                                self.bind("<Return>", lambda event: self.tuition_event_handler())
+                                self.bind("<Return>", lambda event: self.student_event_handler())
                                 self.after(0, self.initialization_student)
-                                self.after(100, self.student_info_frame)
+                                self.after(100, self.auth_info_frame)
                                 self.in_student_frame = True
                             elif self.server_status == "Timeout":
                                 def timeout():
@@ -2421,13 +2426,13 @@ class TeraTermUI(customtkinter.CTk):
 
                                 self.after(0, timeout)
                         elif username != "students":
-                            self.bind("<Return>", lambda event: self.student_event_handler())
+                            self.bind("<Return>", lambda event: self.auth_event_handler())
                             self.after(0, self.show_error_message, 300, 215, translation["invalid_username"])
                     else:
-                        self.bind("<Return>", lambda event: self.student_event_handler())
+                        self.bind("<Return>", lambda event: self.auth_event_handler())
                         self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
                 else:
-                    self.bind("<Return>", lambda event: self.student_event_handler())
+                    self.bind("<Return>", lambda event: self.auth_event_handler())
             except Exception as e:
                 print("An error occurred: ", e)
                 self.error_occurred = True
@@ -2441,7 +2446,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.after(0, self.go_back_event)
                 ctypes.windll.user32.BlockInput(False)
 
-    def student_info_frame(self):
+    def auth_info_frame(self):
         lang = self.language_menu.get()
         self.student_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
         self.student_frame.grid_columnconfigure(2, weight=1)
@@ -2450,15 +2455,15 @@ class TeraTermUI(customtkinter.CTk):
         self.title_student.grid(row=0, column=1, padx=(20, 20), pady=(10, 20))
         self.lock_grid.grid(row=1, column=1, padx=(00, 0), pady=(0, 20))
         if lang == "English":
-            self.ssn.grid(row=2, column=1, padx=(0, 112), pady=(0, 10))
-            self.ssn_entry.grid(row=2, column=1, padx=(175, 0), pady=(0, 10))
-            self.code.grid(row=3, column=1, padx=(0, 146), pady=(0, 10))
-            self.code_entry.grid(row=3, column=1, padx=(175, 0), pady=(0, 10))
+            self.student_id.grid(row=2, column=1, padx=(0, 150), pady=(0, 10))
+            self.student_id_entry.grid(row=2, column=1, padx=(100, 0), pady=(0, 10))
+            self.code.grid(row=3, column=1, padx=(0, 126), pady=(0, 10))
+            self.code_entry.grid(row=3, column=1, padx=(100, 0), pady=(0, 10))
         elif lang == "Español":
-            self.ssn.grid(row=2, column=1, padx=(0, 123), pady=(0, 10))
-            self.ssn_entry.grid(row=2, column=1, padx=(175, 0), pady=(0, 10))
-            self.code.grid(row=3, column=1, padx=(0, 153), pady=(0, 10))
-            self.code_entry.grid(row=3, column=1, padx=(175, 0), pady=(0, 10))
+            self.student_id.grid(row=2, column=1, padx=(0, 164), pady=(0, 10))
+            self.student_id_entry.grid(row=2, column=1, padx=(120, 0), pady=(0, 10))
+            self.code.grid(row=3, column=1, padx=(0, 125), pady=(0, 10))
+            self.code_entry.grid(row=3, column=1, padx=(120, 0), pady=(0, 10))
         self.show.grid(row=4, column=1, padx=(10, 0), pady=(0, 10))
         self.back_student.grid(row=5, column=0, padx=(0, 10), pady=(0, 0))
         self.system.grid(row=5, column=1, padx=(10, 0), pady=(0, 0))
@@ -2538,7 +2543,7 @@ class TeraTermUI(customtkinter.CTk):
                                                                         control_type="Button").wrapper_object()
                                     continue_button.click()
                                     self.show_loading_screen_again()
-                                self.bind("<Return>", lambda event: self.student_event_handler())
+                                self.bind("<Return>", lambda event: self.auth_event_handler())
                                 self.after(0, self.initialization_auth)
                                 self.after(100, self.login_frame)
                             except AppStartError as e:
@@ -2615,7 +2620,7 @@ class TeraTermUI(customtkinter.CTk):
             self.username.grid(row=3, column=0, padx=(0, 140), pady=(0, 10))
             self.username_entry.grid(row=3, column=0, padx=(60, 0), pady=(0, 10))
         self.back.grid(row=4, column=0, padx=(0, 10), pady=(0, 0))
-        self.student.grid(row=4, column=1, padx=(10, 0), pady=(0, 0))
+        self.auth.grid(row=4, column=1, padx=(10, 0), pady=(0, 0))
         self.main_menu = False
         self.language_menu.configure(state="disabled")
         self.home_frame.grid_forget()
@@ -2641,18 +2646,18 @@ class TeraTermUI(customtkinter.CTk):
             screenshot_thread.start()
             screenshot_thread.join()
             text_output = self.capture_screenshot()
-            if (("MENU DE OPCIONES" in text_output or "STUDENTS REQ/DROP" in text_output or
-                 "HOLD FLAGS" in text_output or "PROGRAMA DE CLASES" in text_output or
-                 "ACADEMIC STATISTICS" in text_output or "SNAPSHOT" in text_output or
-                 "SOLICITUD DE PRORROGA" in text_output or "LISTA DE SECCIONES") and
-                    "IDENTIFICACION PERSONAL" not in text_output and "return to continue" not in text_output):
+            if (("STUDENTS REQ/DROP" in text_output or "HOLD FLAGS" in text_output or
+                 "PROGRAMA DE CLASES" in text_output or "ACADEMIC STATISTICS" in text_output or
+                 "SNAPSHOT" in text_output or "SOLICITUD DE PRORROGA" in text_output or
+                 "LISTA DE SECCIONES") and "return to continue" not in text_output and
+                    "SISTEMA DE INFORMACION" not in text_output):
                 self.uprb = Application(backend="uia").connect(
                     title="uprbay.uprb.edu - Tera Term VT", timeout=10)
                 self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                 self.uprbay_window.wait("visible", timeout=10)
                 self.after(0, self.initialization_class)
                 self.after(0, self.initialization_multiple)
-                self.after(100, self.tuition_frame)
+                self.after(100, self.student_info_frame)
                 self.main_menu = False
                 self.passed = True
                 self.reset_activity_timer(None)
@@ -3541,8 +3546,8 @@ class TeraTermUI(customtkinter.CTk):
             self.username_entry = CustomEntry(self.authentication_frame, self)
             self.username_tooltip = CTkToolTip(self.username_entry, message=translation["username_tooltip"],
                                                bg_color="#1E90FF")
-            self.student = CustomButton(master=self.a_buttons_frame, border_width=2, text=translation["authentication"],
-                                        text_color=("gray10", "#DCE4EE"), command=self.student_event_handler)
+            self.auth = CustomButton(master=self.a_buttons_frame, border_width=2, text=translation["authentication"],
+                                     text_color=("gray10", "#DCE4EE"), command=self.auth_event_handler)
             self.back = CustomButton(master=self.a_buttons_frame, fg_color="transparent", border_width=2,
                                      text=translation["back"], hover_color="#4E4F50", text_color=("gray10", "#DCE4EE"),
                                      command=self.go_back_event)
@@ -3575,8 +3580,8 @@ class TeraTermUI(customtkinter.CTk):
             self.username_entry = None
             self.username_tooltip.destroy()
             self.username_tooltip = None
-            self.student.destroy()
-            self.student = None
+            self.auth.destroy()
+            self.auth = None
             self.back.destroy()
             self.back = None
             self.back_tooltip.destroy()
@@ -3596,25 +3601,26 @@ class TeraTermUI(customtkinter.CTk):
             self.lock = self.get_image("lock")
             self.lock_grid = CustomButton(self.student_frame, text="", image=self.lock, command=self.lock_event,
                                           fg_color="transparent", hover=False)
-            self.ssn = customtkinter.CTkLabel(master=self.student_frame, text=translation["ssn"])
-            self.ssn_entry = CustomEntry(self.student_frame, self, placeholder_text="#########", show="*")
-            self.ssn_tooltip = CTkToolTip(self.ssn_entry, message=translation["ssn_tooltip"], bg_color="#1E90FF")
+            self.student_id = customtkinter.CTkLabel(master=self.student_frame, text=translation["student_id"])
+            self.student_id_entry = CustomEntry(self.student_frame, self, placeholder_text="#########", show="*")
+            self.student_id_tooltip = CTkToolTip(self.student_id_entry, message=translation["student_id_tooltip"],
+                                                 bg_color="#1E90FF")
             self.code = customtkinter.CTkLabel(master=self.student_frame, text=translation["code"])
             self.code_entry = CustomEntry(self.student_frame, self, placeholder_text="####", show="*")
             self.code_tooltip = CTkToolTip(self.code_entry, message=translation["code_tooltip"], bg_color="#1E90FF")
             self.show = customtkinter.CTkSwitch(master=self.student_frame, text=translation["show"],
                                                 command=self.show_event, onvalue="on", offvalue="off")
             self.bind("<space>", lambda event: self.spacebar_event())
-            self.ssn_entry.bind("<Command-c>", lambda e: "break")
-            self.ssn_entry.bind("<Control-c>", lambda e: "break")
+            self.student_id_entry.bind("<Command-c>", lambda e: "break")
+            self.student_id_entry.bind("<Control-c>", lambda e: "break")
             self.code_entry.bind("<Command-c>", lambda e: "break")
             self.code_entry.bind("<Control-c>", lambda e: "break")
-            self.ssn_entry.bind("<Command-C>", lambda e: "break")
-            self.ssn_entry.bind("<Control-C>", lambda e: "break")
+            self.student_id_entry.bind("<Command-C>", lambda e: "break")
+            self.student_id_entry.bind("<Control-C>", lambda e: "break")
             self.code_entry.bind("<Command-C>", lambda e: "break")
             self.code_entry.bind("<Control-C>", lambda e: "break")
             self.system = CustomButton(master=self.s_buttons_frame, border_width=2, text=translation["system"],
-                                       text_color=("gray10", "#DCE4EE"), command=self.tuition_event_handler)
+                                       text_color=("gray10", "#DCE4EE"), command=self.student_event_handler)
             self.back_student = CustomButton(master=self.s_buttons_frame, fg_color="transparent", border_width=2,
                                              text=translation["back"], hover_color="#4E4F50",
                                              text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
@@ -3622,7 +3628,7 @@ class TeraTermUI(customtkinter.CTk):
                                                    bg_color="#A9A9A9", alpha=0.90)
             self.student_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.s_buttons_frame.bind("<Button-1>", lambda event: self.focus_set())
-            for entry in [self.ssn_entry, self.code_entry]:
+            for entry in [self.student_id_entry, self.code_entry]:
                 entry.lang = lang
 
     def destroy_student(self):
@@ -3630,12 +3636,12 @@ class TeraTermUI(customtkinter.CTk):
             self.init_student = False
             self.student_frame.unbind("<Button-1>")
             self.s_buttons_frame.unbind("<Button-1>")
-            self.ssn_entry.unbind("<Command-c>")
-            self.ssn_entry.unbind("<Control-c>")
+            self.student_id_entry.unbind("<Command-c>")
+            self.student_id_entry.unbind("<Control-c>")
             self.code_entry.unbind("<Command-c>")
             self.code_entry.unbind("<Control-c>")
-            self.ssn_entry.unbind("<Command-C>")
-            self.ssn_entry.unbind("<Control-C>")
+            self.student_id_entry.unbind("<Command-C>")
+            self.student_id_entry.unbind("<Control-C>")
             self.code_entry.unbind("<Command-C>")
             self.code_entry.unbind("<Control-C>")
             self.student_frame.destroy()
@@ -3647,14 +3653,14 @@ class TeraTermUI(customtkinter.CTk):
             self.lock = None
             self.lock_grid.destroy()
             self.lock_grid = None
-            self.ssn.destroy()
-            self.ssn = None
-            for entry in [self.ssn_entry, self.code_entry]:
+            self.student_id.destroy()
+            self.student_id = None
+            for entry in [self.student_id_entry, self.code_entry]:
                 entry.lang = None
-            self.ssn_entry.destroy()
-            self.ssn_entry = None
-            self.ssn_tooltip.destroy()
-            self.ssn_tooltip = None
+            self.student_id_entry.destroy()
+            self.student_id_entry = None
+            self.student_id_tooltip.destroy()
+            self.student_id_tooltip = None
             self.code.destroy()
             self.code = None
             self.code_entry.destroy()
@@ -4035,26 +4041,26 @@ class TeraTermUI(customtkinter.CTk):
         self.focus_set()
         show = self.show.get()
         if show == "on":
-            self.ssn_entry.unbind("<Command-c>")
-            self.ssn_entry.unbind("<Control-c>")
+            self.student_id_entry.unbind("<Command-c>")
+            self.student_id_entry.unbind("<Control-c>")
             self.code_entry.unbind("<Command-c>")
             self.code_entry.unbind("<Control-c>")
-            self.ssn_entry.unbind("<Command-C>")
-            self.ssn_entry.unbind("<Control-C>")
+            self.student_id_entry.unbind("<Command-C>")
+            self.student_id_entry.unbind("<Control-C>")
             self.code_entry.unbind("<Command-C>")
             self.code_entry.unbind("<Control-C>")
-            self.ssn_entry.configure(show="")
+            self.student_id_entry.configure(show="")
             self.code_entry.configure(show="")
         elif show == "off":
-            self.ssn_entry.bind("<Command-c>", lambda e: "break")
-            self.ssn_entry.bind("<Control-c>", lambda e: "break")
+            self.student_id_entry.bind("<Command-c>", lambda e: "break")
+            self.student_id_entry.bind("<Control-c>", lambda e: "break")
             self.code_entry.bind("<Command-c>", lambda e: "break")
             self.code_entry.bind("<Control-c>", lambda e: "break")
-            self.ssn_entry.bind("<Command-C>", lambda e: "break")
-            self.ssn_entry.bind("<Control-C>", lambda e: "break")
+            self.student_id_entry.bind("<Command-C>", lambda e: "break")
+            self.student_id_entry.bind("<Control-C>", lambda e: "break")
             self.code_entry.bind("<Command-C>", lambda e: "break")
             self.code_entry.bind("<Control-C>", lambda e: "break")
-            self.ssn_entry.configure(show="*")
+            self.student_id_entry.configure(show="*")
             self.code_entry.configure(show="*")
 
     # function that checks if Tera Term is running or not
@@ -7514,4 +7520,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
