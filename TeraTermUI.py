@@ -5677,54 +5677,56 @@ class TeraTermUI(customtkinter.CTk):
             webbrowser.open(url)
 
     def check_update_app_handler(self):
-        if not self.connection_error:
-            self.updating_app = True
-            task_done = threading.Event()
-            loading_screen = self.show_loading_screen()
-            self.update_loading_screen(loading_screen, task_done)
-            event_thread = threading.Thread(target=self.check_update_app, args=(task_done,))
-            event_thread.start()
+        lang = self.language_menu.get()
+        task_done = threading.Event()
+        loading_screen = self.show_loading_screen()
+        self.update_loading_screen(loading_screen, task_done)
+        event_thread = threading.Thread(target=self.check_update_app, args=(task_done,))
+        event_thread.start()
 
     # will tell the user that there's a new update available for the application
     def check_update_app(self, task_done):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        latest_version = self.get_latest_release()
-        if latest_version is None:
-            task_done.set()
+        if asyncio.run(self.test_connection(lang)):
+            self.updating_app = True
+            latest_version = self.get_latest_release()
+            if latest_version is None:
+                task_done.set()
 
-            def error():
-                print("No latest release found. Starting app with the current version.")
-                winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                CTkMessagebox(master=self, title="Error", icon="cancel",
-                              message=translation["failed_to_find_update"], button_width=380)
+                def error():
+                    print("No latest release found. Starting app with the current version.")
+                    winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                    CTkMessagebox(master=self, title="Error", icon="cancel",
+                                  message=translation["failed_to_find_update"], button_width=380)
+                self.after(0, error)
                 return
-            self.after(0, error)
-        if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION):
-            task_done.set()
+            if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION):
+                task_done.set()
 
-            def update():
-                if not self.disable_audio:
-                    winsound.PlaySound("sounds/update.wav", winsound.SND_ASYNC)
-                msg = CTkMessagebox(master=self, title=translation["update_popup_title"],
-                                    message=translation["update_popup_message"],
-                                    icon="question",
-                                    option_1=translation["option_1"], option_2=translation["option_2"],
-                                    option_3=translation["option_3"], icon_size=(65, 65),
-                                    button_color=("#c30101", "#145DA0", "#145DA0"),
-                                    hover_color=("darkred", "darkblue", "darkblue"))
-                response = msg.get()
-                if response[0] == "Yes" or response[0] == "Sí":
-                    webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
-            self.after(0, update)
-        else:
-            task_done.set()
+                def update():
+                    if not self.disable_audio:
+                        winsound.PlaySound("sounds/update.wav", winsound.SND_ASYNC)
+                    msg = CTkMessagebox(master=self, title=translation["update_popup_title"],
+                                        message=translation["update_popup_message"],
+                                        icon="question",
+                                        option_1=translation["option_1"], option_2=translation["option_2"],
+                                        option_3=translation["option_3"], icon_size=(65, 65),
+                                        button_color=("#c30101", "#145DA0", "#145DA0"),
+                                        hover_color=("darkred", "darkblue", "darkblue"))
+                    response = msg.get()
+                    if response[0] == "Yes" or response[0] == "Sí":
+                        webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
+                self.after(0, update)
+            else:
+                task_done.set()
 
-            def error():
-                if not self.disable_audio:
-                    winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                CTkMessagebox(master=self, title="Info", message=translation["update_up_to_date"], button_width=380)
-            self.after(0, error)
+                def error():
+                    if not self.disable_audio:
+                        winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                    CTkMessagebox(master=self, title="Info", message=translation["update_up_to_date"], button_width=380)
+                self.after(0, error)
+        task_done.set()
 
     # (Unused) determines the hardware of the users' computer and change the time.sleep seconds respectively
     # def get_sleep_time(self):
@@ -6597,7 +6599,6 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         if asyncio.run(self.test_connection(lang)):
             url = f"{self.GITHUB_REPO}/releases/latest"
-            self.connection_error = False
             try:
                 response = requests.get(url)
 
@@ -6619,8 +6620,6 @@ class TeraTermUI(customtkinter.CTk):
             except Exception as e:
                 print(f"An error occurred while fetching the latest release: {e}")
                 return None
-        else:
-            self.connection_error = True
 
     # Compares the current version that user is using with the latest available
     @staticmethod
