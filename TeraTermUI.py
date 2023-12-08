@@ -506,6 +506,7 @@ class TeraTermUI(customtkinter.CTk):
         self.focus_or_not = False
         self.changed_location = False
         self.auto_search = False
+        self.updating_app = False
         self.main_menu = True
         self.a_counter = 0
         self.m_counter = 0
@@ -4007,9 +4008,10 @@ class TeraTermUI(customtkinter.CTk):
         self.loading_screen.iconbitmap(self.icon_path)
         loading = customtkinter.CTkLabel(self.loading_screen, text=translation["loading"],
                                          font=customtkinter.CTkFont(size=20, weight="bold"))
-        if self.auto_search:
+        if self.auto_search or  self.updating_app:
             loading.configure(text=translation["searching_exe"])
             self.auto_search = False
+            self.updating_app = False
         loading.pack(pady=(48, 12))
         self.progress_bar = customtkinter.CTkProgressBar(self.loading_screen, mode="indeterminate",
                                                          height=15, width=230, indeterminate_speed=1.5)
@@ -5674,19 +5676,34 @@ class TeraTermUI(customtkinter.CTk):
         if url:
             webbrowser.open(url)
 
+    def check_update_app_handler(self):
+        if not self.connection_error:
+            self.updating_app = True
+            task_done = threading.Event()
+            loading_screen = self.show_loading_screen()
+            self.update_loading_screen(loading_screen, task_done)
+            event_thread = threading.Thread(target=self.check_update_app, args=(task_done,))
+            event_thread.start()
+
     # will tell the user that there's a new update available for the application
-    def check_update_app(self):
+    def check_update_app(self, task_done):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         latest_version = self.get_latest_release()
-        if not self.connection_error:
-            if latest_version is None:
+        if latest_version is None:
+            task_done.set()
+
+            def error():
                 print("No latest release found. Starting app with the current version.")
                 winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                 CTkMessagebox(master=self, title="Error", icon="cancel",
                               message=translation["failed_to_find_update"], button_width=380)
                 return
-            if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION):
+            self.after(0, error)
+        if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION):
+            task_done.set()
+
+            def update():
                 if not self.disable_audio:
                     winsound.PlaySound("sounds/update.wav", winsound.SND_ASYNC)
                 msg = CTkMessagebox(master=self, title=translation["update_popup_title"],
@@ -5699,10 +5716,15 @@ class TeraTermUI(customtkinter.CTk):
                 response = msg.get()
                 if response[0] == "Yes" or response[0] == "Sí":
                     webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
-            else:
+            self.after(0, update)
+        else:
+            task_done.set()
+
+            def error():
                 if not self.disable_audio:
                     winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
                 CTkMessagebox(master=self, title="Info", message=translation["update_up_to_date"], button_width=380)
+            self.after(0, error)
 
     # (Unused) determines the hardware of the users' computer and change the time.sleep seconds respectively
     # def get_sleep_time(self):
@@ -6087,7 +6109,7 @@ class TeraTermUI(customtkinter.CTk):
         self.check_update_text = customtkinter.CTkLabel(self.status_frame, text=translation["update_title"])
         self.check_update_btn = CustomButton(self.status_frame, border_width=2, image=self.get_image("update"),
                                              text=translation["update"], anchor="w", text_color=("gray10", "#DCE4EE"),
-                                             command=self.check_update_app)
+                                             command=self.check_update_app_handler)
         self.website = customtkinter.CTkLabel(self.status_frame, text=translation["website"])
         self.website_link = CustomButton(self.status_frame, border_width=2, image=self.get_image("link"),
                                          text=translation["link"], anchor="w", text_color=("gray10", "#DCE4EE"),
@@ -6603,6 +6625,8 @@ class TeraTermUI(customtkinter.CTk):
     # Compares the current version that user is using with the latest available
     @staticmethod
     def compare_versions(latest_version, user_version):
+        if latest_version is None or user_version is None:
+            return False
         latest_version_parts = [int(part) for part in latest_version.split(".")]
         user_version_parts = [int(part) for part in user_version.split(".")]
 
