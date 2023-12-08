@@ -4008,7 +4008,7 @@ class TeraTermUI(customtkinter.CTk):
         self.loading_screen.iconbitmap(self.icon_path)
         loading = customtkinter.CTkLabel(self.loading_screen, text=translation["loading"],
                                          font=customtkinter.CTkFont(size=20, weight="bold"))
-        if self.auto_search or  self.updating_app:
+        if self.auto_search or self.updating_app:
             loading.configure(text=translation["searching_exe"])
             self.auto_search = False
             self.updating_app = False
@@ -5677,7 +5677,7 @@ class TeraTermUI(customtkinter.CTk):
             webbrowser.open(url)
 
     def check_update_app_handler(self):
-        lang = self.language_menu.get()
+        self.updating_app = True
         task_done = threading.Event()
         loading_screen = self.show_loading_screen()
         self.update_loading_screen(loading_screen, task_done)
@@ -5689,7 +5689,6 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         if asyncio.run(self.test_connection(lang)):
-            self.updating_app = True
             latest_version = self.get_latest_release()
             if latest_version is None:
                 task_done.set()
@@ -5726,7 +5725,9 @@ class TeraTermUI(customtkinter.CTk):
                         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
                     CTkMessagebox(master=self, title="Info", message=translation["update_up_to_date"], button_width=380)
                 self.after(0, error)
-        task_done.set()
+        else:
+            self.updating_app = False
+            task_done.set()
 
     # (Unused) determines the hardware of the users' computer and change the time.sleep seconds respectively
     # def get_sleep_time(self):
