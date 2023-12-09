@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 12/7/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 12/8/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -767,8 +767,7 @@ class TeraTermUI(customtkinter.CTk):
             if asyncio.run(self.test_connection(lang)) and self.check_server():
                 if TeraTermUI.checkIfProcessRunning("ttermpro"):
                     try:
-                        student_id = self.student_id_entry.get().replace(" ", "")
-                        student_id = student_id.replace("-", "")
+                        student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
                         code = self.code_entry.get().replace(" ", "")
                         student_id_enc = aes_encrypt_then_mac(str(student_id), aes_key, iv, mac_key)
                         code_enc = aes_encrypt_then_mac(str(code), aes_key, iv, mac_key)
@@ -1015,7 +1014,7 @@ class TeraTermUI(customtkinter.CTk):
             try:
                 self.automation_preparations()
                 choice = self.radio_var.get()
-                classes = self.e_classes_entry.get().upper().replace(" ", "")
+                classes = self.e_classes_entry.get().upper().replace(" ", "").replace("-", "")
                 section = self.e_section_entry.get().upper().replace(" ", "")
                 semester = self.e_semester_entry.get().upper().replace(" ", "")
                 lang = self.language_menu.get()
@@ -1190,7 +1189,7 @@ class TeraTermUI(customtkinter.CTk):
         with self.lock_thread:
             try:
                 self.automation_preparations()
-                classes = self.s_classes_entry.get().upper().replace(" ", "")
+                classes = self.s_classes_entry.get().upper().replace(" ", "").replace("-", "")
                 semester = self.s_semester_entry.get().upper().replace(" ", "")
                 show_all = self.show_all.get()
                 lang = self.language_menu.get()
@@ -1572,7 +1571,7 @@ class TeraTermUI(customtkinter.CTk):
                 semester = self.m_semester_entry[0].get().upper().replace(" ", "")
                 choices = []
                 for i in range(self.a_counter + 1):
-                    classes.append(self.m_classes_entry[i].get().upper().replace(" ", ""))
+                    classes.append(self.m_classes_entry[i].get().upper().replace(" ", "").replace("-", ""))
                     sections.append(self.m_section_entry[i].get().upper().replace(" ", ""))
                     choices.append(self.m_register_menu[i].get())
                 can_enroll_classes = self.e_counter + self.m_counter + self.a_counter + 1 <= 15
@@ -6800,7 +6799,7 @@ class TeraTermUI(customtkinter.CTk):
 
         # Get the choices from the entries
         for i in range(self.a_counter + 1):
-            classes = self.m_classes_entry[i].get().upper().replace(" ", "")
+            classes = self.m_classes_entry[i].get().upper().replace(" ", "").replace("-", "")
             sections = self.m_section_entry[i].get().upper().replace(" ", "")
             semester = self.m_semester_entry[i].get().upper().replace(" ", "")
             choices = self.m_register_menu[i].get()
