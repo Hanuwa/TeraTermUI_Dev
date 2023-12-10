@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 12/8/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 12/10/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1281,8 +1281,8 @@ class TeraTermUI(customtkinter.CTk):
                                 ctypes.windll.user32.BlockInput(True)
                                 copy = pyperclip.paste()
                                 data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
-                                self.get_class_for_pdf = self.s_classes_entry.get().upper().replace(" ", "")
-                                self.get_semester_for_pdf = self.s_semester_entry.get().upper().replace(" ", "")
+                                self.get_class_for_pdf = classes
+                                self.get_semester_for_pdf = semester
                                 self.show_all_sections = self.show_all.get()
                                 self.after(0, self.display_data, data)
                                 self.clipboard_clear()
