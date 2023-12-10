@@ -6902,17 +6902,24 @@ class CustomScrollableFrame(customtkinter.CTkScrollableFrame):
         # Get the currently focused widget
         focused_widget = self.focus_get()
 
-        # Check if the focused widget is a CustomTextBox and if it has focus
+        # Check if the focused widget is a tk.Text
         if isinstance(focused_widget, tk.Text):
+            # Retrieve the text content and check if it is empty
+            text_content = focused_widget.get("1.0", "end-1c").strip()
+            if text_content == "":
+                # If the text widget is empty, proceed with the normal scroll action
+                super()._mouse_wheel_all(event)
+                return  # Exit the function
+
             # Get mouse position relative to the focused widget
             mouse_x = focused_widget.winfo_pointerx() - focused_widget.winfo_rootx()
             mouse_y = focused_widget.winfo_pointery() - focused_widget.winfo_rooty()
 
             # Check if the mouse is over the focused widget
             if 0 <= mouse_x < focused_widget.winfo_width() and 0 <= mouse_y < focused_widget.winfo_height():
-                return  # Do not scroll if the mouse is over a CustomTextBox
+                return  # Do not scroll if the mouse is over a non-empty CustomTextBox
 
-        # Otherwise, perform the normal scroll action
+        # Perform the normal scroll action for other cases
         super()._mouse_wheel_all(event)
 
 
