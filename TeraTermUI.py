@@ -214,6 +214,10 @@ class TeraTermUI(customtkinter.CTk):
         self.language_menu = customtkinter.CTkOptionMenu(self.sidebar_frame, values=["English", "Español"],
                                                          command=self.change_language_event, corner_radius=15)
         self.language_menu.grid(row=6, column=0, padx=20, pady=(10, 10))
+        self.language_menu_tooltip = CTkToolTip(self.language_menu, message="The language can only\n"
+                                                                            "be changed in the main menu",
+                                                bg_color="#A9A9A9")
+        self.language_menu_tooltip.hide()
         self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame, corner_radius=15,
                                                                        values=["Dark", "Light", "System"],
                                                                        command=self.change_appearance_mode_event)
@@ -2623,6 +2627,7 @@ class TeraTermUI(customtkinter.CTk):
         self.auth.grid(row=4, column=1, padx=(10, 0), pady=(0, 0))
         self.main_menu = False
         self.language_menu.configure(state="disabled")
+        self.language_menu_tooltip.show()
         self.home_frame.grid_forget()
         self.slideshow_frame.pause_cycle()
 
@@ -2665,6 +2670,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.in_student_frame = False
                 self.run_fix = True
                 self.language_menu.configure(state="disabled")
+                self.language_menu_tooltip.show()
                 self.home_frame.grid_forget()
                 self.slideshow_frame.pause_cycle()
                 self.switch_tab()
@@ -2734,6 +2740,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.enrolled_classes_list.clear()
                 self.dropped_classes_list.clear()
             self.language_menu.configure(state="normal")
+            self.language_menu_tooltip.hide()
             self.slideshow_frame.resume_cycle()
             self.intro_box.reset_autoscroll()
             self.run_fix = False
@@ -2929,6 +2936,7 @@ class TeraTermUI(customtkinter.CTk):
         self.intro_box.delete("1.0", "end")
         self.intro_box.insert("0.0", translation["intro_box"])
         self.intro_box.configure(state="disabled")
+        self.language_menu_tooltip.configure(message=translation["language_tooltip"])
         self.appearance_mode_optionemenu.configure(values=[translation["light"], translation["dark"],
                                                            translation["default"]])
         if appearance == "Dark" or appearance == "Oscuro":
