@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 12/10/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 12/12/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -6912,23 +6912,41 @@ class CustomScrollableFrame(customtkinter.CTkScrollableFrame):
 
         # Check if the focused widget is a tk.Text
         if isinstance(focused_widget, tk.Text):
-            # Retrieve the text content and check if it is empty
-            text_content = focused_widget.get("1.0", "end-1c").strip()
-            if text_content == "":
-                # If the text widget is empty, proceed with the normal scroll action
-                super()._mouse_wheel_all(event)
-                return  # Exit the function
+            # Check if a scrollbar is needed for the text widget
+            scrollbar_needed = CustomScrollableFrame._is_scrollbar_needed(focused_widget)
 
-            # Get mouse position relative to the focused widget
-            mouse_x = focused_widget.winfo_pointerx() - focused_widget.winfo_rootx()
-            mouse_y = focused_widget.winfo_pointery() - focused_widget.winfo_rooty()
+            # Check if the mouse is within the bounds of the text widget
+            mouse_within_text_widget = CustomScrollableFrame._is_mouse_within_widget(focused_widget, event)
 
-            # Check if the mouse is over the focused widget
-            if 0 <= mouse_x < focused_widget.winfo_width() and 0 <= mouse_y < focused_widget.winfo_height():
-                return  # Do not scroll if the mouse is over a non-empty CustomTextBox
+            if scrollbar_needed and mouse_within_text_widget:
+                # Scroll the text widget
+                CustomScrollableFrame._scroll_text_widget(focused_widget, event)
+                return
 
         # Perform the normal scroll action for other cases
         super()._mouse_wheel_all(event)
+
+    @staticmethod
+    def _is_scrollbar_needed(text_widget):
+        # Check if the content of the text widget exceeds its viewable area
+        first, last = text_widget.yview()
+        return first > 0 or last < 1
+
+    @staticmethod
+    def _is_mouse_within_widget(widget, event):
+        # Get mouse position relative to the widget
+        mouse_x = widget.winfo_pointerx() - widget.winfo_rootx()
+        mouse_y = widget.winfo_pointery() - widget.winfo_rooty()
+        # Check if the mouse is over the widget
+        return 0 <= mouse_x < widget.winfo_width() and 0 <= mouse_y < widget.winfo_height()
+
+    @staticmethod
+    def _scroll_text_widget(text_widget, event):
+        # Scroll the text widget based on the mouse wheel event
+        if event.num == 5 or event.delta == -120:
+            text_widget.yview_scroll(1, 'units')
+        elif event.num == 4 or event.delta == 120:
+            text_widget.yview_scroll(-1, 'units')
 
 
 class CustomTextBox(customtkinter.CTkTextbox):
