@@ -21,8 +21,8 @@ frozenlist==1.4.0
 google-api-core==2.15.0
 google-api-python-client==2.110.0
 google-auth==2.25.2
-google-auth-httplib2==0.1.1
-google-auth-oauthlib==1.1.0
+google-auth-httplib2==0.2.0
+google-auth-oauthlib==1.2.0
 googleapis-common-protos==1.62.0
 httplib2==0.22.0
 idna==3.6
