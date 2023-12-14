@@ -60,8 +60,8 @@ class CTkMessagebox(customtkinter.CTkToplevel):
 
         self.master_window = master
 
-        self.width = 250 if width<250 else width
-        self.height = 150 if height<150 else  height
+        self.width = width
+        self.height = height
 
         if self.master_window is None:
             self.spawn_x = int((self.winfo_screenwidth()-self.width)/2)
