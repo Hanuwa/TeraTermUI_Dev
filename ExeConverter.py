@@ -145,10 +145,10 @@ except Exception as e:
     sys.exit(1)
 
 nuitka_command = (
-    r'cd /d "'+project_directory+r'\venv\Scripts" & python -m nuitka --standalone '
+    r'cd /d "'+project_directory+r'\.venv\Scripts" & python -m nuitka --standalone '
     r'--experimental=treefree "'+project_directory+r'\TeraTermUI.py" '
-    r'--enable-plugin=tk-inter --include-data-dir="'+project_directory+r'\venv\Lib\site-packages'
-    r'\customtkinter=customtkinter" --include-data-dir="'+project_directory+r'\venv\Lib\site-packages'
+    r'--enable-plugin=tk-inter --include-data-dir="'+project_directory+r'\.venv\Lib\site-packages'
+    r'\customtkinter=customtkinter" --include-data-dir="'+project_directory+r'\.venv\Lib\site-packages'
     r'\CTkMessageBox=CTkMessageBox" --include-package=CTkToolTip '
     r'--include-data-dir="'+project_directory+r'\images=images" '
     r'--include-data-dir="'+project_directory+r'\slideshow=slideshow" '                                           
