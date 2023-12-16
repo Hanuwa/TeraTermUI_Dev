@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 12/12/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 12/16/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with 6000 lines of codes, it definitely makes things harder to work with
+# and with 7000 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -2959,6 +2959,7 @@ class TeraTermUI(customtkinter.CTk):
             self.host.grid(row=2, column=1, padx=(0, 170), pady=(15, 15))
         elif lang == "Español":
             self.host.grid(row=2, column=1, padx=(0, 190), pady=(15, 15))
+        self.intro_box.reset_autoscroll()
         if self.status is not None and self.status.winfo_exists():
             self.status.title(translation["status"])
             self.status_title.configure(text=translation["status_title"])
@@ -7020,8 +7021,9 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.after_id = None
 
     def reset_autoscroll(self):
-        if self.after_id:
-            self.after_cancel(self.after_id)
+        if self.auto_scroll:
+            if self.after_id:
+                self.after_cancel(self.after_id)
         self.update_text()
         self.yview_moveto(0)
 
