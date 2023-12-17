@@ -7,7 +7,7 @@ Dev Environment for Tera Term UI
 make sure to also put ctk_table.py on the customtkinter folder.
 
 Priorities of the development of the application is working on improving the UI since it's  a bit too simple and not polished,
-funtionalty wise the application is pretty fleshed out.
+funtionality wise the application is pretty fleshed out.
 
 # Tesseract OCR
 Must install this application under a folder within the TeraTermUI.py app called "Tesseract-OCR".
