@@ -54,10 +54,10 @@ from Cryptodome.Hash import HMAC, SHA256
 from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import pad, unpad
 from Cryptodome.Random import get_random_bytes
+from CTkTable import CTkTable
 from CTkToolTip import CTkToolTip
 from CTkMessagebox import CTkMessagebox
 from ctypes import wintypes
-from customtkinter import ctktable
 from datetime import datetime, timedelta
 from filelock import FileLock, Timeout
 from pathlib import Path
@@ -4347,7 +4347,7 @@ class TeraTermUI(customtkinter.CTk):
         table_values = [headers] + [[item.get(header, "") for header in headers] for item in modified_data]
         num_rows = len(modified_data) + 1
 
-        new_table = ctktable.CTkTable(
+        new_table = CTkTable(
             self.search_scrollbar,
             column=len(headers),
             row=num_rows,
@@ -4771,7 +4771,7 @@ class TeraTermUI(customtkinter.CTk):
         self.back_my_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
 
         # Create the table widget
-        self.enrolled_classes_table = ctktable.CTkTable(
+        self.enrolled_classes_table = CTkTable(
             self.my_classes_frame,
             column=len(headers),
             row=self.enrolled_rows,
@@ -5152,7 +5152,7 @@ class TeraTermUI(customtkinter.CTk):
         table_values = [headers] + [[cls.get(header, "") for header in headers] for cls in self.enrolled_classes_data]
 
         # Recreate the table with the updated values
-        self.enrolled_classes_table = ctktable.CTkTable(
+        self.enrolled_classes_table = CTkTable(
             self.my_classes_frame,
             column=len(headers),
             row=len(self.enrolled_classes_data) + 1,
@@ -6172,7 +6172,7 @@ class TeraTermUI(customtkinter.CTk):
         self.notaso.pack(pady=5)
         self.notaso_link.pack()
         self.faq_text.pack()
-        self.faq = ctktable.CTkTable(self.status_frame, row=3, column=2, values=self.qa_table, hover=False)
+        self.faq = CTkTable(self.status_frame, row=3, column=2, values=self.qa_table, hover=False)
         self.faq.pack(expand=True, fill="both", padx=20, pady=20)
         self.feedback_text.lang = lang
         self.status.focus_set()
@@ -6523,7 +6523,7 @@ class TeraTermUI(customtkinter.CTk):
                       ["2022", "C21, C22, C23"],
                       ["2023", "C31, C32, C33"],
                       [translation["semester"], translation["seasons"]]]
-        self.terms_table = ctktable.CTkTable(self.help_frame, column=2, row=7, values=self.terms, hover=False)
+        self.terms_table = CTkTable(self.help_frame, column=2, row=7, values=self.terms, hover=False)
         self.files_text = customtkinter.CTkLabel(self.help_frame, text=translation["files_title"])
         self.files = CustomButton(self.help_frame, border_width=2, image=self.get_image("folder"),
                                   text=translation["files_button"], anchor="w", text_color=("gray10", "#DCE4EE"),
