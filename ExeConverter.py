@@ -149,7 +149,7 @@ nuitka_command = (
     r'--experimental=treefree "'+project_directory+r'\TeraTermUI.py" '
     r'--enable-plugin=tk-inter --include-data-dir="'+project_directory+r'\.venv\Lib\site-packages'
     r'\customtkinter=customtkinter" --include-data-dir="'+project_directory+r'\.venv\Lib\site-packages'
-    r'\CTkMessageBox=CTkMessageBox" --include-package=CTkToolTip '
+    r'\CTkMessageBox=CTkMessageBox" --include-package=CTkToolTip --include-package=CTkTable '
     r'--include-data-dir="'+project_directory+r'\images=images" '
     r'--include-data-dir="'+project_directory+r'\slideshow=slideshow" '                                           
     r'--include-data-dir="'+project_directory+r'\sounds=sounds" '
