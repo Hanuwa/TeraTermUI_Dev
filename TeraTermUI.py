@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 12/16/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 12/17/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -3883,11 +3883,11 @@ class TeraTermUI(customtkinter.CTk):
                 self.m_register_menu[i].set(translation["choose"])
             self.m_add = CustomButton(master=self.m_button_frame, border_width=2, text="+",
                                       text_color=("gray10", "#DCE4EE"), command=self.add_event, height=40, width=50,
-                                      hover=True, fg_color="blue")
+                                      fg_color="blue")
             self.m_add_tooltip = CTkToolTip(self.m_add, message=translation["add_tooltip"], bg_color="blue")
             self.m_remove = CustomButton(master=self.m_button_frame, border_width=2, text="-",
                                          text_color=("gray10", "#DCE4EE"), command=self.remove_event, height=40,
-                                         width=50, fg_color="red", hover=True, hover_color="darkred",
+                                         width=50, fg_color="red", hover_color="darkred",
                                          state="disabled")
             self.m_remove_tooltip = CTkToolTip(self.m_remove, message=translation["m_remove_tooltip"], bg_color="red")
             self.back_multiple = CustomButton(master=self.m_button_frame, fg_color="transparent", border_width=2,
@@ -4298,12 +4298,13 @@ class TeraTermUI(customtkinter.CTk):
         self.create_pdf(data, classes_list, filepath, semester_list)
         self.show_success_message(350, 265, translation["pdf_save_success"])
 
-    def copy_cell_data_to_clipboard(self, value):
+    def copy_cell_data_to_clipboard(self, cell_data):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
+        cell_value = cell_data['value']
         self.set_focus()
         self.clipboard_clear()
-        self.clipboard_append(value)
+        self.clipboard_append(cell_value)
         self.update()
 
         # Close existing tooltip if any
@@ -6171,7 +6172,7 @@ class TeraTermUI(customtkinter.CTk):
         self.notaso.pack(pady=5)
         self.notaso_link.pack()
         self.faq_text.pack()
-        self.faq = ctktable.CTkTable(self.status_frame, row=3, column=2, values=self.qa_table)
+        self.faq = ctktable.CTkTable(self.status_frame, row=3, column=2, values=self.qa_table, hover=False)
         self.faq.pack(expand=True, fill="both", padx=20, pady=20)
         self.feedback_text.lang = lang
         self.status.focus_set()
@@ -6522,7 +6523,7 @@ class TeraTermUI(customtkinter.CTk):
                       ["2022", "C21, C22, C23"],
                       ["2023", "C31, C32, C33"],
                       [translation["semester"], translation["seasons"]]]
-        self.terms_table = ctktable.CTkTable(self.help_frame, column=2, row=7, values=self.terms)
+        self.terms_table = ctktable.CTkTable(self.help_frame, column=2, row=7, values=self.terms, hover=False)
         self.files_text = customtkinter.CTkLabel(self.help_frame, text=translation["files_title"])
         self.files = CustomButton(self.help_frame, border_width=2, image=self.get_image("folder"),
                                   text=translation["files_button"], anchor="w", text_color=("gray10", "#DCE4EE"),
