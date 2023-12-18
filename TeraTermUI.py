@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 12/17/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 12/18/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -3571,10 +3571,6 @@ class TeraTermUI(customtkinter.CTk):
             self.init_auth = False
             self.authentication_frame.unbind("<Button-1>")
             self.a_buttons_frame.unbind("<Button-1>")
-            self.authentication_frame.destroy()
-            self.authentication_frame = None
-            self.a_buttons_frame.destroy()
-            self.a_buttons_frame = None
             self.title_login.destroy()
             self.title_login = None
             self.uprb_image = None
@@ -3595,6 +3591,10 @@ class TeraTermUI(customtkinter.CTk):
             self.back = None
             self.back_tooltip.destroy()
             self.back_tooltip = None
+            self.authentication_frame.destroy()
+            self.authentication_frame = None
+            self.a_buttons_frame.destroy()
+            self.a_buttons_frame = None
 
     def initialization_student(self):
         # Student Information
@@ -3653,10 +3653,6 @@ class TeraTermUI(customtkinter.CTk):
             self.student_id_entry.unbind("<Control-C>")
             self.code_entry.unbind("<Command-C>")
             self.code_entry.unbind("<Control-C>")
-            self.student_frame.destroy()
-            self.student_frame = None
-            self.s_buttons_frame.destroy()
-            self.s_buttons_frame = None
             self.title_student.destroy()
             self.title_student = None
             self.lock = None
@@ -3684,6 +3680,10 @@ class TeraTermUI(customtkinter.CTk):
             self.back_student = None
             self.back_student_tooltip.destroy()
             self.back_student_tooltip = None
+            self.student_frame.destroy()
+            self.student_frame = None
+            self.s_buttons_frame.destroy()
+            self.s_buttons_frame = None
 
     def initialization_class(self):
         # Classes
@@ -4407,6 +4407,7 @@ class TeraTermUI(customtkinter.CTk):
             if duplicate_index is not None:
                 self.current_table_index = duplicate_index
                 self.display_current_table()
+                self.update_buttons()
                 return
         self.ignore = True
 
