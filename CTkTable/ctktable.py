@@ -302,6 +302,35 @@ class CTkTable(customtkinter.CTkFrame):
         self.draw_table(**kwargs)
         self.update_data()
 
+    def update_headers(self, new_headers):
+        """
+        Update the headers of the table with a list of new header values.
+        Args:
+            new_headers (list): A list of new header values.
+        """
+        if self.orient == "horizontal":
+            # Update the headers in the first row
+            for j in range(self.columns):
+                self.frame[0, j].configure(text=new_headers[j])
+        else:
+            # Update the headers in the first column
+            for i in range(self.rows):
+                self.frame[i, 0].configure(text=new_headers[i])
+
+    def update_text(self, row, column, new_text):
+        """
+        Update the text of a specific cell in the table.
+        Args:
+            row (int): The row index of the cell.
+            column (int): The column index of the cell.
+            new_text (str): The new text to set for the cell.
+        """
+        if 0 <= row < self.rows and 0 <= column < self.columns:
+            # Check if the cell exists within the table boundaries
+            cell = self.frame[row, column]
+            cell.configure(text=new_text)
+            self.update_data()
+
     def add_column(self, values, index=None, **kwargs):
         """ add a new column """
         for i in self.frame.values():
