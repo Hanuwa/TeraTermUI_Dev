@@ -1220,29 +1220,29 @@ class TeraTermUI(customtkinter.CTk):
                             except Exception as e:
                                 print("Error handling clipboard content:", e)
                             if self.passed and self.search_function_counter == 0:
-                                screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                screenshot_thread.start()
-                                screenshot_thread.join()
-                                text_output = self.capture_screenshot()
-                                if "INVALID ACTION" in text_output and not "LISTA DE SECCIONES" in text_output:
+                                ctypes.windll.user32.BlockInput(False)
+                                self.automate_copy_class_data()
+                                ctypes.windll.user32.BlockInput(True)
+                                copy = pyperclip.paste()
+                                data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
+                                if "INVALID ACTION" in copy and "LISTA DE SECCIONES" not in copy:
                                     self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
                                     self.reset_activity_timer(None)
                                     self.after(0, self.show_error_message, 320, 235, translation["failed_to_search"])
                                     return
-                                elif "INVALID ACTION" in text_output and "LISTA DE SECCIONES" in text_output or \
-                                        "COURSE NOT" in text_output:
-                                    self.search_function_counter = 1
-                                    self.after(0, self.show_error_message, 320, 235, translation["failed_to_search"])
-                                    return
-                                ctypes.windll.user32.BlockInput(False)
-                                self.automate_copy_class_data()
-                                ctypes.windll.user32.BlockInput(True)
-                                copy = pyperclip.paste()
-                                data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
                                 if data or course_found or invalid_action or y_n_found:
-                                    self.search_function_counter = 1
+                                    self.search_function_counter += 1
+                                if classes in copy:
+                                    self.get_class_for_pdf = classes
+                                    self.get_semester_for_pdf = semester
+                                    self.show_all_sections = self.show_all.get()
+                                    self.after(0, self.display_data, data)
+                                    self.clipboard_clear()
+                                    if clipboard_content is not None:
+                                        self.clipboard_append(clipboard_content)
+                                    return
                             if self.search_function_counter == 0:
                                 self.uprb.UprbayTeraTermVt.type_keys(classes)
                             if self.search_function_counter >= 1:
@@ -4301,7 +4301,7 @@ class TeraTermUI(customtkinter.CTk):
     def copy_cell_data_to_clipboard(self, cell_data):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        cell_value = cell_data['value']
+        cell_value = cell_data["value"]
         self.set_focus()
         self.clipboard_clear()
         self.clipboard_append(cell_value)
@@ -4371,9 +4371,11 @@ class TeraTermUI(customtkinter.CTk):
         for i, header in enumerate(headers):
             cell = new_table.get_cell(0, i)
             tooltip_message = tooltip_messages[header]
-            CTkToolTip(cell, message=tooltip_message, bg_color="#A9A9A9", alpha=0.90)
-            tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#A9A9A9", alpha=0.90)
-            self.table_tooltips[cell] = tooltip
+            if cell in self.table_tooltips:
+                self.table_tooltips[cell].configure(message=tooltip_message)
+            else:
+                tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#A9A9A9", alpha=0.90)
+                self.table_tooltips[cell] = tooltip
         self.table = new_table
 
         display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_pdf,
@@ -5707,6 +5709,7 @@ class TeraTermUI(customtkinter.CTk):
                     winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                     CTkMessagebox(master=self, title="Error", icon="cancel",
                                   message=translation["failed_to_find_update"], button_width=380)
+
                 self.after(0, error)
                 return
             if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION):
@@ -5725,6 +5728,7 @@ class TeraTermUI(customtkinter.CTk):
                     response = msg.get()
                     if response[0] == "Yes" or response[0] == "Sí":
                         webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
+
                 self.after(0, update)
             else:
                 task_done.set()
@@ -5733,6 +5737,7 @@ class TeraTermUI(customtkinter.CTk):
                     if not self.disable_audio:
                         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
                     CTkMessagebox(master=self, title="Info", message=translation["update_up_to_date"], button_width=380)
+
                 self.after(0, error)
         else:
             self.updating_app = False
