@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 12/18/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 12/21/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -193,6 +193,7 @@ class TeraTermUI(customtkinter.CTk):
         self.logo_label = customtkinter.CTkLabel(self.sidebar_frame, text="Tera Term UI",
                                                  font=customtkinter.CTkFont(size=20, weight="bold"))
         self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
+        self.logo_label.bind("<Button-1>", lambda event: self.focus_set())
         self.status_button = CustomButton(self.sidebar_frame, text="     Status", image=self.get_image("status"),
                                           command=self.status_button_event, anchor="w")
         self.status_tooltip = CTkToolTip(self.status_button, message="See the status and the state\n"
@@ -210,6 +211,7 @@ class TeraTermUI(customtkinter.CTk):
                                                                             "application\nthese settings are saved so"
                                                                             " next time\nyou log-in you wont have to"
                                                                             " reconfigured them", bg_color="#1E90FF")
+        self.scaling_label.bind("<Button-1>", lambda event: self.focus_set())
         self.scaling_label.grid(row=5, column=0, padx=20, pady=(10, 10))
         self.language_menu = customtkinter.CTkOptionMenu(self.sidebar_frame, values=["English", "Español"],
                                                          command=self.change_language_event, corner_radius=15)
@@ -239,6 +241,7 @@ class TeraTermUI(customtkinter.CTk):
         self.home_frame.grid(row=0, column=1, rowspan=5, columnspan=5, padx=(0, 0), pady=(0, 0))
         self.introduction = customtkinter.CTkLabel(self.home_frame, text="UPRB Enrollment Process",
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
+        self.introduction.bind("<Button-1>", lambda event: self.focus_set())
         self.introduction.grid(row=0, column=1, columnspan=2, padx=(20, 0), pady=(20, 0))
         self.host = customtkinter.CTkLabel(self.home_frame, text="Host")
         self.host.grid(row=2, column=1, padx=(0, 170), pady=(15, 15))
@@ -358,8 +361,8 @@ class TeraTermUI(customtkinter.CTk):
         self.search_next_page_tooltip = None
 
         # Third Tab
-        self.explanation6 = None
         self.title_menu = None
+        self.explanation_menu = None
         self.menu = None
         self.menu_entry = None
         self.menu_semester = None
@@ -390,7 +393,7 @@ class TeraTermUI(customtkinter.CTk):
         self.save_frame = None
         self.auto_frame = None
         self.init_multiple = False
-        self.explanation7 = None
+        self.title_multiple = None
         self.m_class = None
         self.m_section = None
         self.m_semester = None
@@ -885,8 +888,8 @@ class TeraTermUI(customtkinter.CTk):
         elif lang == "Español":
             self.show_all.grid(row=1, column=1, padx=(85, 0), pady=(0, 7), sticky="n")
         self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
-        self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-        self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
+        self.title_menu.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
+        self.explanation_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         if lang == "English":
             self.menu.grid(row=2, column=1, padx=(0, 184), pady=(10, 0))
         elif lang == "Español":
@@ -1512,7 +1515,7 @@ class TeraTermUI(customtkinter.CTk):
         self.save_frame.grid_columnconfigure(2, weight=1)
         self.auto_frame.grid(row=3, column=1, padx=(50, 0), pady=(0, 8), sticky="w")
         self.auto_frame.grid_columnconfigure(2, weight=1)
-        self.explanation7.grid(row=0, column=1, padx=(0, 0), pady=(0, 20))
+        self.title_multiple.grid(row=0, column=1, padx=(0, 0), pady=(0, 20))
         self.m_class.grid(row=0, column=1, padx=(0, 500), pady=(32, 0))
         self.m_section.grid(row=0, column=1, padx=(0, 165), pady=(32, 0))
         self.m_semester.grid(row=0, column=1, padx=(165, 0), pady=(32, 0))
@@ -2810,8 +2813,8 @@ class TeraTermUI(customtkinter.CTk):
             self.search.configure(width=141)
             self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
             self.search_next_page.grid_forget()
-        self.explanation6.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-        self.title_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
+        self.title_menu.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
+        self.explanation_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
         if lang == "English":
             self.menu.grid(row=2, column=1, padx=(0, 184), pady=(10, 0))
         elif lang == "Español":
@@ -3021,8 +3024,8 @@ class TeraTermUI(customtkinter.CTk):
             self.s_classes.configure(text=translation["class"])
             self.s_semester.configure(text=translation["semester"])
             self.show_all.configure(text=translation["show_all"])
-            self.title_menu.configure(text=translation["explanation_menu"])
-            self.explanation6.configure(text=translation["title_menu"])
+            self.explanation_menu.configure(text=translation["explanation_menu"])
+            self.title_menu.configure(text=translation["title_menu"])
             self.menu.configure(text=translation["menu"])
             self.menu_entry.configure(values=[translation["SRM"], translation["004"], translation["1GP"],
                                               translation["118"], translation["1VE"], translation["3DD"],
@@ -3042,7 +3045,7 @@ class TeraTermUI(customtkinter.CTk):
             self.show_classes.configure(text=translation["show_my_classes"])
             self.back_classes.configure(text=translation["back"])
             self.multiple.configure(text=translation["multiple"])
-            self.explanation7.configure(text=translation["title_multiple"])
+            self.title_multiple.configure(text=translation["title_multiple"])
             self.m_class.configure(text=translation["class"])
             self.m_section.configure(text=translation["section"])
             self.m_semester.configure(text=translation["semester"])
@@ -3563,6 +3566,7 @@ class TeraTermUI(customtkinter.CTk):
             self.back_tooltip = CTkToolTip(self.back, message=translation["back_tooltip"], bg_color="#A9A9A9",
                                            alpha=0.90)
             self.username_entry.lang = lang
+            self.title_login.bind("<Button-1>", lambda event: self.focus_set())
             self.authentication_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.a_buttons_frame.bind("<Button-1>", lambda event: self.focus_set())
 
@@ -3571,6 +3575,7 @@ class TeraTermUI(customtkinter.CTk):
             self.init_auth = False
             self.authentication_frame.unbind("<Button-1>")
             self.a_buttons_frame.unbind("<Button-1>")
+            self.title_login.unbind("<Button-1>")
             self.title_login.destroy()
             self.title_login = None
             self.uprb_image = None
@@ -3637,6 +3642,7 @@ class TeraTermUI(customtkinter.CTk):
                                                    bg_color="#A9A9A9", alpha=0.90)
             self.student_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.s_buttons_frame.bind("<Button-1>", lambda event: self.focus_set())
+            self.title_student.bind("<Button-1>", lambda event: self.focus_set())
             for entry in [self.student_id_entry, self.code_entry]:
                 entry.lang = lang
 
@@ -3645,6 +3651,7 @@ class TeraTermUI(customtkinter.CTk):
             self.init_student = False
             self.student_frame.unbind("<Button-1>")
             self.s_buttons_frame.unbind("<Button-1>")
+            self.title_student.unbind("<Button-1>")
             self.student_id_entry.unbind("<Command-c>")
             self.student_id_entry.unbind("<Control-c>")
             self.code_entry.unbind("<Command-c>")
@@ -3727,6 +3734,7 @@ class TeraTermUI(customtkinter.CTk):
                                                      command=self.set_focus)
             self.drop_tooltip = CTkToolTip(self.drop, message=translation["drop_tooltip"])
             self.register.select()
+            self.title_enroll.bind("<Button-1>", lambda event: self.focus_set())
 
             # Second Tab
             self.search_scrollbar = customtkinter.CTkScrollableFrame(master=self.tabview.tab(self.search_tab),
@@ -3753,13 +3761,14 @@ class TeraTermUI(customtkinter.CTk):
             self.search_next_page_tooltip = CTkToolTip(self.search_next_page,
                                                        message=translation["search_next_page_tooltip"],
                                                        bg_color="#A9A9A9", alpha=0.90)
+            self.title_search.bind("<Button-1>", lambda event: self.focus_set())
 
             # Third Tab
-            self.explanation6 = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab),
-                                                       text=translation["title_menu"],
-                                                       font=customtkinter.CTkFont(size=20, weight="bold"))
             self.title_menu = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab),
-                                                     text=translation["explanation_menu"])
+                                                     text=translation["title_menu"],
+                                                     font=customtkinter.CTkFont(size=20, weight="bold"))
+            self.explanation_menu = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab),
+                                                           text=translation["explanation_menu"])
             self.menu = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab), text=translation["menu"])
             self.menu_entry = CustomComboBox(self.tabview.tab(self.other_tab), self,
                                              values=[translation["SRM"], translation["004"], translation["1GP"],
@@ -3798,6 +3807,8 @@ class TeraTermUI(customtkinter.CTk):
                                             border_width=2, text=translation["go_next"],
                                             text_color=("gray10", "#DCE4EE"), hover_color="#4E4F50",
                                             command=self.go_next_page_handler, width=100)
+            self.title_menu.bind("<Button-1>", lambda event: self.focus_set())
+            self.explanation_menu.bind("<Button-1>", lambda event: self.focus_set())
 
             # Bottom Buttons
             self.back_classes = CustomButton(master=self.t_buttons_frame, fg_color="transparent", border_width=2,
@@ -3859,9 +3870,9 @@ class TeraTermUI(customtkinter.CTk):
             self.m_button_frame = customtkinter.CTkFrame(self, corner_radius=10)
             self.save_frame = customtkinter.CTkFrame(self, corner_radius=10)
             self.auto_frame = customtkinter.CTkFrame(self, corner_radius=10)
-            self.explanation7 = customtkinter.CTkLabel(master=self.multiple_frame,
-                                                       text=translation["title_multiple"],
-                                                       font=customtkinter.CTkFont(size=20, weight="bold"))
+            self.title_multiple = customtkinter.CTkLabel(master=self.multiple_frame,
+                                                         text=translation["title_multiple"],
+                                                         font=customtkinter.CTkFont(size=20, weight="bold"))
             self.m_class = customtkinter.CTkLabel(master=self.multiple_frame, text=translation["class"])
             self.m_section = customtkinter.CTkLabel(master=self.multiple_frame, text=translation["section"])
             self.m_semester = customtkinter.CTkLabel(master=self.multiple_frame, text=translation["semester"])
@@ -4380,6 +4391,7 @@ class TeraTermUI(customtkinter.CTk):
 
         display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_pdf,
                                                font=customtkinter.CTkFont(size=15, weight="bold", underline=True))
+        display_class.bind("<Button-1>", lambda event: self.focus_set())
         if self.table_count is None:
             table_count_label = f" {len(self.class_table_pairs)}/10"
             self.table_count = customtkinter.CTkLabel(self.search_scrollbar, text=table_count_label)
@@ -4416,6 +4428,7 @@ class TeraTermUI(customtkinter.CTk):
 
         if len(self.class_table_pairs) > 10:
             display_class_to_remove, table_to_remove, semester, show = self.class_table_pairs[0]
+            display_class_to_remove.unbind("<Button-1>")
             self.after(0, display_class_to_remove.destroy)
             self.after(0, table_to_remove.destroy)
             del self.class_table_pairs[0]
@@ -4429,6 +4442,8 @@ class TeraTermUI(customtkinter.CTk):
         if len(self.class_table_pairs) > 1:
             self.previous_button.grid(row=5, column=1, padx=(0, 300), pady=(10, 0), sticky="n")
             self.next_button.grid(row=5, column=1, padx=(300, 0), pady=(10, 0), sticky="n")
+            self.bind("<Left>", self.keybind_previous_table)
+            self.bind("<Right>", self.keybind_next_table)
         if len(self.class_table_pairs) <= 1:
             self.previous_button.grid_forget()
             self.remove_button.grid_forget()
@@ -4489,6 +4504,14 @@ class TeraTermUI(customtkinter.CTk):
             self.update_buttons()
             self.search_scrollbar.scroll_to_top()
 
+    def keybind_previous_table(self, event):
+        if self.move_slider_left_enabled:
+            self.show_previous_table()
+
+    def keybind_next_table(self, event):
+        if self.move_slider_left_enabled:
+            self.show_next_table()
+
     def remove_current_table(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
@@ -4498,7 +4521,7 @@ class TeraTermUI(customtkinter.CTk):
 
         display_class, table, semester, show = self.class_table_pairs[self.current_table_index]
         display_class.grid_forget()
-        display_class.grid_forget()
+        display_class.unbind("<Button-1>")
         table.grid_forget()
         self.after(0, display_class.destroy)
         self.after(0, table.destroy)
@@ -4514,6 +4537,8 @@ class TeraTermUI(customtkinter.CTk):
         if len(self.class_table_pairs) == 1:
             self.previous_button.grid_forget()
             self.next_button.grid_forget()
+            self.bind("<Left>", self.move_slider_left)
+            self.bind("<Right>", self.move_slider_right)
 
         elif len(self.class_table_pairs) == 0:
             self.table = None
@@ -4738,6 +4763,8 @@ class TeraTermUI(customtkinter.CTk):
         return enrolled_classes, total_credits
 
     def display_enrolled_data(self, data, creds):
+        self.unbind("<space>")
+        self.unbind("<Control-Tab>")
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         if self.enrolled_rows is not None:
@@ -5525,6 +5552,10 @@ class TeraTermUI(customtkinter.CTk):
     def add_key_bindings(self, event):
         self.bind("<Left>", self.move_slider_left)
         self.bind("<Right>", self.move_slider_right)
+        if self.tabview.get() == self.search_tab:
+            if len(self.class_table_pairs) > 1:
+                self.bind("<Left>", self.keybind_previous_table)
+                self.bind("<Right>", self.keybind_next_table)
 
     def remove_key_bindings(self, event):
         self.unbind("<Left>")
@@ -6062,6 +6093,7 @@ class TeraTermUI(customtkinter.CTk):
     def switch_tab(self):
         enroll_frame = self.tabview.tab(self.enroll_tab)
         other_frame = self.tabview.tab(self.other_tab)
+        self.add_key_bindings(event=None)
         if self.tabview.get() == self.enroll_tab:
             self.in_search_frame = False
             self.in_enroll_frame = True
