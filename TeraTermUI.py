@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 12/21/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 12/22/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -205,7 +205,7 @@ class TeraTermUI(customtkinter.CTk):
                                        bg_color="#1E90FF")
         self.help_button.grid(row=2, column=0, padx=20, pady=10)
         self.scaling_label = customtkinter.CTkLabel(self.sidebar_frame, text="Language, Appearance and \n\n "
-                                                                             "UI Scaling:", anchor="w")
+                                                                             "UI Scaling", anchor="w")
         self.scaling_label_tooltip = CTkToolTip(self.scaling_label, message="Change the language, the theme\nand"
                                                                             " the scaling of the widgets of the "
                                                                             "application\nthese settings are saved so"
