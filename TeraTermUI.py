@@ -4506,11 +4506,11 @@ class TeraTermUI(customtkinter.CTk):
 
     def keybind_previous_table(self, event):
         if self.move_slider_left_enabled:
-            self.show_previous_table()
+            self.after(100, self.show_previous_table)
 
     def keybind_next_table(self, event):
         if self.move_slider_left_enabled:
-            self.show_next_table()
+            self.after(100, self.show_next_table)
 
     def remove_current_table(self):
         lang = self.language_menu.get()
@@ -4879,15 +4879,15 @@ class TeraTermUI(customtkinter.CTk):
         self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
         self.my_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
         self.modify_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
+        self.title_my_classes.bind("<Button-1>", lambda event: self.focus_set())
 
     def destroy_enrolled_frame(self):
         self.my_classes_frame.grid_forget()
         self.modify_classes_frame.grid_forget()
         self.my_classes_frame.unbind("<Button-1>")
         self.modify_classes_frame.unbind("<Button-1>")
+        self.title_my_classes.unbind("<Button-1>")
         self.back_my_classes.grid_forget()
-        self.my_classes_frame.destroy()
-        self.modify_classes_frame.destroy()
         self.enrolled_classes_table.destroy()
         self.title_my_classes.destroy()
         self.total_credits_label.destroy()
@@ -4901,6 +4901,8 @@ class TeraTermUI(customtkinter.CTk):
         for entry in self.change_section_entries:
             if entry is not None:
                 entry.destroy()
+        self.my_classes_frame.destroy()
+        self.modify_classes_frame.destroy()
         self.change_section_entries = None
         self.mod_selection_list = None
         self.enrolled_rows = None
@@ -7570,9 +7572,6 @@ class ImageSlideshow:
             self.after_id = self.slideshow_frame.after(self.interval * 1000, self.cycle_images)
 
 
-DWMWA_EXTENDED_FRAME_BOUNDS = 9
-
-
 class RECT(ctypes.Structure):
     _fields_ = [("left", wintypes.LONG),
                 ("top", wintypes.LONG),
@@ -7582,6 +7581,7 @@ class RECT(ctypes.Structure):
 
 def get_window_rect(hwnd):
     rect = RECT()
+    DWMWA_EXTENDED_FRAME_BOUNDS = 9
     DwmGetWindowAttribute = ctypes.windll.dwmapi.DwmGetWindowAttribute
     DwmGetWindowAttribute.restype = wintypes.LONG
     DwmGetWindowAttribute.argtypes = [wintypes.HWND, wintypes.DWORD, ctypes.POINTER(RECT), wintypes.DWORD]
