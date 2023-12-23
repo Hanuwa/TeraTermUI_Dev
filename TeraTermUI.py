@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 12/22/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 12/23/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -7613,6 +7613,17 @@ def main():
         sys.exit(1)
     except KeyboardInterrupt:
         sys.exit(0)
+    except Exception as e:
+        SPANISH = 0x0A
+        language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
+        if language_id & 0xFF == SPANISH:
+            messagebox.showerror("Error", "Ocurrió un error inesperado: " + str(e) + "\n\n"
+                                          "Puede que necesite reinstalar la aplicación")
+            sys.exit(1)
+        else:
+            messagebox.showerror("Error", "An unexpected error occurred: " + str(e) + "\n\n"
+                                          "Might need to reinstall the application")
+            sys.exit(1)
 
 
 if __name__ == "__main__":
