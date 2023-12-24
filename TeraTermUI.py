@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 12/23/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 12/24/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -803,6 +803,8 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(0, self.initialization_class)
                                 self.after(100, self.student_info_frame)
                                 self.run_fix = True
+                                if self.help is not None and self.help.winfo_exists():
+                                    self.fix.configure(state="normal")
                                 self.in_student_frame = False
                                 secure_delete(student_id_enc)
                                 secure_delete(code_enc)
@@ -2629,6 +2631,8 @@ class TeraTermUI(customtkinter.CTk):
         self.back.grid(row=4, column=0, padx=(0, 10), pady=(0, 0))
         self.auth.grid(row=4, column=1, padx=(10, 0), pady=(0, 0))
         self.main_menu = False
+        if self.help is not None and self.help.winfo_exists():
+            self.files.configure(state="disabled")
         self.language_menu.configure(state="disabled")
         self.language_menu_tooltip.show()
         self.home_frame.grid_forget()
@@ -2667,11 +2671,15 @@ class TeraTermUI(customtkinter.CTk):
                 self.after(0, self.initialization_multiple)
                 self.after(100, self.student_info_frame)
                 self.main_menu = False
+                if self.help is not None and self.help.winfo_exists():
+                    self.files.configure(state="disabled")
                 self.passed = True
                 self.reset_activity_timer(None)
                 self.start_check_idle_thread()
                 self.in_student_frame = False
                 self.run_fix = True
+                if self.help is not None and self.help.winfo_exists():
+                    self.fix.configure(state="normal")
                 self.language_menu.configure(state="disabled")
                 self.language_menu_tooltip.show()
                 self.home_frame.grid_forget()
@@ -2747,10 +2755,14 @@ class TeraTermUI(customtkinter.CTk):
             self.slideshow_frame.resume_cycle()
             self.intro_box.reset_autoscroll()
             self.run_fix = False
+            if self.help is not None and self.help.winfo_exists():
+                self.fix.configure(state="disabled")
             self.in_student_frame = False
             self.in_enroll_frame = False
             self.in_search_frame = False
-            self.main_menu = True
+            self.main_menu = False
+            if self.help is not None and self.help.winfo_exists():
+                self.files.configure(state="normal")
             if self.error_occurred:
                 self.destroy_windows()
                 if (self.server_status != "Maintenance message found" and self.server_status != "Timeout") \
@@ -5810,7 +5822,7 @@ class TeraTermUI(customtkinter.CTk):
     def fix_execution_event_handler(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        if TeraTermUI.checkIfProcessRunning("ttermpro") and self.run_fix:
+        if TeraTermUI.checkIfProcessRunning("ttermpro"):
             msg = CTkMessagebox(master=self, title=translation["fix_messagebox_title"],
                                 message=translation["fix_messagebox"],
                                 icon="warning",
@@ -6386,26 +6398,30 @@ class TeraTermUI(customtkinter.CTk):
         return search_within_path("C:/")
 
     def change_location_auto_handler(self):
-        if self.main_menu:
-            lang = self.language_menu.get()
-            message_english = "Do you want to automatically search for Tera Term on the C drive?\n\n" \
-                              "Might take a while and make app unresponsive for a bit"
-            message_spanish = "¿Desea buscar automáticamente Tera Term en la unidad C?\n\n" \
-                              "Podría tardar un poco y hacer que la aplicación no responda durante ese tiempo."
-            message = message_english if lang == "English" else message_spanish
-            response = messagebox.askyesnocancel("Tera Term", message)
-            if response is True:
-                self.auto_search = True
-                task_done = threading.Event()
-                loading_screen = self.show_loading_screen()
-                self.update_loading_screen(loading_screen, task_done)
-                event_thread = threading.Thread(target=self.change_location_event, args=(task_done,))
-                event_thread.start()
-            elif response is False:
-                self.manually_change_location()
-            else:
-                self.help.lift()
-                self.help.focus_set()
+        lang = self.language_menu.get()
+        self.files.configure(state="disabled")
+        message_english = "Do you want to automatically search for Tera Term on the C drive? " \
+                          "(click  the \"no\" button if your prefer to search for it manually)\n\n" \
+                          "Might take a while and make app unresponsive for a bit"
+        message_spanish = "¿Desea buscar automáticamente Tera Term en la unidad C? " \
+                          "(hacer clic al botón \"no\" si desea buscarlo manualmente)\n\n" \
+                          "Podría tardar un poco y hacer que la aplicación no responda durante ese tiempo."
+        message = message_english if lang == "English" else message_spanish
+        response = messagebox.askyesnocancel("Tera Term", message)
+        if response is True:
+            self.auto_search = True
+            task_done = threading.Event()
+            loading_screen = self.show_loading_screen()
+            self.update_loading_screen(loading_screen, task_done)
+            event_thread = threading.Thread(target=self.change_location_event, args=(task_done,))
+            event_thread.start()
+        elif response is False:
+            self.manually_change_location()
+        else:
+            self.help.lift()
+            self.help.focus_set()
+            if self.help is not None and self.help.winfo_exists():
+                self.files.configure(state="normal")
 
     # Automatically tries to find where the Tera Term application is located
     def change_location_event(self, task_done):
@@ -6432,6 +6448,8 @@ class TeraTermUI(customtkinter.CTk):
             self.changed_location = True
             self.after(0, self.show_success_message, 350, 265, translation["tera_term_success"])
             self.edit_teraterm_ini(self.teraterm_file)
+            if self.help is not None and self.help.winfo_exists():
+                self.files.configure(state="normal")
         else:
             task_done.set()
             message_english = ("Tera Term executable was not found on the C drive.\n\n"
@@ -6473,6 +6491,8 @@ class TeraTermUI(customtkinter.CTk):
             self.help.lift()
             self.help.focus_set()
         self.slideshow_frame.resume_cycle()
+        if self.help is not None and self.help.winfo_exists():
+            self.files.configure(state="normal")
 
     # disables scrolling for the class list
     def disable_scroll(self, event):
@@ -6578,6 +6598,10 @@ class TeraTermUI(customtkinter.CTk):
         self.fix = CustomButton(self.help_frame, border_width=2, image=self.get_image("fix"),
                                 text=translation["fix"], anchor="w", text_color=("gray10", "#DCE4EE"),
                                 command=self.fix_execution_event_handler)
+        if not self.main_menu:
+            self.files.configure(state="disabled")
+        if not self.run_fix:
+            self.fix.configure(state="disabled")
 
     # Creates the Help window
     def help_button_event(self):
