@@ -245,7 +245,8 @@ class TeraTermUI(customtkinter.CTk):
         self.introduction.grid(row=0, column=1, columnspan=2, padx=(20, 0), pady=(20, 0))
         self.host = customtkinter.CTkLabel(self.home_frame, text="Host")
         self.host.grid(row=2, column=1, padx=(0, 170), pady=(15, 15))
-        self.host_entry = CustomEntry(self.home_frame, self, placeholder_text="myhost.example.edu")
+        self.host_entry = CustomEntry(self.home_frame, self, self.language_menu.get(),
+                                      placeholder_text="myhost.example.edu")
         self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(15, 15))
         self.host_tooltip = CTkToolTip(self.host_entry, message="Enter the name of the server\n of the university",
                                        bg_color="#1E90FF")
@@ -256,7 +257,8 @@ class TeraTermUI(customtkinter.CTk):
         self.slideshow_frame = ImageSlideshow(self.home_frame, "slideshow", interval=5, width=300,
                                               height=150)
         self.slideshow_frame.grid(row=1, column=1, padx=(20, 0), pady=(140, 0))
-        self.intro_box = CustomTextBox(self.home_frame, read_only=True, height=120, width=400)
+        self.intro_box = CustomTextBox(self.home_frame, read_only=True, lang=self.language_menu.get(),
+                                       height=120, width=400)
         self.intro_box.insert("0.0", "Welcome to the Tera Term UI Application!\n\n" +
                               "The purpose of this application"
                               " is to facilitate the process enrolling and dropping classes, "
@@ -3567,7 +3569,7 @@ class TeraTermUI(customtkinter.CTk):
                                                 command=self.uprb_event, fg_color="transparent", hover=False)
             self.disclaimer = customtkinter.CTkLabel(master=self.authentication_frame, text=translation["disclaimer"])
             self.username = customtkinter.CTkLabel(master=self.authentication_frame, text=translation["username"])
-            self.username_entry = CustomEntry(self.authentication_frame, self)
+            self.username_entry = CustomEntry(self.authentication_frame, self, lang)
             self.username_tooltip = CTkToolTip(self.username_entry, message=translation["username_tooltip"],
                                                bg_color="#1E90FF")
             self.auth = CustomButton(master=self.a_buttons_frame, border_width=2, text=translation["authentication"],
@@ -3628,11 +3630,11 @@ class TeraTermUI(customtkinter.CTk):
             self.lock_grid = CustomButton(self.student_frame, text="", image=self.lock, command=self.lock_event,
                                           fg_color="transparent", hover=False)
             self.student_id = customtkinter.CTkLabel(master=self.student_frame, text=translation["student_id"])
-            self.student_id_entry = CustomEntry(self.student_frame, self, placeholder_text="#########", show="*")
+            self.student_id_entry = CustomEntry(self.student_frame, self, lang, placeholder_text="#########", show="*")
             self.student_id_tooltip = CTkToolTip(self.student_id_entry, message=translation["student_id_tooltip"],
                                                  bg_color="#1E90FF")
             self.code = customtkinter.CTkLabel(master=self.student_frame, text=translation["code"])
-            self.code_entry = CustomEntry(self.student_frame, self, placeholder_text="####", show="*")
+            self.code_entry = CustomEntry(self.student_frame, self, lang, placeholder_text="####", show="*")
             self.code_tooltip = CTkToolTip(self.code_entry, message=translation["code_tooltip"], bg_color="#1E90FF")
             self.show = customtkinter.CTkSwitch(master=self.student_frame, text=translation["show"],
                                                 command=self.show_event, onvalue="on", offvalue="off")
@@ -3726,10 +3728,11 @@ class TeraTermUI(customtkinter.CTk):
                                                        text=translation["title_enroll"],
                                                        font=customtkinter.CTkFont(size=20, weight="bold"))
             self.e_classes = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab), text=translation["class"])
-            self.e_classes_entry = CustomEntry(self.tabview.tab(self.enroll_tab), self, placeholder_text="MATE3032")
+            self.e_classes_entry = CustomEntry(self.tabview.tab(self.enroll_tab), self, lang,
+                                               placeholder_text="MATE3032")
             self.e_section = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab),
                                                     text=translation["section"])
-            self.e_section_entry = CustomEntry(self.tabview.tab(self.enroll_tab), self, placeholder_text="LM1")
+            self.e_section_entry = CustomEntry(self.tabview.tab(self.enroll_tab), self, lang, placeholder_text="LM1")
             self.e_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab),
                                                      text=translation["semester"])
             self.e_semester_entry = CustomComboBox(self.tabview.tab(self.enroll_tab), self,
@@ -3755,7 +3758,7 @@ class TeraTermUI(customtkinter.CTk):
                                                        text=translation["title_search"],
                                                        font=customtkinter.CTkFont(size=20, weight="bold"))
             self.s_classes = customtkinter.CTkLabel(self.search_scrollbar, text=translation["class"])
-            self.s_classes_entry = CustomEntry(self.search_scrollbar, self, placeholder_text="MATE3032",
+            self.s_classes_entry = CustomEntry(self.search_scrollbar, self, lang, placeholder_text="MATE3032",
                                                width=80)
             self.s_semester = customtkinter.CTkLabel(self.search_scrollbar, text=translation["semester"])
             self.s_semester_entry = CustomComboBox(self.search_scrollbar, self,
@@ -3891,9 +3894,9 @@ class TeraTermUI(customtkinter.CTk):
             self.m_choice = customtkinter.CTkLabel(master=self.multiple_frame, text=translation["choice"])
             for i in range(6):
                 self.m_num_class.append(customtkinter.CTkLabel(master=self.multiple_frame, text=f"{i + 1}."))
-                self.m_classes_entry.append(CustomEntry(self.multiple_frame, self,
+                self.m_classes_entry.append(CustomEntry(self.multiple_frame, self, lang,
                                                         placeholder_text=self.placeholder_texts_classes[i]))
-                self.m_section_entry.append(CustomEntry(self.multiple_frame, self,
+                self.m_section_entry.append(CustomEntry(self.multiple_frame, self, lang,
                                                         placeholder_text=self.placeholder_texts_sections[i]))
                 self.m_semester_entry.append(CustomComboBox(self.multiple_frame, self,
                                                             values=["C31", "C32", "C33", "C41", "C42", "C43"],
@@ -4870,7 +4873,7 @@ class TeraTermUI(customtkinter.CTk):
                                                                          translation["section"]], width=80,
                                                                  command=lambda value, index=row_index:
                                                                  self.modify_enrolled_classes(value, index))
-                self.change_section_entry = CustomEntry(self.modify_classes_frame, self,
+                self.change_section_entry = CustomEntry(self.modify_classes_frame, self, lang,
                                                         placeholder_text=placeholder_text,
                                                         width=50)
                 self.mod_selection.grid(row=row_index, column=0, padx=(0, 100), pady=(pad_y, 0))
@@ -6165,7 +6168,7 @@ class TeraTermUI(customtkinter.CTk):
         self.status_title = customtkinter.CTkLabel(self.status_frame, text=translation["status_title"],
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
         self.version = customtkinter.CTkLabel(self.status_frame, text=translation["app_version"])
-        self.feedback_text = CustomTextBox(self.status_frame, enable_autoscroll=False,
+        self.feedback_text = CustomTextBox(self.status_frame, enable_autoscroll=False, lang=lang,
                                            wrap="word", border_spacing=8, width=300, height=170,
                                            fg_color=("#ffffff", "#111111"))
         self.feedback_send = CustomButton(self.status_frame, border_width=2, text=translation["feedback"],
@@ -6560,7 +6563,7 @@ class TeraTermUI(customtkinter.CTk):
         self.notice = customtkinter.CTkLabel(self.help_frame, text=translation["notice"],
                                              font=customtkinter.CTkFont(weight="bold", underline=True))
         self.searchbox_text = customtkinter.CTkLabel(self.help_frame, text=translation["searchbox_title"])
-        self.search_box = CustomEntry(self.help_frame, self, placeholder_text=translation["searchbox"])
+        self.search_box = CustomEntry(self.help_frame, self, lang, placeholder_text=translation["searchbox"])
         self.class_list = tk.Listbox(self.help_frame, width=35, bg=bg_color, fg=fg_color, font=listbox_font)
         self.curriculum_text = customtkinter.CTkLabel(self.help_frame, text=translation["curriculums_title"])
         self.curriculum = customtkinter.CTkOptionMenu(self.help_frame,
@@ -7020,6 +7023,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
         super().__init__(master, **kwargs)
         self.auto_scroll = enable_autoscroll
         self.lang = lang
+        self.read_only = read_only
         self.after_id = None
 
         if self.auto_scroll:
@@ -7055,15 +7059,14 @@ class CustomTextBox(customtkinter.CTkTextbox):
 
         # Context Menu
         self.context_menu = tk.Menu(self, tearoff=0, bg="#f0f0f0", fg="#333333", font=("Arial", 10))
-        if not self.auto_scroll:
+        if not self.read_only:
             self.context_menu.add_command(label="Cut", command=self.cut)
         self.context_menu.add_command(label="Copy", command=self.copy)
-        if not self.auto_scroll:
+        if not self.read_only:
             self.context_menu.add_command(label="Paste", command=self.paste)
         self.context_menu.add_command(label="Select All", command=self.select_all)
         self.bind("<Button-3>", self.show_menu)
 
-        self.read_only = read_only
         if self.read_only:
             self.bind("<Key>", CustomTextBox.readonly)
 
@@ -7113,29 +7116,42 @@ class CustomTextBox(customtkinter.CTkTextbox):
 
     def show_menu(self, event):
         self.focus_set()
+        self.mark_set(tk.INSERT, "end")
         self.stop_autoscroll(event=None)
 
-        # Update the label of the context menu based on the selection state
-        if self.tag_ranges(tk.SEL):
-            self.context_menu.entryconfigure(3, label="Unselect All")
-        else:
-            self.context_menu.entryconfigure(3, label="Select All")
-
         # Update the menu labels based on the current language
-        current_label = self.context_menu.entrycget(0, "label")
-        if self.lang == "English" and current_label != "Cut":
+        if self.lang == "English" and not self.read_only:
             self.context_menu.entryconfigure(0, label="Cut")
             self.context_menu.entryconfigure(1, label="Copy")
             self.context_menu.entryconfigure(2, label="Paste")
             self.context_menu.entryconfigure(3, label="Select All")
-        elif self.lang == "Español" and current_label != "Cortar":
+        elif self.lang == "Español" and not self.read_only:
             self.context_menu.entryconfigure(0, label="Cortar")
             self.context_menu.entryconfigure(1, label="Copiar")
             self.context_menu.entryconfigure(2, label="Pegar")
-            self.context_menu.entryconfigure(3, label="Seleccionar todo")
+            self.context_menu.entryconfigure(3, label="Seleccionar Todo")
+
+        if self.lang == "English" and self.read_only:
+            self.context_menu.entryconfigure(0, label="Copy")
+            self.context_menu.entryconfigure(1, label="Select All")
+
+        elif self.lang == "Español" and self.read_only:
+            self.context_menu.entryconfigure(0, label="Copiar")
+            self.context_menu.entryconfigure(1, label="Seleccionar Todo")
+
+        # Update the label of the context menu based on the selection state
+        if self.tag_ranges(tk.SEL):
+            if self.lang == "English":
+                self.context_menu.entryconfigure(3, label="Unselect All")
+            elif self.lang == "Español":
+                self.context_menu.entryconfigure(3, label="Deseleccionar Todo")
+        else:
+            if self.lang == "English":
+                self.context_menu.entryconfigure(3, label="Select All")
+            elif self.lang == "Español":
+                self.context_menu.entryconfigure(3, label="Seleccionar Todo")
 
         self.context_menu.post(event.x_root, event.y_root)
-        self.mark_set(tk.INSERT, "end")
 
     def cut(self):
         self.focus_set()
@@ -7290,24 +7306,29 @@ class CustomEntry(customtkinter.CTkEntry):
         self.focus_set()
         self.icursor(tk.END)
 
-        # Update the label of the context menu based on the selection state
-        if self.select_present():
-            self.context_menu.entryconfigure(3, label="Unselect All")
-        else:
-            self.context_menu.entryconfigure(3, label="Select All")
-
         # Update the menu labels based on the current language
-        current_label = self.context_menu.entrycget(0, "label")
-        if self.lang == "English" and current_label != "Cut":
+        if self.lang == "English":
             self.context_menu.entryconfigure(0, label="Cut")
             self.context_menu.entryconfigure(1, label="Copy")
             self.context_menu.entryconfigure(2, label="Paste")
             self.context_menu.entryconfigure(3, label="Select All")
-        elif self.lang == "Español" and current_label != "Cortar":
+        elif self.lang == "Español":
             self.context_menu.entryconfigure(0, label="Cortar")
             self.context_menu.entryconfigure(1, label="Copiar")
             self.context_menu.entryconfigure(2, label="Pegar")
-            self.context_menu.entryconfigure(3, label="Seleccionar todo")
+            self.context_menu.entryconfigure(3, label="Seleccionar Todo")
+
+        # Update the label of the context menu based on the selection state
+        if self.select_present():
+            if self.lang == "English":
+                self.context_menu.entryconfigure(3, label="Unselect All")
+            elif self.lang == "Español":
+                self.context_menu.entryconfigure(3, label="Deseleccionar Todo")
+        else:
+            if self.lang == "English":
+                self.context_menu.entryconfigure(3, label="Select All")
+            elif self.lang == "Español":
+                self.context_menu.entryconfigure(3, label="Seleccionar Todo")
 
         self.context_menu.post(event.x_root, event.y_root)
 
