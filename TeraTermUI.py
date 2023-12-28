@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 12/26/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 12/28/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -7114,6 +7114,14 @@ class CustomTextBox(customtkinter.CTkTextbox):
     def show_menu(self, event):
         self.focus_set()
         self.stop_autoscroll(event=None)
+
+        # Update the label of the context menu based on the selection state
+        if self.tag_ranges(tk.SEL):
+            self.context_menu.entryconfigure(3, label="Unselect All")
+        else:
+            self.context_menu.entryconfigure(3, label="Select All")
+
+        # Update the menu labels based on the current language
         current_label = self.context_menu.entrycget(0, "label")
         if self.lang == "English" and current_label != "Cut":
             self.context_menu.entryconfigure(0, label="Cut")
@@ -7125,11 +7133,14 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.context_menu.entryconfigure(1, label="Copiar")
             self.context_menu.entryconfigure(2, label="Pegar")
             self.context_menu.entryconfigure(3, label="Seleccionar todo")
+
         self.context_menu.post(event.x_root, event.y_root)
         self.mark_set(tk.INSERT, "end")
 
     def cut(self):
         self.focus_set()
+        if not self.tag_ranges(tk.SEL):
+            self.tag_add(tk.SEL, "1.0", tk.END)
         try:
             selected_text = self.selection_get()  # Attempt to get selected text
             current_text = self.get("1.0", "end-1c")  # Existing text in the Text widget
@@ -7151,6 +7162,8 @@ class CustomTextBox(customtkinter.CTkTextbox):
     def copy(self):
         self.focus_set()
         self.stop_autoscroll(event=None)
+        if not self.tag_ranges(tk.SEL):
+            self.tag_add(tk.SEL, "1.0", tk.END)
         try:
             selected_text = self.selection_get()  # Attempt to get selected text
             self.clipboard_clear()
@@ -7275,6 +7288,15 @@ class CustomEntry(customtkinter.CTkEntry):
             return
 
         self.focus_set()
+        self.icursor(tk.END)
+
+        # Update the label of the context menu based on the selection state
+        if self.select_present():
+            self.context_menu.entryconfigure(3, label="Unselect All")
+        else:
+            self.context_menu.entryconfigure(3, label="Select All")
+
+        # Update the menu labels based on the current language
         current_label = self.context_menu.entrycget(0, "label")
         if self.lang == "English" and current_label != "Cut":
             self.context_menu.entryconfigure(0, label="Cut")
@@ -7286,11 +7308,13 @@ class CustomEntry(customtkinter.CTkEntry):
             self.context_menu.entryconfigure(1, label="Copiar")
             self.context_menu.entryconfigure(2, label="Pegar")
             self.context_menu.entryconfigure(3, label="Seleccionar todo")
+
         self.context_menu.post(event.x_root, event.y_root)
-        self.icursor(tk.END)
 
     def cut(self):
         self.focus_set()
+        if not self.select_present():
+            self.select_range(0, "end")
         try:
             selected_text = self.selection_get()  # Attempt to get selected text
             current_text = self.get()  # Existing text in the Entry widget
@@ -7315,6 +7339,8 @@ class CustomEntry(customtkinter.CTkEntry):
 
     def copy(self):
         self.focus_set()
+        if not self.select_present():
+            self.select_range(0, "end")
         try:
             selected_text = self.selection_get()  # Attempt to get selected text
             self.clipboard_clear()
