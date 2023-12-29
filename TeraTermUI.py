@@ -6564,6 +6564,7 @@ class TeraTermUI(customtkinter.CTk):
                                              font=customtkinter.CTkFont(weight="bold", underline=True))
         self.searchbox_text = customtkinter.CTkLabel(self.help_frame, text=translation["searchbox_title"])
         self.search_box = CustomEntry(self.help_frame, self, lang, placeholder_text=translation["searchbox"])
+        self.search_box.is_listbox_entry = True
         self.class_list = tk.Listbox(self.help_frame, width=35, bg=bg_color, fg=fg_color, font=listbox_font)
         self.curriculum_text = customtkinter.CTkLabel(self.help_frame, text=translation["curriculums_title"])
         self.curriculum = customtkinter.CTkOptionMenu(self.help_frame,
@@ -7238,6 +7239,7 @@ class CustomEntry(customtkinter.CTkEntry):
         self._undo_stack = deque([initial_state], maxlen=25)
         self._redo_stack = deque(maxlen=25)
         self.lang = lang
+        self.is_listbox_entry = False
 
         self.teraterm_ui = teraterm_ui_instance
         self.bind("<FocusIn>", self.disable_slider_keys)
@@ -7291,6 +7293,8 @@ class CustomEntry(customtkinter.CTkEntry):
             self._redo_stack.append(self._undo_stack.pop())
             self.delete(0, "end")
             self.insert(0, self._undo_stack[-1])
+            if self.is_listbox_entry:
+                self.update_listbox()
 
     def redo(self, event=None):
         if self._redo_stack:
@@ -7298,6 +7302,8 @@ class CustomEntry(customtkinter.CTkEntry):
             self._undo_stack.append(redo_text)
             self.delete(0, "end")
             self.insert(0, redo_text)
+            if self.is_listbox_entry:
+                self.update_listbox()
 
     def show_menu(self, event):
         if self.cget("state") == "disabled":
@@ -7347,6 +7353,8 @@ class CustomEntry(customtkinter.CTkEntry):
             self.clipboard_clear()
             self.clipboard_append(selected_text)
             self.delete(tk.SEL_FIRST, tk.SEL_LAST)
+            if self.is_listbox_entry:
+                self.update_listbox()
 
             # Update the undo stack with the new state
             new_text = self.get()
@@ -7396,6 +7404,8 @@ class CustomEntry(customtkinter.CTkEntry):
             new_text = self.get()
             self._undo_stack.append(new_text)
             self._redo_stack = []
+            if self.is_listbox_entry:
+                self.update_listbox()
         except tk.TclError:
             pass  # Clipboard empty or other issue
         return "break"
@@ -7420,6 +7430,9 @@ class CustomEntry(customtkinter.CTkEntry):
             self.select_range(0, "end")
             self.icursor("end")
         return "break"
+
+    def update_listbox(self):
+        self.teraterm_ui.search_classes(None)
 
 
 class CustomComboBox(customtkinter.CTkComboBox):
