@@ -6168,7 +6168,7 @@ class TeraTermUI(customtkinter.CTk):
         self.status_title = customtkinter.CTkLabel(self.status_frame, text=translation["status_title"],
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
         self.version = customtkinter.CTkLabel(self.status_frame, text=translation["app_version"])
-        self.feedback_text = CustomTextBox(self.status_frame, self, enable_autoscroll=False, lang=lang,
+        self.feedback_text = CustomTextBox(self.status_frame,  self.status_frame, enable_autoscroll=False, lang=lang,
                                            wrap="word", border_spacing=8, width=300, height=170,
                                            fg_color=("#ffffff", "#111111"))
         self.feedback_send = CustomButton(self.status_frame, border_width=2, text=translation["feedback"],
@@ -6563,7 +6563,7 @@ class TeraTermUI(customtkinter.CTk):
         self.notice = customtkinter.CTkLabel(self.help_frame, text=translation["notice"],
                                              font=customtkinter.CTkFont(weight="bold", underline=True))
         self.searchbox_text = customtkinter.CTkLabel(self.help_frame, text=translation["searchbox_title"])
-        self.search_box = CustomEntry(self.help_frame, self, lang, placeholder_text=translation["searchbox"])
+        self.search_box = CustomEntry(self.help_frame, self.help_frame, lang, placeholder_text=translation["searchbox"])
         self.search_box.is_listbox_entry = True
         self.class_list = tk.Listbox(self.help_frame, width=35, bg=bg_color, fg=fg_color, font=listbox_font)
         self.curriculum_text = customtkinter.CTkLabel(self.help_frame, text=translation["curriculums_title"])
@@ -7217,7 +7217,8 @@ class CustomTextBox(customtkinter.CTkTextbox):
             if self.tag_ranges(tk.SEL):
                 # Clear the selection if text is already selected
                 self.tag_remove(tk.SEL, "1.0", tk.END)
-                self.teraterm_ui.focus_set()
+                if self.read_only:
+                    self.teraterm_ui.focus_set()
             else:
                 # Select all text if nothing is selected
                 self.tag_add(tk.SEL, "1.0", tk.END)
