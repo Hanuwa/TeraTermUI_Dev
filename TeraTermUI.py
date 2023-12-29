@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 12/28/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 12/29/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -257,7 +257,7 @@ class TeraTermUI(customtkinter.CTk):
         self.slideshow_frame = ImageSlideshow(self.home_frame, "slideshow", interval=5, width=300,
                                               height=150)
         self.slideshow_frame.grid(row=1, column=1, padx=(20, 0), pady=(140, 0))
-        self.intro_box = CustomTextBox(self.home_frame, read_only=True, lang=self.language_menu.get(),
+        self.intro_box = CustomTextBox(self.home_frame, self, read_only=True, lang=self.language_menu.get(),
                                        height=120, width=400)
         self.intro_box.insert("0.0", "Welcome to the Tera Term UI Application!\n\n" +
                               "The purpose of this application"
@@ -6168,7 +6168,7 @@ class TeraTermUI(customtkinter.CTk):
         self.status_title = customtkinter.CTkLabel(self.status_frame, text=translation["status_title"],
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
         self.version = customtkinter.CTkLabel(self.status_frame, text=translation["app_version"])
-        self.feedback_text = CustomTextBox(self.status_frame, enable_autoscroll=False, lang=lang,
+        self.feedback_text = CustomTextBox(self.status_frame, self, enable_autoscroll=False, lang=lang,
                                            wrap="word", border_spacing=8, width=300, height=170,
                                            fg_color=("#ffffff", "#111111"))
         self.feedback_send = CustomButton(self.status_frame, border_width=2, text=translation["feedback"],
@@ -7020,12 +7020,13 @@ class CustomScrollableFrame(customtkinter.CTkScrollableFrame):
 
 
 class CustomTextBox(customtkinter.CTkTextbox):
-    def __init__(self, master=None, enable_autoscroll=True, read_only=False, lang=None, **kwargs):
+    def __init__(self, master, teraterm_ui_instance, enable_autoscroll=True, read_only=False, lang=None, **kwargs):
         super().__init__(master, **kwargs)
         self.auto_scroll = enable_autoscroll
         self.lang = lang
         self.read_only = read_only
         self.after_id = None
+        self.teraterm_ui = teraterm_ui_instance
 
         if self.auto_scroll:
             self.update_text()
@@ -7216,6 +7217,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
             if self.tag_ranges(tk.SEL):
                 # Clear the selection if text is already selected
                 self.tag_remove(tk.SEL, "1.0", tk.END)
+                self.teraterm_ui.focus_set()
             else:
                 # Select all text if nothing is selected
                 self.tag_add(tk.SEL, "1.0", tk.END)
