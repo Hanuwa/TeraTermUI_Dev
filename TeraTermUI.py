@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 12/29/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 12/30/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -184,6 +184,10 @@ class TeraTermUI(customtkinter.CTk):
         self.grid_columnconfigure(1, weight=1)
         self.grid_columnconfigure((2, 3), weight=0)
         self.grid_rowconfigure((0, 1, 2), weight=1)
+
+        self.app_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
+        self.app_frame.grid(row=0, column=0, rowspan=5, columnspan=5, padx=(0, 0), pady=(0, 0), sticky="nsew")
+        self.app_frame.bind("<Button-1>", lambda event: self.focus_set())
 
         # create sidebar frame with widgets
         self.sidebar_frame = customtkinter.CTkFrame(self, width=140, corner_radius=0)
@@ -3764,6 +3768,7 @@ class TeraTermUI(customtkinter.CTk):
                                                      command=self.set_focus)
             self.drop_tooltip = CTkToolTip(self.drop, message=translation["drop_tooltip"])
             self.register.select()
+            self.tabview.tab(self.enroll_tab).bind("<Button-1>", lambda event: self.focus_set())
             self.title_enroll.bind("<Button-1>", lambda event: self.focus_set())
 
             # Second Tab
@@ -3791,7 +3796,11 @@ class TeraTermUI(customtkinter.CTk):
             self.search_next_page_tooltip = CTkToolTip(self.search_next_page,
                                                        message=translation["search_next_page_tooltip"],
                                                        bg_color="#A9A9A9", alpha=0.90)
+            self.tabview.tab(self.search_tab).bind("<Button-1>", lambda event: self.focus_set())
+            self.search_scrollbar.bind("<Button-1>", lambda event: self.focus_set())
             self.title_search.bind("<Button-1>", lambda event: self.focus_set())
+            self.s_classes.bind("<Button-1>", lambda event: self.focus_set())
+            self.s_semester.bind("<Button-1>", lambda event: self.focus_set())
 
             # Third Tab
             self.title_menu = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab),
@@ -3837,6 +3846,7 @@ class TeraTermUI(customtkinter.CTk):
                                             border_width=2, text=translation["go_next"],
                                             text_color=("gray10", "#DCE4EE"), hover_color="#4E4F50",
                                             command=self.go_next_page_handler, width=100)
+            self.tabview.tab(self.other_tab).bind("<Button-1>", lambda event: self.focus_set())
             self.title_menu.bind("<Button-1>", lambda event: self.focus_set())
             self.explanation_menu.bind("<Button-1>", lambda event: self.focus_set())
 
@@ -6124,8 +6134,6 @@ class TeraTermUI(customtkinter.CTk):
 
     # Changes keybind depending on the tab the user is currently on
     def switch_tab(self):
-        enroll_frame = self.tabview.tab(self.enroll_tab)
-        other_frame = self.tabview.tab(self.other_tab)
         self.add_key_bindings(event=None)
         if self.tabview.get() == self.enroll_tab:
             self.in_search_frame = False
@@ -6134,7 +6142,6 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<Down>")
             self.bind("<Return>", lambda event: self.submit_event_handler())
             self.bind("<space>", lambda event: self.spacebar_event())
-            enroll_frame.bind("<Button-1>", lambda event: enroll_frame.focus_set())
         elif self.tabview.get() == self.search_tab:
             if hasattr(self, "table") and self.table is not None:
                 self.current_class.grid_forget()
@@ -6160,7 +6167,6 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<Up>")
             self.unbind("<Down>")
             self.bind("<Return>", lambda event: self.option_menu_event_handler())
-            other_frame.bind("<Button-1>", lambda event: other_frame.focus_set())
         self.after(0, self.focus_set)
 
     def load_table(self):
