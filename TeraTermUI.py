@@ -1350,7 +1350,8 @@ class TeraTermUI(customtkinter.CTk):
         dialog_x = main_window_x + (main_window_width - dialog_width) / 2
         dialog_y = main_window_y + (main_window_height - dialog_height) / 2
         self.dialog = SmoothFadeInputDialog(text=translation["dialog_message"], title=translation["dialog_title"],
-                                            ok_text=translation["submit"], cancel_text=translation["option_1"])
+                                            ok_text=translation["submit"], cancel_text=translation["option_1"],
+                                            lang=lang)
         self.dialog.geometry("+%d+%d" % (dialog_x + 75, dialog_y + 60))
         self.dialog.iconbitmap(self.icon_path)
         self.dialog.bind("<Escape>", lambda event: self.dialog.destroy())
@@ -1499,6 +1500,20 @@ class TeraTermUI(customtkinter.CTk):
     def remove_event_down_arrow_key(self):
         if self.down_arrow_key_enabled and self.a_counter != 0:
             self.remove_event()
+
+    def move_up_scrollbar(self):
+        if self.up_arrow_key_enabled:
+            if self.enrolled_rows is None:
+                self.search_scrollbar.scroll_more_up()
+            else:
+                self.my_classes_frame.scroll_more_up()
+
+    def move_down_scrollbar(self):
+        if self.down_arrow_key_enabled:
+            if self.enrolled_rows is None:
+                self.search_scrollbar.scroll_more_down()
+            else:
+                self.my_classes_frame.scroll_more_down()
 
     # multiple classes screen
     def multiple_classes_event(self):
@@ -4794,8 +4809,7 @@ class TeraTermUI(customtkinter.CTk):
         self.enrolled_classes_data = data
 
         semester = self.dialog_input.upper().replace(" ", "")
-        self.my_classes_frame = customtkinter.CTkScrollableFrame(self,
-                                                                 corner_radius=10, width=620, height=320)
+        self.my_classes_frame = customtkinter.CTkScrollableFrame(self, corner_radius=10, width=620, height=320)
         self.title_my_classes = customtkinter.CTkLabel(self.my_classes_frame,
                                                        text=translation["my_classes"] + semester,
                                                        font=customtkinter.CTkFont(size=20, weight="bold"))
@@ -4892,6 +4906,8 @@ class TeraTermUI(customtkinter.CTk):
                 pad_y = 45
         self.my_classes_frame.grid(row=0, column=1)
         self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
+        self.bind("<Up>", lambda event: self.move_up_scrollbar())
+        self.bind("<Down>", lambda event: self.move_down_scrollbar())
         self.my_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
         self.modify_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
         self.title_my_classes.bind("<Button-1>", lambda event: self.focus_set())
@@ -6114,6 +6130,8 @@ class TeraTermUI(customtkinter.CTk):
         if self.tabview.get() == self.enroll_tab:
             self.in_search_frame = False
             self.in_enroll_frame = True
+            self.unbind("<Up>")
+            self.unbind("<Down>")
             self.bind("<Return>", lambda event: self.submit_event_handler())
             self.bind("<space>", lambda event: self.spacebar_event())
             enroll_frame.bind("<Button-1>", lambda event: enroll_frame.focus_set())
@@ -6133,10 +6151,14 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Return>", lambda event: self.search_event_handler())
             self.bind("<space>", lambda event: self.spacebar_event())
             self.search_scrollbar.bind("<Button-1>", lambda event: self.search_scrollbar.focus_set())
+            self.bind("<Up>", lambda event: self.move_up_scrollbar())
+            self.bind("<Down>", lambda event: self.move_down_scrollbar())
         elif self.tabview.get() == self.other_tab:
             self.in_enroll_frame = False
             self.in_search_frame = False
             self.unbind("<space>")
+            self.unbind("<Up>")
+            self.unbind("<Down>")
             self.bind("<Return>", lambda event: self.option_menu_event_handler())
             other_frame.bind("<Button-1>", lambda event: other_frame.focus_set())
         self.after(0, self.focus_set)
@@ -6233,6 +6255,8 @@ class TeraTermUI(customtkinter.CTk):
         self.status.focus_set()
         self.status_frame.bind("<Button-1>", lambda event: self.status_frame.focus_set())
         self.status_frame.bind("<Button-3>", lambda event: self.status_frame.focus_set())
+        self.status.bind("<Up>", lambda event: self.status_frame.scroll_more_up())
+        self.status.bind("<Down>", lambda event: self.status_frame.scroll_more_down())
         self.status.protocol("WM_DELETE_WINDOW", self.on_status_window_close)
         self.status.bind("<Escape>", lambda event: self.on_status_window_close())
 
@@ -6664,6 +6688,8 @@ class TeraTermUI(customtkinter.CTk):
         self.search_box.bind("<KeyRelease>", self.search_classes)
         self.help_frame.bind("<Button-1>", lambda event: self.help_frame.focus_set())
         self.help_frame.bind("<Button-3>", lambda event: self.help_frame.focus_set())
+        self.help.bind("<Up>", lambda event: self.help_frame.scroll_more_up())
+        self.help.bind("<Down>", lambda event: self.help_frame.scroll_more_down())
         self.help.protocol("WM_DELETE_WINDOW", self.on_help_window_close)
         self.help.bind("<Escape>", lambda event: self.on_help_window_close())
 
@@ -7059,6 +7085,10 @@ class CustomTextBox(customtkinter.CTkTextbox):
         # Update the undo stack every time the Entry content changes
         self.bind("<KeyRelease>", self.update_undo_stack)
 
+        if self.read_only:
+            self.bind("<Up>", self.scroll_more_up)
+            self.bind("<Down>", self.scroll_more_down)
+
         # Context Menu
         self.context_menu = tk.Menu(self, tearoff=0, bg="#f0f0f0", fg="#333333", font=("Arial", 10))
         if not self.read_only:
@@ -7227,6 +7257,16 @@ class CustomTextBox(customtkinter.CTkTextbox):
         except tk.TclError:
             pass  # Handle any exceptions if needed
         return "break"
+
+    def scroll_more_up(self, event=None, scroll_units=1):
+        current_view = self.yview()
+        if current_view[0] > 0:
+            self.yview_scroll(-scroll_units, "units")
+
+    def scroll_more_down(self, event=None, scroll_units=1):
+        current_view = self.yview()
+        if current_view[1] < 1:
+            self.yview_scroll(scroll_units, "units")
 
     @staticmethod
     def readonly(event):
