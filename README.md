@@ -3,7 +3,7 @@ Dev Environment for Tera Term UI
 
 **Python Version:** "3.11.7"
 
-**Important** modules of "**ctkmessagebox.py, ctk_input_dialog.py, ctk_scrollable_frame.py, ctk_tabview.py, ctk_toplevel.py and ctk_scrollbar.py**" are included here because they have some modifications.
+**Important** modules of "**ctkmessagebox.py, ctk_input_dialog.py, ctk_scrollable_frame.py, ctk_tabview.py, ctk_toplevel.py, ctk_textbox.py and ctk_scrollbar.py**" are included here because they have some modifications.
 
 Priorities of the development of the application is working on improving the UI since it's  a bit too simple and not polished,
 funtionality wise the application is pretty fleshed out.
@@ -25,4 +25,4 @@ Links: https://github.com/TomSchimansky/CustomTkinter
       
 # Convert from .py to .exe
 We convert the application to an executable using Nuitka, is a program that basically compiles your code into C and then bundles your application together,
-it's a really good tool and it even increases the performance of some tasks https://github.com/Nuitka/Nuitka .
+it's a really good tool and it even increases the performance of some tasks https://github.com/Nuitka/Nuitka 
