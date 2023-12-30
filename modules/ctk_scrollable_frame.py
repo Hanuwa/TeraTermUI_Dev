@@ -321,4 +321,14 @@ class CTkScrollableFrame(tkinter.Frame, CTkAppearanceModeBaseClass, CTkScalingBa
     def scroll_to_bottom(self):
         self._parent_canvas.yview_moveto(1)
 
+    def scroll_more_up(self):
+        scroll_units = 10
+        current_view = self._parent_canvas.yview()
+        if current_view[0] > 0:
+            self._parent_canvas.yview_scroll(-scroll_units, "units")
 
+    def scroll_more_down(self):
+        scroll_units = 10
+        current_view = self._parent_canvas.yview()
+        if current_view[1] < 1:
+            self._parent_canvas.yview_scroll(scroll_units, "units")
