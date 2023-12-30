@@ -26,6 +26,7 @@ class CTkInputDialog(CTkToplevel):
                  entry_fg_color: Optional[Union[str, Tuple[str, str]]] = None,
                  entry_border_color: Optional[Union[str, Tuple[str, str]]] = None,
                  entry_text_color: Optional[Union[str, Tuple[str, str]]] = None,
+                 lang: str = 'English',
                  ok_text: str = 'Ok',
                  cancel_text: str = 'Cancel',
                  title: str = "CTkDialog",
@@ -48,6 +49,7 @@ class CTkInputDialog(CTkToplevel):
         self._title = title
         self._text = text
         self._font = font
+        self._lang = lang
         self._ok_text = ok_text
         self._cancel_text = cancel_text
 
@@ -73,6 +75,7 @@ class CTkInputDialog(CTkToplevel):
         self._label.grid(row=0, column=0, columnspan=2, padx=20, pady=20, sticky="ew")
 
         self._entry = CustomEntry(self, self,
+                                  lang=self._lang,
                                   width=230,
                                   fg_color=self._entry_fg_color,
                                   border_color=self._entry_border_color,
@@ -161,6 +164,7 @@ class CustomEntry(CTkEntry):
         self._undo_stack = deque([initial_state], maxlen=25)
         self._redo_stack = deque(maxlen=25)
         self.lang = lang
+        self.is_listbox_entry = False
 
         self.teraterm_ui = teraterm_ui_instance
         self.bind("<FocusIn>", self.disable_slider_keys)
@@ -214,6 +218,8 @@ class CustomEntry(CTkEntry):
             self._redo_stack.append(self._undo_stack.pop())
             self.delete(0, "end")
             self.insert(0, self._undo_stack[-1])
+            if self.is_listbox_entry:
+                self.update_listbox()
 
     def redo(self, event=None):
         if self._redo_stack:
@@ -221,28 +227,46 @@ class CustomEntry(CTkEntry):
             self._undo_stack.append(redo_text)
             self.delete(0, "end")
             self.insert(0, redo_text)
+            if self.is_listbox_entry:
+                self.update_listbox()
 
     def show_menu(self, event):
         if self.cget("state") == "disabled":
             return
 
         self.focus_set()
-        current_label = self.context_menu.entrycget(0, "label")
-        if self.lang == "English" and current_label != "Cut":
+        self.icursor(tk.END)
+
+        # Update the menu labels based on the current language
+        if self.lang == "English":
             self.context_menu.entryconfigure(0, label="Cut")
             self.context_menu.entryconfigure(1, label="Copy")
             self.context_menu.entryconfigure(2, label="Paste")
             self.context_menu.entryconfigure(3, label="Select All")
-        elif self.lang == "Español" and current_label != "Cortar":
+        elif self.lang == "Español":
             self.context_menu.entryconfigure(0, label="Cortar")
             self.context_menu.entryconfigure(1, label="Copiar")
             self.context_menu.entryconfigure(2, label="Pegar")
-            self.context_menu.entryconfigure(3, label="Seleccionar todo")
+            self.context_menu.entryconfigure(3, label="Seleccionar Todo")
+
+        # Update the label of the context menu based on the selection state
+        if self.select_present():
+            if self.lang == "English":
+                self.context_menu.entryconfigure(3, label="Unselect All")
+            elif self.lang == "Español":
+                self.context_menu.entryconfigure(3, label="Deseleccionar Todo")
+        else:
+            if self.lang == "English":
+                self.context_menu.entryconfigure(3, label="Select All")
+            elif self.lang == "Español":
+                self.context_menu.entryconfigure(3, label="Seleccionar Todo")
+
         self.context_menu.post(event.x_root, event.y_root)
-        self.icursor(tk.END)
 
     def cut(self):
         self.focus_set()
+        if not self.select_present():
+            self.select_range(0, "end")
         try:
             selected_text = self.selection_get()  # Attempt to get selected text
             current_text = self.get()  # Existing text in the Entry widget
@@ -254,6 +278,8 @@ class CustomEntry(CTkEntry):
             self.clipboard_clear()
             self.clipboard_append(selected_text)
             self.delete(tk.SEL_FIRST, tk.SEL_LAST)
+            if self.is_listbox_entry:
+                self.update_listbox()
 
             # Update the undo stack with the new state
             new_text = self.get()
@@ -267,6 +293,8 @@ class CustomEntry(CTkEntry):
 
     def copy(self):
         self.focus_set()
+        if not self.select_present():
+            self.select_range(0, "end")
         try:
             selected_text = self.selection_get()  # Attempt to get selected text
             self.clipboard_clear()
@@ -301,6 +329,8 @@ class CustomEntry(CTkEntry):
             new_text = self.get()
             self._undo_stack.append(new_text)
             self._redo_stack = []
+            if self.is_listbox_entry:
+                self.update_listbox()
         except tk.TclError:
             pass  # Clipboard empty or other issue
         return "break"
@@ -325,4 +355,7 @@ class CustomEntry(CTkEntry):
             self.select_range(0, "end")
             self.icursor("end")
         return "break"
+
+    def update_listbox(self):
+        self.teraterm_ui.search_classes(None)
 
