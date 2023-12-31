@@ -709,11 +709,13 @@ class TeraTermUI(customtkinter.CTk):
             if self.checkbox_state:
                 if TeraTermUI.checkIfProcessRunning("ttermpro"):
                     if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
-                        uprb = Application(backend="uia").connect(title="uprbay.uprb.edu - Tera Term VT", timeout=7)
-                        uprb.kill(soft=False)
+                        self.uprb.kill(soft=True)
                     elif TeraTermUI.window_exists("Tera Term - [disconnected] VT"):
-                        subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
-                                       check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        try:
+                            subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
+                                           check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        except subprocess.CalledProcessError:
+                            print("Could not terminate ttermpro.exe.")
             exit(0)
 
     def direct_close(self):
@@ -1543,12 +1545,12 @@ class TeraTermUI(customtkinter.CTk):
         self.in_enroll_frame = False
         self.in_search_frame = False
         self.in_multiple_screen = True
-        self.unbind("<space>")
         self.unbind("<Control-Tab>")
         self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
         self.bind("<Up>", lambda event: self.add_event_up_arrow_key())
         self.bind("<Down>", lambda event: self.remove_event_down_arrow_key())
         self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event2())
+        self.bind("<space>", lambda event: self.keybind_auto_enroll())
         self.multiple_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 30))
         self.multiple_frame.grid_columnconfigure(2, weight=1)
         self.m_button_frame.grid(row=3, column=1, columnspan=4, rowspan=4, padx=(0, 0), pady=(0, 10))
@@ -2703,6 +2705,11 @@ class TeraTermUI(customtkinter.CTk):
                  "SNAPSHOT" in text_output or "SOLICITUD DE PRORROGA" in text_output or
                  "LISTA DE SECCIONES") and "return to continue" not in text_output and
                     "SISTEMA DE INFORMACION" not in text_output):
+                count = TeraTermUI.countRunningProcesses("ttermpro")
+                if count > 1:
+                    self.after(0, self.show_error_message, 450, 270, translation["count_processes"])
+                    self.bind("<Return>", lambda event: self.login_event_handler())
+                    return
                 self.uprb = Application(backend="uia").connect(
                     title="uprbay.uprb.edu - Tera Term VT", timeout=5)
                 self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
@@ -2756,10 +2763,6 @@ class TeraTermUI(customtkinter.CTk):
         if TeraTermUI.checkIfProcessRunning("ttermpro") and (
                 self.error_occurred or (response and (response[0] == "Yes" or response[0] == "Sí"))):
             self.uprb.kill(soft=True)
-        elif TeraTermUI.checkIfProcessRunning("ttermpro") and (
-                self.error_occurred or (response and (response[0] == "Yes" or response[0] == "Sí"))):
-            subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
-                           check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if self.error_occurred or (response and (response[0] == "Yes" or response[0] == "Sí")):
             self.stop_idle_thread()
             self.reset_activity_timer(None)
@@ -2828,6 +2831,7 @@ class TeraTermUI(customtkinter.CTk):
     # function that goes back to Enrolling frame screen
     def go_back_event2(self):
         self.unbind("<Return>")
+        self.unbind("<space>")
         self.unbind("<Up>")
         self.unbind("<Down>")
         self.unbind("<Home>")
@@ -3204,6 +3208,10 @@ class TeraTermUI(customtkinter.CTk):
             self.m_semester_entry[i].set(self.m_semester_entry[0].get())
             self.m_semester_entry[i].configure(state="disabled")
 
+    def keybind_auto_enroll(self):
+        self.auto_enroll.select()
+        self.auto_enroll_event_handler()
+
     def auto_enroll_event_handler(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
@@ -3212,7 +3220,7 @@ class TeraTermUI(customtkinter.CTk):
         if idle[0] != "Disabled":
             if self.auto_enroll.get() == "on":
                 msg = CTkMessagebox(master=self, title=translation["submit"],
-                                    message=translation["enroll_multiple"],
+                                    message=translation["auto_enroll_prompt"],
                                     icon="images/submit.png",
                                     option_1=translation["option_1"], option_2=translation["option_2"],
                                     option_3=translation["option_3"],
@@ -4193,6 +4201,18 @@ class TeraTermUI(customtkinter.CTk):
                 logging.error(f"Exception occurred: {e}")
                 pass
         return False
+
+    @staticmethod
+    def countRunningProcesses(processName):
+        count = 0
+        for proc in psutil.process_iter():
+            try:
+                if processName.lower() in proc.name().lower():
+                    count += 1
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
+                logging.error(f"Exception occurred: {e}")
+                pass
+        return count
 
     # checks if the specified window exists
     @staticmethod
