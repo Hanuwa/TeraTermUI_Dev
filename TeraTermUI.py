@@ -6085,7 +6085,7 @@ class TeraTermUI(customtkinter.CTk):
                 term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                 if term_window.isMinimized:
                     term_window.restore()
-                self.uprbay_window.wait("visible", timeout=30)
+                self.uprbay_window.wait("visible", timeout=5)
                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                 send_keys("{ENTER}")
                 self.reset_activity_timer(None)
