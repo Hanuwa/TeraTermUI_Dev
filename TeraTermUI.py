@@ -465,6 +465,9 @@ class TeraTermUI(customtkinter.CTk):
         self.class_list = None
         self.curriculum_text = None
         self.curriculum = None
+        self.keybinds_text = None
+        self.keybinds = None
+        self.keybinds_table = None
         self.terms_text = None
         self.terms = None
         self.terms_table = None
@@ -553,6 +556,7 @@ class TeraTermUI(customtkinter.CTk):
             self.connection = sqlite3.connect(db_path, check_same_thread=False)
             self.cursor = self.connection.cursor()
             self.protocol("WM_DELETE_WINDOW", self.on_closing)
+            self.bind("<Control-space>", lambda event: self.focus_set())
             self.bind("<Escape>", lambda event: self.on_closing())
             self.bind("<Alt-F4>", lambda event: self.direct_close())
             user_data_fields = ["location", "config", "directory", "host", "language",
@@ -1519,6 +1523,20 @@ class TeraTermUI(customtkinter.CTk):
             else:
                 self.my_classes_frame.scroll_more_down()
 
+    def move_top_scrollbar(self):
+        if self.move_slider_right_enabled or self.move_slider_left_enabled:
+            if self.enrolled_rows is None:
+                self.search_scrollbar.scroll_to_top()
+            else:
+                self.my_classes_frame.scroll_to_top()
+
+    def move_bottom_scrollbar(self):
+        if self.move_slider_right_enabled or self.move_slider_left_enabled:
+            if self.enrolled_rows is None:
+                self.search_scrollbar.scroll_to_bottom()
+            else:
+                self.my_classes_frame.scroll_to_bottom()
+
     # multiple classes screen
     def multiple_classes_event(self):
         self.focus_set()
@@ -1530,6 +1548,7 @@ class TeraTermUI(customtkinter.CTk):
         self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
         self.bind("<Up>", lambda event: self.add_event_up_arrow_key())
         self.bind("<Down>", lambda event: self.remove_event_down_arrow_key())
+        self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event2())
         self.multiple_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 30))
         self.multiple_frame.grid_columnconfigure(2, weight=1)
         self.m_button_frame.grid(row=3, column=1, columnspan=4, rowspan=4, padx=(0, 0), pady=(0, 10))
@@ -2716,6 +2735,10 @@ class TeraTermUI(customtkinter.CTk):
             self.after(0, self.show_error_message, 450, 265,
                        translation["tera_term_already_running"])
 
+    def keybind_go_back_event(self):
+        if self.move_slider_right_enabled or self.move_slider_left_enabled:
+            self.go_back_event()
+
     # function that lets user go back to the initial screen
     def go_back_event(self):
         response = None
@@ -2743,7 +2766,10 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<space>")
             self.unbind("<Up>")
             self.unbind("<Down>")
+            self.unbind("<Home>")
+            self.unbind("<End>")
             self.unbind("<Control-Tab>")
+            self.unbind("<Control-BackSpace>")
             self.bind("<Return>", lambda event: self.login_event_handler())
             self.home_frame.grid(row=0, column=1, rowspan=5, columnspan=5, padx=(0, 0), pady=(10, 0))
             if lang == "English":
@@ -2795,12 +2821,19 @@ class TeraTermUI(customtkinter.CTk):
                                   icon="warning", button_width=380)
             self.error_occurred = False
 
+    def keybind_go_back_event2(self):
+        if self.move_slider_right_enabled or self.move_slider_left_enabled:
+            self.go_back_event2()
+
     # function that goes back to Enrolling frame screen
     def go_back_event2(self):
         self.unbind("<Return>")
         self.unbind("<Up>")
         self.unbind("<Down>")
+        self.unbind("<Home>")
+        self.unbind("<End>")
         self.bind("<Control-Tab>", lambda event: self.tab_switcher())
+        self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
         self.switch_tab()
         lang = self.language_menu.get()
         self.tabview.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 85))
@@ -3027,6 +3060,26 @@ class TeraTermUI(customtkinter.CTk):
                                               translation["s_science"], translation["physical"], translation["elec"],
                                               translation["equip"], translation["peda"], translation["che"],
                                               translation["nur"], translation["office"], translation["engi"]])
+            self.keybinds_text.configure(text=translation["keybinds_title"])
+            self.keybinds = [[translation["keybind"], translation["key_function"]],
+                             ["<Return> / <Enter>", translation["return"]],
+                             ["<Escape>", translation["escape"]],
+                             ["<Ctrl-BackSpace>", translation["ctrl_backspace"]],
+                             ["<ArrowKeys>", translation["arrow_keys"]],
+                             ["<SpaceBar>", translation["space_bar"]],
+                             ["<Ctrl-Tab>", translation["ctrl_tab"]],
+                             ["<Ctrl-Space>", translation["ctrl_space"]],
+                             ["<Ctrl-C>", translation["ctrl_c"]],
+                             ["<Ctrl-V>", translation["ctrl_v"]],
+                             ["<Ctrl-X>", translation["ctrl_x"]],
+                             ["<Ctrl-Z>", translation["ctrl_z"]],
+                             ["<Ctrl-Y>", translation["ctrl_y"]],
+                             ["<Ctrl-A>", translation["ctrl_a"]],
+                             ["<Mouse-2>", translation["mouse_2"]],
+                             ["<Home>", translation["home"]],
+                             ["<End>", translation["end"]],
+                             ["<Alt-F4>", translation["alt_f4"]]]
+            self.keybinds_table.configure(values=self.keybinds)
             self.terms_text.configure(text=translation["terms_title"])
             self.terms = [[translation["terms_year"], translation["terms_term"]],
                           ["2019", "B91, B92, B93"],
@@ -3602,6 +3655,7 @@ class TeraTermUI(customtkinter.CTk):
             self.title_login.bind("<Button-1>", lambda event: self.focus_set())
             self.authentication_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.a_buttons_frame.bind("<Button-1>", lambda event: self.focus_set())
+            self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
 
     def destroy_auth(self):
         if self.init_auth:
@@ -4918,6 +4972,9 @@ class TeraTermUI(customtkinter.CTk):
         self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
         self.bind("<Up>", lambda event: self.move_up_scrollbar())
         self.bind("<Down>", lambda event: self.move_down_scrollbar())
+        self.bind("<Home>", lambda event: self.move_top_scrollbar())
+        self.bind("<End>", lambda event: self.move_bottom_scrollbar())
+        self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event2())
         self.my_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
         self.modify_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
         self.title_my_classes.bind("<Button-1>", lambda event: self.focus_set())
@@ -6140,6 +6197,8 @@ class TeraTermUI(customtkinter.CTk):
             self.in_enroll_frame = True
             self.unbind("<Up>")
             self.unbind("<Down>")
+            self.unbind("<Home>")
+            self.unbind("<End>")
             self.bind("<Return>", lambda event: self.submit_event_handler())
             self.bind("<space>", lambda event: self.spacebar_event())
         elif self.tabview.get() == self.search_tab:
@@ -6160,12 +6219,16 @@ class TeraTermUI(customtkinter.CTk):
             self.search_scrollbar.bind("<Button-1>", lambda event: self.search_scrollbar.focus_set())
             self.bind("<Up>", lambda event: self.move_up_scrollbar())
             self.bind("<Down>", lambda event: self.move_down_scrollbar())
+            self.bind("<Home>", lambda event: self.move_top_scrollbar())
+            self.bind("<End>", lambda event: self.move_bottom_scrollbar())
         elif self.tabview.get() == self.other_tab:
             self.in_enroll_frame = False
             self.in_search_frame = False
             self.unbind("<space>")
             self.unbind("<Up>")
             self.unbind("<Down>")
+            self.unbind("<Home>")
+            self.unbind("<End>")
             self.bind("<Return>", lambda event: self.option_menu_event_handler())
         self.after(0, self.focus_set)
 
@@ -6196,7 +6259,7 @@ class TeraTermUI(customtkinter.CTk):
         self.status_title = customtkinter.CTkLabel(self.status_frame, text=translation["status_title"],
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
         self.version = customtkinter.CTkLabel(self.status_frame, text=translation["app_version"])
-        self.feedback_text = CustomTextBox(self.status_frame,  self.status_frame, enable_autoscroll=False, lang=lang,
+        self.feedback_text = CustomTextBox(self.status_frame,  self, enable_autoscroll=False, lang=lang,
                                            wrap="word", border_spacing=8, width=300, height=170,
                                            fg_color=("#ffffff", "#111111"))
         self.feedback_send = CustomButton(self.status_frame, border_width=2, text=translation["feedback"],
@@ -6256,20 +6319,43 @@ class TeraTermUI(customtkinter.CTk):
         self.notaso_link.pack()
         self.faq_text.pack()
         self.faq = CTkTable(self.status_frame, row=3, column=2, values=self.qa_table, hover=False)
-        self.faq.pack(expand=True, fill="both", padx=20, pady=20)
+        self.faq.pack(expand=True, fill="both", padx=20, pady=10)
         self.feedback_text.lang = lang
         self.status.focus_set()
         self.status_frame.bind("<Button-1>", lambda event: self.status_frame.focus_set())
         self.status_frame.bind("<Button-3>", lambda event: self.status_frame.focus_set())
-        self.status.bind("<Up>", lambda event: self.status_frame.scroll_more_up())
-        self.status.bind("<Down>", lambda event: self.status_frame.scroll_more_down())
+        self.status.bind("<Up>", lambda event: self.status_scroll_up())
+        self.status.bind("<Down>", lambda event: self.status_scroll_down())
+        self.status.bind("<Home>", lambda event: self.status_move_top_scrollbar())
+        self.status.bind("<End>", lambda event: self.status_move_bottom_scrollbar())
         self.status.protocol("WM_DELETE_WINDOW", self.on_status_window_close)
         self.status.bind("<Escape>", lambda event: self.on_status_window_close())
 
     def on_status_window_close(self):
         self.unload_image("update")
         self.unload_image("link")
+        self.move_slider_left_enabled = True
+        self.move_slider_right_enabled = True
+        self.spacebar_enabled = True
+        self.up_arrow_key_enabled = True
+        self.down_arrow_key_enabled = True
         self.status.destroy()
+
+    def status_scroll_up(self):
+        if self.up_arrow_key_enabled:
+            self.status_frame.scroll_more_up()
+
+    def status_scroll_down(self):
+        if self.down_arrow_key_enabled:
+            self.status_frame.scroll_more_down()
+
+    def status_move_top_scrollbar(self):
+        if self.move_slider_right_enabled or self.move_slider_left_enabled:
+            self.status_frame.scroll_to_top()
+
+    def status_move_bottom_scrollbar(self):
+        if self.move_slider_right_enabled or self.move_slider_left_enabled:
+            self.status_frame.scroll_to_bottom()
 
     # Function to call the Google Sheets API
     def call_sheets_api(self, values):
@@ -6593,7 +6679,7 @@ class TeraTermUI(customtkinter.CTk):
         self.notice = customtkinter.CTkLabel(self.help_frame, text=translation["notice"],
                                              font=customtkinter.CTkFont(weight="bold", underline=True))
         self.searchbox_text = customtkinter.CTkLabel(self.help_frame, text=translation["searchbox_title"])
-        self.search_box = CustomEntry(self.help_frame, self.help_frame, lang, placeholder_text=translation["searchbox"])
+        self.search_box = CustomEntry(self.help_frame, self, lang, placeholder_text=translation["searchbox"])
         self.search_box.is_listbox_entry = True
         self.class_list = tk.Listbox(self.help_frame, width=35, bg=bg_color, fg=fg_color, font=listbox_font)
         self.curriculum_text = customtkinter.CTkLabel(self.help_frame, text=translation["curriculums_title"])
@@ -6608,6 +6694,26 @@ class TeraTermUI(customtkinter.CTk):
                                                               translation["che"], translation["nur"],
                                                               translation["office"], translation["engi"]],
                                                       command=TeraTermUI.curriculums, height=30, width=150)
+        self.keybinds_text = customtkinter.CTkLabel(self.help_frame, text=translation["keybinds_title"],
+                                                    font=customtkinter.CTkFont(weight="bold", size=15))
+        self.keybinds = [[translation["keybind"], translation["key_function"]],
+                         ["<Return> / <Enter>", translation["return"]],
+                         ["<Escape>", translation["escape"]],
+                         ["<Ctrl-BackSpace>", translation["ctrl_backspace"]],
+                         ["<ArrowKeys>", translation["arrow_keys"]],
+                         ["<SpaceBar>", translation["space_bar"]],
+                         ["<Ctrl-Tab>", translation["ctrl_tab"]],
+                         ["<Ctrl-Space>", translation["ctrl_space"]],
+                         ["<Ctrl-C>", translation["ctrl_c"]],
+                         ["<Ctrl-V>", translation["ctrl_v"]],
+                         ["<Ctrl-X>", translation["ctrl_x"]],
+                         ["<Ctrl-Z>", translation["ctrl_z"]],
+                         ["<Ctrl-Y>", translation["ctrl_y"]],
+                         ["<Ctrl-A>", translation["ctrl_a"]],
+                         ["<Mouse-2>", translation["mouse_2"]],
+                         ["<Home>", translation["home"]],
+                         ["<End>", translation["end"]],
+                         ["<Alt-F4>", translation["alt_f4"]]]
         self.terms_text = customtkinter.CTkLabel(self.help_frame, text=translation["terms_title"],
                                                  font=customtkinter.CTkFont(weight="bold", size=15))
         self.terms = [[translation["terms_year"], translation["terms_term"]],
@@ -6617,7 +6723,6 @@ class TeraTermUI(customtkinter.CTk):
                       ["2022", "C21, C22, C23"],
                       ["2023", "C31, C32, C33"],
                       [translation["semester"], translation["seasons"]]]
-        self.terms_table = CTkTable(self.help_frame, column=2, row=7, values=self.terms, hover=False)
         self.files_text = customtkinter.CTkLabel(self.help_frame, text=translation["files_title"])
         self.files = CustomButton(self.help_frame, border_width=2, image=self.get_image("folder"),
                                   text=translation["files_button"], anchor="w", text_color=("gray10", "#DCE4EE"),
@@ -6668,9 +6773,13 @@ class TeraTermUI(customtkinter.CTk):
         self.search_box.pack(pady=10)
         self.class_list.pack()
         self.curriculum_text.pack()
-        self.curriculum.pack(pady=5)
+        self.curriculum.pack(pady=(5, 20))
+        self.keybinds_text.pack()
+        self.keybinds_table = CTkTable(self.help_frame, column=2, row=17, values=self.keybinds, hover=False)
+        self.keybinds_table.pack(expand=True, fill="both", padx=20, pady=10)
         self.terms_text.pack()
-        self.terms_table.pack(expand=True, fill="both", padx=20, pady=20)
+        self.terms_table = CTkTable(self.help_frame, column=2, row=7, values=self.terms, hover=False)
+        self.terms_table.pack(expand=True, fill="both", padx=20, pady=10)
         self.files_text.pack()
         self.files.pack(pady=5)
         self.disable_idle_text.pack()
@@ -6694,15 +6803,38 @@ class TeraTermUI(customtkinter.CTk):
         self.search_box.bind("<KeyRelease>", self.search_classes)
         self.help_frame.bind("<Button-1>", lambda event: self.help_frame.focus_set())
         self.help_frame.bind("<Button-3>", lambda event: self.help_frame.focus_set())
-        self.help.bind("<Up>", lambda event: self.help_frame.scroll_more_up())
-        self.help.bind("<Down>", lambda event: self.help_frame.scroll_more_down())
+        self.help.bind("<Up>", lambda event: self.help_scroll_up())
+        self.help.bind("<Down>", lambda event: self.help_scroll_down())
+        self.help.bind("<Home>", lambda event: self.help_move_top_scrollbar())
+        self.help.bind("<End>", lambda event: self.help_move_bottom_scrollbar())
         self.help.protocol("WM_DELETE_WINDOW", self.on_help_window_close)
         self.help.bind("<Escape>", lambda event: self.on_help_window_close())
 
     def on_help_window_close(self):
         self.unload_image("folder")
         self.unload_image("fix")
+        self.move_slider_left_enabled = True
+        self.move_slider_right_enabled = True
+        self.spacebar_enabled = True
+        self.up_arrow_key_enabled = True
+        self.down_arrow_key_enabled = True
         self.help.destroy()
+
+    def help_scroll_up(self):
+        if self.up_arrow_key_enabled:
+            self.help_frame.scroll_more_up()
+
+    def help_scroll_down(self):
+        if self.down_arrow_key_enabled:
+            self.help_frame.scroll_more_down()
+
+    def help_move_top_scrollbar(self):
+        if self.move_slider_right_enabled or self.move_slider_left_enabled:
+            self.help_frame.scroll_to_top()
+
+    def help_move_bottom_scrollbar(self):
+        if self.move_slider_right_enabled or self.move_slider_left_enabled:
+            self.help_frame.scroll_to_bottom()
 
     # Gets the latest release of the application on GitHub
     def get_latest_release(self):
@@ -7066,6 +7198,8 @@ class CustomTextBox(customtkinter.CTkTextbox):
         # Event binding
         self.bind("<Button-1>", self.stop_autoscroll)
         self.bind("<MouseWheel>", self.stop_autoscroll)
+        self.bind("<FocusIn>", self.disable_slider_keys)
+        self.bind("<FocusOut>", self.enable_slider_keys)
 
         if hasattr(self, '_y_scrollbar'):
             self._y_scrollbar.bind("<Button-1>", self.stop_autoscroll)
@@ -7107,6 +7241,20 @@ class CustomTextBox(customtkinter.CTkTextbox):
 
         if self.read_only:
             self.bind("<Key>", CustomTextBox.readonly)
+
+    def disable_slider_keys(self, event=None):
+        self.teraterm_ui.move_slider_left_enabled = False
+        self.teraterm_ui.move_slider_right_enabled = False
+        self.teraterm_ui.spacebar_enabled = False
+        self.teraterm_ui.up_arrow_key_enabled = False
+        self.teraterm_ui.down_arrow_key_enabled = False
+
+    def enable_slider_keys(self, event=None):
+        self.teraterm_ui.move_slider_left_enabled = True
+        self.teraterm_ui.move_slider_right_enabled = True
+        self.teraterm_ui.spacebar_enabled = True
+        self.teraterm_ui.up_arrow_key_enabled = True
+        self.teraterm_ui.down_arrow_key_enabled = True
 
     def update_text(self):
         if self.after_id:
