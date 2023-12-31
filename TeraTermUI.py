@@ -3060,26 +3060,10 @@ class TeraTermUI(customtkinter.CTk):
                                               translation["s_science"], translation["physical"], translation["elec"],
                                               translation["equip"], translation["peda"], translation["che"],
                                               translation["nur"], translation["office"], translation["engi"]])
-            self.keybinds_text.configure(text=translation["keybinds_title"])
-            self.keybinds = [[translation["keybind"], translation["key_function"]],
-                             ["<Return> / <Enter>", translation["return"]],
-                             ["<Escape>", translation["escape"]],
-                             ["<Ctrl-BackSpace>", translation["ctrl_backspace"]],
-                             ["<ArrowKeys>", translation["arrow_keys"]],
-                             ["<SpaceBar>", translation["space_bar"]],
-                             ["<Ctrl-Tab>", translation["ctrl_tab"]],
-                             ["<Ctrl-Space>", translation["ctrl_space"]],
-                             ["<Ctrl-C>", translation["ctrl_c"]],
-                             ["<Ctrl-V>", translation["ctrl_v"]],
-                             ["<Ctrl-X>", translation["ctrl_x"]],
-                             ["<Ctrl-Z>", translation["ctrl_z"]],
-                             ["<Ctrl-Y>", translation["ctrl_y"]],
-                             ["<Ctrl-A>", translation["ctrl_a"]],
-                             ["<Mouse-2>", translation["mouse_2"]],
-                             ["<Home>", translation["home"]],
-                             ["<End>", translation["end"]],
-                             ["<Alt-F4>", translation["alt_f4"]]]
-            self.keybinds_table.configure(values=self.keybinds)
+            if lang == "English":
+                self.curriculum.pack(pady=(5, 0))
+            elif lang == "Español":
+                self.curriculum.pack(pady=(5, 20))
             self.terms_text.configure(text=translation["terms_title"])
             self.terms = [[translation["terms_year"], translation["terms_term"]],
                           ["2019", "B91, B92, B93"],
@@ -3089,6 +3073,26 @@ class TeraTermUI(customtkinter.CTk):
                           ["2023", "C31, C32, C33"],
                           [translation["semester"], translation["seasons"]]]
             self.terms_table.configure(values=self.terms)
+            self.keybinds_text.configure(text=translation["keybinds_title"])
+            self.keybinds = [[translation["keybind"], translation["key_function"]],
+                             ["<Return> / <Enter>", translation["return"]],
+                             ["<Escape>", translation["escape"]],
+                             ["<Ctrl-BackSpace>", translation["ctrl_backspace"]],
+                             ["<Arrow-Keys>", translation["arrow_keys"]],
+                             ["<SpaceBar>", translation["space_bar"]],
+                             ["<Ctrl-Tab>", translation["ctrl_tab"]],
+                             ["<Ctrl-Space>", translation["ctrl_space"]],
+                             ["<Ctrl-C>", translation["ctrl_c"]],
+                             ["<Ctrl-V>", translation["ctrl_v"]],
+                             ["<Ctrl-X>", translation["ctrl_x"]],
+                             ["<Ctrl-Z>", translation["ctrl_z"]],
+                             ["<Ctrl-Y>", translation["ctrl_y"]],
+                             ["<Ctrl-A>", translation["ctrl_a"]],
+                             ["<Right-Click>", translation["mouse_2"]],
+                             ["<Home>", translation["home"]],
+                             ["<End>", translation["end"]],
+                             ["<Alt-F4>", translation["alt_f4"]]]
+            self.keybinds_table.configure(values=self.keybinds)
             self.files_text.configure(text=translation["files_title"])
             self.files.configure(text=translation["files_button"])
             self.disable_idle_text.configure(text=translation["idle_title"])
@@ -6700,7 +6704,7 @@ class TeraTermUI(customtkinter.CTk):
                          ["<Return> / <Enter>", translation["return"]],
                          ["<Escape>", translation["escape"]],
                          ["<Ctrl-BackSpace>", translation["ctrl_backspace"]],
-                         ["<ArrowKeys>", translation["arrow_keys"]],
+                         ["<Arrow-Keys>", translation["arrow_keys"]],
                          ["<SpaceBar>", translation["space_bar"]],
                          ["<Ctrl-Tab>", translation["ctrl_tab"]],
                          ["<Ctrl-Space>", translation["ctrl_space"]],
@@ -6710,7 +6714,7 @@ class TeraTermUI(customtkinter.CTk):
                          ["<Ctrl-Z>", translation["ctrl_z"]],
                          ["<Ctrl-Y>", translation["ctrl_y"]],
                          ["<Ctrl-A>", translation["ctrl_a"]],
-                         ["<Mouse-2>", translation["mouse_2"]],
+                         ["<Right-Click>", translation["mouse_2"]],
                          ["<Home>", translation["home"]],
                          ["<End>", translation["end"]],
                          ["<Alt-F4>", translation["alt_f4"]]]
@@ -6773,13 +6777,16 @@ class TeraTermUI(customtkinter.CTk):
         self.search_box.pack(pady=10)
         self.class_list.pack()
         self.curriculum_text.pack()
-        self.curriculum.pack(pady=(5, 20))
-        self.keybinds_text.pack()
-        self.keybinds_table = CTkTable(self.help_frame, column=2, row=17, values=self.keybinds, hover=False)
-        self.keybinds_table.pack(expand=True, fill="both", padx=20, pady=10)
+        if lang == "English":
+            self.curriculum.pack(pady=(5, 0))
+        elif lang == "Español":
+            self.curriculum.pack(pady=(5, 20))
         self.terms_text.pack()
         self.terms_table = CTkTable(self.help_frame, column=2, row=7, values=self.terms, hover=False)
         self.terms_table.pack(expand=True, fill="both", padx=20, pady=10)
+        self.keybinds_text.pack(pady=(20, 0))
+        self.keybinds_table = CTkTable(self.help_frame, column=2, row=17, values=self.keybinds, hover=False)
+        self.keybinds_table.pack(expand=True, fill="both", padx=20, pady=10)
         self.files_text.pack()
         self.files.pack(pady=5)
         self.disable_idle_text.pack()
