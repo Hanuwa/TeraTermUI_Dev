@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 12/30/23
+# DATE - Started 1/1/23, Current Build v0.9.0 - 12/31/23
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -709,7 +709,7 @@ class TeraTermUI(customtkinter.CTk):
             if self.checkbox_state:
                 if TeraTermUI.checkIfProcessRunning("ttermpro"):
                     if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
-                        uprb = Application(backend="uia").connect(title="uprbay.uprb.edu - Tera Term VT", timeout=10)
+                        uprb = Application(backend="uia").connect(title="uprbay.uprb.edu - Tera Term VT", timeout=7)
                         uprb.kill(soft=False)
                     elif TeraTermUI.window_exists("Tera Term - [disconnected] VT"):
                         subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
@@ -795,7 +795,7 @@ class TeraTermUI(customtkinter.CTk):
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=10)
+                            self.uprbay_window.wait("visible", timeout=5)
                             TeraTermUI.unfocus_tkinter()
                             send_keys("{TAB}")
                             self.uprb.UprbayTeraTermVt.type_keys(
@@ -1051,7 +1051,7 @@ class TeraTermUI(customtkinter.CTk):
                                 term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                                 if term_window.isMinimized:
                                     term_window.restore()
-                                self.uprbay_window.wait("visible", timeout=10)
+                                self.uprbay_window.wait("visible", timeout=5)
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                 send_keys("{ENTER}")
                                 self.uprb.UprbayTeraTermVt.type_keys("1S4")
@@ -1220,7 +1220,7 @@ class TeraTermUI(customtkinter.CTk):
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=10)
+                            self.uprbay_window.wait("visible", timeout=5)
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             send_keys("{ENTER}")
                             self.uprb.UprbayTeraTermVt.type_keys("1CS")
@@ -1387,7 +1387,7 @@ class TeraTermUI(customtkinter.CTk):
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=10)
+                            self.uprbay_window.wait("visible", timeout=5)
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             send_keys("{ENTER}")
                             self.uprb.UprbayTeraTermVt.type_keys("1CP")
@@ -1630,7 +1630,7 @@ class TeraTermUI(customtkinter.CTk):
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=10)
+                            self.uprbay_window.wait("visible", timeout=5)
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             send_keys("{ENTER}")
                             self.uprb.UprbayTeraTermVt.type_keys("1S4")
@@ -1828,7 +1828,7 @@ class TeraTermUI(customtkinter.CTk):
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=10)
+                            self.uprbay_window.wait("visible", timeout=5)
                             match menu.replace(" ", ""):
                                 case "SRM":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -2239,7 +2239,7 @@ class TeraTermUI(customtkinter.CTk):
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=10)
+                            self.uprbay_window.wait("visible", timeout=5)
                             send_keys("{TAB 3}")
                             send_keys("{ENTER}")
                             self.reset_activity_timer(None)
@@ -2247,14 +2247,14 @@ class TeraTermUI(customtkinter.CTk):
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=10)
+                            self.uprbay_window.wait("visible", timeout=5)
                             send_keys("{ENTER}")
                             self.reset_activity_timer(None)
                         elif self._409_screen:
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=10)
+                            self.uprbay_window.wait("visible", timeout=5)
                             send_keys("{TAB 4}")
                             send_keys("{ENTER}")
                             self.reset_activity_timer(None)
@@ -2267,14 +2267,14 @@ class TeraTermUI(customtkinter.CTk):
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=10)
+                            self.uprbay_window.wait("visible", timeout=5)
                             send_keys("{ENTER}")
                             self.reset_activity_timer(None)
                         elif self._4CM_screen:
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=10)
+                            self.uprbay_window.wait("visible", timeout=5)
                             send_keys("{ENTER}")
                             self.reset_activity_timer(None)
                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
@@ -2335,7 +2335,7 @@ class TeraTermUI(customtkinter.CTk):
                         term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                         if term_window.isMinimized:
                             term_window.restore()
-                        self.uprbay_window.wait("visible", timeout=10)
+                        self.uprbay_window.wait("visible", timeout=5)
                         TeraTermUI.unfocus_tkinter()
                         send_keys("{ENTER}")
                         clipboard_content = None
@@ -2426,7 +2426,7 @@ class TeraTermUI(customtkinter.CTk):
                             term_window = gw.getWindowsWithTitle("SSH Authentication")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=10)
+                            self.uprbay_window.wait("visible", timeout=5)
                             user = self.uprb.UprbayTeraTermVt.child_window(title="User name:",
                                                                            control_type="Edit").wrapper_object()
                             user.set_text(username)
@@ -2569,9 +2569,9 @@ class TeraTermUI(customtkinter.CTk):
                                 if self.download or self.teraterm_not_found:
                                     self.edit_teraterm_ini(self.teraterm_file)
                                 self.uprb = Application(backend="uia").start(self.location) \
-                                    .connect(title="Tera Term - [disconnected] VT", timeout=10)
+                                    .connect(title="Tera Term - [disconnected] VT", timeout=7)
                                 disconnected = self.uprb.window(title="Tera Term - [disconnected] VT")
-                                disconnected.wait("visible", timeout=10)
+                                disconnected.wait("visible", timeout=5)
                                 host_input = \
                                     self.uprb.TeraTermDisconnectedVt.child_window(title="Host:",
                                                                                   control_type="Edit").wrapper_object()
@@ -2583,7 +2583,7 @@ class TeraTermUI(customtkinter.CTk):
                                 conn.click()
                                 self.show_loading_screen_again()
                                 self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                                self.uprbay_window.wait("visible", timeout=10)
+                                self.uprbay_window.wait("visible", timeout=5)
                                 if self.uprbay_window.child_window(title="Continue", control_type="Button").exists(
                                         timeout=1):
                                     self.hide_loading_screen()
@@ -2704,9 +2704,9 @@ class TeraTermUI(customtkinter.CTk):
                  "LISTA DE SECCIONES") and "return to continue" not in text_output and
                     "SISTEMA DE INFORMACION" not in text_output):
                 self.uprb = Application(backend="uia").connect(
-                    title="uprbay.uprb.edu - Tera Term VT", timeout=10)
+                    title="uprbay.uprb.edu - Tera Term VT", timeout=5)
                 self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                self.uprbay_window.wait("visible", timeout=10)
+                self.uprbay_window.wait("visible", timeout=5)
                 self.after(0, self.initialization_class)
                 self.after(0, self.initialization_multiple)
                 self.after(100, self.student_info_frame)
@@ -3245,7 +3245,7 @@ class TeraTermUI(customtkinter.CTk):
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=10)
+                            self.uprbay_window.wait("visible", timeout=5)
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             send_keys("{ENTER}")
                             self.after(0, self.disable_go_next_buttons)
@@ -5064,7 +5064,7 @@ class TeraTermUI(customtkinter.CTk):
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=10)
+                            self.uprbay_window.wait("visible", timeout=5)
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             send_keys("{ENTER}")
                             self.uprb.UprbayTeraTermVt.type_keys("1S4")
@@ -5934,7 +5934,7 @@ class TeraTermUI(customtkinter.CTk):
                 term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                 if term_window.isMinimized:
                     term_window.restore()
-                self.uprbay_window.wait("visible", timeout=10)
+                self.uprbay_window.wait("visible", timeout=5)
                 TeraTermUI.unfocus_tkinter()
                 send_keys("{TAB}")
                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -6004,7 +6004,7 @@ class TeraTermUI(customtkinter.CTk):
                         term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                         if term_window.isMinimized:
                             term_window.restore()
-                        self.uprbay_window.wait("visible", timeout=10)
+                        self.uprbay_window.wait("visible", timeout=5)
                         if self.idle_num_check == 0:
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             send_keys("{ENTER}")
