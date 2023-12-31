@@ -121,7 +121,7 @@
 	"office": "Sistemas de Oficina",
 	"engi": "Ingeniería de la Información",
 	"keybinds_title": "Todos los atajos disponibles:",
-	"keybind": "Atajo",
+	"keybind": "Tecla",
 	"key_function": "Función",
 	"return": "Para realizar una acción,\ncomo enviar información",
 	"escape": "Le pedirá al usuario salir de la\naplicación, pero también se puede usar\npara cerrar ventanas como las de error",
