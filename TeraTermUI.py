@@ -6286,18 +6286,17 @@ class TeraTermUI(customtkinter.CTk):
         self.feedback_text = CustomTextBox(self.status_frame,  self, enable_autoscroll=False, lang=lang,
                                            wrap="word", border_spacing=8, width=300, height=170,
                                            fg_color=("#ffffff", "#111111"))
-        self.feedback_send = CustomButton(self.status_frame, border_width=2, text=translation["feedback"],
+        self.feedback_send = CustomButton(self.status_frame, text=translation["feedback"],
                                           text_color=("gray10", "#DCE4EE"), command=self.start_feedback_thread)
         self.check_update_text = customtkinter.CTkLabel(self.status_frame, text=translation["update_title"])
-        self.check_update_btn = CustomButton(self.status_frame, border_width=2, image=self.get_image("update"),
+        self.check_update_btn = CustomButton(self.status_frame, image=self.get_image("update"),
                                              text=translation["update"], anchor="w", text_color=("gray10", "#DCE4EE"),
                                              command=self.check_update_app_handler)
         self.website = customtkinter.CTkLabel(self.status_frame, text=translation["website"])
-        self.website_link = CustomButton(self.status_frame, border_width=2, image=self.get_image("link"),
-                                         text=translation["link"], anchor="w", text_color=("gray10", "#DCE4EE"),
-                                         command=self.github_event)
+        self.website_link = CustomButton(self.status_frame, image=self.get_image("link"), text=translation["link"],
+                                         anchor="w", text_color=("gray10", "#DCE4EE"), command=self.github_event)
         self.notaso = customtkinter.CTkLabel(self.status_frame, text=translation["notaso_title"])
-        self.notaso_link = CustomButton(self.status_frame, border_width=2, image=self.get_image("link"),
+        self.notaso_link = CustomButton(self.status_frame, image=self.get_image("link"),
                                         text=translation["notaso_link"], anchor="w", text_color=("gray10", "#DCE4EE"),
                                         command=self.notaso_event)
         self.faq_text = customtkinter.CTkLabel(self.status_frame, text=translation["faq"],
@@ -6748,8 +6747,8 @@ class TeraTermUI(customtkinter.CTk):
                       ["2023", "C31, C32, C33"],
                       [translation["semester"], translation["seasons"]]]
         self.files_text = customtkinter.CTkLabel(self.help_frame, text=translation["files_title"])
-        self.files = CustomButton(self.help_frame, border_width=2, image=self.get_image("folder"),
-                                  text=translation["files_button"], anchor="w", text_color=("gray10", "#DCE4EE"),
+        self.files = CustomButton(self.help_frame, image=self.get_image("folder"), text=translation["files_button"],
+                                  anchor="w", text_color=("gray10", "#DCE4EE"),
                                   command=self.change_location_auto_handler)
         self.disable_idle_text = customtkinter.CTkLabel(self.help_frame, text=translation["idle_title"])
         self.disable_idle = customtkinter.CTkSwitch(self.help_frame, text=translation["idle"], onvalue="on",
@@ -6758,9 +6757,8 @@ class TeraTermUI(customtkinter.CTk):
         self.disable_audio_val = customtkinter.CTkSwitch(self.help_frame, text=translation["audio"], onvalue="on",
                                                          offvalue="off", command=self.disable_enable_audio)
         self.fix_text = customtkinter.CTkLabel(self.help_frame, text=translation["fix_title"])
-        self.fix = CustomButton(self.help_frame, border_width=2, image=self.get_image("fix"),
-                                text=translation["fix"], anchor="w", text_color=("gray10", "#DCE4EE"),
-                                command=self.fix_execution_event_handler)
+        self.fix = CustomButton(self.help_frame, image=self.get_image("fix"), text=translation["fix"], anchor="w",
+                                text_color=("gray10", "#DCE4EE"), command=self.fix_execution_event_handler)
         if not self.main_menu:
             self.files.configure(state="disabled")
         if not self.run_fix:
