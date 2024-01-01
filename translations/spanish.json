@@ -202,7 +202,7 @@
 	"add_invalid_semester": "¡Error! Debe escribir\n\nun semestre válido",
 	"enroll_multiple": "¿Estás preparado para someter las clases?\n\nWARNING: Asegúrese de que la información está correcta",
 	"submit_modify": "¿Está seguro de que está listo para enviar y modificar sus clases matriculadas actualmente?\n\nWARNING: Asegúrese de que la información está correcta",
-	"auto_enroll_prompt": "¿Estás preparado para someter las clases para ser automatrículadas?\n\nWARNING: Asegúrese de que la información está correcta",
+	"auto_enroll_prompt": "¿Estás preparado para someter las clases para ser auto-matrículadas?\n\nWARNING: Asegúrese de que la información está correcta",
 	"enrolled_dropped_multiple_success": "Clases matriculadas y\nabandonadas exitósamente",
 	"enrolled_multiple_success": "Clases matriculadas exitósamente",
 	"dropped_multiple_success": "Clases abandonadas exitósamente",
