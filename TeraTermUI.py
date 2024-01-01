@@ -6636,6 +6636,9 @@ class TeraTermUI(customtkinter.CTk):
         if self.help is not None and self.help.winfo_exists():
             self.files.configure(state="normal")
 
+    def is_listbox_focused(self):
+        return self.class_list == self.class_list.focus_get()
+
     # disables scrolling for the class list
     def disable_scroll(self, event):
         widget = self.help.winfo_containing(event.x_root, event.y_root)
@@ -6828,10 +6831,10 @@ class TeraTermUI(customtkinter.CTk):
         self.search_box.bind("<KeyRelease>", self.search_classes)
         self.help_frame.bind("<Button-1>", lambda event: self.help_frame.focus_set())
         self.help_frame.bind("<Button-3>", lambda event: self.help_frame.focus_set())
-        self.help.bind("<Up>", lambda event: self.help_scroll_up())
-        self.help.bind("<Down>", lambda event: self.help_scroll_down())
-        self.help.bind("<Home>", lambda event: self.help_move_top_scrollbar())
-        self.help.bind("<End>", lambda event: self.help_move_bottom_scrollbar())
+        self.help.bind("<Up>", lambda event: None if self.is_listbox_focused() else self.help_scroll_up())
+        self.help.bind("<Down>", lambda event: None if self.is_listbox_focused() else self.help_scroll_down())
+        self.help.bind("<Home>", lambda event: None if self.is_listbox_focused() else self.help_move_top_scrollbar())
+        self.help.bind("<End>", lambda event: None if self.is_listbox_focused() else self.help_move_bottom_scrollbar())
         self.help.protocol("WM_DELETE_WINDOW", self.on_help_window_close)
         self.help.bind("<Escape>", lambda event: self.on_help_window_close())
 
