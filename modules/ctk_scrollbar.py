@@ -1,4 +1,5 @@
 import sys
+import time
 from typing import Union, Tuple, Callable, Optional
 
 from .core_rendering import CTkCanvas
@@ -68,6 +69,9 @@ class CTkScrollbar(CTkBaseClass):
         self._start_value: float = 0  # 0 to 1
         self._end_value: float = 1  # 0 to 1
         self._minimum_pixel_length = minimum_pixel_length
+        self._last_motion_time = 0
+        self._last_event_position = 0
+        self._motion_refresh_rate = 0.02
 
         self._canvas = CTkCanvas(master=self,
                                  highlightthickness=0,
@@ -137,34 +141,25 @@ class CTkScrollbar(CTkBaseClass):
         super()._draw(no_color_updates)
 
         corrected_start_value, corrected_end_value = self._get_scrollbar_values_for_minimum_pixel_size()
-        requires_recoloring = self._draw_engine.draw_rounded_scrollbar(self._apply_widget_scaling(self._current_width),
-                                                                       self._apply_widget_scaling(self._current_height),
-                                                                       self._apply_widget_scaling(self._corner_radius),
-                                                                       self._apply_widget_scaling(self._border_spacing),
-                                                                       corrected_start_value,
-                                                                       corrected_end_value,
-                                                                       self._orientation)
+        requires_recoloring = self._draw_engine.draw_rounded_scrollbar(
+            self._apply_widget_scaling(self._current_width),
+            self._apply_widget_scaling(self._current_height),
+            self._apply_widget_scaling(self._corner_radius),
+            self._apply_widget_scaling(self._border_spacing),
+            corrected_start_value,
+            corrected_end_value,
+            self._orientation
+        )
 
-        if no_color_updates is False or requires_recoloring:
-            if self._hover_state is True:
-                self._canvas.itemconfig("scrollbar_parts",
-                                        fill=self._apply_appearance_mode(self._button_hover_color),
-                                        outline=self._apply_appearance_mode(self._button_hover_color))
-            else:
-                self._canvas.itemconfig("scrollbar_parts",
-                                        fill=self._apply_appearance_mode(self._button_color),
-                                        outline=self._apply_appearance_mode(self._button_color))
+        if not no_color_updates or requires_recoloring:
+            scrollbar_color = self._button_hover_color if self._hover_state else self._button_color
+            border_color = self._bg_color if self._fg_color == "transparent" else self._fg_color
+            applied_scrollbar_color = self._apply_appearance_mode(scrollbar_color)
+            applied_border_color = self._apply_appearance_mode(border_color)
 
-            if self._fg_color == "transparent":
-                self._canvas.configure(bg=self._apply_appearance_mode(self._bg_color))
-                self._canvas.itemconfig("border_parts",
-                                        fill=self._apply_appearance_mode(self._bg_color),
-                                        outline=self._apply_appearance_mode(self._bg_color))
-            else:
-                self._canvas.configure(bg=self._apply_appearance_mode(self._fg_color))
-                self._canvas.itemconfig("border_parts",
-                                        fill=self._apply_appearance_mode(self._fg_color),
-                                        outline=self._apply_appearance_mode(self._fg_color))
+            self._canvas.itemconfig("scrollbar_parts", fill=applied_scrollbar_color, outline=applied_scrollbar_color)
+            self._canvas.itemconfig("border_parts", fill=applied_border_color, outline=applied_border_color)
+            self._canvas.configure(bg=applied_border_color)
 
         self._canvas.update_idletasks()
 
@@ -249,22 +244,55 @@ class CTkScrollbar(CTkBaseClass):
         center = self._start_value + ((self._end_value - self._start_value) * 0.5)
         self._motion_center_offset = center - value
 
-    def _on_motion(self, event):
-        if self._orientation == "vertical":
-            value = self._reverse_widget_scaling(((event.y - self._border_spacing) / (
-                        self._current_height - 2 * self._border_spacing))) + self._motion_center_offset
+
+    def _adjust_refresh_rate(self, speed):
+        # Define the speed range and corresponding refresh rate range
+        min_speed = 2    # Minimum speed
+        max_speed = 10   # Maximum speed
+        min_rate = 0.05  # Corresponding refresh rate for minimum speed
+        max_rate = 0.01  # Corresponding refresh rate for maximum speed
+
+        # Linear interpolation of refresh rate based on speed
+        if speed < min_speed:
+            self._motion_refresh_rate = min_rate
+        elif speed > max_speed:
+            self._motion_refresh_rate = max_rate
         else:
-            value = self._reverse_widget_scaling(((event.x - self._border_spacing) / (
-                        self._current_width - 2 * self._border_spacing))) + self._motion_center_offset
+            # Calculate the interpolated refresh rate
+            self._motion_refresh_rate = min_rate + ((max_rate - min_rate) / (max_speed - min_speed)) * (speed - min_speed)
 
-        current_scrollbar_length = self._end_value - self._start_value
-        value = max(current_scrollbar_length / 2, min(value, 1 - (current_scrollbar_length / 2)))
-        self._start_value = value - (current_scrollbar_length / 2)
-        self._end_value = value + (current_scrollbar_length / 2)
-        self._draw()
+    def _on_motion(self, event):
+        current_time = time.time()
+        current_position = event.y if self._orientation == "vertical" else event.x
+        time_diff = current_time - self._last_motion_time
+        position_diff = abs(current_position - self._last_event_position)
 
-        if self._command is not None:
-            self._command('moveto', self._start_value)
+        if time_diff > self._motion_refresh_rate:
+            self._last_motion_time = current_time
+            self._last_event_position = current_position
+
+            # Calculate scrolling speed (position units per second)
+            speed = position_diff / time_diff if time_diff > 0 else 0
+            self._adjust_refresh_rate(speed)
+
+            # Your existing code for handling scrollbar movement
+            if self._orientation == "vertical":
+                value = self._reverse_widget_scaling(((event.y - self._border_spacing) /
+                                                      (
+                                                                  self._current_height - 2 * self._border_spacing))) + self._motion_center_offset
+            else:
+                value = self._reverse_widget_scaling(((event.x - self._border_spacing) /
+                                                      (
+                                                                  self._current_width - 2 * self._border_spacing))) + self._motion_center_offset
+
+            current_scrollbar_length = self._end_value - self._start_value
+            value = max(current_scrollbar_length / 2, min(value, 1 - (current_scrollbar_length / 2)))
+            self._start_value = value - (current_scrollbar_length / 2)
+            self._end_value = value + (current_scrollbar_length / 2)
+            self._draw()
+
+            if self._command is not None:
+                self._command('moveto', self._start_value)
 
     def _mouse_scroll_event(self, event=None):
         if self._command is not None:
