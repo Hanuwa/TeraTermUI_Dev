@@ -202,7 +202,7 @@
 	"add_invalid_semester": "Error! Must enter \n\na valid semester",
 	"enroll_multiple": "Are you sure you are ready to submit the classes?\n\nWARNING: Make sure the information is correct",
 	"submit_modify": "Are you sure you are ready to submit and modify your currently enrolled classes?\n\nWARNING: Make sure the information is correct",
-	"auto_enroll_prompt": "Are you sure you are ready to submit the classes for them to be auto enrolled?\n\nWARNING: Make sure the information is correct",
+	"auto_enroll_prompt": "Are you sure you are ready to submit the classes for them to be auto-enrolled?\n\nWARNING: Make sure the information is correct",
 	"enrolled_dropped_multiple_success": "Enrolled and dropped classes\nsuccessfully",
 	"enrolled_multiple_success": "Enrolled classes successfully", 
 	"dropped_multiple_success": "Dropped classes successfully",
