@@ -1822,7 +1822,7 @@ class TeraTermUI(customtkinter.CTk):
                     "SO (Sign out)": "SO",
                     "SO (Cerrar Sesión)": "SO"
                 }
-                menu = menu_dict.get(menu, menu)
+                menu = menu_dict.get(menu, menu).replace(" ", "")
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
                         if re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE) \
@@ -1831,7 +1831,7 @@ class TeraTermUI(customtkinter.CTk):
                             if term_window.isMinimized:
                                 term_window.restore()
                             self.uprbay_window.wait("visible", timeout=5)
-                            match menu.replace(" ", ""):
+                            match menu:
                                 case "SRM":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
@@ -2158,6 +2158,7 @@ class TeraTermUI(customtkinter.CTk):
                                                        "Error! No se pudo entrar"
                                                        "\n a la pantalla" + self.menu_entry.get())
                                 case "SO":
+                                    self.focus_or_not = True
                                     self.after(0, self.sign_out)
                         else:
                             if not semester or not menu:
@@ -2212,6 +2213,10 @@ class TeraTermUI(customtkinter.CTk):
         response = msg.get()
         if TeraTermUI.checkIfProcessRunning("ttermpro") and response[0] == "Yes" \
                 or response[0] == "Sí":
+            term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
+            if term_window.isMinimized:
+                term_window.restore()
+            self.uprbay_window.wait("visible", timeout=5)
             self.uprb.UprbayTeraTermVt.type_keys("SO")
             send_keys("{ENTER}")
         elif not TeraTermUI.checkIfProcessRunning("ttermpro") and response[0] == "Yes" \
