@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/1/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 1/2/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with 7000 lines of codes, it definitely makes things harder to work with
+# and with 8000 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -45,6 +45,7 @@ import tempfile
 import threading
 import tkinter as tk
 import time
+import warnings
 import webbrowser
 import win32gui
 import winsound
@@ -73,6 +74,7 @@ from PIL import Image
 
 customtkinter.set_appearance_mode("System")
 customtkinter.set_default_color_theme("blue")
+warnings.filterwarnings("ignore", message="32-bit application should be automated using 32-bit Python")
 
 
 def measure_time(threshold):
@@ -229,13 +231,13 @@ class TeraTermUI(customtkinter.CTk):
                                                                        command=self.change_appearance_mode_event)
         self.appearance_mode_optionemenu.set("System")
         self.appearance_mode_optionemenu.grid(row=7, column=0, padx=20, pady=(10, 10))
-        self.scaling_optionemenu = customtkinter.CTkSlider(self.sidebar_frame, from_=97, to=103, number_of_steps=2,
-                                                           width=150, height=20, command=self.change_scaling_event)
-        self.scaling_optionemenu.set(100)
-        self.scaling_tooltip = CTkToolTip(self.scaling_optionemenu, message=str(self.scaling_optionemenu.get()) + "%",
+        self.scaling_slider = customtkinter.CTkSlider(self.sidebar_frame, from_=97, to=103, number_of_steps=2,
+                                                      width=150, height=20, command=self.change_scaling_event)
+        self.scaling_slider.set(100)
+        self.scaling_tooltip = CTkToolTip(self.scaling_slider, message=str(self.scaling_slider.get()) + "%",
                                           bg_color="#1E90FF")
-        self.current_scaling = self.scaling_optionemenu.get()
-        self.scaling_optionemenu.grid(row=8, column=0, padx=20, pady=(10, 20))
+        self.current_scaling = self.scaling_slider.get()
+        self.scaling_slider.grid(row=8, column=0, padx=20, pady=(10, 20))
         self.bind("<Left>", self.move_slider_left)
         self.bind("<Right>", self.move_slider_right)
 
@@ -307,6 +309,8 @@ class TeraTermUI(customtkinter.CTk):
         self.auth = None
         self.back = None
         self.back_tooltip = None
+        self.skip_auth = False
+        self.ask_skip_auth = False
 
         # Student Information
         self.init_student = False
@@ -465,12 +469,14 @@ class TeraTermUI(customtkinter.CTk):
         self.class_list = None
         self.curriculum_text = None
         self.curriculum = None
-        self.keybinds_text = None
-        self.keybinds = None
-        self.keybinds_table = None
         self.terms_text = None
         self.terms = None
         self.terms_table = None
+        self.keybinds_text = None
+        self.keybinds = None
+        self.keybinds_table = None
+        self.skip_auth_text = None
+        self.skip_auth_switch = None
         self.files_text = None
         self.files = None
         self.disable_idle_text = None
@@ -529,6 +535,7 @@ class TeraTermUI(customtkinter.CTk):
         self.e_counter = 0
         self.search_function_counter = 0
         self.last_switch_time = 0
+        timings.Timings.fast()
         SPANISH = 0x0A
         language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
         # default location of Tera Term
@@ -560,7 +567,7 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Escape>", lambda event: self.on_closing())
             self.bind("<Alt-F4>", lambda event: self.direct_close())
             user_data_fields = ["location", "config", "directory", "host", "language",
-                                "appearance", "scaling", "welcome", "audio"]
+                                "appearance", "scaling", "welcome", "audio", "skip_auth"]
             results = {}
             for field in user_data_fields:
                 query_user = f"SELECT {field} FROM user_data"
@@ -593,11 +600,15 @@ class TeraTermUI(customtkinter.CTk):
                     x = (screen_width - width * scaling_factor) / 2
                     y = (screen_height - height * scaling_factor) / 2
                     self.geometry(f"{width}x{height}+{int(x) + 130}+{int(y + 50)}")
-                    self.scaling_optionemenu.set(float(results["scaling"]))
+                    self.scaling_slider.set(float(results["scaling"]))
                     self.change_scaling_event(float(results["scaling"]))
-                    self.current_scaling = self.scaling_optionemenu.get()
+                    self.current_scaling = self.scaling_slider.get()
             if results["audio"] == "Disabled":
                 self.disable_audio = True
+            if results["skip_auth"] == "Yes":
+                self.skip_auth = True
+            elif not results["skip_auth"]:
+                self.ask_skip_auth = True
             if not results["welcome"]:
                 self.help_button.configure(state="disabled")
                 self.status_button.configure(state="disabled")
@@ -2424,7 +2435,10 @@ class TeraTermUI(customtkinter.CTk):
         with self.lock_thread:
             try:
                 self.automation_preparations()
-                username = self.username_entry.get().replace(" ", "").lower()
+                if not self.skip_auth:
+                    username = self.username_entry.get().replace(" ", "").lower()
+                else:
+                    username = "students"
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
@@ -2471,6 +2485,8 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(0, self.initialization_student)
                                 self.after(100, self.auth_info_frame)
                                 self.in_student_frame = True
+                                if self.skip_auth:
+                                    self.home_frame.grid_forget()
                             elif self.server_status == "Timeout":
                                 def timeout():
                                     if not self.disable_audio:
@@ -2524,6 +2540,64 @@ class TeraTermUI(customtkinter.CTk):
         self.back_student.grid(row=5, column=0, padx=(0, 10), pady=(0, 0))
         self.system.grid(row=5, column=1, padx=(10, 0), pady=(0, 0))
         self.destroy_auth()
+        if self.ask_skip_auth:
+            self.unbind("<Return>")
+            self.unbind("<Control-BackSpace>")
+            self.system.configure(state="disabled")
+            self.back_student.configure(state="disabled")
+            self.after(1000, self.skip_auth_prompt)
+
+    def skip_auth_prompt(self):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        if not self.disable_audio:
+            winsound.PlaySound("sounds/update.wav", winsound.SND_ASYNC)
+        msg = CTkMessagebox(master=self, title=translation["skip_auth_title"],
+                            message=translation["skip_auth"],
+                            icon="question",
+                            option_1=translation["option_1"], option_2=translation["option_2"],
+                            option_3=translation["option_3"], icon_size=(65, 65),
+                            button_color=("#c30101", "#145DA0", "#145DA0"),
+                            hover_color=("darkred", "darkblue", "darkblue"))
+        response = msg.get()
+        row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+        if response[0] == "Yes" or response[0] == "Sí":
+            if not row_exists:
+                self.cursor.execute("INSERT INTO user_data (skip_auth) VALUES (?)", ("Yes",))
+            else:
+                self.cursor.execute("UPDATE user_data SET skip_auth=?", ("Yes",))
+            self.skip_auth = True
+        else:
+            if not row_exists:
+                self.cursor.execute("INSERT INTO user_data (skip_auth) VALUES (?)", ("No",))
+            else:
+                self.cursor.execute("UPDATE user_data SET skip_auth=?", ("No",))
+            self.skip_auth = False
+        self.ask_skip_auth = False
+        if self.help and self.help.winfo_exists():
+            self.on_help_window_close()
+            self.help_button_event()
+        self.bind("<Return>", lambda event: self.student_event_handler())
+        self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
+        self.system.configure(state="normal")
+        self.back_student.configure(state="normal")
+        self.ask_skip_auth = False
+
+    def disable_enable_auth(self):
+        row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+        if self.skip_auth_switch.get() == "on":
+            if not row_exists:
+                self.cursor.execute("INSERT INTO user_data (skip_auth) VALUES (?)", ("Yes",))
+            else:
+                self.cursor.execute("UPDATE user_data SET skip_auth=?", ("Yes",))
+            self.skip_auth = True
+        elif self.skip_auth_switch.get() == "off":
+            if not row_exists:
+                self.cursor.execute("INSERT INTO user_data (skip_auth) VALUES (?)", ("No",))
+            else:
+                self.cursor.execute("UPDATE user_data SET skip_auth=?", ("No",))
+            self.skip_auth = False
+        self.connection.commit()
 
     def notice_user(self):
         if self.error and self.error.winfo_exists():
@@ -2600,7 +2674,8 @@ class TeraTermUI(customtkinter.CTk):
                                     continue_button.click()
                                     self.show_loading_screen_again()
                                 self.bind("<Return>", lambda event: self.auth_event_handler())
-                                self.after(0, self.initialization_auth)
+                                if not self.skip_auth:
+                                    self.after(0, self.initialization_auth)
                                 self.after(100, self.login_frame)
                             except AppStartError as e:
                                 print("An error occurred: ", e)
@@ -2662,27 +2737,31 @@ class TeraTermUI(customtkinter.CTk):
 
     def login_frame(self):
         lang = self.language_menu.get()
-        self.authentication_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
-        self.authentication_frame.grid_columnconfigure(2, weight=1)
-        self.a_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 40))
-        self.a_buttons_frame.grid_columnconfigure(2, weight=1)
-        self.title_login.grid(row=0, column=0, padx=(20, 20), pady=10)
-        self.uprb_image_grid.grid(row=1, column=0, padx=(0, 0), pady=10)
-        self.disclaimer.grid(row=2, column=0, padx=(0, 0), pady=(30, 0))
-        if lang == "English":
-            self.username.grid(row=3, column=0, padx=(0, 125), pady=(0, 10))
-            self.username_entry.grid(row=3, column=0, padx=(90, 0), pady=(0, 10))
-        elif lang == "Español":
-            self.username.grid(row=3, column=0, padx=(0, 140), pady=(0, 10))
-            self.username_entry.grid(row=3, column=0, padx=(60, 0), pady=(0, 10))
-        self.back.grid(row=4, column=0, padx=(0, 10), pady=(0, 0))
-        self.auth.grid(row=4, column=1, padx=(10, 0), pady=(0, 0))
+        if not self.skip_auth:
+            self.authentication_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
+            self.authentication_frame.grid_columnconfigure(2, weight=1)
+            self.a_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 40))
+            self.a_buttons_frame.grid_columnconfigure(2, weight=1)
+            self.title_login.grid(row=0, column=0, padx=(20, 20), pady=10)
+            self.uprb_image_grid.grid(row=1, column=0, padx=(0, 0), pady=10)
+            self.disclaimer.grid(row=2, column=0, padx=(0, 0), pady=(30, 0))
+            if lang == "English":
+                self.username.grid(row=3, column=0, padx=(0, 125), pady=(0, 10))
+                self.username_entry.grid(row=3, column=0, padx=(90, 0), pady=(0, 10))
+            elif lang == "Español":
+                self.username.grid(row=3, column=0, padx=(0, 140), pady=(0, 10))
+                self.username_entry.grid(row=3, column=0, padx=(60, 0), pady=(0, 10))
+            self.back.grid(row=4, column=0, padx=(0, 10), pady=(0, 0))
+            self.auth.grid(row=4, column=1, padx=(10, 0), pady=(0, 0))
+            self.home_frame.grid_forget()
+        else:
+            self.auth_event_handler()
+            self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
         self.main_menu = False
         if self.help is not None and self.help.winfo_exists():
             self.files.configure(state="disabled")
         self.language_menu.configure(state="disabled")
         self.language_menu_tooltip.show()
-        self.home_frame.grid_forget()
         self.slideshow_frame.pause_cycle()
 
     def login_to_existent_connection(self):
@@ -3102,6 +3181,8 @@ class TeraTermUI(customtkinter.CTk):
                              ["<End>", translation["end"]],
                              ["<Alt-F4>", translation["alt_f4"]]]
             self.keybinds_table.configure(values=self.keybinds)
+            self.skip_auth_text.configure(text=translation["skip_auth_text"])
+            self.skip_auth_switch.configure(text=translation["skip_auth_switch"])
             self.files_text.configure(text=translation["files_title"])
             self.files.configure(text=translation["files_button"])
             self.disable_idle_text.configure(text=translation["idle_title"])
@@ -4045,7 +4126,7 @@ class TeraTermUI(customtkinter.CTk):
             "host": "uprbay.uprb.edu",
             "language": self.language_menu.get(),
             "appearance": self.appearance_mode_optionemenu.get(),
-            "scaling": self.scaling_optionemenu.get(),
+            "scaling": self.scaling_slider.get(),
             "exit": self.checkbox_state,
         }
         for field, value in field_values.items():
@@ -5693,22 +5774,22 @@ class TeraTermUI(customtkinter.CTk):
     # Moves the scaling slider to the left
     def move_slider_left(self, event):
         if self.move_slider_left_enabled:
-            value = self.scaling_optionemenu.get()
+            value = self.scaling_slider.get()
             if value != 97:
                 value -= 3
-                self.scaling_optionemenu.set(value)
+                self.scaling_slider.set(value)
                 self.change_scaling_event(value)
-                self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
+                self.scaling_tooltip.configure(message=str(self.scaling_slider.get()) + "%")
 
     # Moves the scaling slider to the right
     def move_slider_right(self, event):
         if self.move_slider_right_enabled:
-            value = self.scaling_optionemenu.get()
+            value = self.scaling_slider.get()
             if value != 103:
                 value += 3
-                self.scaling_optionemenu.set(value)
+                self.scaling_slider.set(value)
                 self.change_scaling_event(value)
-                self.scaling_tooltip.configure(message=str(self.scaling_optionemenu.get()) + "%")
+                self.scaling_tooltip.configure(message=str(self.scaling_slider.get()) + "%")
 
     # Keybindings for different widgets
     def spacebar_event(self):
@@ -6025,33 +6106,15 @@ class TeraTermUI(customtkinter.CTk):
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         lang = self.language_menu.get()
                         translation = self.load_language(lang)
-                        self.automation_preparations()
                         if TeraTermUI.window_exists(translation["exit"]):
                             self.exit.close_messagebox()
                         if TeraTermUI.window_exists(translation["idle_warning_title"]):
                             self.idle_warning.close_messagebox()
-                        term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
-                        if term_window.isMinimized:
-                            term_window.restore()
-                        self.uprbay_window.wait("visible", timeout=5)
-                        if self.idle_num_check == 0:
-                            self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                            send_keys("{ENTER}")
-                            screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                            screenshot_thread.start()
-                            screenshot_thread.join()
-                            text_output = self.capture_screenshot()
-                            if "INVALID ACTION" in text_output:
-                                send_keys("{TAB}")
-                                self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                send_keys("{ENTER}")
-                            term_window.minimize()
-                            self.after(0, self.disable_go_next_buttons)
-                        elif self.idle_num_check > 0:
-                            TeraTermUI.unfocus_tkinter()
-                            send_keys("{TAB 2}")
-                            term_window.minimize()
+                        uprb = Application().connect(title_re=".*uprbay.uprb.edu - Tera Term VT.*", timeout=5)
+                        main_window = uprb.window(title_re=".*uprbay.uprb.edu - Tera Term VT.*")
+                        if main_window.exists(timeout=5):
+                            main_window.send_keystrokes("{VK_RIGHT}")
+                            main_window.send_keystrokes("{VK_LEFT}")
                         self.last_activity = time.time()
                         if not self.countdown_running:
                             self.idle_num_check += 1
@@ -6068,15 +6131,6 @@ class TeraTermUI(customtkinter.CTk):
                                     self.idle_num_check = 0
 
                             self.after(0, idle_warning)
-                        if self.in_multiple_screen:
-                            self.set_focus_to_tkinter()
-                            self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
-                        else:
-                            self.set_focus_to_tkinter()
-                            self.switch_tab()
-                        self.show_sidebar_windows()
-                        self.bring_back_timer_window()
-                        ctypes.windll.user32.BlockInput(False)
                     else:
                         self.stop_check_idle.is_set()
             if self.idle_num_check == 12:
@@ -6122,6 +6176,9 @@ class TeraTermUI(customtkinter.CTk):
                 if self.in_multiple_screen:
                     self.set_focus_to_tkinter()
                     self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
+                elif not self.in_multiple_screen and self.enrolled_rows is None:
+                    self.set_focus_to_tkinter()
+                    self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
                 else:
                     self.set_focus_to_tkinter()
                     self.switch_tab()
@@ -6754,6 +6811,9 @@ class TeraTermUI(customtkinter.CTk):
                       ["2022", "C21, C22, C23"],
                       ["2023", "C31, C32, C33"],
                       [translation["semester"], translation["seasons"]]]
+        self.skip_auth_text = customtkinter.CTkLabel(self.help_frame, text=translation["skip_auth_text"])
+        self.skip_auth_switch = customtkinter.CTkSwitch(self.help_frame, text=translation["skip_auth_switch"],
+                                                        onvalue="on", offvalue="off", command=self.disable_enable_auth)
         self.files_text = customtkinter.CTkLabel(self.help_frame, text=translation["files_title"])
         self.files = CustomButton(self.help_frame, image=self.get_image("folder"), text=translation["files_button"],
                                   anchor="w", text_color=("gray10", "#DCE4EE"),
@@ -6813,6 +6873,9 @@ class TeraTermUI(customtkinter.CTk):
         self.keybinds_text.pack(pady=(20, 0))
         self.keybinds_table = CTkTable(self.help_frame, column=2, row=17, values=self.keybinds, hover=False)
         self.keybinds_table.pack(expand=True, fill="both", padx=20, pady=10)
+        if not self.ask_skip_auth:
+            self.skip_auth_text.pack()
+            self.skip_auth_switch.pack()
         self.files_text.pack()
         self.files.pack(pady=5)
         self.disable_idle_text.pack()
@@ -6823,12 +6886,16 @@ class TeraTermUI(customtkinter.CTk):
         self.fix.pack(pady=5)
         idle = self.cursor.execute("SELECT idle FROM user_data").fetchone()
         audio = self.cursor.execute("SELECT audio FROM user_data").fetchone()
+        skip_auth = self.cursor.execute("SELECT skip_auth FROM user_data").fetchone()
         if idle and idle[0] is not None:
             if idle[0] == "Disabled":
                 self.disable_idle.select()
         if audio and audio[0] is not None:
             if audio[0] == "Disabled":
                 self.disable_audio_val.select()
+        if skip_auth and skip_auth[0] is not None:
+            if skip_auth[0] == "Yes":
+                self.skip_auth_switch.select()
         self.search_box.lang = lang
         self.help.focus_set()
         self.class_list.bind("<<ListboxSelect>>", self.show_class_code)
