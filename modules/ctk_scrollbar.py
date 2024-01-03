@@ -69,6 +69,7 @@ class CTkScrollbar(CTkBaseClass):
         self._start_value: float = 0  # 0 to 1
         self._end_value: float = 1  # 0 to 1
         self._minimum_pixel_length = minimum_pixel_length
+        self._motion_center_offset = 0
         self._last_motion_time = 0
         self._last_event_position = 0
         self._motion_refresh_rate = 0.02
