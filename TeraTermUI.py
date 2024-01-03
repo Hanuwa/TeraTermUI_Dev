@@ -612,14 +612,19 @@ class TeraTermUI(customtkinter.CTk):
             if not results["welcome"]:
                 self.help_button.configure(state="disabled")
                 self.status_button.configure(state="disabled")
+                self.intro_box.stop_autoscroll(event=None)
 
                 # Pop up message that appears only the first time the user uses the application
                 def show_message_box():
                     translation = self.load_language(self.language_menu.get())
                     if not self.disable_audio:
                         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    CTkMessagebox(master=self, title=translation["welcome_title"],
-                                  message=translation["welcome_message"], button_width=380)
+                    welcome = CTkMessagebox(master=self, title=translation["welcome_title"],
+                                            message=translation["welcome_message"], button_width=380)
+                    response = welcome.get()[0]
+                    if response is None or response == "OK":
+                        self.slideshow_frame.go_to_first_image()
+                        self.intro_box.restart_autoscroll()
                     self.status_button.configure(state="normal")
                     self.help_button.configure(state="normal")
                     self.log_in.configure(state="normal")
@@ -4243,6 +4248,7 @@ class TeraTermUI(customtkinter.CTk):
         self.progress_bar.pack(pady=1)
         self.progress_bar.start()
         self.attributes("-disabled", True)
+        TeraTermUI.disable_entries(self)
         return self.loading_screen
 
     # hides the loading screen
@@ -4257,11 +4263,28 @@ class TeraTermUI(customtkinter.CTk):
     def update_loading_screen(self, loading_screen, task_done):
         if task_done.is_set():
             self.attributes("-disabled", False)
+            TeraTermUI.enable_entries(self)
             self.hide_loading_screen()
             self.progress_bar.stop()
             loading_screen.destroy()
         else:
             self.after(100, self.update_loading_screen, loading_screen, task_done)
+
+    @staticmethod
+    def disable_entries(container):
+        for widget in container.winfo_children():
+            if isinstance(widget, (tk.Entry, CustomEntry)):
+                widget.configure(state="disabled")
+            elif hasattr(widget, "winfo_children"):
+                TeraTermUI.disable_entries(widget)
+
+    @staticmethod
+    def enable_entries(container):
+        for widget in container.winfo_children():
+            if isinstance(widget, (tk.Entry, CustomEntry)):
+                widget.configure(state="normal")
+            elif hasattr(widget, "winfo_children"):
+                TeraTermUI.enable_entries(widget)
 
     # function that lets user see/hide their input (hidden by default)
     def show_event(self):
@@ -6277,7 +6300,8 @@ class TeraTermUI(customtkinter.CTk):
 
     def tab_switcher(self):
         current_time = time.time()
-        if hasattr(self, "last_switch_time") and current_time - self.last_switch_time < 0.2:
+        if hasattr(self, "last_switch_time") and current_time - self.last_switch_time < 0.2 or \
+                (self.loading_screen is not None and self.loading_screen.winfo_exists()):
             return
         self.last_switch_time = current_time
 
@@ -7388,6 +7412,12 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.after_cancel(self.after_id)
             self.after_id = None
 
+    def restart_autoscroll(self):
+        self.auto_scroll = True
+        if self.after_id:
+            self.after_cancel(self.after_id)
+        self.after_id = self.after(8000, self.update_text)
+
     def reset_autoscroll(self):
         if self.auto_scroll:
             if self.after_id:
@@ -7950,6 +7980,10 @@ class ImageSlideshow:
     def next_image(self):
         self.index = (self.index + 1) % len(self.image_files)  # Increase index and wrap around if needed
         self.show_image()  # Show the new image and reset the timer
+
+    def go_to_first_image(self):
+        self.index = 0  # Reset index to the first image
+        self.show_image()  # Show the first image
 
     def pause_cycle(self):
         self.slideshow_frame.after_cancel(self.after_id)  # Cancel the existing timer
