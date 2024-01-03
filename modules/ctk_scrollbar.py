@@ -249,9 +249,9 @@ class CTkScrollbar(CTkBaseClass):
         # Define the speed range and corresponding refresh rate range
         min_speed = 400   # Minimum speed
         max_speed = 1000   # Maximum speed
-        min_rate = 0.01  # Corresponding refresh rate for maximum speed
+        min_rate = 0.015  # Corresponding refresh rate for minimum speed
         mid_rate = 0.02  # Corresponding refresh rate for medium speed
-        max_rate = 0.03  # Corresponding refresh rate for minimum speed
+        max_rate = 0.025  # Corresponding refresh rate for maximum speed
 
         # Linear interpolation of refresh rate based on speed
         if speed < min_speed:
