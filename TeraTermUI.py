@@ -4208,9 +4208,9 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         self.loading_screen = customtkinter.CTkToplevel(self)
-        self.loading_screen.grab_set()
         self.loading_screen.title(translation["loading"])
         self.loading_screen.overrideredirect(True)
+        self.loading_screen.grab_set()
         width = 275
         height = 150
         self.loading_screen.update_idletasks()
@@ -4237,6 +4237,7 @@ class TeraTermUI(customtkinter.CTk):
                                                          height=15, width=230, indeterminate_speed=1.5)
         self.progress_bar.pack(pady=1)
         self.progress_bar.start()
+        self.attributes("-disabled", True)
         return self.loading_screen
 
     # hides the loading screen
