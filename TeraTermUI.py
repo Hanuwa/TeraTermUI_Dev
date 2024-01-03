@@ -720,7 +720,16 @@ class TeraTermUI(customtkinter.CTk):
             if self.checkbox_state:
                 if TeraTermUI.checkIfProcessRunning("ttermpro"):
                     if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
-                        self.uprb.kill(soft=True)
+                        try:
+                            self.uprb.kill(soft=True)
+                        except Exception as e:
+                            print("An error occurred: ", e)
+                            try:
+                                subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
+                                               check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            except subprocess.CalledProcessError:
+                                print("Could not terminate ttermpro.exe.")
+
                     elif TeraTermUI.window_exists("Tera Term - [disconnected] VT"):
                         try:
                             subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
@@ -4228,7 +4237,6 @@ class TeraTermUI(customtkinter.CTk):
                                                          height=15, width=230, indeterminate_speed=1.5)
         self.progress_bar.pack(pady=1)
         self.progress_bar.start()
-        self.attributes("-disabled", True)
         return self.loading_screen
 
     # hides the loading screen
