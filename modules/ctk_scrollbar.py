@@ -247,10 +247,11 @@ class CTkScrollbar(CTkBaseClass):
 
     def _adjust_refresh_rate(self, speed):
         # Define the speed range and corresponding refresh rate range
-        min_speed = 2    # Minimum speed
-        max_speed = 10   # Maximum speed
-        min_rate = 0.05  # Corresponding refresh rate for minimum speed
-        max_rate = 0.01  # Corresponding refresh rate for maximum speed
+        min_speed = 400   # Minimum speed
+        max_speed = 1000   # Maximum speed
+        min_rate = 0.01  # Corresponding refresh rate for maximum speed
+        mid_rate = 0.02  # Corresponding refresh rate for medium speed
+        max_rate = 0.03  # Corresponding refresh rate for minimum speed
 
         # Linear interpolation of refresh rate based on speed
         if speed < min_speed:
@@ -258,8 +259,7 @@ class CTkScrollbar(CTkBaseClass):
         elif speed > max_speed:
             self._motion_refresh_rate = max_rate
         else:
-            # Calculate the interpolated refresh rate
-            self._motion_refresh_rate = min_rate + ((max_rate - min_rate) / (max_speed - min_speed)) * (speed - min_speed)
+            self._motion_refresh_rate = mid_rate
 
     def _on_motion(self, event):
         current_time = time.time()
@@ -331,3 +331,4 @@ class CTkScrollbar(CTkBaseClass):
 
     def focus_force(self):
         return self._canvas.focus_force()
+        
