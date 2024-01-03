@@ -694,7 +694,8 @@ class TeraTermUI(customtkinter.CTk):
 
     # function that when the user tries to close the application a confirm dialog opens up
     def on_closing(self):
-        if hasattr(self, 'is_exit_dialog_open') and self.is_exit_dialog_open:
+        if hasattr(self, 'is_exit_dialog_open') and self.is_exit_dialog_open or \
+                (self.loading_screen is not None and self.loading_screen.winfo_exists()):
             return
         self.is_exit_dialog_open = True
         lang = self.language_menu.get()
@@ -2844,6 +2845,8 @@ class TeraTermUI(customtkinter.CTk):
         response = None
         lang = self.language_menu.get()
         translation = self.load_language(lang)
+        if self.loading_screen is not None and self.loading_screen.winfo_exists():
+            return
         if not self.error_occurred:
             msg = CTkMessagebox(master=self, title=translation["go_back_title"],
                                 message=translation["go_back"],
@@ -3304,6 +3307,8 @@ class TeraTermUI(customtkinter.CTk):
             self.m_semester_entry[i].configure(state="disabled")
 
     def keybind_auto_enroll(self):
+        if self.loading_screen is not None and self.loading_screen.winfo_exists():
+            return
         self.auto_enroll.select()
         self.auto_enroll_event_handler()
 
