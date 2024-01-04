@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/2/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 1/3/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -811,59 +811,55 @@ class TeraTermUI(customtkinter.CTk):
 
             if asyncio.run(self.test_connection(lang)) and self.check_server():
                 if TeraTermUI.checkIfProcessRunning("ttermpro"):
-                    try:
-                        student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
-                        code = self.code_entry.get().replace(" ", "")
-                        student_id_enc = aes_encrypt_then_mac(str(student_id), aes_key, iv, mac_key)
-                        code_enc = aes_encrypt_then_mac(str(code), aes_key, iv, mac_key)
-                        if ((re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", student_id) or
-                             re.match(r"^\d{9}$", student_id)) and code.isdigit() and len(code) == 4):
-                            secure_delete(student_id)
-                            secure_delete(code)
-                            term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
-                            if term_window.isMinimized:
-                                term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=5)
-                            TeraTermUI.unfocus_tkinter()
-                            send_keys("{TAB}")
-                            self.uprb.UprbayTeraTermVt.type_keys(
-                                aes_decrypt_and_verify_mac(student_id_enc, aes_key, iv, mac_key))
-                            self.uprb.UprbayTeraTermVt.type_keys(
-                                aes_decrypt_and_verify_mac(code_enc, aes_key, iv, mac_key))
-                            send_keys("{ENTER}")
-                            screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                            screenshot_thread.start()
-                            screenshot_thread.join()
-                            text_output = self.capture_screenshot()
-                            if "SIGN-IN" in text_output:
-                                self.reset_activity_timer(None)
-                                self.start_check_idle_thread()
-                                self.after(0, self.initialization_class)
-                                self.after(100, self.student_info_frame)
-                                self.run_fix = True
-                                if self.help is not None and self.help.winfo_exists():
-                                    self.fix.configure(state="normal")
-                                self.in_student_frame = False
-                                secure_delete(student_id_enc)
-                                secure_delete(code_enc)
-                                secure_delete(aes_key)
-                                secure_delete(mac_key)
-                                secure_delete(iv)
-                                del student_id, code, student_id_enc, code_enc, aes_key, mac_key
-                                gc.collect()
-                                self.switch_tab()
-                            else:
-                                self.bind("<Return>", lambda event: self.student_event_handler())
-                                if "ON FILE" in text_output:
-                                    send_keys("{TAB 3}")
-                                if "PIN NUMBER" in text_output:
-                                    send_keys("{TAB 2}")
-
-                                self.after(0, self.show_error_message, 300, 215, translation["error_student_id"])
+                    student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
+                    code = self.code_entry.get().replace(" ", "")
+                    student_id_enc = aes_encrypt_then_mac(str(student_id), aes_key, iv, mac_key)
+                    code_enc = aes_encrypt_then_mac(str(code), aes_key, iv, mac_key)
+                    if ((re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", student_id) or
+                         re.match(r"^\d{9}$", student_id)) and code.isdigit() and len(code) == 4):
+                        secure_delete(student_id)
+                        secure_delete(code)
+                        term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
+                        if term_window.isMinimized:
+                            term_window.restore()
+                        self.uprbay_window.wait("visible", timeout=5)
+                        TeraTermUI.unfocus_tkinter()
+                        send_keys("{TAB}")
+                        self.uprb.UprbayTeraTermVt.type_keys(
+                            aes_decrypt_and_verify_mac(student_id_enc, aes_key, iv, mac_key))
+                        self.uprb.UprbayTeraTermVt.type_keys(
+                            aes_decrypt_and_verify_mac(code_enc, aes_key, iv, mac_key))
+                        send_keys("{ENTER}")
+                        screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                        screenshot_thread.start()
+                        screenshot_thread.join()
+                        text_output = self.capture_screenshot()
+                        if "SIGN-IN" in text_output:
+                            self.reset_activity_timer(None)
+                            self.start_check_idle_thread()
+                            self.after(0, self.initialization_class)
+                            self.after(100, self.student_info_frame)
+                            self.run_fix = True
+                            if self.help is not None and self.help.winfo_exists():
+                                self.fix.configure(state="normal")
+                            self.in_student_frame = False
+                            secure_delete(student_id_enc)
+                            secure_delete(code_enc)
+                            secure_delete(aes_key)
+                            secure_delete(mac_key)
+                            secure_delete(iv)
+                            del student_id, code, student_id_enc, code_enc, aes_key, mac_key
+                            gc.collect()
+                            self.switch_tab()
                         else:
                             self.bind("<Return>", lambda event: self.student_event_handler())
+                            if "ON FILE" in text_output:
+                                send_keys("{TAB 3}")
+                            if "PIN NUMBER" in text_output:
+                                send_keys("{TAB 2}")
+
                             self.after(0, self.show_error_message, 300, 215, translation["error_student_id"])
-                    except ValueError:
+                    else:
                         self.bind("<Return>", lambda event: self.student_event_handler())
                         self.after(0, self.show_error_message, 300, 215, translation["error_student_id"])
                 else:
@@ -4288,7 +4284,6 @@ class TeraTermUI(customtkinter.CTk):
 
     # function that lets user see/hide their input (hidden by default)
     def show_event(self):
-        self.focus_set()
         show = self.show.get()
         if show == "on":
             self.student_id_entry.unbind("<Command-c>")
