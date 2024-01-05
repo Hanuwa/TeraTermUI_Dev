@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/3/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 1/4/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -3647,6 +3647,7 @@ class TeraTermUI(customtkinter.CTk):
             self.timer_window.after_idle(self.timer_window.attributes, "-topmost", 0)
 
     def disable_enable_gui(self):
+        TeraTermUI.enable_entries(self)
         if self.countdown_running:
             self.submit_multiple.configure(state="disabled")
             self.submit.configure(state="disabled")
@@ -4259,7 +4260,7 @@ class TeraTermUI(customtkinter.CTk):
     def update_loading_screen(self, loading_screen, task_done):
         if task_done.is_set():
             self.attributes("-disabled", False)
-            TeraTermUI.enable_entries(self)
+            self.update_entries()
             self.hide_loading_screen()
             self.progress_bar.stop()
             loading_screen.destroy()
@@ -4281,6 +4282,25 @@ class TeraTermUI(customtkinter.CTk):
                 widget.configure(state="normal")
             elif hasattr(widget, "winfo_children"):
                 TeraTermUI.enable_entries(widget)
+
+    def update_entries(self):
+        if self.enrolled_rows is None and not self.countdown_running:
+            TeraTermUI.enable_entries(self)
+        if self.enrolled_rows is not None:
+            lang = self.language_menu.get()
+            translation = self.load_language(lang)
+            for row_index in range(self.enrolled_rows - 1):
+                mod_selection = self.mod_selection_list[row_index]
+                change_section_entry = self.change_section_entries[row_index]
+                if mod_selection is not None and change_section_entry is not None:
+                    mod = mod_selection.get()
+                    if mod == translation["section"]:
+                        change_section_entry.configure(state="normal")
+        if self.init_multiple:
+            for i in range(1, self.a_counter + 1):
+                self.m_semester_entry[i].configure(state="disabled")
+        if self.help and self.help.winfo_exists():
+            self.search_box.configure(state="normal")
 
     # function that lets user see/hide their input (hidden by default)
     def show_event(self):
@@ -5066,7 +5086,8 @@ class TeraTermUI(customtkinter.CTk):
             tooltip_message = tooltip_messages[header]
             CTkToolTip(cell, message=tooltip_message, bg_color="#A9A9A9", alpha=0.90)
 
-        self.my_classes_frame.grid(row=0, column=1)
+        self.my_classes_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
+        self.my_classes_frame.grid_columnconfigure(2, weight=1)
         self.title_my_classes.grid(row=1, column=1, padx=(180, 0), pady=(10, 10))
         self.enrolled_classes_table.grid(row=2, column=1, pady=(0, 5))
         self.total_credits_label.grid(row=3, column=1, padx=(180, 0), pady=(0, 15))
@@ -5122,6 +5143,7 @@ class TeraTermUI(customtkinter.CTk):
         self.title_my_classes.bind("<Button-1>", lambda event: self.focus_set())
 
     def destroy_enrolled_frame(self):
+        TeraTermUI.enable_entries(self)
         self.my_classes_frame.grid_forget()
         self.modify_classes_frame.grid_forget()
         self.my_classes_frame.unbind("<Button-1>")
@@ -5188,13 +5210,20 @@ class TeraTermUI(customtkinter.CTk):
                 show_error = False
                 first_loop = True
                 section_closed = False
+                co_requisite = False
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
                         not_all_choose = False
                         section_pattern = True
+                        edge_cases_bool = False
+                        edge_cases_classes = ["FISI3011", "FISI3013", "FISI3012", "FISI3014", "BIOL3011", "BIOL3013",
+                                              "BIOL3012", "BIOL3014", "QUIM3001", "QUIM3003", "QUIM3002", "QUIM3004"]
+                        edge_cases_classes_met = []
                         for row_index in range(self.enrolled_rows - 1):
                             mod_selection = self.mod_selection_list[row_index]
                             change_section_entry = self.change_section_entries[row_index]
+                            course_code_no_section = self.enrolled_classes_data[row_index][
+                                                         translation["course"]].replace('-', '')[:8]
                             if mod_selection is not None and change_section_entry is not None:
                                 mod = mod_selection.get()
                                 section = change_section_entry.get().upper().replace(" ", "")
@@ -5202,7 +5231,10 @@ class TeraTermUI(customtkinter.CTk):
                                     not_all_choose = True
                                 if mod == translation["section"] and not re.fullmatch("^[A-Z]{2}1$", section):
                                     section_pattern = False
-                        if not_all_choose and section_pattern:
+                                if mod != translation["choose"] and course_code_no_section in edge_cases_classes:
+                                    edge_cases_bool = True
+                                    edge_cases_classes_met.append(course_code_no_section)
+                        if not_all_choose and section_pattern and not edge_cases_bool:
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
@@ -5250,7 +5282,14 @@ class TeraTermUI(customtkinter.CTk):
                                             send_keys("{TAB 2}")
                                         self.uprb.UprbayTeraTermVt.type_keys("D")
                                         self.uprb.UprbayTeraTermVt.type_keys(course_code)
-                                        send_keys("{ENTER 3}")
+                                        send_keys("{ENTER}")
+                                        screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                                        screenshot_thread.start()
+                                        screenshot_thread.join()
+                                        text_output = self.capture_screenshot()
+                                        if "REQUIRED CO-REQUISITE" in text_output:
+                                            co_requisite = True
+                                        send_keys("{ENTER 2}")
                                         if mod == translation["section"]:
                                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
                                             screenshot_thread.start()
@@ -5349,6 +5388,21 @@ class TeraTermUI(customtkinter.CTk):
 
                                     self.after(2500, explanation)
 
+                                if co_requisite:
+                                    self.after(0, self.show_error_message, 320, 240,
+                                               translation["failed_change_section"])
+
+                                    def explanation():
+                                        self.destroy_windows()
+                                        if not self.disable_audio:
+                                            winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                                        CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                                      icon="cancel",
+                                                      message=translation["co_requisite"],
+                                                      button_width=380)
+
+                                    self.after(2500, explanation)
+
                                 else:
                                     self.after(0, self.show_success_message, 350, 265,
                                                translation["success_modify"])
@@ -5386,6 +5440,17 @@ class TeraTermUI(customtkinter.CTk):
                             elif not section_pattern:
                                 self.after(0, self.show_error_message, 360, 240,
                                            translation["section_format_error"])
+                            elif edge_cases_bool:
+                                def explanation():
+                                    if not self.disable_audio:
+                                        winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                                    edge_case_classes_str = ", ".join(edge_cases_classes_met)
+                                    CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                                  icon="warning",
+                                                  message=translation["co_requisite_warning"] + edge_case_classes_str,
+                                                  button_width=380)
+
+                                self.after(0, explanation)
                     else:
                         self.after(0, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             except Exception as e:
@@ -5415,7 +5480,7 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         # Clear the existing table
-        if hasattr(self, 'enrolled_classes_table'):
+        if hasattr(self, "enrolled_classes_table"):
             self.enrolled_classes_table.destroy()
 
         # Create the table values, starting with headers
@@ -5436,13 +5501,24 @@ class TeraTermUI(customtkinter.CTk):
         column_widths = {
             translation["course"]: 100,
             translation["grade"]: 50,
-            translation["days"]: 150,
-            translation["times"]: 50,
+            translation["days"]: 50,
+            translation["times"]: 150,
             translation["room"]: 50
+        }
+
+        tooltip_messages = {
+            translation["course"]: translation["tooltip_course"],
+            translation["grade"]: translation["tooltip_grd"],
+            translation["days"]: translation["tooltip_days"],
+            translation["times"]: translation["tooltip_times"],
+            translation["room"]: translation["tooltip_croom"]
         }
 
         for i, header in enumerate(headers):
             self.enrolled_classes_table.edit_column(i, width=column_widths[header])
+            cell = self.enrolled_classes_table.get_cell(0, i)
+            tooltip_message = tooltip_messages[header]
+            CTkToolTip(cell, message=tooltip_message, bg_color="#A9A9A9", alpha=0.90)
 
         self.total_credits_label.grid_forget()
         self.enrolled_classes_table.grid(row=2, column=1, pady=(0, 20))
