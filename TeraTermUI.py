@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/4/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 1/5/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -708,8 +708,8 @@ class TeraTermUI(customtkinter.CTk):
         self.exit = CTkMessagebox(master=self, title=translation["exit"], message=translation["exit_message"],
                                   icon="question", option_1=translation["close_tera_term"],
                                   option_2=translation["option_2"], option_3=translation["option_3"],
-                                  icon_size=(65, 65), button_color=("#c30101", "#c30101", "#145DA0"),
-                                  option_1_type="checkbox", hover_color=("darkred", "darkred", "darkblue"))
+                                  icon_size=(65, 65), button_color=("#c30101", "#c30101", "#145DA0", "use_default"),
+                                  option_1_type="checkbox", hover_color=("darkred", "darkred", "use_default"))
         on_exit = self.cursor.execute("SELECT exit FROM user_data").fetchone()
         if on_exit and on_exit[0] is not None and on_exit[0] == "1":
             self.exit.check_checkbox()
@@ -1013,7 +1013,7 @@ class TeraTermUI(customtkinter.CTk):
                                     option_1=translation["option_1"], option_2=translation["option_2"],
                                     option_3=translation["option_3"],
                                     icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                                    hover_color=("darkred", "darkblue", "darkblue"))
+                                    hover_color=("darkred", "use_default", "use_default"))
             elif choice == "drop":
                 msg = CTkMessagebox(master=self, title="Submit",
                                     message="Are you sure you are ready " + translation[
@@ -1023,7 +1023,7 @@ class TeraTermUI(customtkinter.CTk):
                                     option_1=translation["option_1"], option_2=translation["option_2"],
                                     option_3=translation["option_3"],
                                     icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                                    hover_color=("darkred", "darkblue", "darkblue"))
+                                    hover_color=("darkred", "use_default", "use_default"))
         elif lang == "Español":
             if choice == "register":
                 msg = CTkMessagebox(master=self, title="Someter",
@@ -1032,8 +1032,8 @@ class TeraTermUI(customtkinter.CTk):
                                     icon="images/submit.png",
                                     option_1=translation["option_1"], option_2=translation["option_2"],
                                     option_3=translation["option_3"],
-                                    icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                                    hover_color=("darkred", "darkblue", "darkblue"))
+                                    icon_size=(65, 65), button_color=("#c30101", "use_default", "use_default"),
+                                    hover_color=("darkred", "use_default", "use_default"))
             elif choice == "drop":
                 msg = CTkMessagebox(master=self, title="Someter",
                                     message="¿Estás preparado para darle de " + translation["drop"].lower() +
@@ -1042,7 +1042,7 @@ class TeraTermUI(customtkinter.CTk):
                                     option_1=translation["option_1"], option_2=translation["option_2"],
                                     option_3=translation["option_3"],
                                     icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                                    hover_color=("darkred", "darkblue", "darkblue"))
+                                    hover_color=("darkred", "use_default", "use_default"))
         response = msg.get()
         if response[0] == "Yes" or response[0] == "Sí":
             task_done = threading.Event()
@@ -1621,7 +1621,7 @@ class TeraTermUI(customtkinter.CTk):
                                 option_1=translation["option_1"], option_2=translation["option_2"],
                                 option_3=translation["option_3"],
                                 icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                                hover_color=("darkred", "darkblue", "darkblue"))
+                                hover_color=("darkred", "use_default", "use_default"))
             response = msg.get()
             if response[0] != "Yes" and response[0] != "Sí":
                 return
@@ -2231,7 +2231,7 @@ class TeraTermUI(customtkinter.CTk):
                             option_3=translation["option_3"],
                             icon_size=(65, 65),
                             button_color=("#c30101", "#145DA0", "#145DA0"),
-                            hover_color=("darkred", "darkblue", "darkblue"))
+                            hover_color=("darkred", "use_default", "use_default"))
         response = msg.get()
         if TeraTermUI.checkIfProcessRunning("ttermpro") and response[0] == "Yes" \
                 or response[0] == "Sí":
@@ -2556,7 +2556,7 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<Control-BackSpace>")
             self.system.configure(state="disabled")
             self.back_student.configure(state="disabled")
-            self.after(1000, self.skip_auth_prompt)
+            self.after(750, self.skip_auth_prompt)
 
     def skip_auth_prompt(self):
         lang = self.language_menu.get()
@@ -2569,7 +2569,7 @@ class TeraTermUI(customtkinter.CTk):
                             option_1=translation["option_1"], option_2=translation["option_2"],
                             option_3=translation["option_3"], icon_size=(65, 65),
                             button_color=("#c30101", "#145DA0", "#145DA0"),
-                            hover_color=("darkred", "darkblue", "darkblue"))
+                            hover_color=("darkred", "use_default", "use_default"))
         response = msg.get()
         row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
         if response[0] == "Yes" or response[0] == "Sí":
@@ -2809,6 +2809,8 @@ class TeraTermUI(customtkinter.CTk):
                     title="uprbay.uprb.edu - Tera Term VT", timeout=5)
                 self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                 self.uprbay_window.wait("visible", timeout=5)
+                send_keys("{VK_RIGHT}")
+                send_keys("{VK_LEFT}")
                 self.after(0, self.initialization_class)
                 self.after(0, self.initialization_multiple)
                 self.after(100, self.student_info_frame)
@@ -2855,7 +2857,7 @@ class TeraTermUI(customtkinter.CTk):
                                 option_1=translation["option_1"], option_2=translation["option_2"],
                                 option_3=translation["option_3"],
                                 icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                                hover_color=("darkred", "darkblue", "darkblue"))
+                                hover_color=("darkred", "use_default", "use_default"))
             response = msg.get()
         if TeraTermUI.checkIfProcessRunning("ttermpro") and (
                 self.error_occurred or (response and (response[0] == "Yes" or response[0] == "Sí"))):
@@ -3326,7 +3328,7 @@ class TeraTermUI(customtkinter.CTk):
                                     option_1=translation["option_1"], option_2=translation["option_2"],
                                     option_3=translation["option_3"],
                                     icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                                    hover_color=("darkred", "darkblue", "darkblue"))
+                                    hover_color=("darkred", "use_default", "use_default"))
                 response = msg.get()
                 if response[0] != "Yes" and response[0] != "Sí":
                     self.auto_enroll.deselect()
@@ -5191,7 +5193,7 @@ class TeraTermUI(customtkinter.CTk):
                             option_1=translation["option_1"], option_2=translation["option_2"],
                             option_3=translation["option_3"],
                             icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                            hover_color=("darkred", "darkblue", "darkblue"))
+                            hover_color=("darkred", "use_default", "use_default"))
         response = msg.get()
         if response[0] == "Yes" or response[0] == "Sí":
             task_done = threading.Event()
@@ -5650,7 +5652,7 @@ class TeraTermUI(customtkinter.CTk):
                             icon="question", option_1=translation["option_1"],
                             option_2=translation["option_2"], option_3=translation["option_3"],
                             icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                            hover_color=("darkred", "darkblue", "darkblue"))
+                            hover_color=("darkred", "use_default", "use_default"))
         response = msg.get()
         if response[0] == "Yes" or response[0] == "Sí":
             webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
@@ -5690,7 +5692,6 @@ class TeraTermUI(customtkinter.CTk):
         self.error = SmoothFadeToplevel(fade_duration=10)
         self.error.title("Error")
         self.error.geometry(window_geometry)
-        self.error.attributes("-topmost", True)
         self.error.resizable(False, False)
         self.error.iconbitmap(self.icon_path)
         my_image = self.get_image("error")
@@ -5969,7 +5970,7 @@ class TeraTermUI(customtkinter.CTk):
                             option_1=translation["option_1"], option_2=translation["option_2"],
                             option_3=translation["option_3"], icon_size=(65, 65),
                             button_color=("#c30101", "#145DA0", "#145DA0"),
-                            hover_color=("darkred", "darkblue", "darkblue"))
+                            hover_color=("darkred", "use_default", "use_default"))
         response = msg.get()
         if response[0] == "Yes" or response[0] == "Sí":
             webbrowser.open("https://osdn.net/projects/ttssh2/releases")
@@ -6074,7 +6075,7 @@ class TeraTermUI(customtkinter.CTk):
                                         option_1=translation["option_1"], option_2=translation["option_2"],
                                         option_3=translation["option_3"], icon_size=(65, 65),
                                         button_color=("#c30101", "#145DA0", "#145DA0"),
-                                        hover_color=("darkred", "darkblue", "darkblue"))
+                                        hover_color=("darkred", "use_default", "use_default"))
                     response = msg.get()
                     if response[0] == "Yes" or response[0] == "Sí":
                         webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
@@ -6133,7 +6134,7 @@ class TeraTermUI(customtkinter.CTk):
                                 option_1=translation["option_1"], option_2=translation["option_2"],
                                 option_3=translation["option_3"], icon_size=(65, 65),
                                 button_color=("#c30101", "#145DA0", "#145DA0"),
-                                hover_color=("darkred", "darkblue", "darkblue"))
+                                hover_color=("darkred", "use_default", "use_default"))
             response = msg.get()
             if response[0] == "Yes" or response[0] == "Sí":
                 task_done = threading.Event()
@@ -6352,11 +6353,17 @@ class TeraTermUI(customtkinter.CTk):
         self.attributes("-topmost", 1)
         self.after_idle(self.attributes, "-topmost", 0)
         if self.error and self.error.winfo_exists():
-            self.error.focus_set()
+            self.error.lift()
+            self.error.focus_force()
+            self.error.attributes("-topmost", 1)
+            self.error.after_idle(self.attributes, "-topmost", 0)
         elif self.success and self.success.winfo_exists():
             self.success.focus_set()
         elif self.information and self.information.winfo_exists():
-            self.information.focus_set()
+            self.information.lift()
+            self.information.focus_force()
+            self.information.attributes("-topmost", 1)
+            self.information.after_idle(self.attributes, "-topmost", 0)
         elif self.timer_window and self.timer_window.winfo_exists():
             self.timer_window.lift()
             self.timer_window.focus_force()
@@ -6373,7 +6380,10 @@ class TeraTermUI(customtkinter.CTk):
         current_time = time.time()
         if hasattr(self, "last_switch_time") and current_time - self.last_switch_time < 0.2 or \
                 (self.loading_screen is not None and self.loading_screen.winfo_exists()):
+            TeraTermUI.disable_entries(self)
+            self.after(0, TeraTermUI.enable_entries, self)
             return
+
         self.last_switch_time = current_time
 
         if self.tabview.get() == self.enroll_tab:
@@ -6592,7 +6602,7 @@ class TeraTermUI(customtkinter.CTk):
                             option_1=translation["option_1"], option_2=translation["option_2"],
                             option_3=translation["option_3"], icon_size=(65, 65),
                             button_color=("#c30101", "#145DA0", "#145DA0"),
-                            hover_color=("darkred", "darkblue", "darkblue"))
+                            hover_color=("darkred", "use_default", "use_default"))
         response = msg.get()
         if response[0] == "Yes" or response[0] == "Sí":
             feedback_thread = threading.Thread(target=self.submit_feedback)
