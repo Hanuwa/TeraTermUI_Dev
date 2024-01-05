@@ -150,33 +150,31 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                 self.transparent_color = "#000001"
                 self.attributes("-transparentcolor", self.transparent_color)
 
-        if button_color=="default":
+        if button_color == "default":
             self.button_color = (default_button_color, default_button_color, default_button_color)
         else:
-            if type(button_color) is tuple:
-                if len(button_color)==2:
-                    self.button_color = (button_color[0], button_color[1], default_button_color)
-                elif len(button_color)==1:
-                    self.button_color = (button_color[0], default_button_color, default_button_color)
+            self.button_color = []
+            for color in button_color:
+                if color is None or color == "use_default":
+                    self.button_color.append(default_button_color)
                 else:
-                    self.button_color = button_color
-            else:
-                self.button_color = (button_color, button_color, button_color)
+                    self.button_color.append(color)
+            while len(self.button_color) < 3:
+                self.button_color.append(default_button_color)
 
         default_hover_color = self._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkButton"]["hover_color"])
 
         if hover_color == "default":
             self.hover_color = (default_hover_color, default_hover_color, default_hover_color)
         else:
-            if type(hover_color) is tuple:
-                if len(hover_color) == 2:
-                    self.hover_color = (hover_color[0], hover_color[1], default_hover_color)
-                elif len(hover_color) == 1:
-                    self.hover_color = (hover_color[0], default_hover_color, default_hover_color)
+            self.hover_color = []
+            for color in hover_color:
+                if color is None or color == "use_default":
+                    self.hover_color.append(default_hover_color)
                 else:
-                    self.hover_color = hover_color
-            else:
-                self.hover_color = (hover_color, hover_color, hover_color)
+                    self.hover_color.append(color)
+            while len(self.hover_color) < 3:
+                self.hover_color.append(default_hover_color)
 
         if text_color=="default":
             self.text_color = self._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkLabel"]["text_color"])
