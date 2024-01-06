@@ -216,17 +216,18 @@ class CustomEntry(CTkEntry):
     def undo(self, event=None):
         if len(self._undo_stack) > 1:
             self._redo_stack.append(self._undo_stack.pop())
+            previous_state = self._undo_stack[-1]
             self.delete(0, "end")
-            self.insert(0, self._undo_stack[-1])
+            self.insert(0, previous_state)
             if self.is_listbox_entry:
                 self.update_listbox()
 
     def redo(self, event=None):
         if self._redo_stack:
-            redo_text = self._redo_stack.pop()
-            self._undo_stack.append(redo_text)
+            state_to_redo = self._redo_stack.pop()
+            self._undo_stack.append(state_to_redo)
             self.delete(0, "end")
-            self.insert(0, redo_text)
+            self.insert(0, state_to_redo)
             if self.is_listbox_entry:
                 self.update_listbox()
 
@@ -356,6 +357,9 @@ class CustomEntry(CTkEntry):
             self.icursor("end")
         return "break"
 
+    def insert(self, index, string):
+        super().insert(index, string)
+        self.update_undo_stack()
+
     def update_listbox(self):
         self.teraterm_ui.search_classes(None)
-
