@@ -327,9 +327,8 @@ class CustomEntry(CTkEntry):
             self.insert(tk.INSERT, clipboard_text)  # Insert the clipboard text
 
             # Update undo stack here, after paste operation
-            new_text = self.get()
-            self._undo_stack.append(new_text)
-            self._redo_stack = []
+            self.update_undo_stack()
+            
             if self.is_listbox_entry:
                 self.update_listbox()
         except tk.TclError:
