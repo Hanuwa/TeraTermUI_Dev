@@ -5772,7 +5772,6 @@ class TeraTermUI(customtkinter.CTk):
                 )
                 del credentials_dict
                 gc.collect()
-
         except Exception as e:
             print(f"Failed to load credentials: {str(e)}")
             self.log_error(str(e))
@@ -7837,7 +7836,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
                 pass  # Nothing selected, which is fine
 
             self.insert(tk.INSERT, clipboard_text)  # Insert the clipboard text
-            self._redo_stack = []  # Clear redo stack when a new operation is done
+            self._redo_stack.clear()  # Clear redo stack after a new operation
         except tk.TclError:
             pass  # Clipboard empty or other issue
 
@@ -8354,7 +8353,7 @@ def bring_to_front(window_title):
 
 def main():
     import sys
-    
+
     appdata_folder = os.path.join(os.getenv("PROGRAMDATA"), "TeraTermUI")
     lock_file = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])), "app_lock.lock")
     lock_file_appdata = os.path.join(appdata_folder, "app_lock.lock")
