@@ -8350,11 +8350,11 @@ def bring_to_front(window_title):
 def main():
     import sys
 
-    appdata_folder = os.path.join(os.getenv("PROGRAMDATA"), "TeraTermUI")
-    lock_file = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])), "app_lock.lock")
-    lock_file_appdata = os.path.join(appdata_folder, "app_lock.lock")
-    file_lock = FileLock(lock_file, timeout=0)
-
+    tera_term_temp_dir = os.path.join(tempfile.gettempdir(), "TeraTermUI")
+    if not os.path.exists(tera_term_temp_dir):
+        os.makedirs(tera_term_temp_dir)
+    lock_file_temp = os.path.join(tera_term_temp_dir, "app_lock.lock")
+    file_lock = FileLock(lock_file_temp, timeout=0)
     try:
         with file_lock.acquire():
             app = TeraTermUI()
