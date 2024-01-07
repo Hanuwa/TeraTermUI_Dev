@@ -532,7 +532,6 @@ class TeraTermUI(customtkinter.CTk):
         self.updating_app = False
         self.main_menu = True
         self.not_rebind = False
-        self.welcome = None
         self.a_counter = 0
         self.m_counter = 0
         self.e_counter = 0
@@ -623,14 +622,12 @@ class TeraTermUI(customtkinter.CTk):
                     translation = self.load_language(self.language_menu.get())
                     if not self.disable_audio:
                         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    self.welcome = CTkMessagebox(master=self, title=translation["welcome_title"],
-                                                message=translation["welcome_message"], button_width=380)
-                    self.welcome.set_modal(False)
-                    response = self.welcome.get()[0]
+                    welcome = CTkMessagebox(master=self, title=translation["welcome_title"],
+                                            message=translation["welcome_message"], button_width=380)
+                    response = welcome.get()[0]
                     if response is None or response == "OK":
                         self.slideshow_frame.go_to_first_image()
                         self.intro_box.restart_autoscroll()
-                        self.welcome = None
                     self.status_button.configure(state="normal")
                     self.help_button.configure(state="normal")
                     self.log_in.configure(state="normal")
@@ -3183,8 +3180,6 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language(lang)
         appearance = self.appearance_mode_optionemenu.get()
         self.focus_set()
-        if self.welcome is not None:
-            self.welcome.configure(title=translation["welcome_title"], message=translation["welcome_message"])
         self.status_button.configure(text=translation["status_button"])
         self.help_button.configure(text=translation["help_button"])
         self.scaling_label.configure(text=translation["option_label"])
