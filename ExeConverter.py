@@ -244,8 +244,8 @@ for version in versions:
                                 'archive = pyzipper.AESZipFile(self.SERVICE_ACCOUNT_FILE)')
             data = data.replace('FileLock(lock_file_appdata, timeout=0)',
                                 'FileLock(lock_file, timeout=0)')
-            data = data.replace('with open("self.logs", "a")',
-                                'with open(logs.txt, "a")')
+            data = data.replace('with open(self.logs, "a")',
+                                'with open("logs.txt", "a")')
             print(Fore.GREEN + "Successfully started portable version\n" + Style.RESET_ALL)
 
         with open(project_directory+r"\TeraTermUI.py", 'w', encoding='utf-8') as file:
