@@ -5916,8 +5916,6 @@ class TeraTermUI(customtkinter.CTk):
         if found_errors:
             self.destroy_windows()
             error_message_str = ", ".join(found_errors)
-            if not self.disable_audio:
-                winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
             CTkMessagebox(master=self, title=translation["automation_error_title"], icon="cancel",
                           message=translation["specific_enrollment_error"] + error_message_str,
                           button_width=380)
@@ -5968,8 +5966,6 @@ class TeraTermUI(customtkinter.CTk):
             def explanation():
                 self.destroy_windows()
                 error_message_str = ", ".join(found_errors)
-                if not self.disable_audio:
-                    winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                 CTkMessagebox(master=self, title=translation["automation_error_title"], icon="cancel",
                               message=translation["specific_enrollment_error"] + error_message_str,
                               button_width=380)
