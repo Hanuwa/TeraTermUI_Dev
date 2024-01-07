@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/6/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 1/7/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -689,7 +689,7 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     messagebox.showerror("Error", "Fatal Error! Failed to initialize language files.\n"
                                                   "Might need to reinstall the application")
-            exit(1)
+            sys.exit(1)
 
         atexit.register(self.cleanup_temp)
         atexit.register(self.restore_original_font, self.teraterm_file)
@@ -703,7 +703,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # function that when the user tries to close the application a confirm dialog opens up
     def on_closing(self):
-        if hasattr(self, 'is_exit_dialog_open') and self.is_exit_dialog_open or \
+        if hasattr(self, "is_exit_dialog_open") and self.is_exit_dialog_open or \
                 (self.loading_screen is not None and self.loading_screen.winfo_exists()):
             return
         self.is_exit_dialog_open = True
@@ -746,7 +746,7 @@ class TeraTermUI(customtkinter.CTk):
                                            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         except subprocess.CalledProcessError:
                             print("Could not terminate ttermpro.exe.")
-            exit(0)
+            sys.exit(0)
 
     def direct_close(self):
         if hasattr(self, "boot_up_thread") and self.boot_up_thread.is_alive():
@@ -756,11 +756,11 @@ class TeraTermUI(customtkinter.CTk):
             self.stop_check_idle.set()
         self.save_user_data(include_exit=False)
         self.destroy()
-        exit(0)
+        sys.exit(0)
 
     def forceful_end_app(self):
         self.destroy()
-        exit(1)
+        sys.exit(1)
 
     def log_error(self, e):
         try:
@@ -783,7 +783,7 @@ class TeraTermUI(customtkinter.CTk):
                 if not os.path.isdir(tera_term_ui_path):
                     raise Exception("Program Data directory not found.")
             # Write the formatted error message and separator to the log file
-            with open(self.logs, "a") as file:
+            with open("logs.txt", "a") as file:
                 file.write(error_message + "\n" + separator)
         except Exception as e:
             print(f"An unexpected error occurred: {str(e)}")
@@ -3146,7 +3146,7 @@ class TeraTermUI(customtkinter.CTk):
                                          "La aplicación se cerrará ahora.")
                 # Exit the application
                 self.destroy()
-                exit(1)
+                sys.exit(1)
 
         # If the language is not supported, return an empty dictionary or raise an exception
         return {}
@@ -4664,7 +4664,7 @@ class TeraTermUI(customtkinter.CTk):
         x, y = self.winfo_pointerxy()
         self.tooltip = tk.Toplevel(self)
         self.tooltip.wm_overrideredirect(True)
-        self.tooltip.config(bg='#145DA0')
+        self.tooltip.config(bg="#145DA0")
         self.tooltip.wm_geometry(f"+{x + 20}+{y + 20}")
 
         label = tk.Label(self.tooltip, text=translation["clipboard"],
@@ -4990,7 +4990,7 @@ class TeraTermUI(customtkinter.CTk):
                     first = False  # Unset the flag after the first iteration
                 else:
                     # For additional days and times, create a new item with only the day and time
-                    modified_item = {key: '' for key in item}  # Initialize all keys with empty strings
+                    modified_item = {key: "" for key in item}  # Initialize all keys with empty strings
                     modified_item["DAYS"] = day
                     modified_item["TIMES"] = time
 
@@ -5070,8 +5070,8 @@ class TeraTermUI(customtkinter.CTk):
                     current_section["TIMES"].append(time_match.group(3))
         # Combine days and times into single strings
         for section in data:
-            section['DAYS'] = ', '.join(section['DAYS'])
-            section['TIMES'] = ', '.join(section['TIMES'])
+            section["DAYS"] = ", ".join(section["DAYS"])
+            section["TIMES"] = ", ".join(section["TIMES"])
 
         return data, course_found, invalid_action, y_n_found
 
@@ -5115,9 +5115,9 @@ class TeraTermUI(customtkinter.CTk):
             # Check for and add a new entry for additional DIAS and HORAS without the course name
             if match[7] and match[8]:
                 additional_time_str = match[8]
-                additional_start_time, additional_end_time = additional_time_str.split('-')
-                additional_start_time = additional_start_time.lstrip('0')
-                additional_end_time = additional_end_time.lstrip('0')
+                additional_start_time, additional_end_time = additional_time_str.split("-")
+                additional_start_time = additional_start_time.lstrip("0")
+                additional_end_time = additional_end_time.lstrip("0")
                 additional_start_time = (f"{additional_start_time[:-4]}:{additional_start_time[-4:-2]}"
                                          f" {additional_start_time[-2:]}")
                 additional_end_time = (f"{additional_end_time[:-4]}:{additional_end_time[-4:-2]}"
@@ -5134,7 +5134,7 @@ class TeraTermUI(customtkinter.CTk):
                 enrolled_classes.append(additional_class_info)
 
         # Search for total credits
-        credits_pattern = re.compile(r'CREDITOS TOTAL:\s+(\d+\.\d+)')
+        credits_pattern = re.compile(r"CREDITOS TOTAL:\s+(\d+\.\d+)")
         credits_match = credits_pattern.search(text)
         total_credits = credits_match.group(1) if credits_match else "0.00"
 
@@ -5347,7 +5347,7 @@ class TeraTermUI(customtkinter.CTk):
                             mod_selection = self.mod_selection_list[row_index]
                             change_section_entry = self.change_section_entries[row_index]
                             course_code_no_section = self.enrolled_classes_data[row_index][
-                                                         translation["course"]].replace('-', '')[:8]
+                                                         translation["course"]].replace("-", "")[:8]
                             if mod_selection is not None and change_section_entry is not None:
                                 mod = mod_selection.get()
                                 section = change_section_entry.get().upper().replace(" ", "")
@@ -5386,13 +5386,12 @@ class TeraTermUI(customtkinter.CTk):
                                         mod = self.mod_selection_list[row_index].get()
                                         section = self.change_section_entries[row_index].get().upper().replace(" ", "")
                                         course_code = self.enrolled_classes_data[row_index][
-                                            translation["course"]].replace('-', '')
+                                            translation["course"]].replace("-", "")
                                         course_code_no_section = self.enrolled_classes_data[row_index][
-                                                                     translation["course"]].replace('-', '')[:8]
+                                                                     translation["course"]].replace("-", "")[:8]
                                         old_section = self.enrolled_classes_data[row_index][
-                                                                     translation["course"]].replace('-', '')[8:]
-
-                                    if (mod == translation["drop"] or mod == translation["section"]):
+                                                                     translation["course"]].replace("-", "")[8:]
+                                    if mod == translation["drop"] or mod == translation["section"]:
                                         if not first_loop:
                                             time.sleep(1.5)
                                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
@@ -6977,7 +6976,7 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language(lang)
         tera_term_path = TeraTermUI.find_ttermpro()
         if tera_term_path:
-            self.location = tera_term_path.replace('\\', '/')
+            self.location = tera_term_path.replace("\\", "/")
             directory, filename = os.path.split(self.location)
             self.teraterm_directory = directory
             self.teraterm_file = self.teraterm_directory + "/TERATERM.ini"
@@ -7017,7 +7016,7 @@ class TeraTermUI(customtkinter.CTk):
                                               title=translation["select_tera_term"],
                                               filetypes=(("Tera Term", "*ttermpro.exe"),))
         if re.search("ttermpro.exe", filename):
-            self.location = filename.replace('\\', '/')
+            self.location = filename.replace("\\", "/")
             directory, filename = os.path.split(self.location)
             self.teraterm_directory = directory
             self.teraterm_file = self.teraterm_directory + "/TERATERM.ini"
@@ -7545,8 +7544,8 @@ class TeraTermUI(customtkinter.CTk):
 class CustomButton(customtkinter.CTkButton):
     def __init__(self, master=None, command=None, **kwargs):
         super().__init__(master, cursor="hand2", **kwargs)
-        self.text = kwargs.pop('text', None)
-        self.image = kwargs.pop('image', None)
+        self.text = kwargs.pop("text", None)
+        self.image = kwargs.pop("image", None)
 
         self.is_pressed = False
         self.click_command = command
@@ -7622,9 +7621,9 @@ class CustomScrollableFrame(customtkinter.CTkScrollableFrame):
     def _scroll_text_widget(text_widget, event):
         # Scroll the text widget based on the mouse wheel event
         if event.num == 5 or event.delta == -120:
-            text_widget.yview_scroll(1, 'units')
+            text_widget.yview_scroll(1, "units")
         elif event.num == 4 or event.delta == 120:
-            text_widget.yview_scroll(-1, 'units')
+            text_widget.yview_scroll(-1, "units")
 
 
 class CustomTextBox(customtkinter.CTkTextbox):
@@ -7645,10 +7644,10 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.bind("<FocusIn>", self.disable_slider_keys)
         self.bind("<FocusOut>", self.enable_slider_keys)
 
-        if hasattr(self, '_y_scrollbar'):
+        if hasattr(self, "_y_scrollbar"):
             self._y_scrollbar.bind("<Button-1>", self.stop_autoscroll)
             self._y_scrollbar.bind("<B1-Motion>", self.stop_autoscroll)
-        if hasattr(self, '_x_scrollbar'):
+        if hasattr(self, "_x_scrollbar"):
             self._x_scrollbar.bind("<Button-1>", self.stop_autoscroll)
             self._x_scrollbar.bind("<B1-Motion>", self.stop_autoscroll)
 
@@ -8354,6 +8353,8 @@ def bring_to_front(window_title):
 
 
 def main():
+    import sys
+    
     appdata_folder = os.path.join(os.getenv("PROGRAMDATA"), "TeraTermUI")
     lock_file = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])), "app_lock.lock")
     lock_file_appdata = os.path.join(appdata_folder, "app_lock.lock")
@@ -8366,22 +8367,20 @@ def main():
             app.mainloop()
     except Timeout:
         bring_to_front("Tera Term UI")
-        sys.exit(1)
-    except KeyboardInterrupt:
         sys.exit(0)
+    except KeyboardInterrupt:
+        sys.exit(1)
     except Exception as e:
         SPANISH = 0x0A
         language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
         if language_id & 0xFF == SPANISH:
             messagebox.showerror("Error", "Ocurrió un error inesperado: " + str(e) + "\n\n"
                                           "Puede que necesite reinstalar la aplicación")
-            sys.exit(1)
         else:
             messagebox.showerror("Error", "An unexpected error occurred: " + str(e) + "\n\n"
                                           "Might need to reinstall the application")
-            sys.exit(1)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
     main()
-    
