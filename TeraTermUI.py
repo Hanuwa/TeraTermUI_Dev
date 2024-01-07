@@ -674,7 +674,7 @@ class TeraTermUI(customtkinter.CTk):
             es_path = "translations/spanish.json"
             print(f"An unexpected error occurred: {e}")
             self.log_error(e)
-            if not os.path.exists(db_path):
+            if not os.path.isfile(db_path):
                 if language_id & 0xFF == SPANISH:
                     messagebox.showerror("Error", "¡Error Fatal! Problema en inicializar la base de"
                                                   " datos.\nEs posible que necesite reinstalar la aplicación")
@@ -8154,7 +8154,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
         if len(self._undo_stack) > 1:
             last_text = self._undo_stack.pop()
             self._redo_stack.append(last_text)
-            self.set(self._undo_stack[-1])  
+            self.set(self._undo_stack[-1])
 
     def redo(self, event=None):
         if self._redo_stack:
@@ -8384,3 +8384,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
