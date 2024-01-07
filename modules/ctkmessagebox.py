@@ -361,23 +361,6 @@ class CTkMessagebox(customtkinter.CTkToplevel):
 
         self.bind("<Escape>", lambda e: self.button_event())
 
-    def set_modal(self, modal=True):
-        if modal:
-            self.grab_set()
-        else:
-            self.grab_release()
-
-    def configure(self, **kwargs):
-        if "message" in kwargs:
-            new_message = kwargs["message"]
-            self.message = new_message
-            self.info.configure(text=new_message)
-
-        if "title" in kwargs:
-            new_title = kwargs["title"]
-            self._title = new_title
-            self.title_label.configure(text=new_title)
-
     def focus_button(self, option_focus):
         try:
             self.selected_button = getattr(self, "button_"+str(option_focus))
@@ -568,3 +551,4 @@ class CustomButton(customtkinter.CTkButton):
 if __name__ == "__main__":
     app = CTkMessagebox()
     app.mainloop()
+    
