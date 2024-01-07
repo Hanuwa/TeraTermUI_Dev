@@ -5595,7 +5595,7 @@ class TeraTermUI(customtkinter.CTk):
                                             self.unbind("<Return>")
                                             self.submit_my_classes.configure(state="disabled")
                                             self.not_rebind = True
-                                            self.after(3500, self.show_modify_classes_information)
+                                            self.after(2500, self.show_modify_classes_information)
                                             self.modify_error_check = True
                                     else:
                                         self.after(100, self.show_error_message, 315, 225,
@@ -5604,7 +5604,7 @@ class TeraTermUI(customtkinter.CTk):
                                             self.unbind("<Return>")
                                             self.submit_my_classes.configure(state="disabled")
                                             self.not_rebind = True
-                                            self.after(3500, self.show_modify_classes_information)
+                                            self.after(2500, self.show_modify_classes_information)
                                             self.modify_error_check = True
 
                         else:
