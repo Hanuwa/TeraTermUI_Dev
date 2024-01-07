@@ -4023,7 +4023,7 @@ class TeraTermUI(customtkinter.CTk):
 
             # Second Tab
             self.search_scrollbar = customtkinter.CTkScrollableFrame(master=self.tabview.tab(self.search_tab),
-                                                                     corner_radius=10, width=600, height=293)
+                                                                     corner_radius=10)
             self.title_search = customtkinter.CTkLabel(self.search_scrollbar,
                                                        text=translation["title_search"],
                                                        font=customtkinter.CTkFont(size=20, weight="bold"))
@@ -5916,6 +5916,8 @@ class TeraTermUI(customtkinter.CTk):
         if found_errors:
             self.destroy_windows()
             error_message_str = ", ".join(found_errors)
+            if not self.disable_audio:
+                winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
             CTkMessagebox(master=self, title=translation["automation_error_title"], icon="cancel",
                           message=translation["specific_enrollment_error"] + error_message_str,
                           button_width=380)
@@ -5966,6 +5968,8 @@ class TeraTermUI(customtkinter.CTk):
             def explanation():
                 self.destroy_windows()
                 error_message_str = ", ".join(found_errors)
+                if not self.disable_audio:
+                    winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
                 CTkMessagebox(master=self, title=translation["automation_error_title"], icon="cancel",
                               message=translation["specific_enrollment_error"] + error_message_str,
                               button_width=380)
@@ -6615,6 +6619,7 @@ class TeraTermUI(customtkinter.CTk):
         self.destroy_tooltip()
         self.add_key_bindings(event=None)
         if self.tabview.get() == self.enroll_tab:
+            self.search_scrollbar.configure(width=None, height=None)
             self.in_search_frame = False
             self.in_enroll_frame = True
             self.unbind("<Up>")
@@ -6627,6 +6632,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.unbind("<Return>")
             self.bind("<space>", lambda event: self.spacebar_event())
         elif self.tabview.get() == self.search_tab:
+            self.search_scrollbar.configure(width=600, height=293)
             if hasattr(self, "table") and self.table is not None:
                 self.current_class.grid_forget()
                 self.table.grid_forget()
@@ -6647,6 +6653,7 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Home>", lambda event: self.move_top_scrollbar())
             self.bind("<End>", lambda event: self.move_bottom_scrollbar())
         elif self.tabview.get() == self.other_tab:
+            self.search_scrollbar.configure(width=None, height=None)
             self.in_enroll_frame = False
             self.in_search_frame = False
             self.unbind("<space>")
