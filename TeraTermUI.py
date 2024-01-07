@@ -1105,7 +1105,7 @@ class TeraTermUI(customtkinter.CTk):
                                     not in self.dropped_classes_list.values() and section
                                     not in self.dropped_classes_list):
                             if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE)
-                                    and re.fullmatch("^[A-Z]{2}\\d$", section, flags=re.IGNORECASE)
+                                    and re.fullmatch("^[A-Z]{2}[A-Z0-9]$", section, flags=re.IGNORECASE)
                                     and re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE)):
                                 term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                                 if term_window.isMinimized:
@@ -1224,7 +1224,7 @@ class TeraTermUI(customtkinter.CTk):
                                 elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE):
                                     self.after(100, self.show_error_message, 360, 230,
                                                translation["class_format_error"])
-                                elif not re.fullmatch("^[A-Z]{2}\\d$", section, flags=re.IGNORECASE):
+                                elif not re.fullmatch("^[A-Z]{2}[A-Z0-9]$", section, flags=re.IGNORECASE):
                                     self.after(100, self.show_error_message, 360, 230,
                                                translation["section_format_error"])
                                 elif not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE):
@@ -4265,7 +4265,7 @@ class TeraTermUI(customtkinter.CTk):
                 if not class_value or not section_value or not semester_value or register_value in ("Choose", "Escoge"):
                     is_empty = True  # Set the flag if any field is empty or register is not selected
                 elif (not re.fullmatch("^[A-Z]{4}[0-9]{4}$", class_value, flags=re.IGNORECASE) or
-                      not re.fullmatch("^[A-Z]{2}\\d$", section_value, flags=re.IGNORECASE) or
+                      not re.fullmatch("^[A-Z]{2}[A-Z0-9]$", section_value, flags=re.IGNORECASE) or
                       not re.fullmatch("^[A-Z][0-9]{2}$", semester_value, flags=re.IGNORECASE)):
                     is_invalid_format = True  # Set the flag if any field has incorrect format
                 else:
@@ -5353,7 +5353,8 @@ class TeraTermUI(customtkinter.CTk):
                                 section = change_section_entry.get().upper().replace(" ", "")
                                 if mod != translation["choose"]:
                                     not_all_choose = True
-                                if mod == translation["section"] and not re.fullmatch("^[A-Z]{2}\\d$", section):
+                                if mod == translation["section"] and not re.fullmatch("^[A-Z]{2}[A-Z0-9]$",
+                                                                                      section):
                                     section_pattern = False
                                 if mod != translation["choose"] and course_code_no_section in edge_cases_classes:
                                     edge_cases_bool = True
@@ -7502,7 +7503,7 @@ class TeraTermUI(customtkinter.CTk):
             elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE):
                 error_msg_short = translation["multiple_class_format_error"]
                 break
-            elif not re.fullmatch("^[A-Z]{2}\\d$", sections, flags=re.IGNORECASE):
+            elif not re.fullmatch("^[A-Z]{2}[A-Z0-9]$", sections, flags=re.IGNORECASE):
                 error_msg_short = translation["multiple_section_format_error"]
                 break
             elif not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE):
@@ -8123,24 +8124,42 @@ class CustomComboBox(customtkinter.CTkComboBox):
         self.teraterm_ui.up_arrow_key_enabled = True
         self.teraterm_ui.down_arrow_key_enabled = True
 
+    def set(self, value):
+        # Call the original set method
+        super().set(value)
+        # Explicitly update the undo stack after setting a new value
+        self.update_undo_stack()
+
     def update_undo_stack(self, event=None):
+        current_text = self.get()
+        # Check for a change in text and avoid duplicating the last entry
+        if len(self._undo_stack) == 0 or (current_text != self._undo_stack[-1]):
+            self._undo_stack.append(current_text)
+            self._redo_stack.clear()  # Clear the redo stack on a new change
+
+    def _dropdown_callback(self, value: str):
+        # Save current value to undo stack before changing
         current_text = self.get()
         if current_text != self._undo_stack[-1]:
             self._undo_stack.append(current_text)
-            self._redo_stack.clear()  # Clear the redo stack whenever a new change is made
+
+        super()._dropdown_callback(value)  # Call the original dropdown callback
+
+        # Update undo stack with new value
+        new_text = self.get()
+        if new_text != self._undo_stack[-1]:
+            self._undo_stack.append(new_text)
 
     def undo(self, event=None):
         if len(self._undo_stack) > 1:
             last_text = self._undo_stack.pop()
             self._redo_stack.append(last_text)
-            self.set("")
-            self.set(self._undo_stack[-1])
+            self.set(self._undo_stack[-1])  
 
     def redo(self, event=None):
         if self._redo_stack:
             redo_text = self._redo_stack.pop()
             self._undo_stack.append(redo_text)
-            self.set("")
             self.set(redo_text)
 
     def paste(self, event=None):
@@ -8153,16 +8172,15 @@ class CustomComboBox(customtkinter.CTkComboBox):
                 print("Pasted content truncated to maximum length.")
 
             current_text = self.get()  # Existing text in the Entry widget
-            # Save the current state to undo stack
-            if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1]):
-                self._undo_stack.append(current_text)
 
-            self.set(clipboard_text)
+            if clipboard_text != current_text:  # Only proceed if there's an actual change
+                self.set(clipboard_text)
 
-            # Update undo stack here, after paste operation
-            new_text = self.get()
-            self._undo_stack.append(new_text)
-            self._redo_stack = []
+                # Update undo stack here, after paste operation
+                new_text = self.get()
+                if len(self._undo_stack) == 0 or (new_text != self._undo_stack[-1]):
+                    self._undo_stack.append(new_text)
+                    self._redo_stack.clear()  # Clear the redo stack after a new change
         except tk.TclError:
             pass  # Clipboard empty or other issue
         return "break"
