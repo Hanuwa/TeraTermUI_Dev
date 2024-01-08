@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/7/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 1/8/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -622,12 +622,10 @@ class TeraTermUI(customtkinter.CTk):
                     translation = self.load_language(self.language_menu.get())
                     if not self.disable_audio:
                         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    welcome = CTkMessagebox(master=self, title=translation["welcome_title"],
+                    CTkMessagebox(master=self, title=translation["welcome_title"],
                                             message=translation["welcome_message"], button_width=380)
-                    response = welcome.get()[0]
-                    if response is None or response == "OK":
-                        self.slideshow_frame.go_to_first_image()
-                        self.intro_box.restart_autoscroll()
+                    self.slideshow_frame.go_to_first_image()
+                    self.intro_box.restart_autoscroll()
                     self.status_button.configure(state="normal")
                     self.help_button.configure(state="normal")
                     self.log_in.configure(state="normal")
