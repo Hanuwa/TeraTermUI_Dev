@@ -118,11 +118,13 @@ class TeraTermUI(customtkinter.CTk):
         self.is_idle_thread_running = False
         self.stop_check_idle = threading.Event()
         self.lock_thread = threading.Lock()
+
         # self.cpu_load_history = deque(maxlen=60)
         # self.stop_monitor = threading.Event()
         # self.monitor_thread = threading.Thread(target=self.cpu_monitor)
         # self.monitor_thread.start()
-        # GitHub information for feedback
+
+        # GitHub's information for feedback
         self.SERVICE_ACCOUNT_FILE = "feedback.zip"
         self.SPREADSHEET_ID = "1ffJLgp8p-goOlxC10OFEu0JefBgQDsgEo_suis4k0Pw"
         self.RANGE_NAME = "Sheet1!A:A"
@@ -2849,6 +2851,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.help is not None and self.help.winfo_exists():
             self.files.configure(state="disabled")
         self.language_menu.configure(state="disabled")
+        self.intro_box.stop_autoscroll(event=None)
         self.language_menu_tooltip.show()
         self.slideshow_frame.pause_cycle()
 
@@ -2902,6 +2905,7 @@ class TeraTermUI(customtkinter.CTk):
                 if self.help is not None and self.help.winfo_exists():
                     self.fix.configure(state="normal")
                 self.language_menu.configure(state="disabled")
+                self.intro_box.stop_autoscroll(event=None)
                 self.language_menu_tooltip.show()
                 self.home_frame.grid_forget()
                 self.slideshow_frame.pause_cycle()
@@ -2980,6 +2984,7 @@ class TeraTermUI(customtkinter.CTk):
             self.language_menu_tooltip.hide()
             self.slideshow_frame.resume_cycle()
             self.intro_box.reset_autoscroll()
+            self.intro_box.restart_autoscroll()
             self.run_fix = False
             if self.help is not None and self.help.winfo_exists():
                 self.fix.configure(state="disabled")
