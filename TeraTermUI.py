@@ -7838,6 +7838,10 @@ class CustomTextBox(customtkinter.CTkTextbox):
 
             self.insert(tk.INSERT, clipboard_text)  # Insert the clipboard text
             self._redo_stack.clear()  # Clear redo stack after a new operation
+
+            new_text = self.get("1.0", "end-1c")
+            if new_text != self._undo_stack[-1]:
+                self._undo_stack.append(new_text)
         except tk.TclError:
             pass  # Clipboard empty or other issue
 
