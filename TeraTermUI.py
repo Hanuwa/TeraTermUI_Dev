@@ -623,7 +623,7 @@ class TeraTermUI(customtkinter.CTk):
                     if not self.disable_audio:
                         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
                     CTkMessagebox(master=self, title=translation["welcome_title"],
-                                            message=translation["welcome_message"], button_width=380)
+                                  message=translation["welcome_message"], button_width=380)
                     self.slideshow_frame.go_to_first_image()
                     self.intro_box.restart_autoscroll()
                     self.status_button.configure(state="normal")
