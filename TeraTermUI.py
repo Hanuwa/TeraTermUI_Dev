@@ -2991,7 +2991,8 @@ class TeraTermUI(customtkinter.CTk):
             self.language_menu_tooltip.hide()
             self.slideshow_frame.resume_cycle()
             self.intro_box.reset_autoscroll()
-            self.intro_box.restart_autoscroll()
+            if not self.intro_box.disabled_autoscroll:
+                self.intro_box.restart_autoscroll()
             self.run_fix = False
             if self.help is not None and self.help.winfo_exists():
                 self.fix.configure(state="disabled")
@@ -7645,6 +7646,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.auto_scroll = enable_autoscroll
         self.lang = lang
         self.read_only = read_only
+        self.disabled_autoscroll = False
         self.after_id = None
         self.teraterm_ui = teraterm_ui_instance
 
@@ -7724,11 +7726,14 @@ class CustomTextBox(customtkinter.CTkTextbox):
                 self.yview_scroll(1, "units")  # Scroll down 1 pixel
             self.after_id = self.after(8000, self.update_text)  # Store the ID
 
-    def stop_autoscroll(self, event):
+    def stop_autoscroll(self, event=None):
         self.auto_scroll = False
         if self.after_id:
             self.after_cancel(self.after_id)
             self.after_id = None
+
+        if event is not None:
+            self.disabled_autoscroll = True
 
     def restart_autoscroll(self):
         self.auto_scroll = True
