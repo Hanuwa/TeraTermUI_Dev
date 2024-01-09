@@ -2555,13 +2555,13 @@ class TeraTermUI(customtkinter.CTk):
                             if self.server_status == "Maintenance message found":
                                 def server_closed():
                                     self.unbind("<Return>")
-                                    self.back.configure(state="disabled")
-                                    self.auth.configure(state="disabled")
+                                    if not self.skip_auth:
+                                        self.back.configure(state="disabled")
+                                        self.auth.configure(state="disabled")
                                     if not self.disable_audio:
                                         winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                                     CTkMessagebox(title=translation["server_maintenance_title"],
-                                                  message=translation["server_maintenance"],
-                                                  icon="cancel",
+                                                  message=translation["server_maintenance"], icon="cancel",
                                                   button_width=380)
                                     self.error_occurred = True
 
@@ -2577,10 +2577,13 @@ class TeraTermUI(customtkinter.CTk):
                                     self.home_frame.grid_forget()
                             elif self.server_status == "Timeout":
                                 def timeout():
+                                    self.unbind("<Return>")
+                                    if not self.skip_auth:
+                                        self.back.configure(state="disabled")
+                                        self.auth.configure(state="disabled")
                                     if not self.disable_audio:
                                         winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                                    CTkMessagebox(title="Error", message=translation["timeout_server"],
-                                                  icon="cancel",
+                                    CTkMessagebox(title="Error", message=translation["timeout_server"], icon="cancel",
                                                   button_width=380)
                                     self.error_occurred = True
 
@@ -2954,16 +2957,17 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<Control-Tab>")
             self.unbind("<Control-BackSpace>")
             self.bind("<Return>", lambda event: self.login_event_handler())
-            self.home_frame.grid(row=0, column=1, rowspan=5, columnspan=5, padx=(0, 0), pady=(10, 0))
-            if lang == "English":
-                self.host.grid(row=2, column=1, padx=(0, 170), pady=(15, 15))
-            elif lang == "Español":
-                self.host.grid(row=2, column=1, padx=(0, 190), pady=(15, 15))
-            self.introduction.grid(row=0, column=1, columnspan=2, padx=(20, 0), pady=(20, 0))
-            self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(15, 15))
-            self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(15, 15))
-            self.intro_box.grid(row=1, column=1, padx=(20, 0), pady=(0, 150))
-            self.slideshow_frame.grid(row=1, column=1, padx=(20, 0), pady=(140, 0))
+            if not self.home_frame.grid_info():
+                self.home_frame.grid(row=0, column=1, rowspan=5, columnspan=5, padx=(0, 0), pady=(10, 0))
+                self.introduction.grid(row=0, column=1, columnspan=2, padx=(20, 0), pady=(20, 0))
+                if lang == "English":
+                    self.host.grid(row=2, column=1, padx=(0, 170), pady=(15, 15))
+                elif lang == "Español":
+                    self.host.grid(row=2, column=1, padx=(0, 190), pady=(15, 15))
+                self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(15, 15))
+                self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(15, 15))
+                self.slideshow_frame.grid(row=1, column=1, padx=(20, 0), pady=(140, 0))
+                self.intro_box.grid(row=1, column=1, padx=(20, 0), pady=(0, 150))
             self.destroy_auth()
             self.destroy_student()
             if self.init_class:
