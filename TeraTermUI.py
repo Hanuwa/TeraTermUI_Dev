@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/8/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 1/9/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -2575,6 +2575,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.in_student_frame = True
                                 if self.skip_auth:
                                     self.home_frame.grid_forget()
+                                    self.intro_box.grid_forget()
                             elif self.server_status == "Timeout":
                                 def timeout():
                                     self.unbind("<Return>")
@@ -2847,6 +2848,7 @@ class TeraTermUI(customtkinter.CTk):
             self.back.grid(row=4, column=0, padx=(0, 10), pady=(0, 0))
             self.auth.grid(row=4, column=1, padx=(10, 0), pady=(0, 0))
             self.home_frame.grid_forget()
+            self.intro_box.grid_forget()
         else:
             self.auth_event_handler()
             self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
@@ -2911,6 +2913,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.intro_box.stop_autoscroll(event=None)
                 self.language_menu_tooltip.show()
                 self.home_frame.grid_forget()
+                self.intro_box.grid_forget()
                 self.slideshow_frame.pause_cycle()
                 self.switch_tab()
                 self.move_window()
@@ -6448,9 +6451,10 @@ class TeraTermUI(customtkinter.CTk):
                             self.idle_warning.close_messagebox()
                         uprb = Application().connect(title_re=".*uprbay.uprb.edu - Tera Term VT.*", timeout=5)
                         main_window = uprb.window(title_re=".*uprbay.uprb.edu - Tera Term VT.*")
-                        if main_window.exists(timeout=5):
-                            main_window.send_keystrokes("{VK_RIGHT}")
-                            main_window.send_keystrokes("{VK_LEFT}")
+                        for main_window in main_window:
+                            if main_window.exists(timeout=5):
+                                main_window.send_keystrokes("{VK_RIGHT}")
+                                main_window.send_keystrokes("{VK_LEFT}")
                         self.last_activity = time.time()
                         if not self.countdown_running:
                             self.idle_num_check += 1
@@ -7813,9 +7817,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
             new_text = self.get("1.0", "end-1c")
             self._undo_stack.append(new_text)
 
-            # Optionally, clear the redo stack
             self._redo_stack = []
-
         except tk.TclError:
             print("No text selected to cut.")  # Log or inform the user accordingly
 
@@ -8376,7 +8378,6 @@ def main():
     try:
         with file_lock.acquire():
             app = TeraTermUI()
-            app.after(1, lambda: app.iconbitmap("images/tera-term.ico"))
             app.mainloop()
     except Timeout:
         bring_to_front("Tera Term UI")
