@@ -119,6 +119,7 @@ class CTkTextbox(CTkBaseClass):
 
         self._create_grid_for_text_and_scrollbars(re_grid_textbox=True, re_grid_x_scrollbar=True, re_grid_y_scrollbar=True)
 
+        self._active = True
         self.after(50, self._check_if_scrollbars_needed, None, True)
         self._draw()
 
@@ -154,6 +155,9 @@ class CTkTextbox(CTkBaseClass):
     def _check_if_scrollbars_needed(self, event=None, continue_loop: bool = False):
         """ Method hides or places the scrollbars if they are needed on key release event of tkinter.text widget """
 
+        if not self._active:
+            return
+
         if self._scrollbars_activated:
             if self._textbox.xview() != (0.0, 1.0) and not self._x_scrollbar.winfo_ismapped():  # x scrollbar needed
                 self._hide_x_scrollbar = False
@@ -168,14 +172,13 @@ class CTkTextbox(CTkBaseClass):
             elif self._textbox.yview() == (0.0, 1.0) and self._y_scrollbar.winfo_ismapped():  # y scrollbar not needed
                 self._hide_y_scrollbar = True
                 self._create_grid_for_text_and_scrollbars(re_grid_y_scrollbar=True)
+            content_length = self._textbox.count("1.0", "end", "displaylines")[0]
         else:
             self._hide_x_scrollbar = False
             self._hide_x_scrollbar = False
             self._create_grid_for_text_and_scrollbars(re_grid_y_scrollbar=True)
 
-        content_length = self._textbox.count("1.0", "end", "displaylines")[0]
-
-        if self._textbox.winfo_exists() and continue_loop is True:
+        if self._textbox.winfo_exists() and continue_loop is True and self._active:
             self.after(self._scrollbar_update_time, lambda: self._check_if_scrollbars_needed(continue_loop=True))
 
     def _set_scaling(self, *args, **kwargs):
@@ -500,3 +503,13 @@ class CTkTextbox(CTkBaseClass):
 
     def yview_scroll(self, n, what):
         return self._textbox.yview_scroll(n, what)
+
+    def grid_forget(self):
+        super().grid_forget()
+        self._active = False
+
+    def grid(self, *args, **kwargs):
+        super().grid(*args, **kwargs)
+        self._active = True
+        self._check_if_scrollbars_needed(continue_loop=True)
+        
