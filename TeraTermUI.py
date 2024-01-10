@@ -1310,6 +1310,17 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys(semester)
                             send_keys("{ENTER}")
                             self.after(0, self.disable_go_next_buttons)
+                            if self.search_function_counter == 0 or semester != self.get_semester_for_pdf:
+                                screenshot_thread = threading.Thread(target=self.capture_screenshot)
+                                screenshot_thread.start()
+                                screenshot_thread.join()
+                                text_output = self.capture_screenshot()
+                                if "INVALID TERM SELECTION" in text_output:
+                                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
+                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                                    send_keys("{ENTER}")
+                                    self.after(100, self.show_error_message, 320, 235, translation["invalid_semester"])
+                                    return
                             clipboard_content = None
                             try:
                                 clipboard_content = self.clipboard_get()
