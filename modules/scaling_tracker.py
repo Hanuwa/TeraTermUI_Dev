@@ -8,43 +8,50 @@ class ScalingTracker:
 
     window_widgets_dict = {}  # contains window objects as keys with list of widget callbacks as elements
     window_dpi_scaling_dict = {}  # contains window objects as keys and corresponding scaling factors
+    window_root_cache = {}  # cache for storing window roots of widgets
+    scaling_cache = {}  # Cache for storing calculated scaling values
 
     widget_scaling = 1  # user values which multiply to detected window scaling factor
     window_scaling = 1
 
     update_loop_running = False
-    update_loop_interval = 2500  # ms
-    loop_pause_after_new_scaling = 5000  # ms
+    update_loop_interval = 500  # ms
+    loop_pause_after_new_scaling = 2000  # ms
 
     @classmethod
     def get_widget_scaling(cls, widget) -> float:
-        window_root = cls.get_window_root_of_widget(widget)
-        return cls.window_dpi_scaling_dict[window_root] * cls.widget_scaling
+        if widget not in cls.scaling_cache:
+            window_root = cls.get_window_root_of_widget(widget)
+            cls.scaling_cache[widget] = cls.window_dpi_scaling_dict[window_root] * cls.widget_scaling
+        return cls.scaling_cache[widget]
 
     @classmethod
     def get_window_scaling(cls, window) -> float:
-        window_root = cls.get_window_root_of_widget(window)
-        return cls.window_dpi_scaling_dict[window_root] * cls.window_scaling
+        if window not in cls.scaling_cache:
+            window_root = cls.get_window_root_of_widget(window)
+            cls.scaling_cache[window] = cls.window_dpi_scaling_dict[window_root] * cls.window_scaling
+        return cls.scaling_cache[window]
 
     @classmethod
     def set_widget_scaling(cls, widget_scaling_factor: float):
         cls.widget_scaling = max(widget_scaling_factor, 0.4)
         cls.update_scaling_callbacks_all()
+        cls.scaling_cache.clear()
 
     @classmethod
     def set_window_scaling(cls, window_scaling_factor: float):
         cls.window_scaling = max(window_scaling_factor, 0.4)
         cls.update_scaling_callbacks_all()
+        cls.scaling_cache.clear()
 
     @classmethod
     def get_window_root_of_widget(cls, widget):
-        current_widget = widget
-
-        while isinstance(current_widget, tkinter.Tk) is False and\
-                isinstance(current_widget, tkinter.Toplevel) is False:
-            current_widget = current_widget.master
-
-        return current_widget
+        if widget not in cls.window_root_cache:
+            current_widget = widget
+            while not isinstance(current_widget, (tkinter.Tk, tkinter.Toplevel)):
+                current_widget = current_widget.master
+            cls.window_root_cache[widget] = current_widget
+        return cls.window_root_cache[widget]
 
     @classmethod
     def update_scaling_callbacks_all(cls):
@@ -168,7 +175,6 @@ class ScalingTracker:
                 return 1  # DPI awareness on Linux not implemented
         else:
             return 1
-        print("done! 1")
 
     @classmethod
     def check_dpi_scaling(cls):
@@ -205,4 +211,4 @@ class ScalingTracker:
                 continue
 
         cls.update_loop_running = False
-        print("done! 2")
+        
