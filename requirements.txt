@@ -37,7 +37,7 @@ oauthlib==3.2.2
 ordered-set==4.1.0
 packaging==23.2
 pillow==10.2.0
-protobuf==4.25.1
+protobuf==4.25.2
 psutil==5.9.7
 py7zr==0.20.8
 pyasn1==0.5.1
