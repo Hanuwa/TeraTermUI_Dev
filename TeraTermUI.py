@@ -144,6 +144,7 @@ class TeraTermUI(customtkinter.CTk):
         # to avoid the instance attribute defined outside __init__ warning
         self.uprbay_window = None
         self.uprb = None
+        self.uprb_32 = None
         self.server_status = None
         self.timer_window = None
         self.timer_label = None
@@ -490,7 +491,7 @@ class TeraTermUI(customtkinter.CTk):
         self.fix = None
 
         # Top level window management, flags and counters
-        self.DEFAULT_SEMESTER = "C32"
+        self.DEFAULT_SEMESTER = "C41"
         self.ignore = True
         self.error_occurred = False
         self.can_edit = False
@@ -2744,6 +2745,8 @@ class TeraTermUI(customtkinter.CTk):
                                     self.edit_teraterm_ini(self.teraterm_file)
                                 self.uprb = Application(backend="uia").start(self.location) \
                                     .connect(title="Tera Term - [disconnected] VT", timeout=7)
+                                self.uprb_32 = Application().connect(
+                                    title="Tera Term - [disconnected] VT", timeout=5)
                                 disconnected = self.uprb.window(title="Tera Term - [disconnected] VT")
                                 disconnected.wait("visible", timeout=5)
                                 host_input = \
@@ -2891,6 +2894,8 @@ class TeraTermUI(customtkinter.CTk):
                     self.bind("<Return>", lambda event: self.login_event_handler())
                     return
                 self.uprb = Application(backend="uia").connect(
+                    title="uprbay.uprb.edu - Tera Term VT", timeout=5)
+                self.uprb_32 = Application().connect(
                     title="uprbay.uprb.edu - Tera Term VT", timeout=5)
                 self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
                 self.uprbay_window.wait("visible", timeout=5)
@@ -3586,6 +3591,8 @@ class TeraTermUI(customtkinter.CTk):
         time_difference = your_date - current_date
         total_seconds = time_difference.total_seconds()
         if self.running_countdown.get():
+            if not TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
+                self.forceful_end_countdown()
             if total_seconds <= 0:
                 # Call enrollment function here
                 self.timer_label.configure(text=translation["performing_auto_enroll"], text_color="#32CD32",
@@ -3642,7 +3649,9 @@ class TeraTermUI(customtkinter.CTk):
                                                             f"minutos \nrestantes hasta la matrícula")
                     if total_seconds > 3600:
                         seconds_until_next_minute = 60 - current_date.second
-                        self.timer_window.after(seconds_until_next_minute * 1000, lambda: self.countdown(your_date))
+                        self.timer_window.after(seconds_until_next_minute * 1000, lambda: self.countdown(your_date)
+                                                if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
+                                                else self.forceful_end_countdown())
 
                 else:  # When there's less than an hour remaining
                     # If there's a part of minute left, consider it as a whole minute
@@ -3682,10 +3691,13 @@ class TeraTermUI(customtkinter.CTk):
                     # update every minute if there's more than 60 seconds left
                     if total_seconds > 60:
                         seconds_until_next_minute = 60 - current_date.second
-                        self.timer_window.after(seconds_until_next_minute * 1000,
-                                                lambda: self.countdown(your_date))
+                        self.timer_window.after(seconds_until_next_minute * 1000, lambda: self.countdown(your_date)
+                                                if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
+                                                else self.forceful_end_countdown())
                     else:  # update every second if there's less than or equal to 60 seconds left
-                        self.timer_window.after(1000, lambda: self.countdown(your_date))
+                        self.timer_window.after(1000, lambda: self.countdown(your_date)
+                                                if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
+                                                else self.forceful_end_countdown())
 
     def end_countdown(self):
         self.auto_enroll_bool = False
@@ -3695,6 +3707,15 @@ class TeraTermUI(customtkinter.CTk):
             self.timer_window.destroy()  # Destroy the countdown window
         self.auto_enroll.deselect()
         self.disable_enable_gui()
+
+    def forceful_end_countdown(self):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        self.end_countdown()
+        if not self.disable_audio:
+            winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+        CTkMessagebox(master=self, title=translation["automation_error_title"], icon="info",
+                      message=translation["end_countdown"], button_width=380)
 
     def create_timer_window(self):
         lang = self.language_menu.get()
@@ -5984,7 +6005,7 @@ class TeraTermUI(customtkinter.CTk):
                 CTkMessagebox(master=self, title=translation["automation_error_title"], icon="cancel",
                               message=translation["specific_enrollment_error"] + error_message_str,
                               button_width=380)
-                for i in range(self.a_counter + 1, 0, -1):
+                for counter in range(self.a_counter + 1, 0, -1):
                     if self.enrolled_classes_list:
                         self.enrolled_classes_list.popitem()
                     if self.dropped_classes_list:
@@ -6440,43 +6461,47 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         self.idle_num_check = 0
-        while self.is_idle_thread_running and not self.stop_check_idle.is_set():
-            if time.time() - self.last_activity >= 300:
-                with self.lock_thread:
-                    if TeraTermUI.checkIfProcessRunning("ttermpro"):
-                        lang = self.language_menu.get()
-                        translation = self.load_language(lang)
-                        if TeraTermUI.window_exists(translation["exit"]):
-                            self.exit.close_messagebox()
-                        if TeraTermUI.window_exists(translation["idle_warning_title"]):
-                            self.idle_warning.close_messagebox()
-                        uprb = Application().connect(title_re=".*uprbay.uprb.edu - Tera Term VT.*", timeout=5)
-                        main_window = uprb.window(title_re=".*uprbay.uprb.edu - Tera Term VT.*")
-                        for main_window in main_window:
-                            if main_window.exists(timeout=5):
-                                main_window.send_keystrokes("{VK_RIGHT}")
-                                main_window.send_keystrokes("{VK_LEFT}")
-                        self.last_activity = time.time()
-                        if not self.countdown_running:
-                            self.idle_num_check += 1
-                        if self.countdown_running:
-                            self.idle_num_check = 1
-                        if self.idle_num_check == 11:
-                            def idle_warning():
-                                if not self.disable_audio:
-                                    winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                                self.idle_warning = CTkMessagebox(master=self, title=translation["idle_warning_title"],
-                                                                  message=translation["idle_warning"], button_width=380)
-                                response = self.idle_warning.get()[0]
-                                if response == "OK":
-                                    self.idle_num_check = 0
+        try:
+            while self.is_idle_thread_running and not self.stop_check_idle.is_set():
+                if time.time() - self.last_activity >= 300:
+                    with self.lock_thread:
+                        if TeraTermUI.checkIfProcessRunning("ttermpro") and \
+                                TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
+                            lang = self.language_menu.get()
+                            translation = self.load_language(lang)
+                            if TeraTermUI.window_exists(translation["exit"]):
+                                self.exit.close_messagebox()
+                            if TeraTermUI.window_exists(translation["idle_warning_title"]):
+                                self.idle_warning.close_messagebox()
+                            main_window = self.uprb_32.window(title="uprbay.uprb.edu - Tera Term VT")
+                            main_window.wait("visible", timeout=5)
+                            main_window.send_keystrokes("{VK_RIGHT}")
+                            main_window.send_keystrokes("{VK_LEFT}")
+                            self.last_activity = time.time()
+                            if not self.countdown_running:
+                                self.idle_num_check += 1
+                            if self.countdown_running:
+                                self.idle_num_check = 1
+                            if self.idle_num_check == 11:
+                                def idle_warning():
+                                    if not self.disable_audio:
+                                        winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                                    self.idle_warning = CTkMessagebox(
+                                        master=self, title=translation["idle_warning_title"],
+                                        message=translation["idle_warning"], button_width=380)
+                                    response = self.idle_warning.get()[0]
+                                    if response == "OK":
+                                        self.idle_num_check = 0
 
-                            self.after(0, idle_warning)
-                    else:
-                        self.stop_check_idle.is_set()
-            if self.idle_num_check == 12:
-                break
-            time.sleep(3)
+                                self.after(0, idle_warning)
+                        else:
+                            self.stop_check_idle.is_set()
+                if self.idle_num_check == 12:
+                    break
+                time.sleep(3)
+        except Exception as e:
+            print("An error occurred: ", e)
+            self.log_error(e)
 
     # Stops the check for idle thread
     def stop_idle_thread(self):
