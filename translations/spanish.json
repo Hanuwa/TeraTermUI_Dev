@@ -175,7 +175,7 @@
 	"exit_message": "¿Estás seguro que quieres salir de la aplicación?",
 	"close_tera_term": "¿Cerrar Tera Term?",
 	"error_student_id": "¡Error! Número o PIN\nde Estudiante Incorrecto",
-	"tera_term_not_running": "¡Error! Tera Term no esta corriendo",
+	"tera_term_not_running": "¡Error! Tera Term no está corriendo",
 	"server_maintenance_title": "Mantenimiento del Servidor",
 	"server_maintenance": "¡Error! El servidor de la universidad está en mantenimiento, trate de nuevo más tarde.\n\nCerrando Tera Term y volviendo a menú principal",
 	"automation_error_title": "Información del Error",
@@ -287,6 +287,7 @@
 	"no_internet": "¡Error! No Conectado al internet",
 	"uprb_down": "¡Error! El servidor de la UPRB\nestá actualmente caído",
 	"unexpected_error": "Error inesperado y raro, no se pudo iniciar Tera Term, por favor, intente iniciar sesión nuevamente\n\n(Se agradecería mucho informar sobre el problema)",
+	"end_countdown": "El evento Auto-Matrícula se forzó a terminar porque Tera Term no está corriendo\n\nSi se cerró por sí mismo, probablemente la universidad inicio un mantenimiento para el servidor",
 	
 	"feedback_unavailable": "¡Error! Mandar comentarios no esta disponible ahora mismo",
 	"submit_feedback": "¿Estás preparado para mandar to comentario?\n\n(EL ENVÍO ES COMPLETAMENTE ANÓNIMO)",
