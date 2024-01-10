@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/9/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 1/10/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -6312,6 +6312,13 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language(lang)
         if asyncio.run(self.test_connection(lang)):
             latest_version = self.get_latest_release()
+            current_date = datetime.today().strftime("%Y-%m-%d")
+            row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+            if not row_exists:
+                self.cursor.execute("INSERT INTO user_data (update_date) VALUES (?)",
+                                    (current_date,))
+            else:
+                self.cursor.execute("UPDATE user_data SET update_date=?", (current_date,))
             if latest_version is None:
                 task_done.set()
 
@@ -6344,12 +6351,12 @@ class TeraTermUI(customtkinter.CTk):
             else:
                 task_done.set()
 
-                def error():
+                def up_to_date():
                     if not self.disable_audio:
                         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
                     CTkMessagebox(master=self, title="Info", message=translation["update_up_to_date"], button_width=380)
 
-                self.after(0, error)
+                self.after(0, up_to_date)
         else:
             self.updating_app = False
             task_done.set()
