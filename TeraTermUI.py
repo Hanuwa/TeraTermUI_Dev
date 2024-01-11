@@ -8303,6 +8303,19 @@ class CustomEntry(customtkinter.CTkEntry):
         super().insert(index, string)
         self.update_undo_stack()
 
+    def _activate_placeholder(self):
+        entry_text = self._entry.get()
+        if (entry_text == "" or entry_text.isspace()) and self._placeholder_text is not None and (
+                self._textvariable is None or self._textvariable == ""):
+            self._placeholder_text_active = True
+            print("yep")
+            self._pre_placeholder_arguments = {"show": self._entry.cget("show")}
+            self._entry.config(fg=self._apply_appearance_mode(self._placeholder_text_color),
+                               disabledforeground=self._apply_appearance_mode(self._placeholder_text_color),
+                               show="")
+            self._entry.delete(0, tk.END)
+            self._entry.insert(0, self._placeholder_text)
+
     def update_listbox(self):
         self.teraterm_ui.search_classes(None)
 
