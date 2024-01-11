@@ -919,6 +919,7 @@ class TeraTermUI(customtkinter.CTk):
             task_done.set()
             lang = self.language_menu.get()
             translation = self.load_language(lang)
+            self.reset_activity_timer(None)
             self.after(100, self.set_focus_to_tkinter)
             self.after(100, self.show_sidebar_windows)
             if self.error_occurred:
@@ -2625,6 +2626,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.log_error(e)
             finally:
                 task_done.set()
+                self.reset_activity_timer(None)
                 self.after(100, self.set_focus_to_tkinter)
                 self.after(100, self.show_sidebar_windows)
                 if self.server_status == "Maintenance message found" or self.server_status == "Timeout":
@@ -6502,9 +6504,10 @@ class TeraTermUI(customtkinter.CTk):
         while self.is_check_process_thread_running and not self.stop_is_check_process.is_set():
             if self.loading_screen is None:
                 is_running = TeraTermUI.checkIfProcessRunning("ttermpro")
-                if is_running and not self.is_idle_thread_running:
+                if is_running:
+                    if not_running_count > 1 and not self.is_idle_thread_running:
+                        self.start_check_idle_thread()
                     not_running_count = 0
-                    self.start_check_idle_thread()
                 else:
                     not_running_count += 1
                     if not_running_count == 1:
@@ -6521,6 +6524,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.after(0, not_running)
                     if not_running_count > 1:
                         self.is_idle_thread_running = False
+                        self.reset_activity_timer(None)
             time.sleep(30)
 
     # Starts the check for idle thread
@@ -6541,8 +6545,7 @@ class TeraTermUI(customtkinter.CTk):
             while self.is_idle_thread_running and not self.stop_check_idle.is_set():
                 if time.time() - self.last_activity >= 300:
                     with self.lock_thread:
-                        if TeraTermUI.checkIfProcessRunning("ttermpro") and \
-                                TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
+                        if TeraTermUI.checkIfProcessRunning("ttermpro"):
                             lang = self.language_menu.get()
                             translation = self.load_language(lang)
                             if TeraTermUI.window_exists(translation["exit"]):
