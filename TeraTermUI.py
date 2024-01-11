@@ -1022,6 +1022,11 @@ class TeraTermUI(customtkinter.CTk):
                 self.changed_sections = set()
                 self.changed_semesters = set()
                 self.changed_registers = set()
+                for i in range(6):
+                    self.m_register_menu[i].configure(
+                        command=lambda value, idx=i: self.detect_register_menu_change(value, idx))
+                    self.m_classes_entry[i].bind("<FocusOut>", self.detect_change)
+                    self.m_section_entry[i].bind("<FocusOut>", self.detect_change)
 
         if save:
             num_rows = len(save)
@@ -4308,11 +4313,8 @@ class TeraTermUI(customtkinter.CTk):
                                                             command=lambda value: self.change_semester()))
                 self.m_semester_entry[i].set(self.DEFAULT_SEMESTER)
                 self.m_register_menu.append(customtkinter.CTkOptionMenu(
-                    master=self.multiple_frame, values=[translation["register"], translation["drop"]],
-                    command=lambda value, index=i: self.detect_register_menu_change(value, index)))
+                    master=self.multiple_frame, values=[translation["register"], translation["drop"]]))
                 self.m_register_menu[i].set(translation["choose"])
-                self.m_classes_entry[i].bind("<FocusOut>", self.detect_change)
-                self.m_section_entry[i].bind("<FocusOut>", self.detect_change)
             self.m_semester_entry[0].bind("<FocusOut>", lambda value: self.change_semester())
             self.m_add = CustomButton(master=self.m_button_frame, border_width=2, text="+",
                                       text_color=("gray10", "#DCE4EE"), command=self.add_event, height=40, width=50,
@@ -4423,10 +4425,19 @@ class TeraTermUI(customtkinter.CTk):
                     self.changed_sections = set()
                     self.changed_semesters = set()
                     self.changed_registers = set()
+                    for i in range(6):
+                        self.m_register_menu[i].configure(
+                            command=lambda value, idx=i: self.detect_register_menu_change(value, idx))
+                        self.m_classes_entry[i].bind("<FocusOut>", self.detect_change)
+                        self.m_section_entry[i].bind("<FocusOut>", self.detect_change)
                     self.show_success_message(350, 265, translation["saved_classes_success"])
         if save == "off":
             self.cursor.execute("DELETE FROM save_classes")
             self.connection.commit()
+            for i in range(6):
+                self.m_register_menu[i].configure(command=None)
+                self.m_classes_entry[i].unbind("<FocusOut>")
+                self.m_section_entry[i].unbind("<FocusOut>")
 
     # shows the important information window
     def show_loading_screen(self):
