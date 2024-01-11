@@ -434,6 +434,10 @@ class TeraTermUI(customtkinter.CTk):
         self.save_data_tooltip = None
         self.auto_enroll = None
         self.auto_enroll_tooltip = None
+        self.changed_classes = None
+        self.changed_sections = None
+        self.changed_semesters = None
+        self.changed_registers = None
 
         # My Classes
         self.enrolled_rows = None
@@ -1014,6 +1018,10 @@ class TeraTermUI(customtkinter.CTk):
         if save_check and save_check[0] is not None:
             if save_check[0] == "Yes":
                 self.save_data.select()
+                self.changed_classes = set()
+                self.changed_sections = set()
+                self.changed_semesters = set()
+                self.changed_registers = set()
 
         if save:
             num_rows = len(save)
@@ -1562,15 +1570,15 @@ class TeraTermUI(customtkinter.CTk):
         self.focus_set()
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        semester = self.m_semester_entry[0].get().upper()
+        semester = self.m_semester_entry[0].get().upper().replace(" ", "")
         if re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE):
-            if self.a_counter + 1 < len(self.m_semester_entry):  # Making sure we don't exceed the list index
-                self.m_semester_entry[self.a_counter + 1].configure(state="normal")
+            if self.a_counter + 1 < len(self.m_semester_entry):
                 self.m_num_class[self.a_counter + 1].grid(row=self.a_counter + 2, column=0, padx=(0, 8), pady=(20, 0))
                 self.m_classes_entry[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(0, 500),
                                                               pady=(20, 0))
                 self.m_section_entry[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(0, 165),
                                                               pady=(20, 0))
+                self.m_semester_entry[self.a_counter + 1].configure(state="normal")
                 self.m_semester_entry[self.a_counter + 1].set(semester)
                 self.m_semester_entry[self.a_counter + 1].configure(state="disabled")
                 self.m_semester_entry[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(165, 0),
@@ -1603,9 +1611,6 @@ class TeraTermUI(customtkinter.CTk):
             self.m_section_entry[self.a_counter + 1].grid_forget()
             self.m_semester_entry[self.a_counter + 1].grid_forget()
             self.m_register_menu[self.a_counter + 1].grid_forget()
-            self.m_semester_entry[self.a_counter + 1].configure(state="normal")
-            self.m_semester_entry[self.a_counter + 1].set("")
-            self.m_semester_entry[self.a_counter + 1].configure(state="disabled")
             if self.a_counter == 0:
                 self.m_remove.configure(state="disabled")
 
@@ -1689,10 +1694,76 @@ class TeraTermUI(customtkinter.CTk):
             self.back_my_classes.grid_forget()
             self.after(0, self.destroy_enrolled_frame)
 
-    def detect_change(self):
-        check = self.save_data.get()
-        if check == "on":
-            self.save_data.deselect()
+    def detect_change(self, event=None):
+        self.cursor.execute("SELECT COUNT(*) FROM save_classes")
+        count = self.cursor.fetchone()[0]
+        if count == 0:
+            return
+
+        triggered_widget = event.widget if event is not None else None
+
+        while triggered_widget:
+            if triggered_widget in self.m_classes_entry:
+                entry_list = self.m_classes_entry
+                column_name = "class"
+                changed_set = self.changed_classes
+            elif triggered_widget in self.m_section_entry:
+                entry_list = self.m_section_entry
+                column_name = "section"
+                changed_set = self.changed_sections
+            elif triggered_widget in self.m_semester_entry:
+                entry_list = self.m_semester_entry
+                column_name = "semester"
+                changed_set = self.changed_semesters
+            elif triggered_widget in self.m_register_menu:
+                entry_list = self.m_register_menu
+                column_name = "action"
+                changed_set = self.changed_registers
+            else:
+                triggered_widget = triggered_widget.master
+                continue
+
+            entry_index = entry_list.index(triggered_widget)
+            entry_value = triggered_widget.get().upper().replace(" ", "").replace("-", "")
+            db_row_number = entry_index + 1
+            query = f"SELECT {column_name} FROM save_classes LIMIT 1 OFFSET ?"
+            self.cursor.execute(query, (db_row_number - 1,))
+            result = self.cursor.fetchone()
+
+            if result and entry_value != result[0]:
+                changed_set.add(entry_index)
+            else:
+                changed_set.discard(entry_index)
+            self.update_save_data_state()
+            break
+
+    def detect_register_menu_change(self, selected_value, index):
+        self.cursor.execute("SELECT COUNT(*) FROM save_classes")
+        count = self.cursor.fetchone()[0]
+        if count == 0:
+            return
+
+        register_menu = self.m_register_menu[index]
+        if register_menu.get() != selected_value:
+            return
+
+        db_row_number = index + 1
+        self.cursor.execute("SELECT action FROM save_classes LIMIT 1 OFFSET ?", (db_row_number - 1,))
+        result = self.cursor.fetchone()
+
+        if result and selected_value != result[0]:
+            self.changed_registers.add(index)
+        else:
+            self.changed_registers.discard(index)
+        self.update_save_data_state()
+
+    def update_save_data_state(self):
+        if any([self.changed_classes, self.changed_sections, self.changed_semesters, self.changed_registers]):
+            if self.save_data.get() == "on":
+                self.save_data.deselect()
+        else:
+            if self.save_data.get() == "off":
+                self.save_data.select()
 
     def submit_multiple_event_handler(self):
         lang = self.language_menu.get()
@@ -3421,18 +3492,21 @@ class TeraTermUI(customtkinter.CTk):
 
     def change_semester(self):
         self.focus_set()
-        self.detect_change()
-        for i in range(1, self.a_counter + 1):
-            self.m_semester_entry[i].configure(state="normal")
-            self.m_semester_entry[i].set("")
-            self.m_semester_entry[i].set(self.m_semester_entry[0].get())
-            self.m_semester_entry[i].configure(state="disabled")
+        semester = self.m_semester_entry[0].get().upper().replace(" ", "")
+        if re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE):
+            dummy_event = type("Dummy", (object,), {"widget": self.m_semester_entry[0]})()
+            self.detect_change(dummy_event)
+            for i in range(1, self.a_counter + 1):
+                self.m_semester_entry[i].configure(state="normal")
+                self.m_semester_entry[i].set(semester)
+                self.m_semester_entry[i].configure(state="disabled")
 
     def keybind_auto_enroll(self):
         if self.loading_screen is not None and self.loading_screen.winfo_exists():
             return
-        self.auto_enroll.select()
-        self.auto_enroll_event_handler()
+        if self.spacebar_enabled:
+            self.auto_enroll.select()
+            self.auto_enroll_event_handler()
 
     def auto_enroll_event_handler(self):
         lang = self.language_menu.get()
@@ -4233,11 +4307,13 @@ class TeraTermUI(customtkinter.CTk):
                                                             values=["C31", "C32", "C33", "C41", "C42", "C43"],
                                                             command=lambda value: self.change_semester()))
                 self.m_semester_entry[i].set(self.DEFAULT_SEMESTER)
-                self.m_register_menu.append(customtkinter.CTkOptionMenu(master=self.multiple_frame,
-                                                                        values=[translation["register"],
-                                                                                translation["drop"]],
-                                                                        command=lambda value: self.detect_change()))
+                self.m_register_menu.append(customtkinter.CTkOptionMenu(
+                    master=self.multiple_frame, values=[translation["register"], translation["drop"]],
+                    command=lambda value, index=i: self.detect_register_menu_change(value, index)))
                 self.m_register_menu[i].set(translation["choose"])
+                self.m_classes_entry[i].bind("<FocusOut>", self.detect_change)
+                self.m_section_entry[i].bind("<FocusOut>", self.detect_change)
+            self.m_semester_entry[0].bind("<FocusOut>", lambda value: self.change_semester())
             self.m_add = CustomButton(master=self.m_button_frame, border_width=2, text="+",
                                       text_color=("gray10", "#DCE4EE"), command=self.add_event, height=40, width=50,
                                       fg_color="blue")
