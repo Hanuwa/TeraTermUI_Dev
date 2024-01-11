@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/10/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 1/11/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -117,6 +117,8 @@ class TeraTermUI(customtkinter.CTk):
         self.last_activity = time.time()
         self.is_idle_thread_running = False
         self.stop_check_idle = threading.Event()
+        self.is_check_process_thread_running = False
+        self.stop_is_check_process = threading.Event()
         self.lock_thread = threading.Lock()
 
         # self.cpu_load_history = deque(maxlen=60)
@@ -153,6 +155,7 @@ class TeraTermUI(customtkinter.CTk):
         self.running_countdown = None
         self.progress_bar = None
         self.check_idle_thread = None
+        self.check_process_thread = None
         self.idle_num_check = None
         self.idle_warning = None
         self.feedback_text = None
@@ -521,7 +524,6 @@ class TeraTermUI(customtkinter.CTk):
         self.information = None
         self.run_fix = False
         self.teraterm_not_found = False
-        self.passed = False
         self.tesseract_unzipped = False
         self.in_multiple_screen = False
         self.started_auto_enroll = False
@@ -726,6 +728,9 @@ class TeraTermUI(customtkinter.CTk):
             if hasattr(self, "check_idle_thread") and self.check_idle_thread is not None \
                     and self.check_idle_thread.is_alive():
                 self.stop_check_idle.set()
+            if hasattr(self, "check_process_thread") and self.check_process_thread is not None \
+                    and self.check_process_thread.is_alive():
+                self.stop_is_check_process.set()
             self.save_user_data()
             self.destroy()
             if self.checkbox_state:
@@ -755,6 +760,9 @@ class TeraTermUI(customtkinter.CTk):
         if hasattr(self, "check_idle_thread") and self.check_idle_thread is not None \
                 and self.check_idle_thread.is_alive():
             self.stop_check_idle.set()
+        if hasattr(self, "check_process_thread") and self.check_process_thread is not None \
+                and self.check_process_thread.is_alive():
+            self.stop_is_check_process.set()
         self.save_user_data(include_exit=False)
         self.destroy()
         sys.exit(0)
@@ -857,7 +865,7 @@ class TeraTermUI(customtkinter.CTk):
                         term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                         if term_window.isMinimized:
                             term_window.restore()
-                        self.uprbay_window.wait("visible", timeout=5)
+                        self.wait_for_window()
                         TeraTermUI.unfocus_tkinter()
                         send_keys("{TAB}")
                         self.uprb.UprbayTeraTermVt.type_keys(
@@ -872,6 +880,7 @@ class TeraTermUI(customtkinter.CTk):
                         if "SIGN-IN" in text_output:
                             self.reset_activity_timer(None)
                             self.start_check_idle_thread()
+                            self.start_check_process_thread()
                             self.after(0, self.initialization_class)
                             self.after(100, self.student_info_frame)
                             self.run_fix = True
@@ -1099,7 +1108,7 @@ class TeraTermUI(customtkinter.CTk):
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
-                    if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
+                    if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if (choice == "register" and classes not in
                             self.enrolled_classes_list.values() and section not in self.enrolled_classes_list) \
                                 or (choice == "drop" and classes
@@ -1111,7 +1120,7 @@ class TeraTermUI(customtkinter.CTk):
                                 term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                                 if term_window.isMinimized:
                                     term_window.restore()
-                                self.uprbay_window.wait("visible", timeout=5)
+                                self.wait_for_window()
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                 send_keys("{ENTER}")
                                 self.uprb.UprbayTeraTermVt.type_keys("1S4")
@@ -1297,13 +1306,13 @@ class TeraTermUI(customtkinter.CTk):
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
-                    if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
+                    if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE)
                                 and re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE)):
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=5)
+                            self.wait_for_window()
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             send_keys("{ENTER}")
                             self.uprb.UprbayTeraTermVt.type_keys("1CS")
@@ -1319,6 +1328,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
+                                    self.reset_activity_timer(None)
                                     self.after(100, self.show_error_message, 320, 235, translation["invalid_semester"])
                                     return
                             clipboard_content = None
@@ -1328,7 +1338,7 @@ class TeraTermUI(customtkinter.CTk):
                                 print("Clipboard contains non-text data, possibly an image or other formats")
                             except Exception as e:
                                 print("Error handling clipboard content:", e)
-                            if self.passed and self.search_function_counter == 0:
+                            if self.search_function_counter == 0:
                                 ctypes.windll.user32.BlockInput(False)
                                 self.automate_copy_class_data()
                                 ctypes.windll.user32.BlockInput(True)
@@ -1478,12 +1488,12 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language(lang)
                 dialog_input = self.dialog_input.upper().replace(" ", "")
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
-                    if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
+                    if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if re.fullmatch("^[A-Z][0-9]{2}$", dialog_input, flags=re.IGNORECASE):
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=5)
+                            self.wait_for_window()
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             send_keys("{ENTER}")
                             self.uprb.UprbayTeraTermVt.type_keys("1CP")
@@ -1722,12 +1732,12 @@ class TeraTermUI(customtkinter.CTk):
                     choices.append(self.m_register_menu[i].get())
                 can_enroll_classes = self.e_counter + self.m_counter + self.a_counter + 1 <= 15
                 if asyncio.run(self.test_connection(lang)) and self.check_server() and self.check_format():
-                    if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
+                    if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if can_enroll_classes:
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=5)
+                            self.wait_for_window()
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             send_keys("{ENTER}")
                             self.uprb.UprbayTeraTermVt.type_keys("1S4")
@@ -1932,13 +1942,13 @@ class TeraTermUI(customtkinter.CTk):
                 }
                 menu = menu_dict.get(menu, menu).replace(" ", "")
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
-                    if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
+                    if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE) \
                                 and menu in menu_dict.values():
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=5)
+                            self.wait_for_window()
                             match menu:
                                 case "SRM":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -2325,7 +2335,7 @@ class TeraTermUI(customtkinter.CTk):
             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
             if term_window.isMinimized:
                 term_window.restore()
-            self.uprbay_window.wait("visible", timeout=5)
+            self.wait_for_window()
             self.uprb.UprbayTeraTermVt.type_keys("SO")
             send_keys("{ENTER}")
         elif not TeraTermUI.checkIfProcessRunning("ttermpro") and response[0] == "Yes" \
@@ -2349,13 +2359,13 @@ class TeraTermUI(customtkinter.CTk):
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
-                    if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
+                    if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         TeraTermUI.unfocus_tkinter()
                         if self._1VE_screen:
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=5)
+                            self.wait_for_window()
                             send_keys("{TAB 3}")
                             send_keys("{ENTER}")
                             self.reset_activity_timer(None)
@@ -2363,14 +2373,14 @@ class TeraTermUI(customtkinter.CTk):
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=5)
+                            self.wait_for_window()
                             send_keys("{ENTER}")
                             self.reset_activity_timer(None)
                         elif self._409_screen:
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=5)
+                            self.wait_for_window()
                             send_keys("{TAB 4}")
                             send_keys("{ENTER}")
                             self.reset_activity_timer(None)
@@ -2383,14 +2393,14 @@ class TeraTermUI(customtkinter.CTk):
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=5)
+                            self.wait_for_window()
                             send_keys("{ENTER}")
                             self.reset_activity_timer(None)
                         elif self._4CM_screen:
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=5)
+                            self.wait_for_window()
                             send_keys("{ENTER}")
                             self.reset_activity_timer(None)
                             screenshot_thread = threading.Thread(target=self.capture_screenshot)
@@ -2448,11 +2458,11 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language(lang)
                 self.automation_preparations()
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
-                    if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
+                    if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                         if term_window.isMinimized:
                             term_window.restore()
-                        self.uprbay_window.wait("visible", timeout=5)
+                        self.wait_for_window()
                         TeraTermUI.unfocus_tkinter()
                         send_keys("{ENTER}")
                         clipboard_content = None
@@ -2918,9 +2928,9 @@ class TeraTermUI(customtkinter.CTk):
                 self.main_menu = False
                 if self.help is not None and self.help.winfo_exists():
                     self.files.configure(state="disabled")
-                self.passed = True
                 self.reset_activity_timer(None)
                 self.start_check_idle_thread()
+                self.start_check_process_thread()
                 self.in_student_frame = False
                 self.run_fix = True
                 if self.help is not None and self.help.winfo_exists():
@@ -2966,7 +2976,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred or (response and (response[0] == "Yes" or response[0] == "Sí"))):
             self.uprb.kill(soft=True)
         if self.error_occurred or (response and (response[0] == "Yes" or response[0] == "Sí")):
-            self.stop_idle_thread()
+            self.is_idle_thread_running = False
+            self.is_check_process_thread_running = False
             self.reset_activity_timer(None)
             self.unbind("<space>")
             self.unbind("<Up>")
@@ -3462,11 +3473,11 @@ class TeraTermUI(customtkinter.CTk):
                 if self.auto_enroll.get() == "on":
                     self.auto_enroll_bool = True
                     if asyncio.run(self.test_connection(lang)) and self.check_server() and self.check_format():
-                        if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
+                        if TeraTermUI.checkIfProcessRunning("ttermpro"):
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=5)
+                            self.wait_for_window()
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             send_keys("{ENTER}")
                             self.after(0, self.disable_go_next_buttons)
@@ -4389,6 +4400,7 @@ class TeraTermUI(customtkinter.CTk):
             self.hide_loading_screen()
             self.progress_bar.stop()
             loading_screen.destroy()
+            self.loading_screen = None
         else:
             self.after(100, self.update_loading_screen, loading_screen, task_done)
 
@@ -5379,7 +5391,7 @@ class TeraTermUI(customtkinter.CTk):
                 section_closed = False
                 co_requisite = False
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
-                    if TeraTermUI.checkIfProcessRunning("ttermpro") or self.passed:
+                    if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         not_all_choose = False
                         section_pattern = True
                         edge_cases_bool = False
@@ -5406,7 +5418,7 @@ class TeraTermUI(customtkinter.CTk):
                             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=5)
+                            self.wait_for_window()
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             send_keys("{ENTER}")
                             self.uprb.UprbayTeraTermVt.type_keys("1S4")
@@ -5707,6 +5719,19 @@ class TeraTermUI(customtkinter.CTk):
             elif time.time() - start_time > timeout:
                 return "Timeout"
             time.sleep(1)  # Adjust the delay between screenshots as needed
+
+    def wait_for_window(self):
+        try:
+            self.uprbay_window.wait("visible", timeout=5)
+        except Exception as e:
+            print("An error occurred: ", e)
+            self.search_function_counter = 0
+            self.uprb = Application(backend="uia").connect(
+                title="uprbay.uprb.edu - Tera Term VT", timeout=5)
+            self.uprb_32 = Application().connect(
+                title="uprbay.uprb.edu - Tera Term VT", timeout=5)
+            self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
+            self.move_window()
 
     # checks whether the user has the requested file
     @staticmethod
@@ -6420,7 +6445,7 @@ class TeraTermUI(customtkinter.CTk):
                 term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                 if term_window.isMinimized:
                     term_window.restore()
-                self.uprbay_window.wait("visible", timeout=5)
+                self.wait_for_window()
                 TeraTermUI.unfocus_tkinter()
                 send_keys("{TAB}")
                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -6465,6 +6490,39 @@ class TeraTermUI(customtkinter.CTk):
                     self.after(0, error_automation)
                 ctypes.windll.user32.BlockInput(False)
 
+    def start_check_process_thread(self):
+        self.is_check_process_thread_running = True
+        self.check_process_thread = threading.Thread(target=self.check_process_periodically)
+        self.check_process_thread.daemon = True
+        self.check_process_thread.start()
+
+    def check_process_periodically(self):
+        time.sleep(30)
+        not_running_count = 0
+        while self.is_check_process_thread_running and not self.stop_is_check_process.is_set():
+            if self.loading_screen is None:
+                is_running = TeraTermUI.checkIfProcessRunning("ttermpro")
+                if is_running and not self.is_idle_thread_running:
+                    not_running_count = 0
+                    self.start_check_idle_thread()
+                else:
+                    not_running_count += 1
+                    if not_running_count == 1:
+                        lang = self.language_menu.get()
+                        translation = self.load_language(lang)
+
+                        def not_running():
+                            if not self.disable_audio:
+                                winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
+                            CTkMessagebox(master=self, title=translation["automation_error_title"], icon="warning",
+                                          message=translation["tera_term_stopped_running"],
+                                          button_width=380)
+
+                        self.after(0, not_running)
+                    if not_running_count > 1:
+                        self.is_idle_thread_running = False
+            time.sleep(30)
+
     # Starts the check for idle thread
     def start_check_idle_thread(self):
         idle = self.cursor.execute("SELECT idle FROM user_data").fetchone()
@@ -6491,8 +6549,19 @@ class TeraTermUI(customtkinter.CTk):
                                 self.exit.close_messagebox()
                             if TeraTermUI.window_exists(translation["idle_warning_title"]):
                                 self.idle_warning.close_messagebox()
-                            main_window = self.uprb_32.window(title="uprbay.uprb.edu - Tera Term VT")
-                            main_window.wait("visible", timeout=5)
+                            try:
+                                main_window = self.uprb_32.window(title="uprbay.uprb.edu - Tera Term VT")
+                                main_window.wait("visible", timeout=5)
+                            except Exception as e:
+                                print("An error occurred: ", e)
+                                self.search_function_counter = 0
+                                self.uprb = Application(backend="uia").connect(
+                                    title="uprbay.uprb.edu - Tera Term VT", timeout=5)
+                                self.uprb_32 = Application().connect(
+                                    title="uprbay.uprb.edu - Tera Term VT", timeout=5)
+                                self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
+                                main_window = self.uprb_32.window(title="uprbay.uprb.edu - Tera Term VT")
+                                self.move_window()
                             main_window.send_keystrokes("{VK_RIGHT}")
                             main_window.send_keystrokes("{VK_LEFT}")
                             self.last_activity = time.time()
@@ -6521,10 +6590,6 @@ class TeraTermUI(customtkinter.CTk):
             print("An error occurred: ", e)
             self.log_error(e)
 
-    # Stops the check for idle thread
-    def stop_idle_thread(self):
-        self.is_idle_thread_running = False
-
     # resets the idle timer when user interacts with something within the application
     def reset_activity_timer(self, _):
         self.last_activity = time.time()
@@ -6539,7 +6604,7 @@ class TeraTermUI(customtkinter.CTk):
             else:
                 self.cursor.execute("UPDATE user_data SET idle=?", ("Disabled",))
             self.reset_activity_timer(None)
-            self.stop_idle_thread()
+            self.is_idle_thread_running = False
         elif self.disable_idle.get() == "off":
             if not row_exists:
                 self.cursor.execute("INSERT INTO user_data (idle) VALUES (?)", ("Enabled",))
@@ -6552,7 +6617,7 @@ class TeraTermUI(customtkinter.CTk):
                 term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                 if term_window.isMinimized:
                     term_window.restore()
-                self.uprbay_window.wait("visible", timeout=5)
+                self.wait_for_window()
                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                 send_keys("{ENTER}")
                 self.reset_activity_timer(None)
@@ -6980,7 +7045,7 @@ class TeraTermUI(customtkinter.CTk):
         ]
 
         # Function to search within a given path to a certain depth
-        def search_within_path(search_root, depth=5):
+        def search_within_path(search_root, depth=7):
             for root, dirs, files in os.walk(search_root, topdown=True):
                 # If we've reached the maximum depth, stop descending
                 if root[len(search_root):].count(os.sep) >= depth:
