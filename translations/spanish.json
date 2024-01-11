@@ -176,6 +176,7 @@
 	"close_tera_term": "¿Cerrar Tera Term?",
 	"error_student_id": "¡Error! Número o PIN\nde Estudiante Incorrecto",
 	"tera_term_not_running": "¡Error! Tera Term no está corriendo",
+	"tera_term_stopped_running": "¡Aviso! ¡El programa Tera Term ya no está corriendo!\n\nEsto podría deberse a que hubo un mantenimiento del servidor por parte de la universidad o se cerró por sí mismo debido a inactividad",
 	"server_maintenance_title": "Mantenimiento del Servidor",
 	"server_maintenance": "¡Error! El servidor de la universidad está en mantenimiento, trate de nuevo más tarde.\n\nCerrando Tera Term y volviendo a menú principal",
 	"automation_error_title": "Información del Error",
@@ -286,7 +287,7 @@
 	"download_tera_term": "Tera Term tiene que estar instalado en su computadora para poder usar esta aplicación, ¿desea instalarlo?",
 	"no_internet": "¡Error! No Conectado al internet",
 	"uprb_down": "¡Error! El servidor de la UPRB\nestá actualmente caído",
-	"unexpected_error": "Error inesperado y raro, no se pudo iniciar Tera Term, por favor, intente iniciar sesión nuevamente\n\n(Se agradecería mucho informar sobre el problema)",
+	"unexpected_error": "Error inesperado y raro, no se pudo iniciar Tera Term, por favor intente iniciar sesión nuevamente\n\n(Se agradecería mucho informar sobre el problema)",
 	"end_countdown": "El evento Auto-Matrícula se forzó a terminar porque Tera Term no está corriendo\n\nSi se cerró por sí mismo, probablemente la universidad inicio un mantenimiento para el servidor",
 	
 	"feedback_unavailable": "¡Error! Mandar comentarios no esta disponible ahora mismo",
