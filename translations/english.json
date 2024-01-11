@@ -176,6 +176,7 @@
 	"close_tera_term": "Close Tera Term?",
 	"error_student_id": "Error! Invalid Student ID or PIN",
 	"tera_term_not_running": "Error! Tera Term isn't running",
+	"tera_term_stopped_running": "Notice! The Tera Term program isn't running anymore!\n\nThis might be because either there was a server maintenance done by the university or it closed by itself because of inactivity",
 	"server_maintenance_title": "Server Maintenance",
 	"server_maintenance": "Error! The university's server is currently on maintenance, please try again later.\n\nClosing Tera Term and returning to main menu",
 	"automation_error_title": "Error Information",
@@ -286,7 +287,7 @@
 	"download_tera_term": "Tera Term must be installed in your computer in order to use this application do you wish to download it?",
 	"no_internet": "Error! Not Connected to the internet",
 	"uprb_down": "Error! UPRB server is currently down",
-	"unexpected_error": "Unexpected and rare error, failed to start tera term, please, try to log-in again\n\n(Reporting the issue is really appreciated)",
+	"unexpected_error": "Unexpected and rare error, failed to start tera term, please try to log-in again\n\n(Reporting the issue is really appreciated)",
 	"end_countdown": "The Auto-Enroll event was force to end because Tera Term is not running anymore\n\nIf it closed by itself, then there was probably a server maintenance done by the university",
 	
 	"feedback_unavailable": "Error! Feedback submission not currently available",
