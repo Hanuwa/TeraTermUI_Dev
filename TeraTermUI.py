@@ -4419,6 +4419,10 @@ class TeraTermUI(customtkinter.CTk):
                     self.show_error_message(330, 255, translation["failed_saved_invalid_info"])
                     self.save_data.deselect()
                 else:
+                    self.changed_classes = set()
+                    self.changed_sections = set()
+                    self.changed_semesters = set()
+                    self.changed_registers = set()
                     self.show_success_message(350, 265, translation["saved_classes_success"])
         if save == "off":
             self.cursor.execute("DELETE FROM save_classes")
