@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/11/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 1/12/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -259,6 +259,7 @@ class TeraTermUI(customtkinter.CTk):
         self.introduction.grid(row=0, column=1, columnspan=2, padx=(20, 0), pady=(20, 0))
         self.host = customtkinter.CTkLabel(self.home_frame, text="Host")
         self.host.grid(row=2, column=1, padx=(0, 170), pady=(15, 15))
+        self.host.bind("<Button-1>", lambda event: self.focus_set())
         self.host_entry = CustomEntry(self.home_frame, self, self.language_menu.get(),
                                       placeholder_text="myhost.example.edu")
         self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(15, 15))
@@ -2986,13 +2987,25 @@ class TeraTermUI(customtkinter.CTk):
             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
             if term_window.isMinimized:
                 term_window.restore()
+            self.connect_to_uprb()
             screenshot_thread = threading.Thread(target=self.capture_screenshot)
             screenshot_thread.start()
             screenshot_thread.join()
             text_output = self.capture_screenshot()
             to_continue = "return to continue"
             count_to_continue = text_output.count(to_continue)
-            if "return to continue" in text_output or "SISTEMA DE INFORMACION" in text_output:
+            if "REGRESE PRONTO" in text_output:
+                def server_closed():
+                    if not self.disable_audio:
+                        winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                    CTkMessagebox(title=translation["server_maintenance_title"],
+                                  message=translation["server_maintenance"], icon="cancel",
+                                  button_width=380)
+                    self.bind("<Return>", lambda event: self.login_event_handler())
+                    self.uprb.kill(soft=True)
+                self.after(0, server_closed)
+                return
+            elif "return to continue" in text_output or "SISTEMA DE INFORMACION" in text_output:
                 if "return to continue" in text_output and "Loading" in text_output:
                     send_keys("{ENTER 3}")
                 elif count_to_continue == 2 or "ZZZ" in text_output:
@@ -3002,7 +3015,6 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     send_keys("{VK_RIGHT}")
                     send_keys("{VK_LEFT}")
-                self.connect_to_uprb()
                 self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
                 self.bind("<Return>", lambda event: self.student_event_handler())
                 self.after(0, self.initialization_student)
@@ -3847,9 +3859,9 @@ class TeraTermUI(customtkinter.CTk):
     def end_countdown(self):
         self.auto_enroll_bool = False
         self.countdown_running = False
-        self.running_countdown.set(False)  # Stop the countdown
+        self.running_countdown.set(False)
         if self.timer_window and self.timer_window.winfo_exists():
-            self.timer_window.destroy()  # Destroy the countdown window
+            self.timer_window.destroy()
         self.auto_enroll.deselect()
         self.disable_enable_gui()
 
@@ -4025,9 +4037,11 @@ class TeraTermUI(customtkinter.CTk):
             self.back_tooltip = CTkToolTip(self.back, message=translation["back_tooltip"], bg_color="#A9A9A9",
                                            alpha=0.90)
             self.username_entry.lang = lang
-            self.title_login.bind("<Button-1>", lambda event: self.focus_set())
             self.authentication_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.a_buttons_frame.bind("<Button-1>", lambda event: self.focus_set())
+            self.title_login.bind("<Button-1>", lambda event: self.focus_set())
+            self.disclaimer.bind("<Button-1>", lambda event: self.focus_set())
+            self.username.bind("<Button-1>", lambda event: self.focus_set())
             self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
 
     def destroy_auth(self):
@@ -4036,6 +4050,8 @@ class TeraTermUI(customtkinter.CTk):
             self.authentication_frame.unbind("<Button-1>")
             self.a_buttons_frame.unbind("<Button-1>")
             self.title_login.unbind("<Button-1>")
+            self.disclaimer.unbind("<Button-1>")
+            self.username.unbind("<Button-1>")
             self.title_login.destroy()
             self.title_login = None
             self.uprb_image = None
@@ -4103,6 +4119,8 @@ class TeraTermUI(customtkinter.CTk):
             self.student_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.s_buttons_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.title_student.bind("<Button-1>", lambda event: self.focus_set())
+            self.student_id.bind("<Button-1>", lambda event: self.focus_set())
+            self.code.bind("<Button-1>", lambda event: self.focus_set())
             for entry in [self.student_id_entry, self.code_entry]:
                 entry.lang = lang
 
@@ -4120,6 +4138,8 @@ class TeraTermUI(customtkinter.CTk):
             self.student_id_entry.unbind("<Control-C>")
             self.code_entry.unbind("<Command-C>")
             self.code_entry.unbind("<Control-C>")
+            self.student_id.unbind("<Button-1>")
+            self.code.unbind("<Button-1>")
             self.title_student.destroy()
             self.title_student = None
             self.lock = None
@@ -4197,6 +4217,9 @@ class TeraTermUI(customtkinter.CTk):
             self.register.select()
             self.tabview.tab(self.enroll_tab).bind("<Button-1>", lambda event: self.focus_set())
             self.title_enroll.bind("<Button-1>", lambda event: self.focus_set())
+            self.e_classes.bind("<Button-1>", lambda event: self.focus_set())
+            self.e_section.bind("<Button-1>", lambda event: self.focus_set())
+            self.e_semester.bind("<Button-1>", lambda event: self.focus_set())
 
             # Second Tab
             self.search_scrollbar = customtkinter.CTkScrollableFrame(master=self.tabview.tab(self.search_tab),
@@ -4276,6 +4299,8 @@ class TeraTermUI(customtkinter.CTk):
             self.tabview.tab(self.other_tab).bind("<Button-1>", lambda event: self.focus_set())
             self.title_menu.bind("<Button-1>", lambda event: self.focus_set())
             self.explanation_menu.bind("<Button-1>", lambda event: self.focus_set())
+            self.menu.bind("<Button-1>", lambda event: self.focus_set())
+            self.menu_semester.bind("<Button-1>", lambda event: self.focus_set())
 
             # Bottom Buttons
             self.back_classes = CustomButton(master=self.t_buttons_frame, fg_color="transparent", border_width=2,
@@ -4357,6 +4382,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.m_register_menu.append(customtkinter.CTkOptionMenu(
                     master=self.multiple_frame, values=[translation["register"], translation["drop"]]))
                 self.m_register_menu[i].set(translation["choose"])
+                self.m_num_class[i].bind("<Button-1>", lambda event: self.focus_set())
             self.m_semester_entry[0].bind("<FocusOut>", lambda value: self.change_semester())
             self.m_add = CustomButton(master=self.m_button_frame, border_width=2, text="+",
                                       text_color=("gray10", "#DCE4EE"), command=self.add_event, height=40, width=50,
@@ -4388,6 +4414,11 @@ class TeraTermUI(customtkinter.CTk):
             self.m_button_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.save_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.auto_frame.bind("<Button-1>", lambda event: self.focus_set())
+            self.title_multiple.bind("<Button-1>", lambda event: self.focus_set())
+            self.m_class.bind("<Button-1>", lambda event: self.focus_set())
+            self.m_section.bind("<Button-1>", lambda event: self.focus_set())
+            self.m_semester.bind("<Button-1>", lambda event: self.focus_set())
+            self.m_choice.bind("<Button-1>", lambda event: self.focus_set())
             for entry in [self.m_classes_entry, self.m_section_entry]:
                 for sub_entry in entry:
                     sub_entry.lang = lang
@@ -5018,6 +5049,7 @@ class TeraTermUI(customtkinter.CTk):
         self.table_count.configure(text=table_count_label)
         if len(self.class_table_pairs) == 10:
             self.table_count.configure(text_color="red")
+        self.table_count.bind("<Button-1>", lambda event: self.focus_set())
 
     def find_duplicate(self, new_display_class, new_semester, show_all_sections_state):
         for index, (display_class, table, semester, existing_show_all_sections_state) in enumerate(
@@ -5451,8 +5483,9 @@ class TeraTermUI(customtkinter.CTk):
         self.bind("<End>", lambda event: self.move_bottom_scrollbar())
         self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event2())
         self.my_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
-        self.modify_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
         self.title_my_classes.bind("<Button-1>", lambda event: self.focus_set())
+        self.modify_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
+        self.total_credits_label.bind("<Button-1>", lambda event: self.focus_set())
 
     def destroy_enrolled_frame(self):
         TeraTermUI.enable_entries(self)
@@ -5461,6 +5494,7 @@ class TeraTermUI(customtkinter.CTk):
         self.my_classes_frame.unbind("<Button-1>")
         self.modify_classes_frame.unbind("<Button-1>")
         self.title_my_classes.unbind("<Button-1>")
+        self.total_credits_label.unbind("<Button-1>")
         self.back_my_classes.grid_forget()
         self.enrolled_classes_table.destroy()
         self.title_my_classes.destroy()
@@ -7011,6 +7045,12 @@ class TeraTermUI(customtkinter.CTk):
         self.status.focus_set()
         self.status_frame.bind("<Button-1>", lambda event: self.status_frame.focus_set())
         self.status_frame.bind("<Button-3>", lambda event: self.status_frame.focus_set())
+        self.status_title.bind("<Button-1>", lambda event: self.status_frame.focus_set())
+        self.version.bind("<Button-1>", lambda event: self.status_frame.focus_set())
+        self.check_update_text.bind("<Button-1>", lambda event: self.status_frame.focus_set())
+        self.website.bind("<Button-1>", lambda event: self.status_frame.focus_set())
+        self.notaso.bind("<Button-1>", lambda event: self.status_frame.focus_set())
+        self.faq_text.bind("<Button-1>", lambda event: self.status_frame.focus_set())
         self.status.bind("<Up>", lambda event: self.status_scroll_up())
         self.status.bind("<Down>", lambda event: self.status_scroll_down())
         self.status.bind("<Home>", lambda event: self.status_move_top_scrollbar())
@@ -7021,6 +7061,14 @@ class TeraTermUI(customtkinter.CTk):
     def on_status_window_close(self):
         self.unload_image("update")
         self.unload_image("link")
+        self.status_frame.unbind("<Button-1>")
+        self.status_frame.unbind("<Button-3>")
+        self.status_title.unbind("<Button-1>")
+        self.version.unbind("<Button-1>")
+        self.check_update_text.unbind("<Button-1>")
+        self.website.unbind("<Button-1>")
+        self.notaso.unbind("<Button-1>")
+        self.faq_text.unbind("<Button-1>")
         self.move_slider_left_enabled = True
         self.move_slider_right_enabled = True
         self.spacebar_enabled = True
@@ -7499,11 +7547,22 @@ class TeraTermUI(customtkinter.CTk):
                 self.skip_auth_switch.select()
         self.search_box.lang = lang
         self.help.focus_set()
+        self.help_frame.bind("<Button-1>", lambda event: self.help_frame.focus_set())
+        self.help_frame.bind("<Button-3>", lambda event: self.help_frame.focus_set())
         self.class_list.bind("<<ListboxSelect>>", self.show_class_code)
         self.class_list.bind("<MouseWheel>", self.disable_scroll)
         self.search_box.bind("<KeyRelease>", self.search_classes)
-        self.help_frame.bind("<Button-1>", lambda event: self.help_frame.focus_set())
-        self.help_frame.bind("<Button-3>", lambda event: self.help_frame.focus_set())
+        self.help_title.bind("<Button-1>", lambda event: self.help_frame.focus_set())
+        self.notice.bind("<Button-1>", lambda event: self.help_frame.focus_set())
+        self.searchbox_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
+        self.curriculum_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
+        self.keybinds_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
+        self.terms_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
+        self.skip_auth_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
+        self.files_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
+        self.disable_idle_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
+        self.disable_audio_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
+        self.fix_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
         self.help.bind("<Up>", lambda event: None if self.is_listbox_focused() else self.help_scroll_up())
         self.help.bind("<Down>", lambda event: None if self.is_listbox_focused() else self.help_scroll_down())
         self.help.bind("<Home>", lambda event: None if self.is_listbox_focused() else self.help_move_top_scrollbar())
@@ -7514,6 +7573,22 @@ class TeraTermUI(customtkinter.CTk):
     def on_help_window_close(self):
         self.unload_image("folder")
         self.unload_image("fix")
+        self.help_frame.unbind("<Button-1>")
+        self.help_frame.unbind("<Button-3>")
+        self.class_list.unbind("<<ListboxSelect>>")
+        self.class_list.unbind("<MouseWheel>")
+        self.search_box.unbind("<KeyRelease>")
+        self.help_title.unbind("<Button-1>")
+        self.notice.unbind("<Button-1>")
+        self.searchbox_text.unbind("<Button-1>")
+        self.curriculum_text.unbind("<Button-1>")
+        self.keybinds_text.unbind("<Button-1>")
+        self.terms_text.unbind("<Button-1>")
+        self.skip_auth_text.unbind("<Button-1>")
+        self.files_text.unbind("<Button-1>")
+        self.disable_idle_text.unbind("<Button-1>")
+        self.disable_audio_text.unbind("<Button-1>")
+        self.fix_text.unbind("<Button-1>")
         self.move_slider_left_enabled = True
         self.move_slider_right_enabled = True
         self.spacebar_enabled = True
