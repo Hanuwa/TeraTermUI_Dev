@@ -36,8 +36,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 
 [CustomMessages]
-english.teraterm=Do you wish to install Tera Term too?
-spanish.teraterm=¿Desea instalar Tera Term también?
+english.teraterm=Do you wish to install the normal Tera Term too?
+spanish.teraterm=¿Desea instalar el Tera Term normal también?
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
