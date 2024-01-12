@@ -742,20 +742,13 @@ class TeraTermUI(customtkinter.CTk):
                     if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
                         try:
                             self.uprb.kill(soft=True)
+                            if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
+                                TeraTermUI.terminate_process()
                         except Exception as e:
                             print("An error occurred: ", e)
-                            try:
-                                subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
-                                               check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                            except subprocess.CalledProcessError:
-                                print("Could not terminate ttermpro.exe.")
-
+                            TeraTermUI.terminate_process()
                     elif TeraTermUI.window_exists("Tera Term - [disconnected] VT"):
-                        try:
-                            subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
-                                           check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                        except subprocess.CalledProcessError:
-                            print("Could not terminate ttermpro.exe.")
+                        TeraTermUI.terminate_process()
             sys.exit(0)
 
     def direct_close(self):
@@ -774,6 +767,14 @@ class TeraTermUI(customtkinter.CTk):
     def forceful_end_app(self):
         self.destroy()
         sys.exit(1)
+
+    @staticmethod
+    def terminate_process():
+        try:
+            subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
+                           check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except subprocess.CalledProcessError:
+            print("Could not terminate ttermpro.exe.")
 
     def log_error(self, e):
         try:
@@ -901,11 +902,10 @@ class TeraTermUI(customtkinter.CTk):
                             self.switch_tab()
                         else:
                             self.bind("<Return>", lambda event: self.student_event_handler())
-                            if "ON FILE" in text_output:
+                            if "ON FILE" in text_output or "ERRORS FOUND" in text_output:
                                 send_keys("{TAB 3}")
-                            if "PIN NUMBER" in text_output:
+                            elif "PIN NUMBER" in text_output:
                                 send_keys("{TAB 2}")
-
                             self.after(100, self.show_error_message, 300, 215, translation["error_student_id"])
                     else:
                         self.bind("<Return>", lambda event: self.student_event_handler())
@@ -2634,7 +2634,7 @@ class TeraTermUI(customtkinter.CTk):
                             term_window = gw.getWindowsWithTitle("SSH Authentication")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
-                            self.uprbay_window.wait("visible", timeout=5)
+                            self.wait_for_window()
                             user = self.uprb.UprbayTeraTermVt.child_window(title="User name:",
                                                                            control_type="Edit").wrapper_object()
                             user.set_text(username)
@@ -2671,6 +2671,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.bind("<Return>", lambda event: self.student_event_handler())
                                 self.after(0, self.initialization_student)
                                 self.after(100, self.auth_info_frame)
+                                self.in_auth_frame = False
                                 self.in_student_frame = True
                                 if self.skip_auth:
                                     self.home_frame.grid_forget()
@@ -2824,7 +2825,7 @@ class TeraTermUI(customtkinter.CTk):
         event_thread.start()
 
     # Checks if host entry is true
-    @measure_time(threshold=7.5)
+    @measure_time(threshold=7)
     def login_event(self, task_done):
         dont_close = False
         with self.lock_thread:
@@ -2868,9 +2869,10 @@ class TeraTermUI(customtkinter.CTk):
                                                                         control_type="Button").wrapper_object()
                                     continue_button.click()
                                     self.show_loading_screen_again()
-                                self.bind("<Return>", lambda event: self.auth_event_handler())
                                 if not self.skip_auth:
+                                    self.bind("<Return>", lambda event: self.auth_event_handler())
                                     self.after(0, self.initialization_auth)
+                                    self.in_auth_frame = True
                                 self.after(100, self.login_frame)
                             except AppStartError as e:
                                 print("An error occurred: ", e)
@@ -2915,11 +2917,7 @@ class TeraTermUI(customtkinter.CTk):
                     def error_automation():
                         self.destroy_windows()
                         if not dont_close:
-                            try:
-                                subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
-                                               check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                            except subprocess.CalledProcessError:
-                                print("Could not terminate ttermpro.exe.")
+                            TeraTermUI.terminate_process()
                         if not self.disable_audio:
                             winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                         CTkMessagebox(master=self, title=translation["automation_error_title"],
@@ -2973,8 +2971,18 @@ class TeraTermUI(customtkinter.CTk):
             if timeout_counter > 5:
                 skip = True
                 break
-        if (TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
-                and not TeraTermUI.window_exists("SSH Authentication") and not skip):
+        count = TeraTermUI.countRunningProcesses("ttermpro")
+        if count > 1:
+            self.after(100, self.show_error_message, 450, 270, translation["count_processes"])
+            self.bind("<Return>", lambda event: self.login_event_handler())
+            return
+        elif TeraTermUI.window_exists("SSH Authentication") and not skip:
+            self.connect_to_uprb()
+            self.bind("<Return>", lambda event: self.auth_event_handler())
+            self.after(0, self.initialization_auth)
+            self.after(100, self.login_frame)
+            self.in_auth_frame = True
+        elif TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT") and not skip:
             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
             if term_window.isMinimized:
                 term_window.restore()
@@ -2982,35 +2990,51 @@ class TeraTermUI(customtkinter.CTk):
             screenshot_thread.start()
             screenshot_thread.join()
             text_output = self.capture_screenshot()
-            if (("STUDENTS REQ/DROP" in text_output or "HOLD FLAGS" in text_output or
-                 "PROGRAMA DE CLASES" in text_output or "ACADEMIC STATISTICS" in text_output or
-                 "SNAPSHOT" in text_output or "SOLICITUD DE PRORROGA" in text_output or
-                 "LISTA DE SECCIONES") and "return to continue" not in text_output and
-                    "SISTEMA DE INFORMACION" not in text_output):
-                count = TeraTermUI.countRunningProcesses("ttermpro")
-                if count > 1:
-                    self.after(100, self.show_error_message, 450, 270, translation["count_processes"])
-                    self.bind("<Return>", lambda event: self.login_event_handler())
-                    return
-                self.uprb = Application(backend="uia").connect(
-                    title="uprbay.uprb.edu - Tera Term VT", timeout=5)
-                self.uprb_32 = Application().connect(
-                    title="uprbay.uprb.edu - Tera Term VT", timeout=5)
-                self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                self.uprbay_window.wait("visible", timeout=5)
-                send_keys("{VK_RIGHT}")
-                send_keys("{VK_LEFT}")
-                self.after(0, self.initialization_class)
-                self.after(0, self.initialization_multiple)
-                self.after(100, self.student_info_frame)
+            to_continue = "return to continue"
+            count_to_continue = text_output.count(to_continue)
+            if "return to continue" in text_output or "SISTEMA DE INFORMACION" in text_output:
+                if "return to continue" in text_output and "Loading" in text_output:
+                    send_keys("{ENTER 3}")
+                elif count_to_continue == 2 or "ZZZ" in text_output:
+                    send_keys("{ENTER 2}")
+                elif count_to_continue == 1 or "automaticamente" in text_output:
+                    send_keys("{ENTER}")
+                else:
+                    send_keys("{VK_RIGHT}")
+                    send_keys("{VK_LEFT}")
+                self.connect_to_uprb()
+                self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
+                self.bind("<Return>", lambda event: self.student_event_handler())
+                self.after(0, self.initialization_student)
+                self.after(100, self.auth_info_frame)
+                self.in_student_frame = True
                 self.main_menu = False
                 if self.help is not None and self.help.winfo_exists():
                     self.files.configure(state="disabled")
+                self.language_menu.configure(state="disabled")
+                self.intro_box.stop_autoscroll(event=None)
+                self.language_menu_tooltip.show()
+                self.home_frame.grid_forget()
+                self.intro_box.grid_forget()
+                self.slideshow_frame.pause_cycle()
+                self.move_window()
+            elif "STUDENTS REQ/DROP" in text_output or "HOLD FLAGS" in text_output or \
+                 "PROGRAMA DE CLASES" in text_output or "ACADEMIC STATISTICS" in text_output or \
+                 "SNAPSHOT" in text_output or "SOLICITUD DE PRORROGA" in text_output or \
+                 "LISTA DE SECCIONES":
+                send_keys("{VK_RIGHT}")
+                send_keys("{VK_LEFT}")
+                self.connect_to_uprb()
+                self.after(0, self.initialization_class)
+                self.after(0, self.initialization_multiple)
+                self.after(100, self.student_info_frame)
                 self.reset_activity_timer(None)
                 self.start_check_idle_thread()
                 self.start_check_process_thread()
-                self.in_student_frame = False
                 self.run_fix = True
+                self.main_menu = False
+                if self.help is not None and self.help.winfo_exists():
+                    self.files.configure(state="disabled")
                 if self.help is not None and self.help.winfo_exists():
                     self.fix.configure(state="normal")
                 self.language_menu.configure(state="disabled")
@@ -3030,6 +3054,14 @@ class TeraTermUI(customtkinter.CTk):
             self.after(100, self.show_error_message, 450, 265,
                        translation["tera_term_already_running"])
 
+    def connect_to_uprb(self):
+        self.uprb = Application(backend="uia").connect(
+            title="uprbay.uprb.edu - Tera Term VT", timeout=5)
+        self.uprb_32 = Application().connect(
+            title="uprbay.uprb.edu - Tera Term VT", timeout=5)
+        self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
+        self.uprbay_window.wait("visible", timeout=5)
+
     def keybind_go_back_event(self):
         if self.move_slider_right_enabled or self.move_slider_left_enabled:
             self.go_back_event()
@@ -3039,7 +3071,7 @@ class TeraTermUI(customtkinter.CTk):
         response = None
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        if self.loading_screen is not None and self.loading_screen.winfo_exists():
+        if self.loading_screen is not None and self.loading_screen.winfo_exists() and not self.error_occurred:
             return
         if not self.error_occurred:
             msg = CTkMessagebox(master=self, title=translation["go_back_title"],
@@ -3052,7 +3084,16 @@ class TeraTermUI(customtkinter.CTk):
             response = msg.get()
         if TeraTermUI.checkIfProcessRunning("ttermpro") and (
                 self.error_occurred or (response and (response[0] == "Yes" or response[0] == "Sí"))):
-            self.uprb.kill(soft=True)
+            if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
+                try:
+                    self.uprb.kill(soft=True)
+                    if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
+                        TeraTermUI.terminate_process()
+                except Exception as e:
+                    print("An error occurred: ", e)
+                    TeraTermUI.terminate_process()
+            elif TeraTermUI.window_exists("Tera Term - [disconnected] VT"):
+                TeraTermUI.terminate_process()
         if self.error_occurred or (response and (response[0] == "Yes" or response[0] == "Sí")):
             self.is_idle_thread_running = False
             self.is_check_process_thread_running = False
@@ -3101,6 +3142,7 @@ class TeraTermUI(customtkinter.CTk):
             self.run_fix = False
             if self.help is not None and self.help.winfo_exists():
                 self.fix.configure(state="disabled")
+            self.in_auth_frame = False
             self.in_student_frame = False
             self.in_enroll_frame = False
             self.in_search_frame = False
@@ -3109,7 +3151,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.files.configure(state="normal")
             if self.error_occurred:
                 self.destroy_windows()
-                if (self.server_status != "Maintenance message found" and self.server_status != "Timeout") \
+                if self.server_status != "Maintenance message found" and self.server_status != "Timeout" \
                         and self.tesseract_unzipped:
                     if not self.disable_audio:
                         winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
@@ -8308,7 +8350,6 @@ class CustomEntry(customtkinter.CTkEntry):
         if (entry_text == "" or entry_text.isspace()) and self._placeholder_text is not None and (
                 self._textvariable is None or self._textvariable == ""):
             self._placeholder_text_active = True
-            print("yep")
             self._pre_placeholder_arguments = {"show": self._entry.cget("show")}
             self._entry.config(fg=self._apply_appearance_mode(self._placeholder_text_color),
                                disabledforeground=self._apply_appearance_mode(self._placeholder_text_color),
