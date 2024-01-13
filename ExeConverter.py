@@ -114,8 +114,8 @@ try:
     if os.path.exists(output_directory):
         shutil.rmtree(output_directory)
     os.makedirs(output_directory, exist_ok=True)
-    for filename in os.listdir(project_directory+"\dist"):
-        src = os.path.join(project_directory+"\dist", filename)
+    for filename in os.listdir(os.path.join(project_directory, "dist")): 
+        src = os.path.join(project_directory, "dist", filename)
         dst = os.path.join(output_directory, filename)
         if os.path.isfile(src):
             shutil.copy2(src, dst)
