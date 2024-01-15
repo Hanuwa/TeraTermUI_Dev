@@ -1,3 +1,4 @@
+import datetime
 import re
 import os
 import signal
@@ -106,9 +107,14 @@ shutil.copy2(project_directory + r"\TeraTermUI.py", program_backup)
 signal.signal(signal.SIGTERM, terminate_process)
 signal.signal(signal.SIGINT, terminate_process)
 
+current_date = datetime.datetime.now().strftime("%m/%d/%Y")
 version_file_path = os.path.join(project_directory, "VERSION.txt")
+with open(version_file_path, "r") as file:
+    version_file_content = file.read()
+version_file_content = re.sub(r'(?<=Version Number: ).*', update, version_file_content)
+version_file_content = re.sub(r'(?<=Release Date: ).*', current_date, version_file_content)
 with open(version_file_path, "w") as file:
-    file.write(update)
+    file.write(version_file_content)
 
 try:
     if os.path.exists(output_directory):
