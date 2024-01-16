@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/12/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 1/16/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -19,9 +19,11 @@
 
 import asyncio
 import atexit
+import chardet
 import ctypes
 import customtkinter
 import functools
+import glob
 import gc
 import inspect
 import json
@@ -551,9 +553,15 @@ class TeraTermUI(customtkinter.CTk):
         SPANISH = 0x0A
         language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
         # default location of Tera Term
-        self.location = "C:/Program Files (x86)/teraterm/ttermpro.exe"
-        self.teraterm_file = "C:/Program Files (x86)/teraterm/TERATERM.ini"
-        self.teraterm_directory = "C:/Program Files (x86)/teraterm"
+        teraterm_directory = TeraTermUI.find_teraterm_directory()
+        if teraterm_directory:
+            self.location = os.path.join(teraterm_directory, "ttermpro.exe")
+            self.teraterm_file = os.path.join(teraterm_directory, "TERATERM.ini")
+            self.teraterm_directory = teraterm_directory
+        else:
+            self.location = "C:/Program Files (x86)/teraterm/ttermpro.exe"
+            self.teraterm_file = "C:/Program Files (x86)/teraterm/TERATERM.ini"
+            self.teraterm_directory = "C:/Program Files (x86)/teraterm"
         self.original_font = None
         # Storing translations for languages in cache to reuse
         self.translations_cache = {}
@@ -5950,7 +5958,22 @@ class TeraTermUI(customtkinter.CTk):
                         messagebox.showerror("Error", f"Fatal Error!\n\n{str(e)}")
                     self.after(0, self.forceful_end_app)
 
+    @staticmethod
+    def find_appdata_teraterm_ini():
+        appdata_path = os.path.join(os.environ.get("APPDATA", ""), "teraterm5")
+        teraterm_ini_path = os.path.join(appdata_path, "TERATERM.ini")
+        if os.path.isfile(teraterm_ini_path):
+            return teraterm_ini_path
+        return None
+
     def backup_and_config_ini(self, file_path):
+        if "teraterm5" in file_path:
+            appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
+            if appdata_ini_path:
+                file_path = appdata_ini_path
+            else:
+                return
+
         # backup for config file of tera term
         if TeraTermUI.is_file_in_directory("ttermpro.exe", self.teraterm_directory):
             backup_path = self.app_temp_dir / "TERATERM.ini.bak"
@@ -5966,10 +5989,13 @@ class TeraTermUI(customtkinter.CTk):
             # Edits the font that tera term uses to "Lucida Console" to mitigate the chance of the OCR mistaking words
             if not self.can_edit:
                 try:
-                    # Read lines once
-                    with open(file_path, "r") as file:
+                    with open(file_path, "rb") as file:
+                        raw_data = file.read()
+                        encoding_info = chardet.detect(raw_data)
+                        detected_encoding = encoding_info["encoding"]
+
+                    with open(file_path, "r", encoding=detected_encoding) as file:
                         lines = file.readlines()
-                    # Edit in-place
                     for index, line in enumerate(lines):
                         if line.startswith("VTFont="):
                             current_value = line.strip().split("=")[1]
@@ -5978,13 +6004,12 @@ class TeraTermUI(customtkinter.CTk):
                             updated_value = "Lucida Console" + current_value[len(font_name):]
                             lines[index] = f"VTFont={updated_value}\n"
                             self.can_edit = True
-                    # Write lines once
-                    with open(file_path, "w") as file:
+                    with open(file_path, "w", encoding=detected_encoding) as file:
                         file.writelines(lines)
                     del line, lines
                 except FileNotFoundError:
                     return
-                except IOError as e:  # Replace with the specific exceptions you want to catch
+                except IOError as e:
                     print(f"Error occurred: {e}")
                     print("Restoring from backup...")
                     shutil.copyfile(backup_path, file_path)
@@ -7235,8 +7260,8 @@ class TeraTermUI(customtkinter.CTk):
                 if root[len(search_root):].count(os.sep) >= depth:
                     del dirs[:]
                 else:
-                    dirs[:] = [d for d in dirs if
-                               d not in ["Recycler", "Recycled", "System Volume Information", "$RECYCLE.BIN"]]
+                    dirs[:] = [d for d in dirs if d not in 
+                               ["Recycler", "Recycled", "System Volume Information", "$RECYCLE.BIN", "Prefetch"]]
 
                 for file in files:
                     if file.lower() == "ttermpro.exe":
@@ -7312,6 +7337,16 @@ class TeraTermUI(customtkinter.CTk):
             message = message_english if lang == "English" else message_spanish
             messagebox.showinfo("Tera Term", message)
             self.manually_change_location()
+
+    @staticmethod
+    def find_teraterm_directory(base_path="C:/Program Files (x86)"):
+        possible_dirs = glob.glob(os.path.join(base_path, "teraterm*"))
+        original_teraterm = os.path.join(base_path, "teraterm")
+        if original_teraterm in possible_dirs:
+            return original_teraterm
+        elif possible_dirs:
+            return possible_dirs[0]
+        return None
 
     # Function that lets user select where their Tera Term application is located
     def manually_change_location(self):
@@ -7656,6 +7691,13 @@ class TeraTermUI(customtkinter.CTk):
 
     # Edits the font that tera term uses to "Terminal" to mitigate the chance of the OCR mistaking words
     def edit_teraterm_ini(self, file_path):
+        if "teraterm5" in file_path:
+            appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
+            if appdata_ini_path:
+                file_path = appdata_ini_path
+            else:
+                return
+
         if TeraTermUI.is_file_in_directory("ttermpro.exe", self.teraterm_directory):
             backup_path = self.app_temp_dir / "TERATERM.ini.bak"
             if not os.path.exists(backup_path):
@@ -7666,7 +7708,12 @@ class TeraTermUI(customtkinter.CTk):
                     print("Tera Term Probably not installed\n"
                           "or installed in a different location from the default")
             try:
-                with open(file_path, "r") as file:
+                with open(file_path, "rb") as file:
+                    raw_data = file.read()
+                    encoding_info = chardet.detect(raw_data)
+                    detected_encoding = encoding_info["encoding"]
+
+                with open(file_path, "r", encoding=detected_encoding) as file:
                     lines = file.readlines()
                 for index, line in enumerate(lines):
                     if line.startswith("VTFont="):
@@ -7676,7 +7723,7 @@ class TeraTermUI(customtkinter.CTk):
                         updated_value = "Lucida Console" + current_value[len(font_name):]
                         lines[index] = f"VTFont={updated_value}\n"
                         self.can_edit = True
-                with open(file_path, "w") as file:
+                with open(file_path, "w", encoding=detected_encoding) as file:
                     file.writelines(lines)
             except FileNotFoundError:
                 return
@@ -7691,36 +7738,45 @@ class TeraTermUI(customtkinter.CTk):
     # Restores the original font option the user had
     def restore_original_font(self, file_path):
         if not self.can_edit:
-            return
+            if "teraterm5" in file_path:
+                return
+
+        if "teraterm5" in file_path:
+            appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
+            if appdata_ini_path:
+                file_path = appdata_ini_path
+            else:
+                return
+
         backup_path = self.app_temp_dir / "TERATERM.ini.bak"
         try:
-            # Read lines once from the main file and the backup
-            with open(file_path, "r") as file:
+            with open(file_path, "rb") as file:
+                raw_data = file.read()
+                encoding_info = chardet.detect(raw_data)
+                detected_encoding = encoding_info["encoding"]
+
+            with open(file_path, "r", encoding=detected_encoding) as file:
                 lines = file.readlines()
-            with open(backup_path, "r") as backup_file:
+            with open(backup_path, "r", encoding=detected_encoding) as backup_file:
                 backup_lines = backup_file.readlines()
-            # Find the backup font
             backup_font = None
             for line in backup_lines:
                 if line.startswith("VTFont="):
                     backup_font = line.strip().split("=")[1]
                     break
-            # If backup font doesn't exist, return
             if backup_font is None:
                 return
-            # Edit lines in-place
             for index, line in enumerate(lines):
                 if line.startswith("VTFont="):
                     if backup_font.split(",")[0].lower() != self.original_font.split(",")[0].lower():
                         lines[index] = f"VTFont={backup_font}\n"
                     else:
                         lines[index] = f"VTFont={self.original_font}\n"
-            # Write lines back to the file
-            with open(file_path, "w") as file:
+            with open(file_path, "w", encoding=detected_encoding) as file:
                 file.writelines(lines)
         except FileNotFoundError:
             print(f"File or backup not found.")
-        except IOError as e:  # Replace with specific exceptions you want to catch
+        except IOError as e:
             print(f"Error occurred: {e}")
             print("Restoring from backup...")
             try:
@@ -8734,3 +8790,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
