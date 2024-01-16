@@ -7738,8 +7738,7 @@ class TeraTermUI(customtkinter.CTk):
     # Restores the original font option the user had
     def restore_original_font(self, file_path):
         if not self.can_edit:
-            if "teraterm5" in file_path:
-                return
+               return
 
         if "teraterm5" in file_path:
             appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
