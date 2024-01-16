@@ -284,7 +284,7 @@
 	"specific_enrollment_error": "Estás recibiendo este mensaje porque una o más clases no se pudieron matricular por la(s) siguiente(s) razón(es):\n\n",
 	"information_title": "Información",
 	"download_title": "Descargar",
-	"download_tera_term": "Tera Term tiene que estar instalado en su computadora para poder usar esta aplicación\n\n¿desea instalarlo?",
+	"download_tera_term": "Tera Term tiene que estar instalado en su computadora para poder usar esta aplicación\n\n¿Desea instalarlo?",
 	"no_internet": "¡Error! No Conectado al internet",
 	"uprb_down": "¡Error! El servidor de la UPRB\nestá actualmente caído",
 	"unexpected_error": "Error inesperado y raro, no se pudo iniciar Tera Term, por favor intente iniciar sesión nuevamente\n\n(Se agradecería mucho informar sobre el problema)",
