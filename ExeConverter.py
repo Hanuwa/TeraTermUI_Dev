@@ -152,7 +152,7 @@ except Exception as e:
 
 nuitka_command = (
     r'cd /d "'+project_directory+r'\.venv\Scripts" & python -m nuitka --standalone '
-    r'--experimental=treefree "'+project_directory+r'\TeraTermUI.py" '
+    r'--lto=auto "'+project_directory+r'\TeraTermUI.py" '
     r'--enable-plugin=tk-inter --include-data-dir="'+project_directory+r'\.venv\Lib\site-packages'
     r'\customtkinter=customtkinter" --include-data-dir="'+project_directory+r'\.venv\Lib\site-packages'
     r'\CTkMessageBox=CTkMessageBox" --include-package=CTkToolTip --include-package=CTkTable '
@@ -167,7 +167,8 @@ nuitka_command = (
     r'--include-data-file="'+project_directory+r'\LICENSE.txt=LICENSE.txt" '                                                     
     r'--output-dir="'+output_directory+r'" --disable-console '
     r'--windows-icon-from-ico="'+project_directory+r'\images\tera-term.ico" '
-    r'--lto=yes --nofollow-import-to=unittest --nofollow-import-to=reportlab.graphics.testshapes'
+    r'--nofollow-import-to=unittest --nofollow-import-to=reportlab.graphics.testshapes '
+    r'--company-name="Armando Del Valle Tejada" --product-version=0.9.0 '
 )
 
 try:
