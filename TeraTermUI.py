@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/16/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 1/17/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -502,7 +502,6 @@ class TeraTermUI(customtkinter.CTk):
 
         # Top level window management, flags and counters
         self.DEFAULT_SEMESTER = "C41"
-        self.ignore = True
         self.error_occurred = False
         self.can_edit = False
         self.enrolled_classes_list = None
@@ -2563,7 +2562,6 @@ class TeraTermUI(customtkinter.CTk):
                         ctypes.windll.user32.BlockInput(True)
                         copy = pyperclip.paste()
                         data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
-                        self.ignore = False
                         self.after(0, self.display_data, data)
                         self.clipboard_clear()
                         if clipboard_content is not None:
@@ -5016,20 +5014,29 @@ class TeraTermUI(customtkinter.CTk):
             self.download_pdf_tooltip = CTkToolTip(self.download_pdf, message=translation["download_pdf_tooltip"],
                                                    bg_color="green")
 
-        if self.ignore:
-            duplicate_index = self.find_duplicate(display_class, self.get_semester_for_pdf, self.show_all_sections)
-            if duplicate_index is not None:
+        available_key = translation["av"]
+        available_values = [row[available_key] for row in modified_data]
+        duplicate_index = self.find_duplicate(display_class, self.get_semester_for_pdf, self.show_all_sections,
+                                              available_values)
+        if duplicate_index is not None:
+            _, _, _, _, existing_available_values = self.class_table_pairs[duplicate_index]
+            if existing_available_values != available_values:
+                display_class_to_remove, table_to_remove, _, _, _ = self.class_table_pairs[duplicate_index]
+                display_class_to_remove.unbind("<Button-1>")
+                self.after(0, display_class_to_remove.destroy)
+                self.after(0, table_to_remove.destroy)
+                del self.class_table_pairs[duplicate_index]
+            else:
                 self.current_table_index = duplicate_index
                 self.display_current_table()
                 self.update_buttons()
                 return
-        self.ignore = True
 
-        self.class_table_pairs.append((display_class, new_table, self.get_semester_for_pdf, self.show_all_sections))
+        self.class_table_pairs.append((display_class, new_table, self.get_semester_for_pdf,
+                                       self.show_all_sections, available_values))
         self.current_table_index = len(self.class_table_pairs) - 1
-
         if len(self.class_table_pairs) > 10:
-            display_class_to_remove, table_to_remove, semester, show = self.class_table_pairs[0]
+            display_class_to_remove, table_to_remove, _, _ = self.class_table_pairs[0]
             display_class_to_remove.unbind("<Button-1>")
             self.after(0, display_class_to_remove.destroy)
             self.after(0, table_to_remove.destroy)
@@ -5059,26 +5066,27 @@ class TeraTermUI(customtkinter.CTk):
             self.table_count.configure(text_color="red")
         self.table_count.bind("<Button-1>", lambda event: self.focus_set())
 
-    def find_duplicate(self, new_display_class, new_semester, show_all_sections_state):
-        for index, (display_class, table, semester, existing_show_all_sections_state) in enumerate(
-                self.class_table_pairs):
+    def find_duplicate(self, new_display_class, new_semester, show_all_sections_state, available_values):
+        for index, (display_class, table, semester, existing_show_all_sections_state,
+                    existing_available_values) in enumerate(self.class_table_pairs):
             if (display_class.cget("text") == new_display_class.cget("text") and
                     semester == new_semester and
-                    existing_show_all_sections_state == show_all_sections_state):
+                    existing_show_all_sections_state == show_all_sections_state and
+                    existing_available_values == available_values):
                 return index
         return None
 
     def display_current_table(self):
         # Hide all tables and display_classes
-        for display_class, table, semester, show in self.class_table_pairs:
+        for display_class, curr_table, _, _, _ in self.class_table_pairs:
             display_class.grid_forget()
-            table.grid_forget()
+            curr_table.grid_forget()
 
         # Show the current display_class and table
-        display_class, table, semester, show = self.class_table_pairs[self.current_table_index]
+        display_class, curr_table, _, _, _ = self.class_table_pairs[self.current_table_index]
         display_class.grid(row=2, column=1, padx=(0, 0), pady=(8, 0), sticky="n")
-        table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
-        self.table = table
+        curr_table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
+        self.table = curr_table
         self.current_class = display_class
         self.after(0, self.set_focus)
 
@@ -5122,12 +5130,12 @@ class TeraTermUI(customtkinter.CTk):
         if len(self.class_table_pairs) == 0:
             return
 
-        display_class, table, semester, show = self.class_table_pairs[self.current_table_index]
-        display_class.grid_forget()
-        display_class.unbind("<Button-1>")
-        table.grid_forget()
-        self.after(0, display_class.destroy)
-        self.after(0, table.destroy)
+        display_class_to_remove, table_to_remove, _, _, _ = self.class_table_pairs[self.current_table_index]
+        display_class_to_remove.grid_forget()
+        display_class_to_remove.unbind("<Button-1>")
+        table_to_remove.grid_forget()
+        self.after(0, display_class_to_remove.destroy)
+        self.after(0, table_to_remove.destroy)
         if len(self.class_table_pairs) == 10:
             self.table_count.configure(text_color=("black", "white"))
         del self.class_table_pairs[self.current_table_index]
@@ -5150,8 +5158,8 @@ class TeraTermUI(customtkinter.CTk):
             self.remove_button.grid_forget()
             self.download_pdf.grid_forget()
             self.search_scrollbar.scroll_to_top()
-            self.after(0, display_class.destroy)
-            self.after(0, table.destroy)
+            self.after(0, display_class_to_remove.destroy)
+            self.after(0, table_to_remove.destroy)
             self.after(0, self.set_focus)
             return
 
