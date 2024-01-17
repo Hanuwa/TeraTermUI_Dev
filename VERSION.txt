@@ -1,12 +1,12 @@
-Version Number: 
+Version Number: v0.9.0
 
-Release Date: 
+Release Date: 01/16/2024
 
 Patch Notes:
  - Introducing the first public release!
  - Gain comprehensive control over Tera Term 
    and your university's enrollment process with an intuitive and visually appealing interface
- - Offers options for class enrollment - select between manual or automatic methods
+ - Offers options for class enrollment, select between manual or automatic methods
  - Enables searching for all available sections of a particular class 
    and allows saving this information as a PDF
  - Provides functionalities to view or alter your current class enrollments.
@@ -23,5 +23,5 @@ replace the existing files in the "TeraTermUI" directory with the new ones.
 Reporting Issues/Bugs/Feedback: Feedback can be submitted directly through the app
 via the "Status" window, or on the Github repository.
 
-*Note: As this application is in the early stages of development, some bugs and issues are anticipated. 
+*Note: As this application is in the early stages of development, some bugs and issues are anticipated.
 Your feedback and bug reports are invaluable and greatly assist in further development and enhancements.
