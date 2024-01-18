@@ -4842,7 +4842,7 @@ class TeraTermUI(customtkinter.CTk):
         semester_list = []
 
         # Loop through each table in self.class_table_pairs
-        for display_class, table, semester, show in self.class_table_pairs:
+        for display_class, table, semester, _, _ in self.class_table_pairs:
             class_name = display_class.cget("text")
             table_data = table.get()
 
