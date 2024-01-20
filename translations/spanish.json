@@ -315,5 +315,6 @@
     "remove_tooltip": "Elimina la tabla\nque estás viendo actualmente",
 	"failed_to_find_update": "No se encontraron actualizaciones,\ninténtalo de nuevo más tarde o\nconsulta la página web del programa",
 	"exec_time": "AVISO\n\nConsidere cerrar cualquier aplicación\nque esté utilizando muchos recursos.\nLa tarea tardó más de lo esperado en realizarse",
-	"epic_games": "AVISO\n\nPor razones desconocidas, se ha observado que el\niniciador de Epic Games puede disminuir el rendimiento\nde esta aplicación. Para un rendimiento óptimo, considere\ncerrar el iniciador de Epic Games"
+	"epic_games": "AVISO\n\nPor razones desconocidas, se ha observado que el\niniciador de Epic Games puede disminuir el rendimiento\nde esta aplicación. Para un rendimiento óptimo, considere\ncerrar el iniciador de Epic Games",
+	"current": "Actual"
 }
