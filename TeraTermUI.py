@@ -8193,9 +8193,10 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.bind("<Button-3>", self.show_menu)
 
     def custom_cut(self, event=None):
-        self.cut()
-        self.see(tk.INSERT)
-        return "break"
+        if self.tag_ranges(tk.SEL):
+            self.cut()
+            self.see(tk.INSERT)
+            return "break"
 
     def custom_paste(self, event=None):
         self.paste()
