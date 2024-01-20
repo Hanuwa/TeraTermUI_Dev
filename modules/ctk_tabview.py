@@ -377,6 +377,8 @@ class CTkTabview(CTkBaseClass):
             raise ValueError(f"new_name '{new_name}' already exists")
 
         if old_name in self._tab_dict:
+            was_selected = old_name == self._current_name
+
             # segmented button
             old_index = self._segmented_button.index(old_name)
             self._segmented_button.delete(old_name)
@@ -384,14 +386,16 @@ class CTkTabview(CTkBaseClass):
 
             # name list
             self._name_list.remove(old_name)
-            self._name_list.append(new_name)
+            self._name_list.insert(old_index, new_name)
 
             # tab dictionary
             self._tab_dict[new_name] = self._tab_dict.pop(old_name)
 
-            # Update _current_name if it matches the old_name
-            if self._current_name == old_name:
+            # If the renamed tab was selected, update the current name and reselect it
+            if was_selected:
                 self._current_name = new_name
+                self._segmented_button.set(new_name)
+                self._set_grid_current_tab()
         else:
             raise ValueError(f"CTkTabview has no tab named '{old_name}'")
 
