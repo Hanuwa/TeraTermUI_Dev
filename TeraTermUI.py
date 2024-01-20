@@ -1112,7 +1112,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # function for registering/dropping classes
     def submit_event(self, task_done):
-        with (self.lock_thread):
+        with self.lock_thread:
             try:
                 self.automation_preparations()
                 lang = self.language_menu.get()
