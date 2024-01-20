@@ -8168,6 +8168,13 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.bind("<Control-a>", self.select_all)
         self.bind("<Control-A>", self.select_all)
 
+        # Bind Ctrl+V to custom paste method
+        self.bind("<Control-v>", self.custom_paste)
+        self.bind("<Control-V>", self.custom_paste)
+        # Bind Ctrl+X to custom cut method
+        self.bind("<Control-x>", self.custom_cut)
+        self.bind("<Control-X>", self.custom_cut)
+
         # Update the undo stack every time the Entry content changes
         self.bind("<KeyRelease>", self.update_undo_stack)
 
@@ -8185,8 +8192,15 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.context_menu.add_command(label="Select All", command=self.select_all)
         self.bind("<Button-3>", self.show_menu)
 
-        if self.read_only:
-            self.bind("<Key>", CustomTextBox.readonly)
+    def custom_cut(self, event=None):
+        self.cut()
+        self.see(tk.INSERT)
+        return "break"
+
+    def custom_paste(self, event=None):
+        self.paste()
+        self.see(tk.INSERT)
+        return "break"
 
     def disable_slider_keys(self, event=None):
         self.teraterm_ui.move_slider_left_enabled = False
@@ -8244,16 +8258,21 @@ class CustomTextBox(customtkinter.CTkTextbox):
 
     def undo(self, event=None):
         if len(self._undo_stack) > 1:
-            self._redo_stack.append(self._undo_stack.pop())
+            cursor_position = self.index(tk.INSERT)
+            self._redo_stack.append((self._undo_stack.pop(), cursor_position))
             self.delete("1.0", "end")
             self.insert("1.0", self._undo_stack[-1])
+            self.mark_set(tk.INSERT, cursor_position)
+            self.see(cursor_position)
 
     def redo(self, event=None):
         if self._redo_stack:
-            redo_text = self._redo_stack.pop()
+            redo_text, new_cursor_position = self._redo_stack.pop()
             self._undo_stack.append(redo_text)
             self.delete("1.0", "end")
             self.insert("1.0", redo_text)
+            self.mark_set(tk.INSERT, new_cursor_position)
+            self.see(new_cursor_position)
 
     def show_menu(self, event):
         self.focus_set()
@@ -8299,20 +8318,19 @@ class CustomTextBox(customtkinter.CTkTextbox):
         if not self.tag_ranges(tk.SEL):
             self.tag_add(tk.SEL, "1.0", tk.END)
         try:
-            selected_text = self.selection_get()  # Attempt to get selected text
-            current_text = self.get("1.0", "end-1c")  # Existing text in the Text widget
-            self._undo_stack.append(current_text)  # Save the current state to undo stack
-
+            selected_text = self.selection_get()
             self.clipboard_clear()
             self.clipboard_append(selected_text)
             self.delete(tk.SEL_FIRST, tk.SEL_LAST)
 
             new_text = self.get("1.0", "end-1c")
+            # Update the undo stack after the cut operation
             self._undo_stack.append(new_text)
-
-            self._redo_stack = []
+            # Clear the redo stack
+            self._redo_stack.clear()
+            self.see(tk.INSERT)
         except tk.TclError:
-            print("No text selected to cut.")  # Log or inform the user accordingly
+            print("No text selected to cut.")
 
     def copy(self):
         self.focus_set()
@@ -8320,32 +8338,37 @@ class CustomTextBox(customtkinter.CTkTextbox):
         if not self.tag_ranges(tk.SEL):
             self.tag_add(tk.SEL, "1.0", tk.END)
         try:
-            selected_text = self.selection_get()  # Attempt to get selected text
+            selected_text = self.selection_get()
             self.clipboard_clear()
             self.clipboard_append(selected_text)
         except tk.TclError:
-            print("No text selected to copy.")  # Log or inform the user accordingly
+            print("No text selected to copy.")
 
     def paste(self, event=None):
         self.focus_set()
         try:
-            clipboard_text = self.clipboard_get()  # Get text from clipboard
-            current_text = self.get("1.0", "end-1c")  # Existing text in the Text widget
-            self._undo_stack.append(current_text)  # Save the current state to undo stack
+            clipboard_text = self.clipboard_get()
+
+            # Save the current state to undo stack only if there is a change
+            current_text = self.get("1.0", "end-1c")
+            if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1]):
+                self._undo_stack.append(current_text)
 
             try:
                 start_index = self.index(tk.SEL_FIRST)
                 end_index = self.index(tk.SEL_LAST)
-                self.delete(start_index, end_index)  # Remove selected text if any
+                self.delete(start_index, end_index)
             except tk.TclError:
                 pass  # Nothing selected, which is fine
 
-            self.insert(tk.INSERT, clipboard_text)  # Insert the clipboard text
+            self.insert(tk.INSERT, clipboard_text)
             self._redo_stack.clear()  # Clear redo stack after a new operation
 
+            # Update undo stack here, after paste operation
             new_text = self.get("1.0", "end-1c")
             if new_text != self._undo_stack[-1]:
                 self._undo_stack.append(new_text)
+            self.see(tk.INSERT)
         except tk.TclError:
             pass  # Clipboard empty or other issue
 
@@ -8354,9 +8377,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.stop_autoscroll(event=None)
         self.mark_set(tk.INSERT, "end")
         try:
-            # Check if any text is currently selected
             if self.tag_ranges(tk.SEL):
-                # Clear the selection if text is already selected
                 self.tag_remove(tk.SEL, "1.0", tk.END)
                 if self.read_only:
                     self.teraterm_ui.focus_set()
@@ -8378,11 +8399,6 @@ class CustomTextBox(customtkinter.CTkTextbox):
         current_view = self.yview()
         if current_view[1] < 1:
             self.yview_scroll(scroll_units, "units")
-
-    @staticmethod
-    def readonly(event):
-        if event.keysym not in ("Control_R", "Control_L", "c"):
-            return "break"
 
 
 class CustomEntry(customtkinter.CTkEntry):
@@ -8440,7 +8456,7 @@ class CustomEntry(customtkinter.CTkEntry):
         current_text = self.get()
         if current_text != self._undo_stack[-1]:
             self._undo_stack.append(current_text)
-            self._redo_stack.clear()  # Clear the redo stack whenever a new change is made
+            self._redo_stack.clear()
 
     def undo(self, event=None):
         if len(self._undo_stack) > 1:
@@ -8498,50 +8514,43 @@ class CustomEntry(customtkinter.CTkEntry):
         if not self.select_present():
             self.select_range(0, "end")
         try:
-            selected_text = self.selection_get()  # Attempt to get selected text
-            current_text = self.get()  # Existing text in the Entry widget
-
-            # Save the current state to undo stack
-            self._undo_stack.append(current_text)
-
-            # Perform the cut operation
+            selected_text = self.selection_get()
             self.clipboard_clear()
             self.clipboard_append(selected_text)
             self.delete(tk.SEL_FIRST, tk.SEL_LAST)
+
+            new_text = self.get()
+            # Update the undo stack after cut operation
+            self._undo_stack.append(new_text)
+            # Clear the redo stack
+            self._redo_stack.clear()
+
             if self.is_listbox_entry:
                 self.update_listbox()
-
-            # Update the undo stack with the new state
-            new_text = self.get()
-            self._undo_stack.append(new_text)
-
-            # Optionally, clear the redo stack
-            self._redo_stack = []
-
         except tk.TclError:
-            print("No text selected to cut.")  # Log or inform the user accordingly
+            print("No text selected to cut.")
 
     def copy(self):
         self.focus_set()
         if not self.select_present():
             self.select_range(0, "end")
         try:
-            selected_text = self.selection_get()  # Attempt to get selected text
+            selected_text = self.selection_get()
             self.clipboard_clear()
             self.clipboard_append(selected_text)
         except tk.TclError:
-            print("No text selected to copy.")  # Log or inform the user accordingly
+            print("No text selected to copy.")
 
     def paste(self, event=None):
         self.focus_set()
         try:
-            clipboard_text = self.clipboard_get()  # Get text from clipboard
+            clipboard_text = self.clipboard_get()
             max_paste_length = 1000  # Set a limit for the max paste length
             if len(clipboard_text) > max_paste_length:
                 clipboard_text = clipboard_text[:max_paste_length]  # Truncate to max length
                 print("Pasted content truncated to maximum length.")
 
-            current_text = self.get()  # Existing text in the Entry widget
+            current_text = self.get()
             # Save the current state to undo stack
             if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1]):
                 self._undo_stack.append(current_text)
@@ -8549,11 +8558,11 @@ class CustomEntry(customtkinter.CTkEntry):
             try:
                 start_index = self.index(tk.SEL_FIRST)
                 end_index = self.index(tk.SEL_LAST)
-                self.delete(start_index, end_index)  # Remove selected text if any
+                self.delete(start_index, end_index)
             except tk.TclError:
                 pass  # Nothing selected, which is fine
 
-            self.insert(tk.INSERT, clipboard_text)  # Insert the clipboard text
+            self.insert(tk.INSERT, clipboard_text)
 
             # Update undo stack here, after paste operation
             self.update_undo_stack()
@@ -8571,9 +8580,7 @@ class CustomEntry(customtkinter.CTkEntry):
         self.focus_set()
         self.icursor(tk.END)
         try:
-            # Check if any text is currently selected
             if self.select_present():
-                # Clear the selection if text is already selected
                 self.select_clear()
             else:
                 # Select all text if nothing is selected
