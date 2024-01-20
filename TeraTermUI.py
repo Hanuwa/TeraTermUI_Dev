@@ -8164,16 +8164,16 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.bind("<Control-y>", self.redo)
         self.bind("<Control-Y>", self.redo)
 
-        self.bind("<Button-2>", self.select_all)
-        self.bind("<Control-a>", self.select_all)
-        self.bind("<Control-A>", self.select_all)
-
         # Bind Ctrl+V to custom paste method
         self.bind("<Control-v>", self.custom_paste)
         self.bind("<Control-V>", self.custom_paste)
         # Bind Ctrl+X to custom cut method
         self.bind("<Control-x>", self.custom_cut)
         self.bind("<Control-X>", self.custom_cut)
+
+        self.bind("<Button-2>", self.select_all)
+        self.bind("<Control-a>", self.select_all)
+        self.bind("<Control-A>", self.select_all)
 
         # Update the undo stack every time the Entry content changes
         self.bind("<KeyRelease>", self.update_undo_stack)
@@ -8191,17 +8191,6 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.context_menu.add_command(label="Paste", command=self.paste)
         self.context_menu.add_command(label="Select All", command=self.select_all)
         self.bind("<Button-3>", self.show_menu)
-
-    def custom_cut(self, event=None):
-        if self.tag_ranges(tk.SEL):
-            self.cut()
-            self.see(tk.INSERT)
-            return "break"
-
-    def custom_paste(self, event=None):
-        self.paste()
-        self.see(tk.INSERT)
-        return "break"
 
     def disable_slider_keys(self, event=None):
         self.teraterm_ui.move_slider_left_enabled = False
@@ -8314,10 +8303,17 @@ class CustomTextBox(customtkinter.CTkTextbox):
 
         self.context_menu.post(event.x_root, event.y_root)
 
+    def custom_cut(self, event=None):
+        self.cut()
+        self.see(tk.INSERT)
+        return "break"
+
     def cut(self):
         self.focus_set()
         if not self.tag_ranges(tk.SEL):
-            self.tag_add(tk.SEL, "1.0", tk.END)
+            current_line = self.index(tk.INSERT).split(".")[0]
+            self.tag_add(tk.SEL, f"{current_line}.0", f"{current_line}.end")
+
         try:
             selected_text = self.selection_get()
             self.clipboard_clear()
@@ -8344,6 +8340,11 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.clipboard_append(selected_text)
         except tk.TclError:
             print("No text selected to copy.")
+
+    def custom_paste(self, event=None):
+        self.paste()
+        self.see(tk.INSERT)
+        return "break"
 
     def paste(self, event=None):
         self.focus_set()
@@ -8421,6 +8422,13 @@ class CustomEntry(customtkinter.CTkEntry):
         self.bind("<Control-Z>", self.undo)
         self.bind("<Control-y>", self.redo)
         self.bind("<Control-Y>", self.redo)
+
+        # Bind Ctrl+V to custom paste method
+        self.bind("<Control-v>", self.custom_paste)
+        self.bind("<Control-V>", self.custom_paste)
+        # Bind Ctrl+X to custom cut method
+        self.bind("<Control-x>", self.custom_cut)
+        self.bind("<Control-X>", self.custom_cut)
 
         self.bind("<Button-2>", self.select_all)
         self.bind("<Control-a>", self.select_all)
@@ -8510,6 +8518,10 @@ class CustomEntry(customtkinter.CTkEntry):
 
         self.context_menu.post(event.x_root, event.y_root)
 
+    def custom_cut(self, event=None):
+        self.cut()
+        return "break"
+
     def cut(self):
         self.focus_set()
         if not self.select_present():
@@ -8541,6 +8553,10 @@ class CustomEntry(customtkinter.CTkEntry):
             self.clipboard_append(selected_text)
         except tk.TclError:
             print("No text selected to copy.")
+
+    def custom_paste(self, event=None):
+        self.paste()
+        return "break"
 
     def paste(self, event=None):
         self.focus_set()
