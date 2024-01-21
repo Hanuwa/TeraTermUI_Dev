@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/20/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 1/21/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -8274,7 +8274,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.mark_set(tk.INSERT, new_cursor_position)
             self.see(new_cursor_position)
 
-    def custom_middle_mouse(self, event):
+    def custom_middle_mouse(self, event=None):
         if self.tag_ranges(tk.SEL):
             self.tag_remove(tk.SEL, "1.0", tk.END)
             return "break"
