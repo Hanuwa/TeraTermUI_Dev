@@ -14,6 +14,7 @@
 AppId={{CF2350A9-945A-44CD-B538-226F1CEB6FD4}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
+VersionInfoVersion={#MyAppVersion}
 ArchitecturesInstallIn64BitMode=x64
 AppVerName={#MyAppName}
 AppPublisher={#MyAppPublisher}
