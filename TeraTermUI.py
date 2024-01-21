@@ -3064,6 +3064,7 @@ class TeraTermUI(customtkinter.CTk):
                                   button_width=380)
                     self.bind("<Return>", lambda event: self.login_event_handler())
                     self.uprb.kill(soft=True)
+
                 self.after(0, server_closed)
                 return
             elif "return to continue" in text_output or "SISTEMA DE INFORMACION" in text_output:
@@ -3092,9 +3093,9 @@ class TeraTermUI(customtkinter.CTk):
                 self.slideshow_frame.pause_cycle()
                 self.move_window()
             elif "STUDENTS REQ/DROP" in text_output or "HOLD FLAGS" in text_output or \
-                 "PROGRAMA DE CLASES" in text_output or "ACADEMIC STATISTICS" in text_output or \
-                 "SNAPSHOT" in text_output or "SOLICITUD DE PRORROGA" in text_output or \
-                 "LISTA DE SECCIONES":
+                    "PROGRAMA DE CLASES" in text_output or "ACADEMIC STATISTICS" in text_output or \
+                    "SNAPSHOT" in text_output or "SOLICITUD DE PRORROGA" in text_output or \
+                    "LISTA DE SECCIONES":
                 send_keys("{VK_RIGHT}")
                 send_keys("{VK_LEFT}")
                 self.connect_to_uprb()
@@ -3878,8 +3879,8 @@ class TeraTermUI(customtkinter.CTk):
                     if total_seconds > 3600:
                         seconds_until_next_minute = 60 - current_date.second
                         self.timer_window.after(seconds_until_next_minute * 1000, lambda: self.countdown(your_date)
-                                                if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
-                                                else self.forceful_end_countdown())
+                        if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
+                        else self.forceful_end_countdown())
 
                 else:  # When there's less than an hour remaining
                     # If there's a part of minute left, consider it as a whole minute
@@ -3920,12 +3921,12 @@ class TeraTermUI(customtkinter.CTk):
                     if total_seconds > 60:
                         seconds_until_next_minute = 60 - current_date.second
                         self.timer_window.after(seconds_until_next_minute * 1000, lambda: self.countdown(your_date)
-                                                if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
-                                                else self.forceful_end_countdown())
+                        if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
+                        else self.forceful_end_countdown())
                     else:  # update every second if there's less than or equal to 60 seconds left
                         self.timer_window.after(1000, lambda: self.countdown(your_date)
-                                                if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
-                                                else self.forceful_end_countdown())
+                        if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
+                        else self.forceful_end_countdown())
 
     def end_countdown(self):
         self.auto_enroll_bool = False
@@ -4552,7 +4553,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.cursor.execute("INSERT INTO save_classes (class, section, semester, action, 'check')"
                                         " VALUES (?, ?, ?, ?, ?)",
                                         (class_value, section_value,
-                                                    translation["current"], register_value, "Yes"))
+                                         translation["current"], register_value, "Yes"))
                     self.connection.commit()
             if is_empty:
                 self.show_error_message(330, 255, translation["failed_saved_lack_info"])
@@ -5729,7 +5730,7 @@ class TeraTermUI(customtkinter.CTk):
                                         course_code_no_section = self.enrolled_classes_data[row_index][
                                                                      translation["course"]].replace("-", "")[:8]
                                         old_section = self.enrolled_classes_data[row_index][
-                                                                     translation["course"]].replace("-", "")[8:]
+                                                          translation["course"]].replace("-", "")[8:]
                                     if mod == translation["drop"] or mod == translation["section"]:
                                         if not first_loop:
                                             time.sleep(1.5)
@@ -7113,7 +7114,7 @@ class TeraTermUI(customtkinter.CTk):
         self.status_title = customtkinter.CTkLabel(self.status_frame, text=translation["status_title"],
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
         self.version = customtkinter.CTkLabel(self.status_frame, text=translation["app_version"])
-        self.feedback_text = CustomTextBox(self.status_frame,  self, enable_autoscroll=False, lang=lang,
+        self.feedback_text = CustomTextBox(self.status_frame, self, enable_autoscroll=False, lang=lang,
                                            wrap="word", border_spacing=8, width=300, height=170,
                                            fg_color=("#ffffff", "#111111"))
         self.feedback_send = CustomButton(self.status_frame, text=translation["feedback"],
@@ -7852,7 +7853,7 @@ class TeraTermUI(customtkinter.CTk):
     # Restores the original font option the user had
     def restore_original_font(self, file_path):
         if not self.can_edit:
-               return
+            return
 
         if "teraterm5" in file_path:
             appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
@@ -8171,7 +8172,6 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.bind("<Control-x>", self.custom_cut)
         self.bind("<Control-X>", self.custom_cut)
 
-        self.bind("<Button-2>", self.select_all)
         self.bind("<Control-a>", self.select_all)
         self.bind("<Control-A>", self.select_all)
 
@@ -8179,6 +8179,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.bind("<KeyRelease>", self.update_undo_stack)
 
         if self.read_only:
+            self.bind("<Return>", self.trigger_main_window_event)
             self.bind("<Up>", self.scroll_more_up)
             self.bind("<Down>", self.scroll_more_down)
 
@@ -8190,7 +8191,13 @@ class CustomTextBox(customtkinter.CTkTextbox):
         if not self.read_only:
             self.context_menu.add_command(label="Paste", command=self.paste)
         self.context_menu.add_command(label="Select All", command=self.select_all)
+        self.bind("<Button-2>", self.custom_middle_mouse)
         self.bind("<Button-3>", self.show_menu)
+
+    def trigger_main_window_event(self, event=None):
+        if self.auto_scroll:
+            self.teraterm_ui.login_event_handler()
+            return "break"
 
     def disable_slider_keys(self, event=None):
         self.teraterm_ui.move_slider_left_enabled = False
@@ -8200,6 +8207,9 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.teraterm_ui.down_arrow_key_enabled = False
 
     def enable_slider_keys(self, event=None):
+        if self.tag_ranges(tk.SEL):
+            self.tag_remove(tk.SEL, "1.0", tk.END)
+
         self.teraterm_ui.move_slider_left_enabled = True
         self.teraterm_ui.move_slider_right_enabled = True
         self.teraterm_ui.spacebar_enabled = True
@@ -8263,6 +8273,16 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.insert("1.0", redo_text)
             self.mark_set(tk.INSERT, new_cursor_position)
             self.see(new_cursor_position)
+
+    def custom_middle_mouse(self, event):
+        if self.tag_ranges(tk.SEL):
+            self.tag_remove(tk.SEL, "1.0", tk.END)
+            return "break"
+        if not self.tag_ranges(tk.SEL) and self.read_only:
+            self.focus_set()
+            self.stop_autoscroll(event=None)
+            self.tag_add(tk.SEL, "1.0", tk.END)
+            return "break"
 
     def show_menu(self, event):
         self.focus_set()
@@ -8381,8 +8401,6 @@ class CustomTextBox(customtkinter.CTkTextbox):
         try:
             if self.tag_ranges(tk.SEL):
                 self.tag_remove(tk.SEL, "1.0", tk.END)
-                if self.read_only:
-                    self.teraterm_ui.focus_set()
             else:
                 # Select all text if nothing is selected
                 self.tag_add(tk.SEL, "1.0", tk.END)
@@ -8430,7 +8448,6 @@ class CustomEntry(customtkinter.CTkEntry):
         self.bind("<Control-x>", self.custom_cut)
         self.bind("<Control-X>", self.custom_cut)
 
-        self.bind("<Button-2>", self.select_all)
         self.bind("<Control-a>", self.select_all)
         self.bind("<Control-A>", self.select_all)
 
@@ -8445,6 +8462,7 @@ class CustomEntry(customtkinter.CTkEntry):
         self.context_menu.add_command(label="Select All", command=self.select_all)
         self.bind("<Control-v>", self.paste)
         self.bind("<Control-V>", self.paste)
+        self.bind("<Button-2>", self.custom_middle_mouse)
         self.bind("<Button-3>", self.show_menu)
 
     def disable_slider_keys(self, event=None):
@@ -8455,6 +8473,9 @@ class CustomEntry(customtkinter.CTkEntry):
         self.teraterm_ui.down_arrow_key_enabled = False
 
     def enable_slider_keys(self, event=None):
+        if self.select_present():
+            self.select_clear()
+
         self.teraterm_ui.move_slider_left_enabled = True
         self.teraterm_ui.move_slider_right_enabled = True
         self.teraterm_ui.spacebar_enabled = True
@@ -8484,6 +8505,11 @@ class CustomEntry(customtkinter.CTkEntry):
             self.insert(0, state_to_redo)
             if self.is_listbox_entry:
                 self.update_listbox()
+
+    def custom_middle_mouse(self, event=None):
+        if self.select_present():
+            self.select_clear()
+            return "break"
 
     def show_menu(self, event):
         if self.cget("state") == "disabled":
@@ -8927,4 +8953,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
