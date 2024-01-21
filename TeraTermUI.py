@@ -8179,7 +8179,6 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.bind("<KeyRelease>", self.update_undo_stack)
 
         if self.read_only:
-            self.bind("<Return>", self.trigger_main_window_event)
             self.bind("<Up>", self.scroll_more_up)
             self.bind("<Down>", self.scroll_more_down)
 
@@ -8193,11 +8192,6 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.context_menu.add_command(label="Select All", command=self.select_all)
         self.bind("<Button-2>", self.custom_middle_mouse)
         self.bind("<Button-3>", self.show_menu)
-
-    def trigger_main_window_event(self, event=None):
-        if self.auto_scroll:
-            self.teraterm_ui.login_event_handler()
-            return "break"
 
     def disable_slider_keys(self, event=None):
         self.teraterm_ui.move_slider_left_enabled = False
