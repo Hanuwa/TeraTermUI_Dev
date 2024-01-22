@@ -4977,9 +4977,11 @@ class TeraTermUI(customtkinter.CTk):
     def transfer_class_data_to_enroll_tab(self, event, section_text):
         self.e_classes_entry.delete(0, "end")
         self.e_section_entry.delete(0, "end")
-        self.e_classes_entry.insert(0, self.get_class_for_pdf)
+        current_table_index = self.current_table_index
+        display_class, _, semester_text, _, _ = self.class_table_pairs[current_table_index]
+        self.e_classes_entry.insert(0, display_class.cget("text"))
         self.e_section_entry.insert(0, section_text)
-        self.e_semester_entry.set(self.get_semester_for_pdf)
+        self.e_semester_entry.set(semester_text)
         self.register.select()
         lang = self.language_menu.get()
         translation = self.load_language(lang)
