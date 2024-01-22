@@ -549,7 +549,6 @@ class TeraTermUI(customtkinter.CTk):
         self.e_counter = 0
         self.search_function_counter = 0
         self.last_switch_time = 0
-        timings.Timings.fast()
         SPANISH = 0x0A
         language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
         # default location of Tera Term
@@ -1086,8 +1085,8 @@ class TeraTermUI(customtkinter.CTk):
         elif lang == "Español":
             if choice == "register":
                 msg = CTkMessagebox(master=self, title="Someter",
-                                    message="¿Estás preparado para " + translation["register"].lower() + "r esta clase?"
-                                            "\n\nWARNING: Asegúrese de que la información está correcta",
+                                    message="¿Estás preparado para " + translation["register"].lower() + "r esta"
+                                             " clase?\n\nWARNING: Asegúrese de que la información está correcta",
                                     icon="images/submit.png",
                                     option_1=translation["option_1"], option_2=translation["option_2"],
                                     option_3=translation["option_3"],
@@ -4772,22 +4771,9 @@ class TeraTermUI(customtkinter.CTk):
             crop_margin = (2, 10, 10, 2)
             if self.loading_screen.winfo_exists():
                 self.hide_loading_screen()
-            original_position = pyautogui.position()
-            screen_width, screen_height = pyautogui.size()
-            offset = 30
-            target_x = screen_width - offset
-            target_y = screen_height - offset
-            try:
-                pyautogui.moveTo(target_x, target_y)
-            except pyautogui.FailSafeException as e:
-                print("An error occurred:", e)
             screenshot = pyautogui.screenshot(region=(x, y, width, height))
             if self.loading_screen.winfo_exists():
                 self.show_loading_screen_again()
-            try:
-                pyautogui.moveTo(original_position.x, original_position.y)
-            except pyautogui.FailSafeException as e:
-                print("An error occurred:", e)
             screenshot = screenshot.crop(
                 (crop_margin[0], crop_margin[1], width - crop_margin[2], height - crop_margin[3]))
             screenshot = screenshot.convert("L")
@@ -8939,11 +8925,11 @@ def main():
         SPANISH = 0x0A
         language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
         if language_id & 0xFF == SPANISH:
-            messagebox.showerror("Error", "Ocurrió un error inesperado: " + str(e) + "\n\n"
-                                          "Puede que necesite reinstalar la aplicación")
+            messagebox.showerror("Error", "Ocurrió un error inesperado: " + str(e) + 
+                                 "\n\nPuede que necesite reinstalar la aplicación")
         else:
-            messagebox.showerror("Error", "An unexpected error occurred: " + str(e) + "\n\n"
-                                          "Might need to reinstall the application")
+            messagebox.showerror("Error", "An unexpected error occurred: " + str(e) + 
+                                 "\n\nMight need to reinstall the application")
         sys.exit(1)
 
 
