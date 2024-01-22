@@ -3543,6 +3543,12 @@ class TeraTermUI(customtkinter.CTk):
             self.menu_semester.configure(text=translation["semester"])
             self.menu_semester_entry.configure(values=["C31", "C32", "C33", "C41", "C42", "C43",
                                                        translation["current"]])
+            if self.e_semester_entry.get() == "Current" or self.e_semester_entry.get() == "Actual":
+                self.e_semester_entry.set(translation["current"])
+            if self.s_semester_entry.get() == "Current" or self.s_semester_entry.get() == "Actual":
+                self.s_semester_entry.set(translation["current"])
+            if self.menu_semester_entry.get() == "Current" or self.menu_semester_entry.get() == "Actual":
+                self.menu_semester_entry.set(translation["current"])
             self.menu_submit.configure(text=translation["submit"])
             self.go_next_1VE.configure(text=translation["go_next"])
             self.go_next_1GP.configure(text=translation["go_next"])
@@ -8935,3 +8941,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
