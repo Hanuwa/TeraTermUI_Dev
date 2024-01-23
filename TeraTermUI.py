@@ -3623,7 +3623,10 @@ class TeraTermUI(customtkinter.CTk):
         self.tabview.rename(self.other_tab, translation["other_tab"])
         self.other_tab = translation["other_tab"]
 
-    def change_semester(self):
+    def change_semester(self, event_type=None):
+        if event_type != "focus_out":
+            self.focus_set()
+
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         semester = self.m_semester_entry[0].get().upper().replace(" ", "")
@@ -4455,13 +4458,14 @@ class TeraTermUI(customtkinter.CTk):
                 self.m_semester_entry.append(CustomComboBox(self.multiple_frame, self,
                                                             values=["C31", "C32", "C33", "C41", "C42", "C43",
                                                                     translation["current"]],
-                                                            command=lambda value: self.change_semester()))
+                                                            command=self.change_semester))
                 self.m_semester_entry[i].set(self.DEFAULT_SEMESTER)
                 self.m_register_menu.append(customtkinter.CTkOptionMenu(
                     master=self.multiple_frame, values=[translation["register"], translation["drop"]]))
                 self.m_register_menu[i].set(translation["choose"])
                 self.m_num_class[i].bind("<Button-1>", lambda event: self.focus_set())
-            self.m_semester_entry[0].bind("<FocusOut>", lambda value: self.change_semester())
+            self.m_semester_entry[0].bind("<FocusOut>", lambda event:
+                                          self.change_semester(event_type="focus_out"))
             self.m_add = CustomButton(master=self.m_button_frame, border_width=2, text="+",
                                       text_color=("gray10", "#DCE4EE"), command=self.add_event, height=40, width=50,
                                       fg_color="blue")
