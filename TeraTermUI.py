@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/22/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 1/23/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -113,6 +113,7 @@ class TeraTermUI(customtkinter.CTk):
         self.geometry(f"{width}x{height}+{int(x) + 130}+{int(y + 50)}")
         self.icon_path = "images/tera-term.ico"
         self.iconbitmap(self.icon_path)
+        self.mode = "Portable"
         self.bind("<Button-3>", lambda event: self.focus_set())
 
         # creates a thread separate from the main application for check_idle and to monitor cpu usage
@@ -566,11 +567,11 @@ class TeraTermUI(customtkinter.CTk):
         # performs some operations in a separate thread when application starts up
         self.boot_up(self.teraterm_file)
         # Database
-        appdata_path = os.environ.get("PROGRAMDATA")
-        self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
-        self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
-        self.logs = os.path.join(appdata_path, "TeraTermUI/logs.txt")
-        self.mode = "Portable"
+        if self.mode == "Installation":
+            appdata_path = os.environ.get("PROGRAMDATA")
+            self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
+            self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
+            self.logs = os.path.join(appdata_path, "TeraTermUI/logs.txt")
         try:
             db_path = "database.db"
             if not os.path.isfile(db_path):
@@ -1085,7 +1086,7 @@ class TeraTermUI(customtkinter.CTk):
             if choice == "register":
                 msg = CTkMessagebox(master=self, title="Someter",
                                     message="¿Estás preparado para " + translation["register"].lower() + "r esta"
-                                             " clase?\n\nWARNING: Asegúrese de que la información está correcta",
+                                            " clase?\n\nWARNING: Asegúrese de que la información está correcta",
                                     icon="images/submit.png",
                                     option_1=translation["option_1"], option_2=translation["option_2"],
                                     option_3=translation["option_3"],
@@ -8922,14 +8923,13 @@ def main():
         SPANISH = 0x0A
         language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
         if language_id & 0xFF == SPANISH:
-            messagebox.showerror("Error", "Ocurrió un error inesperado: " + str(e) + 
+            messagebox.showerror("Error", "Ocurrió un error inesperado: " + str(e) +
                                  "\n\nPuede que necesite reinstalar la aplicación")
         else:
-            messagebox.showerror("Error", "An unexpected error occurred: " + str(e) + 
+            messagebox.showerror("Error", "An unexpected error occurred: " + str(e) +
                                  "\n\nMight need to reinstall the application")
         sys.exit(1)
 
 
 if __name__ == "__main__":
     main()
-    
