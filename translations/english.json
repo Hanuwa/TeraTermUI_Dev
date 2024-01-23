@@ -130,7 +130,7 @@
 	"ctrl_backspace": "Go back to a previous window\nor to go back to main menu",
 	"arrow_keys": "left and right arrow keys can be used\nto move the slider to adjust the scaling\nof the user interface of the app, but it can\nalso be used to cycle through all of\nthe tables of your currently searched\nclasses, the up and down keys can be \nused to scroll through windows and to\nadd or remove classes in the\n\"enroll multiple classes\" screen",
 	"space_bar": "Used to toggle on and off\nthe switches and checkboxes",
-	"ctrl": "Cycle between entries, adds the cursor\nto said entry",
+	"ctrl": "Cycle between entries and widgets,\nadds the cursor to said entry",
 	"ctrl_tab": "Cycle between the enroll, search\nand other tabs",
 	"ctrl_space": "Remove the cursor from the entry",
 	"ctrl_c": "On an entry, used to copy text",
