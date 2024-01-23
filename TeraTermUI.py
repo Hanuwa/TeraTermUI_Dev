@@ -140,7 +140,6 @@ class TeraTermUI(customtkinter.CTk):
         # disabled/enables keybind events
         self.move_slider_left_enabled = True
         self.move_slider_right_enabled = True
-        self.spacebar_enabled = True
         self.up_arrow_key_enabled = True
         self.down_arrow_key_enabled = True
 
@@ -1694,7 +1693,6 @@ class TeraTermUI(customtkinter.CTk):
         self.bind("<Up>", lambda event: self.add_event_up_arrow_key())
         self.bind("<Down>", lambda event: self.remove_event_down_arrow_key())
         self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event2())
-        self.bind("<space>", lambda event: self.keybind_auto_enroll())
         self.multiple_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 30))
         self.multiple_frame.grid_columnconfigure(2, weight=1)
         self.m_button_frame.grid(row=3, column=1, columnspan=4, rowspan=4, padx=(0, 0), pady=(0, 10))
@@ -3171,7 +3169,6 @@ class TeraTermUI(customtkinter.CTk):
             self.is_idle_thread_running = False
             self.is_check_process_thread_running = False
             self.reset_activity_timer(None)
-            self.unbind("<space>")
             self.unbind("<Up>")
             self.unbind("<Down>")
             self.unbind("<Home>")
@@ -3240,7 +3237,6 @@ class TeraTermUI(customtkinter.CTk):
     # function that goes back to Enrolling frame screen
     def go_back_event2(self):
         self.unbind("<Return>")
-        self.unbind("<space>")
         self.unbind("<Up>")
         self.unbind("<Down>")
         self.unbind("<Home>")
@@ -3543,11 +3539,14 @@ class TeraTermUI(customtkinter.CTk):
             self.menu_semester.configure(text=translation["semester"])
             self.menu_semester_entry.configure(values=["C31", "C32", "C33", "C41", "C42", "C43",
                                                        translation["current"]])
-            if self.e_semester_entry.get() == "Current" or self.e_semester_entry.get() == "Actual":
+            if self.e_semester_entry.get().upper().replace(" ", "") == "CURRENT" or \
+                    self.e_semester_entry.get().upper().replace(" ", "") == "ACTUAL":
                 self.e_semester_entry.set(translation["current"])
-            if self.s_semester_entry.get() == "Current" or self.s_semester_entry.get() == "Actual":
+            if self.s_semester_entry.get().upper().replace(" ", "") == "CURRENT" or \
+                    self.s_semester_entry.get().upper().replace(" ", "") == "ACTUAL":
                 self.s_semester_entry.set(translation["current"])
-            if self.menu_semester_entry.get() == "Current" or self.menu_semester_entry.get() == "Actual":
+            if self.menu_semester_entry.get().upper().replace(" ", "") == "CURRENT" or \
+                    self.menu_semester_entry.get().upper().replace(" ", "") == "ACTUAL":
                 self.menu_semester_entry.set(translation["current"])
             self.menu_submit.configure(text=translation["submit"])
             self.go_next_1VE.configure(text=translation["go_next"])
@@ -3624,7 +3623,6 @@ class TeraTermUI(customtkinter.CTk):
         self.other_tab = translation["other_tab"]
 
     def change_semester(self):
-        self.focus_set()
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         semester = self.m_semester_entry[0].get().upper().replace(" ", "")
@@ -3638,11 +3636,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.m_semester_entry[i].configure(state="disabled")
 
     def keybind_auto_enroll(self):
-        if self.loading_screen is not None and self.loading_screen.winfo_exists():
-            return
-        if self.spacebar_enabled:
-            self.auto_enroll.select()
-            self.auto_enroll_event_handler()
+        self.auto_enroll.select()
+        self.auto_enroll_event_handler()
 
     def auto_enroll_event_handler(self):
         lang = self.language_menu.get()
@@ -4177,7 +4172,7 @@ class TeraTermUI(customtkinter.CTk):
             self.code_tooltip = CTkToolTip(self.code_entry, message=translation["code_tooltip"], bg_color="#1E90FF")
             self.show = customtkinter.CTkSwitch(master=self.student_frame, text=translation["show"],
                                                 command=self.show_event, onvalue="on", offvalue="off")
-            self.bind("<space>", lambda event: self.spacebar_event())
+            self.show.bind("<space>", lambda event: self.spacebar_event())
             self.student_id_entry.bind("<Command-c>", lambda e: "break")
             self.student_id_entry.bind("<Control-c>", lambda e: "break")
             self.code_entry.bind("<Command-c>", lambda e: "break")
@@ -4298,6 +4293,8 @@ class TeraTermUI(customtkinter.CTk):
             self.e_classes.bind("<Button-1>", lambda event: self.focus_set())
             self.e_section.bind("<Button-1>", lambda event: self.focus_set())
             self.e_semester.bind("<Button-1>", lambda event: self.focus_set())
+            self.register.bind("<space>", lambda event: self.spacebar_event())
+            self.drop.bind("<space>", lambda event: self.spacebar_event())
 
             # Second Tab
             self.search_scrollbar = customtkinter.CTkScrollableFrame(master=self.tabview.tab(self.search_tab),
@@ -4329,6 +4326,7 @@ class TeraTermUI(customtkinter.CTk):
             self.title_search.bind("<Button-1>", lambda event: self.focus_set())
             self.s_classes.bind("<Button-1>", lambda event: self.focus_set())
             self.s_semester.bind("<Button-1>", lambda event: self.focus_set())
+            self.show_all.bind("<space>", lambda event: self.spacebar_event())
 
             # Third Tab
             self.title_menu = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab),
@@ -4492,7 +4490,9 @@ class TeraTermUI(customtkinter.CTk):
             self.multiple_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.m_button_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.save_frame.bind("<Button-1>", lambda event: self.focus_set())
+            self.save_data.bind("<space>", lambda event: self.keybind_save_classes())
             self.auto_frame.bind("<Button-1>", lambda event: self.focus_set())
+            self.auto_enroll.bind("<space>", lambda event: self.keybind_auto_enroll())
             self.title_multiple.bind("<Button-1>", lambda event: self.focus_set())
             self.m_class.bind("<Button-1>", lambda event: self.focus_set())
             self.m_section.bind("<Button-1>", lambda event: self.focus_set())
@@ -4529,6 +4529,10 @@ class TeraTermUI(customtkinter.CTk):
         with closing(sqlite3.connect("database.db")) as connection:
             with closing(connection.cursor()) as self.cursor:
                 self.connection.commit()
+
+    def keybind_save_classes(self):
+        self.save_data.toggle()
+        self.save_classes()
 
     # saves class information for another session
     def save_classes(self):
@@ -5473,7 +5477,6 @@ class TeraTermUI(customtkinter.CTk):
         return enrolled_classes, total_credits
 
     def display_enrolled_data(self, data, creds):
-        self.unbind("<space>")
         self.unbind("<Control-Tab>")
         lang = self.language_menu.get()
         translation = self.load_language(lang)
@@ -6483,26 +6486,25 @@ class TeraTermUI(customtkinter.CTk):
 
     # Keybindings for different widgets
     def spacebar_event(self):
-        if self.spacebar_enabled:
-            if self.in_student_frame:
-                show = self.show.get()
-                if show == "on":
-                    self.show.deselect()
-                elif show == "off":
-                    self.show.select()
-                self.show_event()
-            elif self.in_enroll_frame:
-                choice = self.radio_var.get()
-                if choice == "register":
-                    self.drop.select()
-                elif choice == "drop":
-                    self.register.select()
-            elif self.in_search_frame:
-                check = self.show_all.get()
-                if check == "on":
-                    self.show_all.deselect()
-                elif check == "off":
-                    self.show_all.select()
+        if self.in_student_frame:
+            show = self.show.get()
+            if show == "on":
+                self.show.deselect()
+            elif show == "off":
+                self.show.select()
+            self.show_event()
+        elif self.in_enroll_frame:
+            choice = self.radio_var.get()
+            if choice == "register":
+                self.drop.select()
+            elif choice == "drop":
+                self.register.select()
+        elif self.in_search_frame:
+            check = self.show_all.get()
+            if check == "on":
+                self.show_all.deselect()
+            elif check == "off":
+                self.show_all.select()
 
     def set_focus(self):
         self.focus_set()
@@ -7047,7 +7049,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.bind("<Return>", lambda event: self.submit_event_handler())
             else:
                 self.unbind("<Return>")
-            self.bind("<space>", lambda event: self.spacebar_event())
         elif self.tabview.get() == self.search_tab:
             self.search_scrollbar.configure(width=600, height=293)
             if hasattr(self, "table") and self.table is not None:
@@ -7063,7 +7064,6 @@ class TeraTermUI(customtkinter.CTk):
             self.in_enroll_frame = False
             self.in_search_frame = True
             self.bind("<Return>", lambda event: self.search_event_handler())
-            self.bind("<space>", lambda event: self.spacebar_event())
             self.search_scrollbar.bind("<Button-1>", lambda event: self.search_scrollbar.focus_set())
             self.bind("<Up>", lambda event: self.move_up_scrollbar())
             self.bind("<Down>", lambda event: self.move_down_scrollbar())
@@ -7073,7 +7073,6 @@ class TeraTermUI(customtkinter.CTk):
             self.search_scrollbar.configure(width=None, height=None)
             self.in_enroll_frame = False
             self.in_search_frame = False
-            self.unbind("<space>")
             self.unbind("<Up>")
             self.unbind("<Down>")
             self.unbind("<Home>")
@@ -7198,7 +7197,6 @@ class TeraTermUI(customtkinter.CTk):
         self.faq_text.unbind("<Button-1>")
         self.move_slider_left_enabled = True
         self.move_slider_right_enabled = True
-        self.spacebar_enabled = True
         self.up_arrow_key_enabled = True
         self.down_arrow_key_enabled = True
         self.status.destroy()
@@ -7735,7 +7733,6 @@ class TeraTermUI(customtkinter.CTk):
         self.fix_text.unbind("<Button-1>")
         self.move_slider_left_enabled = True
         self.move_slider_right_enabled = True
-        self.spacebar_enabled = True
         self.up_arrow_key_enabled = True
         self.down_arrow_key_enabled = True
         self.help.destroy()
@@ -8190,7 +8187,6 @@ class CustomTextBox(customtkinter.CTkTextbox):
     def disable_slider_keys(self, event=None):
         self.teraterm_ui.move_slider_left_enabled = False
         self.teraterm_ui.move_slider_right_enabled = False
-        self.teraterm_ui.spacebar_enabled = False
         self.teraterm_ui.up_arrow_key_enabled = False
         self.teraterm_ui.down_arrow_key_enabled = False
 
@@ -8200,7 +8196,6 @@ class CustomTextBox(customtkinter.CTkTextbox):
 
         self.teraterm_ui.move_slider_left_enabled = True
         self.teraterm_ui.move_slider_right_enabled = True
-        self.teraterm_ui.spacebar_enabled = True
         self.teraterm_ui.up_arrow_key_enabled = True
         self.teraterm_ui.down_arrow_key_enabled = True
 
@@ -8456,7 +8451,6 @@ class CustomEntry(customtkinter.CTkEntry):
     def disable_slider_keys(self, event=None):
         self.teraterm_ui.move_slider_left_enabled = False
         self.teraterm_ui.move_slider_right_enabled = False
-        self.teraterm_ui.spacebar_enabled = False
         self.teraterm_ui.up_arrow_key_enabled = False
         self.teraterm_ui.down_arrow_key_enabled = False
 
@@ -8466,7 +8460,6 @@ class CustomEntry(customtkinter.CTkEntry):
 
         self.teraterm_ui.move_slider_left_enabled = True
         self.teraterm_ui.move_slider_right_enabled = True
-        self.teraterm_ui.spacebar_enabled = True
         self.teraterm_ui.up_arrow_key_enabled = True
         self.teraterm_ui.down_arrow_key_enabled = True
 
@@ -8670,14 +8663,12 @@ class CustomComboBox(customtkinter.CTkComboBox):
     def disable_slider_keys(self, event=None):
         self.teraterm_ui.move_slider_left_enabled = False
         self.teraterm_ui.move_slider_right_enabled = False
-        self.teraterm_ui.spacebar_enabled = False
         self.teraterm_ui.up_arrow_key_enabled = False
         self.teraterm_ui.down_arrow_key_enabled = False
 
     def enable_slider_keys(self, event=None):
         self.teraterm_ui.move_slider_left_enabled = True
         self.teraterm_ui.move_slider_right_enabled = True
-        self.teraterm_ui.spacebar_enabled = True
         self.teraterm_ui.up_arrow_key_enabled = True
         self.teraterm_ui.down_arrow_key_enabled = True
 
