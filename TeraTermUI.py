@@ -4216,6 +4216,7 @@ class TeraTermUI(customtkinter.CTk):
             self.code_entry.unbind("<Control-C>")
             self.student_id.unbind("<Button-1>")
             self.code.unbind("<Button-1>")
+            self.show.unbind("<space>")
             self.title_student.destroy()
             self.title_student = None
             self.lock = None
