@@ -195,6 +195,7 @@
 	"co_requisite": "Este error probablemente ocurrió porque estás intentando cambiar una clase que depende de otra clase. Debido a la naturaleza de estos casos, necesitas retirar ambas al mismo tiempo, lo cual solo se puede hacer en la pantalla \"Múltiple\"",
 	"co_requisite_warning": "¡Lo lamentamos! Pero no puedes modificar clases que dependen entre sí en esta pantalla (clases de laboratorio). Para esto, primero necesitas retirar ambas clases al mismo tiempo, lo cual puedes hacer en la pantalla \"Múltiple\"\n\nLos siguientes cursos son: ",
 	"invalid_semester": "¡Error! Semestre Inválido",
+	"no_active_semester": "¡Error! No hay Semestres\n\nActuales Activos",
 	"missing_info": "¡Error! Le falta información de la\nclase que deseas matricular",
 	"class_format_error": "¡Error! Formato Incorrecto de la Clase",
 	"section_format_error": "¡Error! Formato Incorrecto de la Sección",
