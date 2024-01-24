@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/23/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 1/24/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -8134,6 +8134,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.read_only = read_only
         self.disabled_autoscroll = False
         self.after_id = None
+        self.select = False
         self.teraterm_ui = teraterm_ui_instance
 
         if self.auto_scroll:
@@ -8197,9 +8198,10 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.teraterm_ui.down_arrow_key_enabled = False
 
     def enable_slider_keys(self, event=None):
-        if self.tag_ranges(tk.SEL):
+        if self.tag_ranges(tk.SEL) and not self.select:
             self.tag_remove(tk.SEL, "1.0", tk.END)
 
+        self.select = False
         self.teraterm_ui.move_slider_left_enabled = True
         self.teraterm_ui.move_slider_right_enabled = True
         self.teraterm_ui.up_arrow_key_enabled = True
@@ -8277,6 +8279,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.focus_set()
         self.mark_set(tk.INSERT, "end")
         self.stop_autoscroll(event=None)
+        self.select = True
 
         # Update the menu labels based on the current language
         if self.lang == "English" and not self.read_only:
@@ -8419,6 +8422,7 @@ class CustomEntry(customtkinter.CTkEntry):
         self._redo_stack = deque(maxlen=25)
         self.lang = lang
         self.is_listbox_entry = False
+        self.select = False
 
         self.teraterm_ui = teraterm_ui_instance
         self.bind("<FocusIn>", self.disable_slider_keys)
@@ -8461,9 +8465,10 @@ class CustomEntry(customtkinter.CTkEntry):
         self.teraterm_ui.down_arrow_key_enabled = False
 
     def enable_slider_keys(self, event=None):
-        if self.select_present():
+        if self.select_present() and not self.select:
             self.select_clear()
 
+        self.select = False
         self.teraterm_ui.move_slider_left_enabled = True
         self.teraterm_ui.move_slider_right_enabled = True
         self.teraterm_ui.up_arrow_key_enabled = True
@@ -8504,6 +8509,7 @@ class CustomEntry(customtkinter.CTkEntry):
 
         self.focus_set()
         self.icursor(tk.END)
+        self.select = True
 
         # Update the menu labels based on the current language
         if self.lang == "English":
