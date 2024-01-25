@@ -1144,6 +1144,8 @@ class TeraTermUI(customtkinter.CTk):
                                     if result == "error":
                                         self.after(100, self.show_error_message, 300, 210, translation["failed_enroll"])
                                         return
+                                    elif result == "negative":
+                                        return
                                     else:
                                         semester = result
                                 self.uprb.UprbayTeraTermVt.type_keys(semester)
@@ -1346,6 +1348,8 @@ class TeraTermUI(customtkinter.CTk):
                                 if result == "error":
                                     self.after(100, self.show_error_message, 320, 235, translation["failed_to_search"])
                                     return
+                                elif result == "negative":
+                                    return
                                 else:
                                     semester = result
                             self.uprb.UprbayTeraTermVt.type_keys(semester)
@@ -1378,6 +1382,13 @@ class TeraTermUI(customtkinter.CTk):
                                 data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
                                 if "INVALID ACTION" in copy and "LISTA DE SECCIONES" not in copy:
                                     self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
+                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                                    send_keys("{ENTER}")
+                                    self.reset_activity_timer(None)
+                                    self.after(100, self.show_error_message, 320, 235, translation["failed_to_search"])
+                                    return
+                                elif "INVALID ACTION" in copy and "LISTA DE SECCIONES" in copy:
+                                    send_keys("{TAB 2}")
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     send_keys("{ENTER}")
                                     self.reset_activity_timer(None)
@@ -1535,6 +1546,8 @@ class TeraTermUI(customtkinter.CTk):
                             result = self.handle_current_semester()
                             if result == "error":
                                 self.after(100, self.show_error_message, 300, 215, translation["invalid_semester"])
+                                return
+                            elif result == "negative":
                                 return
                             else:
                                 dialog_input = result
@@ -1864,6 +1877,8 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(100, self.show_error_message, 320, 235,
                                                translation["failed_enroll_multiple"])
                                     return
+                                elif result == "negative":
+                                    return
                                 else:
                                     semester = result
                             self.uprb.UprbayTeraTermVt.type_keys(semester)
@@ -2081,6 +2096,8 @@ class TeraTermUI(customtkinter.CTk):
                                 if result == "error":
                                     self.focus_or_not = True
                                     self.after(100, self.show_error_message, 300, 215, translation["invalid_semester"])
+                                    return
+                                elif result == "negative":
                                     return
                                 else:
                                     semester = result
@@ -2862,7 +2879,6 @@ class TeraTermUI(customtkinter.CTk):
         main_window_y = self.winfo_y()
         self.tooltip = tk.Toplevel(self)
         self.tooltip.wm_overrideredirect(True)
-        self.tooltip.attributes("-topmost", True)
         self.tooltip.config(bg="#FFD700")
         self.tooltip.wm_geometry(f"+{main_window_x + 20}+{main_window_y + 20}")
         if TeraTermUI.checkIfProcessRunning("EpicGamesLauncher"):
@@ -2872,6 +2888,7 @@ class TeraTermUI(customtkinter.CTk):
         label = tk.Label(self.tooltip, text=text,
                          bg="#FFD700", fg="#000", font=("Verdana", 11, "bold"))
         label.pack(padx=5, pady=5)
+        self.lift_tooltip()
         self.tooltip.after(12500, self.destroy_tooltip)
         self.tooltip.bind("<Button-1>", lambda e: self.destroy_tooltip())
         self.tooltip.bind("<Button-2>", lambda e: self.destroy_tooltip())
@@ -4539,6 +4556,7 @@ class TeraTermUI(customtkinter.CTk):
     def keybind_save_classes(self):
         self.save_data.toggle()
         self.save_classes()
+        self.save_data._on_enter()
 
     # saves class information for another session
     def save_classes(self):
@@ -4790,12 +4808,11 @@ class TeraTermUI(customtkinter.CTk):
             screenshot = pyautogui.screenshot(region=(x, y, width, height))
             if self.loading_screen.winfo_exists():
                 self.show_loading_screen_again()
-            screenshot = screenshot.crop(
-                (crop_margin[0], crop_margin[1], width - crop_margin[2], height - crop_margin[3]))
-            screenshot = screenshot.convert("L")
+            screenshot = screenshot.crop((crop_margin[0], crop_margin[1], width - crop_margin[2],
+                                          height - crop_margin[3])).convert("L")
             # screenshot = screenshot.resize((screenshot.width * 2, screenshot.height * 2), resample=Image.BICUBIC)
             # screenshot.save("screenshot.png")
-            custom_config = r"--oem 3 --psm 11"
+            custom_config = r"--oem 3 --psm 6"
             text = pytesseract.image_to_string(screenshot, config=custom_config)
             return text
         else:
@@ -4975,6 +4992,12 @@ class TeraTermUI(customtkinter.CTk):
         if self.tooltip:
             self.tooltip.destroy()
             self.tooltip = None
+
+    def lift_tooltip(self):
+        if self.tooltip and self.tooltip.winfo_exists():
+            self.tooltip.lift()
+
+        self.after(100, self.lift_tooltip)
 
     def transfer_class_data_to_enroll_tab(self, event, section_text):
         self.e_classes_entry.delete(0, "end")
@@ -5288,7 +5311,10 @@ class TeraTermUI(customtkinter.CTk):
             latest_term = match.group()
             return latest_term.replace("%", "")
         else:
-            return "Latest term not found"
+            if "OPCIONES PARA EL ESTUDIANTE" not in input_text:
+                return "Latest term not found"
+            else:
+                return "No active semester"
 
     def handle_current_semester(self):
         if not self.found_latest_semester:
@@ -5298,11 +5324,26 @@ class TeraTermUI(customtkinter.CTk):
             copy = pyperclip.paste()
             latest_term = TeraTermUI.get_latest_term(copy)
             if latest_term == "Latest term not found":
-                self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
+                send_keys("{TAB 2}")
                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                 send_keys("{ENTER}")
                 self.reset_activity_timer(None)
                 return "error"
+            elif latest_term == "No active semester":
+                lang = self.language_menu.get()
+                translation = self.load_language(lang)
+                if "INVALID ACTION" in copy:
+                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
+                    send_keys("{ENTER}")
+                    self.reset_activity_timer(None)
+                else:
+                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
+                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                    send_keys("{ENTER}")
+                    self.reset_activity_timer(None)
+                self.after(100, self.show_error_message, 320, 235, translation["no_active_semester"])
+                return "negative"
             else:
                 self.DEFAULT_SEMESTER = latest_term
                 self.found_latest_semester = True
@@ -6499,18 +6540,22 @@ class TeraTermUI(customtkinter.CTk):
             elif show == "off":
                 self.show.select()
             self.show_event()
+            self.show._on_enter()
         elif self.in_enroll_frame:
             choice = self.radio_var.get()
             if choice == "register":
                 self.drop.select()
+                self.drop._on_enter()
             elif choice == "drop":
                 self.register.select()
+                self.register._on_enter()
         elif self.in_search_frame:
             check = self.show_all.get()
             if check == "on":
                 self.show_all.deselect()
             elif check == "off":
                 self.show_all.select()
+            self.show_all._on_enter()
 
     def set_focus(self):
         self.focus_set()
