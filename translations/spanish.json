@@ -249,7 +249,7 @@
 	"saved_classes_success": "Clases guardadas con éxito",
 	"loading": "Procesando...",
 	"searching_exe": "Buscando...",
-	"sending_feedback": "Enviando..."
+	"sending_feedback": "Enviando...",
 	"tesseract_error": "¡Error Fatal! Es posible que necesite\nreinstalar la aplicación",
 	"save_pdf": "Selecciona donde deseas guardar tu archivo PDF",
 	"class_data": "data_clase",
