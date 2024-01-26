@@ -195,6 +195,7 @@
 	"co_requisite": "This error probably occured because you are trying to change a class that depends on another class, due to the nature of these cases you need to drop them both at the same time, which can only be done in the \"Multiple\" screen",
 	"co_requisite_warning": "Sorry! but you can't modify classes that depend on each other in this screen (lab classes), for this you need to first drop both of those classes at the same time which you can do in the \"Multiple\" screen\n\nThe following classes are: ",
 	"invalid_semester": "¡Error! Invalid Semester",
+	"failed_semester": "Error! Failed to open enrolled\n\nclasses screen",
 	"no_active_semester": "Error! No Current Active\n\nSemesters Available",
 	"missing_info": "Error! Missing information about\nthe class you want to enroll",
 	"class_format_error": "Error! Wrong Format for Class",
