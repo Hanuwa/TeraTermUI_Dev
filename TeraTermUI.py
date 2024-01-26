@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/24/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 1/25/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1543,14 +1543,15 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             send_keys("{ENTER}")
                             self.uprb.UprbayTeraTermVt.type_keys("1CP")
-                            result = self.handle_current_semester()
-                            if result == "error":
-                                self.after(100, self.show_error_message, 300, 215, translation["invalid_semester"])
-                                return
-                            elif result == "negative":
-                                return
-                            else:
-                                dialog_input = result
+                            if dialog_input == curr_sem:
+                                result = self.handle_current_semester()
+                                if result == "error":
+                                    self.after(100, self.show_error_message, 300, 215, translation["invalid_semester"])
+                                    return
+                                elif result == "negative":
+                                    return
+                                else:
+                                    dialog_input = result
                             self.uprb.UprbayTeraTermVt.type_keys(dialog_input)
                             send_keys("{ENTER}")
                             self.after(0, self.disable_go_next_buttons)
@@ -1581,7 +1582,10 @@ class TeraTermUI(customtkinter.CTk):
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                 send_keys("{ENTER}")
                                 self.reset_activity_timer(None)
-                                self.after(100, self.show_error_message, 300, 215, translation["invalid_semester"])
+                                if "INVALID ACTION" in text_output:
+                                    self.after(100, self.show_error_message, 320, 235, translation["failed_semester"])
+                                else:
+                                    self.after(100, self.show_error_message, 300, 215, translation["invalid_semester"])
                         else:
                             self.after(100, self.show_error_message, 300, 215, translation["invalid_semester"])
                     else:
