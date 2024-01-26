@@ -31,6 +31,7 @@ class CTkRadioButton(CTkBaseClass):
                  border_color: Optional[Union[str, Tuple[str, str]]] = None,
                  text_color: Optional[Union[str, Tuple[str, str]]] = None,
                  text_color_disabled: Optional[Union[str, Tuple[str, str]]] = None,
+                 canvas_takefocus: bool = True,
 
                  text: str = "CTkRadioButton",
                  font: Optional[Union[tuple, CTkFont]] = None,
@@ -94,7 +95,7 @@ class CTkRadioButton(CTkBaseClass):
         self._bg_canvas.grid(row=0, column=0, columnspan=3, sticky="nswe")
 
         self._canvas = CTkCanvas(master=self,
-                                 takefocus=True,
+                                 takefocus=canvas_takefocus,
                                  highlightthickness=0,
                                  width=self._apply_widget_scaling(self._radiobutton_width),
                                  height=self._apply_widget_scaling(self._radiobutton_height))
