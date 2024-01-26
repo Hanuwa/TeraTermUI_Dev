@@ -146,6 +146,13 @@ class TeraTermUI(customtkinter.CTk):
         self.up_arrow_key_enabled = True
         self.down_arrow_key_enabled = True
 
+        # Installer Directories
+        if self.mode == "Installation":
+            appdata_path = os.environ.get("PROGRAMDATA")
+            self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
+            self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
+            self.logs = os.path.join(appdata_path, "TeraTermUI/logs.txt")
+
         # Instance variables not yet needed but defined
         # to avoid the instance attribute defined outside __init__ warning
         self.uprbay_window = None
@@ -570,11 +577,6 @@ class TeraTermUI(customtkinter.CTk):
         # performs some operations in a separate thread when application starts up
         self.boot_up(self.teraterm_file)
         # Database
-        if self.mode == "Installation":
-            appdata_path = os.environ.get("PROGRAMDATA")
-            self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
-            self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
-            self.logs = os.path.join(appdata_path, "TeraTermUI/logs.txt")
         try:
             db_path = "database.db"
             if not os.path.isfile(db_path):
@@ -3180,11 +3182,14 @@ class TeraTermUI(customtkinter.CTk):
                 self.destroy_windows()
                 if self.server_status != "Maintenance message found" and self.server_status != "Timeout" \
                         and self.tesseract_unzipped:
-                    if not self.disable_audio:
-                        winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                    CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                  message=translation["tera_term_forced_to_close"],
-                                  icon="warning", button_width=380)
+                    def error():
+                        if not self.disable_audio:
+                            winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                        CTkMessagebox(master=self, title=translation["automation_error_title"],
+                                      message=translation["tera_term_forced_to_close"],
+                                      icon="warning", button_width=380)
+
+                    self.after(0, error)
             self.error_occurred = False
 
     def keybind_go_back_event2(self):
@@ -5743,7 +5748,6 @@ class TeraTermUI(customtkinter.CTk):
                                             self.uprb.UprbayTeraTermVt.type_keys(section)
                                             send_keys("{ENTER}")
                                             self.reset_activity_timer(None)
-
                                             text_output = self.capture_screenshot()
                                             send_keys("{ENTER}")
                                             self.reset_activity_timer(None)
