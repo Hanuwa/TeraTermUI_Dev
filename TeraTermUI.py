@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/25/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 1/26/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -53,6 +53,7 @@ import webbrowser
 import win32gui
 import winsound
 from collections import deque, defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
 from Cryptodome.Hash import HMAC, SHA256
 from Cryptodome.Cipher import AES
@@ -122,6 +123,7 @@ class TeraTermUI(customtkinter.CTk):
         self.stop_check_idle = threading.Event()
         self.is_check_process_thread_running = False
         self.stop_is_check_process = threading.Event()
+        self.thread_pool = ThreadPoolExecutor(max_workers=3)
         self.lock_thread = threading.Lock()
 
         # self.cpu_load_history = deque(maxlen=60)
@@ -518,6 +520,7 @@ class TeraTermUI(customtkinter.CTk):
         self.remove_button = None
         self.renamed_tabs = None
         self.disable_feedback = False
+        self.sending_feedback = False
         self.auto_enroll_bool = False
         self.countdown_running = False
         self.enrollment_error_check = False
@@ -743,6 +746,7 @@ class TeraTermUI(customtkinter.CTk):
             if hasattr(self, "check_process_thread") and self.check_process_thread is not None \
                     and self.check_process_thread.is_alive():
                 self.stop_is_check_process.set()
+            self.thread_pool.shutdown(wait=True)
             self.save_user_data()
             self.destroy()
             if self.checkbox_state:
@@ -768,6 +772,7 @@ class TeraTermUI(customtkinter.CTk):
         if hasattr(self, "check_process_thread") and self.check_process_thread is not None \
                 and self.check_process_thread.is_alive():
             self.stop_is_check_process.set()
+        self.thread_pool.shutdown(wait=True)
         self.save_user_data(include_exit=False)
         self.destroy()
         sys.exit(0)
@@ -814,8 +819,7 @@ class TeraTermUI(customtkinter.CTk):
         task_done = threading.Event()
         loading_screen = self.show_loading_screen()
         self.update_loading_screen(loading_screen, task_done)
-        event_thread = threading.Thread(target=self.student_event, args=(task_done,))
-        event_thread.start()
+        self.thread_pool.submit(self.student_event, task_done)
 
     # Enrolling/Searching classes Frame
     def student_event(self, task_done):
@@ -886,9 +890,6 @@ class TeraTermUI(customtkinter.CTk):
                         self.uprb.UprbayTeraTermVt.type_keys(
                             aes_decrypt_and_verify_mac(code_enc, aes_key, iv, mac_key))
                         send_keys("{ENTER}")
-                        screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                        screenshot_thread.start()
-                        screenshot_thread.join()
                         text_output = self.capture_screenshot()
                         if "SIGN-IN" in text_output:
                             self.reset_activity_timer(None)
@@ -1106,8 +1107,7 @@ class TeraTermUI(customtkinter.CTk):
             task_done = threading.Event()
             loading_screen = self.show_loading_screen()
             self.update_loading_screen(loading_screen, task_done)
-            event_thread = threading.Thread(target=self.submit_event, args=(task_done,))
-            event_thread.start()
+            self.thread_pool.submit(self.submit_event, task_done)
 
     # function for registering/dropping classes
     def submit_event(self, task_done):
@@ -1151,9 +1151,6 @@ class TeraTermUI(customtkinter.CTk):
                                 self.uprb.UprbayTeraTermVt.type_keys(semester)
                                 send_keys("{ENTER}")
                                 self.after(0, self.disable_go_next_buttons)
-                                screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                screenshot_thread.start()
-                                screenshot_thread.join()
                                 text_output = self.capture_screenshot()
                                 enrolled_classes = "ENROLLED"
                                 count_enroll = text_output.count(enrolled_classes)
@@ -1173,9 +1170,6 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(section)
                                     send_keys("{ENTER}")
                                     time.sleep(1.5)
-                                    screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                    screenshot_thread.start()
-                                    screenshot_thread.join()
                                     text = self.capture_screenshot()
                                     enrolled_classes = "ENROLLED"
                                     count_enroll = text.count(enrolled_classes)
@@ -1317,8 +1311,7 @@ class TeraTermUI(customtkinter.CTk):
         task_done = threading.Event()
         loading_screen = self.show_loading_screen()
         self.update_loading_screen(loading_screen, task_done)
-        event_thread = threading.Thread(target=self.search_event, args=(task_done,))
-        event_thread.start()
+        self.thread_pool.submit(self.search_event, task_done)
 
     # function for searching for classes
     def search_event(self, task_done):
@@ -1356,9 +1349,6 @@ class TeraTermUI(customtkinter.CTk):
                             send_keys("{ENTER}")
                             self.after(0, self.disable_go_next_buttons)
                             if self.search_function_counter == 0 or semester != self.get_semester_for_pdf:
-                                screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                screenshot_thread.start()
-                                screenshot_thread.join()
                                 text_output = self.capture_screenshot()
                                 if "INVALID TERM SELECTION" in text_output:
                                     self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
@@ -1416,9 +1406,6 @@ class TeraTermUI(customtkinter.CTk):
                             elif show_all == "off":
                                 self.uprb.UprbayTeraTermVt.type_keys("N")
                             send_keys("{ENTER}")
-                            screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                            screenshot_thread.start()
-                            screenshot_thread.join()
                             text_output = self.capture_screenshot()
                             if "MORE SECTIONS" in text_output:
                                 self.after(0, self.search_next_page_layout)
@@ -1518,8 +1505,7 @@ class TeraTermUI(customtkinter.CTk):
             task_done = threading.Event()
             loading_screen = self.show_loading_screen()
             self.update_loading_screen(loading_screen, task_done)
-            event_thread = threading.Thread(target=self.my_classes_event, args=(task_done,))
-            event_thread.start()
+            self.thread_pool.submit(self.my_classes_event, task_done)
         else:
             self.dialog.destroy()
 
@@ -1555,9 +1541,6 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys(dialog_input)
                             send_keys("{ENTER}")
                             self.after(0, self.disable_go_next_buttons)
-                            screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                            screenshot_thread.start()
-                            screenshot_thread.join()
                             text_output = self.capture_screenshot()
                             if "INVALID TERM SELECTION" not in text_output and "INVALID ACTION" not in text_output:
                                 clipboard_content = None
@@ -1845,8 +1828,7 @@ class TeraTermUI(customtkinter.CTk):
         task_done = threading.Event()
         loading_screen = self.show_loading_screen()
         self.update_loading_screen(loading_screen, task_done)
-        event_thread = threading.Thread(target=self.submit_multiple_event, args=(task_done,))
-        event_thread.start()
+        self.thread_pool.submit(self.submit_multiple_event, task_done)
 
     # function that enrolls multiple classes with one click
     def submit_multiple_event(self, task_done):
@@ -1888,9 +1870,6 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys(semester)
                             send_keys("{ENTER}")
                             self.after(0, self.disable_go_next_buttons)
-                            screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                            screenshot_thread.start()
-                            screenshot_thread.join()
                             text_output = self.capture_screenshot()
                             enrolled_classes = "ENROLLED"
                             count_enroll = text_output.count(enrolled_classes)
@@ -1916,9 +1895,6 @@ class TeraTermUI(customtkinter.CTk):
                                     else:
                                         send_keys("{TAB}")
                                 time.sleep(1.5)
-                                screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                screenshot_thread.start()
-                                screenshot_thread.join()
                                 text = self.capture_screenshot()
                                 dropped_classes = "DROPPED"
                                 count_dropped = text.count(dropped_classes)
@@ -2047,8 +2023,7 @@ class TeraTermUI(customtkinter.CTk):
         task_done = threading.Event()
         loading_screen = self.show_loading_screen()
         self.update_loading_screen(loading_screen, task_done)
-        event_thread = threading.Thread(target=self.option_menu_event, args=(task_done,))
-        event_thread.start()
+        self.thread_pool.submit(self.option_menu_event, task_done)
 
     # changes to the respective screen the user chooses
     def option_menu_event(self, task_done):
@@ -2124,9 +2099,6 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     send_keys("{ENTER}")
                                     self.after(0, self.disable_go_next_buttons)
-                                    screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                    screenshot_thread.start()
-                                    screenshot_thread.join()
                                     text_output = self.capture_screenshot()
                                     if "INVALID TERM SELECTION" not in text_output:
                                         def go_next_grid():
@@ -2166,9 +2138,6 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     send_keys("{ENTER}")
                                     self.after(0, self.disable_go_next_buttons)
-                                    screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                    screenshot_thread.start()
-                                    screenshot_thread.join()
                                     text_output = self.capture_screenshot()
                                     if "INVALID TERM SELECTION" in text_output:
                                         self.focus_or_not = True
@@ -2195,9 +2164,6 @@ class TeraTermUI(customtkinter.CTk):
                                     self._409_screen = False
                                     self._683_screen = False
                                     self._4CM_screen = False
-                                    screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                    screenshot_thread.start()
-                                    screenshot_thread.join()
                                     text_output = self.capture_screenshot()
                                     if "CONFLICT" in text_output:
                                         self.focus_or_not = True
@@ -2235,9 +2201,6 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     send_keys("{ENTER}")
                                     self.after(0, self.disable_go_next_buttons)
-                                    screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                    screenshot_thread.start()
-                                    screenshot_thread.join()
                                     text_output = self.capture_screenshot()
                                     if "INVALID TERM SELECTION" in text_output:
                                         self.focus_or_not = True
@@ -2254,9 +2217,6 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     send_keys("{ENTER}")
                                     self.reset_activity_timer(None)
-                                    screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                    screenshot_thread.start()
-                                    screenshot_thread.join()
                                     text_output = self.capture_screenshot()
                                     if "INVALID TERM SELECTION" not in text_output:
                                         def go_next_grid():
@@ -2309,9 +2269,6 @@ class TeraTermUI(customtkinter.CTk):
                                     self._409_screen = False
                                     self._683_screen = True
                                     self._4CM_screen = False
-                                    screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                    screenshot_thread.start()
-                                    screenshot_thread.join()
                                     text_output = self.capture_screenshot()
                                     if "CONFLICT" in text_output:
                                         self.focus_or_not = True
@@ -2336,9 +2293,6 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     send_keys("{ENTER}")
                                     self.after(0, self.disable_go_next_buttons)
-                                    screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                    screenshot_thread.start()
-                                    screenshot_thread.join()
                                     text_output = self.capture_screenshot()
                                     if "TERM OUTDATED" in text_output or "NO PUEDE REALIZAR CAMBIOS" in text_output or \
                                             "INVALID TERM SELECTION" in text_output:
@@ -2363,9 +2317,6 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     send_keys("{ENTER}")
                                     self.reset_activity_timer(None)
-                                    screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                    screenshot_thread.start()
-                                    screenshot_thread.join()
                                     text_output = self.capture_screenshot()
                                     if "TERM OUTDATED" not in text_output and \
                                             "NO PUEDE REALIZAR CAMBIOS" not in text_output and \
@@ -2413,9 +2364,6 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     send_keys("{ENTER}")
                                     self.after(0, self.disable_go_next_buttons)
-                                    screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                    screenshot_thread.start()
-                                    screenshot_thread.join()
                                     text_output = self.capture_screenshot()
                                     if "TERM OUTDATED" in text_output or "NO PUEDE REALIZAR CAMBIOS" in text_output:
                                         self.focus_or_not = True
@@ -2507,8 +2455,7 @@ class TeraTermUI(customtkinter.CTk):
         task_done = threading.Event()
         loading_screen = self.show_loading_screen()
         self.update_loading_screen(loading_screen, task_done)
-        event_thread = threading.Thread(target=self.go_next_page_event, args=(task_done,))
-        event_thread.start()
+        self.thread_pool.submit(self.go_next_page_event, task_done)
 
     # go through each page of the different screens
     def go_next_page_event(self, task_done):
@@ -2562,9 +2509,6 @@ class TeraTermUI(customtkinter.CTk):
                             self.wait_for_window()
                             send_keys("{ENTER}")
                             self.reset_activity_timer(None)
-                            screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                            screenshot_thread.start()
-                            screenshot_thread.join()
                             text_output = self.capture_screenshot()
                             if "RATE NOT ON ARFILE" in text_output:
                                 self.focus_or_not = True
@@ -2606,8 +2550,7 @@ class TeraTermUI(customtkinter.CTk):
         task_done = threading.Event()
         loading_screen = self.show_loading_screen()
         self.update_loading_screen(loading_screen, task_done)
-        event_thread = threading.Thread(target=self.search_go_next, args=(task_done,))
-        event_thread.start()
+        self.thread_pool.submit(self.search_go_next, task_done)
 
     # Goes through more sections available for the searched class
     def search_go_next(self, task_done):
@@ -2641,9 +2584,6 @@ class TeraTermUI(customtkinter.CTk):
                         if clipboard_content is not None:
                             self.clipboard_append(clipboard_content)
                         self.reset_activity_timer(None)
-                        screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                        screenshot_thread.start()
-                        screenshot_thread.join()
                         text_output = self.capture_screenshot()
                         if "MORE SECTIONS" not in text_output:
                             self.search_next_page.configure(state="disabled")
@@ -2695,8 +2635,7 @@ class TeraTermUI(customtkinter.CTk):
         task_done = threading.Event()
         loading_screen = self.show_loading_screen()
         self.update_loading_screen(loading_screen, task_done)
-        event_thread = threading.Thread(target=self.auth_event, args=(task_done,))
-        event_thread.start()
+        self.thread_pool.submit(self.auth_event, task_done)
 
     # Authentication required frame, where user is asked to input his username
     def auth_event(self, task_done):
@@ -2902,8 +2841,7 @@ class TeraTermUI(customtkinter.CTk):
         task_done = threading.Event()
         loading_screen = self.show_loading_screen()
         self.update_loading_screen(loading_screen, task_done)
-        event_thread = threading.Thread(target=self.login_event, args=(task_done,))
-        event_thread.start()
+        self.thread_pool.submit(self.login_event, task_done)
 
     # Checks if host entry is true
     @measure_time(threshold=7)
@@ -3068,9 +3006,6 @@ class TeraTermUI(customtkinter.CTk):
             if term_window.isMinimized:
                 term_window.restore()
             self.connect_to_uprb()
-            screenshot_thread = threading.Thread(target=self.capture_screenshot)
-            screenshot_thread.start()
-            screenshot_thread.join()
             text_output = self.capture_screenshot()
             to_continue = "return to continue"
             count_to_continue = text_output.count(to_continue)
@@ -3685,8 +3620,7 @@ class TeraTermUI(customtkinter.CTk):
             task_done = threading.Event()
             loading_screen = self.show_loading_screen()
             self.update_loading_screen(loading_screen, task_done)
-            event_thread = threading.Thread(target=self.auto_enroll_event, args=(task_done,))
-            event_thread.start()
+            self.thread_pool.submit(self.auto_enroll_event, task_done)
         else:
             if not self.disable_audio:
                 winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
@@ -3713,9 +3647,6 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             send_keys("{ENTER}")
                             self.after(0, self.disable_go_next_buttons)
-                            screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                            screenshot_thread.start()
-                            screenshot_thread.join()
                             text_output = self.capture_screenshot()
                             if "OPCIONES PARA EL ESTUDIANTE" in text_output or "BALANCE CTA" in text_output or \
                                     "PANTALLAS MATRICULA" in text_output or "PANTALLAS GENERALES" in text_output or \
@@ -4652,6 +4583,9 @@ class TeraTermUI(customtkinter.CTk):
             loading.configure(text=translation["searching_exe"])
             self.auto_search = False
             self.updating_app = False
+        elif self.sending_feedback:
+            loading.configure(text=translation["sending_feedback"])
+            self.sending_feedback = False
         loading.pack(pady=(48, 12))
         self.progress_bar = customtkinter.CTkProgressBar(self.loading_screen, mode="indeterminate",
                                                          height=15, width=230, indeterminate_speed=1.5)
@@ -4796,6 +4730,7 @@ class TeraTermUI(customtkinter.CTk):
     def capture_screenshot(self):
         import pyautogui
 
+        time.sleep(1)
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         tesseract_dir_path = self.app_temp_dir / "Tesseract-OCR"
@@ -5706,8 +5641,7 @@ class TeraTermUI(customtkinter.CTk):
             task_done = threading.Event()
             loading_screen = self.show_loading_screen()
             self.update_loading_screen(loading_screen, task_done)
-            event_thread = threading.Thread(target=self.submit_modify_classes, args=(task_done,))
-            event_thread.start()
+            self.thread_pool.submit(self.submit_modify_classes, task_done)
 
     def submit_modify_classes(self, task_done):
         with self.lock_thread:
@@ -5758,9 +5692,6 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys(dialog_input)
                             send_keys("{ENTER}")
                             self.after(0, self.disable_go_next_buttons)
-                            screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                            screenshot_thread.start()
-                            screenshot_thread.join()
                             text_output = self.capture_screenshot()
                             enrolled_classes = "ENROLLED"
                             count_enroll = text_output.count(enrolled_classes)
@@ -5782,9 +5713,6 @@ class TeraTermUI(customtkinter.CTk):
                                     if mod == translation["drop"] or mod == translation["section"]:
                                         if not first_loop:
                                             time.sleep(1.5)
-                                            screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                            screenshot_thread.start()
-                                            screenshot_thread.join()
                                             text_output = self.capture_screenshot()
                                             enrolled_classes = "ENROLLED"
                                             count_enroll = text_output.count(enrolled_classes)
@@ -5796,9 +5724,6 @@ class TeraTermUI(customtkinter.CTk):
                                         self.uprb.UprbayTeraTermVt.type_keys(course_code)
                                         send_keys("{ENTER}")
                                         self.reset_activity_timer(None)
-                                        screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                        screenshot_thread.start()
-                                        screenshot_thread.join()
                                         text_output = self.capture_screenshot()
                                         if "REQUIRED CO-REQUISITE" in text_output:
                                             co_requisite = True
@@ -5807,9 +5732,6 @@ class TeraTermUI(customtkinter.CTk):
                                         send_keys("{ENTER 2}")
                                         self.reset_activity_timer(None)
                                         if mod == translation["section"]:
-                                            screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                            screenshot_thread.start()
-                                            screenshot_thread.join()
                                             text_output = self.capture_screenshot()
                                             enrolled_classes = "ENROLLED"
                                             count_enroll = text_output.count(enrolled_classes)
@@ -5821,17 +5743,12 @@ class TeraTermUI(customtkinter.CTk):
                                             self.uprb.UprbayTeraTermVt.type_keys(section)
                                             send_keys("{ENTER}")
                                             self.reset_activity_timer(None)
-                                            screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                            screenshot_thread.start()
-                                            screenshot_thread.join()
+
                                             text_output = self.capture_screenshot()
                                             send_keys("{ENTER}")
                                             self.reset_activity_timer(None)
                                             if "INVALID COURSE ID" in text_output or "COURSE CLOSED" in text_output:
                                                 show_error = True
-                                                screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                                screenshot_thread.start()
-                                                screenshot_thread.join()
                                                 text_output = self.capture_screenshot()
                                                 enrolled_classes = "ENROLLED"
                                                 count_enroll = text_output.count(enrolled_classes)
@@ -5842,9 +5759,6 @@ class TeraTermUI(customtkinter.CTk):
                                                 self.uprb.UprbayTeraTermVt.type_keys(course_code)
                                                 send_keys("{ENTER}")
                                                 self.reset_activity_timer(None)
-                                                screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                                screenshot_thread.start()
-                                                screenshot_thread.join()
                                                 text_output = self.capture_screenshot()
                                                 send_keys("{ENTER}")
                                                 self.reset_activity_timer(None)
@@ -5858,9 +5772,6 @@ class TeraTermUI(customtkinter.CTk):
                                 send_keys("{ENTER}")
                                 self.reset_activity_timer(None)
                                 time.sleep(1.5)
-                                screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                                screenshot_thread.start()
-                                screenshot_thread.join()
                                 text_output = self.capture_screenshot()
                                 self.reset_activity_timer(None)
                                 if "CONFIRMED" in text_output:
@@ -6051,7 +5962,7 @@ class TeraTermUI(customtkinter.CTk):
                 return "Prompt found"
             elif time.time() - start_time > timeout:
                 return "Timeout"
-            time.sleep(1)  # Adjust the delay between screenshots as needed
+            time.sleep(0.5)  # Adjust the delay between screenshots as needed
 
     def wait_for_window(self):
         try:
@@ -6076,9 +5987,9 @@ class TeraTermUI(customtkinter.CTk):
 
     # Necessary things to do while the application is booting, gets done on a separate thread
     def boot_up(self, file_path):
-        threading.Thread(target=self.setup_tesseract).start()
-        threading.Thread(target=self.backup_and_config_ini, args=(file_path,)).start()
-        threading.Thread(target=self.setup_feedback).start()
+        self.thread_pool.submit(self.setup_tesseract)
+        self.thread_pool.submit(self.backup_and_config_ini, file_path)
+        self.thread_pool.submit(self.setup_feedback)
 
     def setup_tesseract(self):
         # If Tesseract-OCR already in the temp folder dont unzip
@@ -6681,8 +6592,7 @@ class TeraTermUI(customtkinter.CTk):
         task_done = threading.Event()
         loading_screen = self.show_loading_screen()
         self.update_loading_screen(loading_screen, task_done)
-        event_thread = threading.Thread(target=self.check_update_app, args=(task_done,))
-        event_thread.start()
+        self.thread_pool.submit(self.check_update_app, task_done)
 
     # will tell the user that there's a new update available for the application
     def check_update_app(self, task_done):
@@ -6785,8 +6695,7 @@ class TeraTermUI(customtkinter.CTk):
                 task_done = threading.Event()
                 loading_screen = self.show_loading_screen()
                 self.update_loading_screen(loading_screen, task_done)
-                event_thread = threading.Thread(target=self.fix_execution, args=(task_done,))
-                event_thread.start()
+                self.thread_pool.submit(self.fix_execution, task_done)
 
     # If user messes up the execution of the program this can solve it and make program work as expected
     def fix_execution(self, task_done):
@@ -6805,9 +6714,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                 send_keys("{ENTER}")
                 self.reset_activity_timer(None)
-                screenshot_thread = threading.Thread(target=self.capture_screenshot)
-                screenshot_thread.start()
-                screenshot_thread.join()
                 text_output = self.capture_screenshot()
                 if "INVALID ACTION" in text_output:
                     send_keys("{TAB}")
@@ -7316,13 +7222,16 @@ class TeraTermUI(customtkinter.CTk):
                             hover_color=("darkred", "use_default", "use_default"))
         response = msg.get()
         if response[0] == "Yes" or response[0] == "Sí":
-            feedback_thread = threading.Thread(target=self.submit_feedback)
-            feedback_thread.start()
+            self.sending_feedback = True
+            task_done = threading.Event()
+            loading_screen = self.show_loading_screen()
+            self.update_loading_screen(loading_screen, task_done)
+            self.thread_pool.submit(self.submit_feedback, task_done)
         else:
             self.feedback_send.configure(state="normal")
 
     # Submits feedback from the user to a Google sheet
-    def submit_feedback(self):
+    def submit_feedback(self, task_done):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         if not self.disable_feedback:
@@ -7398,6 +7307,7 @@ class TeraTermUI(customtkinter.CTk):
 
                 self.after(0, show_error)
         self.feedback_send.configure(state="normal")
+        task_done.set()
 
     @staticmethod
     def find_ttermpro():
@@ -7452,8 +7362,7 @@ class TeraTermUI(customtkinter.CTk):
             task_done = threading.Event()
             loading_screen = self.show_loading_screen()
             self.update_loading_screen(loading_screen, task_done)
-            event_thread = threading.Thread(target=self.change_location_event, args=(task_done,))
-            event_thread.start()
+            self.thread_pool.submit(self.change_location_event, task_done)
         elif response is False:
             self.manually_change_location()
         else:
