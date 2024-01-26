@@ -4310,7 +4310,7 @@ class TeraTermUI(customtkinter.CTk):
                                                          variable=self.radio_var, command=self.set_focus)
             self.register_tooltip = CTkToolTip(self.register, message=translation["register_tooltip"])
             self.drop = customtkinter.CTkRadioButton(master=self.tabview.tab(self.enroll_tab), text=translation["drop"],
-                                                     value="drop", variable=self.radio_var,
+                                                     value="drop", variable=self.radio_var, canvas_takefocus=False,
                                                      command=self.set_focus)
             self.drop_tooltip = CTkToolTip(self.drop, message=translation["drop_tooltip"])
             self.register.select()
@@ -4320,7 +4320,7 @@ class TeraTermUI(customtkinter.CTk):
             self.e_section.bind("<Button-1>", lambda event: self.focus_set())
             self.e_semester.bind("<Button-1>", lambda event: self.focus_set())
             self.register.bind("<space>", lambda event: self.spacebar_event())
-            self.drop.bind("<space>", lambda event: self.spacebar_event())
+            self.register.bind("<FocusOut>", lambda event: self.drop._on_leave())
 
             # Second Tab
             self.search_scrollbar = customtkinter.CTkScrollableFrame(master=self.tabview.tab(self.search_tab),
