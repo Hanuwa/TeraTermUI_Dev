@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/26/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 1/27/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -2846,7 +2846,7 @@ class TeraTermUI(customtkinter.CTk):
         self.thread_pool.submit(self.login_event, task_done)
 
     # Checks if host entry is true
-    @measure_time(threshold=7)
+    @measure_time(threshold=7.5)
     def login_event(self, task_done):
         dont_close = False
         with self.lock_thread:
@@ -5212,7 +5212,7 @@ class TeraTermUI(customtkinter.CTk):
     def automate_copy_class_data(self):
         import pyautogui
 
-        max_retries = 3
+        max_retries = 5
         original_timeout = timings.Timings.window_find_timeout
         original_retry = timings.Timings.window_find_retry
         for attempt in range(max_retries):
@@ -5221,7 +5221,7 @@ class TeraTermUI(customtkinter.CTk):
                 timings.Timings.window_find_retry = 0.1
                 edit_menu = self.uprb.UprbayTeraTermVt.child_window(
                     title="Edit", control_type="MenuItem", visible_only=False)
-                edit_menu.invoke()
+                self.uprb.UprbayTeraTermVt.type_keys("%e")
                 select_screen_item = edit_menu.child_window(
                     title="Select screen", control_type="MenuItem", top_level_only=False)
                 select_screen_item.invoke()
