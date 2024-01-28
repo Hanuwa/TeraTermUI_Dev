@@ -253,6 +253,7 @@
 	"tesseract_error": "Fatal Error! Might need to\nreinstall application",
 	"save_pdf": "Select where do you want to save your PDF file",
 	"class_data": "class_data",
+	"multiple_semesters": "multiple_semesters",
 	"classes_data": "classes_data",
 	"pdf_save_as": "Save as PDF",
 	"download_pdf_tooltip": "Download a PDF filled with all the currently\nsearched tables and their data",
