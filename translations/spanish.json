@@ -253,6 +253,7 @@
 	"tesseract_error": "¡Error Fatal! Es posible que necesite\nreinstalar la aplicación",
 	"save_pdf": "Selecciona donde deseas guardar tu archivo PDF",
 	"class_data": "data_clase",
+	"multiple_semesters": "multiples_semestres",
 	"classes_data": "data_clases",
 	"pdf_save_as": "Guardar como PDF",
 	"download_pdf_tooltip": "Descargar un PDF lleno de todas las tablas\nbuscadas actualmente y sus datos",
