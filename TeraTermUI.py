@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/27/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 1/28/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1371,7 +1371,8 @@ class TeraTermUI(customtkinter.CTk):
                                 self.automate_copy_class_data()
                                 ctypes.windll.user32.BlockInput(True)
                                 copy = pyperclip.paste()
-                                data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
+                                data, course_found, invalid_action, \
+                                    y_n_found, y_n_value, term_value = TeraTermUI.extract_class_data(copy)
                                 if "INVALID ACTION" in copy and "LISTA DE SECCIONES" not in copy:
                                     self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -1388,10 +1389,10 @@ class TeraTermUI(customtkinter.CTk):
                                     return
                                 if data or course_found or invalid_action or y_n_found:
                                     self.search_function_counter += 1
-                                if classes in copy:
+                                if classes in copy and show_all == y_n_value and semester == term_value:
                                     self.get_class_for_pdf = classes
                                     self.get_semester_for_pdf = semester
-                                    self.show_all_sections = self.show_all.get()
+                                    self.show_all_sections = show_all
                                     self.after(0, self.display_data, data)
                                     self.clipboard_clear()
                                     if clipboard_content is not None:
@@ -1435,10 +1436,11 @@ class TeraTermUI(customtkinter.CTk):
                                 self.automate_copy_class_data()
                                 ctypes.windll.user32.BlockInput(True)
                                 copy = pyperclip.paste()
-                                data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
+                                data, course_found, invalid_action, \
+                                    y_n_found, y_n_value, term_value = TeraTermUI.extract_class_data(copy)
                                 self.get_class_for_pdf = classes
                                 self.get_semester_for_pdf = semester
-                                self.show_all_sections = self.show_all.get()
+                                self.show_all_sections = show_all
                                 self.after(0, self.display_data, data)
                                 self.clipboard_clear()
                                 if clipboard_content is not None:
@@ -2580,7 +2582,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.automate_copy_class_data()
                         ctypes.windll.user32.BlockInput(True)
                         copy = pyperclip.paste()
-                        data, course_found, invalid_action, y_n_found = TeraTermUI.extract_class_data(copy)
+                        data, course_found, invalid_action, \
+                            y_n_found, y_n_value, term_value = TeraTermUI.extract_class_data(copy)
                         self.after(0, self.display_data, data)
                         self.clipboard_clear()
                         if clipboard_content is not None:
@@ -2991,9 +2994,9 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         while not self.tesseract_unzipped:
-            time.sleep(1)
+            time.sleep(0.5)
             timeout_counter += 1
-            if timeout_counter > 5:
+            if timeout_counter > 7:
                 skip = True
                 break
         count = TeraTermUI.countRunningProcesses("ttermpro")
@@ -3012,6 +3015,7 @@ class TeraTermUI(customtkinter.CTk):
             if term_window.isMinimized:
                 term_window.restore()
             self.connect_to_uprb()
+            TeraTermUI.unfocus_tkinter()
             text_output = self.capture_screenshot()
             to_continue = "return to continue"
             count_to_continue = text_output.count(to_continue)
@@ -4888,10 +4892,13 @@ class TeraTermUI(customtkinter.CTk):
             data.append(table_data)
             semester_list.append(semester)
 
+        all_same_semester = all(semester == semester_list[0] for semester in semester_list)
         if len(self.class_table_pairs) == 1:
             initial_file_name = f"{semester_list[0]}_{classes_list[0]}_{translation['class_data']}.pdf"
-        else:
+        elif all_same_semester:
             initial_file_name = f"{semester_list[0]}_{translation['classes_data']}.pdf"
+        else:
+            initial_file_name = f"{translation['multiple_semesters']}_{translation['classes_data']}.pdf"
 
         # Define where the PDF will be saved
         home = os.path.expanduser("~")
@@ -5348,7 +5355,9 @@ class TeraTermUI(customtkinter.CTk):
         course_found = False
         invalid_action = False
         y_n_found = False
+        y_n_value = None
         current_section = None
+        term_value = None
 
         for i, line in enumerate(lines):
             if "INVALID ACTION" in line:
@@ -5363,6 +5372,13 @@ class TeraTermUI(customtkinter.CTk):
                 y_n_value = line.split("ALL (Y/N):")[-1].strip()
                 if y_n_value in ["Y", "N"]:
                     y_n_found = True
+                if y_n_value == "Y":
+                    y_n_value = "on"
+                elif y_n_value == "N":
+                    y_n_value = "off"
+
+            if "TERM:" in line:
+                term_value = line.split("TERM:")[-1].strip()[:3]
 
         # Regex pattern to match the course entries
         pattern = re.compile(
@@ -5403,7 +5419,7 @@ class TeraTermUI(customtkinter.CTk):
             section["DAYS"] = ", ".join(section["DAYS"])
             section["TIMES"] = ", ".join(section["TIMES"])
 
-        return data, course_found, invalid_action, y_n_found
+        return data, course_found, invalid_action, y_n_found, y_n_value, term_value
 
     def extract_my_enrolled_classes(self, text):
         lang = self.language_menu.get()
@@ -6946,7 +6962,7 @@ class TeraTermUI(customtkinter.CTk):
         except aiohttp.ClientConnectionError:
             print(f"Failed to connect to {url}")
             return False
-        except aiohttp.ClientTimeout:
+        except asyncio.TimeoutError:
             print(f"Request to {url} timed out")
             return False
         except Exception as e:
