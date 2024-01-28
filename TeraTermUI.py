@@ -8172,6 +8172,18 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.bind("<Button-3>", self.show_menu)
 
     def disable_slider_keys(self, event=None):
+        if self.tag_ranges(tk.SEL) and self.select:
+            self.tag_remove(tk.SEL, "1.0", tk.END)
+            if self.lang == "English" and not self.read_only:
+                self.context_menu.entryconfigure(3, label="Select All")
+            elif self.lang == "Español" and not self.read_only:
+                self.context_menu.entryconfigure(3, label="Seleccionar Todo")
+
+            if self.lang == "English" and self.read_only:
+                self.context_menu.entryconfigure(1, label="Select All")
+            elif self.lang == "Español" and self.read_only:
+                self.context_menu.entryconfigure(1, label="Seleccionar Todo")
+
         self.teraterm_ui.move_slider_left_enabled = False
         self.teraterm_ui.move_slider_right_enabled = False
         self.teraterm_ui.up_arrow_key_enabled = False
@@ -8439,6 +8451,14 @@ class CustomEntry(customtkinter.CTkEntry):
         self.bind("<Button-3>", self.show_menu)
 
     def disable_slider_keys(self, event=None):
+        if self.select_present() and self.select:
+            self.select_clear()
+
+            if self.lang == "English":
+                self.context_menu.entryconfigure(3, label="Select All")
+            elif self.lang == "Español":
+                self.context_menu.entryconfigure(3, label="Seleccionar Todo")
+
         self.teraterm_ui.move_slider_left_enabled = False
         self.teraterm_ui.move_slider_right_enabled = False
         self.teraterm_ui.up_arrow_key_enabled = False
