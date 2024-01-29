@@ -256,7 +256,7 @@
 	"multiple_semesters": "multiple_semesters",
 	"classes_data": "classes_data",
 	"pdf_save_as": "Save as PDF",
-	"download_pdf_tooltip": "Download a PDF filled with all the currently\nsearched tables and their data",
+	"download_pdf_search_tooltip": "Download a PDF filled with all the currently\nsearched tables and their data",
 	"download_pdf_enrolled_tooltip": "Download a PDF containing the table\nof your currently enrolled classes",
 	"submit_modify_tooltip": "Submit your modifications of\nyour currently enrolled classes",
 	"mod_selection": "Choose whether you want\nto drop or change the section of the class",
