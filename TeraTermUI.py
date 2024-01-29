@@ -3587,7 +3587,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.previous_button_tooltip.configure(message=translation["previous_tooltip"])
                 self.next_button_tooltip.configure(message=translation["next_tooltip"])
                 self.remove_button_tooltip.configure(message=translation["remove_tooltip"])
-                self.download_search_pdf_tooltip.configure(message=translation["download_pdf_tooltip"])
+                self.download_search_pdf_tooltip.configure(message=translation["download_pdf_search_tooltip"])
             if self.enroll_tab != translation["enroll_tab"]:
                 self.after(1000, self.rename_tabs)
 
@@ -5073,7 +5073,8 @@ class TeraTermUI(customtkinter.CTk):
             self.remove_button_tooltip = CTkToolTip(self.remove_button, message=translation["remove_tooltip"],
                                                     bg_color="red")
             self.download_search_pdf_tooltip = CTkToolTip(self.download_search_pdf,
-                                                          message=translation["download_pdf_tooltip"], bg_color="green")
+                                                          message=translation["download_pdf_search_tooltip"],
+                                                          bg_color="green")
 
         available_key = translation["av"]
         available_values = [row[available_key] for row in modified_data]
