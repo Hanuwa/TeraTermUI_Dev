@@ -261,6 +261,7 @@
 	"mod_selection": "Choose whether you want\nto drop or change the section of the class",
 	"change_section_entry": "Enter the new section\nyou want for that class",
 	"total_creds": "Total Credits: ",
+	"enrolled_classes": "enrolled_classes",
 	"course": "COURSE",
 	"grade": "GRADE",
 	"room": "ROOM",
