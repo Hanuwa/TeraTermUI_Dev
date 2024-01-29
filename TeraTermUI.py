@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/28/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 1/29/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with 8000 lines of codes, it definitely makes things harder to work with
+# and with 9000 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -181,12 +181,14 @@ class TeraTermUI(customtkinter.CTk):
         self.get_class_for_pdf = None
         self.get_semester_for_pdf = None
         self.show_all_sections = None
-        self.download_pdf = None
+        self.download_search_pdf = None
+        self.download_enrolled_pdf = None
+        self.download_enrolled_pdf_tooltip = None
         self.table_count_tooltip = None
         self.previous_button_tooltip = None
         self.next_button_tooltip = None
         self.remove_button_tooltip = None
-        self.download_pdf_tooltip = None
+        self.download_search_pdf_tooltip = None
         self.tooltip = None
         self.exit = None
         self.is_exit_dialog_open = False
@@ -458,8 +460,10 @@ class TeraTermUI(customtkinter.CTk):
         self.title_my_classes = None
         self.total_credits_label = None
         self.submit_my_classes = None
+        self.submit_my_classes_tooltip = None
         self.modify_classes_frame = None
         self.back_my_classes = None
+        self.back_my_classes_tooltip = None
         self.enrolled_classes_table = None
         self.change_section_entries = None
         self.mod_selection_list = None
@@ -519,6 +523,8 @@ class TeraTermUI(customtkinter.CTk):
         self.class_table_pairs = []
         self.current_table_index = -1
         self.table_tooltips = {}
+        self.enrolled_header_tooltips = {}
+        self.enrolled_tooltips = []
         self.table_count = None
         self.table = None
         self.current_class = None
@@ -1542,6 +1548,7 @@ class TeraTermUI(customtkinter.CTk):
                                     return
                                 else:
                                     dialog_input = result
+                                    self.dialog_input = result
                             self.uprb.UprbayTeraTermVt.type_keys(dialog_input)
                             self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                             self.after(0, self.disable_go_next_buttons)
@@ -3575,12 +3582,12 @@ class TeraTermUI(customtkinter.CTk):
                 self.previous_button.configure(text=translation["previous"])
                 self.next_button.configure(text=translation["next"])
                 self.remove_button.configure(text=translation["remove"])
-                self.download_pdf.configure(text=translation["pdf_save_as"])
+                self.download_search_pdf.configure(text=translation["pdf_save_as"])
                 self.table_count_tooltip.configure(message=translation["table_count_tooltip"])
                 self.previous_button_tooltip.configure(message=translation["previous_tooltip"])
                 self.next_button_tooltip.configure(message=translation["next_tooltip"])
                 self.remove_button_tooltip.configure(message=translation["remove_tooltip"])
-                self.download_pdf_tooltip.configure(message=translation["download_pdf_tooltip"])
+                self.download_search_pdf_tooltip.configure(message=translation["download_pdf_tooltip"])
             if self.enroll_tab != translation["enroll_tab"]:
                 self.after(1000, self.rename_tabs)
 
@@ -4787,7 +4794,7 @@ class TeraTermUI(customtkinter.CTk):
                 return
 
     # creates pdf of the table containing for the searched class
-    def create_pdf(self, data_list, classes_list, filepath, semesters_list):
+    def create_search_pdf(self, data_list, classes_list, filepath, semesters_list):
         from reportlab.lib import colors
         from reportlab.lib.pagesizes import letter
         from reportlab.lib.styles import getSampleStyleSheet
@@ -4875,7 +4882,7 @@ class TeraTermUI(customtkinter.CTk):
         return merged_classes_list, merged_data_list, merged_semesters_list
 
     # function for the user to download the created pdf to their computer
-    def download_as_pdf(self):
+    def download_search_classes_as_pdf(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
 
@@ -4916,7 +4923,7 @@ class TeraTermUI(customtkinter.CTk):
             return
 
         classes_list, data, semester_list = TeraTermUI.merge_tables(classes_list, data, semester_list)
-        self.create_pdf(data, classes_list, filepath, semester_list)
+        self.create_search_pdf(data, classes_list, filepath, semester_list)
         self.show_success_message(350, 265, translation["pdf_save_success"])
 
     def copy_cell_data_to_clipboard(self, cell_data):
@@ -5054,8 +5061,9 @@ class TeraTermUI(customtkinter.CTk):
                                             command=self.show_next_table)
             self.remove_button = CustomButton(self.search_scrollbar, text=translation["remove"], hover_color="darkred",
                                               fg_color="red", command=self.remove_current_table)
-            self.download_pdf = CustomButton(self.search_scrollbar, text=translation["pdf_save_as"],
-                                             hover_color="#173518", fg_color="#2e6930", command=self.download_as_pdf)
+            self.download_search_pdf = CustomButton(self.search_scrollbar, text=translation["pdf_save_as"],
+                                                    hover_color="#173518", fg_color="#2e6930",
+                                                    command=self.download_search_classes_as_pdf)
             self.table_count_tooltip = CTkToolTip(self.table_count, message=translation["table_count_tooltip"],
                                                   bg_color="#A9A9A9", alpha=0.90)
             self.previous_button_tooltip = CTkToolTip(self.previous_button, message=translation["previous_tooltip"],
@@ -5064,8 +5072,8 @@ class TeraTermUI(customtkinter.CTk):
                                                   bg_color="#1E90FF")
             self.remove_button_tooltip = CTkToolTip(self.remove_button, message=translation["remove_tooltip"],
                                                     bg_color="red")
-            self.download_pdf_tooltip = CTkToolTip(self.download_pdf, message=translation["download_pdf_tooltip"],
-                                                   bg_color="green")
+            self.download_search_pdf_tooltip = CTkToolTip(self.download_search_pdf,
+                                                          message=translation["download_pdf_tooltip"], bg_color="green")
 
         available_key = translation["av"]
         available_values = [row[available_key] for row in modified_data]
@@ -5076,6 +5084,10 @@ class TeraTermUI(customtkinter.CTk):
             if existing_available_values != available_values:
                 display_class_to_remove, table_to_remove, _, _, _ = self.class_table_pairs[duplicate_index]
                 display_class_to_remove.unbind("<Button-1>")
+                for cell in table_to_remove.get_all_cells():
+                    if cell in self.table_tooltips:
+                        self.table_tooltips[cell].destroy()
+                        del self.table_tooltips[cell]
                 self.after(0, display_class_to_remove.destroy)
                 self.after(0, table_to_remove.destroy)
                 del self.class_table_pairs[duplicate_index]
@@ -5094,6 +5106,10 @@ class TeraTermUI(customtkinter.CTk):
             display_class_to_remove.unbind("<Button-1>")
             self.after(0, display_class_to_remove.destroy)
             self.after(0, table_to_remove.destroy)
+            for cell in table_to_remove.get_all_cells():
+                if cell in self.table_tooltips:
+                    self.table_tooltips[cell].destroy()
+                    del self.table_tooltips[cell]
             del self.class_table_pairs[0]
             self.current_table_index = max(0, self.current_table_index - 1)
             self.table_count.configure(text_color=("black", "white"))
@@ -5112,7 +5128,7 @@ class TeraTermUI(customtkinter.CTk):
             self.remove_button.grid_forget()
             self.next_button.grid_forget()
         self.remove_button.grid(row=5, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-        self.download_pdf.grid(row=6, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+        self.download_search_pdf.grid(row=6, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
         self.update_buttons()
         table_count_label = f"{translation['table_count']} {len(self.class_table_pairs)}/10"
         self.table_count.configure(text=table_count_label)
@@ -5188,6 +5204,10 @@ class TeraTermUI(customtkinter.CTk):
         display_class_to_remove.grid_forget()
         display_class_to_remove.unbind("<Button-1>")
         table_to_remove.grid_forget()
+        for cell in table_to_remove.get_all_cells():
+            if cell in self.table_tooltips:
+                self.table_tooltips[cell].destroy()
+                del self.table_tooltips[cell]
         self.after(0, display_class_to_remove.destroy)
         self.after(0, table_to_remove.destroy)
         if len(self.class_table_pairs) == 10:
@@ -5210,7 +5230,7 @@ class TeraTermUI(customtkinter.CTk):
             self.current_class = None
             self.table_count.grid_forget()
             self.remove_button.grid_forget()
-            self.download_pdf.grid_forget()
+            self.download_search_pdf.grid_forget()
             self.search_scrollbar.scroll_to_top()
             self.after(0, display_class_to_remove.destroy)
             self.after(0, table_to_remove.destroy)
@@ -5486,6 +5506,85 @@ class TeraTermUI(customtkinter.CTk):
 
         return enrolled_classes, total_credits
 
+    def create_enrolled_classes_pdf(self, data, creds, semester, filepath):
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+
+        # Prepare the PDF document
+        pdf = SimpleDocTemplate(filepath, pagesize=letter)
+        elems = []
+
+        # Extract and prepare table data with translated headers
+        headers = [translation["course"], translation["grade"], translation["days"],
+                   translation["times"], translation["room"]]
+        table_data = [headers] + [[cls.get(header, "") for header in headers] for cls in data]
+
+        # Create the table
+        table = Table(table_data)
+
+        # Define and set the same table style as in your create_pdf method
+        blue = colors.Color(0, 0.5, 0.75)
+        gray = colors.Color(0.7, 0.7, 0.7)
+        table_style = TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), blue),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, 0), 14),
+            ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+            ("BACKGROUND", (0, 1), (-1, -1), gray),
+            ("GRID", (0, 0), (-1, -1), 1, colors.black),
+        ])
+        table.setStyle(table_style)
+
+        # Get sample styles and create the "Semester" header
+        styles = getSampleStyleSheet()
+        semester_style = styles["Heading1"]
+        semester_style.alignment = 1
+        semester_header = Paragraph(f"{translation['semester']}: {semester}", semester_style)
+
+        # Add credits at the bottom of the table
+        centered_style = ParagraphStyle(name="Centered", parent=styles["Normal"], alignment=1)
+        credits_style = ParagraphStyle(name="CreditsStyle", parent=centered_style, fontSize=12, spaceAfter=10)
+        credits_line = Paragraph(f"<b>{translation['total_creds']} {creds}</b>", credits_style)
+
+        # Add the header, table, spacer, and credits to the elements
+        elems.extend([semester_header, Spacer(1, 20), table, Spacer(1, 10), credits_line])
+
+        # Build and save the PDF
+        pdf.build(elems)
+
+    def download_enrolled_classes_as_pdf(self, data, creds):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        if self.dialog_input is not None:
+            semester = self.dialog_input.upper().replace(" ", "")
+        else:
+            semester = self.prev_dialog_input.upper().replace(" ", "")
+
+        # Define where the PDF will be saved
+        home = os.path.expanduser("~")
+        downloads = os.path.join(home, "Downloads")
+        filepath = filedialog.asksaveasfilename(
+            title=translation["save_pdf"],
+            defaultextension=".pdf",
+            initialdir=downloads,
+            filetypes=[("PDF Files", "*.pdf")],
+            initialfile=f"{semester}_{translation['enrolled_classes']}"
+        )
+
+        # Check if user cancelled the file dialog
+        if not filepath:
+            return
+
+        self.create_enrolled_classes_pdf(data, creds, semester, filepath)
+        self.show_success_message(350, 265, translation["pdf_save_success"])
+
     def display_enrolled_data(self, data, creds):
         self.unbind("<Control-Tab>")
         lang = self.language_menu.get()
@@ -5511,12 +5610,20 @@ class TeraTermUI(customtkinter.CTk):
         self.submit_my_classes = CustomButton(self.my_classes_frame, border_width=2,
                                               text=translation["submit"], text_color=("gray10", "#DCE4EE"),
                                               command=self.submit_modify_classes_handler)
-        CTkToolTip(self.submit_my_classes, alpha=0.90, bg_color="#1E90FF", message=translation["submit_modify_tooltip"])
+        self.submit_my_classes_tooltip = CTkToolTip(self.submit_my_classes, alpha=0.90, bg_color="#1E90FF"
+                                                    , message=translation["submit_modify_tooltip"])
+        self.download_enrolled_pdf = CustomButton(self.my_classes_frame, text=translation["pdf_save_as"],
+                                                  hover_color="#173518", fg_color="#2e6930",
+                                                  command=lambda: self.download_enrolled_classes_as_pdf(data, creds))
+        self.download_enrolled_pdf_tooltip = CTkToolTip(self.download_enrolled_pdf,
+                                                        message=translation["download_pdf_enrolled_tooltip"],
+                                                        bg_color="green")
         self.modify_classes_frame = customtkinter.CTkFrame(self.my_classes_frame)
         self.back_my_classes = CustomButton(master=self.t_buttons_frame, fg_color="transparent", border_width=2,
                                             text=translation["back"], hover_color="#4E4F50",
                                             text_color=("gray10", "#DCE4EE"), command=self.go_back_event2)
-        CTkToolTip(self.back_my_classes, alpha=0.90, bg_color="#A9A9A9", message=translation["back_multiple"])
+        self.back_my_classes_tooltip = CTkToolTip(self.back_my_classes, alpha=0.90, bg_color="#A9A9A9",
+                                                  message=translation["back_multiple"])
         self.modify_classes_title = customtkinter.CTkLabel(self.modify_classes_frame,
                                                            text=translation["mod_classes_title"])
         self.back_classes.grid_forget()
@@ -5551,7 +5658,8 @@ class TeraTermUI(customtkinter.CTk):
             self.enrolled_classes_table.edit_column(i, width=column_widths[header])
             cell = self.enrolled_classes_table.get_cell(0, i)
             tooltip_message = tooltip_messages[header]
-            CTkToolTip(cell, message=tooltip_message, bg_color="#A9A9A9", alpha=0.90)
+            tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#A9A9A9", alpha=0.90)
+            self.enrolled_header_tooltips[cell] = tooltip
 
         self.my_classes_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
         self.my_classes_frame.grid_columnconfigure(2, weight=1)
@@ -5559,6 +5667,7 @@ class TeraTermUI(customtkinter.CTk):
         self.enrolled_classes_table.grid(row=2, column=1, pady=(0, 5))
         self.total_credits_label.grid(row=3, column=1, padx=(180, 0), pady=(0, 15))
         self.submit_my_classes.grid(row=4, column=1, padx=(180, 0))
+        self.download_enrolled_pdf.grid(row=5, column=1, padx=(180, 0), pady=(10, 0))
         self.modify_classes_frame.grid(row=2, column=2, sticky="nw", padx=10)
         self.modify_classes_title.grid(row=0, column=0, padx=(0, 30), pady=(0, 30))
 
@@ -5586,13 +5695,15 @@ class TeraTermUI(customtkinter.CTk):
                                                         width=50)
                 self.mod_selection.grid(row=row_index, column=0, padx=(0, 100), pady=(pad_y, 0))
                 self.change_section_entry.grid(row=row_index, column=0, padx=(50, 0), pady=(pad_y, 0))
-                CTkToolTip(self.mod_selection, alpha=0.90, bg_color="#1E90FF",
-                           message=translation["mod_selection"])
-                CTkToolTip(self.change_section_entry, alpha=0.90, bg_color="#1E90FF",
-                           message=translation["change_section_entry"])
+                mod_selection_tooltip = CTkToolTip(self.mod_selection, alpha=0.90, bg_color="#1E90FF",
+                                                   message=translation["mod_selection"])
+                change_section_entry_tooltip = CTkToolTip(self.change_section_entry, alpha=0.90, bg_color="#1E90FF",
+                                                          message=translation["change_section_entry"])
                 self.change_section_entry.configure(state="disabled")
                 self.mod_selection_list.append(self.mod_selection)
                 self.change_section_entries.append(self.change_section_entry)
+                self.enrolled_tooltips.append(mod_selection_tooltip)
+                self.enrolled_tooltips.append(change_section_entry_tooltip)
                 pad_y = 9
             else:
                 self.mod_selection_list.append(None)
@@ -5623,6 +5734,7 @@ class TeraTermUI(customtkinter.CTk):
         self.title_my_classes.destroy()
         self.total_credits_label.destroy()
         self.submit_my_classes.destroy()
+        self.download_enrolled_pdf.destroy()
         self.back_my_classes.destroy()
         self.total_credits_label.destroy()
         self.modify_classes_title.destroy()
@@ -5632,11 +5744,23 @@ class TeraTermUI(customtkinter.CTk):
         for entry in self.change_section_entries:
             if entry is not None:
                 entry.destroy()
+        for cell, tooltip in self.enrolled_header_tooltips.items():
+            tooltip.destroy()
+        for tooltip in self.enrolled_tooltips:
+            tooltip.destroy()
+        self.enrolled_header_tooltips = {}
+        self.enrolled_tooltips = []
         self.my_classes_frame.destroy()
         self.modify_classes_frame.destroy()
         self.change_section_entries = None
         self.mod_selection_list = None
         self.enrolled_rows = None
+        self.download_enrolled_pdf_tooltip.destroy()
+        self.download_enrolled_pdf_tooltip = None
+        self.submit_my_classes_tooltip.destroy()
+        self.submit_my_classes_tooltip = None
+        self.back_my_classes_tooltip.destroy()
+        self.back_my_classes_tooltip = None
 
     def modify_enrolled_classes(self, mod, row_index):
         lang = self.language_menu.get()
@@ -7057,7 +7181,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.previous_button.grid_forget()
                 self.next_button.grid_forget()
                 self.remove_button.grid_forget()
-                self.download_pdf.grid_forget()
+                self.download_search_pdf.grid_forget()
                 self.search_scrollbar.scroll_to_top()
                 self.after(100, self.load_table)
             self.in_enroll_frame = False
@@ -7094,7 +7218,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.remove_button.grid_forget()
                 self.next_button.grid_forget()
             self.remove_button.grid(row=5, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-            self.download_pdf.grid(row=6, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+            self.download_search_pdf.grid(row=6, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
             table_count_label = f"{translation['table_count']} {len(self.class_table_pairs)}/10"
             self.table_count.configure(text=table_count_label)
 
