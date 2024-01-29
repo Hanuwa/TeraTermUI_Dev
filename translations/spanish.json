@@ -257,6 +257,7 @@
 	"classes_data": "data_clases",
 	"pdf_save_as": "Guardar como PDF",
 	"download_pdf_tooltip": "Descargar un PDF lleno de todas las tablas\nbuscadas actualmente y sus datos",
+	"download_pdf_enrolled_tooltip": "Descargar un PDF que contiene la tabla\nde tus clases actualmente matriculadas",
 	"submit_modify_tooltip": "Somete tus modificaciones de\ntus classes matriculadas actualmente",
 	"mod_selection": "Elige si quieres abandonar\no cambiar la sección de la clase",
 	"change_section_entry": "Ingresa la nueva sección\nque deseas para esa clase",
