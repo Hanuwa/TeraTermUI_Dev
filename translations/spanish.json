@@ -261,6 +261,7 @@
 	"mod_selection": "Elige si quieres abandonar\no cambiar la sección de la clase",
 	"change_section_entry": "Ingresa la nueva sección\nque deseas para esa clase",
 	"total_creds": "Total de Créditos: ",
+	"enrolled_classes": "clases_matriculadas",
 	"course": "CLASE",
 	"grade": "NOTA",
 	"room": "SALON",
