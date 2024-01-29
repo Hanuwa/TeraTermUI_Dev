@@ -597,8 +597,8 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Control-space>", lambda event: self.focus_set())
             self.bind("<Escape>", lambda event: self.on_closing())
             self.bind("<Alt-F4>", lambda event: self.direct_close())
-            user_data_fields = ["location", "config", "directory", "host", "language",
-                                "appearance", "scaling", "welcome", "audio", "skip_auth"]
+            user_data_fields = ["location", "config", "directory", "host", "language", "appearance",
+                                "scaling", "welcome", "default_semester", "audio", "skip_auth"]
             results = {}
             for field in user_data_fields:
                 query_user = f"SELECT {field} FROM user_data"
@@ -640,6 +640,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.skip_auth = True
             elif not results["skip_auth"]:
                 self.ask_skip_auth = True
+            if results["default_semester"]:
+                self.DEFAULT_SEMESTER = results["default_semester"]
             if not results["welcome"]:
                 self.help_button.configure(state="disabled")
                 self.status_button.configure(state="disabled")
@@ -5321,6 +5323,13 @@ class TeraTermUI(customtkinter.CTk):
                 return "negative"
             else:
                 self.DEFAULT_SEMESTER = latest_term
+                row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+                if not row_exists:
+                    self.cursor.execute("INSERT INTO user_data (default_semester) VALUES (?)",
+                                        (self.DEFAULT_SEMESTER,))
+                else:
+                    self.cursor.execute("UPDATE user_data SET default_semester=?",
+                                        (self.DEFAULT_SEMESTER,))
                 self.found_latest_semester = True
                 return latest_term
         else:
@@ -9085,3 +9094,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
