@@ -432,6 +432,15 @@ class CTkTable(customtkinter.CTkFrame):
     def get_cell(self, row, column):
         return self.frame.get((row, column), None)
 
+    def get_all_cells(self):
+        """
+        Retrieve all cell widgets in the table.
+
+        Returns:
+            list: A list of all cell widgets.
+        """
+        return list(self.frame.values())
+
     def delete_row(self, index=None):
         """ delete a particular row """
         if len(self.values) == 1:
