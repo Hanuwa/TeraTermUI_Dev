@@ -49,7 +49,7 @@ Source: "{#MyAppPath}\TeraTermUI_installer\{#MyAppExeName}"; DestDir: "{app}"; F
 Source: "{#MyAppPath}\database.db"; DestDir: "{commonappdata}\TeraTermUI"; Flags: onlyifdoesntexist; Permissions: everyone-modify
 Source: "{#MyAppPath}\feedback.zip"; DestDir: "{commonappdata}\TeraTermUI"; Flags: onlyifdoesntexist; Permissions: everyone-modify
 Source: "{#MyAppPath}\TeraTermUI_installer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#MyAppPath}\teraterm-4.107.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
+Source: "{#MyAppPath}\teraterm-4.108.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [UninstallDelete]
@@ -73,7 +73,7 @@ begin
     if WizardIsTaskSelected('teraterm') then
     begin
       // Run the teraterm installer without any prompt
-      if not Exec(ExpandConstant('{tmp}\teraterm-4.107.exe'), '/SILENT', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
+      if not Exec(ExpandConstant('{tmp}\teraterm-4.108.exe'), '/SILENT', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
       begin
         // Handle the error. For example, show a message to the user.
         MsgBox('Tera Term installation failed.', mbError, MB_OK);
