@@ -6891,6 +6891,8 @@ class TeraTermUI(customtkinter.CTk):
                     self.reset_activity_timer(None)
                 self.enrolled_classes_list = {}
                 self.dropped_classes_list = {}
+                self.cursor.execute("UPDATE user_data SET default_semester = NULL")
+                self.connection.commit()
                 self.after(100, self.show_information_message, 370, 250,
                            translation["fix_after"])
             except Exception as e:
@@ -6994,8 +6996,8 @@ class TeraTermUI(customtkinter.CTk):
                                 self.select_screen_item = edit_menu.child_window(
                                     title="Select screen", control_type="MenuItem", top_level_only=False)
                                 self.move_window()
-                            main_window.self.uprb.UprbayTeraTermVt.type_keystrokes("{VK_RIGHT}")
-                            main_window.self.uprb.UprbayTeraTermVt.type_keystrokes("{VK_LEFT}")
+                            main_window.send_keystrokes("{VK_RIGHT}")
+                            main_window.send_keystrokes("{VK_LEFT}")
                             self.last_activity = time.time()
                             if not self.countdown_running:
                                 self.idle_num_check += 1
@@ -9094,4 +9096,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
