@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/29/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 1/31/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -514,7 +514,8 @@ class TeraTermUI(customtkinter.CTk):
         self.fix = None
 
         # Top level window management, flags and counters
-        self.DEFAULT_SEMESTER = "C41"
+        self.DEFAULT_SEMESTER = TeraTermUI.calculate_default_semester()
+        self.semester_values = TeraTermUI.generate_semester_values(self.DEFAULT_SEMESTER)
         self.found_latest_semester = False
         self.error_occurred = False
         self.can_edit = False
@@ -3508,7 +3509,7 @@ class TeraTermUI(customtkinter.CTk):
             self.title_search.configure(text=translation["title_search"])
             self.s_classes.configure(text=translation["class"])
             self.s_semester.configure(text=translation["semester"])
-            self.s_semester_entry.configure(values=["C31", "C32", "C33", "C41", "C42", "C43", translation["current"]])
+            self.s_semester_entry.configure(values=self.semester_values + [translation["current"]])
             self.show_all.configure(text=translation["show_all"])
             self.explanation_menu.configure(text=translation["explanation_menu"])
             self.title_menu.configure(text=translation["title_menu"])
@@ -3519,8 +3520,7 @@ class TeraTermUI(customtkinter.CTk):
                                               translation["4CM"], translation["4SP"], translation["SO"]])
             self.menu_entry.set(translation["SRM"])
             self.menu_semester.configure(text=translation["semester"])
-            self.menu_semester_entry.configure(values=["C31", "C32", "C33", "C41", "C42", "C43",
-                                                       translation["current"]])
+            self.menu_semester_entry.configure(values=self.semester_values + [translation["current"]])
             if self.e_semester_entry.get().upper().replace(" ", "") == "CURRENT" or \
                     self.e_semester_entry.get().upper().replace(" ", "") == "ACTUAL":
                 self.e_semester_entry.set(translation["current"])
@@ -3546,8 +3546,7 @@ class TeraTermUI(customtkinter.CTk):
             self.m_class.configure(text=translation["class"])
             self.m_section.configure(text=translation["section"])
             self.m_semester.configure(text=translation["semester"])
-            self.m_semester_entry[0].configure(values=["C31", "C32", "C33", "C41", "C42", "C43",
-                                                       translation["current"]])
+            self.m_semester_entry[0].configure(values=self.semester_values + [translation["current"]])
             self.m_choice.configure(text=translation["choice"])
             self.back_multiple.configure(text=translation["back"])
             self.submit_multiple.configure(text=translation["submit"])
@@ -4256,8 +4255,7 @@ class TeraTermUI(customtkinter.CTk):
             self.e_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab),
                                                      text=translation["semester"])
             self.e_semester_entry = CustomComboBox(self.tabview.tab(self.enroll_tab), self,
-                                                   values=["C31", "C32", "C33", "C41", "C42", "C43",
-                                                           translation["current"]],
+                                                   values=self.semester_values + [translation["current"]],
                                                    command=lambda value: self.set_focus())
             self.e_semester_entry.set(self.DEFAULT_SEMESTER)
             self.radio_var = tk.StringVar()
@@ -4289,8 +4287,7 @@ class TeraTermUI(customtkinter.CTk):
                                                width=80)
             self.s_semester = customtkinter.CTkLabel(self.search_scrollbar, text=translation["semester"])
             self.s_semester_entry = CustomComboBox(self.search_scrollbar, self,
-                                                   values=["C31", "C32", "C33", "C41", "C42", "C43",
-                                                           translation["current"]],
+                                                   values=self.semester_values + [translation["current"]],
                                                    command=lambda value: self.set_focus(), width=80)
             self.s_semester_entry.set(self.DEFAULT_SEMESTER)
             self.show_all = customtkinter.CTkCheckBox(self.search_scrollbar, text=translation["show_all"],
@@ -4327,8 +4324,7 @@ class TeraTermUI(customtkinter.CTk):
             self.menu_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab),
                                                         text=translation["semester"])
             self.menu_semester_entry = CustomComboBox(self.tabview.tab(self.other_tab), self,
-                                                      values=["C31", "C32", "C33", "C41", "C42", "C43",
-                                                              translation["current"]],
+                                                      values=self.semester_values + [translation["current"]],
                                                       command=lambda value: self.set_focus(), width=141)
             self.menu_semester_entry.set(self.DEFAULT_SEMESTER)
             self.menu_submit = CustomButton(master=self.tabview.tab(self.other_tab), border_width=2,
@@ -4434,8 +4430,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.m_section_entry.append(CustomEntry(self.multiple_frame, self, lang,
                                                         placeholder_text=self.placeholder_texts_sections[i]))
                 self.m_semester_entry.append(CustomComboBox(self.multiple_frame, self,
-                                                            values=["C31", "C32", "C33", "C41", "C42", "C43",
-                                                                    translation["current"]],
+                                                            values=self.semester_values + [translation["current"]],
                                                             command=self.change_semester))
                 self.m_semester_entry[i].set(self.DEFAULT_SEMESTER)
                 self.m_register_menu.append(customtkinter.CTkOptionMenu(
@@ -5334,6 +5329,57 @@ class TeraTermUI(customtkinter.CTk):
                 return latest_term
         else:
             return self.DEFAULT_SEMESTER
+
+    @staticmethod
+    def calculate_default_semester():
+        # Preset base year and starting letter
+        base_year = 2000
+        start_letter = "A"
+
+        # Current date
+        current_date = datetime.now()
+        current_year = current_date.year
+        current_month = current_date.month
+
+        # Calculate the academic year
+        academic_year = current_year - base_year
+
+        # Adjust the academic year and semester part based on current month
+        if current_month in [1, 8]:  # January and August for readjustments
+            if current_month == 1:
+                semester_part = "2"
+                academic_year -= 1
+            else:
+                semester_part = "1"
+        elif current_month < 8:
+            semester_part = "1"
+        else:
+            academic_year += 1
+            semester_part = "2"
+
+        # Calculate the letter
+        letter = chr(ord(start_letter) + academic_year // 10)
+
+        return f"{letter}{academic_year % 10}{semester_part}"
+
+    @staticmethod
+    def generate_semester_values(default_semester):
+        letter = default_semester[0]
+        year = int(default_semester[1])
+
+        values = []
+        for i in range(year - 1, year + 1):
+            for j in range(1, 4):
+                if i == year - 1 and default_semester[1] == "0":
+                    # Handle the edge case of 'A01', 'A02', 'A03'
+                    if letter == "A":
+                        values.append(f"Z9{j}")
+                    else:
+                        values.append(f"{chr(ord(letter) - 1)}{i % 10}{j}")
+                else:
+                    values.append(f"{letter}{i % 10}{j}")
+
+        return values[-6:]
 
     @staticmethod
     def specific_class_data(data):
