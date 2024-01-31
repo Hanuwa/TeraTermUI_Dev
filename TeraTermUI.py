@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/30/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 1/29/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -147,7 +147,7 @@ class TeraTermUI(customtkinter.CTk):
 
         # Installer Directories
         if self.mode == "Installation":
-            appdata_path = os.environ.get("APPDATA")
+            appdata_path = os.environ.get("PROGRAMDATA")
             self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
             self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
             self.logs = os.path.join(appdata_path, "TeraTermUI/logs.txt")
@@ -815,10 +815,10 @@ class TeraTermUI(customtkinter.CTk):
             # Create a separator based on the length of the error message
             separator = "-" * error_length + "\n"
             if self.mode == "Installation":
-                appdata_path = os.environ.get("APPDATA")
+                appdata_path = os.environ.get("PROGRAMDATA")
                 tera_term_ui_path = os.path.join(appdata_path, "TeraTermUI")
                 if not os.path.isdir(tera_term_ui_path):
-                    raise Exception("App Data directory not found.")
+                    raise Exception("Program Data directory not found.")
             # Write the formatted error message and separator to the log file
             with open("logs.txt", "a") as file:
                 file.write(error_message + "\n" + separator)
@@ -9096,3 +9096,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
