@@ -2859,7 +2859,7 @@ class TeraTermUI(customtkinter.CTk):
         self.thread_pool.submit(self.login_event, task_done)
 
     # Checks if host entry is true
-    @measure_time(threshold=7.5)
+    @measure_time(threshold=8.5)
     def login_event(self, task_done):
         dont_close = False
         with self.lock_thread:
@@ -2877,8 +2877,8 @@ class TeraTermUI(customtkinter.CTk):
                             try:
                                 if self.download or self.teraterm_not_found:
                                     self.edit_teraterm_ini(self.teraterm_file)
-                                self.uprb = Application(backend="uia").start(self.location) \
-                                    .connect(title="Tera Term - [disconnected] VT", timeout=7)
+                                self.uprb = Application(backend="uia").start(self.location).connect(
+                                    title="Tera Term - [disconnected] VT", timeout=7)
                                 self.uprb_32 = Application().connect(
                                     title="Tera Term - [disconnected] VT", timeout=5)
                                 edit_menu = self.uprb.UprbayTeraTermVt.child_window(title="Edit",
