@@ -18,8 +18,8 @@ EasyProcess==1.1
 entrypoint2==1.1
 filelock==3.13.1
 frozenlist==1.4.1
-google-api-core==2.16.0
-google-api-python-client==2.115.0
+google-api-core==2.16.1
+google-api-python-client==2.116.0
 google-auth==2.27.0
 google-auth-httplib2==0.2.0
 google-auth-oauthlib==1.2.0
@@ -71,6 +71,6 @@ six==1.16.0
 soupsieve==2.5
 texttable==1.7.0
 uritemplate==4.1.1
-urllib3==2.1.0
+urllib3==2.2.0
 yarl==1.9.4
 zstandard==0.22.0
