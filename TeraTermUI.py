@@ -2877,8 +2877,8 @@ class TeraTermUI(customtkinter.CTk):
                             try:
                                 if self.download or self.teraterm_not_found:
                                     self.edit_teraterm_ini(self.teraterm_file)
-                                self.uprb = Application(backend="uia").start(self.location).connect(
-                                    title="Tera Term - [disconnected] VT", timeout=7)
+                                self.uprb = Application(backend="uia").start(
+                                    self.location, timeout=7).connect(title="Tera Term - [disconnected] VT", timeout=5)
                                 self.uprb_32 = Application().connect(
                                     title="Tera Term - [disconnected] VT", timeout=5)
                                 edit_menu = self.uprb.UprbayTeraTermVt.child_window(title="Edit",
@@ -7629,7 +7629,7 @@ class TeraTermUI(customtkinter.CTk):
             self.manually_change_location()
 
     @staticmethod
-    def find_teraterm_directory(base_path="C:/Program Files (x86)"):
+    def find_teraterm_directory(base_path=r"C:\Program Files (x86)"):
         possible_dirs = glob.glob(os.path.join(base_path, "teraterm*"))
         original_teraterm = os.path.join(base_path, "teraterm")
         if original_teraterm in possible_dirs:
@@ -9148,4 +9148,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
