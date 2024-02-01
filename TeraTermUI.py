@@ -9105,10 +9105,16 @@ def get_window_rect(hwnd):
 
 def bring_to_front(window_title):
     try:
-        win = gw.getWindowsWithTitle(window_title)[0]
-        win.activate()
-    except IndexError:
-        print("Window not found.")
+        windows = gw.getWindowsWithTitle(window_title)
+        if windows:
+            window = windows[0]
+            if window.isMinimized:
+                window.restore()
+            window.activate()
+        else:
+            print("Window not found.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
 
 def main():
