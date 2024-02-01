@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/31/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/1/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -519,6 +519,7 @@ class TeraTermUI(customtkinter.CTk):
         self.found_latest_semester = False
         self.error_occurred = False
         self.can_edit = False
+        self.original_font = None
         self.enrolled_classes_list = None
         self.dropped_classes_list = None
         self.class_table_pairs = []
@@ -566,6 +567,8 @@ class TeraTermUI(customtkinter.CTk):
         self.e_counter = 0
         self.search_function_counter = 0
         self.last_switch_time = 0
+        # Storing translations for languages in cache to reuse
+        self.translations_cache = {}
         SPANISH = 0x0A
         language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
         # default location of Tera Term
@@ -578,11 +581,6 @@ class TeraTermUI(customtkinter.CTk):
             self.location = "C:/Program Files (x86)/teraterm/ttermpro.exe"
             self.teraterm_file = "C:/Program Files (x86)/teraterm/TERATERM.ini"
             self.teraterm_directory = "C:/Program Files (x86)/teraterm"
-        self.original_font = None
-        # Storing translations for languages in cache to reuse
-        self.translations_cache = {}
-        # performs some operations in a separate thread when application starts up
-        self.boot_up(self.teraterm_file)
         # Database
         try:
             db_path = "database.db"
@@ -605,8 +603,6 @@ class TeraTermUI(customtkinter.CTk):
                 query_user = f"SELECT {field} FROM user_data"
                 result = self.cursor.execute(query_user).fetchone()
                 results[field] = result[0] if result else None
-            if results["host"]:
-                self.host_entry.insert(0, results["host"])
             if results["location"]:
                 if results["location"] != self.location:
                     self.location = results["location"]
@@ -616,6 +612,12 @@ class TeraTermUI(customtkinter.CTk):
                     self.teraterm_directory = results["directory"]
                     self.edit_teraterm_ini(self.teraterm_file)
                     self.can_edit = True
+
+            # performs some operations on separate threads when application starts up
+            self.boot_up(self.teraterm_file)
+
+            if results["host"]:
+                self.host_entry.insert(0, results["host"])
             if not results["language"] and language_id & 0xFF == SPANISH:
                 self.language_menu.set("Español")
                 self.change_language_event(lang="Español")
