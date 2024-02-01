@@ -165,7 +165,7 @@ nuitka_command = (
     r'--include-data-file="' + project_directory + r'\feedback.zip=feedback.zip" '
     r'--include-data-file="' + project_directory + r'\VERSION.txt=VERSION.txt" '
     r'--include-data-file="' + project_directory + r'\LICENSE.txt=LICENSE.txt" '                                                     
-    r'--output-dir="' + output_directory + r'" --python-flag=no_asserts --python-flag=no_site '
+    r'--output-dir="' + output_directory + r'" --python-flag=no_asserts '
     r'--windows-icon-from-ico="' + project_directory + r'\images\tera-term.ico" '
     r'--nofollow-import-to=unittest --nofollow-import-to=reportlab.graphics.testshapes '
     r'--company-name="Armando Del Valle Tejada" --product-name="Tera Term UI" '  
