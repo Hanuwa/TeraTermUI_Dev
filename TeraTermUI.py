@@ -5347,12 +5347,13 @@ class TeraTermUI(customtkinter.CTk):
         academic_year = current_year - base_year
 
         # Adjust the academic year and semester part based on current month
-        if current_month in [1, 8]:  # January and August for readjustments
-            if current_month == 1:
+        if current_month in [1, 2, 8, 9]:  # January, February, August, September for readjustments
+            if current_month == 1 or current_month == 2:
                 semester_part = "2"
                 academic_year -= 1
             else:
                 semester_part = "1"
+
         elif current_month < 8:
             semester_part = "1"
         else:
@@ -5360,7 +5361,8 @@ class TeraTermUI(customtkinter.CTk):
             semester_part = "2"
 
         # Calculate the letter
-        letter = chr(ord(start_letter) + academic_year // 10)
+        letter_index = (academic_year // 10) % 26  
+        letter = chr(ord(start_letter) + letter_index)
 
         return f"{letter}{academic_year % 10}{semester_part}"
 
