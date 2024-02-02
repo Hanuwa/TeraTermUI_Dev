@@ -4640,16 +4640,28 @@ class TeraTermUI(customtkinter.CTk):
     @staticmethod
     def disable_entries(container):
         for widget in container.winfo_children():
-            if isinstance(widget, (tk.Entry, CustomEntry)):
-                widget.configure(state="disabled")
+            if not widget.winfo_viewable():
+                continue
+
+            widget_types = (tk.Entry, CustomEntry, customtkinter.CTkCheckBox,
+                            customtkinter.CTkRadioButton, customtkinter.CTkSwitch)
+            if isinstance(widget, widget_types):
+                if widget.cget("state") != "disabled":
+                    widget.configure(state="disabled")
             elif hasattr(widget, "winfo_children"):
                 TeraTermUI.disable_entries(widget)
 
     @staticmethod
     def enable_entries(container):
         for widget in container.winfo_children():
-            if isinstance(widget, (tk.Entry, CustomEntry)):
-                widget.configure(state="normal")
+            if not widget.winfo_viewable():
+                continue
+
+            widget_types = (tk.Entry, CustomEntry, customtkinter.CTkCheckBox,
+                            customtkinter.CTkRadioButton, customtkinter.CTkSwitch)
+            if isinstance(widget, widget_types):
+                if widget.cget("state") != "normal":
+                    widget.configure(state="normal")
             elif hasattr(widget, "winfo_children"):
                 TeraTermUI.enable_entries(widget)
 
