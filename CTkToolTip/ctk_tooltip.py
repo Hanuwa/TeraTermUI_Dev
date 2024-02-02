@@ -13,6 +13,8 @@ class CTkToolTip(Toplevel):
     """
     Creates a ToolTip (pop-up) widget for customtkinter.
     """
+    __slots__ = ("widget", "message", "delay", "follow", "x_offset", "y_offset", "bg_color", "corner_radius",
+                 "border_width", "border_color", "alpha", "padding")
 
     def __init__(
             self,
