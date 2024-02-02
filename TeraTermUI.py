@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/1/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/2/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -8229,6 +8229,8 @@ class TeraTermUI(customtkinter.CTk):
 
 
 class CustomButton(customtkinter.CTkButton):
+    __slots__ = ("master", "command")
+
     def __init__(self, master=None, command=None, **kwargs):
         super().__init__(master, cursor="hand2", **kwargs)
         self.text = kwargs.pop("text", None)
@@ -8314,6 +8316,8 @@ class CustomScrollableFrame(customtkinter.CTkScrollableFrame):
 
 
 class CustomTextBox(customtkinter.CTkTextbox):
+    __slots__ = ("master", "teraterm_ui_instance", "enable_autoscroll", "read_only", "lang")
+
     def __init__(self, master, teraterm_ui_instance, enable_autoscroll=True, read_only=False, lang=None, **kwargs):
         super().__init__(master, **kwargs)
         self.auto_scroll = enable_autoscroll
@@ -8613,6 +8617,8 @@ class CustomTextBox(customtkinter.CTkTextbox):
 
 
 class CustomEntry(customtkinter.CTkEntry):
+    __slots__ = ("master", "teraterm_ui_instance", "lang")
+
     def __init__(self, master, teraterm_ui_instance, lang=None, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
 
@@ -8856,6 +8862,8 @@ class CustomEntry(customtkinter.CTkEntry):
 
 
 class CustomComboBox(customtkinter.CTkComboBox):
+    __slots__ = ("master", "teraterm_ui_instance")
+
     def __init__(self, master, teraterm_ui_instance, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
 
@@ -8954,6 +8962,8 @@ class CustomComboBox(customtkinter.CTkComboBox):
 
 
 class SmoothFadeToplevel(customtkinter.CTkToplevel):
+    __slots__ = "fade_duration"
+
     def __init__(self, fade_duration=30, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fade_duration = fade_duration
@@ -8979,6 +8989,8 @@ class SmoothFadeToplevel(customtkinter.CTkToplevel):
 
 
 class SmoothFadeInputDialog(customtkinter.CTkInputDialog):
+    __slots__ = "fade_duration"
+
     def __init__(self, fade_duration=15, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fade_duration = fade_duration
@@ -9003,9 +9015,12 @@ class SmoothFadeInputDialog(customtkinter.CTkInputDialog):
         self._fade()
 
 
-class ImageSlideshow:
-    def __init__(self, parent, image_folder, interval=3, width=300, height=200):
-        self.slideshow_frame = customtkinter.CTkFrame(parent)
+class ImageSlideshow(customtkinter.CTkFrame):
+    __slots__ = ("parent", "image_folder", "interval", "width", "height")
+
+    def __init__(self, parent, image_folder, interval=3, width=300, height=200, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.slideshow_frame = parent
         self.image_folder = image_folder
         self.interval = interval
         self.width = width
@@ -9016,31 +9031,22 @@ class ImageSlideshow:
         self.load_images()
         self.index = 0  # Added index to keep track of the current position in the list
 
-        self.label = customtkinter.CTkLabel(self.slideshow_frame, text="")
+        self.label = customtkinter.CTkLabel(self, text="")
         self.label.bind("<Button-1>", lambda event: self.focus_set())
         self.label.grid(row=0, column=1)
 
-        self.arrow_left = CustomButton(self.slideshow_frame, text="<", command=self.prev_image, width=25)
+        self.arrow_left = CustomButton(self, text="<", command=self.prev_image, width=25)
         self.arrow_left.bind("<Button-1>", lambda event: self.focus_set())
         self.arrow_left.grid(row=0, column=0)
 
-        self.arrow_right = CustomButton(self.slideshow_frame, text=">", command=self.next_image, width=25)
+        self.arrow_right = CustomButton(self, text=">", command=self.next_image, width=25)
         self.arrow_right.bind("<Button-1>", lambda event: self.focus_set())
         self.arrow_right.grid(row=0, column=2)
 
-        self.after_id = self.slideshow_frame.after(1, lambda: None)
-        self.slideshow_frame.bind("<Button-1>", lambda event: self.focus_set())
+        self.after_id = self.after(1, lambda: None)
+        self.bind("<Button-1>", lambda event: self.focus_set())
         self.is_running = True
         self.show_image()
-
-    def focus_set(self):
-        self.slideshow_frame.focus_set()
-
-    def grid(self, **kwargs):
-        self.slideshow_frame.grid(**kwargs)
-
-    def grid_forget(self):
-        self.slideshow_frame.grid_forget()
 
     def load_images(self):
         image_files = [f for f in os.listdir(self.image_folder) if f.endswith(("png", "gif", "jpg", "jpeg"))]
@@ -9060,7 +9066,7 @@ class ImageSlideshow:
         )
         self.label.configure(image=self.current_image)
 
-        self.slideshow_frame.after_cancel(self.after_id)  # Cancel the existing timer
+        self.after_cancel(self.after_id)  # Cancel the existing timer
         self.reset_timer()  # Reset the timer after showing the image
 
     def cycle_images(self):
@@ -9080,7 +9086,7 @@ class ImageSlideshow:
         self.show_image()  # Show the first image
 
     def pause_cycle(self):
-        self.slideshow_frame.after_cancel(self.after_id)  # Cancel the existing timer
+        self.after_cancel(self.after_id)  # Cancel the existing timer
         self.is_running = False  # Set the flag to indicate that the slideshow is not running
 
     def resume_cycle(self):
@@ -9090,9 +9096,9 @@ class ImageSlideshow:
 
     def reset_timer(self):
         if self.is_running:  # Only reset the timer if the slideshow is running
-            self.slideshow_frame.after_cancel(self.after_id)  # Cancel the existing timer if any
+            self.after_cancel(self.after_id)  # Cancel the existing timer if any
             # Set a new timer to cycle images
-            self.after_id = self.slideshow_frame.after(self.interval * 1000, self.cycle_images)
+            self.after_id = self.after(self.interval * 1000, self.cycle_images)
 
 
 class RECT(ctypes.Structure):
