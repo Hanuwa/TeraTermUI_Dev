@@ -14,6 +14,8 @@ class CTkScrollbar(CTkBaseClass):
     Connect to scrollable widget by passing .set() method and set command attribute.
     For detailed information check out the documentation.
     """
+    __slots__ = ("master", "width", "height", "corner_radius", "border_spacing", "minimum_pixel_length", "bg_color",
+                 "fg_color", "button_color", "button_hover_color", "hover", "command", "orientation")
 
     def __init__(self,
                  master: any,
