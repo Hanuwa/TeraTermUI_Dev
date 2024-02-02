@@ -7436,7 +7436,6 @@ class TeraTermUI(customtkinter.CTk):
     def start_feedback_thread(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        self.feedback_send.configure(state="disabled")
         msg = CTkMessagebox(master=self, title="Submit",
                             message=translation["submit_feedback"],
                             icon="question",
@@ -7446,71 +7445,26 @@ class TeraTermUI(customtkinter.CTk):
                             hover_color=("darkred", "use_default", "use_default"))
         response = msg.get()
         if response[0] == "Yes" or response[0] == "Sí":
-            self.sending_feedback = True
-            task_done = threading.Event()
-            loading_screen = self.show_loading_screen()
-            self.update_loading_screen(loading_screen, task_done)
-            self.thread_pool.submit(self.submit_feedback, task_done)
-        else:
-            self.feedback_send.configure(state="normal")
-
-    # Submits feedback from the user to a Google sheet
-    def submit_feedback(self, task_done):
-        with self.lock_thread:
-            try:
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
-                if not self.disable_feedback:
-                    current_date = datetime.today().strftime("%Y-%m-%d")
-                    date_record = self.cursor.execute("SELECT feedback_date FROM user_data").fetchone()
-                    if date_record is None or date_record[0] != current_date:
+            if not self.disable_feedback:
+                current_date = datetime.today().strftime("%Y-%m-%d")
+                date_record = self.cursor.execute("SELECT feedback_date FROM user_data").fetchone()
+                if date_record is None or date_record[0] != current_date:
+                    feedback = self.feedback_text.get("1.0", customtkinter.END).strip()
+                    word_count = len(feedback.split())
+                    if word_count < 1000:
                         feedback = self.feedback_text.get("1.0", customtkinter.END).strip()
-                        word_count = len(feedback.split())
-                        if word_count < 1000:
-                            feedback = self.feedback_text.get("1.0", customtkinter.END).strip()
-                            if feedback:
-                                result = self.call_sheets_api([[feedback]])
-                                if result:
-                                    def show_success():
-                                        if not self.disable_audio:
-                                            winsound.PlaySound("sounds/success.wav", winsound.SND_ASYNC)
-                                        CTkMessagebox(title=translation["success_title"], icon="check",
-                                                      message=translation["feedback_success"], button_width=380)
-
-                                    self.after(0, show_success)
-                                    row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
-                                    if not row_exists:
-                                        self.cursor.execute("INSERT INTO user_data (feedback_date) VALUES (?)",
-                                                            (current_date,))
-                                    else:
-                                        self.cursor.execute("UPDATE user_data SET feedback_date=?",
-                                                            (current_date,))
-                                    self.connection.commit()
-                                else:
-                                    if not self.connection_error:
-                                        def show_error():
-                                            if not self.disable_audio:
-                                                winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                                            CTkMessagebox(title="Error",
-                                                          message=translation["feedback_error"],
-                                                          icon="cancel", button_width=380)
-
-                                        self.after(0, show_error)
-                            else:
-                                if not self.connection_error:
-                                    def show_error():
-                                        if not self.disable_audio:
-                                            winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                                        CTkMessagebox(title="Error", message=translation["feedback_empty"],
-                                                      icon="cancel", button_width=380)
-
-                                    self.after(0, show_error)
+                        if feedback:
+                            self.sending_feedback = True
+                            task_done = threading.Event()
+                            loading_screen = self.show_loading_screen()
+                            self.update_loading_screen(loading_screen, task_done)
+                            self.thread_pool.submit(self.submit_feedback, task_done)
                         else:
                             if not self.connection_error:
                                 def show_error():
                                     if not self.disable_audio:
                                         winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                                    CTkMessagebox(title="Error", message=translation["feedback_1000"],
+                                    CTkMessagebox(title="Error", message=translation["feedback_empty"],
                                                   icon="cancel", button_width=380)
 
                                 self.after(0, show_error)
@@ -7519,7 +7473,7 @@ class TeraTermUI(customtkinter.CTk):
                             def show_error():
                                 if not self.disable_audio:
                                     winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                                CTkMessagebox(title="Error", message=translation["feedback_day"],
+                                CTkMessagebox(title="Error", message=translation["feedback_1000"],
                                               icon="cancel", button_width=380)
 
                             self.after(0, show_error)
@@ -7528,11 +7482,55 @@ class TeraTermUI(customtkinter.CTk):
                         def show_error():
                             if not self.disable_audio:
                                 winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                            CTkMessagebox(title="Error", message=translation["feedback_unavailable"],
+                            CTkMessagebox(title="Error", message=translation["feedback_day"],
                                           icon="cancel", button_width=380)
 
                         self.after(0, show_error)
-                self.feedback_send.configure(state="normal")
+            else:
+                if not self.connection_error:
+                    def show_error():
+                        if not self.disable_audio:
+                            winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                        CTkMessagebox(title="Error", message=translation["feedback_unavailable"],
+                                      icon="cancel", button_width=380)
+
+                    self.after(0, show_error)
+
+    # Submits feedback from the user to a Google sheet
+    def submit_feedback(self, task_done):
+        with self.lock_thread:
+            try:
+                lang = self.language_menu.get()
+                translation = self.load_language(lang)
+                current_date = datetime.today().strftime("%Y-%m-%d")
+                feedback = self.feedback_text.get("1.0", customtkinter.END).strip()
+                result = self.call_sheets_api([[feedback]])
+                if result:
+                    def show_success():
+                        if not self.disable_audio:
+                            winsound.PlaySound("sounds/success.wav", winsound.SND_ASYNC)
+                        CTkMessagebox(title=translation["success_title"], icon="check",
+                                      message=translation["feedback_success"], button_width=380)
+
+                    self.after(0, show_success)
+                    row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+                    if not row_exists:
+                        self.cursor.execute("INSERT INTO user_data (feedback_date) VALUES (?)",
+                                            (current_date,))
+                    else:
+                        self.cursor.execute("UPDATE user_data SET feedback_date=?",
+                                            (current_date,))
+                    self.connection.commit()
+                else:
+                    if not self.connection_error:
+                        def show_error():
+                            if not self.disable_audio:
+                                winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                            CTkMessagebox(title="Error",
+                                          message=translation["feedback_error"],
+                                          icon="cancel", button_width=380)
+
+                        self.after(0, show_error)
             except Exception as e:
                 print("An error occurred: ", e)
                 self.error_occurred = True
