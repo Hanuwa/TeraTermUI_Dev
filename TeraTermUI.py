@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/2/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/3/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -3321,7 +3321,9 @@ class TeraTermUI(customtkinter.CTk):
             self.my_classes_frame.grid_forget()
             self.modify_classes_frame.grid_forget()
             self.back_my_classes.grid_forget()
+            TeraTermUI.enable_widgets(self)
             self.after(0, self.destroy_enrolled_frame)
+            self.after(150, TeraTermUI.enable_widgets, self)
         self.in_multiple_screen = False
 
     def load_language(self, lang):
@@ -3972,7 +3974,7 @@ class TeraTermUI(customtkinter.CTk):
             self.timer_window.after_idle(self.timer_window.attributes, "-topmost", 0)
 
     def disable_enable_gui(self):
-        TeraTermUI.enable_entries(self)
+        TeraTermUI.enable_widgets(self)
         if self.countdown_running:
             self.submit_multiple.configure(state="disabled")
             self.submit.configure(state="disabled")
@@ -4614,7 +4616,7 @@ class TeraTermUI(customtkinter.CTk):
         self.progress_bar.pack(pady=1)
         self.progress_bar.start()
         self.attributes("-disabled", True)
-        TeraTermUI.disable_entries(self)
+        TeraTermUI.disable_widgets(self)
         return self.loading_screen
 
     # hides the loading screen
@@ -4638,7 +4640,7 @@ class TeraTermUI(customtkinter.CTk):
             self.after(100, self.update_loading_screen, loading_screen, task_done)
 
     @staticmethod
-    def disable_entries(container):
+    def disable_widgets(container):
         for widget in container.winfo_children():
             if not widget.winfo_viewable():
                 continue
@@ -4649,10 +4651,10 @@ class TeraTermUI(customtkinter.CTk):
                 if widget.cget("state") != "disabled":
                     widget.configure(state="disabled")
             elif hasattr(widget, "winfo_children"):
-                TeraTermUI.disable_entries(widget)
+                TeraTermUI.disable_widgets(widget)
 
     @staticmethod
-    def enable_entries(container):
+    def enable_widgets(container):
         for widget in container.winfo_children():
             if not widget.winfo_viewable():
                 continue
@@ -4663,11 +4665,11 @@ class TeraTermUI(customtkinter.CTk):
                 if widget.cget("state") != "normal":
                     widget.configure(state="normal")
             elif hasattr(widget, "winfo_children"):
-                TeraTermUI.enable_entries(widget)
+                TeraTermUI.enable_widgets(widget)
 
     def update_entries(self):
         if self.enrolled_rows is None and not self.countdown_running:
-            TeraTermUI.enable_entries(self)
+            TeraTermUI.enable_widgets(self)
         if self.enrolled_rows is not None:
             lang = self.language_menu.get()
             translation = self.load_language(lang)
@@ -5794,14 +5796,13 @@ class TeraTermUI(customtkinter.CTk):
         self.total_credits_label.bind("<Button-1>", lambda event: self.focus_set())
 
     def destroy_enrolled_frame(self):
-        TeraTermUI.enable_entries(self)
         self.my_classes_frame.grid_forget()
         self.modify_classes_frame.grid_forget()
+        self.back_my_classes.grid_forget()
         self.my_classes_frame.unbind("<Button-1>")
         self.modify_classes_frame.unbind("<Button-1>")
         self.title_my_classes.unbind("<Button-1>")
         self.total_credits_label.unbind("<Button-1>")
-        self.back_my_classes.grid_forget()
         self.enrolled_classes_table.destroy()
         self.title_my_classes.destroy()
         self.total_credits_label.destroy()
@@ -7216,8 +7217,8 @@ class TeraTermUI(customtkinter.CTk):
         current_time = time.time()
         if hasattr(self, "last_switch_time") and current_time - self.last_switch_time < 0.2 or \
                 (self.loading_screen is not None and self.loading_screen.winfo_exists()):
-            TeraTermUI.disable_entries(self)
-            self.after(0, TeraTermUI.enable_entries, self)
+            TeraTermUI.disable_widgets(self)
+            self.after(0, TeraTermUI.enable_widgets, self)
             return
 
         self.last_switch_time = current_time
