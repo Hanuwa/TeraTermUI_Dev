@@ -4644,7 +4644,7 @@ class TeraTermUI(customtkinter.CTk):
             if not widget.winfo_viewable():
                 continue
 
-            widget_types = (tk.Entry, CustomEntry, customtkinter.CTkCheckBox,
+            widget_types = (tk.Entry, customtkinter.CTkCheckBox,
                             customtkinter.CTkRadioButton, customtkinter.CTkSwitch)
             if isinstance(widget, widget_types):
                 if widget.cget("state") != "disabled":
@@ -4658,7 +4658,7 @@ class TeraTermUI(customtkinter.CTk):
             if not widget.winfo_viewable():
                 continue
 
-            widget_types = (tk.Entry, CustomEntry, customtkinter.CTkCheckBox,
+            widget_types = (tk.Entry, customtkinter.CTkCheckBox,
                             customtkinter.CTkRadioButton, customtkinter.CTkSwitch)
             if isinstance(widget, widget_types):
                 if widget.cget("state") != "normal":
