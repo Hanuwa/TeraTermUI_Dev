@@ -3695,7 +3695,7 @@ class TeraTermUI(customtkinter.CTk):
                                 else:
                                     self.after(100, self.show_error_message, 300, 215,
                                                translation["failed_to_find_date"])
-                                    self.auto_enroll.deselect()
+                                    self.after(100, self.auto_enroll.deselect)
                                     self.auto_enroll_bool = False
                                     return
                                 date_time_string = re.sub(r"[^a-zA-Z0-9:/ ]", "", date_time_string)
@@ -3738,14 +3738,14 @@ class TeraTermUI(customtkinter.CTk):
                                         self.after(100, self.show_error_message, 300, 215,
                                                    translation["date_past"])
                                         self.auto_enroll_bool = False
-                                        self.auto_enroll.deselect()
+                                        self.after(100, self.auto_enroll.deselect)
                                 elif (is_future_date or is_more_than_one_day) or \
                                         (is_same_date and not is_time_difference_within_8_hours) or \
                                         (is_next_date and not is_time_difference_within_8_hours):
                                     self.after(100, self.show_error_message, 320, 235,
                                                translation["date_not_within_8_hours"])
                                     self.auto_enroll_bool = False
-                                    self.auto_enroll.deselect()
+                                    self.after(100, self.auto_enroll.deselect)
                                 if ("INVALID ACTION" in text_output and "PANTALLAS MATRICULA" in text_output) or \
                                         ("LISTA DE SECCIONES" in text_output and "COURSE NOT" in text_output):
                                     self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
@@ -3756,12 +3756,12 @@ class TeraTermUI(customtkinter.CTk):
                             else:
                                 self.after(100, self.show_error_message, 300, 215,
                                            translation["failed_to_find_date"])
-                                self.auto_enroll.deselect()
+                                self.after(100, self.auto_enroll.deselect)
                                 self.auto_enroll_bool = False
                         else:
                             self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
                             self.auto_enroll_bool = False
-                            self.auto_enroll.deselect()
+                            self.after(100, self.auto_enroll.deselect)
                 elif self.auto_enroll.get() == "off":
                     self.countdown_running = False
                     self.auto_enroll_bool = False
@@ -3916,8 +3916,8 @@ class TeraTermUI(customtkinter.CTk):
         self.running_countdown.set(False)
         if self.timer_window and self.timer_window.winfo_exists():
             self.timer_window.destroy()
-        self.auto_enroll.deselect()
         self.disable_enable_gui()
+        self.auto_enroll.deselect()
 
     def forceful_end_countdown(self):
         lang = self.language_menu.get()
@@ -8221,19 +8221,19 @@ class TeraTermUI(customtkinter.CTk):
             self.after(100, self.show_error_message, 345, 235, error_msg_short)
             if self.auto_enroll_bool:
                 self.auto_enroll_bool = False
-                self.auto_enroll.deselect()
+                self.after(100, self.auto_enroll.deselect)
             return False
         elif error_msg_medium:
             self.after(100, self.show_error_message, 355, 240, error_msg_medium)
             if self.auto_enroll_bool:
                 self.auto_enroll_bool = False
-                self.auto_enroll.deselect()
+                self.after(100, self.auto_enroll.deselect)
             return False
         elif error_msg_long:
             self.after(100, self.show_error_message, 390, 245, error_msg_long)
             if self.auto_enroll_bool:
                 self.auto_enroll_bool = False
-                self.auto_enroll.deselect()
+                self.after(100, self.auto_enroll.deselect)
             return False
 
         self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
