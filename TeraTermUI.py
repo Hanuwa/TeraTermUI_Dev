@@ -1791,6 +1791,7 @@ class TeraTermUI(customtkinter.CTk):
             break
 
     def detect_register_menu_change(self, selected_value, index):
+        self.focus_set()
         self.cursor.execute("SELECT COUNT(*) FROM save_classes")
         count = self.cursor.fetchone()[0]
         if count == 0:
@@ -3963,14 +3964,14 @@ class TeraTermUI(customtkinter.CTk):
         self.timer_window.protocol("WM_DELETE_WINDOW", self.end_countdown)
 
     def bring_back_timer_window(self):
-        import win32gui
-        
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         if self.window_exists(translation["auto_enroll"]):
-            handle = win32gui.FindWindow(None, translation["auto_enroll"])
-            self.timer_window.deiconify()
-            win32gui.SetForegroundWindow(handle)
+            timer_title = translation["auto_enroll"]
+            timer = gw.getWindowsWithTitle(timer_title)[0]
+            if timer.isMinimized:
+                timer.restore()
+            timer.activate()
             self.timer_window.focus_force()
             self.timer_window.lift()
             self.timer_window.attributes("-topmost", 1)
@@ -4263,16 +4264,16 @@ class TeraTermUI(customtkinter.CTk):
                                                      text=translation["semester"])
             self.e_semester_entry = CustomComboBox(self.tabview.tab(self.enroll_tab), self,
                                                    values=self.semester_values + [translation["current"]],
-                                                   command=lambda value: self.set_focus())
+                                                   command=lambda value: self.focus_set())
             self.e_semester_entry.set(self.DEFAULT_SEMESTER)
             self.radio_var = tk.StringVar()
             self.register = customtkinter.CTkRadioButton(master=self.tabview.tab(self.enroll_tab),
                                                          text=translation["register"], value="register",
-                                                         variable=self.radio_var, command=self.set_focus)
+                                                         variable=self.radio_var, command=self.focus_set)
             self.register_tooltip = CTkToolTip(self.register, message=translation["register_tooltip"])
             self.drop = customtkinter.CTkRadioButton(master=self.tabview.tab(self.enroll_tab), text=translation["drop"],
                                                      value="drop", variable=self.radio_var, canvas_takefocus=False,
-                                                     command=self.set_focus)
+                                                     command=self.focus_set)
             self.drop_tooltip = CTkToolTip(self.drop, message=translation["drop_tooltip"])
             self.register.select()
             self.tabview.tab(self.enroll_tab).bind("<Button-1>", lambda event: self.focus_set())
@@ -4295,10 +4296,10 @@ class TeraTermUI(customtkinter.CTk):
             self.s_semester = customtkinter.CTkLabel(self.search_scrollbar, text=translation["semester"])
             self.s_semester_entry = CustomComboBox(self.search_scrollbar, self,
                                                    values=self.semester_values + [translation["current"]],
-                                                   command=lambda value: self.set_focus(), width=80)
+                                                   command=lambda value: self.focus_set(), width=80)
             self.s_semester_entry.set(self.DEFAULT_SEMESTER)
             self.show_all = customtkinter.CTkCheckBox(self.search_scrollbar, text=translation["show_all"],
-                                                      onvalue="on", offvalue="off", command=self.set_focus)
+                                                      onvalue="on", offvalue="off", command=self.focus_set)
             self.show_all_tooltip = CTkToolTip(self.show_all, message=translation["show_all_tooltip"],
                                                bg_color="#1E90FF")
             self.search_next_page = CustomButton(master=self.search_scrollbar, fg_color="transparent", border_width=2,
@@ -4326,13 +4327,13 @@ class TeraTermUI(customtkinter.CTk):
                                                      translation["118"], translation["1VE"], translation["3DD"],
                                                      translation["409"], translation["683"], translation["1PL"],
                                                      translation["4CM"], translation["4SP"], translation["SO"]],
-                                             command=lambda value: self.set_focus(), width=141)
+                                             command=lambda value: self.focus_set(), width=141)
             self.menu_entry.set(translation["SRM"])
             self.menu_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab),
                                                         text=translation["semester"])
             self.menu_semester_entry = CustomComboBox(self.tabview.tab(self.other_tab), self,
                                                       values=self.semester_values + [translation["current"]],
-                                                      command=lambda value: self.set_focus(), width=141)
+                                                      command=lambda value: self.focus_set(), width=141)
             self.menu_semester_entry.set(self.DEFAULT_SEMESTER)
             self.menu_submit = CustomButton(master=self.tabview.tab(self.other_tab), border_width=2,
                                             text=translation["submit"], text_color=("gray10", "#DCE4EE"),
@@ -4441,7 +4442,8 @@ class TeraTermUI(customtkinter.CTk):
                                                             command=self.change_semester))
                 self.m_semester_entry[i].set(self.DEFAULT_SEMESTER)
                 self.m_register_menu.append(customtkinter.CTkOptionMenu(
-                    master=self.multiple_frame, values=[translation["register"], translation["drop"]]))
+                    master=self.multiple_frame, values=[translation["register"], translation["drop"]],
+                    command=lambda value: self.focus_set()))
                 self.m_register_menu[i].set(translation["choose"])
                 self.m_num_class[i].bind("<Button-1>", lambda event: self.focus_set())
             self.m_semester_entry[0].bind("<FocusOut>", lambda event:
@@ -4577,7 +4579,7 @@ class TeraTermUI(customtkinter.CTk):
             self.cursor.execute("DELETE FROM save_classes")
             self.connection.commit()
             for i in range(6):
-                self.m_register_menu[i].configure(command=None)
+                self.m_register_menu[i].configure(command=lambda value: self.focus_set())
                 self.m_classes_entry[i].unbind("<FocusOut>")
                 self.m_section_entry[i].unbind("<FocusOut>")
 
@@ -4947,7 +4949,7 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         cell_value = cell_data["value"]
-        self.set_focus()
+        self.focus_set()
         self.clipboard_clear()
         self.clipboard_append(cell_value)
         self.update()
@@ -4992,7 +4994,7 @@ class TeraTermUI(customtkinter.CTk):
         self.register.select()
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        self.set_focus()
+        self.focus_set()
 
         # Close existing tooltip if any
         if self.tooltip:
@@ -5176,7 +5178,7 @@ class TeraTermUI(customtkinter.CTk):
         curr_table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
         self.table = curr_table
         self.current_class = display_class
-        self.after(0, self.set_focus)
+        self.after(0, self.focus_set)
 
     def update_buttons(self):
         if self.current_table_index == 0:
@@ -5252,7 +5254,7 @@ class TeraTermUI(customtkinter.CTk):
             self.search_scrollbar.scroll_to_top()
             self.after(0, display_class_to_remove.destroy)
             self.after(0, table_to_remove.destroy)
-            self.after(0, self.set_focus)
+            self.after(0, self.focus_set)
             return
 
         # Step 4: Show the previous table
@@ -6698,9 +6700,6 @@ class TeraTermUI(customtkinter.CTk):
             elif check == "off":
                 self.show_all.select()
             self.show_all._on_enter()
-
-    def set_focus(self):
-        self.focus_set()
 
     # function that lets your increase/decrease the scaling of the GUI
     def change_scaling_event(self, new_scaling: float):
@@ -9181,3 +9180,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
