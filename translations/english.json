@@ -20,7 +20,7 @@
 	"authentication": "Next",
 	"back": "Back",
 	"skip_auth_title": "Skip Screen",
-	"skip_auth": "Would you like to skip the authentication screen next time you log-in?\n\nYou can enable or disable this at anytime on the \"Help window\"",
+	"skip_auth": "Would you like to skip the authentication screen next time you log-in?\n\nYou can enable or disable this at anytime on the \"Help\" window",
 	"title_security": "Credentials to enter the System",
 	"student_id": "Student Number",
 	"code": "PIN Number",
