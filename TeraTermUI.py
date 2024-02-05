@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/3/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/4/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -33,7 +33,6 @@ import psutil
 import py7zr
 import pygetwindow as gw
 import pyperclip
-import pytz
 import pyzipper
 import pytesseract
 import re
@@ -50,7 +49,6 @@ import tkinter as tk
 import time
 import warnings
 import webbrowser
-import win32gui
 import winsound
 from collections import deque, defaultdict
 from concurrent.futures import ThreadPoolExecutor
@@ -3658,6 +3656,8 @@ class TeraTermUI(customtkinter.CTk):
 
     # Auto-Enroll classes
     def auto_enroll_event(self, task_done):
+        import pytz
+        
         with self.lock_thread:
             try:
                 lang = self.language_menu.get()
@@ -3796,6 +3796,8 @@ class TeraTermUI(customtkinter.CTk):
 
     # Starts the countdown on when the auto-enroll process will occur
     def countdown(self, your_date):
+        import pytz
+        
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         puerto_rico_tz = pytz.timezone("America/Puerto_Rico")
@@ -3961,6 +3963,8 @@ class TeraTermUI(customtkinter.CTk):
         self.timer_window.protocol("WM_DELETE_WINDOW", self.end_countdown)
 
     def bring_back_timer_window(self):
+        import win32gui
+        
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         if self.window_exists(translation["auto_enroll"]):
@@ -4764,6 +4768,7 @@ class TeraTermUI(customtkinter.CTk):
     # captures a screenshot of tera term and performs OCR
     def capture_screenshot(self):
         import pyautogui
+        import win32gui
 
         time.sleep(1)
         lang = self.language_menu.get()
@@ -8439,6 +8444,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.after_id = self.after(8000, self.update_text)  # Store the ID
 
     def stop_autoscroll(self, event=None):
+        self.focus_set()
         self.auto_scroll = False
         if self.after_id:
             self.after_cancel(self.after_id)
@@ -8489,15 +8495,13 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.tag_remove(tk.SEL, "1.0", tk.END)
             return "break"
         if not self.tag_ranges(tk.SEL) and self.read_only:
-            self.focus_set()
             self.stop_autoscroll(event=None)
             self.tag_add(tk.SEL, "1.0", tk.END)
             return "break"
 
     def show_menu(self, event):
-        self.focus_set()
-        self.mark_set(tk.INSERT, "end")
         self.stop_autoscroll(event=None)
+        self.mark_set(tk.INSERT, "end")
         self.select = True
 
         # Update the menu labels based on the current language
@@ -8561,7 +8565,6 @@ class CustomTextBox(customtkinter.CTkTextbox):
             print("No text selected to cut.")
 
     def copy(self):
-        self.focus_set()
         self.stop_autoscroll(event=None)
         if not self.tag_ranges(tk.SEL):
             self.tag_add(tk.SEL, "1.0", tk.END)
@@ -8606,7 +8609,6 @@ class CustomTextBox(customtkinter.CTkTextbox):
             pass  # Clipboard empty or other issue
 
     def select_all(self, event=None):
-        self.focus_set()
         self.stop_autoscroll(event=None)
         self.mark_set(tk.INSERT, "end")
         try:
