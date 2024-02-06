@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/4/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/5/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -239,13 +239,15 @@ class TeraTermUI(customtkinter.CTk):
         self.scaling_label.bind("<Button-1>", lambda event: self.focus_set())
         self.scaling_label.grid(row=5, column=0, padx=20, pady=(10, 10))
         self.language_menu = customtkinter.CTkOptionMenu(self.sidebar_frame, values=["English", "Español"],
-                                                         command=self.change_language_event, corner_radius=15)
+                                                         canvas_takefocus=False, command=self.change_language_event,
+                                                         corner_radius=15)
         self.language_menu.grid(row=6, column=0, padx=20, pady=(10, 10))
         self.language_menu_tooltip = CTkToolTip(self.language_menu, message="The language can only\n"
                                                                             "be changed in the main menu",
                                                 bg_color="#A9A9A9")
         self.language_menu_tooltip.hide()
         self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame, corner_radius=15,
+                                                                       canvas_takefocus=False,
                                                                        values=["Dark", "Light", "System"],
                                                                        command=self.change_appearance_mode_event)
         self.appearance_mode_optionemenu.set("System")
@@ -7782,7 +7784,8 @@ class TeraTermUI(customtkinter.CTk):
                                                               translation["equip"], translation["peda"],
                                                               translation["che"], translation["nur"],
                                                               translation["office"], translation["engi"]],
-                                                      command=TeraTermUI.curriculums, height=30, width=150)
+                                                      canvas_takefocus=False, command=TeraTermUI.curriculums,
+                                                      height=30, width=150)
         self.keybinds_text = customtkinter.CTkLabel(self.help_frame, text=translation["keybinds_title"],
                                                     font=customtkinter.CTkFont(weight="bold", size=15))
         self.keybinds = [[translation["keybind"], translation["key_function"]],
