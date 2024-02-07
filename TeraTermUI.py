@@ -7354,7 +7354,7 @@ class TeraTermUI(customtkinter.CTk):
         help_window_height = 280
         center_x = main_window_x + (main_window_width // 2) - (help_window_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (help_window_height // 2)
-        self.status.geometry(f"{help_window_width}x{help_window_height}+{center_x + 75}+{center_y}")
+        self.status.geometry(f"{help_window_width}x{help_window_height}+{center_x + 70}+{center_y - 15}")
         self.status.title(translation["status"])
         self.status.iconbitmap(self.icon_path)
         self.status.resizable(False, False)
@@ -7863,7 +7863,7 @@ class TeraTermUI(customtkinter.CTk):
         help_window_height = 280
         center_x = main_window_x + (main_window_width // 2) - (help_window_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (help_window_height // 2)
-        self.help.geometry(f"{help_window_width}x{help_window_height}+{center_x + 75}+{center_y}")
+        self.help.geometry(f"{help_window_width}x{help_window_height}+{center_x + 70}+{center_y - 15}")
         self.help.title(translation["help"])
         self.help.iconbitmap(self.icon_path)
         self.help.resizable(False, False)
