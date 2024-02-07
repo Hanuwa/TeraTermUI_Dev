@@ -1,7 +1,7 @@
 # TeraTermUI_Dev
 Dev Environment for Tera Term UI
 
-**Python Version:** "3.11.7"
+**Python Version:** "3.11.8"
 
 **Important** modules of "**ctkmessagebox.py, ctk_input_dialog.py, ctk_scrollable_frame.py, ctk_tabview.py, ctk_toplevel.py,
 ctk_textbox.py, ctk_scrollbar.py, ctk_checkbox.py, ctk_radiobutton.py, ctk_switch.py, ctk_optionmenu.py, dropdown_menu.py
