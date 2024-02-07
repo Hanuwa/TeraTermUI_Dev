@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/6/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/7/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -4647,14 +4647,14 @@ class TeraTermUI(customtkinter.CTk):
             self.after(100, self.update_loading_screen, loading_screen, task_done)
 
     @staticmethod
+    @staticmethod
     def disable_widgets(container):
+        widget_types = (tk.Entry, customtkinter.CTkCheckBox, customtkinter.CTkRadioButton,
+                        customtkinter.CTkSwitch, customtkinter.CTkOptionMenu)
         for widget in container.winfo_children():
-            if not widget.winfo_viewable():
-                continue
-
-            widget_types = (tk.Entry, customtkinter.CTkCheckBox,
-                            customtkinter.CTkRadioButton, customtkinter.CTkSwitch)
             if isinstance(widget, widget_types):
+                if not widget.winfo_viewable():
+                    continue
                 if widget.cget("state") != "disabled":
                     widget.configure(state="disabled")
             elif hasattr(widget, "winfo_children"):
@@ -4662,13 +4662,12 @@ class TeraTermUI(customtkinter.CTk):
 
     @staticmethod
     def enable_widgets(container):
+        widget_types = (tk.Entry, customtkinter.CTkCheckBox, customtkinter.CTkRadioButton,
+                        customtkinter.CTkSwitch, customtkinter.CTkOptionMenu)
         for widget in container.winfo_children():
-            if not widget.winfo_viewable():
-                continue
-
-            widget_types = (tk.Entry, customtkinter.CTkCheckBox,
-                            customtkinter.CTkRadioButton, customtkinter.CTkSwitch)
             if isinstance(widget, widget_types):
+                if not widget.winfo_viewable():
+                    continue
                 if widget.cget("state") != "normal":
                     widget.configure(state="normal")
             elif hasattr(widget, "winfo_children"):
