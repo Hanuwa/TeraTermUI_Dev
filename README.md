@@ -20,7 +20,7 @@ Using this we can now stop the execution of code and show error message within o
 Link: https://github.com/UB-Mannheim/tesseract/wiki
 
 # GUI Framework
-The whole GUI is made using customtinter, read wiki to familiarize yourself with it, can work in conjunction with the normal tkinter too.
+The whole GUI is made using customtkinter, read wiki to familiarize yourself with it, can work in conjunction with the normal tkinter too.
 
 Links: https://github.com/TomSchimansky/CustomTkinter
        https://customtkinter.tomschimansky.com
