@@ -7645,6 +7645,8 @@ class TeraTermUI(customtkinter.CTk):
             self.changed_location = True
             self.after(100, self.show_success_message, 350, 265, translation["tera_term_success"])
             self.edit_teraterm_ini(self.teraterm_file)
+            atexit.unregister(self.restore_original_font)
+            atexit.register(self.restore_original_font, self.teraterm_file)
             if self.help is not None and self.help.winfo_exists():
                 self.files.configure(state="normal")
         else:
@@ -7694,6 +7696,8 @@ class TeraTermUI(customtkinter.CTk):
             self.changed_location = True
             self.show_success_message(350, 265, translation["tera_term_success"])
             self.edit_teraterm_ini(self.teraterm_file)
+            atexit.unregister(self.restore_original_font)
+            atexit.register(self.restore_original_font, self.teraterm_file)
         if not re.search("ttermpro.exe", filename):
             self.help.lift()
             self.help.focus_set()
