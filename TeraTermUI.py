@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/7/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/8/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1099,8 +1099,8 @@ class TeraTermUI(customtkinter.CTk):
         elif lang == "Español":
             if choice == "register":
                 msg = CTkMessagebox(master=self, title="Someter",
-                                    message="¿Estás preparado para " + translation["register"].lower() + "r esta"
-                                            " clase?\n\nWARNING: Asegúrese de que la información está correcta",
+                                    message="¿Estás preparado para " + translation["register"].lower() +
+                                            "r esta clase?\n\nWARNING: Asegúrese de que la información está correcta",
                                     icon="images/submit.png",
                                     option_1=translation["option_1"], option_2=translation["option_2"],
                                     option_3=translation["option_3"],
@@ -3323,7 +3323,7 @@ class TeraTermUI(customtkinter.CTk):
             self.modify_classes_frame.grid_forget()
             self.back_my_classes.grid_forget()
             self.after(0, self.destroy_enrolled_frame)
-            self.after(200, TeraTermUI.enable_widgets, self)
+            self.after(200, self.enable_widgets, self)
         self.in_multiple_screen = False
 
     def load_language(self, lang):
@@ -3660,7 +3660,7 @@ class TeraTermUI(customtkinter.CTk):
     # Auto-Enroll classes
     def auto_enroll_event(self, task_done):
         import pytz
-        
+
         with self.lock_thread:
             try:
                 lang = self.language_menu.get()
@@ -3800,7 +3800,7 @@ class TeraTermUI(customtkinter.CTk):
     # Starts the countdown on when the auto-enroll process will occur
     def countdown(self, your_date):
         import pytz
-        
+
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         puerto_rico_tz = pytz.timezone("America/Puerto_Rico")
@@ -3980,7 +3980,7 @@ class TeraTermUI(customtkinter.CTk):
             self.timer_window.after_idle(self.timer_window.attributes, "-topmost", 0)
 
     def disable_enable_gui(self):
-        TeraTermUI.enable_widgets(self)
+        self.enable_widgets(self)
         if self.countdown_running:
             self.submit_multiple.configure(state="disabled")
             self.submit.configure(state="disabled")
@@ -4449,7 +4449,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.m_register_menu[i].set(translation["choose"])
                 self.m_num_class[i].bind("<Button-1>", lambda event: self.focus_set())
             self.m_semester_entry[0].bind("<FocusOut>", lambda event:
-                                          self.change_semester(event_type="focus_out"))
+            self.change_semester(event_type="focus_out"))
             self.m_add = CustomButton(master=self.m_button_frame, border_width=2, text="+",
                                       text_color=("gray10", "#DCE4EE"), command=self.add_event, height=40, width=50,
                                       fg_color="blue")
@@ -4623,7 +4623,7 @@ class TeraTermUI(customtkinter.CTk):
         self.progress_bar.pack(pady=1)
         self.progress_bar.start()
         self.attributes("-disabled", True)
-        TeraTermUI.disable_widgets(self)
+        self.disable_widgets(self)
         return self.loading_screen
 
     # hides the loading screen
@@ -4638,7 +4638,7 @@ class TeraTermUI(customtkinter.CTk):
     def update_loading_screen(self, loading_screen, task_done):
         if task_done.is_set():
             self.attributes("-disabled", False)
-            self.update_entries()
+            self.update_widgets()
             self.hide_loading_screen()
             self.progress_bar.stop()
             loading_screen.destroy()
@@ -4646,40 +4646,41 @@ class TeraTermUI(customtkinter.CTk):
         else:
             self.after(100, self.update_loading_screen, loading_screen, task_done)
 
-    @staticmethod
-def disable_widgets(container):
-    widget_types = (tk.Entry, customtkinter.CTkCheckBox, customtkinter.CTkRadioButton,
-                    customtkinter.CTkSwitch, customtkinter.CTkOptionMenu)
-    widgets_to_process = [container]
+    def disable_widgets(self, container):
+        for widget in container.winfo_children():
+            if not widget.winfo_viewable():
+                continue
+            if (widget == self.language_menu or widget == self.appearance_mode_optionemenu
+                    or widget == self.curriculum or widget == self.search_box):
+                continue
 
-    while widgets_to_process:
-        current_widget = widgets_to_process.pop()
-        for widget in current_widget.winfo_children():
+            widget_types = (tk.Entry, customtkinter.CTkCheckBox, customtkinter.CTkRadioButton,
+                            customtkinter.CTkSwitch, customtkinter.CTkOptionMenu)
             if isinstance(widget, widget_types):
-                if widget.winfo_viewable():
+                if widget.cget("state") != "disabled":
                     widget.configure(state="disabled")
             elif hasattr(widget, "winfo_children"):
-                widgets_to_process.append(widget)
+                self.disable_widgets(widget)
 
-@staticmethod
-def enable_widgets(container):
-    widget_types = (tk.Entry, customtkinter.CTkCheckBox, customtkinter.CTkRadioButton,
-                    customtkinter.CTkSwitch, customtkinter.CTkOptionMenu)
-    widgets_to_process = [container]
+    def enable_widgets(self, container):
+        for widget in container.winfo_children():
+            if not widget.winfo_viewable():
+                continue
+            if (widget == self.language_menu or widget == self.appearance_mode_optionemenu
+                    or widget == self.curriculum or widget == self.search_box):
+                continue
 
-    while widgets_to_process:
-        current_widget = widgets_to_process.pop()
-        for widget in current_widget.winfo_children():
+            widget_types = (tk.Entry, customtkinter.CTkCheckBox, customtkinter.CTkRadioButton,
+                            customtkinter.CTkSwitch, customtkinter.CTkOptionMenu)
             if isinstance(widget, widget_types):
-                if widget.winfo_viewable():
+                if widget.cget("state") != "normal":
                     widget.configure(state="normal")
             elif hasattr(widget, "winfo_children"):
-                widgets_to_process.append(widget)
+                self.enable_widgets(widget)
 
-
-    def update_entries(self):
+    def update_widgets(self):
         if self.enrolled_rows is None and not self.countdown_running:
-            TeraTermUI.enable_widgets(self)
+            self.enable_widgets(self)
         if self.enrolled_rows is not None:
             lang = self.language_menu.get()
             translation = self.load_language(lang)
@@ -4693,8 +4694,6 @@ def enable_widgets(container):
         if self.init_multiple:
             for i in range(1, self.a_counter + 1):
                 self.m_semester_entry[i].configure(state="disabled")
-        if self.help and self.help.winfo_exists():
-            self.search_box.configure(state="normal")
 
     # function that lets user see/hide their input (hidden by default)
     def show_event(self):
@@ -7225,8 +7224,8 @@ def enable_widgets(container):
         current_time = time.time()
         if hasattr(self, "last_switch_time") and current_time - self.last_switch_time < 0.2 or \
                 (self.loading_screen is not None and self.loading_screen.winfo_exists()):
-            TeraTermUI.disable_widgets(self)
-            self.after(0, TeraTermUI.enable_widgets, self)
+            self.disable_widgets(self)
+            self.after(0, self.enable_widgets, self)
             return
 
         self.last_switch_time = current_time
@@ -9190,4 +9189,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
