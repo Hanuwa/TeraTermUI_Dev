@@ -4647,31 +4647,35 @@ class TeraTermUI(customtkinter.CTk):
             self.after(100, self.update_loading_screen, loading_screen, task_done)
 
     @staticmethod
-    @staticmethod
-    def disable_widgets(container):
-        widget_types = (tk.Entry, customtkinter.CTkCheckBox, customtkinter.CTkRadioButton,
-                        customtkinter.CTkSwitch, customtkinter.CTkOptionMenu)
-        for widget in container.winfo_children():
+def disable_widgets(container):
+    widget_types = (tk.Entry, customtkinter.CTkCheckBox, customtkinter.CTkRadioButton,
+                    customtkinter.CTkSwitch, customtkinter.CTkOptionMenu)
+    widgets_to_process = [container]
+
+    while widgets_to_process:
+        current_widget = widgets_to_process.pop()
+        for widget in current_widget.winfo_children():
             if isinstance(widget, widget_types):
-                if not widget.winfo_viewable():
-                    continue
-                if widget.cget("state") != "disabled":
+                if widget.winfo_viewable():
                     widget.configure(state="disabled")
             elif hasattr(widget, "winfo_children"):
-                TeraTermUI.disable_widgets(widget)
+                widgets_to_process.append(widget)
 
-    @staticmethod
-    def enable_widgets(container):
-        widget_types = (tk.Entry, customtkinter.CTkCheckBox, customtkinter.CTkRadioButton,
-                        customtkinter.CTkSwitch, customtkinter.CTkOptionMenu)
-        for widget in container.winfo_children():
+@staticmethod
+def enable_widgets(container):
+    widget_types = (tk.Entry, customtkinter.CTkCheckBox, customtkinter.CTkRadioButton,
+                    customtkinter.CTkSwitch, customtkinter.CTkOptionMenu)
+    widgets_to_process = [container]
+
+    while widgets_to_process:
+        current_widget = widgets_to_process.pop()
+        for widget in current_widget.winfo_children():
             if isinstance(widget, widget_types):
-                if not widget.winfo_viewable():
-                    continue
-                if widget.cget("state") != "normal":
+                if widget.winfo_viewable():
                     widget.configure(state="normal")
             elif hasattr(widget, "winfo_children"):
-                TeraTermUI.enable_widgets(widget)
+                widgets_to_process.append(widget)
+
 
     def update_entries(self):
         if self.enrolled_rows is None and not self.countdown_running:
