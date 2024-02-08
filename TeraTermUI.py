@@ -1740,7 +1740,7 @@ class TeraTermUI(customtkinter.CTk):
             self.my_classes_frame.grid_forget()
             self.modify_classes_frame.grid_forget()
             self.back_my_classes.grid_forget()
-            self.after(0, self.destroy_enrolled_frame)
+            self.destroy_enrolled_frame()
 
     def detect_change(self, event=None):
         self.cursor.execute("SELECT COUNT(*) FROM save_classes")
@@ -3322,8 +3322,8 @@ class TeraTermUI(customtkinter.CTk):
             self.my_classes_frame.grid_forget()
             self.modify_classes_frame.grid_forget()
             self.back_my_classes.grid_forget()
-            self.after(0, self.destroy_enrolled_frame)
-            self.after(200, self.enable_widgets, self)
+            self.destroy_enrolled_frame()
+            self.after(150, self.enable_widgets, self)
         self.in_multiple_screen = False
 
     def load_language(self, lang):
