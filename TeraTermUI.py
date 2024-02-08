@@ -3229,7 +3229,6 @@ class TeraTermUI(customtkinter.CTk):
         self.unbind("<End>")
         self.bind("<Control-Tab>", lambda event: self.tab_switcher())
         self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
-        self.switch_tab()
         lang = self.language_menu.get()
         self.tabview.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 85))
         self.tabview.tab(self.enroll_tab).grid_columnconfigure(1, weight=2)
@@ -3318,6 +3317,7 @@ class TeraTermUI(customtkinter.CTk):
         self.m_button_frame.grid_forget()
         self.save_frame.grid_forget()
         self.auto_frame.grid_forget()
+        self.switch_tab()
         if not self.in_multiple_screen:
             self.my_classes_frame.grid_forget()
             self.modify_classes_frame.grid_forget()
@@ -4648,10 +4648,9 @@ class TeraTermUI(customtkinter.CTk):
 
     def disable_widgets(self, container):
         for widget in container.winfo_children():
-            if not widget.winfo_viewable():
-                continue
-            if (widget == self.language_menu or widget == self.appearance_mode_optionemenu
-                    or widget == self.curriculum or widget == self.search_box):
+            if not widget.winfo_viewable() or widget in [self.language_menu, self.appearance_mode_optionemenu,
+                                                         self.curriculum, self.search_box, self.skip_auth_switch,
+                                                         self.disable_audio_val, self.disable_idle]:
                 continue
 
             widget_types = (tk.Entry, customtkinter.CTkCheckBox, customtkinter.CTkRadioButton,
@@ -4664,10 +4663,9 @@ class TeraTermUI(customtkinter.CTk):
 
     def enable_widgets(self, container):
         for widget in container.winfo_children():
-            if not widget.winfo_viewable():
-                continue
-            if (widget == self.language_menu or widget == self.appearance_mode_optionemenu
-                    or widget == self.curriculum or widget == self.search_box):
+            if not widget.winfo_viewable() or widget in [self.language_menu, self.appearance_mode_optionemenu,
+                                                         self.curriculum, self.search_box, self.skip_auth_switch,
+                                                         self.disable_audio_val, self.disable_idle]:
                 continue
 
             widget_types = (tk.Entry, customtkinter.CTkCheckBox, customtkinter.CTkRadioButton,
@@ -6959,15 +6957,19 @@ class TeraTermUI(customtkinter.CTk):
                     self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                     self.reset_activity_timer(None)
+                elif "PF4" in text_output:
+                    self.error_occurred = True
+                    self.after(250, self.go_back_event)
                 self.enrolled_classes_list = {}
                 self.dropped_classes_list = {}
                 self.cursor.execute("UPDATE user_data SET default_semester = NULL")
                 self.connection.commit()
-                self.after(100, self.show_information_message, 370, 250,
-                           translation["fix_after"])
+                if not self.error_occurred:
+                    self.after(100, self.show_information_message, 370, 250,
+                               translation["fix_after"])
             except Exception as e:
                 print("An error occurred: ", e)
-                self.error_occurred = True
+                error_occurred = True
                 self.log_error(e)
             finally:
                 task_done.set()
@@ -6976,7 +6978,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.after(0, self.switch_tab)
                 self.after(100, self.show_sidebar_windows)
                 translation = self.load_language(lang)
-                if self.error_occurred:
+                if error_occurred:
                     def error_automation():
                         self.destroy_windows()
                         if not self.disable_audio:
@@ -6984,7 +6986,6 @@ class TeraTermUI(customtkinter.CTk):
                         CTkMessagebox(master=self, title=translation["automation_error_title"],
                                       message=translation["automation_error"],
                                       icon="warning", button_width=380)
-                        self.error_occurred = False
 
                     self.after(0, error_automation)
                 ctypes.windll.user32.BlockInput(False)
