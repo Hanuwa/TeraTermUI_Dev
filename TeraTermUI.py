@@ -23,9 +23,7 @@ import chardet
 import ctypes
 import customtkinter
 import functools
-import glob
 import gc
-import inspect
 import json
 import logging
 import os
@@ -33,7 +31,6 @@ import psutil
 import py7zr
 import pygetwindow as gw
 import pyperclip
-import pyzipper
 import pytesseract
 import re
 import requests
@@ -807,6 +804,8 @@ class TeraTermUI(customtkinter.CTk):
             print("Could not terminate ttermpro.exe.")
 
     def log_error(self, e):
+        import inspect
+        
         try:
             # Get the current timestamp
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -3196,16 +3195,16 @@ class TeraTermUI(customtkinter.CTk):
             self.intro_box.reset_autoscroll()
             if not self.intro_box.disabled_autoscroll:
                 self.intro_box.restart_autoscroll()
-            self.run_fix = False
             if self.help is not None and self.help.winfo_exists():
                 self.fix.configure(state="disabled")
+                self.files.configure(state="normal")
+            self.run_fix = False
             self.in_auth_frame = False
             self.in_student_frame = False
             self.in_enroll_frame = False
             self.in_search_frame = False
             self.main_menu = True
-            if self.help is not None and self.help.winfo_exists():
-                self.files.configure(state="normal")
+            self.host_entry.configure(state="normal")
             if self.error_occurred:
                 self.destroy_windows()
                 if self.server_status != "Maintenance message found" and self.server_status != "Timeout" \
@@ -6325,6 +6324,7 @@ class TeraTermUI(customtkinter.CTk):
             self.teraterm_not_found = True
 
     def setup_feedback(self):
+        import pyzipper
         from google.oauth2 import service_account
 
         # Reads from the feedback.json file to connect to Google's Sheets Api for user feedback
@@ -7672,6 +7672,8 @@ class TeraTermUI(customtkinter.CTk):
 
     @staticmethod
     def find_teraterm_directory(base_path=r"C:\Program Files (x86)"):
+        import glob
+        
         possible_dirs = glob.glob(os.path.join(base_path, "teraterm*"))
         original_teraterm = os.path.join(base_path, "teraterm")
         if original_teraterm in possible_dirs:
