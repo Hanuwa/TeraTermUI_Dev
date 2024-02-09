@@ -805,7 +805,7 @@ class TeraTermUI(customtkinter.CTk):
 
     def log_error(self, e):
         import inspect
-        
+
         try:
             # Get the current timestamp
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -3198,13 +3198,14 @@ class TeraTermUI(customtkinter.CTk):
             if self.help is not None and self.help.winfo_exists():
                 self.fix.configure(state="disabled")
                 self.files.configure(state="normal")
+            if self.host_entry.cget("state") == "disabled":
+                self.host_entry.configure(state="normal")
             self.run_fix = False
             self.in_auth_frame = False
             self.in_student_frame = False
             self.in_enroll_frame = False
             self.in_search_frame = False
             self.main_menu = True
-            self.host_entry.configure(state="normal")
             if self.error_occurred:
                 self.destroy_windows()
                 if self.server_status != "Maintenance message found" and self.server_status != "Timeout" \
@@ -7673,7 +7674,7 @@ class TeraTermUI(customtkinter.CTk):
     @staticmethod
     def find_teraterm_directory(base_path=r"C:\Program Files (x86)"):
         import glob
-        
+
         possible_dirs = glob.glob(os.path.join(base_path, "teraterm*"))
         original_teraterm = os.path.join(base_path, "teraterm")
         if original_teraterm in possible_dirs:
@@ -9244,8 +9245,6 @@ def bring_to_front(window_title):
 
 
 def main():
-    import sys
-
     tera_term_temp_dir = os.path.join(tempfile.gettempdir(), "TeraTermUI")
     if not os.path.exists(tera_term_temp_dir):
         os.makedirs(tera_term_temp_dir)
