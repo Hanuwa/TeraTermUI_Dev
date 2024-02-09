@@ -3327,7 +3327,7 @@ class TeraTermUI(customtkinter.CTk):
             self.modify_classes_frame.grid_forget()
             self.back_my_classes.grid_forget()
             self.destroy_enrolled_frame()
-            self.after(150, self.enable_widgets, self)
+            self.after(100, self.enable_widgets, self)
         self.in_multiple_screen = False
 
     def load_language(self, lang):
@@ -4651,34 +4651,38 @@ class TeraTermUI(customtkinter.CTk):
             self.after(100, self.update_loading_screen, loading_screen, task_done)
 
     def disable_widgets(self, container):
-        for widget in container.winfo_children():
-            if not widget.winfo_viewable() or widget in [self.language_menu, self.appearance_mode_optionemenu,
-                                                         self.curriculum, self.search_box, self.skip_auth_switch,
-                                                         self.disable_audio_val, self.disable_idle]:
-                continue
+        stack = [container]
+        while stack:
+            current_container = stack.pop()
+            for widget in current_container.winfo_children():
+                if not widget.winfo_viewable() or widget in [self.language_menu, self.appearance_mode_optionemenu,
+                                                             self.curriculum, self.search_box, self.skip_auth_switch,
+                                                             self.disable_audio_val, self.disable_idle]:
+                    continue
 
-            widget_types = (tk.Entry, customtkinter.CTkCheckBox, customtkinter.CTkRadioButton,
-                            customtkinter.CTkSwitch, customtkinter.CTkOptionMenu)
-            if isinstance(widget, widget_types):
-                if widget.cget("state") != "disabled":
+                widget_types = (tk.Entry, customtkinter.CTkCheckBox, customtkinter.CTkRadioButton,
+                                customtkinter.CTkSwitch, customtkinter.CTkOptionMenu)
+                if isinstance(widget, widget_types) and widget.cget("state") != "disabled":
                     widget.configure(state="disabled")
-            elif hasattr(widget, "winfo_children"):
-                self.disable_widgets(widget)
+                elif hasattr(widget, "winfo_children"):
+                    stack.append(widget)
 
     def enable_widgets(self, container):
-        for widget in container.winfo_children():
-            if not widget.winfo_viewable() or widget in [self.language_menu, self.appearance_mode_optionemenu,
-                                                         self.curriculum, self.search_box, self.skip_auth_switch,
-                                                         self.disable_audio_val, self.disable_idle]:
-                continue
+        stack = [container]
+        while stack:
+            current_container = stack.pop()
+            for widget in current_container.winfo_children():
+                if not widget.winfo_viewable() or widget in [self.language_menu, self.appearance_mode_optionemenu,
+                                                             self.curriculum, self.search_box, self.skip_auth_switch,
+                                                             self.disable_audio_val, self.disable_idle]:
+                    continue
 
-            widget_types = (tk.Entry, customtkinter.CTkCheckBox, customtkinter.CTkRadioButton,
-                            customtkinter.CTkSwitch, customtkinter.CTkOptionMenu)
-            if isinstance(widget, widget_types):
-                if widget.cget("state") != "normal":
+                widget_types = (tk.Entry, customtkinter.CTkCheckBox, customtkinter.CTkRadioButton,
+                                customtkinter.CTkSwitch, customtkinter.CTkOptionMenu)
+                if isinstance(widget, widget_types) and widget.cget("state") != "normal":
                     widget.configure(state="normal")
-            elif hasattr(widget, "winfo_children"):
-                self.enable_widgets(widget)
+                elif hasattr(widget, "winfo_children"):
+                    stack.append(widget)
 
     def update_widgets(self):
         if self.enrolled_rows is None and not self.countdown_running:
