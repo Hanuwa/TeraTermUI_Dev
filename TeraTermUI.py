@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/8/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/9/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -8689,8 +8689,6 @@ class CustomEntry(customtkinter.CTkEntry):
         self.context_menu.add_command(label="Copy", command=self.copy)
         self.context_menu.add_command(label="Paste", command=self.paste)
         self.context_menu.add_command(label="Select All", command=self.select_all)
-        self.bind("<Control-v>", self.paste)
-        self.bind("<Control-V>", self.paste)
         self.bind("<Button-2>", self.custom_middle_mouse)
         self.bind("<Button-3>", self.show_menu)
 
@@ -8912,11 +8910,19 @@ class CustomComboBox(customtkinter.CTkComboBox):
         self.bind("<Control-y>", self.redo)
         self.bind("<Control-Y>", self.redo)
 
+        # Bind Ctrl+V to custom paste method
+        self.bind("<Control-v>", self.custom_paste)
+        self.bind("<Control-V>", self.custom_paste)
+        # Bind Ctrl+X to custom cut method
+        self.bind("<Control-x>", self.custom_cut)
+        self.bind("<Control-X>", self.custom_cut)
+
+        self.bind("<Control-a>", self.select_all)
+        self.bind("<Control-A>", self.select_all)
+
+        self.bind("<Button-2>", self.custom_middle_mouse)
         # Update the undo stack every time the Entry content changes
         self.bind("<KeyRelease>", self.update_undo_stack)
-
-        self.bind("<Control-v>", self.paste)
-        self.bind("<Control-V>", self.paste)
 
     def disable_slider_keys(self, event=None):
         self.teraterm_ui.move_slider_left_enabled = False
@@ -8968,25 +8974,93 @@ class CustomComboBox(customtkinter.CTkComboBox):
             self._undo_stack.append(redo_text)
             self.set(redo_text)
 
+    def custom_middle_mouse(self, event=None):
+        if self._entry.select_present():
+            self._entry.select_clear()
+            return "break"
+
+    def custom_cut(self, event=None):
+        self.cut()
+        return "break"
+
+    def cut(self):
+        self.focus_set()
+        if not self._entry.select_present():
+            self._entry.select_range(0, "end")
+        try:
+            selected_text = self.selection_get()
+            self.clipboard_clear()
+            self.clipboard_append(selected_text)
+            self._entry.delete(tk.SEL_FIRST, tk.SEL_LAST)
+
+            new_text = self.get()
+            # Update the undo stack after cut operation
+            self._undo_stack.append(new_text)
+            # Clear the redo stack
+            self._redo_stack.clear()
+        except tk.TclError:
+            print("No text selected to cut.")
+
+    def copy(self):
+        self.focus_set()
+        if not self._entry.select_present():
+            self._entry.select_range(0, "end")
+        try:
+            selected_text = self.selection_get()
+            self.clipboard_clear()
+            self.clipboard_append(selected_text)
+        except tk.TclError:
+            print("No text selected to copy.")
+
+    def select_all(self, event=None):
+        if self.cget("state") == "disabled":
+            return
+
+        self.focus_set()
+        self._entry.icursor(tk.END)
+        try:
+            if self._entry.select_present():
+                self._entry.select_clear()
+            else:
+                # Select all text if nothing is selected
+                self._entry.select_range(0, "end")
+                self._entry.icursor("end")
+        except tk.TclError:
+            # No text was selected, so select all
+            self._entry.select_range(0, "end")
+            self._entry.icursor("end")
+        return "break"
+
+    def custom_paste(self, event=None):
+        self.paste()
+        return "break"
+
     def paste(self, event=None):
         self.focus_set()
         try:
-            clipboard_text = self.clipboard_get()  # Get text from clipboard
+            clipboard_text = self.clipboard_get()
             max_paste_length = 1000  # Set a limit for the max paste length
             if len(clipboard_text) > max_paste_length:
                 clipboard_text = clipboard_text[:max_paste_length]  # Truncate to max length
                 print("Pasted content truncated to maximum length.")
 
-            current_text = self.get()  # Existing text in the Entry widget
+            current_text = self.get()
+            # Save the current state to undo stack
+            if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1]):
+                self._undo_stack.append(current_text)
 
-            if clipboard_text != current_text:  # Only proceed if there's an actual change
-                self.set(clipboard_text)
+            try:
+                start_index = self._entry.index(tk.SEL_FIRST)
+                end_index = self._entry.index(tk.SEL_LAST)
+                self._entry.delete(start_index, end_index)
+            except tk.TclError:
+                pass  # Nothing selected, which is fine
 
-                # Update undo stack here, after paste operation
-                new_text = self.get()
-                if len(self._undo_stack) == 0 or (new_text != self._undo_stack[-1]):
-                    self._undo_stack.append(new_text)
-                    self._redo_stack.clear()  # Clear the redo stack after a new change
+            self._entry.insert(tk.INSERT, clipboard_text)
+
+            # Update undo stack here, after paste operation
+            self.update_undo_stack()
+
         except tk.TclError:
             pass  # Clipboard empty or other issue
         return "break"
