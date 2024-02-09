@@ -644,7 +644,11 @@ class TeraTermUI(customtkinter.CTk):
             elif not results["skip_auth"]:
                 self.ask_skip_auth = True
             if results["default_semester"]:
-                self.DEFAULT_SEMESTER = results["default_semester"]
+                values = TeraTermUI.generate_semester_values(self.DEFAULT_SEMESTER)
+                if results["default_semester"] in values:
+                    self.DEFAULT_SEMESTER = results["default_semester"]
+                else:
+                    self.cursor.execute("UPDATE user_data SET default_semester=NULL")
             if not results["welcome"]:
                 self.help_button.configure(state="disabled")
                 self.status_button.configure(state="disabled")
@@ -6962,7 +6966,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.after(250, self.go_back_event)
                 self.enrolled_classes_list = {}
                 self.dropped_classes_list = {}
-                self.cursor.execute("UPDATE user_data SET default_semester = NULL")
+                self.cursor.execute("UPDATE user_data SET default_semester=NULL")
                 self.connection.commit()
                 if not self.error_occurred:
                     self.after(100, self.show_information_message, 370, 250,
