@@ -157,6 +157,8 @@ class CustomButton(CTkButton):
         self.configure(cursor="")
 
 class CustomEntry(CTkEntry):
+    __slots__ = ("master", "teraterm_ui_instance", "lang")
+
     def __init__(self, master, teraterm_ui_instance, lang=None, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
 
@@ -165,6 +167,7 @@ class CustomEntry(CTkEntry):
         self._redo_stack = deque(maxlen=25)
         self.lang = lang
         self.is_listbox_entry = False
+        self.select = False
 
         self.teraterm_ui = teraterm_ui_instance
         self.bind("<FocusIn>", self.disable_slider_keys)
@@ -176,7 +179,13 @@ class CustomEntry(CTkEntry):
         self.bind("<Control-y>", self.redo)
         self.bind("<Control-Y>", self.redo)
 
-        self.bind("<Button-2>", self.select_all)
+        # Bind Ctrl+V to custom paste method
+        self.bind("<Control-v>", self.custom_paste)
+        self.bind("<Control-V>", self.custom_paste)
+        # Bind Ctrl+X to custom cut method
+        self.bind("<Control-x>", self.custom_cut)
+        self.bind("<Control-X>", self.custom_cut)
+
         self.bind("<Control-a>", self.select_all)
         self.bind("<Control-A>", self.select_all)
 
@@ -189,21 +198,30 @@ class CustomEntry(CTkEntry):
         self.context_menu.add_command(label="Copy", command=self.copy)
         self.context_menu.add_command(label="Paste", command=self.paste)
         self.context_menu.add_command(label="Select All", command=self.select_all)
-        self.bind("<Control-v>", self.paste)
-        self.bind("<Control-V>", self.paste)
+        self.bind("<Button-2>", self.custom_middle_mouse)
         self.bind("<Button-3>", self.show_menu)
 
     def disable_slider_keys(self, event=None):
+        if self.select_present() and self.select:
+            self.select_clear()
+
+            if self.lang == "English":
+                self.context_menu.entryconfigure(3, label="Select All")
+            elif self.lang == "Español":
+                self.context_menu.entryconfigure(3, label="Seleccionar Todo")
+
         self.teraterm_ui.move_slider_left_enabled = False
         self.teraterm_ui.move_slider_right_enabled = False
-        self.teraterm_ui.spacebar_enabled = False
         self.teraterm_ui.up_arrow_key_enabled = False
         self.teraterm_ui.down_arrow_key_enabled = False
 
     def enable_slider_keys(self, event=None):
+        if self.select_present() and not self.select:
+            self.select_clear()
+
+        self.select = False
         self.teraterm_ui.move_slider_left_enabled = True
         self.teraterm_ui.move_slider_right_enabled = True
-        self.teraterm_ui.spacebar_enabled = True
         self.teraterm_ui.up_arrow_key_enabled = True
         self.teraterm_ui.down_arrow_key_enabled = True
 
@@ -211,7 +229,7 @@ class CustomEntry(CTkEntry):
         current_text = self.get()
         if current_text != self._undo_stack[-1]:
             self._undo_stack.append(current_text)
-            self._redo_stack.clear()  # Clear the redo stack whenever a new change is made
+            self._redo_stack.clear()
 
     def undo(self, event=None):
         if len(self._undo_stack) > 1:
@@ -231,12 +249,18 @@ class CustomEntry(CTkEntry):
             if self.is_listbox_entry:
                 self.update_listbox()
 
+    def custom_middle_mouse(self, event=None):
+        if self.select_present():
+            self.select_clear()
+            return "break"
+
     def show_menu(self, event):
         if self.cget("state") == "disabled":
             return
 
         self.focus_set()
         self.icursor(tk.END)
+        self.select = True
 
         # Update the menu labels based on the current language
         if self.lang == "English":
@@ -264,55 +288,56 @@ class CustomEntry(CTkEntry):
 
         self.context_menu.post(event.x_root, event.y_root)
 
+    def custom_cut(self, event=None):
+        self.cut()
+        return "break"
+
     def cut(self):
         self.focus_set()
         if not self.select_present():
             self.select_range(0, "end")
         try:
-            selected_text = self.selection_get()  # Attempt to get selected text
-            current_text = self.get()  # Existing text in the Entry widget
-
-            # Save the current state to undo stack
-            self._undo_stack.append(current_text)
-
-            # Perform the cut operation
+            selected_text = self.selection_get()
             self.clipboard_clear()
             self.clipboard_append(selected_text)
             self.delete(tk.SEL_FIRST, tk.SEL_LAST)
+
+            new_text = self.get()
+            # Update the undo stack after cut operation
+            self._undo_stack.append(new_text)
+            # Clear the redo stack
+            self._redo_stack.clear()
+
             if self.is_listbox_entry:
                 self.update_listbox()
-
-            # Update the undo stack with the new state
-            new_text = self.get()
-            self._undo_stack.append(new_text)
-
-            # Optionally, clear the redo stack
-            self._redo_stack = []
-
         except tk.TclError:
-            print("No text selected to cut.")  # Log or inform the user accordingly
+            print("No text selected to cut.")
 
     def copy(self):
         self.focus_set()
         if not self.select_present():
             self.select_range(0, "end")
         try:
-            selected_text = self.selection_get()  # Attempt to get selected text
+            selected_text = self.selection_get()
             self.clipboard_clear()
             self.clipboard_append(selected_text)
         except tk.TclError:
-            print("No text selected to copy.")  # Log or inform the user accordingly
+            print("No text selected to copy.")
+
+    def custom_paste(self, event=None):
+        self.paste()
+        return "break"
 
     def paste(self, event=None):
         self.focus_set()
         try:
-            clipboard_text = self.clipboard_get()  # Get text from clipboard
+            clipboard_text = self.clipboard_get()
             max_paste_length = 1000  # Set a limit for the max paste length
             if len(clipboard_text) > max_paste_length:
                 clipboard_text = clipboard_text[:max_paste_length]  # Truncate to max length
                 print("Pasted content truncated to maximum length.")
 
-            current_text = self.get()  # Existing text in the Entry widget
+            current_text = self.get()
             # Save the current state to undo stack
             if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1]):
                 self._undo_stack.append(current_text)
@@ -320,15 +345,15 @@ class CustomEntry(CTkEntry):
             try:
                 start_index = self.index(tk.SEL_FIRST)
                 end_index = self.index(tk.SEL_LAST)
-                self.delete(start_index, end_index)  # Remove selected text if any
+                self.delete(start_index, end_index)
             except tk.TclError:
                 pass  # Nothing selected, which is fine
 
-            self.insert(tk.INSERT, clipboard_text)  # Insert the clipboard text
+            self.insert(tk.INSERT, clipboard_text)
 
             # Update undo stack here, after paste operation
             self.update_undo_stack()
-            
+
             if self.is_listbox_entry:
                 self.update_listbox()
         except tk.TclError:
@@ -342,9 +367,7 @@ class CustomEntry(CTkEntry):
         self.focus_set()
         self.icursor(tk.END)
         try:
-            # Check if any text is currently selected
             if self.select_present():
-                # Clear the selection if text is already selected
                 self.select_clear()
             else:
                 # Select all text if nothing is selected
@@ -359,6 +382,18 @@ class CustomEntry(CTkEntry):
     def insert(self, index, string):
         super().insert(index, string)
         self.update_undo_stack()
+
+    def _activate_placeholder(self):
+        entry_text = self._entry.get()
+        if (entry_text == "" or entry_text.isspace()) and self._placeholder_text is not None and (
+                self._textvariable is None or self._textvariable == ""):
+            self._placeholder_text_active = True
+            self._pre_placeholder_arguments = {"show": self._entry.cget("show")}
+            self._entry.config(fg=self._apply_appearance_mode(self._placeholder_text_color),
+                               disabledforeground=self._apply_appearance_mode(self._placeholder_text_color),
+                               show="")
+            self._entry.delete(0, tk.END)
+            self._entry.insert(0, self._placeholder_text)
 
     def update_listbox(self):
         self.teraterm_ui.search_classes(None)
