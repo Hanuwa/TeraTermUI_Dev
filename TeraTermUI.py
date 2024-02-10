@@ -180,11 +180,6 @@ class TeraTermUI(customtkinter.CTk):
         self.remove_button_tooltip = None
         self.download_search_pdf_tooltip = None
         self.tooltip = None
-        self.exit = None
-        self.feedback_window = None
-        self.fix_exe = None
-        self.update_window = None
-        self.so = None
         self.is_exit_dialog_open = False
         self.dialog = None
         self.dialog_input = None
@@ -747,15 +742,15 @@ class TeraTermUI(customtkinter.CTk):
         self.is_exit_dialog_open = True
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        self.exit = CTkMessagebox(master=self, title=translation["exit"], message=translation["exit_message"],
-                                  icon="question", option_1=translation["close_tera_term"],
-                                  option_2=translation["option_2"], option_3=translation["option_3"],
-                                  icon_size=(65, 65), button_color=("#c30101", "#c30101", "#145DA0", "use_default"),
-                                  option_1_type="checkbox", hover_color=("darkred", "darkred", "use_default"))
+        msg = CTkMessagebox(master=self, title=translation["exit"], message=translation["exit_message"],
+                            icon="question", option_1=translation["close_tera_term"],
+                            option_2=translation["option_2"], option_3=translation["option_3"],
+                            icon_size=(65, 65), button_color=("#c30101", "#c30101", "#145DA0", "use_default"),
+                            option_1_type="checkbox", hover_color=("darkred", "darkred", "use_default"))
         on_exit = self.cursor.execute("SELECT exit FROM user_data").fetchone()
         if on_exit and on_exit[0] is not None and on_exit[0] == "1":
-            self.exit.check_checkbox()
-        response, self.checkbox_state = self.exit.get()
+            msg.check_checkbox()
+        response, self.checkbox_state = msg.get()
         self.is_exit_dialog_open = False
         if response == "Yes" or response == "Sí":
             if hasattr(self, "boot_up_thread") and self.boot_up_thread.is_alive():
@@ -2473,12 +2468,12 @@ class TeraTermUI(customtkinter.CTk):
     def sign_out(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        self.so = CTkMessagebox(master=self, title=translation["so_title"], message=translation["so_message"],
-                                option_1=translation["option_1"], option_2=translation["option_2"],
-                                option_3=translation["option_3"], icon_size=(65, 65),
-                                button_color=("#c30101", "#145DA0", "#145DA0"),
-                                hover_color=("darkred", "use_default", "use_default"))
-        response = self.so.get()
+        msg = CTkMessagebox(master=self, title=translation["so_title"], message=translation["so_message"],
+                            option_1=translation["option_1"], option_2=translation["option_2"],
+                            option_3=translation["option_3"], icon_size=(65, 65),
+                            button_color=("#c30101", "#145DA0", "#145DA0"),
+                            hover_color=("darkred", "use_default", "use_default"))
+        response = msg.get()
         if TeraTermUI.checkIfProcessRunning("ttermpro") and response[0] == "Yes" \
                 or response[0] == "Sí":
             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
@@ -3867,16 +3862,17 @@ class TeraTermUI(customtkinter.CTk):
                         hwnd = win32gui.FindWindow("#32770", translation["save_pdf"])
                         win32gui.PostMessage(hwnd, win32con.WM_CLOSE, 0, 0)
                     self.after(2500, close_file_dialog)
-                if TeraTermUI.window_exists(translation["exit"]):
-                    self.after(2500, self.exit.close_messagebox)
-                elif TeraTermUI.window_exists(translation["submit"]):
-                    self.after(2500,  self.feedback_window.close_messagebox)
-                elif TeraTermUI.window_exists(translation["fix_messagebox_title"]):
-                    self.after(2500,  self.fix_exe.close_messagebox)
-                elif TeraTermUI.window_exists(translation["update_popup_title"]):
-                    self.after(2500, self.update_window.close_messagebox)
-                elif TeraTermUI.window_exists(translation["so_title"]):
-                    self.after(2500, self.so.close_messagebox)
+                titles_to_close = [
+                    translation["exit"],
+                    translation["submit"],
+                    translation["success_title"],
+                    translation["error"],
+                    translation["fix_messagebox_title"],
+                    translation["update_popup_title"],
+                    translation["so_title"],
+                    translation["automation_error_title"]
+                ]
+                self.after(2500, TeraTermUI.close_matching_windows, titles_to_close)
                 return
             else:
                 hours, remainder = divmod(total_seconds, 3600)
@@ -4814,6 +4810,17 @@ class TeraTermUI(customtkinter.CTk):
             return True
         except IndexError:
             return False
+
+    @staticmethod
+    def close_matching_windows(titles_to_close):
+        import win32con
+        import win32gui
+
+        def window_enum_handler(hwnd, titles):
+            if win32gui.IsWindowVisible(hwnd) and win32gui.GetWindowText(hwnd) in titles:
+                win32gui.SendMessage(hwnd, win32con.WM_CLOSE, 0, 0)
+
+        win32gui.EnumWindows(window_enum_handler, titles_to_close)
 
     # function that checks if UPRB server is currently running
     def check_server(self):
@@ -6921,14 +6928,13 @@ class TeraTermUI(customtkinter.CTk):
                 def update():
                     if not self.disable_audio:
                         winsound.PlaySound("sounds/update.wav", winsound.SND_ASYNC)
-                    self.update_window = CTkMessagebox(master=self, title=translation["update_popup_title"],
-                                                       message=translation["update_popup_message"], icon="question",
-                                                       option_1=translation["option_1"],
-                                                       option_2=translation["option_2"],
-                                                       option_3=translation["option_3"], icon_size=(65, 65),
-                                                       button_color=("#c30101", "#145DA0", "#145DA0"),
-                                                       hover_color=("darkred", "use_default", "use_default"))
-                    response = self.update_window.get()
+                    msg = CTkMessagebox(master=self, title=translation["update_popup_title"],
+                                        message=translation["update_popup_message"], icon="question",
+                                        option_1=translation["option_1"], option_2=translation["option_2"],
+                                        option_3=translation["option_3"], icon_size=(65, 65),
+                                        button_color=("#c30101", "#145DA0", "#145DA0"),
+                                        hover_color=("darkred", "use_default", "use_default"))
+                    response = msg.get()
                     if response[0] == "Yes" or response[0] == "Sí":
                         webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
 
@@ -6939,8 +6945,8 @@ class TeraTermUI(customtkinter.CTk):
                 def up_to_date():
                     if not self.disable_audio:
                         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    self.update_window = CTkMessagebox(master=self, title=translation["update_popup_title"],
-                                                       message=translation["update_up_to_date"], button_width=380)
+                    msg = CTkMessagebox(master=self, title=translation["update_popup_title"],
+                                         message=translation["update_up_to_date"], button_width=380)
 
                 self.after(0, up_to_date)
         else:
@@ -6951,13 +6957,13 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         if TeraTermUI.checkIfProcessRunning("ttermpro"):
-            self.fix_exe = CTkMessagebox(master=self, title=translation["fix_messagebox_title"],
-                                         message=translation["fix_messagebox"], icon="warning",
-                                         option_1=translation["option_1"], option_2=translation["option_2"],
-                                         option_3=translation["option_3"], icon_size=(65, 65),
-                                         button_color=("#c30101", "#145DA0", "#145DA0"),
-                                         hover_color=("darkred", "use_default", "use_default"))
-            response = self.fix_exe.get()
+            msg = CTkMessagebox(master=self, title=translation["fix_messagebox_title"],
+                                message=translation["fix_messagebox"], icon="warning",
+                                option_1=translation["option_1"], option_2=translation["option_2"],
+                                option_3=translation["option_3"], icon_size=(65, 65),
+                                button_color=("#c30101", "#145DA0", "#145DA0"),
+                                hover_color=("darkred", "use_default", "use_default"))
+            response = msg.get()
             if response[0] == "Yes" or response[0] == "Sí":
                 task_done = threading.Event()
                 loading_screen = self.show_loading_screen()
@@ -7087,8 +7093,6 @@ class TeraTermUI(customtkinter.CTk):
                         if TeraTermUI.checkIfProcessRunning("ttermpro"):
                             lang = self.language_menu.get()
                             translation = self.load_language(lang)
-                            if TeraTermUI.window_exists(translation["exit"]):
-                                self.exit.close_messagebox()
                             if TeraTermUI.window_exists(translation["idle_warning_title"]):
                                 self.idle_warning.close_messagebox()
                             try:
@@ -7500,14 +7504,12 @@ class TeraTermUI(customtkinter.CTk):
     def start_feedback_thread(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        self.feedback_window = CTkMessagebox(master=self, title=translation["submit"],
-                                             message=translation["submit_feedback"],
-                                             icon="question",
-                                             option_1=translation["option_1"], option_2=translation["option_2"],
-                                             option_3=translation["option_3"], icon_size=(65, 65),
-                                             button_color=("#c30101", "#145DA0", "#145DA0"),
-                                             hover_color=("darkred", "use_default", "use_default"))
-        response = self.feedback_window.get()
+        msg = CTkMessagebox(master=self, title=translation["submit"], message=translation["submit_feedback"],
+                            icon="question", option_1=translation["option_1"], option_2=translation["option_2"],
+                            option_3=translation["option_3"], icon_size=(65, 65),
+                            button_color=("#c30101", "#145DA0", "#145DA0"),
+                            hover_color=("darkred", "use_default", "use_default"))
+        response = msg.get()
         if response[0] == "Yes" or response[0] == "Sí":
             if not self.disable_feedback:
                 current_date = datetime.today().strftime("%Y-%m-%d")
