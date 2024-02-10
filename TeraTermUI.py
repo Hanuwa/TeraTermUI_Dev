@@ -120,11 +120,6 @@ class TeraTermUI(customtkinter.CTk):
         self.thread_pool = ThreadPoolExecutor(max_workers=3)
         self.lock_thread = threading.Lock()
 
-        # self.cpu_load_history = deque(maxlen=60)
-        # self.stop_monitor = threading.Event()
-        # self.monitor_thread = threading.Thread(target=self.cpu_monitor)
-        # self.monitor_thread.start()
-
         # GitHub's information for feedback
         self.SERVICE_ACCOUNT_FILE = "feedback.zip"
         self.SPREADSHEET_ID = "1ffJLgp8p-goOlxC10OFEu0JefBgQDsgEo_suis4k0Pw"
@@ -1852,7 +1847,7 @@ class TeraTermUI(customtkinter.CTk):
                                          self.go_next_event_completed or not self.search_go_next_event_completed or not
                                          self.my_classes_event_completed or not self.fix_execution_event_completed
                                          or not self.submit_feedback_event_completed):
-            self.after(0, self.submit_multiple_event_handler)
+            self.after(500, self.submit_multiple_event_handler)
         elif self.started_auto_enroll:
             self.end_countdown()
         if self.countdown_running:
@@ -3841,8 +3836,9 @@ class TeraTermUI(customtkinter.CTk):
 
     # Starts the countdown on when the auto-enroll process will occur
     def countdown(self, your_date):
-        import pyautogui
         import pytz
+        import win32con
+        import win32gui
 
         lang = self.language_menu.get()
         translation = self.load_language(lang)
@@ -3867,9 +3863,10 @@ class TeraTermUI(customtkinter.CTk):
                 if TeraTermUI.window_exists(translation["dialog_title"]):
                     self.after(2500, self.dialog.destroy)
                 if TeraTermUI.window_exists(translation["save_pdf"]):
-                    file_dialog = gw.getWindowsWithTitle(translation["save_pdf"])[0]
-                    file_dialog.activate()
-                    pyautogui.hotkey("alt", "f4")
+                    def close_file_dialog():
+                        hwnd = win32gui.FindWindow("#32770", translation["save_pdf"])
+                        win32gui.PostMessage(hwnd, win32con.WM_CLOSE, 0, 0)
+                    self.after(2500, close_file_dialog)
                 if TeraTermUI.window_exists(translation["exit"]):
                     self.after(2500, self.exit.close_messagebox)
                 elif TeraTermUI.window_exists(translation["submit"]):
@@ -6942,54 +6939,24 @@ class TeraTermUI(customtkinter.CTk):
                 def up_to_date():
                     if not self.disable_audio:
                         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    CTkMessagebox(master=self, title=translation["update_popup_title"],
-                                  message=translation["update_up_to_date"], button_width=380)
+                    self.update_window = CTkMessagebox(master=self, title=translation["update_popup_title"],
+                                                       message=translation["update_up_to_date"], button_width=380)
 
                 self.after(0, up_to_date)
         else:
             self.updating_app = False
             task_done.set()
 
-    # (Unused) determines the hardware of the users' computer and change the time.sleep seconds respectively
-    # def get_sleep_time(self):
-    # cpu_count = psutil.cpu_count()
-    # self.avg_cpu_load = sum(self.cpu_load_history) / len(self.cpu_load_history)
-    # if cpu_count >= 8 and self.avg_cpu_load <= 50:
-    # sleep_time = 0.5
-    # elif cpu_count >= 6 and self.avg_cpu_load <= 50:
-    # sleep_time = 0.75
-    # elif cpu_count >= 4 and self.avg_cpu_load <= 50:
-    # sleep_time = 1
-    # elif cpu_count >= 8 and self.avg_cpu_load >= 50:
-    # sleep_time = 0.90
-    # elif cpu_count >= 6 and self.avg_cpu_load >= 50:
-    # sleep_time = 1.2
-    # elif cpu_count >= 4 and self.avg_cpu_load >= 50:
-    # sleep_time = 1.5
-    # elif not self.cpu_load_history:
-    # sleep_time = 2
-    # else:
-    # sleep_time = 2
-
-    # return sleep_time
-
-    # (Unused) Monitors the usage of the CPU of the user to determine the time.sleep of how long should the function
-    # take before executing something
-    # def cpu_monitor(self, interval=1):
-    # while not self.stop_monitor.is_set():
-    # cpu_percent = psutil.cpu_percent(interval=interval)
-    # self.cpu_load_history.append(cpu_percent)
-
     def fix_execution_event_handler(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         if TeraTermUI.checkIfProcessRunning("ttermpro"):
             self.fix_exe = CTkMessagebox(master=self, title=translation["fix_messagebox_title"],
-                                        message=translation["fix_messagebox"], icon="warning",
-                                        option_1=translation["option_1"], option_2=translation["option_2"],
-                                        option_3=translation["option_3"], icon_size=(65, 65),
-                                        button_color=("#c30101", "#145DA0", "#145DA0"),
-                                        hover_color=("darkred", "use_default", "use_default"))
+                                         message=translation["fix_messagebox"], icon="warning",
+                                         option_1=translation["option_1"], option_2=translation["option_2"],
+                                         option_3=translation["option_3"], icon_size=(65, 65),
+                                         button_color=("#c30101", "#145DA0", "#145DA0"),
+                                         hover_color=("darkred", "use_default", "use_default"))
             response = self.fix_exe.get()
             if response[0] == "Yes" or response[0] == "Sí":
                 task_done = threading.Event()
