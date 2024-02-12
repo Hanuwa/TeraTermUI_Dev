@@ -251,6 +251,8 @@ class CustomEntry(CTkEntry):
 
     def custom_middle_mouse(self, event=None):
         if self.select_present():
+            char_index = self.index("@%d" % event.x)
+            self.icursor(char_index)
             self.select_clear()
             return "break"
 
