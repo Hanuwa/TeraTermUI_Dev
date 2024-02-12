@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/11/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/12/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -807,6 +807,7 @@ class TeraTermUI(customtkinter.CTk):
 
     def log_error(self, e):
         import inspect
+        import traceback
 
         try:
             # Get the current timestamp
@@ -815,9 +816,11 @@ class TeraTermUI(customtkinter.CTk):
             stack = inspect.stack()
             _, filename, _, function, _, _ = stack[1]
             function_info = f"{filename}:{function}"
+            # Capture the full traceback
+            traceback_summary = traceback.format_exc().strip().split('\n')[-1]
             # Create a formatted error message with the app version and timestamp
             error_message = (f"[ERROR] [{self.mode}] [{self.USER_APP_VERSION}] [{timestamp}]"
-                             f" [{function_info}] {str(e)}")
+                             f" [{function_info}] Traceback: {traceback_summary}")
             # Calculate the length of the error message
             error_length = len(error_message)
             # Create a separator based on the length of the error message
@@ -964,7 +967,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.bind("<Return>", lambda event: self.student_event_handler())
                     self.error_occurred = False
 
-                self.after(0, error_automation)
+                self.after(50, error_automation)
             ctypes.windll.user32.BlockInput(False)
 
     def student_info_frame(self):
@@ -1307,7 +1310,7 @@ class TeraTermUI(customtkinter.CTk):
                                       icon="warning", button_width=380)
                         self.error_occurred = False
 
-                    self.after(0, error_automation)
+                    self.after(50, error_automation)
                 if not self.not_rebind:
                     self.bind("<Return>", lambda event: self.submit_event_handler())
                 ctypes.windll.user32.BlockInput(False)
@@ -1495,7 +1498,7 @@ class TeraTermUI(customtkinter.CTk):
                                       icon="warning", button_width=380)
                         self.error_occurred = False
 
-                    self.after(0, error_automation)
+                    self.after(50, error_automation)
                 self.bind("<Return>", lambda event: self.search_event_handler())
                 ctypes.windll.user32.BlockInput(False)
                 self.search_event_completed = True
@@ -1621,7 +1624,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.switch_tab()
                         self.error_occurred = False
 
-                    self.after(0, error_automation)
+                    self.after(50, error_automation)
                 ctypes.windll.user32.BlockInput(False)
                 self.my_classes_event_completed = True
 
@@ -2053,7 +2056,7 @@ class TeraTermUI(customtkinter.CTk):
                                       icon="question", button_width=380)
                         self.error_occurred = False
 
-                    self.after(0, error_automation)
+                    self.after(50, error_automation)
                 if not self.not_rebind:
                     self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                 ctypes.windll.user32.BlockInput(False)
@@ -2421,7 +2424,7 @@ class TeraTermUI(customtkinter.CTk):
                                                        "\n a la pantalla" + self.menu_entry.get())
                                 case "SO":
                                     self.focus_or_not = True
-                                    self.after(0, self.sign_out)
+                                    self.after(50, self.sign_out)
                         else:
                             self.focus_or_not = True
                             if not semester or not menu:
@@ -2461,7 +2464,7 @@ class TeraTermUI(customtkinter.CTk):
                                       icon="warning", button_width=380)
                         self.error_occurred = False
 
-                    self.after(0, error_automation)
+                    self.after(50, error_automation)
                 self.bind("<Return>", lambda event: self.option_menu_event_handler())
                 ctypes.windll.user32.BlockInput(False)
                 self.option_menu_event_completed = True
@@ -2581,7 +2584,7 @@ class TeraTermUI(customtkinter.CTk):
                                       icon="warning", button_width=380)
                         self.error_occurred = False
 
-                    self.after(0, error_automation)
+                    self.after(50, error_automation)
                 self.bind("<Return>", lambda event: self.option_menu_event_handler())
                 ctypes.windll.user32.BlockInput(False)
                 self.go_next_event_completed = True
@@ -2652,7 +2655,7 @@ class TeraTermUI(customtkinter.CTk):
                                       icon="warning", button_width=380)
                         self.error_occurred = False
 
-                    self.after(0, error_automation)
+                    self.after(50, error_automation)
                 self.bind("<Return>", lambda event: self.search_event_handler())
                 ctypes.windll.user32.BlockInput(False)
                 self.search_go_next_event_completed = True
@@ -2727,7 +2730,7 @@ class TeraTermUI(customtkinter.CTk):
                                                   button_width=380)
                                     self.error_occurred = True
 
-                                self.after(0, server_closed)
+                                self.after(50, server_closed)
                             elif self.server_status == "Prompt found":
                                 self.uprb.UprbayTeraTermVt.type_keys("{ENTER 3}")
                                 self.move_window()
@@ -2751,7 +2754,7 @@ class TeraTermUI(customtkinter.CTk):
                                                   button_width=380)
                                     self.error_occurred = True
 
-                                self.after(0, timeout)
+                                self.after(50, timeout)
                         elif username != "students":
                             self.bind("<Return>", lambda event: self.auth_event_handler())
                             self.after(100, self.show_error_message, 300, 215, translation["invalid_username"])
@@ -2968,7 +2971,7 @@ class TeraTermUI(customtkinter.CTk):
                                       message=translation["unexpected_error"], icon="warning", button_width=380)
 
                     self.error_occurred = False
-                    self.after(0, rare_error)
+                    self.after(50, rare_error)
                 else:
                     print("An error occurred:", error_message)
                     self.error_occurred = True
@@ -2992,7 +2995,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.bind("<Return>", lambda event: self.login_event_handler())
                         self.error_occurred = False
 
-                    self.after(0, error_automation)
+                    self.after(50, error_automation)
                 ctypes.windll.user32.BlockInput(False)
 
     def login_frame(self):
@@ -3067,7 +3070,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.bind("<Return>", lambda event: self.login_event_handler())
                     self.uprb.kill(soft=True)
 
-                self.after(0, server_closed)
+                self.after(50, server_closed)
                 return
             elif "return to continue" in text_output or "SISTEMA DE INFORMACION" in text_output:
                 if "return to continue" in text_output and "Loading" in text_output:
@@ -3242,7 +3245,7 @@ class TeraTermUI(customtkinter.CTk):
                                       message=translation["tera_term_forced_to_close"],
                                       icon="warning", button_width=380)
 
-                    self.after(0, error)
+                    self.after(50, error)
             self.error_occurred = False
 
     def keybind_go_back_event2(self):
@@ -3828,7 +3831,7 @@ class TeraTermUI(customtkinter.CTk):
                                       icon="warning", button_width=380)
                         self.error_occurred = False
 
-                    self.after(0, error_automation)
+                    self.after(50, error_automation)
                 self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
                 ctypes.windll.user32.BlockInput(False)
 
@@ -6229,7 +6232,7 @@ class TeraTermUI(customtkinter.CTk):
                                                   message=translation["co_requisite_warning"] + edge_case_classes_str,
                                                   button_width=380)
 
-                                self.after(0, explanation)
+                                self.after(50, explanation)
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             except Exception as e:
@@ -6252,7 +6255,7 @@ class TeraTermUI(customtkinter.CTk):
                                       icon="warning", button_width=380)
                         self.error_occurred = False
 
-                    self.after(0, error_automation)
+                    self.after(50, error_automation)
                 if not self.not_rebind:
                     self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
                 ctypes.windll.user32.BlockInput(False)
@@ -6923,7 +6926,7 @@ class TeraTermUI(customtkinter.CTk):
                     CTkMessagebox(master=self, title=translation["error"], icon="cancel",
                                   message=translation["failed_to_find_update"], button_width=380)
 
-                self.after(0, error)
+                self.after(50, error)
                 return
             if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION):
                 task_done.set()
@@ -6941,7 +6944,7 @@ class TeraTermUI(customtkinter.CTk):
                     if response[0] == "Yes" or response[0] == "Sí":
                         webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
 
-                self.after(0, update)
+                self.after(50, update)
             else:
                 task_done.set()
 
@@ -6951,7 +6954,7 @@ class TeraTermUI(customtkinter.CTk):
                     CTkMessagebox(master=self, title=translation["update_popup_title"],
                                   message=translation["update_up_to_date"], button_width=380)
 
-                self.after(0, up_to_date)
+                self.after(50, up_to_date)
         else:
             self.updating_app = False
             task_done.set()
@@ -7036,7 +7039,7 @@ class TeraTermUI(customtkinter.CTk):
                                       message=translation["automation_error"],
                                       icon="warning", button_width=380)
 
-                    self.after(0, error_automation)
+                    self.after(50, error_automation)
                 ctypes.windll.user32.BlockInput(False)
                 self.fix_execution_event_completed = True
 
@@ -7069,7 +7072,7 @@ class TeraTermUI(customtkinter.CTk):
                                           message=translation["tera_term_stopped_running"],
                                           button_width=380)
 
-                        self.after(0, not_running)
+                        self.after(50, not_running)
                     if not_running_count > 1:
                         self.is_idle_thread_running = False
                         self.reset_activity_timer(None)
@@ -7133,7 +7136,7 @@ class TeraTermUI(customtkinter.CTk):
                                     if response == "OK":
                                         self.idle_num_check = 0
 
-                                self.after(0, idle_warning)
+                                self.after(50, idle_warning)
                         else:
                             self.stop_check_idle.is_set()
                 if self.idle_num_check == 12:
@@ -7537,7 +7540,7 @@ class TeraTermUI(customtkinter.CTk):
                                     CTkMessagebox(title=translation["error"], message=translation["feedback_empty"],
                                                   icon="cancel", button_width=380)
 
-                                self.after(0, show_error)
+                                self.after(50, show_error)
                     else:
                         if not self.connection_error:
                             def show_error():
@@ -7546,7 +7549,7 @@ class TeraTermUI(customtkinter.CTk):
                                 CTkMessagebox(title=translation["error"], message=translation["feedback_1000"],
                                               icon="cancel", button_width=380)
 
-                            self.after(0, show_error)
+                            self.after(50, show_error)
                 else:
                     if not self.connection_error:
                         def show_error():
@@ -7555,7 +7558,7 @@ class TeraTermUI(customtkinter.CTk):
                             CTkMessagebox(title=translation["error"], message=translation["feedback_day"],
                                           icon="cancel", button_width=380)
 
-                        self.after(0, show_error)
+                        self.after(50, show_error)
             else:
                 if not self.connection_error:
                     def show_error():
@@ -7564,7 +7567,7 @@ class TeraTermUI(customtkinter.CTk):
                         CTkMessagebox(title=translation["error"], message=translation["feedback_unavailable"],
                                       icon="cancel", button_width=380)
 
-                    self.after(0, show_error)
+                    self.after(50, show_error)
 
     # Submits feedback from the user to a Google sheet
     def submit_feedback(self, task_done):
@@ -7582,7 +7585,7 @@ class TeraTermUI(customtkinter.CTk):
                         CTkMessagebox(title=translation["success_title"], icon="check",
                                       message=translation["feedback_success"], button_width=380)
 
-                    self.after(0, show_success)
+                    self.after(50, show_success)
                     row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
                     if not row_exists:
                         self.cursor.execute("INSERT INTO user_data (feedback_date) VALUES (?)",
@@ -7600,7 +7603,7 @@ class TeraTermUI(customtkinter.CTk):
                                           message=translation["feedback_error"],
                                           icon="cancel", button_width=380)
 
-                        self.after(0, show_error)
+                        self.after(50, show_error)
             except Exception as e:
                 print("An error occurred: ", e)
                 self.error_occurred = True
