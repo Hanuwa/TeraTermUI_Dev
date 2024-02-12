@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/10/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/11/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -324,6 +324,7 @@ class TeraTermUI(customtkinter.CTk):
         self.back_tooltip = None
         self.skip_auth = False
         self.ask_skip_auth = False
+        self.skipped_login = False
 
         # Student Information
         self.init_student = False
@@ -2796,7 +2797,7 @@ class TeraTermUI(customtkinter.CTk):
         self.back_student.grid(row=5, column=0, padx=(0, 10), pady=(0, 0))
         self.system.grid(row=5, column=1, padx=(10, 0), pady=(0, 0))
         self.destroy_auth()
-        if self.ask_skip_auth:
+        if self.ask_skip_auth and not self.skipped_login:
             self.unbind("<Return>")
             self.unbind("<Control-BackSpace>")
             self.system.configure(state="disabled")
@@ -3083,6 +3084,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.after(0, self.initialization_student)
                 self.after(100, self.auth_info_frame)
                 self.in_student_frame = True
+                self.skipped_login = True
                 self.main_menu = False
                 if self.help is not None and self.help.winfo_exists():
                     self.files.configure(state="disabled")
@@ -3227,6 +3229,7 @@ class TeraTermUI(customtkinter.CTk):
             self.in_student_frame = False
             self.in_enroll_frame = False
             self.in_search_frame = False
+            self.skipped_login = False
             self.main_menu = True
             if self.error_occurred:
                 self.destroy_windows()
@@ -6945,8 +6948,8 @@ class TeraTermUI(customtkinter.CTk):
                 def up_to_date():
                     if not self.disable_audio:
                         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    msg = CTkMessagebox(master=self, title=translation["update_popup_title"],
-                                         message=translation["update_up_to_date"], button_width=380)
+                    CTkMessagebox(master=self, title=translation["update_popup_title"],
+                                  message=translation["update_up_to_date"], button_width=380)
 
                 self.after(0, up_to_date)
         else:
@@ -8548,6 +8551,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
 
     def custom_middle_mouse(self, event=None):
         if self.tag_ranges(tk.SEL):
+            self.mark_set(tk.INSERT, "@%d,%d" % (event.x, event.y))
             self.tag_remove(tk.SEL, "1.0", tk.END)
             return "break"
         if not self.tag_ranges(tk.SEL) and self.read_only:
@@ -8785,6 +8789,8 @@ class CustomEntry(customtkinter.CTkEntry):
 
     def custom_middle_mouse(self, event=None):
         if self.select_present():
+            char_index = self.index("@%d" % event.x)
+            self.icursor(char_index)
             self.select_clear()
             return "break"
 
@@ -9019,6 +9025,8 @@ class CustomComboBox(customtkinter.CTkComboBox):
 
     def custom_middle_mouse(self, event=None):
         if self._entry.select_present():
+            char_index = self._entry.index("@%d" % event.x)
+            self._entry.icursor(char_index)
             self._entry.select_clear()
             return "break"
 
