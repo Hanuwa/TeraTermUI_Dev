@@ -2696,7 +2696,9 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language(lang)
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
-                        if username == "students":
+                        allowed_roles = {"students", "student", "estudiantes", "estudiante"}
+                        if username in allowed_roles:
+                            username = "students"
                             term_window = gw.getWindowsWithTitle("SSH Authentication")[0]
                             if term_window.isMinimized:
                                 term_window.restore()
