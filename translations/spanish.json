@@ -67,7 +67,7 @@
 	"host_tooltip": "Ingrese el nombre del servidor\nde la universidad",
 	"register_tooltip": "Matricula la clase",
 	"drop_tooltip": "Darle de baja a la clase",
-	"username_tooltip": "La universidad requiere esto \npara entrar y acceder\nnel sistema",
+	"username_tooltip": "La universidad requiere esto para\ndeterminar el rol del usuario que\nesta accediendo el sistema",
 	"student_id_tooltip": "Requerido para iniciar sesión,\nla información se encripta\n(Puedes usar tambien tu ssn)",
 	"code_tooltip": "Código de 4 dígitos incluido en\nel correo electrónico del\nboleto de su pre-matrícula",
 	"back_tooltip": "Volver a la pantalla principal\nde la aplicación",
