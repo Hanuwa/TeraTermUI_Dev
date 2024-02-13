@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/12/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/13/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -689,7 +689,7 @@ class TeraTermUI(customtkinter.CTk):
                             print("No latest release found. Starting app with the current version.")
                             latest_version = self.USER_APP_VERSION
                         if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION):
-                            self.after(1000, self.update_app)
+                            self.after(1000, self.update_app, latest_version)
                         row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
                         if not row_exists:
                             self.cursor.execute("INSERT INTO user_data (update_date) VALUES (?)",
@@ -6422,15 +6422,25 @@ class TeraTermUI(customtkinter.CTk):
             self.credentials = None
             self.disable_feedback = True
 
-    def update_app(self):
-        translation = self.load_language(self.language_menu.get())
+    def update_app(self, latest_version):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        current = None
+        latest = None
+        if lang == "English":
+            current = "Current"
+            latest = "Latest"
+        elif lang == "Español":
+            current = "Actual"
+            latest = "Nueva"
         if not self.disable_audio:
             winsound.PlaySound("sounds/update.wav", winsound.SND_ASYNC)
         msg = CTkMessagebox(master=self, title=translation["update_popup_title"],
-                            message=translation["update_popup_message"],
-                            icon="question", option_1=translation["option_1"],
-                            option_2=translation["option_2"], option_3=translation["option_3"],
-                            icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                            message=translation["update_popup_message"] + "\n\n" + current + ": v" +
+                            self.USER_APP_VERSION + " ---> " + latest + ": v" + latest_version,
+                            option_1=translation["option_1"], option_2=translation["option_2"],
+                            option_3=translation["option_3"], icon_size=(65, 65),
+                            button_color=("#c30101", "#145DA0", "#145DA0"), icon="question",
                             hover_color=("darkred", "use_default", "use_default"))
         response = msg.get()
         if response[0] == "Yes" or response[0] == "Sí":
@@ -6934,13 +6944,22 @@ class TeraTermUI(customtkinter.CTk):
                 task_done.set()
 
                 def update():
+                    current = None
+                    latest = None
+                    if lang == "English":
+                        current = "Current"
+                        latest = "Latest"
+                    elif lang == "Español":
+                        current = "Actual"
+                        latest = "Nueva"
                     if not self.disable_audio:
                         winsound.PlaySound("sounds/update.wav", winsound.SND_ASYNC)
                     msg = CTkMessagebox(master=self, title=translation["update_popup_title"],
-                                        message=translation["update_popup_message"], icon="question",
+                                        message=translation["update_popup_message"] + "\n\n" + current + ": v" +
+                                        self.USER_APP_VERSION + " ---> " + latest + ": v" + latest_version,
                                         option_1=translation["option_1"], option_2=translation["option_2"],
                                         option_3=translation["option_3"], icon_size=(65, 65),
-                                        button_color=("#c30101", "#145DA0", "#145DA0"),
+                                        button_color=("#c30101", "#145DA0", "#145DA0"), icon="question",
                                         hover_color=("darkred", "use_default", "use_default"))
                     response = msg.get()
                     if response[0] == "Yes" or response[0] == "Sí":
