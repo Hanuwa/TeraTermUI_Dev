@@ -7846,7 +7846,7 @@ class TeraTermUI(customtkinter.CTk):
                                                               translation["equip"], translation["peda"],
                                                               translation["che"], translation["nur"],
                                                               translation["office"], translation["engi"]],
-                                                      canvas_takefocus=False, command=TeraTermUI.curriculums,
+                                                      command=TeraTermUI.curriculums,
                                                       height=30, width=150)
         self.keybinds_text = customtkinter.CTkLabel(self.help_frame, text=translation["keybinds_title"],
                                                     font=customtkinter.CTkFont(weight="bold", size=15))
