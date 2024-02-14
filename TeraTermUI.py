@@ -782,6 +782,9 @@ class TeraTermUI(customtkinter.CTk):
             sys.exit(0)
 
     def direct_close(self):
+        if self.loading_screen is not None and self.loading_screen.winfo_exists():
+            return
+
         if hasattr(self, "boot_up_thread") and self.boot_up_thread.is_alive():
             self.boot_up_thread.join()
         if hasattr(self, "check_idle_thread") and self.check_idle_thread is not None \
@@ -3257,6 +3260,9 @@ class TeraTermUI(customtkinter.CTk):
             self.error_occurred = False
 
     def keybind_go_back_event2(self):
+        if self.loading_screen is not None and self.loading_screen.winfo_exists():
+            return
+
         if self.move_slider_right_enabled or self.move_slider_left_enabled:
             self.go_back_event2()
 
@@ -4585,6 +4591,9 @@ class TeraTermUI(customtkinter.CTk):
                 self.connection.commit()
 
     def keybind_save_classes(self, event=None):
+        if self.loading_screen is not None and self.loading_screen.winfo_exists():
+            return
+
         self.save_data.toggle()
         self.save_classes()
         if event and event.keysym == 'space':
@@ -4993,6 +5002,9 @@ class TeraTermUI(customtkinter.CTk):
 
     # function for the user to download the created pdf to their computer
     def download_search_classes_as_pdf(self):
+        if self.loading_screen is not None and self.loading_screen.winfo_exists():
+            return
+
         lang = self.language_menu.get()
         translation = self.load_language(lang)
 
@@ -5733,6 +5745,9 @@ class TeraTermUI(customtkinter.CTk):
         pdf.build(elems)
 
     def download_enrolled_classes_as_pdf(self, data, creds):
+        if self.loading_screen is not None and self.loading_screen.winfo_exists():
+            return
+
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         if self.dialog_input is not None:
