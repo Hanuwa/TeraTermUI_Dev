@@ -7943,6 +7943,9 @@ class TeraTermUI(customtkinter.CTk):
 
     # Creates the Help window
     def help_button_event(self):
+        if self.loading_screen is not None and self.loading_screen.winfo_exists():
+            return
+
         if self.help and self.help.winfo_exists():
             windows_help = gw.getWindowsWithTitle("Help") + gw.getWindowsWithTitle("Ayuda")
             self.help_minimized = windows_help[0].isMinimized
