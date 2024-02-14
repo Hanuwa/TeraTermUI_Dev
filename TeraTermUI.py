@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/13/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/14/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -666,6 +666,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.help_button.configure(state="normal")
                     self.log_in.configure(state="normal")
                     self.bind("<Return>", lambda event: self.login_event_handler())
+                    self.bind("<F1>", lambda event: self.help_button_event())
                     row_exists_in_welcome = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
                     if not row_exists_in_welcome:
                         self.cursor.execute("INSERT INTO user_data (welcome) VALUES (?)", ("Checked",))
@@ -678,6 +679,7 @@ class TeraTermUI(customtkinter.CTk):
                 # Binding events
                 self.log_in.configure(state="normal")
                 self.bind("<Return>", lambda event: self.login_event_handler())
+                self.bind("<F1>", lambda event: self.help_button_event())
                 # Check for update for the application
                 current_date = datetime.today().strftime("%Y-%m-%d")
                 date_record = self.cursor.execute("SELECT update_date FROM user_data").fetchone()
@@ -1721,6 +1723,8 @@ class TeraTermUI(customtkinter.CTk):
         self.in_search_frame = False
         self.in_multiple_screen = True
         self.unbind("<Control-Tab>")
+        self.bind("<Control-s>", self.keybind_save_classes)
+        self.bind("<Control-S>", self.keybind_save_classes)
         self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
         self.bind("<Up>", lambda event: self.add_event_up_arrow_key())
         self.bind("<Down>", lambda event: self.remove_event_down_arrow_key())
@@ -3188,6 +3192,8 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<Down>")
             self.unbind("<Home>")
             self.unbind("<End>")
+            self.unbind("<Control-s>")
+            self.unbind("<Control-S>")
             self.unbind("<Control-Tab>")
             self.unbind("<Control-BackSpace>")
             self.bind("<Return>", lambda event: self.login_event_handler())
@@ -3261,6 +3267,8 @@ class TeraTermUI(customtkinter.CTk):
         self.unbind("<Down>")
         self.unbind("<Home>")
         self.unbind("<End>")
+        self.unbind("<Control-s>")
+        self.unbind("<Control-S>")
         self.bind("<Control-Tab>", lambda event: self.tab_switcher())
         self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
         lang = self.language_menu.get()
@@ -3519,9 +3527,11 @@ class TeraTermUI(customtkinter.CTk):
                              ["<Ctrl-Z>", translation["ctrl_z"]],
                              ["<Ctrl-Y>", translation["ctrl_y"]],
                              ["<Ctrl-A>", translation["ctrl_a"]],
+                             ["<Ctrl-S", translation["ctrl_s"]],
                              ["<Right-Click>", translation["mouse_2"]],
                              ["<Home>", translation["home"]],
                              ["<End>", translation["end"]],
+                             ["<F1>", translation["F1"]],
                              ["<Alt-F4>", translation["alt_f4"]]]
             self.keybinds_table.configure(values=self.keybinds)
             self.skip_auth_text.configure(text=translation["skip_auth_text"])
@@ -4534,7 +4544,7 @@ class TeraTermUI(customtkinter.CTk):
             self.multiple_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.m_button_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.save_frame.bind("<Button-1>", lambda event: self.focus_set())
-            self.save_data.bind("<space>", lambda event: self.keybind_save_classes())
+            self.save_data.bind("<space>", self.keybind_save_classes)
             self.auto_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.auto_enroll.bind("<space>", lambda event: self.keybind_auto_enroll())
             self.title_multiple.bind("<Button-1>", lambda event: self.focus_set())
@@ -4574,10 +4584,11 @@ class TeraTermUI(customtkinter.CTk):
             with closing(connection.cursor()) as self.cursor:
                 self.connection.commit()
 
-    def keybind_save_classes(self):
+    def keybind_save_classes(self, event=None):
         self.save_data.toggle()
         self.save_classes()
-        self.save_data._on_enter()
+        if event and event.keysym == 'space':
+            self.save_data._on_enter()
 
     # saves class information for another session
     def save_classes(self):
@@ -5235,6 +5246,8 @@ class TeraTermUI(customtkinter.CTk):
         if len(self.class_table_pairs) == 10:
             self.table_count.configure(text_color="red")
         self.table_count.bind("<Button-1>", lambda event: self.focus_set())
+        self.bind("<Control-s>", lambda event: self.download_search_classes_as_pdf())
+        self.bind("<Control-S>", lambda event: self.download_search_classes_as_pdf())
 
     def find_duplicate(self, new_display_class, new_semester, show_all_sections_state, available_values):
         for index, (display_class, table, semester, existing_show_all_sections_state,
@@ -5877,6 +5890,8 @@ class TeraTermUI(customtkinter.CTk):
         self.bind("<Down>", lambda event: self.move_down_scrollbar())
         self.bind("<Home>", lambda event: self.move_top_scrollbar())
         self.bind("<End>", lambda event: self.move_bottom_scrollbar())
+        self.bind("<Control-s>", lambda event: self.download_enrolled_classes_as_pdf(data, creds))
+        self.bind("<Control-S>", lambda event: self.download_enrolled_classes_as_pdf(data, creds))
         self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event2())
         self.my_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
         self.title_my_classes.bind("<Button-1>", lambda event: self.focus_set())
@@ -7323,6 +7338,8 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<Down>")
             self.unbind("<Home>")
             self.unbind("<End>")
+            self.unbind("<Control-s>")
+            self.unbind("<Control-S>")
             if not self.not_rebind:
                 self.bind("<Return>", lambda event: self.submit_event_handler())
             else:
@@ -7339,6 +7356,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.download_search_pdf.grid_forget()
                 self.search_scrollbar.scroll_to_top()
                 self.after(100, self.load_table)
+                self.bind("<Control-s>", lambda event: self.download_search_classes_as_pdf())
+                self.bind("<Control-S>", lambda event: self.download_search_classes_as_pdf())
             self.in_enroll_frame = False
             self.in_search_frame = True
             self.bind("<Return>", lambda event: self.search_event_handler())
@@ -7355,6 +7374,8 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<Down>")
             self.unbind("<Home>")
             self.unbind("<End>")
+            self.unbind("<Control-s>")
+            self.unbind("<Control-S>")
             self.bind("<Return>", lambda event: self.option_menu_event_handler())
         self.after(0, self.focus_set)
 
@@ -7884,9 +7905,11 @@ class TeraTermUI(customtkinter.CTk):
                          ["<Ctrl-Z>", translation["ctrl_z"]],
                          ["<Ctrl-Y>", translation["ctrl_y"]],
                          ["<Ctrl-A>", translation["ctrl_a"]],
+                         ["<Ctrl-S", translation["ctrl_s"]],
                          ["<Right-Click>", translation["mouse_2"]],
                          ["<Home>", translation["home"]],
                          ["<End>", translation["end"]],
+                         ["<F1>", translation["F1"]],
                          ["<Alt-F4>", translation["alt_f4"]]]
         self.terms_text = customtkinter.CTkLabel(self.help_frame, text=translation["terms_title"],
                                                  font=customtkinter.CTkFont(weight="bold", size=15))
@@ -7959,7 +7982,7 @@ class TeraTermUI(customtkinter.CTk):
         self.terms_table = CTkTable(self.help_frame, column=2, row=7, values=self.terms, hover=False)
         self.terms_table.pack(expand=True, fill="both", padx=20, pady=10)
         self.keybinds_text.pack(pady=(20, 0))
-        self.keybinds_table = CTkTable(self.help_frame, column=2, row=17, values=self.keybinds, hover=False)
+        self.keybinds_table = CTkTable(self.help_frame, column=2, row=21, values=self.keybinds, hover=False)
         self.keybinds_table.pack(expand=True, fill="both", padx=20, pady=10)
         if not self.ask_skip_auth:
             self.skip_auth_text.pack()
