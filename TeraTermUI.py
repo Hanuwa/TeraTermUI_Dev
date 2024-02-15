@@ -4693,10 +4693,15 @@ class TeraTermUI(customtkinter.CTk):
         self.progress_bar = customtkinter.CTkProgressBar(self.loading_screen, mode="indeterminate",
                                                          height=15, width=230, indeterminate_speed=1.5)
         self.progress_bar.pack(pady=1)
+        self.loading_screen.protocol("WM_DELETE_WINDOW", TeraTermUI.disable_loading_screen_close)
         self.progress_bar.start()
         self.attributes("-disabled", True)
         self.disable_widgets(self)
         return self.loading_screen
+
+    @staticmethod
+    def disable_loading_screen_close():
+        return "break"
 
     # hides the loading screen
     def hide_loading_screen(self):
