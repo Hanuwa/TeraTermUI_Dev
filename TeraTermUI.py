@@ -1685,10 +1685,18 @@ class TeraTermUI(customtkinter.CTk):
                 self.m_remove.configure(state="disabled")
 
     def add_event_up_arrow_key(self):
+        if self.loading_screen is not None and self.loading_screen.winfo_exists() or \
+                self.countdown_running or self.started_auto_enroll:
+            return
+
         if self.up_arrow_key_enabled and self.a_counter != 5:
             self.add_event()
 
     def remove_event_down_arrow_key(self):
+        if self.loading_screen is not None and self.loading_screen.winfo_exists() or \
+                self.countdown_running or self.started_auto_enroll:
+            return
+
         if self.down_arrow_key_enabled and self.a_counter != 0:
             self.remove_event()
 
