@@ -658,8 +658,8 @@ class TeraTermUI(customtkinter.CTk):
                     translation = self.load_language(self.language_menu.get())
                     if not self.disable_audio:
                         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    CTkMessagebox(master=self, title=translation["welcome_title"],
-                                  message=translation["welcome_message"], button_width=380)
+                    CTkMessagebox(title=translation["welcome_title"], message=translation["welcome_message"],
+                                  button_width=380)
                     self.slideshow_frame.go_to_first_image()
                     self.intro_box.restart_autoscroll()
                     self.status_button.configure(state="normal")
@@ -746,10 +746,10 @@ class TeraTermUI(customtkinter.CTk):
         self.is_exit_dialog_open = True
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        msg = CTkMessagebox(master=self, title=translation["exit"], message=translation["exit_message"],
-                            icon="question", option_1=translation["close_tera_term"],
-                            option_2=translation["option_2"], option_3=translation["option_3"],
-                            icon_size=(65, 65), button_color=("#c30101", "#c30101", "#145DA0", "use_default"),
+        msg = CTkMessagebox(title=translation["exit"], message=translation["exit_message"], icon="question",
+                            option_1=translation["close_tera_term"], option_2=translation["option_2"],
+                            option_3=translation["option_3"], icon_size=(65, 65),
+                            button_color=("#c30101", "#c30101", "#145DA0", "use_default"),
                             option_1_type="checkbox", hover_color=("darkred", "darkred", "use_default"))
         on_exit = self.cursor.execute("SELECT exit FROM user_data").fetchone()
         if on_exit and on_exit[0] is not None and on_exit[0] == "1":
@@ -967,8 +967,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.destroy_windows()
                     if not self.disable_audio:
                         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                  message=translation["automation_error"],
+                    CTkMessagebox(title=translation["automation_error_title"], message=translation["automation_error"],
                                   icon="warning", button_width=380)
                     self.bind("<Return>", lambda event: self.student_event_handler())
                     self.error_occurred = False
@@ -1095,7 +1094,7 @@ class TeraTermUI(customtkinter.CTk):
         self.focus_set()
         if lang == "English":
             if choice == "register":
-                msg = CTkMessagebox(master=self, title="Submit",
+                msg = CTkMessagebox(title="Submit",
                                     message="Are you sure you are ready " + translation["register"].lower() +
                                             " this class?\n\nWARNING: Make sure the information is correct",
                                     icon="images/submit.png",
@@ -1104,7 +1103,7 @@ class TeraTermUI(customtkinter.CTk):
                                     icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
                                     hover_color=("darkred", "use_default", "use_default"))
             elif choice == "drop":
-                msg = CTkMessagebox(master=self, title="Submit",
+                msg = CTkMessagebox(title="Submit",
                                     message="Are you sure you are ready " + translation[
                                         "drop"].lower() + " this class?\n\nWARNING: Make sure the information "
                                                           "is correct",
@@ -1115,7 +1114,7 @@ class TeraTermUI(customtkinter.CTk):
                                     hover_color=("darkred", "use_default", "use_default"))
         elif lang == "Español":
             if choice == "register":
-                msg = CTkMessagebox(master=self, title="Someter",
+                msg = CTkMessagebox(title="Someter",
                                     message="¿Estás preparado para " + translation["register"].lower() +
                                             "r esta clase?\n\nWARNING: Asegúrese de que la información está correcta",
                                     icon="images/submit.png",
@@ -1124,7 +1123,7 @@ class TeraTermUI(customtkinter.CTk):
                                     icon_size=(65, 65), button_color=("#c30101", "use_default", "use_default"),
                                     hover_color=("darkred", "use_default", "use_default"))
             elif choice == "drop":
-                msg = CTkMessagebox(master=self, title="Someter",
+                msg = CTkMessagebox(title="Someter",
                                     message="¿Estás preparado para darle de " + translation["drop"].lower() +
                                             " a esta clase?\n\nWARNING: Asegúrese de que la información está correcta",
                                     icon="images/submit.png",
@@ -1311,9 +1310,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.destroy_windows()
                         if not self.disable_audio:
                             winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                        CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                      message=translation["automation_error"],
-                                      icon="warning", button_width=380)
+                        CTkMessagebox(title=translation["automation_error_title"],
+                                      message=translation["automation_error"], icon="warning", button_width=380)
                         self.error_occurred = False
 
                     self.after(50, error_automation)
@@ -1499,9 +1497,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.destroy_windows()
                         if not self.disable_audio:
                             winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                        CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                      message=translation["automation_error"],
-                                      icon="warning", button_width=380)
+                        CTkMessagebox(title=translation["automation_error_title"],
+                                      message=translation["automation_error"], icon="warning", button_width=380)
                         self.error_occurred = False
 
                     self.after(50, error_automation)
@@ -1624,9 +1621,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.destroy_windows()
                         if not self.disable_audio:
                             winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                        CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                      message=translation["automation_error"],
-                                      icon="warning", button_width=380)
+                        CTkMessagebox(title=translation["automation_error_title"],
+                                      message=translation["automation_error"], icon="warning", button_width=380)
                         self.switch_tab()
                         self.error_occurred = False
 
@@ -1872,11 +1868,9 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language(lang)
         self.focus_set()
         if not self.started_auto_enroll:
-            msg = CTkMessagebox(master=self, title=translation["submit"],
-                                message=translation["enroll_multiple"],
-                                icon="images/submit.png",
-                                option_1=translation["option_1"], option_2=translation["option_2"],
-                                option_3=translation["option_3"],
+            msg = CTkMessagebox(title=translation["submit"], message=translation["enroll_multiple"],
+                                icon="images/submit.png", option_1=translation["option_1"],
+                                option_2=translation["option_2"], option_3=translation["option_3"],
                                 icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
                                 hover_color=("darkred", "use_default", "use_default"))
             response = msg.get()
@@ -2067,9 +2061,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.destroy_windows()
                         if not self.disable_audio:
                             winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                        CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                      message=translation["automation_error"],
-                                      icon="question", button_width=380)
+                        CTkMessagebox(title=translation["automation_error_title"],
+                                      message=translation["automation_error"], icon="question", button_width=380)
                         self.error_occurred = False
 
                     self.after(50, error_automation)
@@ -2475,9 +2468,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.destroy_windows()
                         if not self.disable_audio:
                             winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                        CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                      message=translation["automation_error"],
-                                      icon="warning", button_width=380)
+                        CTkMessagebox(title=translation["automation_error_title"],
+                                      message=translation["automation_error"], icon="warning", button_width=380)
                         self.error_occurred = False
 
                     self.after(50, error_automation)
@@ -2488,7 +2480,7 @@ class TeraTermUI(customtkinter.CTk):
     def sign_out(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        msg = CTkMessagebox(master=self, title=translation["so_title"], message=translation["so_message"],
+        msg = CTkMessagebox(title=translation["so_title"], message=translation["so_message"],
                             option_1=translation["option_1"], option_2=translation["option_2"],
                             option_3=translation["option_3"], icon_size=(65, 65),
                             button_color=("#c30101", "#145DA0", "#145DA0"),
@@ -2595,9 +2587,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.destroy_windows()
                         if not self.disable_audio:
                             winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                        CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                      message=translation["automation_error"],
-                                      icon="warning", button_width=380)
+                        CTkMessagebox(title=translation["automation_error_title"],
+                                      message=translation["automation_error"], icon="warning", button_width=380)
                         self.error_occurred = False
 
                     self.after(50, error_automation)
@@ -2666,9 +2657,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.destroy_windows()
                         if not self.disable_audio:
                             winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                        CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                      message=translation["automation_error"],
-                                      icon="warning", button_width=380)
+                        CTkMessagebox(title=translation["automation_error_title"],
+                                      message=translation["automation_error"], icon="warning", button_width=380)
                         self.error_occurred = False
 
                     self.after(50, error_automation)
@@ -2737,7 +2727,6 @@ class TeraTermUI(customtkinter.CTk):
                                 "return to continue", "REGRESE PRONTO")
                             if self.server_status == "Maintenance message found":
                                 def server_closed():
-                                    self.unbind("<Return>")
                                     if not self.skip_auth:
                                         self.back.configure(state="disabled")
                                         self.auth.configure(state="disabled")
@@ -2748,7 +2737,7 @@ class TeraTermUI(customtkinter.CTk):
                                                   button_width=380)
                                     self.error_occurred = True
 
-                                self.after(50, server_closed)
+                                self.after(125, server_closed)
                             elif self.server_status == "Prompt found":
                                 self.uprb.UprbayTeraTermVt.type_keys("{ENTER 3}")
                                 self.move_window()
@@ -2762,7 +2751,6 @@ class TeraTermUI(customtkinter.CTk):
                                     self.intro_box.grid_forget()
                             elif self.server_status == "Timeout":
                                 def timeout():
-                                    self.unbind("<Return>")
                                     if not self.skip_auth:
                                         self.back.configure(state="disabled")
                                         self.auth.configure(state="disabled")
@@ -2772,7 +2760,7 @@ class TeraTermUI(customtkinter.CTk):
                                                   button_width=380)
                                     self.error_occurred = True
 
-                                self.after(50, timeout)
+                                self.after(125, timeout)
                         elif username != "students":
                             self.bind("<Return>", lambda event: self.auth_event_handler())
                             self.after(100, self.show_error_message, 300, 215, translation["invalid_username"])
@@ -2830,10 +2818,8 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language(lang)
         if not self.disable_audio:
             winsound.PlaySound("sounds/update.wav", winsound.SND_ASYNC)
-        msg = CTkMessagebox(master=self, title=translation["skip_auth_title"],
-                            message=translation["skip_auth"],
-                            icon="question",
-                            option_1=translation["option_1"], option_2=translation["option_2"],
+        msg = CTkMessagebox(title=translation["skip_auth_title"], message=translation["skip_auth"],
+                            icon="question", option_1=translation["option_1"], option_2=translation["option_2"],
                             option_3=translation["option_3"], icon_size=(65, 65),
                             button_color=("#c30101", "#145DA0", "#145DA0"),
                             hover_color=("darkred", "use_default", "use_default"))
@@ -2985,7 +2971,7 @@ class TeraTermUI(customtkinter.CTk):
                     def rare_error():
                         if not self.disable_audio:
                             winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                        CTkMessagebox(master=self, title=translation["automation_error_title"],
+                        CTkMessagebox(title=translation["automation_error_title"],
                                       message=translation["unexpected_error"], icon="warning", button_width=380)
 
                     self.error_occurred = False
@@ -3007,7 +2993,7 @@ class TeraTermUI(customtkinter.CTk):
                             TeraTermUI.terminate_process()
                         if not self.disable_audio:
                             winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                        CTkMessagebox(master=self, title=translation["automation_error_title"],
+                        CTkMessagebox(title=translation["automation_error_title"],
                                       message=translation["tera_term_forced_to_close"], icon="warning",
                                       button_width=380)
                         self.bind("<Return>", lambda event: self.login_event_handler())
@@ -3083,12 +3069,11 @@ class TeraTermUI(customtkinter.CTk):
                     if not self.disable_audio:
                         winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                     CTkMessagebox(title=translation["server_maintenance_title"],
-                                  message=translation["server_maintenance"], icon="cancel",
-                                  button_width=380)
+                                  message=translation["server_maintenance"], icon="cancel", button_width=380)
                     self.bind("<Return>", lambda event: self.login_event_handler())
                     self.uprb.kill(soft=True)
 
-                self.after(50, server_closed)
+                self.after(125, server_closed)
                 return
             elif "return to continue" in text_output or "SISTEMA DE INFORMACION" in text_output:
                 if "return to continue" in text_output and "Loading" in text_output:
@@ -3176,9 +3161,7 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         if not self.error_occurred:
-            msg = CTkMessagebox(master=self, title=translation["go_back_title"],
-                                message=translation["go_back"],
-                                icon="question",
+            msg = CTkMessagebox(title=translation["go_back_title"], message=translation["go_back"], icon="question",
                                 option_1=translation["option_1"], option_2=translation["option_2"],
                                 option_3=translation["option_3"],
                                 icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
@@ -3261,7 +3244,7 @@ class TeraTermUI(customtkinter.CTk):
                     def error():
                         if not self.disable_audio:
                             winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                        CTkMessagebox(master=self, title=translation["automation_error_title"],
+                        CTkMessagebox(title=translation["automation_error_title"],
                                       message=translation["tera_term_forced_to_close"],
                                       icon="warning", button_width=380)
 
@@ -3706,11 +3689,9 @@ class TeraTermUI(customtkinter.CTk):
         idle = self.cursor.execute("SELECT idle FROM user_data").fetchone()
         if idle[0] != "Disabled":
             if self.auto_enroll.get() == "on":
-                msg = CTkMessagebox(master=self, title=translation["auto_enroll"],
-                                    message=translation["auto_enroll_prompt"],
-                                    icon="images/submit.png",
-                                    option_1=translation["option_1"], option_2=translation["option_2"],
-                                    option_3=translation["option_3"],
+                msg = CTkMessagebox(title=translation["auto_enroll"], message=translation["auto_enroll_prompt"],
+                                    icon="images/submit.png", option_1=translation["option_1"],
+                                    option_2=translation["option_2"], option_3=translation["option_3"],
                                     icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
                                     hover_color=("darkred", "use_default", "use_default"))
                 response = msg.get()
@@ -3729,7 +3710,7 @@ class TeraTermUI(customtkinter.CTk):
         else:
             if not self.disable_audio:
                 winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-            CTkMessagebox(master=self, title=translation["auto_enroll"], icon="cancel", button_width=380,
+            CTkMessagebox(title=translation["auto_enroll"], icon="cancel", button_width=380,
                           message=translation["auto_enroll_idle"])
             self.auto_enroll.deselect()
             self.auto_enroll.configure(state="disabled")
@@ -3857,9 +3838,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.destroy_windows()
                         if not self.disable_audio:
                             winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                        CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                      message=translation["automation_error"],
-                                      icon="warning", button_width=380)
+                        CTkMessagebox(title=translation["automation_error_title"],
+                                      message=translation["automation_error"], icon="warning", button_width=380)
                         self.error_occurred = False
 
                     self.after(50, error_automation)
@@ -4017,8 +3997,8 @@ class TeraTermUI(customtkinter.CTk):
         self.end_countdown()
         if not self.disable_audio:
             winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-        CTkMessagebox(master=self, title=translation["automation_error_title"], icon="info",
-                      message=translation["end_countdown"], button_width=380)
+        CTkMessagebox(title=translation["automation_error_title"], icon="info", message=translation["end_countdown"],
+                      button_width=380)
 
     def create_timer_window(self):
         lang = self.language_menu.get()
@@ -5984,12 +5964,10 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         self.focus_set()
-        msg = CTkMessagebox(master=self, title=translation["submit"],
-                            message=translation["submit_modify"],
-                            icon="images/submit.png",
+        msg = CTkMessagebox(title=translation["submit"], message=translation["submit_modify"], icon="images/submit.png",
                             option_1=translation["option_1"], option_2=translation["option_2"],
-                            option_3=translation["option_3"],
-                            icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
+                            option_3=translation["option_3"], icon_size=(65, 65),
+                            button_color=("#c30101", "#145DA0", "#145DA0"),
                             hover_color=("darkred", "use_default", "use_default"))
         response = msg.get()
         if response[0] == "Yes" or response[0] == "Sí":
@@ -6171,8 +6149,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.not_rebind = False
                                         if not self.disable_audio:
                                             winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                                        CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                                      icon="cancel",
+                                        CTkMessagebox(title=translation["automation_error_title"], icon="cancel",
                                                       message=translation["failed_change_section_exp"],
                                                       button_width=380)
 
@@ -6192,10 +6169,8 @@ class TeraTermUI(customtkinter.CTk):
                                         self.not_rebind = False
                                         if not self.disable_audio:
                                             winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                                        CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                                      icon="cancel",
-                                                      message=translation["section_closed"],
-                                                      button_width=380)
+                                        CTkMessagebox(title=translation["automation_error_title"], icon="cancel",
+                                                      message=translation["section_closed"], button_width=380)
 
                                     self.unbind("<Return>")
                                     self.submit_my_classes.configure(state="disabled")
@@ -6214,10 +6189,8 @@ class TeraTermUI(customtkinter.CTk):
                                         self.not_rebind = False
                                         if not self.disable_audio:
                                             winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                                        CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                                      icon="cancel",
-                                                      message=translation["co_requisite"],
-                                                      button_width=380)
+                                        CTkMessagebox(title=translation["automation_error_title"], icon="cancel",
+                                                      message=translation["co_requisite"], button_width=380)
 
                                     self.unbind("<Return>")
                                     self.submit_my_classes.configure(state="disabled")
@@ -6272,12 +6245,11 @@ class TeraTermUI(customtkinter.CTk):
                                     if not self.disable_audio:
                                         winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                                     edge_case_classes_str = ", ".join(edge_cases_classes_met)
-                                    CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                                  icon="warning",
+                                    CTkMessagebox(title=translation["automation_error_title"], icon="warning",
                                                   message=translation["co_requisite_warning"] + edge_case_classes_str,
                                                   button_width=380)
 
-                                self.after(50, explanation)
+                                self.after(125, explanation)
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             except Exception as e:
@@ -6295,9 +6267,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.destroy_windows()
                         if not self.disable_audio:
                             winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                        CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                      message=translation["automation_error"],
-                                      icon="warning", button_width=380)
+                        CTkMessagebox(title=translation["automation_error_title"],
+                                      message=translation["automation_error"], icon="warning", button_width=380)
                         self.error_occurred = False
 
                     self.after(50, error_automation)
@@ -6478,7 +6449,7 @@ class TeraTermUI(customtkinter.CTk):
             latest = "Nueva"
         if not self.disable_audio:
             winsound.PlaySound("sounds/update.wav", winsound.SND_ASYNC)
-        msg = CTkMessagebox(master=self, title=translation["update_popup_title"],
+        msg = CTkMessagebox(title=translation["update_popup_title"],
                             message=translation["update_popup_message"] + "\n\n" + current + ": v" +
                             self.USER_APP_VERSION + " ---> " + latest + ": v" + latest_version,
                             option_1=translation["option_1"], option_2=translation["option_2"],
@@ -6615,9 +6586,8 @@ class TeraTermUI(customtkinter.CTk):
             error_message_str = ", ".join(found_errors)
             if not self.disable_audio:
                 winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-            CTkMessagebox(master=self, title=translation["automation_error_title"], icon="cancel",
-                          message=translation["specific_enrollment_error"] + error_message_str,
-                          button_width=380)
+            CTkMessagebox(title=translation["automation_error_title"], icon="cancel",
+                          message=translation["specific_enrollment_error"] + error_message_str, button_width=380)
         self.submit.configure(state="normal")
         self.submit_multiple.configure(state="normal")
         self.not_rebind = False
@@ -6629,8 +6599,8 @@ class TeraTermUI(customtkinter.CTk):
             self.destroy_windows()
             if not self.disable_audio:
                 winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-            CTkMessagebox(master=self, title=translation["automation_error_title"],
-                          message=translation["enrollment_error"], button_width=380)
+            CTkMessagebox(title=translation["automation_error_title"], message=translation["enrollment_error"],
+                          button_width=380)
 
     # Pop window that shows the user more context on why they couldn't enroll their classes
     def show_enrollment_error_information_multiple(self, text="Error"):
@@ -6667,9 +6637,8 @@ class TeraTermUI(customtkinter.CTk):
                 error_message_str = ", ".join(found_errors)
                 if not self.disable_audio:
                     winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                CTkMessagebox(master=self, title=translation["automation_error_title"], icon="cancel",
-                              message=translation["specific_enrollment_error"] + error_message_str,
-                              button_width=380)
+                CTkMessagebox(title=translation["automation_error_title"], icon="cancel",
+                              message=translation["specific_enrollment_error"] + error_message_str, button_width=380)
                 for counter in range(self.a_counter + 1, 0, -1):
                     if self.enrolled_classes_list:
                         self.enrolled_classes_list.popitem()
@@ -6707,8 +6676,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.destroy_windows()
                 if not self.disable_audio:
                     winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                CTkMessagebox(master=self, title=translation["automation_error_title"],
-                              message=translation["enrollment_error"], button_width=380)
+                CTkMessagebox(title=translation["automation_error_title"], message=translation["enrollment_error"],
+                              button_width=380)
 
             self.after(2500, explanation)
 
@@ -6723,8 +6692,8 @@ class TeraTermUI(customtkinter.CTk):
             self.not_rebind = False
             if not self.disable_audio:
                 winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-            CTkMessagebox(master=self, title=translation["automation_error_title"],
-                          message=translation["modify_error"], button_width=380)
+            CTkMessagebox(title=translation["automation_error_title"], message=translation["modify_error"],
+                          button_width=380)
 
     # important information window pop up message
     def show_information_message(self, width, height, success_msg_text):
@@ -6878,10 +6847,8 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language(lang)
         if not self.disable_audio:
             winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-        msg = CTkMessagebox(master=self, title=translation["download_title"],
-                            message=translation["download_tera_term"],
-                            icon="question",
-                            option_1=translation["option_1"], option_2=translation["option_2"],
+        msg = CTkMessagebox(title=translation["download_title"], message=translation["download_tera_term"],
+                            icon="question", option_1=translation["option_1"], option_2=translation["option_2"],
                             option_3=translation["option_3"], icon_size=(65, 65),
                             button_color=("#c30101", "#145DA0", "#145DA0"),
                             hover_color=("darkred", "use_default", "use_default"))
@@ -6977,8 +6944,9 @@ class TeraTermUI(customtkinter.CTk):
 
                 def error():
                     print("No latest release found. Starting app with the current version.")
-                    winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                    CTkMessagebox(master=self, title=translation["error"], icon="cancel",
+                    if not self.disable_audio:
+                        winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
+                    CTkMessagebox(title=translation["error"], icon="cancel",
                                   message=translation["failed_to_find_update"], button_width=380)
 
                 self.after(50, error)
@@ -6997,7 +6965,7 @@ class TeraTermUI(customtkinter.CTk):
                         latest = "Nueva"
                     if not self.disable_audio:
                         winsound.PlaySound("sounds/update.wav", winsound.SND_ASYNC)
-                    msg = CTkMessagebox(master=self, title=translation["update_popup_title"],
+                    msg = CTkMessagebox(title=translation["update_popup_title"],
                                         message=translation["update_popup_message"] + "\n\n" + current + ": v" +
                                         self.USER_APP_VERSION + " ---> " + latest + ": v" + latest_version,
                                         option_1=translation["option_1"], option_2=translation["option_2"],
@@ -7015,8 +6983,8 @@ class TeraTermUI(customtkinter.CTk):
                 def up_to_date():
                     if not self.disable_audio:
                         winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                    CTkMessagebox(master=self, title=translation["update_popup_title"],
-                                  message=translation["update_up_to_date"], button_width=380)
+                    CTkMessagebox(title=translation["update_popup_title"], message=translation["update_up_to_date"],
+                                  button_width=380)
 
                 self.after(50, up_to_date)
         else:
@@ -7027,7 +6995,7 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         if TeraTermUI.checkIfProcessRunning("ttermpro"):
-            msg = CTkMessagebox(master=self, title=translation["fix_messagebox_title"],
+            msg = CTkMessagebox(title=translation["fix_messagebox_title"],
                                 message=translation["fix_messagebox"], icon="warning",
                                 option_1=translation["option_1"], option_2=translation["option_2"],
                                 option_3=translation["option_3"], icon_size=(65, 65),
@@ -7099,9 +7067,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.destroy_windows()
                         if not self.disable_audio:
                             winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                        CTkMessagebox(master=self, title=translation["automation_error_title"],
-                                      message=translation["automation_error"],
-                                      icon="warning", button_width=380)
+                        CTkMessagebox(title=translation["automation_error_title"],
+                                      message=translation["automation_error"], icon="warning", button_width=380)
 
                     self.after(50, error_automation)
                 ctypes.windll.user32.BlockInput(False)
@@ -7132,9 +7099,8 @@ class TeraTermUI(customtkinter.CTk):
                         def not_running():
                             if not self.disable_audio:
                                 winsound.PlaySound("sounds/notification.wav", winsound.SND_ASYNC)
-                            CTkMessagebox(master=self, title=translation["automation_error_title"], icon="warning",
-                                          message=translation["tera_term_stopped_running"],
-                                          button_width=380)
+                            CTkMessagebox(title=translation["automation_error_title"], icon="warning",
+                                          message=translation["tera_term_stopped_running"], button_width=380)
 
                         self.after(50, not_running)
                     if not_running_count > 1:
@@ -7580,7 +7546,7 @@ class TeraTermUI(customtkinter.CTk):
     def start_feedback_thread(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        msg = CTkMessagebox(master=self, title=translation["submit"], message=translation["submit_feedback"],
+        msg = CTkMessagebox(title=translation["submit"], message=translation["submit_feedback"],
                             icon="question", option_1=translation["option_1"], option_2=translation["option_2"],
                             option_3=translation["option_3"], icon_size=(65, 65),
                             button_color=("#c30101", "#145DA0", "#145DA0"),
@@ -7669,8 +7635,7 @@ class TeraTermUI(customtkinter.CTk):
                         def show_error():
                             if not self.disable_audio:
                                 winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                            CTkMessagebox(title=translation["error"],
-                                          message=translation["feedback_error"],
+                            CTkMessagebox(title=translation["error"],  message=translation["feedback_error"],
                                           icon="cancel", button_width=380)
 
                         self.after(50, show_error)
