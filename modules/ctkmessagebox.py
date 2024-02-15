@@ -50,7 +50,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                  justify: str = "right",
                  font: tuple = None,
                  header: bool = False,
-                 topmost: bool = True,
+                 topmost: bool = False,
                  fade_in_duration: int = 0,
                  sound: bool = False,
                  option_focus: Literal[1, 2, 3] = None):
