@@ -220,7 +220,7 @@ class TeraTermUI(customtkinter.CTk):
         self.help_tooltip = CTkToolTip(self.help_button, message="Contains useful utilities for the user",
                                        bg_color="#1E90FF")
         self.help_button.grid(row=2, column=0, padx=20, pady=10)
-        self.scaling_label = customtkinter.CTkLabel(self.sidebar_frame, text="Language, Appearance and \n\n "
+        self.scaling_label = customtkinter.CTkLabel(self.sidebar_frame, text="Language, Appearance and\n\n"
                                                                              "UI Scaling", anchor="w")
         self.scaling_label_tooltip = CTkToolTip(self.scaling_label, message="Change the language, the theme\nand"
                                                                             " the scaling of the widgets of the "
@@ -727,6 +727,7 @@ class TeraTermUI(customtkinter.CTk):
                                                   "Might need to reinstall the application")
             sys.exit(1)
 
+        self.curr_lang = self.language_menu.get()
         atexit.register(self.cleanup_temp)
         atexit.register(self.restore_original_font, self.teraterm_file)
         self.after(0, self.unload_image("uprb"))
@@ -3439,8 +3440,12 @@ class TeraTermUI(customtkinter.CTk):
 
     # function for changing language
     def change_language_event(self, lang):
+        if self.curr_lang == lang:
+            return
+
         translation = self.load_language(lang)
         appearance = self.appearance_mode_optionemenu.get()
+        self.curr_lang = lang
         self.focus_set()
         self.status_button.configure(text=translation["status_button"])
         self.help_button.configure(text=translation["help_button"])
