@@ -56,6 +56,16 @@ def check_and_restore_backup():
             os.remove(program_backup)
 
 
+def attach_manifest(executable_path, manifest_path):
+    try:
+        subprocess.run(f"mt.exe -manifest {manifest_path} -outputresource:{executable_path};1",
+                       check=True, shell=True)
+        print(Fore.GREEN + "Manifest attached successfully." + Style.RESET_ALL)
+    except subprocess.CalledProcessError as e:
+        print(Fore.RED + f"Failed to attach manifest: {e}" + Style.RESET_ALL)
+        sys.exit(1)
+
+
 def terminate_process(signum, frame):
     shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
     os.remove(program_backup)
@@ -120,7 +130,7 @@ try:
     if os.path.exists(output_directory):
         shutil.rmtree(output_directory)
     os.makedirs(output_directory, exist_ok=True)
-    for filename in os.listdir(os.path.join(project_directory, "dist")): 
+    for filename in os.listdir(os.path.join(project_directory, "dist")):
         src = os.path.join(project_directory, "dist", filename)
         dst = os.path.join(output_directory, filename)
         if os.path.isfile(src):
@@ -269,6 +279,9 @@ for version in versions:
     try:
         subprocess.run(nuitka_command, shell=True, check=True)
         print(Fore.GREEN + "Successfully completed nuitka script\n" + Style.RESET_ALL)
+        executable_path = os.path.join(output_directory, "TeraTermUI.dist", "TeraTermUI.exe")
+        manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
+        attach_manifest(executable_path, manifest_path)
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
         os.remove(program_backup)
