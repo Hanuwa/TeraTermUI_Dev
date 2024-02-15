@@ -60,9 +60,8 @@ def attach_manifest(executable_path, manifest_path):
     try:
         subprocess.run(f"mt.exe -manifest {manifest_path} -outputresource:{executable_path};1",
                        check=True, shell=True)
-        print(Fore.GREEN + "Manifest attached successfully." + Style.RESET_ALL)
     except subprocess.CalledProcessError as e:
-        print(Fore.RED + f"Failed to attach manifest: {e}" + Style.RESET_ALL)
+        print(Fore.RED + f"Failed to attach manifest: {e}\n" + Style.RESET_ALL)
         sys.exit(1)
 
 
