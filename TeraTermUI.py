@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/14/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/16/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -3529,7 +3529,7 @@ class TeraTermUI(customtkinter.CTk):
                              ["<Ctrl-Z>", translation["ctrl_z"]],
                              ["<Ctrl-Y>", translation["ctrl_y"]],
                              ["<Ctrl-A>", translation["ctrl_a"]],
-                             ["<Ctrl-S", translation["ctrl_s"]],
+                             ["<Ctrl-S>", translation["ctrl_s"]],
                              ["<Right-Click>", translation["mouse_2"]],
                              ["<Home>", translation["home"]],
                              ["<End>", translation["end"]],
@@ -7903,7 +7903,7 @@ class TeraTermUI(customtkinter.CTk):
                          ["<Ctrl-Z>", translation["ctrl_z"]],
                          ["<Ctrl-Y>", translation["ctrl_y"]],
                          ["<Ctrl-A>", translation["ctrl_a"]],
-                         ["<Ctrl-S", translation["ctrl_s"]],
+                         ["<Ctrl-S>", translation["ctrl_s"]],
                          ["<Right-Click>", translation["mouse_2"]],
                          ["<Home>", translation["home"]],
                          ["<End>", translation["end"]],
