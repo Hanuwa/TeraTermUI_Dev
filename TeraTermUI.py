@@ -242,13 +242,14 @@ class TeraTermUI(customtkinter.CTk):
                                                                        values=["Dark", "Light", "System"],
                                                                        command=self.change_appearance_mode_event)
         self.appearance_mode_optionemenu.set("System")
+        self.curr_appearance = self.appearance_mode_optionemenu.get()
         self.appearance_mode_optionemenu.grid(row=7, column=0, padx=20, pady=(10, 10))
         self.scaling_slider = customtkinter.CTkSlider(self.sidebar_frame, from_=97, to=103, number_of_steps=2,
                                                       width=150, height=20, command=self.change_scaling_event)
         self.scaling_slider.set(100)
         self.scaling_tooltip = CTkToolTip(self.scaling_slider, message=str(self.scaling_slider.get()) + "%",
                                           bg_color="#1E90FF")
-        self.current_scaling = self.scaling_slider.get()
+        self.curr_scaling = self.scaling_slider.get() / 100
         self.scaling_slider.grid(row=8, column=0, padx=20, pady=(10, 20))
         self.bind("<Left>", self.move_slider_left)
         self.bind("<Right>", self.move_slider_right)
@@ -636,7 +637,6 @@ class TeraTermUI(customtkinter.CTk):
                     self.geometry(f"{width}x{height}+{int(x) + 130}+{int(y + 50)}")
                     self.scaling_slider.set(float(results["scaling"]))
                     self.change_scaling_event(float(results["scaling"]))
-                    self.current_scaling = self.scaling_slider.get()
             if results["audio"] == "Disabled":
                 self.disable_audio = True
             if results["skip_auth"] == "Yes":
@@ -6747,14 +6747,19 @@ class TeraTermUI(customtkinter.CTk):
 
     # function that changes the theme of the application
     def change_appearance_mode_event(self, new_appearance_mode: str):
-        self.focus_set()
         if new_appearance_mode == "Oscuro":
             new_appearance_mode = "Dark"
         elif new_appearance_mode == "Claro":
             new_appearance_mode = "Light"
         elif new_appearance_mode == "Sistema":
             new_appearance_mode = "System"
+
+        if new_appearance_mode == self.curr_appearance:
+            return
+
+        self.focus_set()
         customtkinter.set_appearance_mode(new_appearance_mode)
+        self.curr_appearance = new_appearance_mode
 
     def add_key_bindings(self, event):
         self.bind("<Left>", self.move_slider_left)
@@ -6817,14 +6822,14 @@ class TeraTermUI(customtkinter.CTk):
     # function that lets your increase/decrease the scaling of the GUI
     def change_scaling_event(self, new_scaling: float):
         new_scaling_float = new_scaling / 100
-        if new_scaling_float == self.current_scaling:
+        if new_scaling_float == self.curr_scaling:
             return
 
-        self.scaling_tooltip.hide()
         self.focus_set()
+        self.scaling_tooltip.hide()
         customtkinter.set_widget_scaling(new_scaling_float)
         self.scaling_tooltip.configure(message=f"{new_scaling}%")
-        self.current_scaling = new_scaling_float
+        self.curr_scaling = new_scaling_float
         self.scaling_tooltip.show()
 
     # opens GitHub page
