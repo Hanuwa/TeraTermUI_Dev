@@ -277,7 +277,7 @@ for version in versions:
 
     try:
         subprocess.run(nuitka_command, shell=True, check=True)
-        print(Fore.GREEN + "Successfully completed nuitka script\n" + Style.RESET_ALL)
+        print(Fore.GREEN + "\nSuccessfully completed nuitka script\n" + Style.RESET_ALL)
         executable_path = os.path.join(output_directory, "TeraTermUI.dist", "TeraTermUI.exe")
         manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
         attach_manifest(executable_path, manifest_path)
@@ -296,7 +296,7 @@ for version in versions:
         try:
             os.rename(output_directory + r"\TeraTermUI.dist",
                       output_directory + r"\TeraTermUI_installer")
-            print(Fore.GREEN + "Successfully created TeraTermUI installer folder\n" + Style.RESET_ALL)
+            print(Fore.GREEN + "\nSuccessfully created TeraTermUI installer folder\n" + Style.RESET_ALL)
         except KeyboardInterrupt as e:
             shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
             os.remove(program_backup)
@@ -356,7 +356,7 @@ for version in versions:
             os.rename(output_directory + r"\TeraTermUI.dist", output_directory + r"\TeraTermUI")
             zip_file_path = output_directory + fr"\{app_folder}-"+update+""
             shutil.make_archive(zip_file_path, 'zip', output_directory, app_folder)
-            print(Fore.GREEN + "Successfully completed portable version\n" + Style.RESET_ALL)
+            print(Fore.GREEN + "\nSuccessfully completed portable version\n" + Style.RESET_ALL)
         except KeyboardInterrupt as e:
             shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
             os.remove(program_backup)
