@@ -222,10 +222,10 @@ class TeraTermUI(customtkinter.CTk):
         self.help_button.grid(row=2, column=0, padx=20, pady=10)
         self.scaling_label = customtkinter.CTkLabel(self.sidebar_frame, text="Language, Appearance and\n\n"
                                                                              "UI Scaling", anchor="w")
-        self.scaling_label_tooltip = CTkToolTip(self.scaling_label, message="Change the language, the theme\nand"
-                                                                            " the scaling of the widgets of the "
+        self.scaling_label_tooltip = CTkToolTip(self.scaling_label, message="Change the language, the theme and "
+                                                                            "the\nscaling of the widgets of the "
                                                                             "application\nthese settings are saved so"
-                                                                            " next time\nyou log-in you wont have to"
+                                                                            " next time you\nlog-in you won't have to"
                                                                             " reconfigured them", bg_color="#1E90FF")
         self.scaling_label.bind("<Button-1>", lambda event: self.focus_set())
         self.scaling_label.grid(row=5, column=0, padx=20, pady=(10, 10))
@@ -568,6 +568,7 @@ class TeraTermUI(customtkinter.CTk):
         self.last_switch_time = 0
         # Storing translations for languages in cache to reuse
         self.translations_cache = {}
+        self.curr_lang = self.language_menu.get()
         SPANISH = 0x0A
         language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
         # default location of Tera Term
@@ -727,7 +728,6 @@ class TeraTermUI(customtkinter.CTk):
                                                   "Might need to reinstall the application")
             sys.exit(1)
 
-        self.curr_lang = self.language_menu.get()
         atexit.register(self.cleanup_temp)
         atexit.register(self.restore_original_font, self.teraterm_file)
         self.after(0, self.unload_image("uprb"))
