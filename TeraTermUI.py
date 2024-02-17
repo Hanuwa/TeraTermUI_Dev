@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/16/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/17/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -2878,8 +2878,7 @@ class TeraTermUI(customtkinter.CTk):
             text = translation["epic_games"]
         else:
             text = translation["exec_time"]
-        label = tk.Label(self.tooltip, text=text,
-                         bg="#FFD700", fg="#000", font=("Verdana", 11, "bold"))
+        label = tk.Label(self.tooltip, text=text, bg="#FFD700", fg="#000", font=("Verdana", 11, "bold"))
         label.pack(padx=5, pady=5)
         self.lift_tooltip()
         self.tooltip.after(12500, self.destroy_tooltip)
@@ -2894,8 +2893,9 @@ class TeraTermUI(customtkinter.CTk):
         self.thread_pool.submit(self.login_event, task_done)
 
     # Checks if host entry is true
-    @measure_time(threshold=8.5)
+    @measure_time(threshold=10)
     def login_event(self, task_done):
+        new_connection = False
         dont_close = False
         with self.lock_thread:
             try:
@@ -2906,55 +2906,67 @@ class TeraTermUI(customtkinter.CTk):
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if host == "uprbay.uprb.edu" or host == "uprbayuprbedu":
                         if TeraTermUI.checkIfProcessRunning("ttermpro"):
-                            dont_close = True
-                            self.login_to_existent_connection()
-                        else:
-                            try:
-                                if self.download or self.teraterm_not_found:
-                                    self.edit_teraterm_ini(self.teraterm_file)
+                            count = TeraTermUI.countRunningProcesses("ttermpro")
+                            if count > 1:
+                                self.after(100, self.show_error_message, 450, 270, translation["count_processes"])
+                                self.bind("<Return>", lambda event: self.login_event_handler())
+                                return
+                            if TeraTermUI.window_exists("Tera Term: New connection"):
+                                new_connection = True
+                            else:
+                                self.login_to_existent_connection()
+                                dont_close = True
+                                return
+                        try:
+                            if self.download or self.teraterm_not_found:
+                                self.edit_teraterm_ini(self.teraterm_file)
+                            if not new_connection:
                                 self.uprb = Application(backend="uia").start(
                                     self.location, timeout=7).connect(title="Tera Term - [disconnected] VT", timeout=5)
-                                self.uprb_32 = Application().connect(
+                            else:
+                                self.uprb = Application(backend="uia").connect(
                                     title="Tera Term - [disconnected] VT", timeout=5)
-                                edit_menu = self.uprb.UprbayTeraTermVt.child_window(title="Edit",
-                                                                                    control_type="MenuItem")
-                                self.select_screen_item = edit_menu.child_window(
-                                    title="Select screen", control_type="MenuItem", top_level_only=False)
-                                disconnected = self.uprb.window(title="Tera Term - [disconnected] VT")
-                                disconnected.wait("visible", timeout=5)
-                                host_input = \
-                                    self.uprb.TeraTermDisconnectedVt.child_window(title="Host:",
-                                                                                  control_type="Edit").wrapper_object()
-                                host_input.set_text("uprbay.uprb.edu")
+                            self.uprb_32 = Application().connect(title="Tera Term - [disconnected] VT", timeout=5)
+                            edit_menu = self.uprb.UprbayTeraTermVt.child_window(title="Edit", control_type="MenuItem")
+                            self.select_screen_item = edit_menu.child_window(
+                                title="Select screen", control_type="MenuItem", top_level_only=False)
+                            disconnected = self.uprb.window(title="Tera Term - [disconnected] VT")
+                            disconnected.wait("visible", timeout=5)
+                            if new_connection:
+                                self.new_connection(disconnected)
+                            host_input = \
+                                self.uprb.TeraTermDisconnectedVt.child_window(title="Host:",
+                                                                              control_type="Edit").wrapper_object()
+                            host_input.set_text("uprbay.uprb.edu")
+                            self.hide_loading_screen()
+                            conn = \
+                                self.uprb.TeraTermDisconnectedVt.child_window(
+                                    title="OK", control_type="Button").wrapper_object()
+                            conn.click()
+                            self.show_loading_screen_again()
+                            self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
+                            self.uprbay_window.wait("visible", timeout=5)
+                            if self.uprbay_window.child_window(title="Continue", control_type="Button").exists(
+                                    timeout=1):
                                 self.hide_loading_screen()
-                                conn = \
-                                    self.uprb.TeraTermDisconnectedVt.child_window(
-                                        title="OK", control_type="Button").wrapper_object()
-                                conn.click()
+                                continue_button = \
+                                    self.uprbay_window.child_window(title="Continue",
+                                                                    control_type="Button").wrapper_object()
+                                continue_button.click()
                                 self.show_loading_screen_again()
-                                self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                                self.uprbay_window.wait("visible", timeout=5)
-                                if self.uprbay_window.child_window(title="Continue", control_type="Button").exists(
-                                        timeout=1):
-                                    self.hide_loading_screen()
-                                    continue_button = \
-                                        self.uprbay_window.child_window(title="Continue",
-                                                                        control_type="Button").wrapper_object()
-                                    continue_button.click()
-                                    self.show_loading_screen_again()
-                                if not self.skip_auth:
-                                    self.bind("<Return>", lambda event: self.auth_event_handler())
-                                    self.after(0, self.initialization_auth)
-                                    self.in_auth_frame = True
-                                self.after(100, self.login_frame)
-                            except AppStartError as e:
-                                print("An error occurred: ", e)
-                                self.bind("<Return>", lambda event: self.login_event_handler())
-                                self.after(100, self.show_error_message, 425, 330,
-                                           translation["tera_term_failed_to_start"])
-                                if not self.download:
-                                    self.after(3500, self.download_teraterm)
-                                    self.download = True
+                            if not self.skip_auth:
+                                self.bind("<Return>", lambda event: self.auth_event_handler())
+                                self.after(0, self.initialization_auth)
+                                self.in_auth_frame = True
+                            self.after(100, self.login_frame)
+                        except AppStartError as e:
+                            print("An error occurred: ", e)
+                            self.bind("<Return>", lambda event: self.login_event_handler())
+                            self.after(100, self.show_error_message, 425, 330,
+                                       translation["tera_term_failed_to_start"])
+                            if not self.download:
+                                self.after(3500, self.download_teraterm)
+                                self.download = True
                     elif host != "uprbay.uprb.edu":
                         self.bind("<Return>", lambda event: self.login_event_handler())
                         self.after(100, self.show_error_message, 300, 215, translation["invalid_host"])
@@ -3044,12 +3056,7 @@ class TeraTermUI(customtkinter.CTk):
             if timeout_counter > 7:
                 skip = True
                 break
-        count = TeraTermUI.countRunningProcesses("ttermpro")
-        if count > 1:
-            self.after(100, self.show_error_message, 450, 270, translation["count_processes"])
-            self.bind("<Return>", lambda event: self.login_event_handler())
-            return
-        elif TeraTermUI.window_exists("SSH Authentication") and not skip:
+        if TeraTermUI.window_exists("SSH Authentication") and not skip:
             self.connect_to_uprb()
             self.bind("<Return>", lambda event: self.auth_event_handler())
             self.after(0, self.initialization_auth)
@@ -3147,6 +3154,37 @@ class TeraTermUI(customtkinter.CTk):
         edit_menu = self.uprb.UprbayTeraTermVt.child_window(title="Edit", control_type="MenuItem")
         self.select_screen_item = edit_menu.child_window(
             title="Select screen", control_type="MenuItem", top_level_only=False)
+
+    def new_connection(self, window):
+        new_connection = window.child_window(title="Tera Term: New connection")
+        new_connection.wait("visible", timeout=5)
+        tcp_ip_radio = new_connection.child_window(title="TCP/IP", control_type="RadioButton")
+        if not tcp_ip_radio.is_selected():
+            self.hide_loading_screen()
+            tcp_ip_radio.click()
+            self.show_loading_screen_again()
+        history_checkbox = new_connection.child_window(title="History", control_type="CheckBox")
+        if not history_checkbox.get_toggle_state():
+            self.hide_loading_screen()
+            history_checkbox.click()
+            self.show_loading_screen_again()
+        ssh_radio = new_connection.child_window(title="SSH", control_type="RadioButton")
+        if not ssh_radio.is_selected():
+            self.hide_loading_screen()
+            ssh_radio.click()
+            self.show_loading_screen_again()
+        tcp_port_edit = new_connection.child_window(title="TCP port#:", control_type="Edit")
+        tcp_port_edit.set_text("22")
+        ssh_version_combo = new_connection.child_window(title="SSH version:", control_type="ComboBox")
+        if ssh_version_combo.selected_text() != "SSH2":
+            self.hide_loading_screen()
+            ssh_version_combo.select("SSH2")
+            self.show_loading_screen_again()
+        ip_version_combo = new_connection.child_window(title="IP version:", control_type="ComboBox")
+        if ip_version_combo.selected_text() != "AUTO":
+            self.hide_loading_screen()
+            ip_version_combo.select("AUTO")
+            self.show_loading_screen_again()
 
     def keybind_go_back_event(self):
         if self.move_slider_right_enabled or self.move_slider_left_enabled:
