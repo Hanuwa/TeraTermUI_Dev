@@ -2929,7 +2929,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb_32 = Application().connect(title="Tera Term - [disconnected] VT", timeout=5)
                             edit_menu = self.uprb.UprbayTeraTermVt.child_window(title="Edit", control_type="MenuItem")
                             self.select_screen_item = edit_menu.child_window(
-                                title="Select screen", control_type="MenuItem", top_level_only=False)
+                                title="Select screen", control_type="MenuItem", auto_id="50280")
                             disconnected = self.uprb.window(title="Tera Term - [disconnected] VT")
                             disconnected.wait("visible", timeout=5)
                             if new_connection:
@@ -2944,7 +2944,8 @@ class TeraTermUI(customtkinter.CTk):
                                     title="OK", control_type="Button").wrapper_object()
                             conn.click()
                             self.show_loading_screen_again()
-                            self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
+                            self.uprbay_window = self.uprb.window(
+                                title="uprbay.uprb.edu - Tera Term VT", class_name="VTWin32")
                             self.uprbay_window.wait("visible", timeout=5)
                             if self.uprbay_window.child_window(title="Continue", control_type="Button").exists(
                                     timeout=1):
@@ -3146,14 +3147,14 @@ class TeraTermUI(customtkinter.CTk):
 
     def connect_to_uprb(self):
         self.uprb = Application(backend="uia").connect(
-            title="uprbay.uprb.edu - Tera Term VT", timeout=5)
+            title="uprbay.uprb.edu - Tera Term VT", timeout=5, class_name="VTWin32")
         self.uprb_32 = Application().connect(
-            title="uprbay.uprb.edu - Tera Term VT", timeout=5)
-        self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
+            title="uprbay.uprb.edu - Tera Term VT", timeout=5, class_name="VTWin32")
+        self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT", class_name="VTWin32")
         self.uprbay_window.wait("visible", timeout=5)
         edit_menu = self.uprb.UprbayTeraTermVt.child_window(title="Edit", control_type="MenuItem")
         self.select_screen_item = edit_menu.child_window(
-            title="Select screen", control_type="MenuItem", top_level_only=False)
+            title="Select screen", control_type="MenuItem", auto_id="50280")
 
     def new_connection(self, window):
         new_connection = window.child_window(title="Tera Term: New connection")
@@ -3178,12 +3179,8 @@ class TeraTermUI(customtkinter.CTk):
         ssh_version_combo = new_connection.child_window(title="SSH version:", control_type="ComboBox")
         if ssh_version_combo.selected_text() != "SSH2":
             self.hide_loading_screen()
-            ssh_version_combo.select("SSH2")
-            self.show_loading_screen_again()
-        ip_version_combo = new_connection.child_window(title="IP version:", control_type="ComboBox")
-        if ip_version_combo.selected_text() != "AUTO":
-            self.hide_loading_screen()
-            ip_version_combo.select("AUTO")
+            ssh_version_combo.expand()
+            ssh_version_combo.child_window(title="SSH2", control_type="ListItem").select()
             self.show_loading_screen_again()
 
     def keybind_go_back_event(self):
@@ -5415,7 +5412,10 @@ class TeraTermUI(customtkinter.CTk):
                 timings.Timings.window_find_timeout = 0.5
                 timings.Timings.window_find_retry = 0.1
                 self.uprb.UprbayTeraTermVt.type_keys("%e")
-                self.select_screen_item.invoke()
+                if attempt <= 2:
+                    self.uprb.UprbayTeraTermVt.type_keys("e")
+                if attempt >= 3:
+                    self.select_screen_item.invoke()
                 break
             except ElementNotFoundError as e:
                 print(f"An error occurred: {e}")
@@ -6339,13 +6339,13 @@ class TeraTermUI(customtkinter.CTk):
             print("An error occurred: ", e)
             self.search_function_counter = 0
             self.uprb = Application(backend="uia").connect(
-                title="uprbay.uprb.edu - Tera Term VT", timeout=5)
+                title="uprbay.uprb.edu - Tera Term VT", timeout=5, class_name="VTWin32")
             self.uprb_32 = Application().connect(
-                title="uprbay.uprb.edu - Tera Term VT", timeout=5)
-            self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
+                title="uprbay.uprb.edu - Tera Term VT", timeout=5, class_name="VTWin32")
+            self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT", class_name="VTWin32")
             edit_menu = self.uprb.UprbayTeraTermVt.child_window(title="Edit", control_type="MenuItem")
             self.select_screen_item = edit_menu.child_window(
-                title="Select screen", control_type="MenuItem", top_level_only=False)
+                title="Select screen", control_type="MenuItem", auto_id="50280")
             self.move_window()
 
     # checks whether the user has the requested file
@@ -7186,15 +7186,17 @@ class TeraTermUI(customtkinter.CTk):
                                 print("An error occurred: ", e)
                                 self.search_function_counter = 0
                                 self.uprb = Application(backend="uia").connect(
-                                    title="uprbay.uprb.edu - Tera Term VT", timeout=5)
+                                    title="uprbay.uprb.edu - Tera Term VT", timeout=5, class_name="VTWin32")
                                 self.uprb_32 = Application().connect(
-                                    title="uprbay.uprb.edu - Tera Term VT", timeout=5)
-                                self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT")
-                                main_window = self.uprb_32.window(title="uprbay.uprb.edu - Tera Term VT")
-                                edit_menu = self.uprb.UprbayTeraTermVt.child_window(title="Edit",
-                                                                                    control_type="MenuItem")
+                                    title="uprbay.uprb.edu - Tera Term VT", timeout=5, class_name="VTWin32")
+                                self.uprbay_window = self.uprb.window(
+                                    title="uprbay.uprb.edu - Tera Term VT", class_name="VTWin32")
+                                main_window = self.uprb_32.window(
+                                    title="uprbay.uprb.edu - Tera Term VT", class_name="VTWin32")
+                                edit_menu = self.uprb.UprbayTeraTermVt.child_window(
+                                    title="Edit", control_type="MenuItem")
                                 self.select_screen_item = edit_menu.child_window(
-                                    title="Select screen", control_type="MenuItem", top_level_only=False)
+                                    title="Select screen", control_type="MenuItem", auto_id="50280")
                                 self.move_window()
                             main_window.send_keystrokes("{VK_RIGHT}")
                             main_window.send_keystrokes("{VK_LEFT}")
