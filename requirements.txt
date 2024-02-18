@@ -71,6 +71,6 @@ six==1.16.0
 soupsieve==2.5
 texttable==1.7.0
 uritemplate==4.1.1
-urllib3==2.2.0
+urllib3==2.2.1
 yarl==1.9.4
 zstandard==0.22.0
