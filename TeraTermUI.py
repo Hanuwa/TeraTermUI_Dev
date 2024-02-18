@@ -2710,7 +2710,8 @@ class TeraTermUI(customtkinter.CTk):
                                 term_window.restore()
                             self.wait_for_window()
                             user = self.uprb.UprbayTeraTermVt.child_window(title="User name:", control_type="Edit")
-                            user.set_text(username)
+                            if user.get_value() != username:
+                                user.set_text(username)
                             check = self.uprb.UprbayTeraTermVt.child_window(
                                 title="Remember password in memory", control_type="CheckBox")
                             if check.get_toggle_state() == 0:
@@ -2934,7 +2935,8 @@ class TeraTermUI(customtkinter.CTk):
                                 self.new_connection(disconnected)
                             host_input = self.uprb.TeraTermDisconnectedVt.child_window(
                                 title="Host:", control_type="Edit")
-                            host_input.set_text("uprbay.uprb.edu")
+                            if host_input.get_value() != "uprbay.uprb.edu":
+                                host_input.set_text("uprbay.uprb.edu")
                             conn = self.uprb.TeraTermDisconnectedVt.child_window(title="OK", control_type="Button")
                             conn.click()
                             self.uprbay_window = self.uprb.window(
@@ -3159,7 +3161,8 @@ class TeraTermUI(customtkinter.CTk):
         if not ssh_radio.is_selected():
             ssh_radio.click()
         tcp_port_edit = new_connection.child_window(title="TCP port#:", control_type="Edit")
-        tcp_port_edit.set_text("22")
+        if tcp_port_edit.get_value() != "22":
+            tcp_port_edit.set_text("22")
         ssh_version_combo = new_connection.child_window(title="SSH version:", control_type="ComboBox")
         if ssh_version_combo.selected_text() != "SSH2":
             ssh_version_combo.expand()
