@@ -6578,7 +6578,7 @@ class TeraTermUI(customtkinter.CTk):
         self.success.destroy()
         if self.help and self.help.winfo_exists() and self.changed_location:
             self.after(250, self.help.lift)
-            self.after(260, self.help.focus_set)
+            self.after(250, self.help.focus_set)
             self.changed_location = False
 
     # Pop window that shows the user more context on why they couldn't enroll their classes
@@ -7740,9 +7740,9 @@ class TeraTermUI(customtkinter.CTk):
         elif response is False:
             self.manually_change_location()
         else:
-            self.help.lift()
-            self.help.focus_set()
             if self.help is not None and self.help.winfo_exists():
+                self.help.lift()
+                self.help.focus_set()
                 self.files.configure(state="normal")
 
     # Automatically tries to find where the Tera Term application is located
@@ -7826,11 +7826,11 @@ class TeraTermUI(customtkinter.CTk):
             atexit.unregister(self.restore_original_font)
             atexit.register(self.restore_original_font, self.teraterm_file)
         if not re.search("ttermpro.exe", filename):
-            self.help.lift()
-            self.help.focus_set()
+            if self.help is not None and self.help.winfo_exists():
+                self.help.lift()
+                self.help.focus_set()
+                self.files.configure(state="normal")
         self.slideshow_frame.resume_cycle()
-        if self.help is not None and self.help.winfo_exists():
-            self.files.configure(state="normal")
 
     def is_listbox_focused(self):
         return self.class_list == self.class_list.focus_get()
