@@ -57,18 +57,12 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         
         super().__init__()
 
-
         self.master_window = master
-
         self.width = width
         self.height = height
 
-        if self.master_window is None:
-            self.spawn_x = int((self.winfo_screenwidth()-self.width)/2)
-            self.spawn_y = int((self.winfo_screenheight()-self.height)/2)
-        else:
-            self.spawn_x = int(self.master_window.winfo_width() * .5 + self.master_window.winfo_x() - .5 * self.width + 7)
-            self.spawn_y = int(self.master_window.winfo_height() * .5 + self.master_window.winfo_y() - .5 * self.height + 20)
+        self.spawn_x = int(self._root().winfo_width() * .5 + self._root().winfo_x() - .5 * self.width + 50)
+        self.spawn_y = int(self._root().winfo_height() * .5 + self._root().winfo_y() - .5 * self.height + 15)
 
         self.after(10)
         self.geometry(f"{self.width}x{self.height}+{self.spawn_x}+{self.spawn_y}")
