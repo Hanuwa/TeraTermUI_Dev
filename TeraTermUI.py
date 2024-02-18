@@ -2709,18 +2709,18 @@ class TeraTermUI(customtkinter.CTk):
                             if term_window.isMinimized:
                                 term_window.restore()
                             self.wait_for_window()
-                            user = self.uprb.UprbayTeraTermVt.child_window(title="User name:",
-                                                                           control_type="Edit").wrapper_object()
+                            user = self.uprb.UprbayTeraTermVt.child_window(title="User name:", control_type="Edit")
                             user.set_text(username)
-                            check = self.uprb.UprbayTeraTermVt.child_window(title="Remember password in memory",
-                                                                            control_type="CheckBox")
+                            check = self.uprb.UprbayTeraTermVt.child_window(
+                                title="Remember password in memory", control_type="CheckBox")
                             if check.get_toggle_state() == 0:
                                 check.invoke()
-                            self.uprb.UprbayTeraTermVt.child_window(title="Use plain password to log in",
-                                                                    control_type="RadioButton").click()
+                            radio = self.uprb.UprbayTeraTermVt.child_window(
+                                title="Use plain password to log in", control_type="RadioButton")
+                            if not radio.is_selected():
+                                radio.click()
                             self.hide_loading_screen()
-                            conn = self.uprb.UprbayTeraTermVt.child_window(title="OK",
-                                                                           control_type="Button").wrapper_object()
+                            conn = self.uprb.UprbayTeraTermVt.child_window(title="OK", control_type="Button")
                             conn.click()
                             self.show_loading_screen_again()
                             self.server_status = self.wait_for_prompt(
@@ -2934,14 +2934,11 @@ class TeraTermUI(customtkinter.CTk):
                             disconnected.wait("visible", timeout=5)
                             if new_connection:
                                 self.new_connection(disconnected)
-                            host_input = \
-                                self.uprb.TeraTermDisconnectedVt.child_window(title="Host:",
-                                                                              control_type="Edit").wrapper_object()
+                            host_input = self.uprb.TeraTermDisconnectedVt.child_window(
+                                title="Host:", control_type="Edit")
                             host_input.set_text("uprbay.uprb.edu")
                             self.hide_loading_screen()
-                            conn = \
-                                self.uprb.TeraTermDisconnectedVt.child_window(
-                                    title="OK", control_type="Button").wrapper_object()
+                            conn = self.uprb.TeraTermDisconnectedVt.child_window(title="OK", control_type="Button")
                             conn.click()
                             self.show_loading_screen_again()
                             self.uprbay_window = self.uprb.window(
@@ -2950,9 +2947,8 @@ class TeraTermUI(customtkinter.CTk):
                             if self.uprbay_window.child_window(title="Continue", control_type="Button").exists(
                                     timeout=1):
                                 self.hide_loading_screen()
-                                continue_button = \
-                                    self.uprbay_window.child_window(title="Continue",
-                                                                    control_type="Button").wrapper_object()
+                                continue_button = self.uprbay_window.child_window(
+                                    title="Continue", control_type="Button")
                                 continue_button.click()
                                 self.show_loading_screen_again()
                             if not self.skip_auth:
@@ -5412,9 +5408,9 @@ class TeraTermUI(customtkinter.CTk):
                 timings.Timings.window_find_timeout = 0.5
                 timings.Timings.window_find_retry = 0.1
                 self.uprb.UprbayTeraTermVt.type_keys("%e")
-                if attempt <= 2:
+                if attempt < 1:
                     self.uprb.UprbayTeraTermVt.type_keys("e")
-                if attempt >= 3:
+                if attempt >= 1:
                     self.select_screen_item.invoke()
                 break
             except ElementNotFoundError as e:
