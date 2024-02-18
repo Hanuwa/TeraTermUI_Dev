@@ -3720,6 +3720,8 @@ class TeraTermUI(customtkinter.CTk):
                     loading_screen = self.show_loading_screen()
                     self.update_loading_screen(loading_screen, task_done)
                     self.thread_pool.submit(self.auto_enroll_event, task_done)
+                else:
+                    self.auto_enroll.deselect()
             elif self.auto_enroll.get() == "off":
                 self.countdown_running = False
                 self.auto_enroll_bool = False
