@@ -179,7 +179,7 @@ nuitka_command = (
     r'--nofollow-import-to=unittest --nofollow-import-to=reportlab.graphics.testshapes '
     r'--company-name="Armando Del Valle Tejada" --product-name="Tera Term UI" '  
     r'--file-version="0.9.0" --product-version="0.9.0" --file-description="TeraTermUI" ' 
-    r'--copyright="Copyright 2024 Armando Del Valle Tejada" --python-flag=no_docstrings '
+    r'--copyright="Copyright © 2024 Armando Del Valle Tejada" --python-flag=no_docstrings '
 )
 
 try:
