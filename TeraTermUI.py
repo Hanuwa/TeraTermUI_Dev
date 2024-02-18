@@ -2719,10 +2719,8 @@ class TeraTermUI(customtkinter.CTk):
                                 title="Use plain password to log in", control_type="RadioButton")
                             if not radio.is_selected():
                                 radio.click()
-                            self.hide_loading_screen()
                             conn = self.uprb.UprbayTeraTermVt.child_window(title="OK", control_type="Button")
                             conn.click()
-                            self.show_loading_screen_again()
                             self.server_status = self.wait_for_prompt(
                                 "return to continue", "REGRESE PRONTO")
                             if self.server_status == "Maintenance message found":
@@ -2937,20 +2935,16 @@ class TeraTermUI(customtkinter.CTk):
                             host_input = self.uprb.TeraTermDisconnectedVt.child_window(
                                 title="Host:", control_type="Edit")
                             host_input.set_text("uprbay.uprb.edu")
-                            self.hide_loading_screen()
                             conn = self.uprb.TeraTermDisconnectedVt.child_window(title="OK", control_type="Button")
                             conn.click()
-                            self.show_loading_screen_again()
                             self.uprbay_window = self.uprb.window(
                                 title="uprbay.uprb.edu - Tera Term VT", class_name="VTWin32")
                             self.uprbay_window.wait("visible", timeout=5)
                             if self.uprbay_window.child_window(title="Continue", control_type="Button").exists(
                                     timeout=1):
-                                self.hide_loading_screen()
                                 continue_button = self.uprbay_window.child_window(
                                     title="Continue", control_type="Button")
                                 continue_button.click()
-                                self.show_loading_screen_again()
                             if not self.skip_auth:
                                 self.bind("<Return>", lambda event: self.auth_event_handler())
                                 self.after(0, self.initialization_auth)
@@ -3157,27 +3151,19 @@ class TeraTermUI(customtkinter.CTk):
         new_connection.wait("visible", timeout=5)
         tcp_ip_radio = new_connection.child_window(title="TCP/IP", control_type="RadioButton")
         if not tcp_ip_radio.is_selected():
-            self.hide_loading_screen()
             tcp_ip_radio.click()
-            self.show_loading_screen_again()
         history_checkbox = new_connection.child_window(title="History", control_type="CheckBox")
         if not history_checkbox.get_toggle_state():
-            self.hide_loading_screen()
             history_checkbox.click()
-            self.show_loading_screen_again()
         ssh_radio = new_connection.child_window(title="SSH", control_type="RadioButton")
         if not ssh_radio.is_selected():
-            self.hide_loading_screen()
             ssh_radio.click()
-            self.show_loading_screen_again()
         tcp_port_edit = new_connection.child_window(title="TCP port#:", control_type="Edit")
         tcp_port_edit.set_text("22")
         ssh_version_combo = new_connection.child_window(title="SSH version:", control_type="ComboBox")
         if ssh_version_combo.selected_text() != "SSH2":
-            self.hide_loading_screen()
             ssh_version_combo.expand()
             ssh_version_combo.child_window(title="SSH2", control_type="ListItem").select()
-            self.show_loading_screen_again()
 
     def keybind_go_back_event(self):
         if self.move_slider_right_enabled or self.move_slider_left_enabled:
