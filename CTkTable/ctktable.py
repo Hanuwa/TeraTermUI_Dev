@@ -10,7 +10,7 @@ class CTkTable(customtkinter.CTkFrame):
     """ CTkTable Widget """
     __slots__ = ("master", "row", "column", "padx", "pady", "width", "height", "values", "colors", "orientation",
                  "color_phase", "border_width", "text_color", "border_color", "font", "header_color", "corner_radius",
-                 "write", "command", "anchor", "hover_color", "hover", "justify", "wrap_length")
+                 "write", "command", "anchor", "hover_color", "hover", "justify", "wraplength")
 
     def __init__(
             self,
