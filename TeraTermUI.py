@@ -1425,6 +1425,16 @@ class TeraTermUI(customtkinter.CTk):
                                     self.clipboard_clear()
                                     if clipboard_content is not None:
                                         self.clipboard_append(clipboard_content)
+                                    if "MORE SECTIONS" in text_output:
+                                        self.after(0, self.search_next_page_layout)
+                                    else:
+                                        def hide_next_button():
+                                            self.search_next_page.grid_forget()
+                                            self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
+                                            self.search.configure(width=140)
+                                            self.search_next_page_status = False
+
+                                        self.after(0, hide_next_button)
                                     return
                             if self.search_function_counter == 0:
                                 self.uprb.UprbayTeraTermVt.type_keys(classes)
@@ -1440,6 +1450,14 @@ class TeraTermUI(customtkinter.CTk):
                             text_output = self.capture_screenshot()
                             if "MORE SECTIONS" in text_output:
                                 self.after(0, self.search_next_page_layout)
+                            else:
+                                def hide_next_button():
+                                    self.search_next_page.grid_forget()
+                                    self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
+                                    self.search.configure(width=140)
+                                    self.search_next_page_status = False
+
+                                self.after(0, hide_next_button)
                             if "COURSE NOT IN" in text_output:
                                 if lang == "English":
                                     self.after(100, self.show_error_message, 300, 215,
@@ -1509,7 +1527,6 @@ class TeraTermUI(customtkinter.CTk):
 
     def search_next_page_layout(self):
         self.search_next_page_status = True
-        self.search_next_page.configure(state="normal")
         self.search.configure(width=85)
         self.search.grid(row=1, column=1, padx=(285, 0), pady=(0, 5), sticky="n")
         self.search_next_page.grid(row=1, column=1, padx=(465, 0), pady=(0, 5), sticky="n")
@@ -2155,15 +2172,6 @@ class TeraTermUI(customtkinter.CTk):
                                     text_output = self.capture_screenshot()
                                     if "INVALID TERM SELECTION" not in text_output:
                                         def go_next_grid():
-                                            self.go_next_1GP.configure(state="normal")
-                                            self.go_next_1VE.grid_forget()
-                                            self.go_next_409.grid_forget()
-                                            self.go_next_683.grid_forget()
-                                            self.go_next_4CM.grid_forget()
-                                            self.go_next_1VE.configure(state="disabled")
-                                            self.go_next_409.configure(state="disabled")
-                                            self.go_next_683.configure(state="disabled")
-                                            self.go_next_4CM.configure(state="disabled")
                                             self._1VE_screen = False
                                             self._1GP_screen = True
                                             self._409_screen = False
@@ -2206,12 +2214,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys("1VE")
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                                    self.reset_activity_timer()
-                                    self.go_next_1VE.configure(state="disabled")
-                                    self.go_next_1GP.configure(state="disabled")
-                                    self.go_next_409.configure(state="disabled")
-                                    self.go_next_683.configure(state="disabled")
-                                    self.go_next_4CM.configure(state="disabled")
+                                    self.after(0, self.disable_go_next_buttons)
                                     self._1VE_screen = True
                                     self._1GP_screen = False
                                     self._409_screen = False
@@ -2235,11 +2238,6 @@ class TeraTermUI(customtkinter.CTk):
                                                    translation["invalid_semester"])
                                     if "CONFLICT" not in text_output or "INVALID TERM SELECTION" not in text_output:
                                         def go_next_grid():
-                                            self.go_next_1VE.configure(state="normal")
-                                            self.go_next_1GP.grid_forget()
-                                            self.go_next_409.grid_forget()
-                                            self.go_next_683.grid_forget()
-                                            self.go_next_4CM.grid_forget()
                                             self.menu_submit.configure(width=100)
                                             self.menu_submit.grid(row=5, column=1, padx=(0, 110), pady=(40, 0),
                                                                   sticky="n")
@@ -2269,19 +2267,10 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys("409")
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                                    self.reset_activity_timer()
+                                    self.after(0, self.disable_go_next_buttons)
                                     text_output = self.capture_screenshot()
                                     if "INVALID TERM SELECTION" not in text_output:
                                         def go_next_grid():
-                                            self.go_next_409.configure(state="normal")
-                                            self.go_next_1VE.grid_forget()
-                                            self.go_next_1GP.grid_forget()
-                                            self.go_next_683.grid_forget()
-                                            self.go_next_4CM.grid_forget()
-                                            self.go_next_1GP.configure(state="disabled")
-                                            self.go_next_683.configure(state="disabled")
-                                            self.go_next_1VE.configure(state="disabled")
-                                            self.go_next_4CM.configure(state="disabled")
                                             self._1VE_screen = False
                                             self._1GP_screen = False
                                             self._409_screen = True
@@ -2308,15 +2297,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys("683")
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                                    self.reset_activity_timer()
-                                    self.go_next_1VE.grid_forget()
-                                    self.go_next_1GP.grid_forget()
-                                    self.go_next_409.grid_forget()
-                                    self.go_next_4CM.grid_forget()
-                                    self.go_next_1VE.configure(state="disabled")
-                                    self.go_next_1GP.configure(state="disabled")
-                                    self.go_next_409.configure(state="disabled")
-                                    self.go_next_4CM.configure(state="disabled")
+                                    self.after(0, self.disable_go_next_buttons)
                                     self._1VE_screen = False
                                     self._1GP_screen = False
                                     self._409_screen = False
@@ -2331,7 +2312,6 @@ class TeraTermUI(customtkinter.CTk):
                                                    translation["hold_flag"])
                                     if "CONFLICT" not in text_output:
                                         def go_next_grid():
-                                            self.go_next_683.configure(state="normal")
                                             self.submit.configure(width=100)
                                             self.menu_submit.grid(row=5, column=1, padx=(0, 110), pady=(40, 0),
                                                                   sticky="n")
@@ -2369,21 +2349,12 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys("4CM")
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                                    self.reset_activity_timer()
+                                    self.after(0, self.disable_go_next_buttons)
                                     text_output = self.capture_screenshot()
                                     if "TERM OUTDATED" not in text_output and \
                                             "NO PUEDE REALIZAR CAMBIOS" not in text_output and \
                                             "INVALID TERM SELECTION" not in text_output:
                                         def go_next_grid():
-                                            self.go_next_4CM.configure(state="normal")
-                                            self.go_next_1VE.grid_forget()
-                                            self.go_next_1GP.grid_forget()
-                                            self.go_next_409.grid_forget()
-                                            self.go_next_4CM.grid_forget()
-                                            self.go_next_1VE.configure(state="disabled")
-                                            self.go_next_1GP.configure(state="disabled")
-                                            self.go_next_409.configure(state="disabled")
-                                            self.go_next_683.configure(state="disabled")
                                             self._1VE_screen = False
                                             self._1GP_screen = False
                                             self._409_screen = False
@@ -2495,6 +2466,7 @@ class TeraTermUI(customtkinter.CTk):
             self.wait_for_window()
             self.uprb.UprbayTeraTermVt.type_keys("SO")
             self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+            self.after(0, self.disable_go_next_buttons)
         elif not TeraTermUI.checkIfProcessRunning("ttermpro") and response[0] == "Yes" \
                 or response[0] == "Sí":
             self.focus_or_not = True
@@ -2565,7 +2537,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.focus_or_not = True
                                 self.after(100, self.show_error_message, 310, 225, translation["unknown_error"])
                             else:
-                                self.go_next_4CM.configure(state="disabled")
+                                self.after(0, self.disable_go_next_buttons)
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
 
@@ -2639,8 +2611,13 @@ class TeraTermUI(customtkinter.CTk):
                         self.reset_activity_timer()
                         text_output = self.capture_screenshot()
                         if "MORE SECTIONS" not in text_output:
-                            self.search_next_page.configure(state="disabled")
-                            self.search_next_page_status = False
+                            def hide_next_button():
+                                self.search_next_page.grid_forget()
+                                self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
+                                self.search.configure(width=140)
+                                self.search_next_page_status = False
+
+                            self.after(0, hide_next_button)
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             except Exception as e:
@@ -2670,12 +2647,17 @@ class TeraTermUI(customtkinter.CTk):
     # disable these buttons if the user changed screen
     def disable_go_next_buttons(self):
         if self.init_class:
-            self.go_next_1VE.configure(state="disabled")
-            self.go_next_1GP.configure(state="disabled")
-            self.go_next_409.configure(state="disabled")
-            self.go_next_683.configure(state="disabled")
-            self.go_next_4CM.configure(state="disabled")
-            self.search_next_page.configure(state="disabled")
+            self.go_next_1VE.grid_forget()
+            self.go_next_1GP.grid_forget()
+            self.go_next_409.grid_forget()
+            self.go_next_683.grid_forget()
+            self.go_next_4CM.grid_forget()
+            self.menu_submit.configure(width=140)
+            self.menu_submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
+            self.search_next_page.grid_forget()
+            self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
+            self.search.configure(width=140)
+            self.search_next_page_status = False
             self._1VE_screen = False
             self._1GP_screen = False
             self._409_screen = False
@@ -2748,7 +2730,6 @@ class TeraTermUI(customtkinter.CTk):
                                 self.in_student_frame = True
                                 if self.skip_auth:
                                     self.home_frame.grid_forget()
-                                    self.intro_box.grid_forget()
                             elif self.server_status == "Timeout":
                                 def timeout():
                                     if not self.skip_auth:
@@ -3027,7 +3008,6 @@ class TeraTermUI(customtkinter.CTk):
             self.back.grid(row=4, column=0, padx=(0, 10), pady=(0, 0))
             self.auth.grid(row=4, column=1, padx=(10, 0), pady=(0, 0))
             self.home_frame.grid_forget()
-            self.intro_box.grid_forget()
         else:
             self.auth_event_handler()
             self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
@@ -3099,7 +3079,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.intro_box.stop_autoscroll(event=None)
                 self.language_menu_tooltip.show()
                 self.home_frame.grid_forget()
-                self.intro_box.grid_forget()
                 self.slideshow_frame.pause_cycle()
                 self.move_window()
             elif "STUDENTS REQ/DROP" in text_output or "HOLD FLAGS" in text_output or \
@@ -3125,7 +3104,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.intro_box.stop_autoscroll(event=None)
                 self.language_menu_tooltip.show()
                 self.home_frame.grid_forget()
-                self.intro_box.grid_forget()
                 self.slideshow_frame.pause_cycle()
                 self.switch_tab()
                 self.move_window()
@@ -3215,26 +3193,21 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Return>", lambda event: self.login_event_handler())
             if not self.home_frame.grid_info():
                 self.home_frame.grid(row=0, column=1, rowspan=5, columnspan=5, padx=(0, 0), pady=(10, 0))
-                self.introduction.grid(row=0, column=1, columnspan=2, padx=(20, 0), pady=(20, 0))
-                if lang == "English":
-                    self.host.grid(row=2, column=1, padx=(0, 170), pady=(15, 15))
-                elif lang == "Español":
-                    self.host.grid(row=2, column=1, padx=(0, 190), pady=(15, 15))
-                self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(15, 15))
-                self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(15, 15))
-                self.slideshow_frame.grid(row=1, column=1, padx=(20, 0), pady=(140, 0))
-                self.intro_box.grid(row=1, column=1, padx=(20, 0), pady=(0, 150))
-            self.destroy_auth()
-            self.destroy_student()
-            if self.init_class:
+            if self.in_auth_frame:
+                self.destroy_auth()
+            elif self.in_student_frame:
+                self.destroy_student()
+            elif self.init_class:
                 self.tabview.grid_forget()
                 self.t_buttons_frame.grid_forget()
                 self.multiple_frame.grid_forget()
                 self.m_button_frame.grid_forget()
-                self.multiple.configure(state="normal")
-                self.submit.configure(state="normal")
-                self.show_classes.configure(state="normal")
-                self.search.configure(state="normal")
+                if self.submit.cget("state") == "disabled" or self.show_classes.cget("state") == "disabled":
+                    self.multiple.configure(state="normal")
+                    self.submit.configure(state="normal")
+                    self.search.configure(state="normal")
+                    self.menu_submit.configure(state="normal")
+                    self.show_classes.configure(state="normal")
                 self.search_function_counter = 0
                 self.e_counter = 0
                 self.m_counter = 0
@@ -3290,7 +3263,6 @@ class TeraTermUI(customtkinter.CTk):
         self.unbind("<Control-S>")
         self.bind("<Control-Tab>", lambda event: self.tab_switcher())
         self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
-        lang = self.language_menu.get()
         self.tabview.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 85))
         self.tabview.tab(self.enroll_tab).grid_columnconfigure(1, weight=2)
         self.tabview.tab(self.search_tab).grid_columnconfigure(1, weight=2)
@@ -3298,93 +3270,18 @@ class TeraTermUI(customtkinter.CTk):
         self.tabview.tab(self.other_tab).grid_columnconfigure(1, weight=2)
         self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 20))
         self.t_buttons_frame.grid_columnconfigure(1, weight=2)
-        self.title_enroll.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-        self.e_classes.grid(row=1, column=1, padx=(0, 188), pady=(0, 0))
-        self.e_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0))
-        if lang == "English":
-            self.e_section.grid(row=2, column=1, padx=(0, 199), pady=(20, 0))
-        elif lang == "Español":
-            self.e_section.grid(row=2, column=1, padx=(0, 202), pady=(20, 0))
-        self.e_section_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0))
-        self.e_semester.grid(row=3, column=1, padx=(0, 211), pady=(20, 0))
-        self.e_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0))
-        self.register.grid(row=4, column=1, padx=(0, 60), pady=(15, 0))
-        self.drop.grid(row=4, column=1, padx=(140, 0), pady=(15, 0))
-        self.submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
-        self.search_scrollbar.grid(row=0, column=1, padx=(0, 0), pady=(0, 0), sticky="nsew")
-        self.title_search.grid(row=0, column=1, padx=(0, 0), pady=(0, 20), sticky="n")
-        self.s_classes.grid(row=1, column=1, padx=(0, 550), pady=(0, 0), sticky="n")
-        self.s_classes_entry.grid(row=1, column=1, padx=(0, 425), pady=(0, 0), sticky="n")
-        self.s_semester.grid(row=1, column=1, padx=(0, 270), pady=(0, 0), sticky="n")
-        self.s_semester_entry.grid(row=1, column=1, padx=(0, 120), pady=(0, 0), sticky="n")
-        if lang == "English":
-            self.show_all.grid(row=1, column=1, padx=(85, 0), pady=(2, 0), sticky="n")
-        elif lang == "Español":
-            self.show_all.grid(row=1, column=1, padx=(85, 0), pady=(0, 7), sticky="n")
-        self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
-        if self.search_next_page_status:
-            self.search.configure(width=85)
-            if lang == "English":
-                self.search.grid(row=1, column=1, padx=(290, 0), pady=(0, 5), sticky="n")
-                self.search_next_page.grid(row=1, column=1, padx=(470, 0), pady=(0, 5), sticky="n")
-            elif lang == "Español":
-                self.search.grid(row=1, column=1, padx=(285, 0), pady=(0, 5), sticky="n")
-                self.search_next_page.grid(row=1, column=1, padx=(465, 0), pady=(0, 5), sticky="n")
-        else:
-            self.search.configure(width=141)
-            self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
-            self.search_next_page.grid_forget()
-        self.title_menu.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-        self.explanation_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-        if lang == "English":
-            self.menu.grid(row=2, column=1, padx=(0, 184), pady=(10, 0))
-        elif lang == "Español":
-            self.menu.grid(row=2, column=1, padx=(0, 194), pady=(10, 0))
-        self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0))
-        self.menu_semester.grid(row=3, column=1, padx=(0, 211), pady=(20, 0))
-        self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0))
-        if self._1VE_screen:
-            self.menu_submit.configure(width=100)
-            self.menu_submit.grid(row=5, column=1, padx=(0, 110), pady=(40, 0), sticky="n")
-            self.go_next_1VE.grid(row=5, column=1, padx=(110, 0), pady=(40, 0), sticky="n")
-        elif self._1GP_screen:
-            self.menu_submit.configure(width=100)
-            self.menu_submit.grid(row=5, column=1, padx=(0, 110), pady=(40, 0), sticky="n")
-            self.go_next_1GP.grid(row=5, column=1, padx=(110, 0), pady=(40, 0), sticky="n")
-        elif self._409_screen:
-            self.menu_submit.configure(width=100)
-            self.menu_submit.grid(row=5, column=1, padx=(0, 110), pady=(40, 0), sticky="n")
-            self.go_next_409.grid(row=5, column=1, padx=(110, 0), pady=(40, 0), sticky="n")
-        elif self._683_screen:
-            self.menu_submit.configure(width=100)
-            self.menu_submit.grid(row=5, column=1, padx=(0, 110), pady=(40, 0), sticky="n")
-            self.go_next_683.grid(row=5, column=1, padx=(110, 0), pady=(40, 0), sticky="n")
-        elif self._4CM_screen:
-            self.menu_submit.configure(width=100)
-            self.menu_submit.grid(row=5, column=1, padx=(0, 110), pady=(40, 0), sticky="n")
-            self.go_next_1VE.grid(row=5, column=1, padx=(110, 0), pady=(40, 0), sticky="n")
-        else:
-            self.menu_submit.configure(width=140)
-            self.menu_submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
-            self.go_next_1VE.grid_forget()
-            self.go_next_1GP.grid_forget()
-            self.go_next_409.grid_forget()
-            self.go_next_683.grid_forget()
-            self.go_next_4CM.grid_forget()
-        self.back_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
-        self.show_classes.grid(row=4, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-        self.multiple.grid(row=4, column=2, padx=(10, 0), pady=(0, 0), sticky="e")
-        self.multiple_frame.grid_forget()
-        self.m_button_frame.grid_forget()
-        self.save_frame.grid_forget()
-        self.auto_frame.grid_forget()
-        self.switch_tab()
+        if self.in_multiple_screen:
+            self.multiple_frame.grid_forget()
+            self.m_button_frame.grid_forget()
+            self.save_frame.grid_forget()
+            self.auto_frame.grid_forget()
         if not self.in_multiple_screen:
             self.my_classes_frame.grid_forget()
             self.modify_classes_frame.grid_forget()
             self.back_my_classes.grid_forget()
             self.destroy_enrolled_frame()
             self.after(100, self.enable_widgets, self)
+        self.switch_tab()
         self.in_multiple_screen = False
 
     def load_language(self, lang):
@@ -3602,12 +3499,6 @@ class TeraTermUI(customtkinter.CTk):
                     self.menu_semester_entry.get().upper().replace(" ", "") == "ACTUAL":
                 self.menu_semester_entry.set(translation["current"])
             self.menu_submit.configure(text=translation["submit"])
-            self.go_next_1VE.configure(text=translation["go_next"])
-            self.go_next_1GP.configure(text=translation["go_next"])
-            self.go_next_409.configure(text=translation["go_next"])
-            self.go_next_683.configure(text=translation["go_next"])
-            self.go_next_4CM.configure(text=translation["go_next"])
-            self.search_next_page.configure(text=translation["search_next_page"])
             self.submit.configure(text=translation["submit"])
             self.search.configure(text=translation["search"])
             self.show_classes.configure(text=translation["show_my_classes"])
@@ -4479,9 +4370,6 @@ class TeraTermUI(customtkinter.CTk):
             for entry in [self.e_classes_entry, self.e_section_entry, self.s_classes_entry]:
                 entry.lang = lang
         else:
-            self.search_next_page.grid_forget()
-            self.search.configure(width=141)
-            self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
             self.go_next_1VE.grid_forget()
             self.go_next_1GP.grid_forget()
             self.go_next_409.grid_forget()
@@ -4489,6 +4377,10 @@ class TeraTermUI(customtkinter.CTk):
             self.go_next_4CM.grid_forget()
             self.menu_submit.configure(width=140)
             self.menu_submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
+            self.search_next_page.grid_forget()
+            self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
+            self.search.configure(width=140)
+            self.search_next_page_status = False
             self._1VE_screen = False
             self._1GP_screen = False
             self._409_screen = False
