@@ -7119,11 +7119,11 @@ class TeraTermUI(customtkinter.CTk):
 
     def check_process_periodically(self):
         import random
-        
+
         time.sleep(30 + random.randint(5, 15))
         not_running_count = 0
         while self.is_check_process_thread_running and not self.stop_is_check_process.is_set():
-            if self.loading_screen is None:
+            if self.loading_screen is None and not self.loading_screen.winfo_exists():
                 is_running = TeraTermUI.checkIfProcessRunning("ttermpro")
                 if is_running:
                     if not_running_count > 1 and not self.is_idle_thread_running:
