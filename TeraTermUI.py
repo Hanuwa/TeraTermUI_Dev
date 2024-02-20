@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/19/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/20/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -806,8 +806,9 @@ class TeraTermUI(customtkinter.CTk):
     @staticmethod
     def terminate_process():
         try:
-            subprocess.run(["taskkill", "/f", "/im", "ttermpro.exe"],
-                           check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.Popen(["taskkill", "/f", "/im", "ttermpro.exe"],
+                             creationflags=subprocess.CREATE_NO_WINDOW,
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except subprocess.CalledProcessError:
             print("Could not terminate ttermpro.exe.")
 
@@ -7117,7 +7118,9 @@ class TeraTermUI(customtkinter.CTk):
         self.check_process_thread.start()
 
     def check_process_periodically(self):
-        time.sleep(30)
+        import random
+        
+        time.sleep(30 + random.randint(5, 15))
         not_running_count = 0
         while self.is_check_process_thread_running and not self.stop_is_check_process.is_set():
             if self.loading_screen is None:
@@ -7142,7 +7145,7 @@ class TeraTermUI(customtkinter.CTk):
                     if not_running_count > 1:
                         self.is_idle_thread_running = False
                         self.reset_activity_timer()
-            time.sleep(30)
+            time.sleep(30 + random.randint(5, 15))
 
     # Starts the check for idle thread
     def start_check_idle_thread(self):
