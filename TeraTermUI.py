@@ -3009,6 +3009,7 @@ class TeraTermUI(customtkinter.CTk):
             self.auth.grid(row=4, column=1, padx=(10, 0), pady=(0, 0))
             self.home_frame.grid_forget()
         else:
+            self.log_in.configure(state="disabled")
             self.auth_event_handler()
             self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
         self.main_menu = False
@@ -3224,6 +3225,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.files.configure(state="normal")
             if self.host_entry.cget("state") == "disabled":
                 self.host_entry.configure(state="normal")
+            if self.log_in.cget("state") == "disabled":
+                self.log_in.configure(state="normal")
             self.run_fix = False
             self.in_auth_frame = False
             self.in_student_frame = False
