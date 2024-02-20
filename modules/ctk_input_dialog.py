@@ -18,6 +18,7 @@ class CTkInputDialog(CTkToplevel):
     """
 
     def __init__(self,
+                 master: any = None,
                  fg_color: Optional[Union[str, Tuple[str, str]]] = None,
                  text_color: Optional[Union[str, Tuple[str, str]]] = None,
                  button_fg_color: Optional[Union[str, Tuple[str, str]]] = None,
@@ -55,10 +56,10 @@ class CTkInputDialog(CTkToplevel):
 
         self.title(self._title)
         self.lift()  # lift window on top
-        self.attributes("-topmost", True)  # stay on top
         self.protocol("WM_DELETE_WINDOW", self._on_closing)
         self.after(10, self._create_widgets)  # create widgets with slight delay, to avoid white flickering of background
         self.resizable(False, False)
+        self.transient(master)
         self.grab_set()  # make other windows not clickable
 
     def _create_widgets(self):
