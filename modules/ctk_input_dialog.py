@@ -126,14 +126,22 @@ class CTkInputDialog(CTkToplevel):
         return self._user_input
 
 class CustomButton(CTkButton):
+    __slots__ = ("master", "command")
+
     def __init__(self, master=None, command=None, **kwargs):
         super().__init__(master, cursor="hand2", **kwargs)
+        self.text = kwargs.pop("text", None)
+        self.image = kwargs.pop("image", None)
+
         self.is_pressed = False
         self.click_command = command
+        if self.image and not self.text:
+            self.configure(image=self.image)
+        else:
+            self.bind("<Enter>", self.on_enter)
+            self.bind("<Leave>", self.on_leave)
         self.bind("<ButtonPress-1>", self.on_button_down)
         self.bind("<ButtonRelease-1>", self.on_button_up)
-        self.bind("<Enter>", self.on_enter)
-        self.bind("<Leave>", self.on_leave)
 
     def on_button_down(self, event):
         if self.cget("state") == "disabled":
