@@ -2959,7 +2959,10 @@ class TeraTermUI(customtkinter.CTk):
                             winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
                         CTkMessagebox(title=translation["automation_error_title"],
                                       message=translation["unexpected_error"], icon="warning", button_width=380)
-
+                        self.bind("<Return>", lambda event: self.login_event_handler())
+                        if self.log_in.cget("state") == "disabled":
+                            self.log_in.configure(state="normal")
+                            
                     self.error_occurred = False
                     self.after(50, rare_error)
                 else:
@@ -2982,12 +2985,12 @@ class TeraTermUI(customtkinter.CTk):
                         CTkMessagebox(title=translation["automation_error_title"],
                                       message=translation["tera_term_forced_to_close"], icon="warning",
                                       button_width=380)
+                        self.bind("<Return>", lambda event: self.login_event_handler())
+                        if self.log_in.cget("state") == "disabled":
+                            self.log_in.configure(state="normal")
                         self.error_occurred = False
 
                     self.after(50, error_automation)
-                self.bind("<Return>", lambda event: self.login_event_handler())
-                if self.log_in.cget("state") == "disabled":
-                    self.log_in.configure(state="normal")
                 ctypes.windll.user32.BlockInput(False)
 
     def login_frame(self):
