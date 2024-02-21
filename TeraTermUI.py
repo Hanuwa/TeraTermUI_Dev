@@ -1610,6 +1610,7 @@ class TeraTermUI(customtkinter.CTk):
                                 ctypes.windll.user32.BlockInput(True)
                                 copy = pyperclip.paste()
                                 enrolled_classes, total_credits = self.extract_my_enrolled_classes(copy)
+                                self.after(0, self.enable_widgets, self)
                                 self.after(0, self.tabview.grid_forget)
                                 self.after(50, self.display_enrolled_data, enrolled_classes, total_credits)
                                 self.clipboard_clear()
@@ -3284,7 +3285,6 @@ class TeraTermUI(customtkinter.CTk):
         self.tabview.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 85))
         self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 20))
         self.back_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
-        self.after(100, self.enable_widgets, self)
         self.switch_tab()
         self.in_multiple_screen = False
 
