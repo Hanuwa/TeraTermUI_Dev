@@ -1203,7 +1203,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(classes)
                                     self.uprb.UprbayTeraTermVt.type_keys(section)
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-									self.update_idletasks()
+                                    self.update_idletasks()
                                     time.sleep(1.5)
                                     text = self.capture_screenshot()
                                     enrolled_classes = "ENROLLED"
@@ -1224,7 +1224,7 @@ class TeraTermUI(customtkinter.CTk):
                                             self.e_counter += 1
                                         if choice == "register":
                                             self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-											self.update_idletasks()
+                                            self.update_idletasks()
                                             time.sleep(1)
                                             self.add_enrolled_classes_list(section, classes)
                                             self.after(100, self.show_success_message, 350, 265,
@@ -1970,7 +1970,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                     else:
                                         self.uprb.UprbayTeraTermVt.type_keys("{TAB}")
-								self.update_idletasks()
+                                self.update_idletasks()
                                 time.sleep(1.5)
                                 text = self.capture_screenshot()
                                 dropped_classes = "DROPPED"
@@ -2004,13 +2004,13 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(2500, self.show_enrollment_error_information_multiple, text)
                                     if "CONFIRMED" in text and "DROPPED" in text:
                                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-										self.update_idletasks()
+                                        self.update_idletasks()
                                         time.sleep(1)
                                         self.after(100, self.show_success_message, 350, 265,
                                                    translation["enrolled_dropped_multiple_success"])
                                     elif "CONFIRMED" in text and "DROPPED" not in text:
                                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-										self.update_idletasks()
+                                        self.update_idletasks()
                                         time.sleep(1)
                                         self.after(100, self.show_success_message, 350, 265,
                                                    translation["enrolled_multiple_success"])
@@ -2672,7 +2672,6 @@ class TeraTermUI(customtkinter.CTk):
             self._409_screen = False
             self._683_screen = False
             self._4CM_screen = False
-            self.search_next_page_status = False
         self.reset_activity_timer()
 
     def auth_event_handler(self):
@@ -3035,8 +3034,8 @@ class TeraTermUI(customtkinter.CTk):
         skip = False
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        while not self.tesseract_unzipped:\
-			self.update_idletasks()
+        while not self.tesseract_unzipped:
+            self.update_idletasks()
             time.sleep(0.5)
             timeout_counter += 1
             if timeout_counter > 7:
@@ -3349,7 +3348,7 @@ class TeraTermUI(customtkinter.CTk):
                        translation["days"], translation["times"], translation["av"],
                        translation["instructor"]]
 
-        for _, table, _, _, _ in self.class_table_pairs:
+        for _, table, _, _, _, _ in self.class_table_pairs:
             table.update_headers(new_headers)
             for i, new_header in enumerate(new_headers):
                 tooltip_message = tooltip_messages[new_header]
@@ -4058,7 +4057,7 @@ class TeraTermUI(customtkinter.CTk):
             elif current_y > target_y:
                 current_y -= min(step_size, current_y - target_y)
             window.moveTo(current_x, current_y)
-			self.update_idletasks()
+            self.update_idletasks()
             time.sleep(delay_time)
 
     def initialization_auth(self):
@@ -4401,7 +4400,6 @@ class TeraTermUI(customtkinter.CTk):
             self._409_screen = False
             self._683_screen = False
             self._4CM_screen = False
-            self.search_next_page_status = False
 
     def initialization_multiple(self):
         # Multiple Classes Enrollment
@@ -4644,6 +4642,7 @@ class TeraTermUI(customtkinter.CTk):
     # tells the loading screen when it should stop and close
     def update_loading_screen(self, loading_screen, task_done):
         if task_done.is_set():
+            self.update_idletasks()
             self.attributes("-disabled", False)
             self.update_widgets()
             self.hide_loading_screen()
@@ -4799,8 +4798,8 @@ class TeraTermUI(customtkinter.CTk):
     def capture_screenshot(self):
         import pyautogui
         import win32gui
-		
-		self.update_idletasks()
+
+        self.update_idletasks()
         time.sleep(1)
         lang = self.language_menu.get()
         translation = self.load_language(lang)
@@ -4942,7 +4941,7 @@ class TeraTermUI(customtkinter.CTk):
         semester_list = []
 
         # Loop through each table in self.class_table_pairs
-        for display_class, table, semester, _, _ in self.class_table_pairs:
+        for display_class, table, semester, _, _, _ in self.class_table_pairs:
             class_name = display_class.cget("text")
             table_data = table.get()
 
@@ -5018,7 +5017,7 @@ class TeraTermUI(customtkinter.CTk):
         self.e_classes_entry.delete(0, "end")
         self.e_section_entry.delete(0, "end")
         current_table_index = self.current_table_index
-        display_class, _, semester_text, _, _ = self.class_table_pairs[current_table_index]
+        display_class, _, semester_text, _, _, _ = self.class_table_pairs[current_table_index]
         self.e_classes_entry.insert(0, display_class.cget("text"))
         self.e_section_entry.insert(0, section_text)
         self.e_semester_entry.set(semester_text)
@@ -5131,9 +5130,9 @@ class TeraTermUI(customtkinter.CTk):
         duplicate_index = self.find_duplicate(display_class, self.get_semester_for_pdf, self.show_all_sections,
                                               available_values)
         if duplicate_index is not None:
-            _, _, _, _, existing_available_values = self.class_table_pairs[duplicate_index]
+            _, _, _, _, existing_available_values, _ = self.class_table_pairs[duplicate_index]
             if existing_available_values != available_values:
-                display_class_to_remove, table_to_remove, _, _, _ = self.class_table_pairs[duplicate_index]
+                display_class_to_remove, table_to_remove, _, _, _, _ = self.class_table_pairs[duplicate_index]
                 display_class_to_remove.unbind("<Button-1>")
                 for cell in table_to_remove.get_all_cells():
                     if cell in self.table_tooltips:
@@ -5150,10 +5149,10 @@ class TeraTermUI(customtkinter.CTk):
                 return
 
         self.class_table_pairs.append((display_class, new_table, self.get_semester_for_pdf,
-                                       self.show_all_sections, available_values))
+                                       self.show_all_sections, available_values, self.search_next_page_status))
         self.current_table_index = len(self.class_table_pairs) - 1
         if len(self.class_table_pairs) > 10:
-            display_class_to_remove, table_to_remove, _, _ = self.class_table_pairs[0]
+            display_class_to_remove, table_to_remove, _, _, more_sections = self.class_table_pairs[0]
             display_class_to_remove.unbind("<Button-1>")
             self.after(0, display_class_to_remove.destroy)
             self.after(0, table_to_remove.destroy)
@@ -5161,6 +5160,11 @@ class TeraTermUI(customtkinter.CTk):
                 if cell in self.table_tooltips:
                     self.table_tooltips[cell].destroy()
                     del self.table_tooltips[cell]
+            if more_sections:
+                self.search_next_page.grid_forget()
+                self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
+                self.search.configure(width=140)
+                self.search_next_page_status = False
             del self.class_table_pairs[0]
             self.current_table_index = max(0, self.current_table_index - 1)
             self.table_count.configure(text_color=("black", "white"))
@@ -5191,7 +5195,7 @@ class TeraTermUI(customtkinter.CTk):
 
     def find_duplicate(self, new_display_class, new_semester, show_all_sections_state, available_values):
         for index, (display_class, table, semester, existing_show_all_sections_state,
-                    existing_available_values) in enumerate(self.class_table_pairs):
+                    existing_available_values, _) in enumerate(self.class_table_pairs):
             if (display_class.cget("text") == new_display_class.cget("text") and
                     semester == new_semester and
                     existing_show_all_sections_state == show_all_sections_state and
@@ -5201,12 +5205,12 @@ class TeraTermUI(customtkinter.CTk):
 
     def display_current_table(self):
         # Hide all tables and display_classes
-        for display_class, curr_table, _, _, _ in self.class_table_pairs:
+        for display_class, curr_table, _, _, _, _ in self.class_table_pairs:
             display_class.grid_forget()
             curr_table.grid_forget()
 
         # Show the current display_class and table
-        display_class, curr_table, _, _, _ = self.class_table_pairs[self.current_table_index]
+        display_class, curr_table, _, _, _, _ = self.class_table_pairs[self.current_table_index]
         display_class.grid(row=2, column=1, padx=(0, 0), pady=(8, 0), sticky="n")
         curr_table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
         self.table = curr_table
@@ -5253,7 +5257,8 @@ class TeraTermUI(customtkinter.CTk):
         if len(self.class_table_pairs) == 0:
             return
 
-        display_class_to_remove, table_to_remove, _, _, _ = self.class_table_pairs[self.current_table_index]
+        display_class_to_remove, table_to_remove, _, _, _, more_sections \
+            = self.class_table_pairs[self.current_table_index]
         display_class_to_remove.grid_forget()
         display_class_to_remove.unbind("<Button-1>")
         table_to_remove.grid_forget()
@@ -5261,6 +5266,11 @@ class TeraTermUI(customtkinter.CTk):
             if cell in self.table_tooltips:
                 self.table_tooltips[cell].destroy()
                 del self.table_tooltips[cell]
+        if more_sections:
+            self.search_next_page.grid_forget()
+            self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
+            self.search.configure(width=140)
+            self.search_next_page_status = False
         self.after(0, display_class_to_remove.destroy)
         self.after(0, table_to_remove.destroy)
         if len(self.class_table_pairs) == 10:
@@ -5983,7 +5993,7 @@ class TeraTermUI(customtkinter.CTk):
                                                           translation["course"]].replace("-", "")[8:]
                                     if mod == translation["drop"] or mod == translation["section"]:
                                         if not first_loop:
-											self.update_idletasks()
+                                            self.update_idletasks()
                                             time.sleep(1.5)
                                             text_output = self.capture_screenshot()
                                             enrolled_classes = "ENROLLED"
@@ -6042,7 +6052,7 @@ class TeraTermUI(customtkinter.CTk):
                                                 self.add_enrolled_classes_list(section, course_code_no_section)
                                 self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                 self.reset_activity_timer()
-								self.update_idletasks()
+                                self.update_idletasks()
                                 time.sleep(1.5)
                                 text_output = self.capture_screenshot()
                                 self.reset_activity_timer()
@@ -6073,7 +6083,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.clipboard_clear()
                                     if clipboard_content is not None:
                                         self.clipboard_append(clipboard_content)
-									self.update_idletasks()
+                                    self.update_idletasks()
                                     time.sleep(1)
                                 except Exception as e:
                                     print("An error occurred: ", e)
@@ -6219,7 +6229,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # checks whether the program can continue its normal execution or if the server is on maintenance
     def wait_for_prompt(self, prompt_text, maintenance_text, timeout=15):
-		self.update_idletasks()
+        self.update_idletasks()
         time.sleep(1)
         start_time = time.time()
         while True:
@@ -6230,7 +6240,7 @@ class TeraTermUI(customtkinter.CTk):
                 return "Prompt found"
             elif time.time() - start_time > timeout:
                 return "Timeout"
-			self.update_idletasks()
+            self.update_idletasks()
             time.sleep(0.5)  # Adjust the delay between screenshots as needed
 
     def wait_for_window(self):
@@ -6414,7 +6424,7 @@ class TeraTermUI(customtkinter.CTk):
                     shutil.rmtree(tesseract_dir)
                     break  # If the directory was deleted successfully, exit the loop
                 except PermissionError:
-					self.update_idletasks()
+                    self.update_idletasks()
                     time.sleep(1)  # Wait for 1 second before the next attempt
         # Delete the 'TERATERM.ini.bak' file
         if backup_file_path.exists() and not TeraTermUI.checkIfProcessRunning("ttermpro"):
@@ -7032,8 +7042,8 @@ class TeraTermUI(customtkinter.CTk):
 
     def check_process_periodically(self):
         import random
-		
-		self.update_idletasks()
+
+        self.update_idletasks()
         time.sleep(30 + random.randint(5, 20))
         not_running_count = 0
         while self.is_check_process_thread_running and not self.stop_is_check_process.is_set():
@@ -7059,7 +7069,7 @@ class TeraTermUI(customtkinter.CTk):
                     if not_running_count > 1:
                         self.is_idle_thread_running = False
                         self.reset_activity_timer()
-			self.update_idletasks()
+            self.update_idletasks()
             time.sleep(30 + random.randint(5, 20))
 
     # Starts the check for idle thread
@@ -7127,7 +7137,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.stop_check_idle.is_set()
                 if self.idle_num_check == 12:
                     break
-				self.update_idletasks()
+                self.update_idletasks()
                 time.sleep(30)
         except Exception as e:
             print("An error occurred: ", e)
