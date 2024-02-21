@@ -2703,8 +2703,7 @@ class TeraTermUI(customtkinter.CTk):
                                 title="Use plain password to log in", control_type="RadioButton")
                             if not radio.is_selected():
                                 radio.click()
-                            conn = self.uprb.UprbayTeraTermVt.child_window(title="OK", control_type="Button")
-                            conn.click()
+                            self.uprb.UprbayTeraTermVt.child_window(title="OK", control_type="Button").click()
                             self.server_status = self.wait_for_prompt(
                                 "return to continue", "REGRESE PRONTO")
                             if self.server_status == "Maintenance message found":
@@ -2914,21 +2913,18 @@ class TeraTermUI(customtkinter.CTk):
                             disconnected = self.uprb.window(title="Tera Term - [disconnected] VT")
                             disconnected.wait("visible", timeout=5)
                             if new_connection:
-                                self.new_connection(disconnected)
+                                TeraTermUI.new_connection(disconnected)
                             host_input = self.uprb.TeraTermDisconnectedVt.child_window(
                                 title="Host:", control_type="Edit")
                             if host_input.get_value() != "uprbay.uprb.edu":
                                 host_input.set_text("uprbay.uprb.edu")
-                            conn = self.uprb.TeraTermDisconnectedVt.child_window(title="OK", control_type="Button")
-                            conn.click()
+                            self.uprb.TeraTermDisconnectedVt.child_window(title="OK", control_type="Button").click()
                             self.uprbay_window = self.uprb.window(
                                 title="uprbay.uprb.edu - Tera Term VT", class_name="VTWin32")
                             self.uprbay_window.wait("visible", timeout=5)
                             if self.uprbay_window.child_window(title="Continue", control_type="Button").exists(
                                     timeout=1):
-                                continue_button = self.uprbay_window.child_window(
-                                    title="Continue", control_type="Button")
-                                continue_button.click()
+                                self.uprbay_window.child_window(title="Continue", control_type="Button").click()
                             if not self.skip_auth:
                                 self.bind("<Return>", lambda event: self.auth_event_handler())
                                 self.after(0, self.initialization_auth)
@@ -2954,7 +2950,7 @@ class TeraTermUI(customtkinter.CTk):
                 if "catching classes that do not inherit from BaseException is not allowed" in error_message:
                     print("Caught the specific error message: ", error_message)
                     self.destroy_windows()
-                    
+
                     def rare_error():
                         if not self.disable_audio:
                             winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
@@ -3133,7 +3129,8 @@ class TeraTermUI(customtkinter.CTk):
         self.select_screen_item = edit_menu.child_window(
             title="Select screen", control_type="MenuItem", auto_id="50280")
 
-    def new_connection(self, window):
+    @staticmethod
+    def new_connection(window):
         new_connection = window.child_window(title="Tera Term: New connection")
         new_connection.wait("visible", timeout=5)
         tcp_ip_radio = new_connection.child_window(title="TCP/IP", control_type="RadioButton")
