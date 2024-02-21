@@ -2954,6 +2954,7 @@ class TeraTermUI(customtkinter.CTk):
                 if "catching classes that do not inherit from BaseException is not allowed" in error_message:
                     print("Caught the specific error message: ", error_message)
                     self.destroy_windows()
+                    
                     def rare_error():
                         if not self.disable_audio:
                             winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
@@ -2962,7 +2963,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.bind("<Return>", lambda event: self.login_event_handler())
                         if self.log_in.cget("state") == "disabled":
                             self.log_in.configure(state="normal")
-                            
+
                     self.error_occurred = False
                     self.after(50, rare_error)
                 else:
