@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/20/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/21/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1203,6 +1203,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(classes)
                                     self.uprb.UprbayTeraTermVt.type_keys(section)
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+									self.update_idletasks()
                                     time.sleep(1.5)
                                     text = self.capture_screenshot()
                                     enrolled_classes = "ENROLLED"
@@ -1223,6 +1224,7 @@ class TeraTermUI(customtkinter.CTk):
                                             self.e_counter += 1
                                         if choice == "register":
                                             self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+											self.update_idletasks()
                                             time.sleep(1)
                                             self.add_enrolled_classes_list(section, classes)
                                             self.after(100, self.show_success_message, 350, 265,
@@ -1968,6 +1970,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                     else:
                                         self.uprb.UprbayTeraTermVt.type_keys("{TAB}")
+								self.update_idletasks()
                                 time.sleep(1.5)
                                 text = self.capture_screenshot()
                                 dropped_classes = "DROPPED"
@@ -2001,11 +2004,13 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(2500, self.show_enrollment_error_information_multiple, text)
                                     if "CONFIRMED" in text and "DROPPED" in text:
                                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+										self.update_idletasks()
                                         time.sleep(1)
                                         self.after(100, self.show_success_message, 350, 265,
                                                    translation["enrolled_dropped_multiple_success"])
                                     elif "CONFIRMED" in text and "DROPPED" not in text:
                                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+										self.update_idletasks()
                                         time.sleep(1)
                                         self.after(100, self.show_success_message, 350, 265,
                                                    translation["enrolled_multiple_success"])
@@ -3030,7 +3035,8 @@ class TeraTermUI(customtkinter.CTk):
         skip = False
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        while not self.tesseract_unzipped:
+        while not self.tesseract_unzipped:\
+			self.update_idletasks()
             time.sleep(0.5)
             timeout_counter += 1
             if timeout_counter > 7:
@@ -4052,6 +4058,7 @@ class TeraTermUI(customtkinter.CTk):
             elif current_y > target_y:
                 current_y -= min(step_size, current_y - target_y)
             window.moveTo(current_x, current_y)
+			self.update_idletasks()
             time.sleep(delay_time)
 
     def initialization_auth(self):
@@ -4792,7 +4799,8 @@ class TeraTermUI(customtkinter.CTk):
     def capture_screenshot(self):
         import pyautogui
         import win32gui
-
+		
+		self.update_idletasks()
         time.sleep(1)
         lang = self.language_menu.get()
         translation = self.load_language(lang)
@@ -4976,7 +4984,6 @@ class TeraTermUI(customtkinter.CTk):
         self.focus_set()
         self.clipboard_clear()
         self.clipboard_append(cell_value)
-        self.update()
 
         # Close existing tooltip if any
         if self.tooltip:
@@ -5976,6 +5983,7 @@ class TeraTermUI(customtkinter.CTk):
                                                           translation["course"]].replace("-", "")[8:]
                                     if mod == translation["drop"] or mod == translation["section"]:
                                         if not first_loop:
+											self.update_idletasks()
                                             time.sleep(1.5)
                                             text_output = self.capture_screenshot()
                                             enrolled_classes = "ENROLLED"
@@ -6034,6 +6042,7 @@ class TeraTermUI(customtkinter.CTk):
                                                 self.add_enrolled_classes_list(section, course_code_no_section)
                                 self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                 self.reset_activity_timer()
+								self.update_idletasks()
                                 time.sleep(1.5)
                                 text_output = self.capture_screenshot()
                                 self.reset_activity_timer()
@@ -6064,6 +6073,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.clipboard_clear()
                                     if clipboard_content is not None:
                                         self.clipboard_append(clipboard_content)
+									self.update_idletasks()
                                     time.sleep(1)
                                 except Exception as e:
                                     print("An error occurred: ", e)
@@ -6209,6 +6219,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # checks whether the program can continue its normal execution or if the server is on maintenance
     def wait_for_prompt(self, prompt_text, maintenance_text, timeout=15):
+		self.update_idletasks()
         time.sleep(1)
         start_time = time.time()
         while True:
@@ -6219,6 +6230,7 @@ class TeraTermUI(customtkinter.CTk):
                 return "Prompt found"
             elif time.time() - start_time > timeout:
                 return "Timeout"
+			self.update_idletasks()
             time.sleep(0.5)  # Adjust the delay between screenshots as needed
 
     def wait_for_window(self):
@@ -6402,6 +6414,7 @@ class TeraTermUI(customtkinter.CTk):
                     shutil.rmtree(tesseract_dir)
                     break  # If the directory was deleted successfully, exit the loop
                 except PermissionError:
+					self.update_idletasks()
                     time.sleep(1)  # Wait for 1 second before the next attempt
         # Delete the 'TERATERM.ini.bak' file
         if backup_file_path.exists() and not TeraTermUI.checkIfProcessRunning("ttermpro"):
@@ -7019,7 +7032,8 @@ class TeraTermUI(customtkinter.CTk):
 
     def check_process_periodically(self):
         import random
-
+		
+		self.update_idletasks()
         time.sleep(30 + random.randint(5, 20))
         not_running_count = 0
         while self.is_check_process_thread_running and not self.stop_is_check_process.is_set():
@@ -7045,6 +7059,7 @@ class TeraTermUI(customtkinter.CTk):
                     if not_running_count > 1:
                         self.is_idle_thread_running = False
                         self.reset_activity_timer()
+			self.update_idletasks()
             time.sleep(30 + random.randint(5, 20))
 
     # Starts the check for idle thread
@@ -7112,6 +7127,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.stop_check_idle.is_set()
                 if self.idle_num_check == 12:
                     break
+				self.update_idletasks()
                 time.sleep(30)
         except Exception as e:
             print("An error occurred: ", e)
