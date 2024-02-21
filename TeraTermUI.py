@@ -977,52 +977,55 @@ class TeraTermUI(customtkinter.CTk):
             ctypes.windll.user32.BlockInput(False)
 
     def student_info_frame(self):
-        lang = self.language_menu.get()
-        self.initialization_multiple()
-        self.tabview.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 85))
-        self.tabview.tab(self.enroll_tab).grid_columnconfigure(1, weight=2)
-        self.tabview.tab(self.search_tab).grid_columnconfigure(1, weight=2)
-        self.search_scrollbar.grid_columnconfigure(1, weight=2)
-        self.tabview.tab(self.other_tab).grid_columnconfigure(1, weight=2)
-        self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 20))
-        self.t_buttons_frame.grid_columnconfigure(1, weight=2)
-        self.title_enroll.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-        self.e_classes.grid(row=1, column=1, padx=(0, 188), pady=(0, 0))
-        self.e_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0))
-        if lang == "English":
-            self.e_section.grid(row=2, column=1, padx=(0, 199), pady=(20, 0))
-        elif lang == "Español":
-            self.e_section.grid(row=2, column=1, padx=(0, 202), pady=(20, 0))
-        self.e_section_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0))
-        self.e_semester.grid(row=3, column=1, padx=(0, 211), pady=(20, 0))
-        self.e_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0))
-        self.register.grid(row=4, column=1, padx=(0, 60), pady=(15, 0))
-        self.drop.grid(row=4, column=1, padx=(140, 0), pady=(15, 0))
-        self.submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
-        self.search_scrollbar.grid(row=0, column=1, padx=(0, 0), pady=(0, 0), sticky="nsew")
-        self.title_search.grid(row=0, column=1, padx=(0, 0), pady=(0, 20), sticky="n")
-        self.s_classes.grid(row=1, column=1, padx=(0, 550), pady=(0, 0), sticky="n")
-        self.s_classes_entry.grid(row=1, column=1, padx=(0, 425), pady=(0, 0), sticky="n")
-        self.s_semester.grid(row=1, column=1, padx=(0, 270), pady=(0, 0), sticky="n")
-        self.s_semester_entry.grid(row=1, column=1, padx=(0, 120), pady=(0, 0), sticky="n")
-        if lang == "English":
-            self.show_all.grid(row=1, column=1, padx=(85, 0), pady=(2, 0), sticky="n")
-        elif lang == "Español":
-            self.show_all.grid(row=1, column=1, padx=(85, 0), pady=(0, 7), sticky="n")
-        self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
-        self.title_menu.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-        self.explanation_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-        if lang == "English":
-            self.menu.grid(row=2, column=1, padx=(0, 184), pady=(10, 0))
-        elif lang == "Español":
-            self.menu.grid(row=2, column=1, padx=(0, 194), pady=(10, 0))
-        self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0))
-        self.menu_semester.grid(row=3, column=1, padx=(0, 211), pady=(20, 0))
-        self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0))
-        self.menu_submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
-        self.back_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
-        self.show_classes.grid(row=4, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
-        self.multiple.grid(row=4, column=2, padx=(10, 0), pady=(0, 0), sticky="e")
+        if not self.init_multiple:
+            lang = self.language_menu.get()
+            self.tabview.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 85))
+            self.tabview.tab(self.enroll_tab).grid_columnconfigure(1, weight=2)
+            self.tabview.tab(self.search_tab).grid_columnconfigure(1, weight=2)
+            self.search_scrollbar.grid_columnconfigure(1, weight=2)
+            self.tabview.tab(self.other_tab).grid_columnconfigure(1, weight=2)
+            self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 20))
+            self.t_buttons_frame.grid_columnconfigure(1, weight=2)
+            self.title_enroll.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
+            self.e_classes.grid(row=1, column=1, padx=(0, 188), pady=(0, 0))
+            self.e_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0))
+            if lang == "English":
+                self.e_section.grid(row=2, column=1, padx=(0, 199), pady=(20, 0))
+            elif lang == "Español":
+                self.e_section.grid(row=2, column=1, padx=(0, 202), pady=(20, 0))
+            self.e_section_entry.grid(row=2, column=1, padx=(0, 0), pady=(20, 0))
+            self.e_semester.grid(row=3, column=1, padx=(0, 211), pady=(20, 0))
+            self.e_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0))
+            self.register.grid(row=4, column=1, padx=(0, 60), pady=(15, 0))
+            self.drop.grid(row=4, column=1, padx=(140, 0), pady=(15, 0))
+            self.submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
+            self.search_scrollbar.grid(row=0, column=1, padx=(0, 0), pady=(0, 0), sticky="nsew")
+            self.title_search.grid(row=0, column=1, padx=(0, 0), pady=(0, 20), sticky="n")
+            self.s_classes.grid(row=1, column=1, padx=(0, 550), pady=(0, 0), sticky="n")
+            self.s_classes_entry.grid(row=1, column=1, padx=(0, 425), pady=(0, 0), sticky="n")
+            self.s_semester.grid(row=1, column=1, padx=(0, 270), pady=(0, 0), sticky="n")
+            self.s_semester_entry.grid(row=1, column=1, padx=(0, 120), pady=(0, 0), sticky="n")
+            if lang == "English":
+                self.show_all.grid(row=1, column=1, padx=(85, 0), pady=(2, 0), sticky="n")
+            elif lang == "Español":
+                self.show_all.grid(row=1, column=1, padx=(85, 0), pady=(0, 7), sticky="n")
+            self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
+            self.title_menu.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
+            self.explanation_menu.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
+            if lang == "English":
+                self.menu.grid(row=2, column=1, padx=(0, 184), pady=(10, 0))
+            elif lang == "Español":
+                self.menu.grid(row=2, column=1, padx=(0, 194), pady=(10, 0))
+            self.menu_entry.grid(row=2, column=1, padx=(0, 0), pady=(10, 0))
+            self.menu_semester.grid(row=3, column=1, padx=(0, 211), pady=(20, 0))
+            self.menu_semester_entry.grid(row=3, column=1, padx=(0, 0), pady=(20, 0))
+            self.menu_submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
+            self.back_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
+            self.show_classes.grid(row=4, column=1, padx=(0, 0), pady=(0, 0), sticky="n")
+            self.multiple.grid(row=4, column=2, padx=(10, 0), pady=(0, 0), sticky="e")
+        else:
+            self.tabview.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 85))
+            self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 20))
         self.bind("<Control-Tab>", lambda event: self.tab_switcher())
         if self.renamed_tabs is not None:
             if self.renamed_tabs == self.enroll_tab:
@@ -1033,6 +1036,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.tabview.set(self.other_tab)
             self.renamed_tabs = None
             self.after(0, self.switch_tab)
+        self.initialization_multiple()
         self.destroy_student()
 
     def load_saved_classes(self):
@@ -3269,12 +3273,7 @@ class TeraTermUI(customtkinter.CTk):
         self.bind("<Control-Tab>", lambda event: self.tab_switcher())
         self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
         self.tabview.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 85))
-        self.tabview.tab(self.enroll_tab).grid_columnconfigure(1, weight=2)
-        self.tabview.tab(self.search_tab).grid_columnconfigure(1, weight=2)
-        self.search_scrollbar.grid_columnconfigure(1, weight=2)
-        self.tabview.tab(self.other_tab).grid_columnconfigure(1, weight=2)
         self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 20))
-        self.t_buttons_frame.grid_columnconfigure(1, weight=2)
         if self.in_multiple_screen:
             self.multiple_frame.grid_forget()
             self.m_button_frame.grid_forget()
@@ -4092,6 +4091,8 @@ class TeraTermUI(customtkinter.CTk):
     def destroy_auth(self):
         if self.init_auth:
             self.init_auth = False
+            self.authentication_frame.grid_forget()
+            self.a_buttons_frame.grid_forget()
             self.authentication_frame.unbind("<Button-1>")
             self.a_buttons_frame.unbind("<Button-1>")
             self.title_login.unbind("<Button-1>")
@@ -4172,6 +4173,8 @@ class TeraTermUI(customtkinter.CTk):
     def destroy_student(self):
         if self.init_student:
             self.init_student = False
+            self.student_frame.grid_forget()
+            self.s_buttons_frame.grid_forget()
             self.student_frame.unbind("<Button-1>")
             self.s_buttons_frame.unbind("<Button-1>")
             self.title_student.unbind("<Button-1>")
