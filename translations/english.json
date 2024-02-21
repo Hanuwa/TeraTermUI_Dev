@@ -68,7 +68,7 @@
 	"register_tooltip": "Enroll class",
 	"drop_tooltip": "Drop class",
 	"username_tooltip": "The university requires this to\ndetermine the role of the user\naccessing the system",
-	"student_id_tooltip": "Required to log-in,\ninformation gets encrypted\n(You can also use your ssn)",
+	"student_id_tooltip": "Required to enter the system.\nInformation gets encrypted\n(You can also use your ssn)",
 	"code_tooltip": "4 digit code included in the\npre-enrollment ticket email",
 	"back_tooltip": "Go back to the home screen\n of the application",
 	"back_multiple": "Go back to the previous\nscreen",
