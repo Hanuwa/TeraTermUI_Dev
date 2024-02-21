@@ -924,7 +924,8 @@ class TeraTermUI(customtkinter.CTk):
                             self.start_check_idle_thread()
                             self.start_check_process_thread()
                             self.after(0, self.initialization_class)
-                            self.after(100, self.student_info_frame)
+                            self.after(0, self.destroy_student)
+                            self.after(50, self.student_info_frame)
                             self.run_fix = True
                             if self.help is not None and self.help.winfo_exists():
                                 self.fix.configure(state="normal")
@@ -1037,7 +1038,6 @@ class TeraTermUI(customtkinter.CTk):
             self.renamed_tabs = None
             self.after(0, self.switch_tab)
         self.initialization_multiple()
-        self.destroy_student()
 
     def load_saved_classes(self):
         lang = self.language_menu.get()
@@ -1610,11 +1610,11 @@ class TeraTermUI(customtkinter.CTk):
                                 ctypes.windll.user32.BlockInput(True)
                                 copy = pyperclip.paste()
                                 enrolled_classes, total_credits = self.extract_my_enrolled_classes(copy)
-                                self.after(0, self.display_enrolled_data, enrolled_classes, total_credits)
+                                self.after(0, self.tabview.grid_forget)
+                                self.after(50, self.display_enrolled_data, enrolled_classes, total_credits)
                                 self.clipboard_clear()
                                 if clipboard_content is not None:
                                     self.clipboard_append(clipboard_content)
-                                self.tabview.grid_forget()
                             else:
                                 self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -1748,7 +1748,13 @@ class TeraTermUI(customtkinter.CTk):
 
     # multiple classes screen
     def multiple_classes_event(self):
-        self.focus_set()
+        self.tabview.grid_forget()
+        self.t_buttons_frame.grid_forget()
+        if self.enrolled_rows is not None:
+            self.my_classes_frame.grid_forget()
+            self.modify_classes_frame.grid_forget()
+            self.back_my_classes.grid_forget()
+            self.destroy_enrolled_frame()
         self.in_enroll_frame = False
         self.in_search_frame = False
         self.in_multiple_screen = True
@@ -1783,13 +1789,6 @@ class TeraTermUI(customtkinter.CTk):
         self.m_remove.grid(row=3, column=3, padx=(20, 0), pady=(0, 0))
         self.save_data.grid(row=0, column=0, padx=(0, 0), pady=(0, 0))
         self.auto_enroll.grid(row=0, column=0, padx=(0, 0), pady=(0, 0))
-        self.tabview.grid_forget()
-        self.t_buttons_frame.grid_forget()
-        if self.enrolled_rows is not None:
-            self.my_classes_frame.grid_forget()
-            self.modify_classes_frame.grid_forget()
-            self.back_my_classes.grid_forget()
-            self.destroy_enrolled_frame()
 
     def detect_change(self, event=None):
         self.cursor.execute("SELECT COUNT(*) FROM save_classes")
@@ -2727,12 +2726,13 @@ class TeraTermUI(customtkinter.CTk):
                                 self.uprb.UprbayTeraTermVt.type_keys("{ENTER 3}")
                                 self.move_window()
                                 self.bind("<Return>", lambda event: self.student_event_handler())
+                                if self.skip_auth:
+                                    self.after(0, self.home_frame.grid_forget)
                                 self.after(0, self.initialization_student)
-                                self.after(100, self.auth_info_frame)
+                                self.after(0, self.destroy_auth)
+                                self.after(50, self.auth_info_frame)
                                 self.in_auth_frame = False
                                 self.in_student_frame = True
-                                if self.skip_auth:
-                                    self.home_frame.grid_forget()
                             elif self.server_status == "Timeout":
                                 def timeout():
                                     if not self.skip_auth:
@@ -2789,7 +2789,6 @@ class TeraTermUI(customtkinter.CTk):
         self.show.grid(row=4, column=1, padx=(10, 0), pady=(0, 10))
         self.back_student.grid(row=5, column=0, padx=(0, 10), pady=(0, 0))
         self.system.grid(row=5, column=1, padx=(10, 0), pady=(0, 0))
-        self.destroy_auth()
         if self.ask_skip_auth and not self.skipped_login:
             self.unbind("<Return>")
             self.unbind("<Control-BackSpace>")
@@ -2933,7 +2932,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.bind("<Return>", lambda event: self.auth_event_handler())
                                 self.after(0, self.initialization_auth)
                                 self.in_auth_frame = True
-                            self.after(100, self.login_frame)
+                            self.after(50, self.login_frame)
                         except AppStartError as e:
                             print("An error occurred: ", e)
                             self.bind("<Return>", lambda event: self.login_event_handler())
@@ -2997,6 +2996,7 @@ class TeraTermUI(customtkinter.CTk):
     def login_frame(self):
         lang = self.language_menu.get()
         if not self.skip_auth:
+            self.home_frame.grid_forget()
             self.authentication_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
             self.authentication_frame.grid_columnconfigure(2, weight=1)
             self.a_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 40))
@@ -3012,7 +3012,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.username_entry.grid(row=3, column=0, padx=(60, 0), pady=(0, 10))
             self.back.grid(row=4, column=0, padx=(0, 10), pady=(0, 0))
             self.auth.grid(row=4, column=1, padx=(10, 0), pady=(0, 0))
-            self.home_frame.grid_forget()
         else:
             self.log_in.configure(state="disabled")
             self.auth_event_handler()
@@ -3040,7 +3039,7 @@ class TeraTermUI(customtkinter.CTk):
             self.connect_to_uprb()
             self.bind("<Return>", lambda event: self.auth_event_handler())
             self.after(0, self.initialization_auth)
-            self.after(100, self.login_frame)
+            self.after(50, self.login_frame)
             self.in_auth_frame = True
         elif TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT") and not skip:
             term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
@@ -3074,8 +3073,9 @@ class TeraTermUI(customtkinter.CTk):
                     self.uprb.UprbayTeraTermVt.type_keys("{VK_LEFT}")
                 self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
                 self.bind("<Return>", lambda event: self.student_event_handler())
+                self.home_frame.grid_forget()
                 self.after(0, self.initialization_student)
-                self.after(100, self.auth_info_frame)
+                self.after(50, self.auth_info_frame)
                 self.in_student_frame = True
                 self.skipped_login = True
                 self.main_menu = False
@@ -3084,7 +3084,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.language_menu.configure(state="disabled")
                 self.intro_box.stop_autoscroll(event=None)
                 self.language_menu_tooltip.show()
-                self.home_frame.grid_forget()
                 self.slideshow_frame.pause_cycle()
                 self.move_window()
             elif "STUDENTS REQ/DROP" in text_output or "HOLD FLAGS" in text_output or \
@@ -3094,9 +3093,10 @@ class TeraTermUI(customtkinter.CTk):
                 self.uprb.UprbayTeraTermVt.type_keys("{VK_RIGHT}")
                 self.uprb.UprbayTeraTermVt.type_keys("{VK_LEFT}")
                 self.connect_to_uprb()
+                self.home_frame.grid_forget()
                 self.after(0, self.initialization_class)
-                self.after(0, self.initialization_multiple)
-                self.after(100, self.student_info_frame)
+                self.after(50, self.student_info_frame)
+                self.after(100, self.initialization_multiple)
                 self.reset_activity_timer()
                 self.start_check_idle_thread()
                 self.start_check_process_thread()
@@ -3109,7 +3109,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.language_menu.configure(state="disabled")
                 self.intro_box.stop_autoscroll(event=None)
                 self.language_menu_tooltip.show()
-                self.home_frame.grid_forget()
                 self.slideshow_frame.pause_cycle()
                 self.switch_tab()
                 self.move_window()
@@ -3198,8 +3197,6 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<Control-Tab>")
             self.unbind("<Control-BackSpace>")
             self.bind("<Return>", lambda event: self.login_event_handler())
-            if not self.home_frame.grid_info():
-                self.home_frame.grid(row=0, column=1, rowspan=5, columnspan=5, padx=(0, 0), pady=(10, 0))
             if self.in_auth_frame:
                 self.destroy_auth()
             elif self.in_student_frame:
@@ -3226,6 +3223,8 @@ class TeraTermUI(customtkinter.CTk):
             self.intro_box.reset_autoscroll()
             if not self.intro_box.disabled_autoscroll:
                 self.intro_box.restart_autoscroll()
+            if not self.home_frame.grid_info():
+                self.home_frame.grid(row=0, column=1, rowspan=5, columnspan=5, padx=(0, 0), pady=(10, 0))
             if self.help is not None and self.help.winfo_exists():
                 self.fix.configure(state="disabled")
                 self.files.configure(state="normal")
@@ -3272,8 +3271,6 @@ class TeraTermUI(customtkinter.CTk):
         self.unbind("<Control-S>")
         self.bind("<Control-Tab>", lambda event: self.tab_switcher())
         self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
-        self.tabview.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 85))
-        self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 20))
         if self.in_multiple_screen:
             self.multiple_frame.grid_forget()
             self.m_button_frame.grid_forget()
@@ -3284,7 +3281,10 @@ class TeraTermUI(customtkinter.CTk):
             self.modify_classes_frame.grid_forget()
             self.back_my_classes.grid_forget()
             self.destroy_enrolled_frame()
-            self.after(100, self.enable_widgets, self)
+        self.tabview.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 85))
+        self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 20))
+        self.back_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
+        self.after(100, self.enable_widgets, self)
         self.switch_tab()
         self.in_multiple_screen = False
 
