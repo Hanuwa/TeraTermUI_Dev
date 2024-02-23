@@ -74,7 +74,7 @@ class CTkScrollbar(CTkBaseClass):
         self._motion_center_offset = 0
         self._last_motion_time = 0
         self._last_event_position = 0
-        self._motion_refresh_rate = 0.02
+        self._motion_refresh_rate =  0.0275
 
         self._canvas = CTkCanvas(master=self,
                                  highlightthickness=0,
@@ -91,6 +91,8 @@ class CTkScrollbar(CTkBaseClass):
         if sequence is None:
             self._canvas.tag_bind("border_parts", "<Button-1>", self._clicked)
             self._canvas.tag_bind("scrollbar_parts", "<Button-1>", self._clicked_scrollbar)
+        if sequence is None or sequence == "<ButtonRelease-1>":
+            self._canvas.bind("<ButtonRelease-1>", self._on_release)
         if sequence is None or sequence == "<Enter>":
             self._canvas.bind("<Enter>", self._on_enter)
         if sequence is None or sequence == "<Leave>":
@@ -233,6 +235,9 @@ class CTkScrollbar(CTkBaseClass):
                                 outline=self._apply_appearance_mode(self._button_color),
                                 fill=self._apply_appearance_mode(self._button_color))
 
+    def _on_release(self, event):
+        self.update_idletasks()
+
     def _clicked(self, event):
         self._motion_center_offset = 0
         self._on_motion(event)
@@ -247,14 +252,13 @@ class CTkScrollbar(CTkBaseClass):
         center = self._start_value + ((self._end_value - self._start_value) * 0.5)
         self._motion_center_offset = center - value
 
-
     def _adjust_refresh_rate(self, speed):
         # Define the speed range and corresponding refresh rate range
         min_speed = 400   # Minimum speed
         max_speed = 1000   # Maximum speed
-        min_rate = 0.015  # Corresponding refresh rate for minimum speed
-        mid_rate = 0.0175  # Corresponding refresh rate for medium speed
-        max_rate = 0.02  # Corresponding refresh rate for maximum speed
+        min_rate = 0.0225  # Corresponding refresh rate for minimum speed
+        mid_rate = 0.0250   # Corresponding refresh rate for medium speed
+        max_rate = 0.0275  # Corresponding refresh rate for maximum speed
 
         # Linear interpolation of refresh rate based on speed
         if speed < min_speed:
