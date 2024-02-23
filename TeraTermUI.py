@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/21/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/23/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -4998,6 +4998,7 @@ class TeraTermUI(customtkinter.CTk):
         label = tk.Label(self.tooltip, text=translation["clipboard"],
                          bg="#145DA0", fg="#fff", font=("Arial", 10, "bold"))
         label.pack(padx=5, pady=5)
+        self.update_idletasks()
 
         # Auto-destroy after 1.5 seconds and reset the tooltip variable
         self.tooltip.after(1500, self.destroy_tooltip)
