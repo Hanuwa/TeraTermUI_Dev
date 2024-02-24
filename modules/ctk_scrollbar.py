@@ -74,7 +74,7 @@ class CTkScrollbar(CTkBaseClass):
         self._motion_center_offset = 0
         self._last_motion_time = 0
         self._last_event_position = 0
-        self._motion_refresh_rate =  0.0150
+        self._motion_refresh_rate =  0.0175
 
         self._canvas = CTkCanvas(master=self,
                                  highlightthickness=0,
@@ -256,7 +256,7 @@ class CTkScrollbar(CTkBaseClass):
         # Define the speed and refresh rate ranges
         min_speed = 400  # Minimum speed
         max_speed = 1000  # Maximum speed
-        min_rate = 0.0150  # Refresh rate for minimum speed
+        min_rate = 0.0175  # Refresh rate for minimum speed
         max_rate = 0.0275  # Refresh rate for maximum speed
 
         # Calculate the slope of the line
