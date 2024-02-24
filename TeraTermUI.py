@@ -6256,7 +6256,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.enrolled_classes_list.clear()
                 self.dropped_classes_list.clear()
             self.connect_to_uprb()
-            if TeraTermUI.window_exists("SSH Authentication") and \
+            if not TeraTermUI.window_exists("SSH Authentication") and \
                     not TeraTermUI.window_exists("Tera Term - [disconnected] VT"):
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
@@ -6267,18 +6267,7 @@ class TeraTermUI(customtkinter.CTk):
                 text_output = self.capture_screenshot()
                 to_continue = "return to continue"
                 count_to_continue = text_output.count(to_continue)
-                if "REGRESE PRONTO" in text_output:
-                    def server_closed():
-                        if not self.disable_audio:
-                            winsound.PlaySound("sounds/error.wav", winsound.SND_ASYNC)
-                        CTkMessagebox(title=translation["server_maintenance_title"],
-                                      message=translation["server_maintenance"], icon="cancel", button_width=380)
-                        self.bind("<Return>", lambda event: self.login_event_handler())
-                        self.uprb.kill(soft=True)
-
-                    self.after(125, server_closed)
-                    return
-                elif "return to continue" in text_output or "SISTEMA DE INFORMACION" in text_output:
+                if "return to continue" in text_output or "SISTEMA DE INFORMACION" in text_output:
                     if "return to continue" in text_output and "Loading" in text_output:
                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER 3}")
                     elif count_to_continue == 2 or "ZZZ" in text_output:
