@@ -6258,8 +6258,6 @@ class TeraTermUI(customtkinter.CTk):
             self.connect_to_uprb()
             if not TeraTermUI.window_exists("SSH Authentication") and \
                     not TeraTermUI.window_exists("Tera Term - [disconnected] VT"):
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
                 tera_term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                 if tera_term_window.isMinimized:
                     tera_term_window.restore()
