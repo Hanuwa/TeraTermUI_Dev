@@ -6275,7 +6275,7 @@ class TeraTermUI(customtkinter.CTk):
                     else:
                         self.uprb.UprbayTeraTermVt.type_keys("{VK_RIGHT}")
                         self.uprb.UprbayTeraTermVt.type_keys("{VK_LEFT}")
-                self.move_window()
+            self.move_window()
 
     # checks whether the user has the requested file
     @staticmethod
