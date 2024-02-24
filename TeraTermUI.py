@@ -1424,13 +1424,6 @@ class TeraTermUI(customtkinter.CTk):
                                 if data or course_found or invalid_action or y_n_found:
                                     self.search_function_counter += 1
                                 if classes in copy and show_all == y_n_value and semester == term_value:
-                                    self.get_class_for_pdf = classes
-                                    self.get_semester_for_pdf = semester
-                                    self.show_all_sections = show_all
-                                    self.after(0, self.display_data, data)
-                                    self.clipboard_clear()
-                                    if clipboard_content is not None:
-                                        self.clipboard_append(clipboard_content)
                                     if "MORE SECTIONS" in text_output:
                                         self.after(0, self.search_next_page_layout)
                                     else:
@@ -1441,6 +1434,13 @@ class TeraTermUI(customtkinter.CTk):
                                             self.search_next_page_status = False
 
                                         self.after(0, hide_next_button)
+                                    self.get_class_for_pdf = classes
+                                    self.get_semester_for_pdf = semester
+                                    self.show_all_sections = show_all
+                                    self.after(0, self.display_data, data)
+                                    self.clipboard_clear()
+                                    if clipboard_content is not None:
+                                        self.clipboard_append(clipboard_content)
                                     return
                             if self.search_function_counter == 0:
                                 self.uprb.UprbayTeraTermVt.type_keys(classes)
@@ -5017,8 +5017,7 @@ class TeraTermUI(customtkinter.CTk):
     def transfer_class_data_to_enroll_tab(self, event, section_text):
         self.e_classes_entry.delete(0, "end")
         self.e_section_entry.delete(0, "end")
-        current_table_index = self.current_table_index
-        display_class, _, semester_text, _, _, _ = self.class_table_pairs[current_table_index]
+        display_class, _, semester_text, _, _, _ = self.class_table_pairs[self.current_table_index]
         self.e_classes_entry.insert(0, display_class.cget("text"))
         self.e_section_entry.insert(0, section_text)
         self.e_semester_entry.set(semester_text)
@@ -5268,10 +5267,15 @@ class TeraTermUI(customtkinter.CTk):
                 self.table_tooltips[cell].destroy()
                 del self.table_tooltips[cell]
         if more_sections:
-            self.search_next_page.grid_forget()
-            self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
-            self.search.configure(width=140)
-            self.search_next_page_status = False
+            next_index = min(self.current_table_index + 1, len(self.class_table_pairs) - 1)
+            prev_index = max(self.current_table_index - 1, 0)
+            next_has_more = self.class_table_pairs[next_index][5] if next_index != self.current_table_index else False
+            prev_has_more = self.class_table_pairs[prev_index][5] if prev_index != self.current_table_index else False
+            if not next_has_more and not prev_has_more:
+                self.search_next_page.grid_forget()
+                self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
+                self.search.configure(width=140)
+                self.search_next_page_status = False
         self.after(0, display_class_to_remove.destroy)
         self.after(0, table_to_remove.destroy)
         if len(self.class_table_pairs) == 10:
