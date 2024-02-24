@@ -5266,7 +5266,7 @@ class TeraTermUI(customtkinter.CTk):
             if cell in self.table_tooltips:
                 self.table_tooltips[cell].destroy()
                 del self.table_tooltips[cell]
-        if more_sections:
+        if more_sections and self.search_next_page.grid_info():
             next_index = min(self.current_table_index + 1, len(self.class_table_pairs) - 1)
             prev_index = max(self.current_table_index - 1, 0)
             next_has_more = self.class_table_pairs[next_index][5] if next_index != self.current_table_index else False
