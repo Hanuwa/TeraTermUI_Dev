@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/23/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/24/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -585,7 +585,7 @@ class TeraTermUI(customtkinter.CTk):
         # Database
         try:
             db_path = "database.db"
-            if not os.path.isfile(db_path):
+            if not os.path.isfile(db_path) or not os.access(db_path, os.R_OK):
                 raise Exception("Database file not found.")
             en_path = "translations/english.json"
             es_path = "translations/spanish.json"
@@ -711,7 +711,7 @@ class TeraTermUI(customtkinter.CTk):
             es_path = "translations/spanish.json"
             print(f"An unexpected error occurred: {e}")
             self.log_error(e)
-            if not os.path.isfile(db_path):
+            if not os.path.isfile(db_path) or not os.access(db_path, os.R_OK):
                 if language_id & 0xFF == SPANISH:
                     messagebox.showerror("Error", "¡Error Fatal! Problema en inicializar la base de"
                                                   " datos.\nEs posible que necesite reinstalar la aplicación")
