@@ -71,6 +71,7 @@ class CTkScrollbar(CTkBaseClass):
         self._start_value: float = 0  # 0 to 1
         self._end_value: float = 1  # 0 to 1
         self._minimum_pixel_length = minimum_pixel_length
+        self._last_refresh_time = time.time()
         self._motion_center_offset = 0
         self._last_motion_time = 0
         self._last_event_position = 0
@@ -283,17 +284,19 @@ class CTkScrollbar(CTkBaseClass):
 
             # Calculate scrolling speed (position units per second)
             speed = position_diff / time_diff if time_diff > 0 else 0
-            self._adjust_refresh_rate(speed)
 
-            # Your existing code for handling scrollbar movement
+            # Time-based throttling for refresh rate adjustment
+            refresh_rate_adjustment_interval = 0.1
+            if current_time - self._last_refresh_time > refresh_rate_adjustment_interval:
+                self._adjust_refresh_rate(speed)
+                self._last_refresh_time = current_time
+
             if self._orientation == "vertical":
                 value = self._reverse_widget_scaling(((event.y - self._border_spacing) /
-                                                      (
-                                                                  self._current_height - 2 * self._border_spacing))) + self._motion_center_offset
+                                                      (self._current_height - 2 * self._border_spacing))) + self._motion_center_offset
             else:
                 value = self._reverse_widget_scaling(((event.x - self._border_spacing) /
-                                                      (
-                                                                  self._current_width - 2 * self._border_spacing))) + self._motion_center_offset
+                                                      (self._current_width - 2 * self._border_spacing))) + self._motion_center_offset
 
             current_scrollbar_length = self._end_value - self._start_value
             value = max(current_scrollbar_length / 2, min(value, 1 - (current_scrollbar_length / 2)))
