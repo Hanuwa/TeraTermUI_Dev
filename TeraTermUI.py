@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/24/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/25/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -105,7 +105,7 @@ class TeraTermUI(customtkinter.CTk):
         screen_height = self.winfo_screenheight()
         x = (screen_width - width * scaling_factor) / 2
         y = (screen_height - height * scaling_factor) / 2
-        self.geometry(f"{width}x{height}+{int(x) + 130}+{int(y + 50)}")
+        self.geometry(f"{width}x{height}+{int(x) + 125}+{int(y + 50)}")
         self.icon_path = "images/tera-term.ico"
         self.iconbitmap(self.icon_path)
         self.mode = "Portable"
@@ -634,7 +634,7 @@ class TeraTermUI(customtkinter.CTk):
                 if float(results["scaling"]) != 100.0:
                     x = (screen_width - width * scaling_factor) / 2
                     y = (screen_height - height * scaling_factor) / 2
-                    self.geometry(f"{width}x{height}+{int(x) + 130}+{int(y + 50)}")
+                    self.geometry(f"{width}x{height}+{int(x) + 125}+{int(y + 50)}")
                     self.scaling_slider.set(float(results["scaling"]))
                     self.change_scaling_event(float(results["scaling"]))
             if results["audio"] == "Disabled":
@@ -3926,16 +3926,17 @@ class TeraTermUI(customtkinter.CTk):
     def create_timer_window(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        width = 335
-        height = 160
-        scaling_factor = self.tk.call("tk", "scaling")
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        x = (screen_width - width * scaling_factor) / 2
-        y = (screen_height - height * scaling_factor) / 2
+        main_window_x = self.winfo_x()
+        main_window_y = self.winfo_y()
+        main_window_width = self.winfo_width()
+        main_window_height = self.winfo_height()
+        timer_window_width = 335
+        timer_window_height = 160
+        center_x = main_window_x + (main_window_width // 2) - (timer_window_width // 2)
+        center_y = main_window_y + (main_window_height // 2) - (timer_window_height // 2)
         self.timer_window = SmoothFadeToplevel(fade_duration=15)
+        self.timer_window.geometry(f"{timer_window_width}x{timer_window_height}+{center_x + 70}+{center_y - 15}")
         self.timer_window.title(translation["auto_enroll"])
-        self.timer_window.geometry(f"{width}x{height}+{int(x) + 130}+{int(y)}")
         self.timer_window.attributes("-alpha", 0.90)
         self.timer_window.resizable(False, False)
         self.timer_window.iconbitmap(self.icon_path)
