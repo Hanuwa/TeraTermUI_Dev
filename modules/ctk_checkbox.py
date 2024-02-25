@@ -41,6 +41,7 @@ class CTkCheckBox(CTkBaseClass):
                  onvalue: Union[int, str] = 1,
                  offvalue: Union[int, str] = 0,
                  variable: Union[tkinter.Variable, None] = None,
+                 canvas_takefocus: bool = True,
                  **kwargs):
 
         # transfer basic functionality (_bg_color, size, __appearance_mode, scaling) to CTkBaseClass
@@ -97,7 +98,7 @@ class CTkCheckBox(CTkBaseClass):
         self._bg_canvas.grid(row=0, column=0, columnspan=3, sticky="nswe")
 
         self._canvas = CTkCanvas(master=self,
-                                 takefocus=True,
+                                 takefocus=canvas_takefocus,
                                  highlightthickness=0,
                                  width=self._apply_widget_scaling(self._checkbox_width),
                                  height=self._apply_widget_scaling(self._checkbox_height))
