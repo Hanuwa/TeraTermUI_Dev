@@ -253,7 +253,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                 self.button1 = customtkinter.CTkCheckBox(self.frame_top, width=self.button_width, font=self.font,
                                                          height=self.button_height,
                                                          text=self.option_text_1,
-                                                         variable=self.button1_var)
+                                                         variable=self.button1_var, canvas_takefocus=False)
                 self.button1.grid(row=2, column=3, sticky="news", padx=(0, 10), pady=10)
                 self.bind("<space>", self.toggle_checkbox)
 
