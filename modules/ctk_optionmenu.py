@@ -147,8 +147,9 @@ class CTkOptionMenu(CTkBaseClass):
         if sequence is None or sequence == "<FocusOut>":
             self._canvas.bind("<FocusOut>", self._on_leave)
             self._text_label.bind("<FocusOut>", self._on_leave)
-        self._canvas.bind("<Key>", self._handle_key_events)
-        self._text_label.bind("<Key>", self._handle_key_events)
+        if sequence is None or sequence == "<Key>":
+            self._canvas.bind("<Key>", self._handle_key_events)
+            self._text_label.bind("<Key>", self._handle_key_events)
 
     def _handle_key_events(self, event):
         if event.keysym == "space":
@@ -159,23 +160,17 @@ class CTkOptionMenu(CTkBaseClass):
             self._select_dropdown_value()
 
     def _toggle_dropdown(self):
-        if self._dropdown_menu.is_open:
-            self._dropdown_menu.close()
-        else:
-            self._open_dropdown_menu()
-            self._dropdown_menu.focus_set()
+        self._open_dropdown_menu()
+        self._dropdown_menu.focus_set()
 
     def _navigate_dropdown(self, direction):
-        if self._dropdown_menu.is_open:
-            if direction == "Up":
-                self._dropdown_menu.focus_previous()
-            elif direction == "Down":
-                self._dropdown_menu.focus_next()
+        if direction == "Up":
+            self._dropdown_menu.focus_previous()
+        elif direction == "Down":
+            self._dropdown_menu.focus_next()
 
     def _select_dropdown_value(self):
-        if self._dropdown_menu.is_open:
-            self._dropdown_menu.select_focused_item()
-            self._dropdown_menu.close()
+        self._dropdown_menu.select_focused_item()
 
     def _open_dropdown_menu(self):
         self._dropdown_menu.open(self.winfo_rootx(),
@@ -423,6 +418,7 @@ class CTkOptionMenu(CTkBaseClass):
 
         if self._command is not None:
             self._command(self._current_value)
+        self.focus_set()
 
     def set(self, value: str):
         self._current_value = value
