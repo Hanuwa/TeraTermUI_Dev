@@ -66,6 +66,7 @@ class CTkScrollbar(CTkBaseClass):
 
         self._hover = hover
         self._hover_state: bool = False
+        self._needs_redraw = True
         self._command = command
         self._orientation = orientation
         self._start_value: float = 0  # 0 to 1
@@ -75,7 +76,7 @@ class CTkScrollbar(CTkBaseClass):
         self._motion_center_offset = 0
         self._last_motion_time = 0
         self._last_event_position = 0
-        self._motion_refresh_rate =  0.0275
+        self._motion_refresh_rate =  0.0267
 
         self._canvas = CTkCanvas(master=self,
                                  highlightthickness=0,
@@ -144,7 +145,8 @@ class CTkScrollbar(CTkBaseClass):
                 return self._start_value, self._end_value
 
     def _draw(self, no_color_updates=False):
-        super()._draw(no_color_updates)
+        if getattr(self, '_needs_redraw', True):
+            super()._draw(no_color_updates)
 
         corrected_start_value, corrected_end_value = self._get_scrollbar_values_for_minimum_pixel_size()
         requires_recoloring = self._draw_engine.draw_rounded_scrollbar(
@@ -167,6 +169,7 @@ class CTkScrollbar(CTkBaseClass):
             self._canvas.itemconfig("border_parts", fill=applied_border_color, outline=applied_border_color)
             self._canvas.configure(bg=applied_border_color)
 
+        self._needs_redraw = False
         self._canvas.update_idletasks()
 
     def configure(self, require_redraw=False, **kwargs):
@@ -257,8 +260,8 @@ class CTkScrollbar(CTkBaseClass):
         # Define the speed and refresh rate ranges
         min_speed = 400  # Minimum speed
         max_speed = 1000  # Maximum speed
-        min_rate = 0.0175  # Refresh rate for minimum speed
-        max_rate = 0.0275  # Refresh rate for maximum speed
+        min_rate = 0.0167  # Refresh rate for minimum speed
+        max_rate = 0.0267  # Refresh rate for maximum speed
 
         # Calculate the slope of the line
         slope = (max_rate - min_rate) / (max_speed - min_speed)
@@ -302,7 +305,7 @@ class CTkScrollbar(CTkBaseClass):
             value = max(current_scrollbar_length / 2, min(value, 1 - (current_scrollbar_length / 2)))
             self._start_value = value - (current_scrollbar_length / 2)
             self._end_value = value + (current_scrollbar_length / 2)
-            self._draw()
+            self._needs_redraw = True
 
             if self._command is not None:
                 self._command('moveto', self._start_value)
