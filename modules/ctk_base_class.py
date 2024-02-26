@@ -100,12 +100,12 @@ class CTkBaseClass(tkinter.Frame, CTkAppearanceModeBaseClass, CTkScalingBaseClas
 
     def destroy(self):
         """ Destroy this and all descendants widgets. """
-
-        super().unbind('<Configure>')
+        if self.winfo_exists():
+            super().unbind('<Configure>')
         self._last_geometry_manager_call = None
         if hasattr(self, '_master_old_configure'):
             master = self._master_ref()
-            if master is not None:
+            if master is not None and master.winfo_exists():
                 master.config = self._master_old_configure
                 master.configure = self._master_old_configure
         # call destroy methods of super classes
