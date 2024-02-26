@@ -736,7 +736,6 @@ class TeraTermUI(customtkinter.CTk):
         self.after(0, self.set_focus_to_tkinter)
         del user_data_fields, results, SPANISH, language_id, scaling_factor, screen_width, screen_height, width, \
             height, x, y, db_path, en_path, es_path
-        gc.collect()
 
     # function that when the user tries to close the application a confirm dialog opens up
     def on_closing(self):
@@ -936,7 +935,6 @@ class TeraTermUI(customtkinter.CTk):
                             secure_delete(mac_key)
                             secure_delete(iv)
                             del student_id, code, student_id_enc, code_enc, aes_key, mac_key
-                            gc.collect()
                             self.switch_tab()
                         else:
                             self.bind("<Return>", lambda event: self.student_event_handler())
@@ -6406,7 +6404,6 @@ class TeraTermUI(customtkinter.CTk):
                     scopes=["https://www.googleapis.com/auth/spreadsheets"]
                 )
                 del credentials_dict
-                gc.collect()
         except Exception as e:
             print(f"Failed to load credentials: {str(e)}")
             self.log_error(str(e))
@@ -8147,7 +8144,6 @@ class TeraTermUI(customtkinter.CTk):
                 print("Restoring from backup...")
                 shutil.copyfile(backup_path, file_path)
             del line, lines
-            gc.collect()
 
     # Restores the original font option the user had
     def restore_original_font(self, file_path):
@@ -9247,7 +9243,6 @@ class ImageSlideshow(customtkinter.CTkFrame):
         # Delete the previous image from memory
         if hasattr(self, "current_image"):
             del self.current_image
-            gc.collect()
 
         # Load and show the current image
         filepath = os.path.join(self.image_folder, self.image_files[self.index])
