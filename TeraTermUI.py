@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/26/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/27/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -282,7 +282,7 @@ class TeraTermUI(customtkinter.CTk):
         self.intro_box.insert("0.0", "Welcome to the Tera Term UI Application!\n\n" +
                               "The purpose of this application"
                               " is to facilitate the process enrolling and dropping classes, "
-                              "since Tera Term uses Terminal interface, "
+                              "since Tera Term uses a terminal interface, "
                               "it's hard for new users to use and learn how to navigate and do things in "
                               "Tera Term. "
                               "This application has a very nice and clean user interface that most users are "
