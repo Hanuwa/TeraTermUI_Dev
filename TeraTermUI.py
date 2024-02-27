@@ -5170,6 +5170,7 @@ class TeraTermUI(customtkinter.CTk):
             self.current_table_index = max(0, self.current_table_index - 1)
             self.table_count.configure(text_color=("black", "white"))
 
+        self.check_and_update_labels()
         self.display_current_table()
 
         new_table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
@@ -5190,7 +5191,6 @@ class TeraTermUI(customtkinter.CTk):
         self.table_count.configure(text=table_count_label)
         if len(self.class_table_pairs) == 10:
             self.table_count.configure(text_color="red")
-        self.check_and_update_duplicates()
         self.table_count.bind("<Button-1>", lambda event: self.focus_set())
         self.bind("<Control-s>", lambda event: self.download_search_classes_as_pdf())
         self.bind("<Control-S>", lambda event: self.download_search_classes_as_pdf())
@@ -5205,7 +5205,7 @@ class TeraTermUI(customtkinter.CTk):
                 return index
         return None
 
-    def check_and_update_duplicates(self):
+    def check_and_update_labels(self):
         display_class_counts = {}
         for display_class, _, semester, _, _, _ in self.class_table_pairs:
             display_class_text = display_class.cget("text").split("-")[0].strip()
