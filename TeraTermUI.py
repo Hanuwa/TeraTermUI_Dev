@@ -684,8 +684,9 @@ class TeraTermUI(customtkinter.CTk):
                 # Check for update for the application
                 current_date = datetime.today().strftime("%Y-%m-%d")
                 date_record = self.cursor.execute("SELECT update_date FROM user_data").fetchone()
-                if date_record is None or (datetime.strptime(current_date, "%Y-%m-%d") -
-                                           datetime.strptime(date_record[0], "%Y-%m-%d")).days >= 3:
+                if date_record is None or date_record[0] is None or (
+                        datetime.strptime(current_date, "%Y-%m-%d")
+                        - datetime.strptime(date_record[0], "%Y-%m-%d")).days >= 7:
                     try:
                         self.check_update = True
                         latest_version = self.get_latest_release()
