@@ -4943,7 +4943,7 @@ class TeraTermUI(customtkinter.CTk):
 
         # Loop through each table in self.class_table_pairs
         for display_class, table, semester, _, _, _ in self.class_table_pairs:
-            class_name = display_class.cget("text")
+            class_name = display_class.cget("text").split("-")[0].strip()
             table_data = table.get()
 
             classes_list.append(class_name)
@@ -5190,6 +5190,7 @@ class TeraTermUI(customtkinter.CTk):
         self.table_count.configure(text=table_count_label)
         if len(self.class_table_pairs) == 10:
             self.table_count.configure(text_color="red")
+        self.check_and_update_duplicates()
         self.table_count.bind("<Button-1>", lambda event: self.focus_set())
         self.bind("<Control-s>", lambda event: self.download_search_classes_as_pdf())
         self.bind("<Control-S>", lambda event: self.download_search_classes_as_pdf())
@@ -5203,6 +5204,21 @@ class TeraTermUI(customtkinter.CTk):
                     existing_available_values == available_values):
                 return index
         return None
+
+    def check_and_update_duplicates(self):
+        display_class_counts = {}
+        for display_class, _, semester, _, _, _ in self.class_table_pairs:
+            display_class_text = display_class.cget("text").split("-")[0].strip()
+            if display_class_text in display_class_counts:
+                display_class_counts[display_class_text].append(semester)
+            else:
+                display_class_counts[display_class_text] = [semester]
+        for display_class_text, semesters in display_class_counts.items():
+            if len(semesters) > 1:
+                for display_class, _, semester, _, _, _ in self.class_table_pairs:
+                    if display_class.cget("text").split("-")[0].strip() == display_class_text:
+                        new_text = f"{display_class_text} - {semester}"
+                        display_class.configure(text=new_text)
 
     def display_current_table(self):
         # Hide all tables and display_classes
