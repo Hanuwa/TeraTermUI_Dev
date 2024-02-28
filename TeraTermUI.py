@@ -2600,6 +2600,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.wait_for_window()
                         TeraTermUI.unfocus_tkinter()
                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                        self.update_idletasks()
+                        time.sleep(0.3)
                         clipboard_content = None
                         try:
                             clipboard_content = self.clipboard_get()
@@ -5019,7 +5021,7 @@ class TeraTermUI(customtkinter.CTk):
         self.e_classes_entry.delete(0, "end")
         self.e_section_entry.delete(0, "end")
         display_class, _, semester_text, _, _, _ = self.class_table_pairs[self.current_table_index]
-        self.e_classes_entry.insert(0, display_class.cget("text"))
+        self.e_classes_entry.insert(0, display_class.cget("text").split("-")[0].strip())
         self.e_section_entry.insert(0, section_text)
         self.e_semester_entry.set(semester_text)
         self.register.select()
@@ -5151,6 +5153,7 @@ class TeraTermUI(customtkinter.CTk):
 
         self.class_table_pairs.append((display_class, new_table, self.get_semester_for_pdf,
                                        self.show_all_sections, available_values, self.search_next_page_status))
+        self.check_and_update_labels()
         self.current_table_index = len(self.class_table_pairs) - 1
         if len(self.class_table_pairs) > 10:
             display_class_to_remove, table_to_remove, _, _, more_sections = self.class_table_pairs[0]
@@ -5186,7 +5189,6 @@ class TeraTermUI(customtkinter.CTk):
         self.remove_button.grid(row=5, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
         self.download_search_pdf.grid(row=6, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
         self.update_buttons()
-        self.check_and_update_labels()
         table_count_label = f"{translation['table_count']} {len(self.class_table_pairs)}/10"
         self.table_count.configure(text=table_count_label)
         if len(self.class_table_pairs) == 10:
@@ -5198,26 +5200,24 @@ class TeraTermUI(customtkinter.CTk):
     def find_duplicate(self, new_display_class, new_semester, show_all_sections_state, available_values):
         for index, (display_class, table, semester, existing_show_all_sections_state,
                     existing_available_values, _) in enumerate(self.class_table_pairs):
-            if (display_class.cget("text") == new_display_class.cget("text") and
-                    semester == new_semester and
-                    existing_show_all_sections_state == show_all_sections_state and
+            if (display_class.cget("text").split("-")[0].strip() == new_display_class.cget("text").split("-")[0].strip()
+                    and semester == new_semester and existing_show_all_sections_state == show_all_sections_state and
                     existing_available_values == available_values):
                 return index
         return None
 
     def check_and_update_labels(self):
-        display_class_counts = {}
+        class_info = {}
         for display_class, _, semester, _, _, _ in self.class_table_pairs:
             display_class_text = display_class.cget("text").split("-")[0].strip()
-            if display_class_text in display_class_counts:
-                display_class_counts[display_class_text].append(semester)
-            else:
-                display_class_counts[display_class_text] = [semester]
-        for display_class_text, semesters in display_class_counts.items():
-            if len(semesters) > 1:
-                for display_class, _, semester, _, _, _ in self.class_table_pairs:
-                    if display_class.cget("text").split("-")[0].strip() == display_class_text:
-                        new_text = f"{display_class_text} - {semester}"
+            if display_class_text not in class_info:
+                class_info[display_class_text] = []
+            class_info[display_class_text].append((display_class, semester))
+        for display_class_text, class_semesters in class_info.items():
+            if len(class_semesters) > 1:
+                for display_class, semester in class_semesters:
+                    new_text = f"{display_class_text} - {semester}"
+                    if display_class.cget("text") != new_text:
                         display_class.configure(text=new_text)
 
     def display_current_table(self):
