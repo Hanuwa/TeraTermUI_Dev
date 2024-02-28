@@ -5170,7 +5170,6 @@ class TeraTermUI(customtkinter.CTk):
             self.current_table_index = max(0, self.current_table_index - 1)
             self.table_count.configure(text_color=("black", "white"))
 
-        self.check_and_update_labels()
         self.display_current_table()
 
         new_table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
@@ -5187,6 +5186,7 @@ class TeraTermUI(customtkinter.CTk):
         self.remove_button.grid(row=5, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
         self.download_search_pdf.grid(row=6, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
         self.update_buttons()
+        self.check_and_update_labels()
         table_count_label = f"{translation['table_count']} {len(self.class_table_pairs)}/10"
         self.table_count.configure(text=table_count_label)
         if len(self.class_table_pairs) == 10:
