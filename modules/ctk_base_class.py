@@ -238,12 +238,15 @@ class CTkBaseClass(tkinter.Frame, CTkAppearanceModeBaseClass, CTkScalingBaseClas
 
     def _set_scaling(self, new_widget_scaling, new_window_scaling):
         super()._set_scaling(new_widget_scaling, new_window_scaling)
-
         super().configure(width=self._apply_widget_scaling(self._desired_width),
                           height=self._apply_widget_scaling(self._desired_height))
-
         if self._last_geometry_manager_call is not None:
-            self._last_geometry_manager_call["function"](**self._apply_argument_scaling(self._last_geometry_manager_call["kwargs"]))
+            geometry_manager_function_ref = self._last_geometry_manager_call["function"]
+            geometry_manager_function = geometry_manager_function_ref()
+            if geometry_manager_function is not None:
+                kwargs = self._last_geometry_manager_call["kwargs"]
+                scaled_kwargs = self._apply_argument_scaling(kwargs)
+                geometry_manager_function(**scaled_kwargs)
 
     def _set_dimensions(self, width=None, height=None):
         if width is not None:
