@@ -1285,16 +1285,25 @@ class TeraTermUI(customtkinter.CTk):
                             else:
                                 if not classes or not section or not semester:
                                     self.after(100, self.show_error_message, 350, 230, translation["missing_info"])
+                                    if not classes:
+                                        self.after(0, self.e_classes_entry.configure(border_color="#c30101"))
+                                    if not section:
+                                        self.after(0, self.e_section_entry.configure(border_color="#c30101"))
+                                    if not semester:
+                                        self.after(0, self.e_semester_entry.configure(border_color="#c30101"))
                                 elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE):
                                     self.after(100, self.show_error_message, 360, 230,
                                                translation["class_format_error"])
+                                    self.after(0, self.e_classes.configure(border_color="#c30101"))
                                 elif not re.fullmatch("^[A-Z]{2}[A-Z0-9]$", section, flags=re.IGNORECASE):
                                     self.after(100, self.show_error_message, 360, 230,
                                                translation["section_format_error"])
+                                    self.after(0, self.e_section_entry.configure(border_color="#c30101"))
                                 elif not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE) \
                                         and semester != curr_sem:
                                     self.after(100, self.show_error_message, 360, 230,
                                                translation["semester_format_error"])
+                                    self.after(0, self.e_semester_entry.configure(border_color="#c30101"))
                         else:
                             if classes in self.enrolled_classes_list.values() or section in self.enrolled_classes_list:
                                 self.after(100, self.show_error_message, 335, 240, translation["already_enrolled"])
@@ -1472,6 +1481,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(100, self.show_error_message, 310, 215,
                                                "Error! Clase: " + classes + " \nno se encontro")
                                 self.search_function_counter += 1
+                                self.after(0, self.s_classes_entry.configure(border_color="#c30101"))
                             elif "INVALID ACTION" in text_output or "INVALID TERM SELECTION" in text_output:
                                 self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -1500,11 +1510,17 @@ class TeraTermUI(customtkinter.CTk):
                         else:
                             if not classes or not semester:
                                 self.after(100, self.show_error_message, 350, 230, translation["missing_info_search"])
+                                if not classes:
+                                    self.after(0, self.s_classes_entry.configure(border_color="#c30101"))
+                                if not semester:
+                                    self.after(0, self.s_semester_entry.configure(border_color="#c30101"))
                             elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE):
                                 self.after(100, self.show_error_message, 360, 230, translation["class_format_error"])
+                                self.after(0, self.s_classes_entry.configure(border_color="#c30101"))
                             elif not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE) \
                                     and semester != curr_sem:
                                 self.after(100, self.show_error_message, 360, 230, translation["semester_format_error"])
+                                self.after(0, self.s_semester_entry.configure(border_color="#c30101"))
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             except Exception as e:
@@ -2139,11 +2155,13 @@ class TeraTermUI(customtkinter.CTk):
                     "SO (Sign out)": "SO",
                     "SO (Cerrar Sesión)": "SO"
                 }
-                menu = menu_dict.get(menu, menu).replace(" ", "")
+                menu = menu_dict.get(menu, menu).replace(" ", "").upper()
+                valid_menu_options = set(menu_dict.values())
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
-                        if re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE) or \
-                                semester == curr_sem and menu in menu_dict.values():
+                        if menu and menu in valid_menu_options and (
+                                re.fullmatch("^[A-Z][0-9]{2}$", semester,
+                                             flags=re.IGNORECASE) or semester == curr_sem):
                             tera_term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if tera_term_window.isMinimized:
                                 tera_term_window.restore()
@@ -2420,13 +2438,19 @@ class TeraTermUI(customtkinter.CTk):
                             if not semester or not menu:
                                 self.after(100, self.show_error_message, 350, 230,
                                            translation["menu_missing_info"])
+                                if not semester:
+                                    self.after(0, self.menu_semester_entry.configure(border_color="#c30101"))
+                                if not menu:
+                                    self.after(0, self.menu_entry.configure(border_color="#c30101"))
                             elif not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE) \
                                     and semester != curr_sem:
                                 self.after(100, self.show_error_message, 360, 230,
                                            translation["semester_format_error"])
+                                self.after(0, self.menu_semester_entry.configure(border_color="#c30101"))
                             elif menu not in menu_dict.values():
                                 self.after(100, self.show_error_message, 340, 230,
                                            translation["menu_code_error"])
+                                self.after(0, self.menu_entry.configure(border_color="#c30101"))
                     else:
                         self.focus_or_not = True
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
@@ -2755,6 +2779,7 @@ class TeraTermUI(customtkinter.CTk):
                         elif username != "students":
                             self.bind("<Return>", lambda event: self.auth_event_handler())
                             self.after(100, self.show_error_message, 300, 215, translation["invalid_username"])
+                            self.after(0, self.username_entry.configure(border_color="#c30101"))
                     else:
                         self.bind("<Return>", lambda event: self.auth_event_handler())
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
@@ -2951,6 +2976,7 @@ class TeraTermUI(customtkinter.CTk):
                     elif host != "uprbay.uprb.edu":
                         self.bind("<Return>", lambda event: self.login_event_handler())
                         self.after(100, self.show_error_message, 300, 215, translation["invalid_host"])
+                        self.after(0, self.host_entry.configure(border_color="#c30101"))
                 else:
                     self.bind("<Return>", lambda event: self.login_event_handler())
             except Exception as e:
@@ -5981,9 +6007,11 @@ class TeraTermUI(customtkinter.CTk):
                                 if mod == translation["section"] and not re.fullmatch("^[A-Z]{2}[A-Z0-9]$",
                                                                                       section):
                                     section_pattern = False
+                                    self.after(0, change_section_entry.configure(border_color="#c30101"))
                                 if mod != translation["choose"] and course_code_no_section in edge_cases_classes:
                                     edge_cases_bool = True
                                     edge_cases_classes_met.append(course_code_no_section)
+                                    self.after(0, change_section_entry.configure(border_color="#c30101"))
                         if not_all_choose and section_pattern and not edge_cases_bool:
                             tera_term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if tera_term_window.isMinimized:
@@ -8308,19 +8336,31 @@ class TeraTermUI(customtkinter.CTk):
         curr_sem = translation["current"].upper().replace(" ", "")
 
         # Check for empty entries and format errors
+        error_entries = []
         for i in range(self.a_counter + 1):
             (choices, classes, sections) = entries[i]
             if not classes or not sections or not semester:
                 error_msg_long = translation["missing_info_multiple"]
+                if not classes:
+                    error_entries.append(self.m_classes_entry[i])
+                if not sections:
+                    error_entries.append(self.m_section_entry[i])
+                if not semester:
+                    error_entries.append(self.m_semester_entry[0])
+                if choices not in ["Register", "Registra", "Drop", "Baja"]:
+                    error_entries.append(self.m_register_menu[i])
                 break
             elif choices not in ["Register", "Registra", "Drop", "Baja"]:
                 error_msg_medium = translation["drop_or_enroll"]
+                error_entries.append(self.m_register_menu[i])
                 break
             elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE):
                 error_msg_short = translation["multiple_class_format_error"]
+                error_entries.append(self.m_classes_entry[i])
                 break
             elif not re.fullmatch("^[A-Z]{2}[A-Z0-9]$", sections, flags=re.IGNORECASE):
                 error_msg_short = translation["multiple_section_format_error"]
+                error_entries.append(self.m_section_entry[i])
                 break
             if choices in ["Register", "Registra"]:
                 if sections in self.enrolled_classes_list and self.enrolled_classes_list[sections] == classes:
@@ -8332,6 +8372,12 @@ class TeraTermUI(customtkinter.CTk):
                     break
         if not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE) and semester != curr_sem:
             error_msg_short = translation["multiple_semester_format_error"]
+            error_entries.append(self.m_semester_entry[0])
+        for error_widget in error_entries:
+            if error_widget in self.m_register_menu:
+                self.after(0, error_widget.configure(button_color="#c30101"))
+            else:
+                self.after(0, error_widget.configure(border_color="#c30101"))
 
         # Display error messages or proceed if no errors
         if error_msg_short:
@@ -8455,6 +8501,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.disabled_autoscroll = False
         self.after_id = None
         self.select = False
+
         self.teraterm_ui = teraterm_ui_instance
 
         if self.auto_scroll:
@@ -8755,6 +8802,7 @@ class CustomEntry(customtkinter.CTkEntry):
         self.lang = lang
         self.is_listbox_entry = False
         self.select = False
+        self.border_color = None
 
         self.teraterm_ui = teraterm_ui_instance
         self.bind("<FocusIn>", self.disable_slider_keys)
@@ -8789,6 +8837,11 @@ class CustomEntry(customtkinter.CTkEntry):
         self.bind("<Button-3>", self.show_menu)
 
     def disable_slider_keys(self, event=None):
+        if self.cget("border_color") == "#c30101":
+            if self.border_color is None:
+                self.border_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
+            self.configure(border_color=self.border_color)
+
         if self.select_present() and self.select:
             self.select_clear()
 
@@ -8997,6 +9050,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
         initial_state = self.get()
         self._undo_stack = deque([initial_state], maxlen=25)
         self._redo_stack = deque(maxlen=25)
+        self.border_color = None
 
         self.teraterm_ui = teraterm_ui_instance
         self.bind("<FocusIn>", self.disable_slider_keys)
@@ -9023,6 +9077,11 @@ class CustomComboBox(customtkinter.CTkComboBox):
         self.bind("<KeyRelease>", self.update_undo_stack)
 
     def disable_slider_keys(self, event=None):
+        if self.cget("border_color") == "#c30101":
+            if self.border_color is None:
+                self.border_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
+            self.configure(border_color=self.border_color)
+
         self.teraterm_ui.move_slider_left_enabled = False
         self.teraterm_ui.move_slider_right_enabled = False
         self.teraterm_ui.up_arrow_key_enabled = False
