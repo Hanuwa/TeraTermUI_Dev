@@ -3258,12 +3258,11 @@ class TeraTermUI(customtkinter.CTk):
             if not self.intro_box.disabled_autoscroll:
                 self.intro_box.restart_autoscroll()
             if not self.home_frame.grid_info():
+                self.host_entry.configure(state="normal")
                 self.home_frame.grid(row=0, column=1, rowspan=5, columnspan=5, padx=(0, 0), pady=(10, 0))
             if self.help is not None and self.help.winfo_exists():
                 self.fix.configure(state="disabled")
                 self.files.configure(state="normal")
-            if self.host_entry.cget("state") == "disabled":
-                self.host_entry.configure(state="normal")
             if self.log_in.cget("state") == "disabled":
                 self.log_in.configure(state="normal")
             self.run_fix = False
