@@ -74,6 +74,7 @@ class CTkOptionMenu(CTkBaseClass):
         self._hover = hover
         self._dynamic_resizing = dynamic_resizing
         self._hover_state = False
+        self.button_color_default = None
 
         if values is None:
             self._values = ["CTkOptionMenu"]
@@ -389,6 +390,11 @@ class CTkOptionMenu(CTkBaseClass):
             return super().cget(attribute_name)
 
     def _on_enter(self, event=0):
+        if self.cget("button_color") == "#c30101":
+            if self.button_color_default is None:
+                self.button_color_default = ThemeManager.theme["CTkOptionMenu"]["button_color"]
+            self.configure(button_color=self.button_color_default)
+
         if self._hover and self._state == tkinter.NORMAL:
             self._hover_state = True
             self._canvas.itemconfig("inner_parts_right",
