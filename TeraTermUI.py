@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/29/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/1/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -5464,22 +5464,36 @@ class TeraTermUI(customtkinter.CTk):
         current_date = datetime.now()
         current_year = current_date.year
         current_month = current_date.month
+        current_day = current_date.day
 
         # Calculate the academic year
         academic_year = current_year - base_year
 
         # Adjust the academic year and semester part based on current month
-        if current_month in [1, 2, 8, 9]:  # January, February, August, September for readjustments
+        if current_month in [1, 2]:
             if current_month == 1 or current_month == 2:
                 semester_part = "2"
                 academic_year -= 1
             else:
                 semester_part = "1"
 
-        elif current_month < 8:
+        elif current_month == 3:
+            if current_day < 16:
+                semester_part = "2"
+                academic_year -= 1
+            else:
+                semester_part = "1"
+
+        elif current_month < 10:
             semester_part = "1"
+
+        elif current_month == 10:
+            if current_day < 16:
+                semester_part = "1"
+            else:
+                semester_part = "2"
+
         else:
-            academic_year += 1
             semester_part = "2"
 
         # Calculate the letter
