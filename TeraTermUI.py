@@ -109,6 +109,7 @@ class TeraTermUI(customtkinter.CTk):
         self.icon_path = "images/tera-term.ico"
         self.iconbitmap(self.icon_path)
         self.mode = "Portable"
+        self.bind("<Button-2>", lambda event: self.focus_set())
         self.bind("<Button-3>", lambda event: self.focus_set())
 
         # creates a thread separate from the main application for check_idle and to monitor cpu usage
@@ -7520,6 +7521,7 @@ class TeraTermUI(customtkinter.CTk):
         self.feedback_text.lang = lang
         self.status.focus_set()
         self.status_frame.bind("<Button-1>", lambda event: self.status_frame.focus_set())
+        self.status_frame.bind("<Button-2>", lambda event: self.status_frame.focus_set())
         self.status_frame.bind("<Button-3>", lambda event: self.status_frame.focus_set())
         self.status_title.bind("<Button-1>", lambda event: self.status_frame.focus_set())
         self.version.bind("<Button-1>", lambda event: self.status_frame.focus_set())
@@ -7539,6 +7541,7 @@ class TeraTermUI(customtkinter.CTk):
         self.unload_image("update")
         self.unload_image("link")
         self.status_frame.unbind("<Button-1>")
+        self.status_frame.unbind("<Button-2>")
         self.status_frame.unbind("<Button-3>")
         self.status_title.unbind("<Button-1>")
         self.version.unbind("<Button-1>")
@@ -8062,6 +8065,7 @@ class TeraTermUI(customtkinter.CTk):
         self.search_box.lang = lang
         self.help.focus_set()
         self.help_frame.bind("<Button-1>", lambda event: self.help_frame.focus_set())
+        self.help_frame.bind("<Button-2>", lambda event: self.help_frame.focus_set())
         self.help_frame.bind("<Button-3>", lambda event: self.help_frame.focus_set())
         self.class_list.bind("<<ListboxSelect>>", self.show_class_code)
         self.class_list.bind("<MouseWheel>", self.disable_scroll)
@@ -8089,6 +8093,7 @@ class TeraTermUI(customtkinter.CTk):
         self.unload_image("folder")
         self.unload_image("fix")
         self.help_frame.unbind("<Button-1>")
+        self.help_frame.unbind("<Button-2>")
         self.help_frame.unbind("<Button-3>")
         self.class_list.unbind("<<ListboxSelect>>")
         self.class_list.unbind("<MouseWheel>")
