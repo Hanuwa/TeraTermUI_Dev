@@ -3436,6 +3436,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.status is not None and self.status.winfo_exists():
             self.status.title(translation["status"])
             self.status_title.configure(text=translation["status_title"])
+            translation["app_version"] = translation["app_version"].replace("{version}", self.USER_APP_VERSION)
             self.version.configure(text=translation["app_version"])
             self.feedback_send.configure(text=translation["feedback"])
             self.check_update_text.configure(text=translation["update_title"])
@@ -7455,6 +7456,7 @@ class TeraTermUI(customtkinter.CTk):
                                                   fg_color=("#e6e6e6", "#222222"))
         self.status_title = customtkinter.CTkLabel(self.status_frame, text=translation["status_title"],
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
+        translation["app_version"] = translation["app_version"].replace("{version}", self.USER_APP_VERSION)
         self.version = customtkinter.CTkLabel(self.status_frame, text=translation["app_version"])
         self.feedback_text = CustomTextBox(self.status_frame, self, enable_autoscroll=False, lang=lang,
                                            wrap="word", border_spacing=8, width=300, height=170,
