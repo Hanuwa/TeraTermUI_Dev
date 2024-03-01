@@ -83,7 +83,7 @@
 	
 	"status": "Estado",
 	"status_title": "Estado de la Aplicación",
-	"app_version": "\nVersión 0.9.0\n--Fase de Pruebas--\n\n¡Cualquier comentario es muy apreciado!",
+	"app_version": "\nVersión {version}\n--Fase de Pruebas--\n\n¡Cualquier comentario es muy apreciado!",
 	"feedback": "Enviar Comentario",
 	"update_title": "\n\n Revisa sí la aplicación tiene una actualización nueva",
 	"update": "    Actualizar",
