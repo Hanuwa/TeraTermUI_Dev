@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/28/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/29/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -944,10 +944,19 @@ class TeraTermUI(customtkinter.CTk):
                                 self.uprb.UprbayTeraTermVt.type_keys("{TAB 3}")
                             elif "PIN NUMBER" in text_output:
                                 self.uprb.UprbayTeraTermVt.type_keys("{TAB 2}")
-                            self.after(100, self.show_error_message, 300, 215, translation["error_student_id"])
+                            self.after(100, self.show_error_message, 300, 215, translation["error_student"])
                     else:
                         self.bind("<Return>", lambda event: self.student_event_handler())
-                        self.after(100, self.show_error_message, 300, 215, translation["error_student_id"])
+                        if (not student_id or len(student_id) != 9) and (not code.isdigit or len(code) != 4):
+                            self.after(0, self.student_id_entry.configure(border_color="#c30101"))
+                            self.after(0, self.code_entry.configure(border_color="#c30101"))
+                            self.after(100, self.show_error_message, 300, 215, translation["error_student_id_code"])
+                        elif not student_id or len(student_id) != 9:
+                            self.after(0, self.student_id_entry.configure(border_color="#c30101"))
+                            self.after(100, self.show_error_message, 315, 230, translation["error_student_id"])
+                        elif not code.isdigit or len(code) != 4:
+                            self.after(0, self.code_entry.configure(border_color="#c30101"))
+                            self.after(100, self.show_error_message, 315, 230, translation["error_code"])
                 else:
                     self.bind("<Return>", lambda event: self.student_event_handler())
                     self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
