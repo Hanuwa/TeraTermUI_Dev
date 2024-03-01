@@ -83,7 +83,7 @@
 	
 	"status": "Status",
 	"status_title": "Status of the Application",
-	"app_version": "\n0.9.0 Version\n--Testing Phase--\n\nAny feedback is greatly appreciated!",
+	"app_version": "\n{version} Version\n--Testing Phase--\n\nAny feedback is greatly appreciated!",
 	"feedback": "Send Feedback",
 	"update_title": "\n\nCheck if application has a new update available",
 	"update": "      Update",
