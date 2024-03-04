@@ -24,5 +24,24 @@ if '%errorlevel%' NEQ '0' (
     CD /D "%~dp0"
 :--------------------------------------
 
-python [insert your file path here]\ExeConverter.py
+:: Check if colorama is already installed or the flag file exists
+if not exist "%temp%\colorama_installed.flag" (
+    pip show colorama >nul 2>&1
+    if '%errorlevel%' NEQ '0' (
+        echo Installing colorama...
+        pip install colorama
+        if '%errorlevel%' NEQ '0' (
+            echo Failed to install colorama. Please install it manually.
+            exit /B
+        )
+    )
+)
+
+:: Run the Python script
+python ExeConverter.py
+if '%errorlevel%' NEQ '0' (
+    echo Failed to run ExeConverter.py. Please check the script for errors.
+    exit /B
+)
+
 pause
