@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/1/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/3/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -61,9 +61,23 @@ from ctypes import wintypes
 from datetime import datetime, timedelta
 from filelock import FileLock, Timeout
 from pathlib import Path
-from pywinauto.application import Application, AppStartError
-from pywinauto.findwindows import ElementNotFoundError
-from pywinauto import timings
+try:
+    from pywinauto.application import Application, AppStartError
+    from pywinauto.findwindows import ElementNotFoundError
+    from pywinauto import timings
+except Exception as e:
+    print(f"An exception occurred during import: {e}")
+    temp_dir = tempfile.gettempdir()
+    cache_pattern = os.path.join(temp_dir, "comtypes_cache", "TeraTermUI-*")
+    cache_dirs = [d for d in os.listdir(os.path.join(temp_dir, "comtypes_cache")) if
+                  os.path.isdir(os.path.join(temp_dir, "comtypes_cache", d)) and d.startswith("TeraTermUI-")]
+    for cache_dir in cache_dirs:
+        comtypes_cache_dir = os.path.join(temp_dir, "comtypes_cache", cache_dir)
+        if os.path.exists(comtypes_cache_dir):
+            shutil.rmtree(comtypes_cache_dir)
+    current_executable = sys.argv[0]
+    subprocess.Popen([current_executable])
+    sys.exit(0)
 from tkinter import filedialog
 from tkinter import messagebox
 from PIL import Image
