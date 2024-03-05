@@ -65,7 +65,7 @@ try:
     from pywinauto.application import Application, AppStartError
     from pywinauto.findwindows import ElementNotFoundError
     from pywinauto import timings
-except Exception as e:
+except:
     temp_dir = tempfile.gettempdir()
     cache_pattern = os.path.join(temp_dir, "comtypes_cache", "TeraTermUI-*")
     cache_dirs = [d for d in os.listdir(os.path.join(temp_dir, "comtypes_cache")) if
@@ -7613,6 +7613,7 @@ class TeraTermUI(customtkinter.CTk):
                 return result
             except HttpError as error:
                 print(f"An error occurred: {error}")
+                self.log_error(error)
                 return None
         else:
             self.connection_error = True
