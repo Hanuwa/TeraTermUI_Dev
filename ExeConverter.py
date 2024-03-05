@@ -58,11 +58,16 @@ def check_and_restore_backup():
 
 def attach_manifest(executable_path, manifest_path):
     try:
-        subprocess.run(f"mt.exe -manifest {manifest_path} -outputresource:{executable_path};1",
-                       check=True, shell=True)
-    except subprocess.CalledProcessError as e:
+        subprocess.run(f"mt.exe -manifest {manifest_path} -outputresource:{executable_path};1",  check=True)
+    except KeyboardInterrupt as e:
+        shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+        os.remove(program_backup)
         print(Fore.RED + f"Failed to attach manifest: {e}\n" + Style.RESET_ALL)
         sys.exit(1)
+    except Exception as e:
+        shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+        os.remove(program_backup)
+        print(Fore.RED + f"Failed to attach manifest: {e}\n" + Style.RESET_ALL)
 
 
 def terminate_process(signum, frame):
@@ -157,7 +162,6 @@ except Exception as e:
     shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
     os.remove(program_backup)
     print(Fore.RED + f"Error modifying creating distribution directory: {e}\n" + Style.RESET_ALL)
-    sys.exit(1)
 
 nuitka_command = (
     r'cd /d "' + project_directory + r'\.venv\Scripts" & python -m nuitka '
@@ -198,7 +202,6 @@ except Exception as e:
     shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
     os.remove(program_backup)
     print(Fore.RED + f"Failed to reset database: {e}\n" + Style.RESET_ALL)
-    sys.exit(1)
 try:
     # Check current state of the script to decide the order of versions
     with open(project_directory+r"\TeraTermUI.py", 'r', encoding='utf-8') as file:
@@ -219,7 +222,6 @@ except Exception as e:
     shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
     os.remove(program_backup)
     print(Fore.RED + f"Failed to decide what version to make (Installer or Portable): {e}\n" + Style.RESET_ALL)
-    sys.exit(1)
 
 for version in versions:
     script = None
@@ -273,7 +275,6 @@ for version in versions:
         shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
         os.remove(program_backup)
         print(Fore.RED + f"Error modifying script: {e}\n" + Style.RESET_ALL)
-        sys.exit(1)
 
     try:
         subprocess.run(nuitka_command, shell=True, check=True)
@@ -290,7 +291,6 @@ for version in versions:
         shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
         os.remove(program_backup)
         print(Fore.RED + f"Failed to create executable with Nuitka: {e}\n" + Style.RESET_ALL)
-        sys.exit(1)
 
     if script == "installer":
         try:
@@ -306,7 +306,6 @@ for version in versions:
             shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
             os.remove(program_backup)
             print(Fore.RED + f"Error renaming folder: {e}\n" + Style.RESET_ALL)
-            sys.exit(1)
 
         try:
             os.remove(os.path.join(output_directory, "TeraTermUI_installer", "database.db"))
@@ -320,7 +319,6 @@ for version in versions:
             shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
             os.remove(program_backup)
             print(Fore.RED + f"Error removing files: {e}\n" + Style.RESET_ALL)
-            sys.exit(1)
 
         try:
             subprocess.run([inno_directory, output_directory + r"\InstallerScript.iss"], check=True)
@@ -334,7 +332,6 @@ for version in versions:
             shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
             os.remove(program_backup)
             print(Fore.RED + f"Error compiling Inno Setup script: {e}\n" + Style.RESET_ALL)
-            sys.exit(1)
 
         try:
             shutil.move(output_directory + r"\output\TeraTermUI_64-bit_Installer-"+update+".exe", output_directory)
@@ -349,7 +346,6 @@ for version in versions:
             shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
             os.remove(program_backup)
             print(Fore.RED + f"Error moving or removing folder: {e}\n" + Style.RESET_ALL)
-            sys.exit(1)
 
     elif script == "portable":
         try:
@@ -366,7 +362,6 @@ for version in versions:
             shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
             os.remove(program_backup)
             print(Fore.RED + f"Error creating zip file: {e}\n" + Style.RESET_ALL)
-            sys.exit(1)
 
 print(Fore.GREEN + "Both versions (installer and portable) have been created successfully.\n"
       + Style.RESET_ALL)
