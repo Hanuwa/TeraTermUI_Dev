@@ -24,16 +24,14 @@ if '%errorlevel%' NEQ '0' (
     CD /D "%~dp0"
 :--------------------------------------
 
-:: Check if colorama is already installed or the flag file exists
-if not exist "%temp%\colorama_installed.flag" (
-    pip show colorama >nul 2>&1
+:: Check if colorama is installed
+pip show colorama >nul 2>&1
+if '%errorlevel%' NEQ '0' (
+    echo Installing colorama...
+    pip install colorama
     if '%errorlevel%' NEQ '0' (
-        echo Installing colorama...
-        pip install colorama
-        if '%errorlevel%' NEQ '0' (
-            echo Failed to install colorama. Please install it manually.
-            exit /B
-        )
+        echo Failed to install colorama. Please install it manually.
+        exit /B
     )
 )
 
