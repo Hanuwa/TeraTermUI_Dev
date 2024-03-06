@@ -198,7 +198,7 @@ class TeraTermUI(customtkinter.CTk):
         self.dialog = None
         self.dialog_input = None
         self.prev_dialog_input = None
-        self.move_classes_overlay = None
+        self.move_tables_overlay = None
 
         self.image_cache = {}
 
@@ -683,12 +683,12 @@ class TeraTermUI(customtkinter.CTk):
                     self.log_in.configure(state="normal")
                     self.bind("<Return>", lambda event: self.login_event_handler())
                     self.bind("<F1>", lambda event: self.help_button_event())
-                    row_exists_in_welcome = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
-                    if not row_exists_in_welcome:
+                    row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+                    if not row_exists:
                         self.cursor.execute("INSERT INTO user_data (welcome) VALUES (?)", ("Checked",))
                     else:
                         self.cursor.execute("UPDATE user_data SET welcome=?", ("Checked",))
-                    del row_exists_in_welcome, translation
+                    del row_exists, translation
 
                 self.after(3500, show_message_box)
             else:
@@ -4571,7 +4571,7 @@ class TeraTermUI(customtkinter.CTk):
 
         self.save_data.toggle()
         self.save_classes()
-        if event and event.keysym == 'space':
+        if event and event.keysym == "space":
             self.save_data._on_enter()
 
     # saves class information for another session
@@ -5151,7 +5151,7 @@ class TeraTermUI(customtkinter.CTk):
                 event, section) if section.strip() else None)
         for col_index in range(len(headers)):
             header_cell = new_table.get_cell(0, col_index)
-            header_cell.bind("<Button-3>", lambda event: self.move_classes_overlay_event())
+            header_cell.bind("<Button-3>", lambda event: self.move_tables_overlay_event())
 
         display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_pdf,
                                                font=customtkinter.CTkFont(size=15, weight="bold", underline=True))
@@ -5319,56 +5319,61 @@ class TeraTermUI(customtkinter.CTk):
         if self.move_slider_left_enabled:
             self.after(100, self.show_next_table)
 
-    def move_classes_overlay_event(self):
+    def move_tables_overlay_event(self):
         if len(self.class_table_pairs) == 1:
             return
 
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        self.move_classes_overlay = SmoothFadeToplevel(fade_duration=10, final_alpha=0.90)
-        self.move_classes_overlay.title(translation["move_classes"])
-        self.move_classes_overlay.overrideredirect(True)
+        self.move_tables_overlay = SmoothFadeToplevel(fade_duration=10, final_alpha=0.90)
+        self.move_tables_overlay.title(translation["move_classes"])
+        self.move_tables_overlay.overrideredirect(True)
 
-        title_label = customtkinter.CTkLabel(self.move_classes_overlay, text=translation["move_classes"],
+        title_label = customtkinter.CTkLabel(self.move_tables_overlay, text=translation["move_classes"],
                                              font=customtkinter.CTkFont(size=16, weight="bold"))
         title_label.grid(row=0, column=1, padx=10, pady=(10, 0))
-        switches_container = customtkinter.CTkFrame(self.move_classes_overlay, fg_color="transparent")
-        switches_container.grid(row=1, column=1, padx=(7, 0), pady=(0, 10))
+        checkboxes_container = customtkinter.CTkFrame(self.move_tables_overlay, fg_color="transparent")
+        checkboxes_container.grid(row=1, column=1, padx=(7, 0), pady=(0, 10))
         num_tables = len(self.class_table_pairs)
-        switch_width = 30
-        switch_padding = 2
-        total_switch_width = num_tables * (switch_width + switch_padding)
-
+        checkbox_width = 30
+        checkbox_padding = 2
+        total_checkbox_width = num_tables * (checkbox_width + checkbox_padding)
         for index in range(num_tables):
-            switch = customtkinter.CTkCheckBox(
-                switches_container, text="", width=switch_width, checkbox_width=30, checkbox_height=30,
+            checkbox = customtkinter.CTkCheckBox(
+                checkboxes_container, text="", width=checkbox_width, checkbox_width=30, checkbox_height=30,
                 command=lambda idx=index: self.select_new_position(idx))
-            switch.grid(row=0, column=index, padx=switch_padding, pady=10)
-        total_width = total_switch_width + 100
-        self.move_classes_overlay.grid_rowconfigure(0, weight=1)
-        self.move_classes_overlay.grid_rowconfigure(1, weight=1)
-        self.move_classes_overlay.grid_columnconfigure(0, weight=1)
-        self.move_classes_overlay.grid_columnconfigure(1, weight=0)
-        self.move_classes_overlay.grid_columnconfigure(2, weight=1)
+            checkbox.grid(row=0, column=index, padx=checkbox_padding, pady=10)
+            checkbox.bind("<space>", lambda event, idx=index: self.select_new_position(idx))
+
+        total_width = total_checkbox_width + 100
+        self.move_tables_overlay.grid_rowconfigure(0, weight=1)
+        self.move_tables_overlay.grid_rowconfigure(1, weight=1)
+        self.move_tables_overlay.grid_columnconfigure(0, weight=1)
+        self.move_tables_overlay.grid_columnconfigure(1, weight=0)
+        self.move_tables_overlay.grid_columnconfigure(2, weight=1)
         main_window_x = self.winfo_x()
         main_window_y = self.winfo_y()
         main_window_width = self.winfo_width()
         main_window_height = self.winfo_height()
         center_x = main_window_x + (main_window_width // 2) - (total_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (85 // 2)
-        self.move_classes_overlay.geometry(f"{total_width}x{85}+{center_x + 103}+{center_y + 15}")
-        self.after(0, self.move_classes_overlay.focus_force)
+        self.move_tables_overlay.geometry(f"{total_width}x{85}+{center_x + 103}+{center_y + 15}")
+        self.after(0, self.move_tables_overlay.focus_force)
         self.highlight_selected_table_in_grid()
-        self.move_classes_overlay.bind("<FocusOut>", lambda event: self.on_move_window_close())
+        self.move_tables_overlay.bind("<FocusOut>", lambda event: self.on_move_window_close())
 
     def on_move_window_close(self):
-        current_focus = self.move_classes_overlay.focus_get()
+        current_focus = self.move_tables_overlay.focus_get()
         if current_focus is None:
-            self.move_classes_overlay.destroy()
+            checkboxes_container = self.move_tables_overlay.winfo_children()[1]
+            for widget in checkboxes_container.winfo_children():
+                if isinstance(widget, customtkinter.CTkCheckBox):
+                    widget.unbind("<space>")
+            self.move_tables_overlay.destroy()
 
     def highlight_selected_table_in_grid(self):
-        switches_container = self.move_classes_overlay.winfo_children()[1]
-        for idx, widget in enumerate(switches_container.winfo_children()):
+        checkboxes_container = self.move_tables_overlay.winfo_children()[1]
+        for idx, widget in enumerate(checkboxes_container.winfo_children()):
             if isinstance(widget, customtkinter.CTkCheckBox):
                 if idx == self.current_table_index:
                     widget.select()
@@ -5380,7 +5385,7 @@ class TeraTermUI(customtkinter.CTk):
     def select_new_position(self, target_index):
         if target_index != self.current_table_index:
             self.rearrange_tables(self.current_table_index, target_index)
-        self.move_classes_overlay.destroy()
+        self.move_tables_overlay.destroy()
 
     def rearrange_tables(self, source_index, target_index):
         self.class_table_pairs[source_index], self.class_table_pairs[target_index] = \
