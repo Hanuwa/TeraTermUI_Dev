@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/4/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/5/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -198,6 +198,7 @@ class TeraTermUI(customtkinter.CTk):
         self.dialog = None
         self.dialog_input = None
         self.prev_dialog_input = None
+        self.move_classes_overlay = None
 
         self.image_cache = {}
 
@@ -4641,13 +4642,12 @@ class TeraTermUI(customtkinter.CTk):
     def show_loading_screen(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        self.loading_screen = customtkinter.CTkToplevel(self)
+        self.loading_screen = SmoothFadeToplevel(fade_duration=10, final_alpha=0.90)
         self.loading_screen.title(translation["loading"])
         self.loading_screen.overrideredirect(True)
         self.loading_screen.grab_set()
         width = 275
         height = 150
-        self.loading_screen.update_idletasks()
         main_window_x = self.winfo_x()
         main_window_y = self.winfo_y()
         main_window_width = self.winfo_width()
@@ -4657,8 +4657,7 @@ class TeraTermUI(customtkinter.CTk):
         center_x = main_window_x + (main_window_width // 2) - (loading_screen_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (loading_screen_height // 2)
         self.loading_screen.geometry(f"{width}x{height}+{center_x + 105}+{center_y}")
-        self.loading_screen.attributes("-topmost", True, "-alpha", 0.90)
-        self.loading_screen.resizable(False, False)
+        self.loading_screen.attributes("-topmost", True)
         self.loading_screen.iconbitmap(self.icon_path)
         loading = customtkinter.CTkLabel(self.loading_screen, text=translation["loading"],
                                          font=customtkinter.CTkFont(size=20, weight="bold"))
@@ -5149,6 +5148,9 @@ class TeraTermUI(customtkinter.CTk):
             section_text = section_cell.cget("text")
             section_cell.bind("<Button-3>", lambda event, section=section_text: self.transfer_class_data_to_enroll_tab(
                 event, section) if section.strip() else None)
+        for col_index in range(len(headers)):
+            header_cell = new_table.get_cell(0, col_index)
+            header_cell.bind("<Button-3>", lambda event: self.move_classes_overlay_event())
 
         display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_pdf,
                                                font=customtkinter.CTkFont(size=15, weight="bold", underline=True))
@@ -5315,6 +5317,79 @@ class TeraTermUI(customtkinter.CTk):
     def keybind_next_table(self, event):
         if self.move_slider_left_enabled:
             self.after(100, self.show_next_table)
+
+    def move_classes_overlay_event(self):
+        if len(self.class_table_pairs) == 1:
+            return
+
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        self.move_classes_overlay = SmoothFadeToplevel(fade_duration=10, final_alpha=0.90)
+        self.move_classes_overlay.title(translation["move_classes"])
+        self.move_classes_overlay.overrideredirect(True)
+
+        title_label = customtkinter.CTkLabel(self.move_classes_overlay, text=translation["move_classes"],
+                                             font=customtkinter.CTkFont(size=16, weight="bold"))
+        title_label.grid(row=0, column=1, padx=10, pady=(10, 0))
+        switches_container = customtkinter.CTkFrame(self.move_classes_overlay, fg_color="transparent")
+        switches_container.grid(row=1, column=1, padx=(7, 0), pady=(0, 10))
+        num_tables = len(self.class_table_pairs)
+        switch_width = 30
+        switch_padding = 2
+        total_switch_width = num_tables * (switch_width + switch_padding)
+
+        for index in range(num_tables):
+            switch = customtkinter.CTkCheckBox(
+                switches_container, text="", width=switch_width, checkbox_width=30, checkbox_height=30,
+                command=lambda idx=index: self.select_new_position(idx))
+            switch.grid(row=0, column=index, padx=switch_padding, pady=10)
+        total_width = total_switch_width + 100
+        self.move_classes_overlay.grid_rowconfigure(0, weight=1)
+        self.move_classes_overlay.grid_rowconfigure(1, weight=1)
+        self.move_classes_overlay.grid_columnconfigure(0, weight=1)
+        self.move_classes_overlay.grid_columnconfigure(1, weight=0)
+        self.move_classes_overlay.grid_columnconfigure(2, weight=1)
+        main_window_x = self.winfo_x()
+        main_window_y = self.winfo_y()
+        main_window_width = self.winfo_width()
+        main_window_height = self.winfo_height()
+        center_x = main_window_x + (main_window_width // 2) - (total_width // 2)
+        center_y = main_window_y + (main_window_height // 2) - (85 // 2)
+        self.move_classes_overlay.geometry(f"{total_width}x{85}+{center_x + 103}+{center_y + 15}")
+        self.after(0, self.move_classes_overlay.focus_force)
+        self.highlight_selected_table_in_grid()
+        self.move_classes_overlay.bind("<FocusOut>", lambda event: self.move_classes_overlay.destroy())
+
+    def highlight_selected_table_in_grid(self):
+        switches_container = self.move_classes_overlay.winfo_children()[1]
+        for idx, widget in enumerate(switches_container.winfo_children()):
+            if isinstance(widget, customtkinter.CTkCheckBox):
+                if idx == self.current_table_index:
+                    widget.select()
+                    widget.configure(state="disabled")
+                else:
+                    widget.deselect()
+                    widget.configure(state="normal")
+
+    def select_new_position(self, target_index):
+        if target_index != self.current_table_index:
+            self.rearrange_tables(self.current_table_index, target_index)
+        self.move_classes_overlay.destroy()
+
+    def rearrange_tables(self, source_index, target_index):
+        self.class_table_pairs[source_index], self.class_table_pairs[target_index] = \
+            self.class_table_pairs[target_index], self.class_table_pairs[source_index]
+
+        for _, table_widget, _, _, _, _ in self.class_table_pairs:
+            table_widget.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
+
+        if self.current_table_index == source_index:
+            self.current_table_index = target_index
+        elif self.current_table_index == target_index:
+            self.current_table_index = source_index
+
+        self.display_current_table()
+        self.update_buttons()
 
     def remove_current_table(self):
         lang = self.language_menu.get()
@@ -9269,11 +9344,12 @@ class CustomComboBox(customtkinter.CTkComboBox):
 
 
 class SmoothFadeToplevel(customtkinter.CTkToplevel):
-    __slots__ = "fade_duration"
+    __slots__ = "fade_duration", "final_alpha"
 
-    def __init__(self, fade_duration=30, *args, **kwargs):
+    def __init__(self, fade_duration=30, final_alpha=1.0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fade_duration = fade_duration
+        self.final_alpha = final_alpha
         self.alpha = 0.0
         self.fade_direction = 1  # 1 for fade-in, -1 for fade-out
         self.after_idle(self._start_fade_in)
@@ -9283,16 +9359,19 @@ class SmoothFadeToplevel(customtkinter.CTkToplevel):
         self._fade()
 
     def _fade(self):
-        self.alpha += self.fade_direction / self.fade_duration
+        self.alpha += self.fade_direction * (self.final_alpha / self.fade_duration)
+        # Ensure alpha stays within valid range
+        self.alpha = max(0, min(self.alpha, self.final_alpha))
         self.attributes("-alpha", self.alpha)
-        if 0 < self.alpha < 1:
-            self.after(5, self._fade)  # Adjust the update interval to make the fade-in faster
+        if 0 < self.alpha < self.final_alpha:
+            self.after(5, self._fade)
         elif self.alpha <= 0:
             self.destroy()
 
     def button_event(self, event=None):
         self.fade_direction = -1
         self._fade()
+
 
 
 class SmoothFadeInputDialog(customtkinter.CTkInputDialog):
@@ -9313,7 +9392,7 @@ class SmoothFadeInputDialog(customtkinter.CTkInputDialog):
         self.alpha += self.fade_direction / self.fade_duration
         self.attributes("-alpha", self.alpha)
         if 0 < self.alpha < 1:
-            self.after(5, self._fade)  # Adjust the update interval to make the fade-in faster
+            self.after(5, self._fade)  
         elif self.alpha <= 0:
             self.destroy()
 
