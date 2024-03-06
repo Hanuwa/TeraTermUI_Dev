@@ -255,6 +255,7 @@
 	"loading": "Loading...",
 	"searching_exe": "Searching...",
 	"sending_feedback": "Sending...",
+	"move_classes": "Move Tables",
 	"tesseract_error": "Fatal Error! Might need to\nreinstall application",
 	"save_pdf": "Select where do you want to save your PDF file",
 	"class_data": "class_data",
