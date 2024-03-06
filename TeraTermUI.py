@@ -9373,7 +9373,6 @@ class SmoothFadeToplevel(customtkinter.CTkToplevel):
         self._fade()
 
 
-
 class SmoothFadeInputDialog(customtkinter.CTkInputDialog):
     __slots__ = "fade_duration"
 
@@ -9392,7 +9391,7 @@ class SmoothFadeInputDialog(customtkinter.CTkInputDialog):
         self.alpha += self.fade_direction / self.fade_duration
         self.attributes("-alpha", self.alpha)
         if 0 < self.alpha < 1:
-            self.after(5, self._fade)  
+            self.after(5, self._fade)
         elif self.alpha <= 0:
             self.destroy()
 
