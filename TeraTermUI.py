@@ -5319,7 +5319,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.move_slider_left_enabled:
             self.after(100, self.show_next_table)
 
-        def move_classes_overlay_event(self):
+    def move_classes_overlay_event(self):
         if len(self.class_table_pairs) == 1:
             return
 
@@ -9551,4 +9551,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
