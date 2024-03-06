@@ -253,6 +253,7 @@
 	"failed_saved_invalid_info": "No se guardaron clases debido\na información incorrecta",
 	"saved_classes_success": "Clases guardadas con éxito",
 	"loading": "Procesando...",
+	"move_classes": "Mover Tablas",
 	"searching_exe": "Buscando...",
 	"sending_feedback": "Enviando...",
 	"tesseract_error": "¡Error Fatal! Es posible que necesite\nreinstalar la aplicación",
