@@ -4083,8 +4083,8 @@ class TeraTermUI(customtkinter.CTk):
         # Identify which monitor the Tkinter window and Tera Term window are in
         tk_monitor = TeraTermUI.get_window_monitor(tk_x, tk_y, self.winfo_width(), self.winfo_height())
         tera_monitor = TeraTermUI.get_window_monitor(window.left, window.top, window.width, window.height)
-        print(f"Tkinter window is on monitor {tk_monitor} at position ({tk_x}, {tk_y}).")
-        print(f"Tera Term window is on monitor {tera_monitor} at position ({window.left}, {window.top}).")
+        # print(f"Tkinter window is on monitor {tk_monitor} at position ({tk_x}, {tk_y}).")
+        # print(f"Tera Term window is on monitor {tera_monitor} at position ({window.left}, {window.top}).")
         # If they're not on the same monitor, don't move the Tera Term window
         if tk_monitor != tera_monitor:
             print("Windows are on different monitors. Not moving Tera Term window.")
@@ -9545,3 +9545,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
