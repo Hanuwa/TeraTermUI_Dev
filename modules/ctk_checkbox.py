@@ -299,6 +299,10 @@ class CTkCheckBox(CTkBaseClass):
             self._textvariable = kwargs.pop("textvariable")
             self._text_label.configure(textvariable=self._textvariable)
 
+        if "canvas_takefocus" in kwargs:
+            self._canvas_takefocus = kwargs.pop("canvas_takefocus")
+            self._canvas.configure(takefocus=self._canvas_takefocus)
+
         if "variable" in kwargs:
             if self._variable is not None and self._variable != "":
                 self._variable.trace_remove("write", self._variable_callback_name)  # remove old variable callback
