@@ -5372,7 +5372,7 @@ class TeraTermUI(customtkinter.CTk):
             if isinstance(widget, customtkinter.CTkCheckBox):
                 if idx == self.current_table_index:
                     widget.select()
-                    widget.configure(state="disabled")
+                    widget.configure(state="disabled", canvas_takefocus=False)
                 else:
                     widget.deselect()
                     widget.configure(state="normal")
