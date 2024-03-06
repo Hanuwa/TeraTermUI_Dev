@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/5/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/6/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1417,8 +1417,9 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys(semester)
                             self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                             self.after(0, self.disable_go_next_buttons)
-                            if self.search_function_counter == 0 or semester != self.get_semester_for_pdf:
+                            if self.search_function_counter == 0:
                                 text_output = self.capture_screenshot()
+                            if self.search_function_counter == 0 or semester != self.get_semester_for_pdf:
                                 if "INVALID TERM SELECTION" in text_output:
                                     self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -1433,7 +1434,7 @@ class TeraTermUI(customtkinter.CTk):
                                 print("Clipboard contains non-text data, possibly an image or other formats")
                             except Exception as e:
                                 print("Error handling clipboard content:", e)
-                            if self.search_function_counter == 0:
+                            if self.search_function_counter == 0 and "COURSE NOT IN" not in text_output:
                                 ctypes.windll.user32.BlockInput(False)
                                 self.automate_copy_class_data()
                                 ctypes.windll.user32.BlockInput(True)
@@ -5318,7 +5319,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.move_slider_left_enabled:
             self.after(100, self.show_next_table)
 
-    def move_classes_overlay_event(self):
+        def move_classes_overlay_event(self):
         if len(self.class_table_pairs) == 1:
             return
 
@@ -5358,7 +5359,12 @@ class TeraTermUI(customtkinter.CTk):
         self.move_classes_overlay.geometry(f"{total_width}x{85}+{center_x + 103}+{center_y + 15}")
         self.after(0, self.move_classes_overlay.focus_force)
         self.highlight_selected_table_in_grid()
-        self.move_classes_overlay.bind("<FocusOut>", lambda event: self.move_classes_overlay.destroy())
+        self.move_classes_overlay.bind("<FocusOut>", lambda event: self.on_move_window_close())
+
+    def on_move_window_close(self):
+        current_focus = self.move_classes_overlay.focus_get()
+        if current_focus is None:
+            self.move_classes_overlay.destroy()
 
     def highlight_selected_table_in_grid(self):
         switches_container = self.move_classes_overlay.winfo_children()[1]
