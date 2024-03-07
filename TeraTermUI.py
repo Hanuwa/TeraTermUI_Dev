@@ -7849,11 +7849,11 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         self.files.configure(state="disabled")
         message_english = "Do you want to automatically search for Tera Term on the C drive? " \
-                          "(click  the \"no\" button if your prefer to search for it manually)\n\n" \
-                          "Might take a while and make app unresponsive for a bit"
+                          "(click  the \"no\" button if you prefer to search for it manually)\n\n" \
+                          "Might take a while and make the application unresponsive briefly"
         message_spanish = "¿Desea buscar automáticamente Tera Term en la unidad C? " \
                           "(hacer clic al botón \"no\" si desea buscarlo manualmente)\n\n" \
-                          "Podría tardar un poco y hacer que la aplicación no responda durante ese tiempo."
+                          "Podría tardar un poco y causar que la aplicación brevemente no responda."
         message = message_english if lang == "English" else message_spanish
         response = messagebox.askyesnocancel("Tera Term", message)
         if response is True:
