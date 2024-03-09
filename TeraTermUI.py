@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/6/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/9/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -7848,12 +7848,12 @@ class TeraTermUI(customtkinter.CTk):
     def change_location_auto_handler(self):
         lang = self.language_menu.get()
         self.files.configure(state="disabled")
-        message_english = "Do you want to automatically search for Tera Term on the C drive? " \
-                          "(click  the \"no\" button if you prefer to search for it manually)\n\n" \
-                          "Might take a while and make the application unresponsive briefly"
-        message_spanish = "¿Desea buscar automáticamente Tera Term en la unidad C? " \
-                          "(hacer clic al botón \"no\" si desea buscarlo manualmente)\n\n" \
-                          "Podría tardar un poco y causar que la aplicación brevemente no responda."
+        message_english = "Would you like the application to search for Tera Term on the C drive automatically? " \
+                          "(click  the \"no\" button to search for it manually)\n\n" \
+                          "Note: This process may take some time and make the application unresponsive briefly"
+        message_spanish = "¿Desea que la aplicación busque automáticamente Tera Term en la unidad C? " \
+                          "(hacer clic al botón \"no\" para buscarlo manualmente)\n\n" \
+                          "Nota:  Este proceso podría tardar un poco y causar que la aplicación brevemente no responda."
         message = message_english if lang == "English" else message_spanish
         response = messagebox.askyesnocancel("Tera Term", message)
         if response is True:
@@ -9556,3 +9556,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
