@@ -250,7 +250,7 @@ class TeraTermUI(customtkinter.CTk):
         self.language_menu.grid(row=6, column=0, padx=20, pady=(10, 10))
         self.language_menu_tooltip = CTkToolTip(self.language_menu, message="The language can only\n"
                                                                             "be changed in the main menu",
-                                                bg_color="#A9A9A9")
+                                                bg_color="#989898")
         self.language_menu_tooltip.hide()
         self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame, corner_radius=15,
                                                                        canvas_takefocus=False,
@@ -4147,9 +4147,9 @@ class TeraTermUI(customtkinter.CTk):
             self.auth = CustomButton(master=self.a_buttons_frame, border_width=2, text=translation["authentication"],
                                      text_color=("gray10", "#DCE4EE"), command=self.auth_event_handler)
             self.back = CustomButton(master=self.a_buttons_frame, fg_color="transparent", border_width=2,
-                                     text=translation["back"], hover_color=("#A9A9A9", "#4E4F50"),
+                                     text=translation["back"], hover_color=("#BEBEBE", "#4E4F50"),
                                      text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
-            self.back_tooltip = CTkToolTip(self.back, message=translation["back_tooltip"], bg_color="#A9A9A9",
+            self.back_tooltip = CTkToolTip(self.back, message=translation["back_tooltip"], bg_color="#989898",
                                            alpha=0.90)
             self.username_entry.lang = lang
             self.authentication_frame.bind("<Button-1>", lambda event: self.focus_set())
@@ -4229,10 +4229,10 @@ class TeraTermUI(customtkinter.CTk):
             self.system = CustomButton(master=self.s_buttons_frame, border_width=2, text=translation["system"],
                                        text_color=("gray10", "#DCE4EE"), command=self.student_event_handler)
             self.back_student = CustomButton(master=self.s_buttons_frame, fg_color="transparent", border_width=2,
-                                             text=translation["back"], hover_color=("#A9A9A9", "#4E4F50"),
+                                             text=translation["back"], hover_color=("#BEBEBE", "#4E4F50"),
                                              text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
             self.back_student_tooltip = CTkToolTip(self.back_student, message=translation["back_tooltip"],
-                                                   bg_color="#A9A9A9", alpha=0.90)
+                                                   bg_color="#989898", alpha=0.90)
             self.student_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.s_buttons_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.title_student.bind("<Button-1>", lambda event: self.focus_set())
@@ -4363,11 +4363,11 @@ class TeraTermUI(customtkinter.CTk):
                                                bg_color="#1E90FF")
             self.search_next_page = CustomButton(master=self.search_scrollbar, fg_color="transparent", border_width=2,
                                                  text=translation["search_next_page"], text_color=("gray10", "#DCE4EE"),
-                                                 hover_color=("#A9A9A9", "#4E4F50"),
+                                                 hover_color=("#BEBEBE", "#4E4F50"),
                                                  command=self.go_next_search_handler, width=85)
             self.search_next_page_tooltip = CTkToolTip(self.search_next_page,
                                                        message=translation["search_next_page_tooltip"],
-                                                       bg_color="#A9A9A9", alpha=0.90)
+                                                       bg_color="#989898", alpha=0.90)
             self.tabview.tab(self.search_tab).bind("<Button-1>", lambda event: self.focus_set())
             self.search_scrollbar.bind("<Button-1>", lambda event: self.focus_set())
             self.title_search.bind("<Button-1>", lambda event: self.focus_set())
@@ -4400,23 +4400,23 @@ class TeraTermUI(customtkinter.CTk):
                                             command=self.option_menu_event_handler, width=141)
             self.go_next_1VE = CustomButton(master=self.tabview.tab(self.other_tab), fg_color="transparent",
                                             border_width=2, text=translation["go_next"],
-                                            text_color=("gray10", "#DCE4EE"), hover_color=("#A9A9A9", "#4E4F50"),
+                                            text_color=("gray10", "#DCE4EE"), hover_color=("#BEBEBE", "#4E4F50"),
                                             command=self.go_next_page_handler, width=100)
             self.go_next_1GP = CustomButton(master=self.tabview.tab(self.other_tab), fg_color="transparent",
                                             border_width=2, text=translation["go_next"],
-                                            text_color=("gray10", "#DCE4EE"), hover_color=("#A9A9A9", "#4E4F50"),
+                                            text_color=("gray10", "#DCE4EE"), hover_color=("#BEBEBE", "#4E4F50"),
                                             command=self.go_next_page_handler, width=100)
             self.go_next_409 = CustomButton(master=self.tabview.tab(self.other_tab), fg_color="transparent",
                                             border_width=2, text=translation["go_next"],
-                                            text_color=("gray10", "#DCE4EE"), hover_color=("#A9A9A9", "#4E4F50"),
+                                            text_color=("gray10", "#DCE4EE"), hover_color=("#BEBEBE", "#4E4F50"),
                                             command=self.go_next_page_handler, width=100)
             self.go_next_683 = CustomButton(master=self.tabview.tab(self.other_tab), fg_color="transparent",
                                             border_width=2, text=translation["go_next"],
-                                            text_color=("gray10", "#DCE4EE"), hover_color=("#A9A9A9", "#4E4F50"),
+                                            text_color=("gray10", "#DCE4EE"), hover_color=("#BEBEBE", "#4E4F50"),
                                             command=self.go_next_page_handler, width=100)
             self.go_next_4CM = CustomButton(master=self.tabview.tab(self.other_tab), fg_color="transparent",
                                             border_width=2, text=translation["go_next"],
-                                            text_color=("gray10", "#DCE4EE"), hover_color=("#A9A9A9", "#4E4F50"),
+                                            text_color=("gray10", "#DCE4EE"), hover_color=("#BEBEBE", "#4E4F50"),
                                             command=self.go_next_page_handler, width=100)
             self.tabview.tab(self.other_tab).bind("<Button-1>", lambda event: self.focus_set())
             self.title_menu.bind("<Button-1>", lambda event: self.focus_set())
@@ -4426,10 +4426,10 @@ class TeraTermUI(customtkinter.CTk):
 
             # Bottom Buttons
             self.back_classes = CustomButton(master=self.t_buttons_frame, fg_color="transparent", border_width=2,
-                                             text=translation["back"], hover_color=("#A9A9A9", "#4E4F50"),
+                                             text=translation["back"], hover_color=("#BEBEBE", "#4E4F50"),
                                              text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
             self.back_classes_tooltip = CTkToolTip(self.back_classes, alpha=0.90, message=translation["back_tooltip"],
-                                                   bg_color="#A9A9A9")
+                                                   bg_color="#989898")
             self.submit = CustomButton(master=self.tabview.tab(self.enroll_tab), border_width=2,
                                        text=translation["submit"], text_color=("gray10", "#DCE4EE"),
                                        command=self.submit_event_handler)
@@ -4442,7 +4442,7 @@ class TeraTermUI(customtkinter.CTk):
             self.show_classes_tooltip = CTkToolTip(self.show_classes, message=translation["show_classes_tooltip"],
                                                    bg_color="#1E90FF")
             self.multiple = CustomButton(master=self.t_buttons_frame, fg_color="transparent", border_width=2,
-                                         text=translation["multiple"], hover_color=("#A9A9A9", "#4E4F50"),
+                                         text=translation["multiple"], hover_color=("#BEBEBE", "#4E4F50"),
                                          text_color=("gray10", "#DCE4EE"), command=self.multiple_classes_event)
             self.multiple_tooltip = CTkToolTip(self.multiple, message=translation["multiple_tooltip"],
                                                bg_color="blue")
@@ -4519,10 +4519,10 @@ class TeraTermUI(customtkinter.CTk):
             self.m_remove_tooltip = CTkToolTip(self.m_remove, message=translation["m_remove_tooltip"], bg_color="red")
             self.back_multiple = CustomButton(master=self.m_button_frame, fg_color="transparent", border_width=2,
                                               text=translation["back"], height=40, width=70,
-                                              hover_color=("#A9A9A9", "#4E4F50"), text_color=("gray10", "#DCE4EE"),
+                                              hover_color=("#BEBEBE", "#4E4F50"), text_color=("gray10", "#DCE4EE"),
                                               command=self.go_back_event2)
             self.back_multiple_tooltip = CTkToolTip(self.back_multiple, alpha=0.90,
-                                                    message=translation["back_multiple"], bg_color="#A9A9A9")
+                                                    message=translation["back_multiple"], bg_color="#989898")
             self.submit_multiple = CustomButton(master=self.m_button_frame, border_width=2, text=translation["submit"],
                                                 text_color=("gray10", "#DCE4EE"),
                                                 command=self.submit_multiple_event_handler, height=40, width=70)
@@ -5153,7 +5153,7 @@ class TeraTermUI(customtkinter.CTk):
             if cell in self.table_tooltips:
                 self.table_tooltips[cell].configure(message=tooltip_message)
             else:
-                tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#A9A9A9", alpha=0.90)
+                tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#989898", alpha=0.90)
                 self.table_tooltips[cell] = tooltip
         self.table = new_table
 
@@ -5182,7 +5182,7 @@ class TeraTermUI(customtkinter.CTk):
                                                     hover_color="#173518", fg_color="#2e6930",
                                                     command=self.download_search_classes_as_pdf)
             self.table_count_tooltip = CTkToolTip(self.table_count, message=translation["table_count_tooltip"],
-                                                  bg_color="#A9A9A9", alpha=0.90)
+                                                  bg_color="#989898", alpha=0.90)
             self.previous_button_tooltip = CTkToolTip(self.previous_button, message=translation["previous_tooltip"],
                                                       bg_color="#1E90FF")
             self.next_button_tooltip = CTkToolTip(self.next_button, message=translation["next_tooltip"],
@@ -5933,9 +5933,9 @@ class TeraTermUI(customtkinter.CTk):
                                                         bg_color="green")
         self.modify_classes_frame = customtkinter.CTkFrame(self.my_classes_frame)
         self.back_my_classes = CustomButton(master=self.t_buttons_frame, fg_color="transparent", border_width=2,
-                                            text=translation["back"], hover_color=("#A9A9A9", "#4E4F50"),
+                                            text=translation["back"], hover_color=("#BEBEBE", "#4E4F50"),
                                             text_color=("gray10", "#DCE4EE"), command=self.go_back_event2)
-        self.back_my_classes_tooltip = CTkToolTip(self.back_my_classes, alpha=0.90, bg_color="#A9A9A9",
+        self.back_my_classes_tooltip = CTkToolTip(self.back_my_classes, alpha=0.90, bg_color="#989898",
                                                   message=translation["back_multiple"])
         self.modify_classes_title = customtkinter.CTkLabel(self.modify_classes_frame,
                                                            text=translation["mod_classes_title"])
@@ -5971,7 +5971,7 @@ class TeraTermUI(customtkinter.CTk):
             self.enrolled_classes_table.edit_column(i, width=column_widths[header])
             cell = self.enrolled_classes_table.get_cell(0, i)
             tooltip_message = tooltip_messages[header]
-            tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#A9A9A9", alpha=0.90)
+            tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#989898", alpha=0.90)
             self.enrolled_header_tooltips[cell] = tooltip
 
         self.my_classes_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
