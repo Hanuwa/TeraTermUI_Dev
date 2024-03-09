@@ -93,16 +93,19 @@ class CTkScalingBaseClass:
         else:
             raise ValueError(f"Can not scale font '{font}' of type {type(font)}. font needs to be tuple or instance of CTkFont")
 
-    def _apply_argument_scaling(self, kwargs):
+    def _apply_argument_scaling(self, kwargs: dict) -> dict:
+        assert self.__scaling_type == "widget"
+        scaled_kwargs = kwargs.copy()
         scalable_keys = ['pady', 'padx', 'x', 'y']
         for key in scalable_keys:
-            if key in kwargs:
-                value = kwargs[key]
+            if key in scaled_kwargs:
+                value = scaled_kwargs[key]
                 if isinstance(value, (int, float)):
-                    kwargs[key] = self._apply_widget_scaling(value)
+                    scaled_kwargs[key] = self._apply_widget_scaling(value)
                 elif isinstance(value, tuple):
-                    kwargs[key] = tuple(self._apply_widget_scaling(v) for v in value)
-        return kwargs
+                    scaled_kwargs[key] = tuple(self._apply_widget_scaling(v) for v in value)
+
+        return scaled_kwargs
 
     @staticmethod
     def _parse_geometry_string(geometry_string: str) -> tuple:
