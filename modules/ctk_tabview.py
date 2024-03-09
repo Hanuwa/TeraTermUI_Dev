@@ -181,15 +181,13 @@ class CTkTabview(CTkBaseClass):
             self._segmented_button.grid(row=1, rowspan=2, column=0, columnspan=1, padx=self._apply_widget_scaling(self._corner_radius), sticky="nse")
 
     def _set_grid_current_tab(self):
-        """ needs to be called for changes in corner_radius, border_width """
-        if self._anchor.lower() in ("center", "w", "nw", "n", "ne", "e", "e"):
-            self._tab_dict[self._current_name].grid(row=3, column=0, sticky="nsew",
-                                                    padx=self._apply_widget_scaling(max(self._corner_radius, self._border_width)),
-                                                    pady=self._apply_widget_scaling(max(self._corner_radius, self._border_width)))
-        else:
-            self._tab_dict[self._current_name].grid(row=0, column=0, sticky="nsew",
-                                                    padx=self._apply_widget_scaling(max(self._corner_radius, self._border_width)),
-                                                    pady=self._apply_widget_scaling(max(self._corner_radius, self._border_width)))
+        padding = self._apply_widget_scaling(max(self._corner_radius, self._border_width))
+        if not self._tab_dict[self._current_name].winfo_ismapped():
+            if self._anchor.lower() in ("center", "w", "nw", "n", "ne", "e", "e"):
+                row, column, sticky = 3, 0, "nsew"
+            else:
+                row, column, sticky = 0, 0, "nsew"
+            self._tab_dict[self._current_name].grid(row=row, column=column, sticky=sticky, padx=padding, pady=padding)
 
     def _grid_forget_all_tabs(self, exclude_name=None):
         for name, frame in self._tab_dict.items():
