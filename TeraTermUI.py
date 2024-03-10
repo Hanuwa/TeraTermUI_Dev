@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/9/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/10/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -3656,6 +3656,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.next_button.configure(text=translation["next"])
                 self.remove_button.configure(text=translation["remove"])
                 self.download_search_pdf.configure(text=translation["pdf_save_as"])
+                table_count = self.table_count.cget("text").split(":")[1].strip()
+                self.table_count.configure(text=translation["table_count"] + table_count)
                 self.table_count_tooltip.configure(message=translation["table_count_tooltip"])
                 self.previous_button_tooltip.configure(message=translation["previous_tooltip"])
                 self.next_button_tooltip.configure(message=translation["next_tooltip"])
@@ -5325,7 +5327,7 @@ class TeraTermUI(customtkinter.CTk):
         self.remove_button.grid(row=5, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
         self.download_search_pdf.grid(row=6, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
         self.update_buttons()
-        table_count_label = f"{translation['table_count']} {len(self.class_table_pairs)}/10"
+        table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/10"
         self.table_count.configure(text=table_count_label)
         if len(self.class_table_pairs) == 10:
             self.table_count.configure(text_color="red")
@@ -5514,7 +5516,7 @@ class TeraTermUI(customtkinter.CTk):
             self.table_count.configure(text_color=("black", "white"))
         del self.class_table_pairs[self.current_table_index]
 
-        table_count_label = f"{translation['table_count']} {len(self.class_table_pairs)}/10"
+        table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/10"
         self.table_count.configure(text=table_count_label)
 
         if len(self.class_table_pairs) == 1:
@@ -6161,6 +6163,8 @@ class TeraTermUI(customtkinter.CTk):
             if mod == translation["section"]:
                 entry.configure(state="normal")
             elif mod == translation["drop"] or mod == translation["choose"]:
+                if entry.get().strip() == "":
+                    entry._activate_placeholder()
                 entry.configure(state="disabled")
 
     def submit_modify_classes_handler(self):
@@ -7632,7 +7636,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.next_button.grid_forget()
             self.remove_button.grid(row=5, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
             self.download_search_pdf.grid(row=6, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-            table_count_label = f"{translation['table_count']} {len(self.class_table_pairs)}/10"
+            table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/10"
             self.table_count.configure(text=table_count_label)
 
     def status_widgets(self):
