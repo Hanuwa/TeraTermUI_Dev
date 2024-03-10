@@ -227,4 +227,23 @@ class CTkToolTip(Toplevel):
 
         self.messageVar.set(message)
         self.message_label.configure(**kwargs)
-        
+
+    def destroy(self):
+        if self.widget is not None and self.widget.winfo_exists():
+            self.widget.unbind("<Enter>")
+            self.widget.unbind("<Leave>")
+            self.widget.unbind("<Motion>")
+            self.widget.unbind("<B1-Motion>")
+            self.widget.unbind("<Destroy>")
+        if self.message_label is not None:
+            self.message_label.destroy()
+            self.message_label = None
+        if self.frame is not None:
+            self.frame.destroy()
+            self.frame = None
+        if self.transparent_frame is not None:
+            self.transparent_frame.destroy()
+            self.transparent_frame = None
+        super().destroy()
+
+
