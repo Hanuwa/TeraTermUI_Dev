@@ -6672,6 +6672,10 @@ class TeraTermUI(customtkinter.CTk):
             self.log_error(str(e))
             self.credentials = None
             self.disable_feedback = True
+        finally:
+            if hasattr(self, "FEEDBACK"):
+                del self.FEEDBACK
+            os.environ.pop("Feedback", None)
 
     def update_app(self, latest_version):
         lang = self.language_menu.get()
