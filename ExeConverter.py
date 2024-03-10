@@ -112,7 +112,7 @@ else:
     update_without_v = user_input
     update = "v" + update_without_v
 versions = ['installer', 'portable']
-output_directory = os.path.join(r"C:/Users/" + username + "/OneDrive/Documentos", "TeraTermUI_" + update)
+output_directory = os.path.join(r"C:\Users\\" + username + r"\OneDrive\Documentos", "TeraTermUI_" + update)
 
 # If process gets abruptly interrupted, load backup file
 program_backup = project_directory + r"\TeraTermUI.BAK.py"
