@@ -870,7 +870,6 @@ class TeraTermUI(customtkinter.CTk):
             translation = self.load_language(lang)
             aes_key = secrets.token_bytes(32)  # 256-bit key
             mac_key = secrets.token_bytes(32)  # separate 256-bit key for HMAC
-            iv = get_random_bytes(16)  # for AES CBC mode
 
             # Deletes these encrypted variables from memory
             def secure_delete(variable):
@@ -883,18 +882,23 @@ class TeraTermUI(customtkinter.CTk):
                 del variable
 
             # Encrypt and compute MAC
-            def aes_encrypt_then_mac(plaintext, key, inner_iv, inner_mac_key):
+            def aes_encrypt_then_mac(plaintext, key, inner_mac_key):
+                # Generate a new IV for each encryption
+                inner_iv = get_random_bytes(16)  # for AES CBC mode
                 cipher = AES.new(key, AES.MODE_CBC, iv=inner_iv)
                 ciphertext = cipher.encrypt(pad(plaintext.encode(), AES.block_size))
                 # Compute a MAC over the ciphertext
                 hmac = HMAC.new(inner_mac_key, digestmod=SHA256)
                 hmac.update(ciphertext)
                 mac = hmac.digest()
-                # Append the MAC to the ciphertext
-                return ciphertext + mac
+                # Prepend the IV to the ciphertext and append the MAC
+                return inner_iv + ciphertext + mac
 
             # Decrypt and verify MAC
-            def aes_decrypt_and_verify_mac(ciphertext_with_mac, key, inner_iv, inner_mac_key):
+            def aes_decrypt_and_verify_mac(ciphertext_with_iv_mac, key, inner_mac_key):
+                # Extract the IV from the beginning of the data
+                inner_iv = ciphertext_with_iv_mac[:16]
+                ciphertext_with_mac = ciphertext_with_iv_mac[16:]
                 # Separate the MAC from the ciphertext
                 ciphertext = ciphertext_with_mac[:-SHA256.digest_size]
                 mac = ciphertext_with_mac[-SHA256.digest_size:]
@@ -914,8 +918,8 @@ class TeraTermUI(customtkinter.CTk):
                 if TeraTermUI.checkIfProcessRunning("ttermpro"):
                     student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
                     code = self.code_entry.get().replace(" ", "")
-                    student_id_enc = aes_encrypt_then_mac(str(student_id), aes_key, iv, mac_key)
-                    code_enc = aes_encrypt_then_mac(str(code), aes_key, iv, mac_key)
+                    student_id_enc = aes_encrypt_then_mac(str(student_id), aes_key, mac_key)
+                    code_enc = aes_encrypt_then_mac(str(code), aes_key, mac_key)
                     if ((re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", student_id) or
                          re.match(r"^\d{9}$", student_id)) and code.isdigit() and len(code) == 4):
                         secure_delete(student_id)
@@ -927,9 +931,9 @@ class TeraTermUI(customtkinter.CTk):
                         TeraTermUI.unfocus_tkinter()
                         self.uprb.UprbayTeraTermVt.type_keys("{TAB}")
                         self.uprb.UprbayTeraTermVt.type_keys(
-                            aes_decrypt_and_verify_mac(student_id_enc, aes_key, iv, mac_key))
+                            aes_decrypt_and_verify_mac(student_id_enc, aes_key, mac_key))
                         self.uprb.UprbayTeraTermVt.type_keys(
-                            aes_decrypt_and_verify_mac(code_enc, aes_key, iv, mac_key))
+                            aes_decrypt_and_verify_mac(code_enc, aes_key, mac_key))
                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                         text_output = self.capture_screenshot()
                         if "SIGN-IN" in text_output:
@@ -947,7 +951,6 @@ class TeraTermUI(customtkinter.CTk):
                             secure_delete(code_enc)
                             secure_delete(aes_key)
                             secure_delete(mac_key)
-                            secure_delete(iv)
                             del student_id, code, student_id_enc, code_enc, aes_key, mac_key
                             self.switch_tab()
                         else:
