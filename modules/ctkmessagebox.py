@@ -42,7 +42,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                  button_width: int = None,
                  button_height: int = None,
                  cancel_button_color: str = None,
-                 cancel_button: str = None, # types: circle, cross or none
+                 cancel_button: str = None,
                  hover_color: tuple = "default",
                  icon: str = "info",
                  icon_size: tuple = None,
@@ -457,7 +457,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
     def get(self):
         if self.winfo_exists():
             self.master.wait_window(self)
-        if hasattr(self, 'button1_var'):  # If it's a checkbox
+        if hasattr(self, 'button1_var'):
             checkbox_state = self.button1_var.get()
             return self.event, checkbox_state
         else:
@@ -473,11 +473,11 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                 self.button1.deselect()
 
     def check_checkbox(self):
-        if hasattr(self, 'button1_var'):  # If it's a checkbox
+        if hasattr(self, 'button1_var'):
             self.button1.select()
 
     def uncheck_checkbox(self):
-        if hasattr(self, 'button1_var'):  # If it's a checkbox
+        if hasattr(self, 'button1_var'):
             self.button1.deselect()
 
     def oldxyset(self, event):
@@ -503,18 +503,43 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                 self.fade_out()
             self.grab_release()
             self.destroy()
-        elif event:  # In case there's another event
+        elif event:
             self.event = event
             if self.fade:
                 self.fade_out()
             self.grab_release()
             self.destroy()
-        else:  # If no event
+        else:
             self.event = event
             if self.fade:
                 self.fade_out()
             self.grab_release()
             self.destroy()
+
+    def destroy(self):
+        self.unbind("<Return>")
+        self.unbind("<Escape>")
+        self.frame_top.unbind("<B1-Motion>")
+        self.frame_top.unbind("<ButtonPress-1>")
+        if hasattr(self, "button_close"):
+            self.button_close.unbind("<ButtonPress-1>")
+            self.button_close.unbind("<ButtonRelease-1>")
+            self.button_close.unbind("<Enter>")
+            self.button_close.unbind("<Leave>")
+            self.button_close.destroy()
+        if hasattr(self, "title_label"):
+            self.title_label.unbind("<B1-Motion>")
+            self.title_label.unbind("<ButtonPress-1>")
+            self.title_label.destroy()
+        if hasattr(self, "info"):
+            self.info.destroy()
+        if hasattr(self, "button1"):
+            self.button1.destroy()
+        if hasattr(self, "button_2"):
+            self.button_2.destroy()
+        if hasattr(self, "button_3"):
+            self.button_3.destroy()
+        super().destroy()
 
 
 class CustomButton(customtkinter.CTkButton):
