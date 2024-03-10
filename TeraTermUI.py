@@ -590,9 +590,10 @@ class TeraTermUI(customtkinter.CTk):
             self.teraterm_file = os.path.join(teraterm_directory, "TERATERM.ini")
             self.teraterm_directory = teraterm_directory
         else:
-            self.location = "C:/Program Files (x86)/teraterm/ttermpro.exe"
-            self.teraterm_file = "C:/Program Files (x86)/teraterm/TERATERM.ini"
-            self.teraterm_directory = "C:/Program Files (x86)/teraterm"
+            main_drive = os.path.abspath(os.sep)
+            self.location = os.path.join(main_drive, "Program Files (x86)", "teraterm", "ttermpro.exe")
+            self.teraterm_file = os.path.join(main_drive, "Program Files (x86)", "teraterm", "TERATERM.ini")
+            self.teraterm_directory = os.path.join(main_drive, "Program Files (x86)", "teraterm")
         # Database
         try:
             db_path = "database.db"
@@ -7896,11 +7897,12 @@ class TeraTermUI(customtkinter.CTk):
 
     @staticmethod
     def find_ttermpro():
+        main_drive = os.path.abspath(os.sep)
         # Prioritize common installation directories
         common_paths = [
-            "C:/Program Files (x86)/",
-            "C:/Program Files/",
-            "C:/Users/*/AppData/Local/Programs/",
+            main_drive + "Program Files (x86)/",
+            main_drive + "Program Files/",
+            main_drive + "Users/*/AppData/Local/Programs/",
         ]
 
         # Function to search within a given path to a certain depth
@@ -7928,16 +7930,16 @@ class TeraTermUI(customtkinter.CTk):
             if result:
                 return result
 
-        # If not found, search the entire C drive with a limited depth
-        return search_within_path("C:/")
+        # If not found, search the entire main drive with a limited depth
+        return search_within_path(main_drive)
 
     def change_location_auto_handler(self):
         lang = self.language_menu.get()
         self.files.configure(state="disabled")
-        message_english = "Would you like the application to search for Tera Term on the C drive automatically? " \
+        message_english = "Would you like the application to search for Tera Term on the main drive automatically? " \
                           "(click  the \"no\" button to search for it manually)\n\n" \
                           "Note: This process may take some time and make the application unresponsive briefly"
-        message_spanish = "¿Desea que la aplicación busque automáticamente Tera Term en la unidad C? " \
+        message_spanish = "¿Desea que la aplicación busque automáticamente Tera Term en la unidad principal? " \
                           "(hacer clic al botón \"no\" para buscarlo manualmente)\n\n" \
                           "Nota:  Este proceso podría tardar un poco y causar que la aplicación brevemente no responda."
         message = message_english if lang == "English" else message_spanish
@@ -7996,9 +7998,11 @@ class TeraTermUI(customtkinter.CTk):
             self.manually_change_location()
 
     @staticmethod
-    def find_teraterm_directory(base_path=r"C:\Program Files (x86)"):
+    def find_teraterm_directory():
         import glob
 
+        main_drive = os.path.abspath(os.sep)
+        base_path = os.path.join(main_drive, "Program Files (x86)")
         possible_dirs = glob.glob(os.path.join(base_path, "teraterm*"))
         original_teraterm = os.path.join(base_path, "teraterm")
         if original_teraterm in possible_dirs:
@@ -8012,7 +8016,7 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         self.slideshow_frame.pause_cycle()
-        filename = filedialog.askopenfilename(initialdir="C:/",
+        filename = filedialog.askopenfilename(initialdir=os.path.abspath(os.sep),
                                               title=translation["select_tera_term"],
                                               filetypes=(("Tera Term", "*ttermpro.exe"),))
         if re.search("ttermpro.exe", filename):
@@ -9642,4 +9646,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
