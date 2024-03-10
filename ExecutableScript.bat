@@ -31,6 +31,7 @@ if '%errorlevel%' NEQ '0' (
     pip install colorama
     if '%errorlevel%' NEQ '0' (
         echo Failed to install colorama. Please install it manually.
+        pause
         exit /B
     )
 )
@@ -39,6 +40,7 @@ if '%errorlevel%' NEQ '0' (
 python ExeConverter.py
 if '%errorlevel%' NEQ '0' (
     echo Failed to run ExeConverter.py. Please check the script for errors.
+    pause
     exit /B
 )
 
