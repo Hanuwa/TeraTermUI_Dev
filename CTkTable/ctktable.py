@@ -774,3 +774,18 @@ class CTkTable(customtkinter.CTkFrame):
         for i in self.frame:
             self.frame[i].unbind(sequence, funcid)
         self.inside_frame.unbind(sequence, funcid)
+
+    def destroy(self):
+        for cell in self.frame.values():
+            for bind_info in self.binded_objects:
+                sequence, _, _ = bind_info
+                cell.unbind(sequence)
+            cell.destroy()
+        self.frame.clear()
+        self.binded_objects.clear()
+        if self.inside_frame:
+            self.inside_frame.destroy()
+            self.inside_frame = None
+        self.data.clear()
+        self.values = None
+        super().destroy()
