@@ -248,10 +248,6 @@ class TeraTermUI(customtkinter.CTk):
                                                          canvas_takefocus=False, command=self.change_language_event,
                                                          corner_radius=15)
         self.language_menu.grid(row=6, column=0, padx=20, pady=(10, 10))
-        self.language_menu_tooltip = CTkToolTip(self.language_menu, message="The language can only\n"
-                                                                            "be changed in the main menu",
-                                                bg_color="#989898")
-        self.language_menu_tooltip.hide()
         self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame, corner_radius=15,
                                                                        canvas_takefocus=False,
                                                                        values=["Dark", "Light", "System"],
@@ -462,9 +458,11 @@ class TeraTermUI(customtkinter.CTk):
         self.changed_registers = None
 
         # My Classes
-        self.enrolled_rows = None
-        self.enrolled_classes_data = None
+        self.enrolled_header_tooltips = {}
+        self.enrolled_tooltips = []
         self.my_classes_frame = None
+        self.enrolled_classes_table = None
+        self.enrolled_classes_data = None
         self.title_my_classes = None
         self.total_credits_label = None
         self.submit_my_classes = None
@@ -472,7 +470,6 @@ class TeraTermUI(customtkinter.CTk):
         self.modify_classes_frame = None
         self.back_my_classes = None
         self.back_my_classes_tooltip = None
-        self.enrolled_classes_table = None
         self.change_section_entries = None
         self.mod_selection_list = None
         self.mod_selection = None
@@ -540,8 +537,6 @@ class TeraTermUI(customtkinter.CTk):
         self.class_table_pairs = []
         self.current_table_index = -1
         self.table_tooltips = {}
-        self.enrolled_header_tooltips = {}
-        self.enrolled_tooltips = []
         self.table_count = None
         self.table = None
         self.current_class = None
@@ -561,6 +556,7 @@ class TeraTermUI(customtkinter.CTk):
         self.error = None
         self.success = None
         self.loading_screen = None
+        self.loading_screen_start_time = None
         self.information = None
         self.run_fix = False
         self.teraterm_not_found = False
@@ -1763,28 +1759,28 @@ class TeraTermUI(customtkinter.CTk):
 
     def move_up_scrollbar(self):
         if self.up_arrow_key_enabled:
-            if self.enrolled_rows is None:
+            if self.enrolled_classes_table is None:
                 self.search_scrollbar.scroll_more_up()
             else:
                 self.my_classes_frame.scroll_more_up()
 
     def move_down_scrollbar(self):
         if self.down_arrow_key_enabled:
-            if self.enrolled_rows is None:
+            if self.enrolled_classes_table is None:
                 self.search_scrollbar.scroll_more_down()
             else:
                 self.my_classes_frame.scroll_more_down()
 
     def move_top_scrollbar(self):
         if self.move_slider_right_enabled or self.move_slider_left_enabled:
-            if self.enrolled_rows is None:
+            if self.enrolled_classes_table is None:
                 self.search_scrollbar.scroll_to_top()
             else:
                 self.my_classes_frame.scroll_to_top()
 
     def move_bottom_scrollbar(self):
         if self.move_slider_right_enabled or self.move_slider_left_enabled:
-            if self.enrolled_rows is None:
+            if self.enrolled_classes_table is None:
                 self.search_scrollbar.scroll_to_bottom()
             else:
                 self.my_classes_frame.scroll_to_bottom()
@@ -1793,7 +1789,7 @@ class TeraTermUI(customtkinter.CTk):
     def multiple_classes_event(self):
         self.tabview.grid_forget()
         self.t_buttons_frame.grid_forget()
-        if self.enrolled_rows is not None:
+        if self.enrolled_classes_table is not None:
             self.my_classes_frame.grid_forget()
             self.modify_classes_frame.grid_forget()
             self.back_my_classes.grid_forget()
@@ -3076,9 +3072,7 @@ class TeraTermUI(customtkinter.CTk):
         self.main_menu = False
         if self.help is not None and self.help.winfo_exists():
             self.files.configure(state="disabled")
-        self.language_menu.configure(state="disabled")
         self.intro_box.stop_autoscroll(event=None)
-        self.language_menu_tooltip.show()
         self.slideshow_frame.pause_cycle()
 
     def login_to_existent_connection(self):
@@ -3139,9 +3133,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.main_menu = False
                 if self.help is not None and self.help.winfo_exists():
                     self.files.configure(state="disabled")
-                self.language_menu.configure(state="disabled")
                 self.intro_box.stop_autoscroll(event=None)
-                self.language_menu_tooltip.show()
                 self.slideshow_frame.pause_cycle()
                 self.move_window()
             elif "STUDENTS REQ/DROP" in text_output or "HOLD FLAGS" in text_output or \
@@ -3164,9 +3156,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.files.configure(state="disabled")
                 if self.help is not None and self.help.winfo_exists():
                     self.fix.configure(state="normal")
-                self.language_menu.configure(state="disabled")
                 self.intro_box.stop_autoscroll(event=None)
-                self.language_menu_tooltip.show()
                 self.slideshow_frame.pause_cycle()
                 self.switch_tab()
                 self.move_window()
@@ -3275,8 +3265,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.m_counter = 0
                 self.enrolled_classes_list.clear()
                 self.dropped_classes_list.clear()
-            self.language_menu.configure(state="normal")
-            self.language_menu_tooltip.hide()
             self.slideshow_frame.resume_cycle()
             self.intro_box.reset_autoscroll()
             if not self.intro_box.disabled_autoscroll:
@@ -3407,6 +3395,25 @@ class TeraTermUI(customtkinter.CTk):
                 if header_cell in self.table_tooltips:
                     self.table_tooltips[header_cell].configure(message=tooltip_message)
 
+    def update_enrolled_classes_headers_tooltips(self):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        tooltip_messages = {
+            translation["course"]: translation["tooltip_course"],
+            translation["grade"]: translation["tooltip_grd"],
+            translation["days"]: translation["tooltip_days"],
+            translation["times"]: translation["tooltip_times"],
+            translation["room"]: translation["tooltip_croom"]
+        }
+        new_headers = [translation["course"], translation["grade"], translation["days"],
+                       translation["times"], translation["room"]]
+        self.enrolled_classes_table.update_headers(new_headers)
+        for i, new_header in enumerate(new_headers):
+            tooltip_message = tooltip_messages[new_header]
+            header_cell = self.enrolled_classes_table.get_cell(0, i)
+            if header_cell in self.enrolled_header_tooltips:
+                self.enrolled_header_tooltips[header_cell].configure(message=tooltip_message)
+
     # function for changing language
     def change_language_event(self, lang):
         if self.curr_lang == lang:
@@ -3423,7 +3430,6 @@ class TeraTermUI(customtkinter.CTk):
         self.intro_box.delete("1.0", "end")
         self.intro_box.insert("0.0", translation["intro_box"])
         self.intro_box.configure(state="disabled")
-        self.language_menu_tooltip.configure(message=translation["language_tooltip"])
         self.appearance_mode_optionemenu.configure(values=[translation["light"], translation["dark"],
                                                            translation["default"]])
         if appearance == "Dark" or appearance == "Oscuro":
@@ -3526,7 +3532,37 @@ class TeraTermUI(customtkinter.CTk):
             self.fix_text.configure(text=translation["fix_title"])
             self.fix.configure(text=translation["fix"])
             self.search_box.lang = lang
+        if self.in_auth_frame:
+            self.title_login.configure(text=translation["title_auth"])
+            self.disclaimer.configure(text=translation["disclaimer"])
+            self.username.configure(text=translation["username"])
+            if lang == "English":
+                self.username.grid(row=3, column=0, padx=(0, 125), pady=(0, 10))
+                self.username_entry.grid(row=3, column=0, padx=(90, 0), pady=(0, 10))
+            elif lang == "Español":
+                self.username.grid(row=3, column=0, padx=(0, 140), pady=(0, 10))
+                self.username_entry.grid(row=3, column=0, padx=(60, 0), pady=(0, 10))
+            self.back.configure(text=translation["back"])
+            self.auth.configure(text=translation["authentication"])
+        elif self.in_student_frame:
+            self.title_student.configure(text=translation["title_security"])
+            self.student_id.configure(text=translation["student_id"])
+            self.code.configure(text=translation["code"])
+            if lang == "English":
+                self.student_id.grid(row=2, column=1, padx=(0, 150), pady=(0, 10))
+                self.student_id_entry.grid(row=2, column=1, padx=(100, 0), pady=(0, 10))
+                self.code.grid(row=3, column=1, padx=(0, 126), pady=(0, 10))
+                self.code_entry.grid(row=3, column=1, padx=(100, 0), pady=(0, 10))
+            elif lang == "Español":
+                self.student_id.grid(row=2, column=1, padx=(0, 164), pady=(0, 10))
+                self.student_id_entry.grid(row=2, column=1, padx=(120, 0), pady=(0, 10))
+                self.code.grid(row=3, column=1, padx=(0, 125), pady=(0, 10))
+                self.code_entry.grid(row=3, column=1, padx=(120, 0), pady=(0, 10))
+            self.show.configure(text=translation["show"])
+            self.back_student.configure(text=translation["back"])
+            self.system.configure(text=translation["system"])
         if self.init_multiple:
+            self.rename_tabs()
             self.update_table_headers_tooltips()
             self.title_enroll.configure(text=translation["title_enroll"])
             self.e_classes.configure(text=translation["class"])
@@ -3587,11 +3623,11 @@ class TeraTermUI(customtkinter.CTk):
             self.submit_multiple.configure(text=translation["submit"])
             for i in range(6):
                 self.m_register_menu[i].configure(values=[translation["register"], translation["drop"]])
-                if self.m_register_menu[i].get() == "Choose":
+                if self.m_register_menu[i].get() == "Choose" or self.m_register_menu[i].get() == "Escoge":
                     self.m_register_menu[i].set(translation["choose"])
-                elif self.m_register_menu[i].get() == "Register":
+                elif self.m_register_menu[i].get() == "Register" or self.m_register_menu[i].get() == "Registra":
                     self.m_register_menu[i].set(translation["register"])
-                elif self.m_register_menu[i].get() == "Drop":
+                elif self.m_register_menu[i].get() == "Drop" or self.m_register_menu[i].get() == "Baja":
                     self.m_register_menu[i].set(translation["drop"])
             self.auto_enroll.configure(text=translation["auto_enroll"])
             self.save_data.configure(text=translation["save_data"])
@@ -3624,8 +3660,34 @@ class TeraTermUI(customtkinter.CTk):
                 self.next_button_tooltip.configure(message=translation["next_tooltip"])
                 self.remove_button_tooltip.configure(message=translation["remove_tooltip"])
                 self.download_search_pdf_tooltip.configure(message=translation["download_pdf_search_tooltip"])
-            if self.enroll_tab != translation["enroll_tab"]:
-                self.after(1000, self.rename_tabs)
+            if self.enrolled_classes_table is not None:
+                self.update_enrolled_classes_headers_tooltips()
+                title_my_classes = self.title_my_classes.cget("text").split(":")[1].strip()
+                self.title_my_classes.configure(text=translation["my_classes"] + title_my_classes)
+                total_credits = float(self.total_credits_label.cget("text").split(":")[1].strip())
+                self.total_credits_label.configure(text=translation["total_creds"] + str(total_credits) + "0")
+                self.submit_my_classes.configure(text=translation["submit"])
+                self.submit_my_classes_tooltip.configure(message=translation["submit_modify_tooltip"])
+                self.download_enrolled_pdf.configure(text=translation["pdf_save_as"])
+                self.download_enrolled_pdf_tooltip.configure(message=translation["download_pdf_enrolled_tooltip"])
+                self.back_my_classes.configure(text=translation["back"])
+                self.back_my_classes_tooltip.configure(message=translation["back_multiple"])
+                self.modify_classes_title.configure(text=translation["mod_classes_title"])
+                for option_menu in self.mod_selection_list:
+                    if option_menu is not None:
+                        option_menu.configure(values=[translation["choose"], translation["drop"],
+                                                      translation["section"]])
+                        if option_menu.get() == "Choose" or option_menu.get() == "Escoge":
+                            option_menu.set(translation["choose"])
+                        elif option_menu.get() == "Drop" or option_menu.get() == "Baja":
+                            option_menu.set(translation["drop"])
+                        elif option_menu.get() == "Section" or option_menu.get() == "Sección":
+                            option_menu.set(translation["section"])
+                for i in range(0, len(self.enrolled_tooltips), 2):
+                    if i < len(self.enrolled_tooltips):
+                        self.enrolled_tooltips[i].configure(translation["mod_selection"])
+                    if i+1 < len(self.enrolled_tooltips):
+                        self.enrolled_tooltips[i+1].configure(translation["change_section_entry"])
 
     def rename_tabs(self):
         lang = self.language_menu.get()
@@ -3849,7 +3911,7 @@ class TeraTermUI(customtkinter.CTk):
             if not TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
                 self.forceful_end_countdown()
             if total_seconds <= 0:
-                # Call enrollment function
+                # Enrollment function
                 self.timer_label.configure(text=translation["performing_auto_enroll"], text_color="#32CD32",
                                            font=customtkinter.CTkFont(size=17))
                 self.timer_label.pack(pady=30)
@@ -3919,9 +3981,10 @@ class TeraTermUI(customtkinter.CTk):
                                                             f"minutos \nrestantes hasta la matrícula")
                     if total_seconds > 3600:
                         seconds_until_next_minute = 60 - current_date.second
-                        self.timer_window.after(seconds_until_next_minute * 1000, lambda: self.countdown(your_date)
-                        if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
-                        else self.forceful_end_countdown())
+                        self.timer_window.after(
+                            seconds_until_next_minute * 1000, lambda: self.countdown(your_date)
+                            if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
+                            else self.forceful_end_countdown())
 
                 else:  # When there's less than an hour remaining
                     # If there's a part of minute left, consider it as a whole minute
@@ -3961,13 +4024,15 @@ class TeraTermUI(customtkinter.CTk):
                     # update every minute if there's more than 60 seconds left
                     if total_seconds > 60:
                         seconds_until_next_minute = 60 - current_date.second
-                        self.timer_window.after(seconds_until_next_minute * 1000, lambda: self.countdown(your_date)
-                        if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
-                        else self.forceful_end_countdown())
+                        self.timer_window.after(
+                            seconds_until_next_minute * 1000, lambda: self.countdown(your_date)
+                            if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
+                            else self.forceful_end_countdown())
                     else:  # update every second if there's less than or equal to 60 seconds left
-                        self.timer_window.after(1000, lambda: self.countdown(your_date)
-                        if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
-                        else self.forceful_end_countdown())
+                        self.timer_window.after(
+                            1000, lambda: self.countdown(your_date)
+                            if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
+                            else self.forceful_end_countdown())
 
     def end_countdown(self):
         self.auto_enroll_bool = False
@@ -4055,7 +4120,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.m_section_entry[i].configure(state="normal")
                 self.m_register_menu[i].configure(state="normal")
             self.m_semester_entry[0].configure(state="normal")
-            if self.enrolled_rows is not None:
+            if self.enrolled_classes_table is not None:
                 self.submit_my_classes.configure(state="normal")
 
     @staticmethod
@@ -4445,7 +4510,7 @@ class TeraTermUI(customtkinter.CTk):
                                          text=translation["multiple"], hover_color=("#BEBEBE", "#4E4F50"),
                                          text_color=("gray10", "#DCE4EE"), command=self.multiple_classes_event)
             self.multiple_tooltip = CTkToolTip(self.multiple, message=translation["multiple_tooltip"],
-                                               bg_color="blue")
+                                               bg_color="#0F52BA")
             self.t_buttons_frame.bind("<Button-1>", lambda event: self.focus_set())
             for entry in [self.e_classes_entry, self.e_section_entry, self.s_classes_entry]:
                 entry.lang = lang
@@ -4506,17 +4571,18 @@ class TeraTermUI(customtkinter.CTk):
                     command=lambda value: self.focus_set()))
                 self.m_register_menu[i].set(translation["choose"])
                 self.m_num_class[i].bind("<Button-1>", lambda event: self.focus_set())
-            self.m_semester_entry[0].bind("<FocusOut>", lambda event:
-            self.change_semester(event_type="focus_out"))
+            self.m_semester_entry[0].bind(
+                "<FocusOut>", lambda event: self.change_semester(event_type="focus_out"))
             self.m_add = CustomButton(master=self.m_button_frame, border_width=2, text="+",
                                       text_color=("gray10", "#DCE4EE"), command=self.add_event, height=40, width=50,
-                                      fg_color="blue")
-            self.m_add_tooltip = CTkToolTip(self.m_add, message=translation["add_tooltip"], bg_color="blue")
+                                      fg_color="#0F52BA")
+            self.m_add_tooltip = CTkToolTip(self.m_add, message=translation["add_tooltip"], bg_color="#0F52BA")
             self.m_remove = CustomButton(master=self.m_button_frame, border_width=2, text="-",
                                          text_color=("gray10", "#DCE4EE"), command=self.remove_event, height=40,
-                                         width=50, fg_color="red", hover_color="darkred",
+                                         width=50, fg_color="#DC143C", hover_color="darkred",
                                          state="disabled")
-            self.m_remove_tooltip = CTkToolTip(self.m_remove, message=translation["m_remove_tooltip"], bg_color="red")
+            self.m_remove_tooltip = CTkToolTip(self.m_remove, message=translation["m_remove_tooltip"],
+                                               bg_color="#DC143C")
             self.back_multiple = CustomButton(master=self.m_button_frame, fg_color="transparent", border_width=2,
                                               text=translation["back"], height=40, width=70,
                                               hover_color=("#BEBEBE", "#4E4F50"), text_color=("gray10", "#DCE4EE"),
@@ -4690,6 +4756,7 @@ class TeraTermUI(customtkinter.CTk):
         self.progress_bar.start()
         self.attributes("-disabled", True)
         self.disable_widgets(self)
+        self.loading_screen_start_time = time.time()
         return self.loading_screen
 
     @staticmethod
@@ -4706,8 +4773,8 @@ class TeraTermUI(customtkinter.CTk):
 
     # tells the loading screen when it should stop and close
     def update_loading_screen(self, loading_screen, task_done):
-        if task_done.is_set():
-            self.update_idletasks()
+        current_time = time.time()
+        if task_done.is_set() or (current_time - self.loading_screen_start_time > 30):
             self.attributes("-disabled", False)
             self.update_widgets()
             self.hide_loading_screen()
@@ -4756,10 +4823,10 @@ class TeraTermUI(customtkinter.CTk):
             return
 
         self.enable_widgets(self)
-        if self.enrolled_rows is not None:
+        if self.enrolled_classes_table is not None:
             lang = self.language_menu.get()
             translation = self.load_language(lang)
-            for row_index in range(min(len(self.mod_selection_list), self.enrolled_rows - 1)):
+            for row_index in range(min(len(self.mod_selection_list), len(self.enrolled_classes_data))):
                 mod_selection = self.mod_selection_list[row_index]
                 change_section_entry = self.change_section_entries[row_index]
                 if mod_selection is not None and change_section_entry is not None:
@@ -4863,6 +4930,7 @@ class TeraTermUI(customtkinter.CTk):
     def capture_screenshot(self):
         import pyautogui
         import win32gui
+        import win32con
 
         self.update_idletasks()
         time.sleep(1)
@@ -4872,6 +4940,8 @@ class TeraTermUI(customtkinter.CTk):
         if self.tesseract_unzipped and tesseract_dir_path.is_dir():
             window_title = "uprbay.uprb.edu - Tera Term VT"
             hwnd = win32gui.FindWindow(None, window_title)
+            if win32gui.IsIconic(hwnd):
+                win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
             win32gui.SetForegroundWindow(hwnd)
             x, y, right, bottom = get_window_rect(hwnd)
             width = right - x
@@ -5240,7 +5310,7 @@ class TeraTermUI(customtkinter.CTk):
 
         self.display_current_table()
 
-        new_table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
+        new_table.grid(row=2, column=1, padx=(0, 15), pady=(40, 0), sticky="n")
         self.table_count.grid(row=4, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
         if len(self.class_table_pairs) > 1:
             self.previous_button.grid(row=5, column=1, padx=(0, 300), pady=(10, 0), sticky="n")
@@ -5418,10 +5488,6 @@ class TeraTermUI(customtkinter.CTk):
     def remove_current_table(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        # Step 1: Remove the selected table
-        if len(self.class_table_pairs) == 0:
-            return
-
         display_class_to_remove, table_to_remove, _, _, _, more_sections \
             = self.class_table_pairs[self.current_table_index]
         display_class_to_remove.grid_forget()
@@ -5447,11 +5513,9 @@ class TeraTermUI(customtkinter.CTk):
             self.table_count.configure(text_color=("black", "white"))
         del self.class_table_pairs[self.current_table_index]
 
-        # Step 2: Update the table count
         table_count_label = f"{translation['table_count']} {len(self.class_table_pairs)}/10"
         self.table_count.configure(text=table_count_label)
 
-        # Step 3: Hide all GUI elements if no tables are left
         if len(self.class_table_pairs) == 1:
             self.previous_button.grid_forget()
             self.next_button.grid_forget()
@@ -5470,7 +5534,6 @@ class TeraTermUI(customtkinter.CTk):
             self.after(0, self.focus_set)
             return
 
-        # Step 4: Show the previous table
         self.current_table_index = max(0, self.current_table_index - 1)
         self.display_current_table()
         self.update_buttons()
@@ -5902,7 +5965,7 @@ class TeraTermUI(customtkinter.CTk):
         self.unbind("<Control-Tab>")
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        if self.enrolled_rows is not None:
+        if self.enrolled_classes_table is not None:
             self.destroy_enrolled_frame()
         # Define the headers for the table based on the keys from enrolled_classes
         headers = [translation["course"], translation["grade"], translation["days"],
@@ -5910,7 +5973,7 @@ class TeraTermUI(customtkinter.CTk):
         # Create the table values, starting with headers
         table_values = [headers] + [[cls.get(header, "") for header in headers] for cls in data]
         # Calculate the number of rows
-        self.enrolled_rows = len(data) + 1
+        enrolled_rows = len(data) + 1
         self.enrolled_classes_data = data
 
         semester = self.dialog_input.upper().replace(" ", "")
@@ -5946,7 +6009,7 @@ class TeraTermUI(customtkinter.CTk):
         self.enrolled_classes_table = CTkTable(
             self.my_classes_frame,
             column=len(headers),
-            row=self.enrolled_rows,
+            row=enrolled_rows,
             values=table_values,
             header_color="#145DA0",
             hover_color="#339CFF",
@@ -5977,18 +6040,18 @@ class TeraTermUI(customtkinter.CTk):
         self.my_classes_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
         self.my_classes_frame.grid_columnconfigure(2, weight=1)
         self.title_my_classes.grid(row=1, column=1, padx=(180, 0), pady=(10, 10))
-        self.enrolled_classes_table.grid(row=2, column=1, pady=(0, 5))
+        self.enrolled_classes_table.grid(row=2, column=1, pady=(0, 5), padx=(10, 0))
         self.total_credits_label.grid(row=3, column=1, padx=(180, 0), pady=(0, 15))
         self.submit_my_classes.grid(row=4, column=1, padx=(180, 0))
         self.download_enrolled_pdf.grid(row=5, column=1, padx=(180, 0), pady=(10, 0))
-        self.modify_classes_frame.grid(row=2, column=2, sticky="nw", padx=10)
+        self.modify_classes_frame.grid(row=2, column=2, sticky="nw", padx=(15, 0))
         self.modify_classes_title.grid(row=0, column=0, padx=(0, 30), pady=(0, 30))
 
         self.change_section_entries = []
         self.mod_selection_list = []
         pad_y = 9
 
-        for row_index in range(self.enrolled_rows - 1):
+        for row_index in range(len(self.enrolled_classes_data)):
             if row_index == 0:
                 pad_y = 30
             if self.enrolled_classes_data[row_index][translation["course"]] != "":
@@ -6052,11 +6115,13 @@ class TeraTermUI(customtkinter.CTk):
         self.submit_my_classes.destroy()
         self.download_enrolled_pdf.destroy()
         self.back_my_classes.destroy()
-        self.total_credits_label.destroy()
         self.modify_classes_title.destroy()
-        for widget in self.mod_selection_list:
-            if widget is not None:
-                widget.destroy()
+        self.download_enrolled_pdf_tooltip.destroy()
+        self.submit_my_classes_tooltip.destroy()
+        self.back_my_classes_tooltip.destroy()
+        for option_menu in self.mod_selection_list:
+            if option_menu is not None:
+                option_menu.destroy()
         for entry in self.change_section_entries:
             if entry is not None:
                 entry.destroy()
@@ -6066,17 +6131,25 @@ class TeraTermUI(customtkinter.CTk):
             tooltip.destroy()
         self.enrolled_header_tooltips = {}
         self.enrolled_tooltips = []
+        self.change_section_entries = []
+        self.mod_selection_list = []
         self.my_classes_frame.destroy()
         self.modify_classes_frame.destroy()
+        self.my_classes_frame = None
+        self.enrolled_classes_table = None
+        self.enrolled_classes_data = None
+        self.title_my_classes = None
+        self.total_credits_label = None
+        self.submit_my_classes = None
+        self.submit_my_classes_tooltip = None
+        self.modify_classes_frame = None
+        self.back_my_classes = None
+        self.back_my_classes_tooltip = None
         self.change_section_entries = None
         self.mod_selection_list = None
-        self.enrolled_rows = None
-        self.download_enrolled_pdf_tooltip.destroy()
-        self.download_enrolled_pdf_tooltip = None
-        self.submit_my_classes_tooltip.destroy()
-        self.submit_my_classes_tooltip = None
-        self.back_my_classes_tooltip.destroy()
-        self.back_my_classes_tooltip = None
+        self.mod_selection = None
+        self.change_section_entry = None
+        self.modify_classes_title = None
 
     def modify_enrolled_classes(self, mod, row_index):
         lang = self.language_menu.get()
@@ -6130,7 +6203,7 @@ class TeraTermUI(customtkinter.CTk):
                         edge_cases_classes = ["FISI3011", "FISI3013", "FISI3012", "FISI3014", "BIOL3011", "BIOL3013",
                                               "BIOL3012", "BIOL3014", "QUIM3001", "QUIM3003", "QUIM3002", "QUIM3004"]
                         edge_cases_classes_met = []
-                        for row_index in range(self.enrolled_rows - 1):
+                        for row_index in range(len(self.enrolled_classes_data)):
                             mod_selection = self.mod_selection_list[row_index]
                             change_section_entry = self.change_section_entries[row_index]
                             course_code_no_section = self.enrolled_classes_data[row_index][
@@ -6165,7 +6238,7 @@ class TeraTermUI(customtkinter.CTk):
                             if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output and \
                                     "USO INTERNO" not in text_output and "TERMINO LA MATRICULA" \
                                     not in text_output and "ENTER REGISTRATION" in text_output:
-                                for row_index in range(self.enrolled_rows - 1):
+                                for row_index in range(len(self.enrolled_classes_data)):
                                     mod_selection = self.mod_selection_list[row_index]
                                     change_section_entry = self.change_section_entries[row_index]
                                     if mod_selection is not None and change_section_entry is not None:
@@ -6280,7 +6353,7 @@ class TeraTermUI(customtkinter.CTk):
 
                                     def explanation():
                                         self.destroy_windows()
-                                        if self.enrolled_rows is not None:
+                                        if self.enrolled_classes_table is not None:
                                             self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
                                             self.submit_my_classes.configure(state="normal")
                                         self.not_rebind = False
@@ -6300,7 +6373,7 @@ class TeraTermUI(customtkinter.CTk):
 
                                     def explanation():
                                         self.destroy_windows()
-                                        if self.enrolled_rows is not None:
+                                        if self.enrolled_classes_table is not None:
                                             self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
                                             self.submit_my_classes.configure(state="normal")
                                         self.not_rebind = False
@@ -6320,7 +6393,7 @@ class TeraTermUI(customtkinter.CTk):
 
                                     def explanation():
                                         self.destroy_windows()
-                                        if self.enrolled_rows is not None:
+                                        if self.enrolled_classes_table is not None:
                                             self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
                                             self.submit_my_classes.configure(state="normal")
                                         self.not_rebind = False
@@ -6843,7 +6916,7 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         if self.modify_error_check:
-            if self.enrolled_rows is not None:
+            if self.enrolled_classes_table is not None:
                 self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
                 self.submit_my_classes.configure(state="normal")
             self.not_rebind = False
@@ -7380,7 +7453,7 @@ class TeraTermUI(customtkinter.CTk):
                 if self.in_multiple_screen:
                     self.set_focus_to_tkinter()
                     self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
-                elif not self.in_multiple_screen and self.enrolled_rows is None:
+                elif not self.in_multiple_screen and self.enrolled_classes_table is None:
                     self.set_focus_to_tkinter()
                     self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
                 else:
