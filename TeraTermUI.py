@@ -7989,9 +7989,9 @@ class TeraTermUI(customtkinter.CTk):
                 self.files.configure(state="normal")
         else:
             task_done.set()
-            message_english = ("Tera Term executable was not found on the C drive.\n\n"
+            message_english = ("Tera Term executable was not found on the main drive.\n\n"
                                "the application is probably not installed\nor it's located on another drive")
-            message_spanish = ("No se encontró el ejecutable de Tera Term en la unidad C.\n\n"
+            message_spanish = ("No se encontró el ejecutable de Tera Term en la unidad principal.\n\n"
                                "Probablemente no tiene la aplicación instalada\no está localizada en otra unidad")
             message = message_english if lang == "English" else message_spanish
             messagebox.showinfo("Tera Term", message)
