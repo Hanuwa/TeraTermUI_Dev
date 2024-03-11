@@ -854,7 +854,7 @@ class TeraTermUI(customtkinter.CTk):
                 if not os.path.isdir(tera_term_ui_path):
                     raise Exception("Program Data directory not found.")
             # Write the formatted error message and separator to the log file
-            with open("logs.txt", "a") as file:
+            with open(TeraTermUI.get_absolute_path("logs.txt"), "a") as file:
                 file.write(error_message + "\n" + separator)
         except Exception as e:
             print(f"An unexpected error occurred: {str(e)}")
