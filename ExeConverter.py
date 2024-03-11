@@ -237,13 +237,13 @@ for version in versions:
                                 'if not os.path.exists(self.db_path):')
             data = data.replace('self.connection = sqlite3.connect(db_path, check_same_thread=False)',
                                 'self.connection = sqlite3.connect(self.db_path, check_same_thread=False)')
-            data = data.replace('closing(sqlite3.connect("database.db")) as connection',
+            data = data.replace('closing(sqlite3.connect(TeraTermUI.get_absolute_path("database.db"))) as connection',
                                 'closing(sqlite3.connect(self.db_path)) as connection')
             data = data.replace('with open(self.SERVICE_ACCOUNT_FILE, "rb"):',
                                 'with open(self.ath, "rb"):')
             data = data.replace('archive = pyzipper.AESZipFile(self.SERVICE_ACCOUNT_FILE)',
                                 'archive = pyzipper.AESZipFile(self.ath)')
-            data = data.replace('with open("logs.txt", "a")',
+            data = data.replace('with open(TeraTermUI.get_absolute_path("logs.txt"), "a")',
                                 'with open(self.logs, "a")')
             print(Fore.GREEN + "Successfully started installer version\n" + Style.RESET_ALL)
         else:
@@ -255,12 +255,12 @@ for version in versions:
             data = data.replace('self.connection = sqlite3.connect(self.db_path, check_same_thread=False)',
                                 'self.connection = sqlite3.connect(db_path, check_same_thread=False)')
             data = data.replace('closing(sqlite3.connect(self.db_path)) as connection',
-                                'closing(sqlite3.connect("database.db")) as connection')
+                                'closing(sqlite3.connect(TeraTermUI.get_absolute_path("database.db"))) as connection')
             data = data.replace('with open(self.ath, "rb"):',
                                 'with open(self.SERVICE_ACCOUNT_FILE, "rb"):')
             data = data.replace('archive = pyzipper.AESZipFile(self.ath)',
                                 'archive = pyzipper.AESZipFile(self.SERVICE_ACCOUNT_FILE)')
-            data = data.replace('with open(self.logs, "a")',
+            data = data.replace('with open(TeraTermUI.get_absolute_path("logs.txt"), "a")',
                                 'with open("logs.txt", "a")')
             print(Fore.GREEN + "Successfully started portable version\n" + Style.RESET_ALL)
 
