@@ -260,8 +260,8 @@ for version in versions:
                                 'with open(self.SERVICE_ACCOUNT_FILE, "rb"):')
             data = data.replace('archive = pyzipper.AESZipFile(self.ath)',
                                 'archive = pyzipper.AESZipFile(self.SERVICE_ACCOUNT_FILE)')
-            data = data.replace('with open(TeraTermUI.get_absolute_path("logs.txt"), "a")',
-                                'with open("logs.txt", "a")')
+            data = data.replace('with open(self.logs, "a")',
+                                'with open(TeraTermUI.get_absolute_path("logs.txt"), "a")')
             print(Fore.GREEN + "Successfully started portable version\n" + Style.RESET_ALL)
 
         with open(project_directory+r"\TeraTermUI.py", 'w', encoding='utf-8') as file:
