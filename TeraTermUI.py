@@ -5642,41 +5642,23 @@ class TeraTermUI(customtkinter.CTk):
         # Preset base year and starting letter
         base_year = 2000
         start_letter = "A"
+        semester_part = "1"  # Default value
 
         # Current date
         current_date = datetime.now()
         current_year = current_date.year
         current_month = current_date.month
-        current_day = current_date.day
 
         # Calculate the academic year
         academic_year = current_year - base_year
 
         # Adjust the academic year and semester part based on current month
         if current_month in [1, 2]:
-            if current_month == 1 or current_month == 2:
-                semester_part = "2"
-                academic_year -= 1
-            else:
-                semester_part = "1"
-
-        elif current_month == 3:
-            if current_day < 16:
-                semester_part = "2"
-                academic_year -= 1
-            else:
-                semester_part = "1"
-
-        elif current_month < 10:
+            semester_part = "2"
+            academic_year -= 1
+        elif current_month in [3, 4, 5, 6, 7, 8, 9]:
             semester_part = "1"
-
-        elif current_month == 10:
-            if current_day < 16:
-                semester_part = "1"
-            else:
-                semester_part = "2"
-
-        else:
+        elif current_month in [10, 11, 12]:
             semester_part = "2"
 
         # Calculate the letter
@@ -5687,21 +5669,27 @@ class TeraTermUI(customtkinter.CTk):
 
     @staticmethod
     def generate_semester_values(default_semester):
+        # Extracting letter and year part from default semester code
         letter = default_semester[0]
-        year = int(default_semester[1])
+        year_digit = int(default_semester[1])
 
+        # Initialize list to store generated semester values
         values = []
-        for i in range(year - 1, year + 1):
-            for j in range(1, 4):
-                if i == year - 1 and default_semester[1] == "0":
-                    # Handle the edge case of 'A01', 'A02', 'A03'
-                    if letter == "A":
-                        values.append(f"Z9{j}")
-                    else:
-                        values.append(f"{chr(ord(letter) - 1)}{i % 10}{j}")
-                else:
-                    values.append(f"{letter}{i % 10}{j}")
 
+        # Looping through the current and previous year
+        for year_iter in range(year_digit - 1, year_digit + 1):
+            for semester_part in range(1, 4):
+                # Handling the edge case for year '0' in the previous year
+                if year_iter == year_digit - 1 and default_semester[1] == "0":
+                    if letter == "A":
+                        values.append(f"Z9{semester_part}")
+                    else:
+                        values.append(f"{chr(ord(letter) - 1)}9{semester_part}")
+                else:
+                    # Appending regular semester values
+                    values.append(f"{letter}{year_iter % 10}{semester_part}")
+
+        # Return the last six semester codes
         return values[-6:]
 
     @staticmethod
