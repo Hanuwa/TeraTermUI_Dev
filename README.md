@@ -21,6 +21,7 @@ Link: https://github.com/UB-Mannheim/tesseract/wiki
 
 # GUI Framework
 The whole GUI is made using customtkinter, read wiki to familiarize yourself with it, can work in conjunction with the normal tkinter too.
+It is versatile but very incomplete, which is why I have customized and modified some of the internal files within the framework.
 
 Links: https://github.com/TomSchimansky/CustomTkinter &
        https://customtkinter.tomschimansky.com
