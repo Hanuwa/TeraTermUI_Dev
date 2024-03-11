@@ -77,6 +77,7 @@ except:
     current_executable = sys.argv[0]
     subprocess.Popen([current_executable])
     sys.exit(0)
+from tkinter import filedialog
 from tkinter import messagebox
 from PIL import Image
 
@@ -5116,13 +5117,9 @@ class TeraTermUI(customtkinter.CTk):
         # Define where the PDF will be saved
         home = os.path.expanduser("~")
         downloads = os.path.join(home, "Downloads")
-        filepath = custom_file_dialog(
-            master=self, title=translation["save_pdf"],
-            filter_string="PDF Files (*.pdf)\0*.pdf\0",
-            initial_dir=downloads,
-            default_extension="pdf",
-            initial_file_name=initial_file_name,
-            dialog_type="save"
+        filepath = filedialog.asksaveasfilename(
+            title=translation["save_pdf"], defaultextension=".pdf", initialdir=downloads,
+            filetypes=[("PDF Files", "*.pdf")], initialfile=initial_file_name
         )
 
         # Check if user cancelled the file dialog
@@ -5956,13 +5953,9 @@ class TeraTermUI(customtkinter.CTk):
         # Define where the PDF will be saved
         home = os.path.expanduser("~")
         downloads = os.path.join(home, "Downloads")
-        filepath = custom_file_dialog(
-            master=self, title=translation["save_pdf"],
-            filter_string="PDF Files (*.pdf)\0*.pdf\0",
-            initial_dir=downloads,
-            default_extension="pdf",
-            initial_file_name=f"{semester}_{translation['enrolled_classes']}",
-            dialog_type="save"
+        filepath = filedialog.asksaveasfilename(
+            title=translation["save_pdf"], defaultextension=".pdf", initialdir=downloads,
+            filetypes=[("PDF Files", "*.pdf")], initialfile=f"{semester}_{translation['enrolled_classes']}"
         )
 
         # Check if user cancelled the file dialog
@@ -8046,10 +8039,10 @@ class TeraTermUI(customtkinter.CTk):
     def manually_change_location(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        filename = custom_file_dialog(master=self, title=translation["select_tera_term"],
-                                      filter_string="Tera Term (*ttermpro.exe)\0*ttermpro.exe\0",
-                                      initial_dir=os.path.abspath(os.sep), dialog_type="open")
-        if filename:
+        filename = filedialog.askopenfilename(
+            initialdir=os.path.abspath(os.sep), title=translation["select_tera_term"],
+            filetypes=(("Tera Term", "*ttermpro.exe"),))
+        if re.search("ttermpro.exe", filename):
             self.location = filename.replace("\\", "/")
             directory, filename = os.path.split(self.location)
             self.teraterm_directory = directory
@@ -8070,7 +8063,7 @@ class TeraTermUI(customtkinter.CTk):
             self.edit_teraterm_ini(self.teraterm_file)
             atexit.unregister(self.restore_original_font)
             atexit.register(self.restore_original_font, self.teraterm_file)
-        else:
+        if not re.search("ttermpro.exe", filename):
             if self.help is not None and self.help.winfo_exists():
                 self.help.lift()
                 self.help.focus_set()
@@ -9615,69 +9608,6 @@ class ImageSlideshow(customtkinter.CTkFrame):
             self.after_id = self.after(self.interval * 1000, self.cycle_images)
 
 
-def custom_file_dialog(title, filter_string, initial_dir, master, default_extension=None,
-                       initial_file_name=None, dialog_type="open"):
-    # Constants for the Win32 API
-    OFN_PATHMUSTEXIST = 0x00000800
-    OFN_FILEMUSTEXIST = 0x00001000
-    OFN_EXPLORER = 0x00080000
-    OFN_OVERWRITEPROMPT = 0x00000002
-
-    class OPENFILENAME(ctypes.Structure):
-        _fields_ = [("lStructSize", ctypes.wintypes.DWORD),
-                    ("hwndOwner", ctypes.wintypes.HWND),
-                    ("hInstance", ctypes.wintypes.HINSTANCE),
-                    ("lpstrFilter", ctypes.c_wchar_p),
-                    ("lpstrCustomFilter", ctypes.c_wchar_p),
-                    ("nMaxCustFilter", ctypes.wintypes.DWORD),
-                    ("nFilterIndex", ctypes.wintypes.DWORD),
-                    ("lpstrFile", ctypes.c_wchar_p),
-                    ("nMaxFile", ctypes.wintypes.DWORD),
-                    ("lpstrFileTitle", ctypes.c_wchar_p),
-                    ("nMaxFileTitle", ctypes.wintypes.DWORD),
-                    ("lpstrInitialDir", ctypes.c_wchar_p),
-                    ("lpstrTitle", ctypes.c_wchar_p),
-                    ("Flags", ctypes.wintypes.DWORD),
-                    ("nFileOffset", ctypes.wintypes.WORD),
-                    ("nFileExtension", ctypes.wintypes.WORD),
-                    ("lpstrDefExt", ctypes.c_wchar_p),
-                    ("lCustData", ctypes.wintypes.LPARAM),
-                    ("lpfnHook", ctypes.wintypes.LPVOID),
-                    ("lpTemplateName", ctypes.c_wchar_p),
-                    ("pvReserved", ctypes.wintypes.LPVOID),
-                    ("dwReserved", ctypes.wintypes.DWORD),
-                    ("FlagsEx", ctypes.wintypes.DWORD)]
-
-    ofn = OPENFILENAME()
-    ofn.lStructSize = ctypes.sizeof(OPENFILENAME)
-    ofn.lpstrTitle = title
-    ofn.lpstrFilter = filter_string
-    ofn.lpstrInitialDir = initial_dir
-    ofn.lpstrDefExt = default_extension
-    buffer = ctypes.create_unicode_buffer(260)
-    if initial_file_name:
-        buffer.value = initial_file_name
-    ofn.lpstrFile = ctypes.addressof(buffer)
-    ofn.nMaxFile = 260
-    ofn.Flags = OFN_PATHMUSTEXIST | OFN_EXPLORER
-    if dialog_type == "save":
-        ofn.Flags |= OFN_OVERWRITEPROMPT
-    else:
-        ofn.Flags |= OFN_FILEMUSTEXIST
-
-    result = ""
-    master.attributes("-disabled", True)
-    if dialog_type == "save":
-        if ctypes.windll.comdlg32.GetSaveFileNameW(ctypes.byref(ofn)):
-            result = buffer.value
-    else:
-        if ctypes.windll.comdlg32.GetOpenFileNameW(ctypes.byref(ofn)):
-            result = buffer.value
-    master.attributes("-disabled", False)
-
-    return result
-
-
 def get_window_rect(hwnd):
     class RECT(ctypes.Structure):
         _fields_ = [("left", wintypes.LONG),
@@ -9737,3 +9667,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
