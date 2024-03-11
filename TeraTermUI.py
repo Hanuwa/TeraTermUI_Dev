@@ -5117,7 +5117,7 @@ class TeraTermUI(customtkinter.CTk):
         home = os.path.expanduser("~")
         downloads = os.path.join(home, "Downloads")
         filepath = custom_file_dialog(
-            title=translation["save_pdf"],
+            master=self, title=translation["save_pdf"],
             filter_string="PDF Files (*.pdf)\0*.pdf\0",
             initial_dir=downloads,
             default_extension="pdf",
@@ -5957,7 +5957,7 @@ class TeraTermUI(customtkinter.CTk):
         home = os.path.expanduser("~")
         downloads = os.path.join(home, "Downloads")
         filepath = custom_file_dialog(
-            title=translation["save_pdf"],
+            master=self, title=translation["save_pdf"],
             filter_string="PDF Files (*.pdf)\0*.pdf\0",
             initial_dir=downloads,
             default_extension="pdf",
@@ -8046,7 +8046,7 @@ class TeraTermUI(customtkinter.CTk):
     def manually_change_location(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        filename = custom_file_dialog(title=translation["select_tera_term"],
+        filename = custom_file_dialog(master=self, title=translation["select_tera_term"],
                                       filter_string="Tera Term (*ttermpro.exe)\0*ttermpro.exe\0",
                                       initial_dir=os.path.abspath(os.sep), dialog_type="open")
         if filename:
@@ -9615,8 +9615,8 @@ class ImageSlideshow(customtkinter.CTkFrame):
             self.after_id = self.after(self.interval * 1000, self.cycle_images)
 
 
-def custom_file_dialog(title, filter_string, initial_dir, default_extension=None, initial_file_name=None,
-                       dialog_type="open"):
+def custom_file_dialog(title, filter_string, initial_dir, master, default_extension=None,
+                       initial_file_name=None, dialog_type="open"):
     # Constants for the Win32 API
     OFN_PATHMUSTEXIST = 0x00000800
     OFN_FILEMUSTEXIST = 0x00001000
@@ -9664,13 +9664,16 @@ def custom_file_dialog(title, filter_string, initial_dir, default_extension=None
         ofn.Flags |= OFN_OVERWRITEPROMPT
     else:
         ofn.Flags |= OFN_FILEMUSTEXIST
+
     result = ""
+    master.attributes("-disabled", True)
     if dialog_type == "save":
         if ctypes.windll.comdlg32.GetSaveFileNameW(ctypes.byref(ofn)):
             result = buffer.value
     else:
         if ctypes.windll.comdlg32.GetOpenFileNameW(ctypes.byref(ofn)):
             result = buffer.value
+    master.attributes("-disabled", False)
 
     return result
 
