@@ -9648,7 +9648,6 @@ def custom_file_dialog(title, filter_string, initial_dir, default_extension=None
                     ("dwReserved", ctypes.wintypes.DWORD),
                     ("FlagsEx", ctypes.wintypes.DWORD)]
 
-    result = ""
     ofn = OPENFILENAME()
     ofn.lStructSize = ctypes.sizeof(OPENFILENAME)
     ofn.lpstrTitle = title
@@ -9665,15 +9664,13 @@ def custom_file_dialog(title, filter_string, initial_dir, default_extension=None
         ofn.Flags |= OFN_OVERWRITEPROMPT
     else:
         ofn.Flags |= OFN_FILEMUSTEXIST
+    result = ""
     if dialog_type == "save":
         if ctypes.windll.comdlg32.GetSaveFileNameW(ctypes.byref(ofn)):
             result = buffer.value
     else:
         if ctypes.windll.comdlg32.GetOpenFileNameW(ctypes.byref(ofn)):
             result = buffer.value
-    # Release the memory for the buffer
-    buffer_handle = ctypes.windll.kernel32.GlobalHandle(buffer)
-    ctypes.windll.kernel32.GlobalFree(buffer_handle)
 
     return result
 
