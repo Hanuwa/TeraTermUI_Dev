@@ -3081,7 +3081,7 @@ class TeraTermUI(customtkinter.CTk):
             self.auth.grid(row=4, column=1, padx=(10, 0), pady=(0, 0))
         else:
             self.log_in.configure(state="disabled")
-            self.auth_event_handler()
+            self.after(0, self.auth_event_handler)
             self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
         self.main_menu = False
         if self.help is not None and self.help.winfo_exists():
