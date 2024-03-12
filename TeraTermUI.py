@@ -2917,7 +2917,7 @@ class TeraTermUI(customtkinter.CTk):
         self.connection.commit()
 
     def notice_user(self):
-        if self.error and self.error.winfo_exists():
+        if self.error is not None and self.error.winfo_exists():
             return
         lang = self.language_menu.get()
         translation = self.load_language(lang)
@@ -4803,6 +4803,9 @@ class TeraTermUI(customtkinter.CTk):
             self.progress_bar.stop()
             loading_screen.destroy()
             self.loading_screen = None
+            if current_time - self.loading_screen_start_time > 30:
+                if self.log_in.cget("state") == "disabled":
+                    self.log_in.configure(state="normal")
         else:
             self.after(100, self.update_loading_screen, loading_screen, task_done)
 
@@ -4969,10 +4972,10 @@ class TeraTermUI(customtkinter.CTk):
             width = right - x
             height = bottom - y
             crop_margin = (2, 10, 10, 2)
-            if self.loading_screen.winfo_exists():
+            if self.loading_screen is not None and self.loading_screen.winfo_exists():
                 self.hide_loading_screen()
             screenshot = pyautogui.screenshot(region=(x, y, width, height))
-            if self.loading_screen.winfo_exists():
+            if self.loading_screen is not None and self.loading_screen.winfo_exists():
                 self.show_loading_screen_again()
             screenshot = screenshot.crop((crop_margin[0], crop_margin[1], width - crop_margin[2],
                                           height - crop_margin[3])).convert("L")
@@ -5163,7 +5166,7 @@ class TeraTermUI(customtkinter.CTk):
             self.tooltip = None
 
     def lift_tooltip(self):
-        if self.tooltip and self.tooltip.winfo_exists():
+        if self.tooltip is not None and self.tooltip.winfo_exists():
             self.tooltip.lift()
 
         self.after(100, self.lift_tooltip)
@@ -6723,7 +6726,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # error window pop up message
     def show_error_message(self, width, height, error_msg_text):
-        if self.error and self.error.winfo_exists():
+        if self.error is not None and self.error.winfo_exists():
             self.error.lift()
             return
         main_window_x = self.winfo_x()
@@ -6760,7 +6763,7 @@ class TeraTermUI(customtkinter.CTk):
     def show_success_message(self, width, height, success_msg_text):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        if self.success and self.success.winfo_exists():
+        if self.success is not None and self.success.winfo_exists():
             self.success.lift()
             return
         main_window_x = self.winfo_x()
@@ -6793,7 +6796,7 @@ class TeraTermUI(customtkinter.CTk):
     def on_success_window_close(self):
         self.unload_image("success")
         self.success.destroy()
-        if self.help and self.help.winfo_exists() and self.changed_location:
+        if self.help is not None and self.help.winfo_exists() and self.changed_location:
             self.after(250, self.help.lift)
             self.after(250, self.help.focus_set)
             self.after(250, self.files.configure(state="normal"))
@@ -6945,7 +6948,7 @@ class TeraTermUI(customtkinter.CTk):
     def show_information_message(self, width, height, success_msg_text):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        if self.information and self.information.winfo_exists():
+        if self.information is not None and self.information.winfo_exists():
             self.information.lift()
             return
         main_window_x = self.winfo_x()
@@ -6982,7 +6985,7 @@ class TeraTermUI(customtkinter.CTk):
         self.destroy_windows()
         self.hide_sidebar_windows()
         self.unbind("<Return>")
-        if self.tooltip and self.tooltip.winfo_exists():
+        if self.tooltip is not None and self.tooltip.winfo_exists():
             self.tooltip.destroy()
         ctypes.windll.user32.BlockInput(True)
 
@@ -7540,19 +7543,19 @@ class TeraTermUI(customtkinter.CTk):
         self.focus_force()
         self.attributes("-topmost", 1)
         self.after_idle(self.attributes, "-topmost", 0)
-        if self.error and self.error.winfo_exists():
+        if self.error is not None and self.error.winfo_exists():
             self.error.lift()
             self.error.focus_force()
             self.error.attributes("-topmost", 1)
             self.error.after_idle(self.attributes, "-topmost", 0)
-        elif self.success and self.success.winfo_exists():
+        elif self.success is not None and self.success.winfo_exists():
             self.success.focus_set()
-        elif self.information and self.information.winfo_exists():
+        elif self.information is not None and self.information.winfo_exists():
             self.information.lift()
             self.information.focus_force()
             self.information.attributes("-topmost", 1)
             self.information.after_idle(self.attributes, "-topmost", 0)
-        elif self.timer_window and self.timer_window.winfo_exists() and self.in_multiple_screen:
+        elif self.timer_window is not None and self.timer_window.winfo_exists() and self.in_multiple_screen:
             self.timer_window.lift()
             self.timer_window.focus_force()
             self.timer_window.attributes("-topmost", 1)
@@ -7687,7 +7690,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # Creates the status window
     def status_button_event(self):
-        if self.status and self.status.winfo_exists():
+        if self.status is not None and self.status.winfo_exists():
             windows_status = gw.getWindowsWithTitle("Status") + gw.getWindowsWithTitle("Estado")
             self.status_minimized = windows_status[0].isMinimized
             if self.status_minimized:
@@ -8212,7 +8215,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.loading_screen is not None and self.loading_screen.winfo_exists():
             return
 
-        if self.help and self.help.winfo_exists():
+        if self.help is not None and self.help.winfo_exists():
             windows_help = gw.getWindowsWithTitle("Help") + gw.getWindowsWithTitle("Ayuda")
             self.help_minimized = windows_help[0].isMinimized
             if self.help_minimized:
@@ -8495,9 +8498,9 @@ class TeraTermUI(customtkinter.CTk):
                 self.help_minimized = windows_help[0].isMinimized
             else:
                 self.help_minimized = False
-        if self.status and self.status.winfo_exists() and not self.status_minimized:
+        if self.status is not None and self.status.winfo_exists() and not self.status_minimized:
             self.status.withdraw()
-        if self.help and self.help.winfo_exists() and not self.help_minimized:
+        if self.help is not None and self.help.winfo_exists() and not self.help_minimized:
             self.help.withdraw()
 
     # Makes the sidebar reappear again
@@ -8510,11 +8513,11 @@ class TeraTermUI(customtkinter.CTk):
 
     # When the user performs an action to do something in tera term it destroys windows that might get in the way
     def destroy_windows(self):
-        if self.error and self.error.winfo_exists():
+        if self.error is not None and self.error.winfo_exists():
             self.error.destroy()
-        if self.success and self.success.winfo_exists():
+        if self.success is not None and self.success.winfo_exists():
             self.success.destroy()
-        if self.information and self.information.winfo_exists():
+        if self.information is not None and self.information.winfo_exists():
             self.information.destroy()
 
     def get_image(self, image_name):
