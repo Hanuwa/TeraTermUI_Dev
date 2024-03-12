@@ -4951,7 +4951,6 @@ class TeraTermUI(customtkinter.CTk):
     def capture_screenshot(self):
         import pyautogui
         import win32gui
-        import win32con
 
         self.update_idletasks()
         time.sleep(1)
