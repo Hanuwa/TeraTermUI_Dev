@@ -932,7 +932,6 @@ class TeraTermUI(customtkinter.CTk):
                         if tera_term_window.isMinimized:
                             tera_term_window.restore()
                         self.wait_for_window()
-                        TeraTermUI.unfocus_tkinter()
                         self.uprb.UprbayTeraTermVt.type_keys("{TAB}")
                         self.uprb.UprbayTeraTermVt.type_keys(
                             aes_decrypt_and_verify_mac(student_id_enc, aes_key, mac_key))
@@ -2200,7 +2199,6 @@ class TeraTermUI(customtkinter.CTk):
                                 tera_term_window.restore()
                             self.wait_for_window()
                             if semester == curr_sem:
-                                TeraTermUI.unfocus_tkinter()
                                 result = self.handle_current_semester()
                                 if result == "error":
                                     self.focus_or_not = True
@@ -2556,7 +2554,6 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language(lang)
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
-                        TeraTermUI.unfocus_tkinter()
                         if self._1VE_screen:
                             tera_term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if tera_term_window.isMinimized:
@@ -2657,7 +2654,6 @@ class TeraTermUI(customtkinter.CTk):
                         if tera_term_window.isMinimized:
                             tera_term_window.restore()
                         self.wait_for_window()
-                        TeraTermUI.unfocus_tkinter()
                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                         self.update_idletasks()
                         time.sleep(0.3)
@@ -3115,8 +3111,8 @@ class TeraTermUI(customtkinter.CTk):
             tera_term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
             if tera_term_window.isMinimized:
                 tera_term_window.restore()
+            tera_term_window.activate()
             self.connect_to_uprb()
-            TeraTermUI.unfocus_tkinter()
             text_output = self.capture_screenshot()
             to_continue = "return to continue"
             count_to_continue = text_output.count(to_continue)
@@ -4965,9 +4961,10 @@ class TeraTermUI(customtkinter.CTk):
         if self.tesseract_unzipped and tesseract_dir_path.is_dir():
             window_title = "uprbay.uprb.edu - Tera Term VT"
             hwnd = win32gui.FindWindow(None, window_title)
-            if win32gui.IsIconic(hwnd):
-                win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-            win32gui.SetForegroundWindow(hwnd)
+            tera_term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
+            if tera_term_window.isMinimized:
+                tera_term_window.restore()
+            tera_term_window.activate()
             x, y, right, bottom = get_window_rect(hwnd)
             width = right - x
             height = bottom - y
@@ -6533,7 +6530,7 @@ class TeraTermUI(customtkinter.CTk):
                 tera_term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                 if tera_term_window.isMinimized:
                     tera_term_window.restore()
-                TeraTermUI.unfocus_tkinter()
+                tera_term_window.activate()
                 text_output = self.capture_screenshot()
                 to_continue = "return to continue"
                 count_to_continue = text_output.count(to_continue)
@@ -7275,7 +7272,6 @@ class TeraTermUI(customtkinter.CTk):
                 if tera_term_window.isMinimized:
                     tera_term_window.restore()
                 self.wait_for_window()
-                TeraTermUI.unfocus_tkinter()
                 if self.search_function_counter == 0:
                     text_output = self.capture_screenshot()
                     if "INVALID ACTION" in text_output and "LISTA DE SECCIONES" in text_output:
