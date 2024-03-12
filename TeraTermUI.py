@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/11/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/12/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -2998,6 +2998,8 @@ class TeraTermUI(customtkinter.CTk):
                                 self.bind("<Return>", lambda event: self.auth_event_handler())
                                 self.after(0, self.initialization_auth)
                                 self.in_auth_frame = True
+                            else:
+                                self.after(0, self.log_in.configure(state="disabled"))
                             self.after(50, self.login_frame)
                         except AppStartError as e:
                             print("An error occurred: ", e)
@@ -3080,8 +3082,7 @@ class TeraTermUI(customtkinter.CTk):
             self.back.grid(row=4, column=0, padx=(0, 10), pady=(0, 0))
             self.auth.grid(row=4, column=1, padx=(10, 0), pady=(0, 0))
         else:
-            self.log_in.configure(state="disabled")
-            self.after(0, self.auth_event_handler)
+            self.after(100, self.auth_event_handler)
             self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
         self.main_menu = False
         if self.help is not None and self.help.winfo_exists():
@@ -3130,7 +3131,7 @@ class TeraTermUI(customtkinter.CTk):
 
                 self.after(125, server_closed)
                 return
-            elif "return to continue" in text_output or "SISTEMA DE INFORMACION" in text_output:
+            elif "return to continue" in text_output or "INFORMACION ESTUDIANTIL" in text_output:
                 if "return to continue" in text_output and "Loading" in text_output:
                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER 3}")
                 elif count_to_continue == 2 or "ZZZ" in text_output:
@@ -4749,7 +4750,6 @@ class TeraTermUI(customtkinter.CTk):
         self.loading_screen = SmoothFadeToplevel(fade_duration=10, final_alpha=0.90)
         self.loading_screen.title(translation["loading"])
         self.loading_screen.overrideredirect(True)
-        self.loading_screen.grab_set()
         width = 275
         height = 150
         main_window_x = self.winfo_x()
@@ -4801,10 +4801,11 @@ class TeraTermUI(customtkinter.CTk):
         if task_done.is_set() or (current_time - self.loading_screen_start_time > 30):
             self.attributes("-disabled", False)
             self.update_widgets()
-            self.hide_loading_screen()
+            if loading_screen is not None and loading_screen.winfo_exists():
+                self.hide_loading_screen()
             self.progress_bar.stop()
             loading_screen.destroy()
-            self.loading_screen = None
+            loading_screen = None
             if current_time - self.loading_screen_start_time > 30:
                 if self.log_in.cget("state") == "disabled":
                     self.log_in.configure(state="normal")
@@ -5593,14 +5594,16 @@ class TeraTermUI(customtkinter.CTk):
                 timings.Timings.window_find_timeout = original_timeout
                 timings.Timings.window_find_retry = original_retry
         self.uprb.UprbayTeraTermVt.type_keys("%c")
-        self.hide_loading_screen()
+        if self.loading_screen is not None and self.loading_screen.winfo_exists():
+            self.hide_loading_screen()
         original_position = pyautogui.position()
         self.uprbay_window.click_input(button="left")
         try:
             pyautogui.moveTo(original_position.x, original_position.y)
         except pyautogui.FailSafeException as e:
             print("An error occurred:", e)
-        self.show_loading_screen_again()
+        if self.loading_screen is not None and self.loading_screen.winfo_exists():
+            self.show_loading_screen_again()
 
     @staticmethod
     def get_latest_term(input_text):
@@ -6545,7 +6548,7 @@ class TeraTermUI(customtkinter.CTk):
                 text_output = self.capture_screenshot()
                 to_continue = "return to continue"
                 count_to_continue = text_output.count(to_continue)
-                if "return to continue" in text_output or "SISTEMA DE INFORMACION" in text_output:
+                if "return to continue" in text_output or "INFORMACION ESTUDIANTIL" in text_output:
                     if "return to continue" in text_output and "Loading" in text_output:
                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER 3}")
                     elif count_to_continue == 2 or "ZZZ" in text_output:
