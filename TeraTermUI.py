@@ -1054,7 +1054,7 @@ class TeraTermUI(customtkinter.CTk):
         else:
             self.tabview.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 85))
             self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 20))
-        self.bind("<Control-Tab>", lambda event: self.tab_switcher())
+        self.bind("<Control-Tab>", lambda event: self.on_ctrl_tab_pressed())
         if self.renamed_tabs is not None:
             if self.renamed_tabs == self.enroll_tab:
                 self.tabview.set(self.enroll_tab)
@@ -3332,7 +3332,7 @@ class TeraTermUI(customtkinter.CTk):
         self.unbind("<End>")
         self.unbind("<Control-s>")
         self.unbind("<Control-S>")
-        self.bind("<Control-Tab>", lambda event: self.tab_switcher())
+        self.bind("<Control-Tab>", lambda event: self.on_ctrl_tab_pressed())
         self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
         if self.in_multiple_screen:
             self.multiple_frame.grid_forget()
@@ -7580,12 +7580,14 @@ class TeraTermUI(customtkinter.CTk):
         except:
             pass
 
+    def on_ctrl_tab_pressed(self):
+        self.tab_switcher()
+        return "break"
+
     def tab_switcher(self):
         current_time = time.time()
-        if hasattr(self, "last_switch_time") and current_time - self.last_switch_time < 0.2 or \
+        if hasattr(self, "last_switch_time") and current_time - self.last_switch_time < 0.150 or \
                 (self.loading_screen is not None and self.loading_screen.winfo_exists()):
-            self.disable_widgets(self)
-            self.after(0, self.enable_widgets, self)
             return
 
         self.last_switch_time = current_time
