@@ -4801,11 +4801,11 @@ class TeraTermUI(customtkinter.CTk):
         if task_done.is_set() or (current_time - self.loading_screen_start_time > 30):
             self.attributes("-disabled", False)
             self.update_widgets()
-            if loading_screen is not None and loading_screen.winfo_exists():
+            if self.loading_screen is not None and self.loading_screen.winfo_exists():
                 self.hide_loading_screen()
             self.progress_bar.stop()
             loading_screen.destroy()
-            loading_screen = None
+            self.loading_screen = None
             if current_time - self.loading_screen_start_time > 30:
                 if self.log_in.cget("state") == "disabled":
                     self.log_in.configure(state="normal")
