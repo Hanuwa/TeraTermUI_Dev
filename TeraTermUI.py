@@ -3111,7 +3111,10 @@ class TeraTermUI(customtkinter.CTk):
             tera_term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
             if tera_term_window.isMinimized:
                 tera_term_window.restore()
-            tera_term_window.activate()
+            try:
+                tera_term_window.activate()
+            except:
+                pass
             self.connect_to_uprb()
             text_output = self.capture_screenshot()
             to_continue = "return to continue"
@@ -4110,7 +4113,10 @@ class TeraTermUI(customtkinter.CTk):
             timer = gw.getWindowsWithTitle(timer_title)[0]
             if timer.isMinimized:
                 timer.restore()
-            timer.activate()
+            try:
+                timer.activate()
+            except:
+                pass
             self.timer_window.focus_force()
             self.timer_window.lift()
             self.timer_window.attributes("-topmost", 1)
@@ -4963,7 +4969,10 @@ class TeraTermUI(customtkinter.CTk):
             tera_term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
             if tera_term_window.isMinimized:
                 tera_term_window.restore()
-            tera_term_window.activate()
+            try:
+                tera_term_window.activate()
+            except:
+                pass
             x, y, right, bottom = get_window_rect(hwnd)
             width = right - x
             height = bottom - y
@@ -6529,7 +6538,10 @@ class TeraTermUI(customtkinter.CTk):
                 tera_term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                 if tera_term_window.isMinimized:
                     tera_term_window.restore()
-                tera_term_window.activate()
+                try:
+                    tera_term_window.activate()
+                except:
+                    pass
                 text_output = self.capture_screenshot()
                 to_continue = "return to continue"
                 count_to_continue = text_output.count(to_continue)
@@ -7560,7 +7572,10 @@ class TeraTermUI(customtkinter.CTk):
     @staticmethod
     def unfocus_tkinter():
         tera_term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
-        tera_term_window.activate()
+        try:
+            tera_term_window.activate()
+        except:
+            pass
 
     def tab_switcher(self):
         current_time = time.time()
@@ -9629,7 +9644,10 @@ def bring_to_front(window_title):
             window = windows[0]
             if window.isMinimized:
                 window.restore()
-            window.activate()
+            try:
+                window.activate()
+            except:
+                pass
         else:
             print("Window not found.")
     except Exception as e:
