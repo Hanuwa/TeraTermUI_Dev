@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/12/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/13/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -137,7 +137,7 @@ class TeraTermUI(customtkinter.CTk):
         # GitHub's information for feedback
         self.SERVICE_ACCOUNT_FILE = TeraTermUI.get_absolute_path("feedback.zip")
         self.SPREADSHEET_ID = "1ffJLgp8p-goOlxC10OFEu0JefBgQDsgEo_suis4k0Pw"
-        os.environ["Feedback"] = "F_QL^B#O_/r9|Rl0i=x),;!@en|V5qR%W(9;2^+f=lRPcw!+4"
+        os.environ["REAZIONE"] = "F_QL^B#O_/r9|Rl0i=x),;!@en|V5qR%W(9;2^+f=lRPcw!+4"
         self.REAZIONE = os.getenv("REAZIONE")
         self.RANGE_NAME = "Sheet1!A:A"
         self.credentials = None
@@ -472,8 +472,6 @@ class TeraTermUI(customtkinter.CTk):
         self.back_my_classes_tooltip = None
         self.change_section_entries = None
         self.mod_selection_list = None
-        self.mod_selection = None
-        self.change_section_entry = None
         self.modify_classes_title = None
 
         # Status Window
@@ -6076,23 +6074,22 @@ class TeraTermUI(customtkinter.CTk):
                     extra_placeholder_text = ["KJ1", "LJ1", "KI1", "LI1", "VM1", "JM1"]
                     index_in_extra = (row_index - len(self.placeholder_texts_sections)) % len(extra_placeholder_text)
                     placeholder_text = extra_placeholder_text[index_in_extra]
-                self.mod_selection = customtkinter.CTkOptionMenu(self.modify_classes_frame,
-                                                                 values=[translation["choose"], translation["drop"],
-                                                                         translation["section"]], width=80,
-                                                                 command=lambda value, index=row_index:
-                                                                 self.modify_enrolled_classes(value, index))
-                self.change_section_entry = CustomEntry(self.modify_classes_frame, self, lang,
-                                                        placeholder_text=placeholder_text,
-                                                        width=50)
-                self.mod_selection.grid(row=row_index, column=0, padx=(0, 100), pady=(pad_y, 0))
-                self.change_section_entry.grid(row=row_index, column=0, padx=(50, 0), pady=(pad_y, 0))
-                mod_selection_tooltip = CTkToolTip(self.mod_selection, alpha=0.90, bg_color="#1E90FF",
+                mod_selection = customtkinter.CTkOptionMenu(self.modify_classes_frame,
+                                                            values=[translation["choose"], translation["drop"],
+                                                                    translation["section"]], width=80,
+                                                            command=lambda value, index=row_index:
+                                                            self.modify_enrolled_classes(value, index))
+                change_section_entry = CustomEntry(self.modify_classes_frame, self, lang,
+                                                   placeholder_text=placeholder_text, width=50)
+                mod_selection.grid(row=row_index, column=0, padx=(0, 100), pady=(pad_y, 0))
+                change_section_entry.grid(row=row_index, column=0, padx=(50, 0), pady=(pad_y, 0))
+                mod_selection_tooltip = CTkToolTip(mod_selection, alpha=0.90, bg_color="#1E90FF",
                                                    message=translation["mod_selection"])
-                change_section_entry_tooltip = CTkToolTip(self.change_section_entry, alpha=0.90, bg_color="#1E90FF",
+                change_section_entry_tooltip = CTkToolTip(change_section_entry, alpha=0.90, bg_color="#1E90FF",
                                                           message=translation["change_section_entry"])
-                self.change_section_entry.configure(state="disabled")
-                self.mod_selection_list.append(self.mod_selection)
-                self.change_section_entries.append(self.change_section_entry)
+                change_section_entry.configure(state="disabled")
+                self.mod_selection_list.append(mod_selection)
+                self.change_section_entries.append(change_section_entry)
                 self.enrolled_tooltips.append(mod_selection_tooltip)
                 self.enrolled_tooltips.append(change_section_entry_tooltip)
                 pad_y = 9
@@ -6117,54 +6114,49 @@ class TeraTermUI(customtkinter.CTk):
         self.total_credits_label.bind("<Button-1>", lambda event: self.focus_set())
 
     def destroy_enrolled_frame(self):
-        self.my_classes_frame.grid_forget()
-        self.modify_classes_frame.grid_forget()
-        self.back_my_classes.grid_forget()
         self.my_classes_frame.unbind("<Button-1>")
         self.modify_classes_frame.unbind("<Button-1>")
         self.title_my_classes.unbind("<Button-1>")
         self.total_credits_label.unbind("<Button-1>")
-        self.enrolled_classes_table.destroy()
+        self.enrolled_classes_data = None
         self.title_my_classes.destroy()
+        self.title_my_classes = None
         self.total_credits_label.destroy()
+        self.total_credits_label = None
         self.submit_my_classes.destroy()
+        self.submit_my_classes = None
         self.download_enrolled_pdf.destroy()
+        self.download_enrolled_pdf = None
         self.back_my_classes.destroy()
+        self.back_my_classes = None
         self.modify_classes_title.destroy()
+        self.modify_classes_title = None
         self.download_enrolled_pdf_tooltip.destroy()
+        self.download_enrolled_pdf_tooltip = None
         self.submit_my_classes_tooltip.destroy()
+        self.submit_my_classes_tooltip = None
         self.back_my_classes_tooltip.destroy()
-        for option_menu in self.mod_selection_list:
-            if option_menu is not None:
-                option_menu.destroy()
-        for entry in self.change_section_entries:
-            if entry is not None:
-                entry.destroy()
+        self.back_my_classes_tooltip = None
         for cell, tooltip in self.enrolled_header_tooltips.items():
             tooltip.destroy()
         for tooltip in self.enrolled_tooltips:
             tooltip.destroy()
         self.enrolled_header_tooltips = {}
         self.enrolled_tooltips = []
-        self.change_section_entries = []
-        self.mod_selection_list = []
-        self.my_classes_frame.destroy()
-        self.modify_classes_frame.destroy()
-        self.my_classes_frame = None
+        self.enrolled_classes_table.destroy()
         self.enrolled_classes_table = None
-        self.enrolled_classes_data = None
-        self.title_my_classes = None
-        self.total_credits_label = None
-        self.submit_my_classes = None
-        self.submit_my_classes_tooltip = None
+        for entry in self.change_section_entries:
+            if entry is not None:
+                entry.destroy()
+        self.change_section_entries = []
+        for option_menu in self.mod_selection_list:
+            if option_menu is not None:
+                option_menu.destroy()
+        self.mod_selection_list = []
+        self.modify_classes_frame.destroy()
         self.modify_classes_frame = None
-        self.back_my_classes = None
-        self.back_my_classes_tooltip = None
-        self.change_section_entries = None
-        self.mod_selection_list = None
-        self.mod_selection = None
-        self.change_section_entry = None
-        self.modify_classes_title = None
+        self.my_classes_frame.destroy()
+        self.my_classes_frame = None
 
     def modify_enrolled_classes(self, mod, row_index):
         lang = self.language_menu.get()
