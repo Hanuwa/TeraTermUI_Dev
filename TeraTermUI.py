@@ -137,9 +137,9 @@ class TeraTermUI(customtkinter.CTk):
         # GitHub's information for feedback
         self.SERVICE_ACCOUNT_FILE = TeraTermUI.get_absolute_path("feedback.zip")
         self.SPREADSHEET_ID = "1ffJLgp8p-goOlxC10OFEu0JefBgQDsgEo_suis4k0Pw"
-        self.RANGE_NAME = "Sheet1!A:A"
         os.environ["Feedback"] = "F_QL^B#O_/r9|Rl0i=x),;!@en|V5qR%W(9;2^+f=lRPcw!+4"
         self.FEEDBACK = os.getenv("Feedback")
+        self.RANGE_NAME = "Sheet1!A:A"
         self.credentials = None
         self.GITHUB_REPO = "https://api.github.com/repos/Hanuwa/TeraTermUI"
         self.USER_APP_VERSION = "0.9.0"
@@ -8780,8 +8780,8 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self._x_scrollbar.bind("<B1-Motion>", self.stop_autoscroll)
 
         initial_state = self.get("1.0", "end-1c")
-        self._undo_stack = deque([initial_state], maxlen=100)
-        self._redo_stack = deque(maxlen=100)
+        self._undo_stack = deque([initial_state], maxlen=50)
+        self._redo_stack = deque(maxlen=50)
 
         # Bind Control-Z to undo and Control-Y to redo
         self.bind("<Control-z>", self.undo)
@@ -8999,6 +8999,10 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.focus_set()
         try:
             clipboard_text = self.clipboard_get()
+            max_paste_length = 10000  # Set a limit for the max paste length
+            if len(clipboard_text) > max_paste_length:
+                clipboard_text = clipboard_text[:max_paste_length]  # Truncate to max length
+                print("Pasted content truncated to maximum length.")
 
             # Save the current state to undo stack only if there is a change
             current_text = self.get("1.0", "end-1c")
@@ -9233,7 +9237,7 @@ class CustomEntry(customtkinter.CTkEntry):
         self.focus_set()
         try:
             clipboard_text = self.clipboard_get()
-            max_paste_length = 1000  # Set a limit for the max paste length
+            max_paste_length = 250  # Set a limit for the max paste length
             if len(clipboard_text) > max_paste_length:
                 clipboard_text = clipboard_text[:max_paste_length]  # Truncate to max length
                 print("Pasted content truncated to maximum length.")
@@ -9457,7 +9461,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
         self.focus_set()
         try:
             clipboard_text = self.clipboard_get()
-            max_paste_length = 1000  # Set a limit for the max paste length
+            max_paste_length = 250  # Set a limit for the max paste length
             if len(clipboard_text) > max_paste_length:
                 clipboard_text = clipboard_text[:max_paste_length]  # Truncate to max length
                 print("Pasted content truncated to maximum length.")
