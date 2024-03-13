@@ -1798,9 +1798,6 @@ class TeraTermUI(customtkinter.CTk):
         self.tabview.grid_forget()
         self.t_buttons_frame.grid_forget()
         if self.enrolled_classes_table is not None:
-            self.my_classes_frame.grid_forget()
-            self.modify_classes_frame.grid_forget()
-            self.back_my_classes.grid_forget()
             self.destroy_enrolled_frame()
         self.in_enroll_frame = False
         self.in_search_frame = False
@@ -3338,9 +3335,6 @@ class TeraTermUI(customtkinter.CTk):
             self.save_frame.grid_forget()
             self.auto_frame.grid_forget()
         if not self.in_multiple_screen:
-            self.my_classes_frame.grid_forget()
-            self.modify_classes_frame.grid_forget()
-            self.back_my_classes.grid_forget()
             self.destroy_enrolled_frame()
         self.tabview.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 85))
         self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 20))
@@ -6097,7 +6091,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.mod_selection_list.append(None)
                 self.change_section_entries.append(None)
                 pad_y = 45
-        self.my_classes_frame.grid(row=0, column=1)
         if self.countdown_running:
             self.submit_my_classes.configure(state="disabled")
         self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
@@ -6114,6 +6107,9 @@ class TeraTermUI(customtkinter.CTk):
         self.total_credits_label.bind("<Button-1>", lambda event: self.focus_set())
 
     def destroy_enrolled_frame(self):
+        self.my_classes_frame.grid_forget()
+        self.modify_classes_frame.grid_forget()
+        self.back_my_classes.grid_forget()
         self.my_classes_frame.unbind("<Button-1>")
         self.modify_classes_frame.unbind("<Button-1>")
         self.title_my_classes.unbind("<Button-1>")
@@ -6148,11 +6144,11 @@ class TeraTermUI(customtkinter.CTk):
         for entry in self.change_section_entries:
             if entry is not None:
                 entry.destroy()
-        self.change_section_entries = []
+        self.change_section_entries = None
         for option_menu in self.mod_selection_list:
             if option_menu is not None:
                 option_menu.destroy()
-        self.mod_selection_list = []
+        self.mod_selection_list = None
         self.modify_classes_frame.destroy()
         self.modify_classes_frame = None
         self.my_classes_frame.destroy()
