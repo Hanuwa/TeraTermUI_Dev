@@ -138,7 +138,7 @@ class TeraTermUI(customtkinter.CTk):
         self.SERVICE_ACCOUNT_FILE = TeraTermUI.get_absolute_path("feedback.zip")
         self.SPREADSHEET_ID = "1ffJLgp8p-goOlxC10OFEu0JefBgQDsgEo_suis4k0Pw"
         os.environ["Feedback"] = "F_QL^B#O_/r9|Rl0i=x),;!@en|V5qR%W(9;2^+f=lRPcw!+4"
-        self.FEEDBACK = os.getenv("Feedback")
+        self.REAZIONE = os.getenv("REAZIONE")
         self.RANGE_NAME = "Sheet1!A:A"
         self.credentials = None
         self.GITHUB_REPO = "https://api.github.com/repos/Hanuwa/TeraTermUI"
@@ -6676,7 +6676,7 @@ class TeraTermUI(customtkinter.CTk):
         try:
             with open(self.SERVICE_ACCOUNT_FILE, "rb"):
                 archive = pyzipper.AESZipFile(self.SERVICE_ACCOUNT_FILE)
-                archive.setpassword(self.FEEDBACK.encode())
+                archive.setpassword(self.REAZIONE.encode())
                 file_contents = archive.read("feedback.json")
                 credentials_dict = json.loads(file_contents.decode())
                 self.credentials = service_account.Credentials.from_service_account_info(
@@ -6690,9 +6690,9 @@ class TeraTermUI(customtkinter.CTk):
             self.credentials = None
             self.disable_feedback = True
         finally:
-            if hasattr(self, "FEEDBACK"):
-                del self.FEEDBACK
-            os.environ.pop("Feedback", None)
+            if hasattr(self, "REAZIONE"):
+                del self.REAZIONE
+            os.environ.pop("REAZIONE", None)
 
     def update_app(self, latest_version):
         lang = self.language_menu.get()
