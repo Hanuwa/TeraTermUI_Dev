@@ -8,7 +8,7 @@ class AppearanceModeTracker:
     callback_list = []
     app_list = weakref.WeakSet()
     update_loop_running = False
-    update_loop_interval = 100  # milliseconds
+    update_loop_interval = 50  # milliseconds
 
     appearance_mode_set_by = "system"
     appearance_mode = 0  # Light (standard)
