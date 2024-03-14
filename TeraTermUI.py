@@ -7341,7 +7341,7 @@ class TeraTermUI(customtkinter.CTk):
         import random
 
         self.update_idletasks()
-        time.sleep(30 + random.randint(5, 20))
+        time.sleep(30 + random.uniform(5, 25))
         not_running_count = 0
         while self.is_check_process_thread_running and not self.stop_is_check_process.is_set():
             if self.loading_screen is None:
@@ -7368,7 +7368,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.is_idle_thread_running = False
                         self.reset_activity_timer()
             self.update_idletasks()
-            time.sleep(30 + random.randint(5, 20))
+            time.sleep(30 + random.uniform(5, 25))
 
     # Starts the check for idle thread
     def start_check_idle_thread(self):
