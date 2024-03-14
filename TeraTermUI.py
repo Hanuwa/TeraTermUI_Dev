@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/13/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/14/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1435,7 +1435,7 @@ class TeraTermUI(customtkinter.CTk):
                                 print("Clipboard contains non-text data, possibly an image or other formats")
                             except Exception as e:
                                 print("Error handling clipboard content:", e)
-                            if self.search_function_counter == 0 and "COURSE NOT IN" not in text_output:
+                            if self.search_function_counter == 0 and "\"R-AOOO7" not in text_output:
                                 ctypes.windll.user32.BlockInput(False)
                                 self.automate_copy_class_data()
                                 ctypes.windll.user32.BlockInput(True)
@@ -1477,17 +1477,19 @@ class TeraTermUI(customtkinter.CTk):
                                     if clipboard_content is not None:
                                         self.clipboard_append(clipboard_content)
                                     return
-                            if self.search_function_counter == 0:
-                                self.uprb.UprbayTeraTermVt.type_keys(classes)
-                            if self.search_function_counter >= 1:
-                                self.uprb.UprbayTeraTermVt.type_keys("1CS")
-                                self.uprb.UprbayTeraTermVt.type_keys(classes)
-                            self.uprb.UprbayTeraTermVt.type_keys("{TAB}")
-                            if show_all == "on":
-                                self.uprb.UprbayTeraTermVt.type_keys("Y")
-                            elif show_all == "off":
-                                self.uprb.UprbayTeraTermVt.type_keys("N")
-                            self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                            if not (self.get_class_for_pdf == classes and self.get_semester_for_pdf != semester and
+                                    show_all == self.show_all_sections):
+                                if self.search_function_counter == 0:
+                                    self.uprb.UprbayTeraTermVt.type_keys(classes)
+                                if self.search_function_counter >= 1:
+                                    self.uprb.UprbayTeraTermVt.type_keys("1CS")
+                                    self.uprb.UprbayTeraTermVt.type_keys(classes)
+                                self.uprb.UprbayTeraTermVt.type_keys("{TAB}")
+                                if show_all == "on":
+                                    self.uprb.UprbayTeraTermVt.type_keys("Y")
+                                elif show_all == "off":
+                                    self.uprb.UprbayTeraTermVt.type_keys("N")
+                                self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                             text_output = self.capture_screenshot()
                             if "MORE SECTIONS" in text_output:
                                 self.after(0, self.search_next_page_layout)
