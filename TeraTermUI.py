@@ -9567,7 +9567,7 @@ class ImageSlideshow(customtkinter.CTkFrame):
         self.show_image()
 
     def load_images(self):
-        image_files = [f for f in os.listdir(self.image_folder) if f.endswith(("png", "gif", "jpg", "jpeg"))]
+        image_files = [f for f in os.listdir(self.image_folder) if f.endswith(("png", "jpg", "jpeg"))]
         self.image_files = sorted(image_files)
 
     def show_image(self):
