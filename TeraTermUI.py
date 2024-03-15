@@ -4657,11 +4657,11 @@ class TeraTermUI(customtkinter.CTk):
             # Skip 'exit' field if include_exit is False
             if field == "exit" and not include_exit:
                 continue
-            # for 'host' field, only update or insert when host is "uprbay.uprb.edu"
-            if field == "host" and (self.host_entry.get().replace(" ", "").lower() != "uprbay.uprb.edu" and
-                                    self.host_entry.get().replace(" ", "").lower() != "uprbayuprbedu" and
-                                    self.host_entry.get().replace(" ", "").lower()) != "uprb":
-                continue
+            # Save 'host' no matter the result as 'uprbay.uprb.edu'
+            if field == "host":
+                host_entry_value = self.host_entry.get().replace(" ", "").lower()
+                if host_entry_value not in ["uprbay.uprb.edu", "uprbayuprbedu", "uprb"]:
+                    continue
             result = self.cursor.execute(f"SELECT {field} FROM user_data").fetchone()
             if result is None:
                 self.cursor.execute(f"INSERT INTO user_data ({field}) VALUES (?)", (value,))
