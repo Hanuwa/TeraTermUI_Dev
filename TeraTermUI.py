@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/14/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/15/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -5223,6 +5223,9 @@ class TeraTermUI(customtkinter.CTk):
         for item in spec_data:
             modified_item = {header_mapping[key]: value for key, value in item.items() if key in header_mapping}
             modified_data.append(modified_item)
+        if not modified_data:
+            self.after(100, self.show_error_message, 320, 235, translation["failed_to_search"])
+            return
         table_values = [headers] + [[item.get(header, "") for header in headers] for item in modified_data]
         num_rows = len(modified_data) + 1
 
@@ -5987,6 +5990,10 @@ class TeraTermUI(customtkinter.CTk):
         # Define the headers for the table based on the keys from enrolled_classes
         headers = [translation["course"], translation["grade"], translation["days"],
                    translation["times"], translation["room"]]
+        if not data:
+            self.after(100, self.show_error_message, 320, 235, translation["failed_semester"])
+            return
+
         # Create the table values, starting with headers
         table_values = [headers] + [[cls.get(header, "") for header in headers] for cls in data]
         # Calculate the number of rows
