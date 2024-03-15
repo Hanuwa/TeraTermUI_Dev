@@ -1177,7 +1177,7 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language(lang)
                 choice = self.radio_var.get()
                 classes = self.e_classes_entry.get().upper().replace(" ", "").replace("-", "")
-                curr_sem = translation["current"].upper().replace(" ", "")
+                curr_sem = translation["current"].upper()
                 section = self.e_section_entry.get().upper().replace(" ", "")
                 semester = self.e_semester_entry.get().upper().replace(" ", "")
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
@@ -1393,7 +1393,7 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language(lang)
                 classes = self.s_classes_entry.get().upper().replace(" ", "").replace("-", "")
                 semester = self.s_semester_entry.get().upper().replace(" ", "")
-                curr_sem = translation["current"].upper().replace(" ", "")
+                curr_sem = translation["current"].upper()
                 show_all = self.show_all.get()
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
@@ -1619,7 +1619,7 @@ class TeraTermUI(customtkinter.CTk):
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 dialog_input = self.dialog_input.upper().replace(" ", "")
-                curr_sem = translation["current"].upper().replace(" ", "")
+                curr_sem = translation["current"].upper()
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if re.fullmatch("^[A-Z][0-9]{2}$", dialog_input, flags=re.IGNORECASE) or \
@@ -1708,7 +1708,7 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         semester = self.m_semester_entry[0].get().upper().replace(" ", "")
-        curr_sem = translation["current"].upper().replace(" ", "")
+        curr_sem = translation["current"].upper()
         if re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE) or semester == curr_sem:
             if self.a_counter + 1 < len(self.m_semester_entry):
                 self.m_num_class[self.a_counter + 1].grid(row=self.a_counter + 2, column=0, padx=(0, 8), pady=(20, 0))
@@ -1717,7 +1717,10 @@ class TeraTermUI(customtkinter.CTk):
                 self.m_section_entry[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(0, 165),
                                                               pady=(20, 0))
                 self.m_semester_entry[self.a_counter + 1].configure(state="normal")
-                self.m_semester_entry[self.a_counter + 1].set(semester)
+                if semester == curr_sem:
+                    self.m_semester_entry[self.a_counter + 1].set(translation["current"])
+                else:
+                    self.m_semester_entry[self.a_counter + 1].set(semester)
                 self.m_semester_entry[self.a_counter + 1].configure(state="disabled")
                 self.m_semester_entry[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(165, 0),
                                                                pady=(20, 0))
@@ -1961,7 +1964,7 @@ class TeraTermUI(customtkinter.CTk):
                 classes = []
                 sections = []
                 semester = self.m_semester_entry[0].get().upper().replace(" ", "")
-                curr_sem = translation["current"].upper().replace(" ", "")
+                curr_sem = translation["current"].upper()
                 choices = []
                 for i in range(self.a_counter + 1):
                     classes.append(self.m_classes_entry[i].get().upper().replace(" ", "").replace("-", ""))
@@ -2159,7 +2162,7 @@ class TeraTermUI(customtkinter.CTk):
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 semester = self.menu_semester_entry.get().upper().replace(" ", "")
-                curr_sem = translation["current"].upper().replace(" ", "")
+                curr_sem = translation["current"].upper()
                 menu_dict = {
                     "SRM (Main Menu)": "SRM",
                     "SRM (Menú Principal)": "SRM",
@@ -3722,13 +3725,16 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         semester = self.m_semester_entry[0].get().upper().replace(" ", "")
-        curr_sem = translation["current"].upper().replace(" ", "")
+        curr_sem = translation["current"].upper()
         dummy_event = type("Dummy", (object,), {"widget": self.m_semester_entry[0]})()
         self.detect_change(dummy_event)
         if re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE) or semester == curr_sem:
             for i in range(1, self.a_counter + 1):
                 self.m_semester_entry[i].configure(state="normal")
-                self.m_semester_entry[i].set(semester)
+                if semester == curr_sem:
+                    self.m_semester_entry[i].set(translation["current"])
+                else:
+                    self.m_semester_entry[i].set(semester)
                 self.m_semester_entry[i].configure(state="disabled")
 
     def keybind_auto_enroll(self):
@@ -8583,7 +8589,7 @@ class TeraTermUI(customtkinter.CTk):
             choices = self.m_register_menu[i].get()
             entries.append((choices, classes, sections))
         semester = self.m_semester_entry[0].get().upper().replace(" ", "")
-        curr_sem = translation["current"].upper().replace(" ", "")
+        curr_sem = translation["current"].upper()
 
         # Check for empty entries and format errors
         error_entries = []
