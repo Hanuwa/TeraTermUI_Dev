@@ -2954,7 +2954,7 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language(lang)
                 host = self.host_entry.get().replace(" ", "").lower()
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
-                    if host == "uprbay.uprb.edu" or host == "uprbayuprbedu":
+                    if host == "uprbay.uprb.edu" or host == "uprbayuprbedu" or host == "uprb":
                         if TeraTermUI.checkIfProcessRunning("ttermpro"):
                             count = TeraTermUI.countRunningProcesses("ttermpro")
                             if count > 1:
