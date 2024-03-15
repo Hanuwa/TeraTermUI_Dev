@@ -4659,7 +4659,8 @@ class TeraTermUI(customtkinter.CTk):
                 continue
             # for 'host' field, only update or insert when host is "uprbay.uprb.edu"
             if field == "host" and (self.host_entry.get().replace(" ", "").lower() != "uprbay.uprb.edu" and
-                                    self.host_entry.get().replace(" ", "").lower() != "uprbayuprbedu"):
+                                    self.host_entry.get().replace(" ", "").lower() != "uprbayuprbedu" and
+                                    self.host_entry.get().replace(" ", "").lower()) != "uprb":
                 continue
             result = self.cursor.execute(f"SELECT {field} FROM user_data").fetchone()
             if result is None:
