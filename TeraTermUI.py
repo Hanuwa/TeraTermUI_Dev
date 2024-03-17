@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/15/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/17/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -187,6 +187,7 @@ class TeraTermUI(customtkinter.CTk):
         self.show_all_sections = None
         self.download_search_pdf = None
         self.download_enrolled_pdf = None
+        self.sort_by = None
         self.download_enrolled_pdf_tooltip = None
         self.table_count_tooltip = None
         self.previous_button_tooltip = None
@@ -676,7 +677,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.status_button.configure(state="normal")
                     self.help_button.configure(state="normal")
                     self.log_in.configure(state="normal")
-                    self.bind("<Return>", lambda event: self.login_event_handler())
+                    self.bind("<KeyRelease-Return>", lambda event: self.login_event_handler())
                     self.bind("<F1>", lambda event: self.help_button_event())
                     row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
                     if not row_exists:
@@ -689,7 +690,7 @@ class TeraTermUI(customtkinter.CTk):
             else:
                 # Binding events
                 self.log_in.configure(state="normal")
-                self.bind("<Return>", lambda event: self.login_event_handler())
+                self.bind("<KeyRelease-Return>", lambda event: self.login_event_handler())
                 self.bind("<F1>", lambda event: self.help_button_event())
                 # Check for update for the application
                 current_date = datetime.today().strftime("%Y-%m-%d")
@@ -955,14 +956,14 @@ class TeraTermUI(customtkinter.CTk):
                             del student_id, code, student_id_enc, code_enc, aes_key, mac_key
                             self.switch_tab()
                         else:
-                            self.bind("<Return>", lambda event: self.student_event_handler())
+                            self.bind("<KeyRelease-Return>", lambda event: self.student_event_handler())
                             if "ON FILE" in text_output or "ERRORS FOUND" in text_output:
                                 self.uprb.UprbayTeraTermVt.type_keys("{TAB 3}")
                             elif "PIN NUMBER" in text_output:
                                 self.uprb.UprbayTeraTermVt.type_keys("{TAB 2}")
                             self.after(100, self.show_error_message, 300, 215, translation["error_student"])
                     else:
-                        self.bind("<Return>", lambda event: self.student_event_handler())
+                        self.bind("<KeyRelease-Return>", lambda event: self.student_event_handler())
                         if (not student_id or len(student_id) != 9) and (not code.isdigit or len(code) != 4):
                             self.after(0, self.student_id_entry.configure(border_color="#c30101"))
                             self.after(0, self.code_entry.configure(border_color="#c30101"))
@@ -974,10 +975,10 @@ class TeraTermUI(customtkinter.CTk):
                             self.after(0, self.code_entry.configure(border_color="#c30101"))
                             self.after(100, self.show_error_message, 315, 230, translation["error_code"])
                 else:
-                    self.bind("<Return>", lambda event: self.student_event_handler())
+                    self.bind("<KeyRelease-Return>", lambda event: self.student_event_handler())
                     self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             else:
-                self.bind("<Return>", lambda event: self.student_event_handler())
+                self.bind("<KeyRelease-Return>", lambda event: self.student_event_handler())
         except Exception as e:
             print("An error occurred: ", e)
             self.error_occurred = True
@@ -996,7 +997,7 @@ class TeraTermUI(customtkinter.CTk):
                         winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/notification.wav"), winsound.SND_ASYNC)
                     CTkMessagebox(title=translation["automation_error_title"], message=translation["automation_error"],
                                   icon="warning", button_width=380)
-                    self.bind("<Return>", lambda event: self.student_event_handler())
+                    self.bind("<KeyRelease-Return>", lambda event: self.student_event_handler())
                     self.error_occurred = False
 
                 self.after(50, error_automation)
@@ -1267,7 +1268,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.after(100, self.show_error_message, 320, 235,
                                                    translation["failed_enroll"])
                                         self.submit.configure(state="disabled")
-                                        self.unbind("<Return>")
+                                        self.unbind("<KeyRelease-Return>")
                                         self.not_rebind = True
                                         self.after(2500, self.show_enrollment_error_information, text_output)
                                 else:
@@ -1294,7 +1295,7 @@ class TeraTermUI(customtkinter.CTk):
                                                        translation["failed_enroll"])
                                             if not self.enrollment_error_check:
                                                 self.submit.configure(state="disabled")
-                                                self.unbind("<Return>")
+                                                self.unbind("<KeyRelease-Return>")
                                                 self.not_rebind = True
                                                 self.after(2500, self.show_enrollment_error_information)
                                                 self.enrollment_error_check = True
@@ -1303,7 +1304,7 @@ class TeraTermUI(customtkinter.CTk):
                                                        translation["failed_enroll"])
                                             if not self.enrollment_error_check:
                                                 self.submit.configure(state="disabled")
-                                                self.unbind("<Return>")
+                                                self.unbind("<KeyRelease-Return>")
                                                 self.not_rebind = True
                                                 self.after(2500, self.show_enrollment_error_information)
                                                 self.enrollment_error_check = True
@@ -1358,7 +1359,7 @@ class TeraTermUI(customtkinter.CTk):
 
                     self.after(50, error_automation)
                 if not self.not_rebind:
-                    self.bind("<Return>", lambda event: self.submit_event_handler())
+                    self.bind("<KeyRelease-Return>", lambda event: self.submit_event_handler())
                 ctypes.windll.user32.BlockInput(False)
 
     def add_enrolled_classes_list(self, section, classes):
@@ -1573,7 +1574,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.error_occurred = False
 
                     self.after(50, error_automation)
-                self.bind("<Return>", lambda event: self.search_event_handler())
+                self.bind("<KeyRelease-Return>", lambda event: self.search_event_handler())
                 ctypes.windll.user32.BlockInput(False)
                 self.search_event_completed = True
 
@@ -1811,7 +1812,7 @@ class TeraTermUI(customtkinter.CTk):
         self.unbind("<Control-Tab>")
         self.bind("<Control-s>", self.keybind_save_classes)
         self.bind("<Control-S>", self.keybind_save_classes)
-        self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
+        self.bind("<KeyRelease-Return>", lambda event: self.submit_multiple_event_handler())
         self.bind("<Up>", lambda event: self.add_event_up_arrow_key())
         self.bind("<Down>", lambda event: self.remove_event_down_arrow_key())
         self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event2())
@@ -2047,7 +2048,7 @@ class TeraTermUI(customtkinter.CTk):
                                                 if sec not in self.dropped_classes_list:
                                                     self.dropped_classes_list[sec] = cls
                                     self.submit_multiple.configure(state="disabled")
-                                    self.unbind("<Return>")
+                                    self.unbind("<KeyRelease-Return>")
                                     self.not_rebind = True
                                     self.after(2500, self.show_enrollment_error_information_multiple, text_output)
                                     if "CONFIRMED" in text_output and "DROPPED" in text_output:
@@ -2075,11 +2076,11 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(100, self.show_error_message, 320, 235,
                                                translation["failed_enroll_multiple"])
                                     self.submit_multiple.configure(state="disabled")
-                                    self.unbind("<Return>")
+                                    self.unbind("<KeyRelease-Return>")
                                     self.not_rebind = True
                                     self.after(2500, self.show_enrollment_error_information_multiple, text_output)
                                     self.m_counter = self.m_counter - self.a_counter - 1
-                                    self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
+                                    self.bind("<KeyRelease-Return>", lambda event: self.submit_multiple_event_handler())
                             else:
                                 if count_enroll == 15:
                                     self.submit.configure(state="disabled")
@@ -2107,18 +2108,18 @@ class TeraTermUI(customtkinter.CTk):
                                                    translation["failed_enroll_multiple"])
                                         if not self.enrollment_error_check:
                                             self.submit_multiple.configure(state="disabled")
-                                            self.unbind("<Return>")
+                                            self.unbind("<KeyRelease-Return>")
                                             self.not_rebind = True
                                             self.after(2500, self.show_enrollment_error_information)
                                             self.enrollment_error_check = True
                         else:
                             self.after(100, self.show_error_message, 320, 235,
                                        translation["max_enroll"])
-                            self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
+                            self.bind("<KeyRelease-Return>", lambda event: self.submit_multiple_event_handler())
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
-                    self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
-                self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
+                    self.bind("<KeyRelease-Return>", lambda event: self.submit_multiple_event_handler())
+                self.bind("<KeyRelease-Return>", lambda event: self.submit_multiple_event_handler())
             except Exception as e:
                 print("An error occurred: ", e)
                 self.error_occurred = True
@@ -2143,7 +2144,7 @@ class TeraTermUI(customtkinter.CTk):
 
                     self.after(50, error_automation)
                 if not self.not_rebind:
-                    self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
+                    self.bind("<KeyRelease-Return>", lambda event: self.submit_multiple_event_handler())
                 ctypes.windll.user32.BlockInput(False)
 
     def option_menu_event_handler(self):
@@ -2511,7 +2512,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.error_occurred = False
 
                     self.after(50, error_automation)
-                self.bind("<Return>", lambda event: self.option_menu_event_handler())
+                self.bind("<KeyRelease-Return>", lambda event: self.option_menu_event_handler())
                 ctypes.windll.user32.BlockInput(False)
                 self.option_menu_event_completed = True
 
@@ -2631,7 +2632,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.error_occurred = False
 
                     self.after(50, error_automation)
-                self.bind("<Return>", lambda event: self.option_menu_event_handler())
+                self.bind("<KeyRelease-Return>", lambda event: self.option_menu_event_handler())
                 ctypes.windll.user32.BlockInput(False)
                 self.go_next_event_completed = True
 
@@ -2708,7 +2709,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.error_occurred = False
 
                     self.after(50, error_automation)
-                self.bind("<Return>", lambda event: self.search_event_handler())
+                self.bind("<KeyRelease-Return>", lambda event: self.search_event_handler())
                 ctypes.windll.user32.BlockInput(False)
                 self.search_go_next_event_completed = True
 
@@ -2790,7 +2791,7 @@ class TeraTermUI(customtkinter.CTk):
                             elif self.server_status == "Prompt found":
                                 self.uprb.UprbayTeraTermVt.type_keys("{ENTER 3}")
                                 self.move_window()
-                                self.bind("<Return>", lambda event: self.student_event_handler())
+                                self.bind("<KeyRelease-Return>", lambda event: self.student_event_handler())
                                 if self.skip_auth:
                                     self.after(0, self.home_frame.grid_forget)
                                 self.after(0, self.initialization_student)
@@ -2812,14 +2813,14 @@ class TeraTermUI(customtkinter.CTk):
 
                                 self.after(125, timeout)
                         elif username != "students":
-                            self.bind("<Return>", lambda event: self.auth_event_handler())
+                            self.bind("<KeyRelease-Return>", lambda event: self.auth_event_handler())
                             self.after(100, self.show_error_message, 300, 215, translation["invalid_username"])
                             self.after(0, self.username_entry.configure(border_color="#c30101"))
                     else:
-                        self.bind("<Return>", lambda event: self.auth_event_handler())
+                        self.bind("<KeyRelease-Return>", lambda event: self.auth_event_handler())
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
                 else:
-                    self.bind("<Return>", lambda event: self.auth_event_handler())
+                    self.bind("<KeyRelease-Return>", lambda event: self.auth_event_handler())
             except Exception as e:
                 print("An error occurred: ", e)
                 self.error_occurred = True
@@ -2833,6 +2834,8 @@ class TeraTermUI(customtkinter.CTk):
                     self.after(3500, self.go_back_event)
                 elif self.error_occurred:
                     self.after(0, self.go_back_event)
+                if self.log_in.cget("state") == "disabled":
+                    self.log_in.configure(state="normal")
                 ctypes.windll.user32.BlockInput(False)
 
     def auth_info_frame(self):
@@ -2857,7 +2860,7 @@ class TeraTermUI(customtkinter.CTk):
         self.back_student.grid(row=5, column=0, padx=(0, 10), pady=(0, 0))
         self.system.grid(row=5, column=1, padx=(10, 0), pady=(0, 0))
         if self.ask_skip_auth and not self.skipped_login:
-            self.unbind("<Return>")
+            self.unbind("<KeyRelease-Return>")
             self.unbind("<Control-BackSpace>")
             self.system.configure(state="disabled")
             self.back_student.configure(state="disabled")
@@ -2891,7 +2894,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.help and self.help.winfo_exists():
             self.on_help_window_close()
             self.help_button_event()
-        self.bind("<Return>", lambda event: self.student_event_handler())
+        self.bind("<KeyRelease-Return>", lambda event: self.student_event_handler())
         self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
         self.system.configure(state="normal")
         self.back_student.configure(state="normal")
@@ -2959,7 +2962,7 @@ class TeraTermUI(customtkinter.CTk):
                             count = TeraTermUI.countRunningProcesses("ttermpro")
                             if count > 1:
                                 self.after(100, self.show_error_message, 450, 270, translation["count_processes"])
-                                self.bind("<Return>", lambda event: self.login_event_handler())
+                                self.bind("<KeyRelease-Return>", lambda event: self.login_event_handler())
                                 return
                             if TeraTermUI.window_exists("Tera Term: New connection"):
                                 new_connection = True
@@ -2996,7 +2999,7 @@ class TeraTermUI(customtkinter.CTk):
                                     timeout=1):
                                 self.uprbay_window.child_window(title="Continue", control_type="Button").click()
                             if not self.skip_auth:
-                                self.bind("<Return>", lambda event: self.auth_event_handler())
+                                self.bind("<KeyRelease-Return>", lambda event: self.auth_event_handler())
                                 self.after(0, self.initialization_auth)
                                 self.in_auth_frame = True
                             else:
@@ -3004,18 +3007,18 @@ class TeraTermUI(customtkinter.CTk):
                             self.after(50, self.login_frame)
                         except AppStartError as e:
                             print("An error occurred: ", e)
-                            self.bind("<Return>", lambda event: self.login_event_handler())
+                            self.bind("<KeyRelease-Return>", lambda event: self.login_event_handler())
                             self.after(100, self.show_error_message, 425, 330,
                                        translation["tera_term_failed_to_start"])
                             if not self.download:
                                 self.after(3500, self.download_teraterm)
                                 self.download = True
                     elif host != "uprbay.uprb.edu":
-                        self.bind("<Return>", lambda event: self.login_event_handler())
+                        self.bind("<KeyRelease-Return>", lambda event: self.login_event_handler())
                         self.after(100, self.show_error_message, 300, 215, translation["invalid_host"])
                         self.after(0, self.host_entry.configure(border_color="#c30101"))
                 else:
-                    self.bind("<Return>", lambda event: self.login_event_handler())
+                    self.bind("<KeyRelease-Return>", lambda event: self.login_event_handler())
             except Exception as e:
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
@@ -3029,9 +3032,7 @@ class TeraTermUI(customtkinter.CTk):
                             winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/error.wav"), winsound.SND_ASYNC)
                         CTkMessagebox(title=translation["automation_error_title"],
                                       message=translation["unexpected_error"], icon="warning", button_width=380)
-                        self.bind("<Return>", lambda event: self.login_event_handler())
-                        if self.log_in.cget("state") == "disabled":
-                            self.log_in.configure(state="normal")
+                        self.bind("<KeyRelease-Return>", lambda event: self.login_event_handler())
 
                     self.error_occurred = False
                     self.after(50, rare_error)
@@ -3055,9 +3056,7 @@ class TeraTermUI(customtkinter.CTk):
                         CTkMessagebox(title=translation["automation_error_title"],
                                       message=translation["tera_term_forced_to_close"], icon="warning",
                                       button_width=380)
-                        self.bind("<Return>", lambda event: self.login_event_handler())
-                        if self.log_in.cget("state") == "disabled":
-                            self.log_in.configure(state="normal")
+                        self.bind("<KeyRelease-Return>", lambda event: self.login_event_handler())
                         self.error_occurred = False
 
                     self.after(50, error_automation)
@@ -3105,7 +3104,7 @@ class TeraTermUI(customtkinter.CTk):
                 break
         if TeraTermUI.window_exists("SSH Authentication") and not skip:
             self.connect_to_uprb()
-            self.bind("<Return>", lambda event: self.auth_event_handler())
+            self.bind("<KeyRelease-Return>", lambda event: self.auth_event_handler())
             self.after(0, self.initialization_auth)
             self.after(50, self.login_frame)
             self.in_auth_frame = True
@@ -3127,7 +3126,7 @@ class TeraTermUI(customtkinter.CTk):
                         winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/error.wav"), winsound.SND_ASYNC)
                     CTkMessagebox(title=translation["server_maintenance_title"],
                                   message=translation["server_maintenance"], icon="cancel", button_width=380)
-                    self.bind("<Return>", lambda event: self.login_event_handler())
+                    self.bind("<KeyRelease-Return>", lambda event: self.login_event_handler())
                     self.uprb.kill(soft=True)
 
                 self.after(125, server_closed)
@@ -3143,7 +3142,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.uprb.UprbayTeraTermVt.type_keys("{VK_RIGHT}")
                     self.uprb.UprbayTeraTermVt.type_keys("{VK_LEFT}")
                 self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
-                self.bind("<Return>", lambda event: self.student_event_handler())
+                self.bind("<KeyRelease-Return>", lambda event: self.student_event_handler())
                 self.home_frame.grid_forget()
                 self.after(0, self.initialization_student)
                 self.after(50, self.auth_info_frame)
@@ -3180,11 +3179,11 @@ class TeraTermUI(customtkinter.CTk):
                 self.switch_tab()
                 self.move_window()
             else:
-                self.bind("<Return>", lambda event: self.login_event_handler())
+                self.bind("<KeyRelease-Return>", lambda event: self.login_event_handler())
                 self.after(100, self.show_error_message, 450, 265,
                            translation["tera_term_already_running"])
         else:
-            self.bind("<Return>", lambda event: self.login_event_handler())
+            self.bind("<KeyRelease-Return>", lambda event: self.login_event_handler())
             self.after(100, self.show_error_message, 450, 265,
                        translation["tera_term_already_running"])
 
@@ -3263,7 +3262,7 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<Control-S>")
             self.unbind("<Control-Tab>")
             self.unbind("<Control-BackSpace>")
-            self.bind("<Return>", lambda event: self.login_event_handler())
+            self.bind("<KeyRelease-Return>", lambda event: self.login_event_handler())
             if self.in_auth_frame:
                 self.destroy_auth()
             elif self.in_student_frame:
@@ -3294,8 +3293,6 @@ class TeraTermUI(customtkinter.CTk):
             if self.help is not None and self.help.winfo_exists():
                 self.fix.configure(state="disabled")
                 self.files.configure(state="normal")
-            if self.log_in.cget("state") == "disabled":
-                self.log_in.configure(state="normal")
             self.run_fix = False
             self.in_auth_frame = False
             self.in_student_frame = False
@@ -3326,7 +3323,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # function that goes back to Enrolling frame screen
     def go_back_event2(self):
-        self.unbind("<Return>")
+        self.unbind("<KeyRelease-Return>")
         self.unbind("<Up>")
         self.unbind("<Down>")
         self.unbind("<Home>")
@@ -3678,6 +3675,9 @@ class TeraTermUI(customtkinter.CTk):
                 self.next_button_tooltip.configure(message=translation["next_tooltip"])
                 self.remove_button_tooltip.configure(message=translation["remove_tooltip"])
                 self.download_search_pdf_tooltip.configure(message=translation["download_pdf_search_tooltip"])
+                self.sort_by.configure(values=[translation["time_asc"], translation["time_dec"], translation["av_asc"],
+                                               translation["av_dec"], translation["original_data"]])
+                self.sort_by.set(translation["sort_by"])
             if self.enrolled_classes_table is not None:
                 self.update_enrolled_classes_headers_tooltips()
                 title_my_classes = self.title_my_classes.cget("text").split(":")[1].strip()
@@ -3915,7 +3915,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.error_occurred = False
 
                     self.after(50, error_automation)
-                self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
+                self.bind("<KeyRelease-Return>", lambda event: self.submit_multiple_event_handler())
                 ctypes.windll.user32.BlockInput(False)
 
     # Starts the countdown on when the auto-enroll process will occur
@@ -4808,9 +4808,6 @@ class TeraTermUI(customtkinter.CTk):
             self.progress_bar.stop()
             loading_screen.destroy()
             self.loading_screen = None
-            if current_time - self.loading_screen_start_time > 30:
-                if self.log_in.cget("state") == "disabled":
-                    self.log_in.configure(state="normal")
         else:
             self.after(100, self.update_loading_screen, loading_screen, task_done)
 
@@ -5145,6 +5142,9 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         cell_value = cell_data["value"]
+        if not cell_value.strip():
+            return
+
         self.focus_set()
         self.clipboard_clear()
         self.clipboard_append(cell_value)
@@ -5209,6 +5209,27 @@ class TeraTermUI(customtkinter.CTk):
         # Auto-destroy after 3.5 seconds and reset the tooltip variable
         self.tooltip.after(3500, self.destroy_tooltip)
 
+    @staticmethod
+    def open_professor_profile(event, instructor_text):
+        def attempt_open_url(p_names):
+            first_name = p_names[2].lower()
+            last_names = [p_names[0].lower(), "-".join(p_names[:2]).lower()]
+            for ln in last_names:
+                url = f"https://notaso.com/professors/{first_name}-{ln}/"
+                try:
+                    response = requests.head(url)
+                    if response.status_code == 200:
+                        webbrowser.open(url)
+                        return
+                except requests.RequestException as e:
+                    print(f"Failed to open URL: {url}, Error: {e}")
+                    continue
+
+        names = instructor_text.split()
+        if len(names) >= 3:
+            thread = threading.Thread(target=attempt_open_url, args=(names,))
+            thread.start()
+
     # displays the extracted data into a table
     def display_data(self, data):
         lang = self.language_menu.get()
@@ -5265,6 +5286,13 @@ class TeraTermUI(customtkinter.CTk):
             section_text = section_cell.cget("text")
             section_cell.bind("<Button-3>", lambda event, section=section_text: self.transfer_class_data_to_enroll_tab(
                 event, section) if section.strip() else None)
+        instructor_col_index = headers.index(translation["instructor"])
+        for row in range(1, num_rows):
+            instructor_cell = new_table.get_cell(row, instructor_col_index)
+            instructor_text = instructor_cell.cget("text")
+            if instructor_text.strip():
+                instructor_cell.bind("<Button-3>", lambda event,
+                                     instructor=instructor_text: TeraTermUI.open_professor_profile(event, instructor))
         for col_index in range(len(headers)):
             header_cell = new_table.get_cell(0, col_index)
             header_cell.bind("<Button-3>", lambda event: self.move_tables_overlay_event())
@@ -5295,6 +5323,11 @@ class TeraTermUI(customtkinter.CTk):
             self.download_search_pdf_tooltip = CTkToolTip(self.download_search_pdf,
                                                           message=translation["download_pdf_search_tooltip"],
                                                           bg_color="green")
+            self.sort_by = customtkinter.CTkOptionMenu(self.search_scrollbar, values=[
+                translation["time_asc"], translation["time_dec"],
+                translation["av_asc"], translation["av_dec"],
+                translation["original_data"]], command=self.sort_tables)
+            self.sort_by.set(translation["sort_by"])
 
         available_key = translation["av"]
         available_values = [row[available_key] for row in modified_data]
@@ -5355,7 +5388,8 @@ class TeraTermUI(customtkinter.CTk):
             self.remove_button.grid_forget()
             self.next_button.grid_forget()
         self.remove_button.grid(row=5, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-        self.download_search_pdf.grid(row=6, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+        self.download_search_pdf.grid(row=6, column=1, padx=(150, 0), pady=(10, 0), sticky="n")
+        self.sort_by.grid(row=6, column=1, padx=(0, 150), pady=(10, 0), sticky="n")
         self.update_buttons()
         table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/10"
         self.table_count.configure(text=table_count_label)
@@ -5373,6 +5407,42 @@ class TeraTermUI(customtkinter.CTk):
                     existing_available_values == available_values):
                 return index
         return None
+
+    def sort_tables(self, sort_by_option):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        for _, table, _, _, _, _ in self.class_table_pairs:
+            table_data = table.values
+            headers = table_data[0]
+            time_index = headers.index("TIMES") if "TIMES" in headers else None
+            av_index = headers.index("AV") if "AV" in headers else None
+            valid_entries = []
+            non_standard_positions = []
+
+            for i, row in enumerate(table_data[1:]):
+                time_minutes = float("inf")
+                if time_index is not None and row[time_index]:
+                    times = row[time_index].strip().split("\n")
+                    if len(times) == 2:
+                        try:
+                            time_minutes = sum(int(datetime.strptime(t, "%I:%M %p").strftime("%H")) * 60 + int(
+                                datetime.strptime(t, "%I:%M %p").strftime("%M")) for t in times)
+                        except ValueError:
+                            pass
+                if time_minutes != float("inf"):
+                    valid_entries.append(row)
+                else:
+                    non_standard_positions.append((i, row))
+
+            if sort_by_option in [translation["time_asc"], translation["time_dec"]] and time_index is not None:
+                valid_entries.sort(key=lambda x: time_minutes, reverse=(sort_by_option == translation["time_dec"]))
+
+            elif sort_by_option in [translation["av_asc"], translation["av_asc"]] and av_index is not None:
+                valid_entries.sort(key=lambda x: int(x[av_index]) if x[av_index].isdigit() else float("inf"),
+                                   reverse=(sort_by_option == translation["av_dec"]))
+            for pos, row in non_standard_positions:
+                valid_entries.insert(pos, row)
+            table.update_values([headers] + valid_entries)
 
     def check_and_update_labels(self):
         class_info = {}
@@ -5561,6 +5631,7 @@ class TeraTermUI(customtkinter.CTk):
             self.table_count.grid_forget()
             self.remove_button.grid_forget()
             self.download_search_pdf.grid_forget()
+            self.sort_by.grid_forget()
             self.search_scrollbar.scroll_to_top()
             self.after(0, display_class_to_remove.destroy)
             self.after(0, table_to_remove.destroy)
@@ -6110,7 +6181,7 @@ class TeraTermUI(customtkinter.CTk):
                 pad_y = 45
         if self.countdown_running:
             self.submit_my_classes.configure(state="disabled")
-        self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
+        self.bind("<KeyRelease-Return>", lambda event: self.submit_modify_classes_handler())
         self.bind("<Up>", lambda event: self.move_up_scrollbar())
         self.bind("<Down>", lambda event: self.move_down_scrollbar())
         self.bind("<Home>", lambda event: self.move_top_scrollbar())
@@ -6376,7 +6447,8 @@ class TeraTermUI(customtkinter.CTk):
                                     def explanation():
                                         self.destroy_windows()
                                         if self.enrolled_classes_table is not None:
-                                            self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
+                                            self.bind("<KeyRelease-Return>",
+                                                      lambda event: self.submit_modify_classes_handler())
                                             self.submit_my_classes.configure(state="normal")
                                         self.not_rebind = False
                                         if not self.disable_audio:
@@ -6386,7 +6458,7 @@ class TeraTermUI(customtkinter.CTk):
                                                       message=translation["failed_change_section_exp"],
                                                       button_width=380)
 
-                                    self.unbind("<Return>")
+                                    self.unbind("<KeyRelease-Return>")
                                     self.submit_my_classes.configure(state="disabled")
                                     self.not_rebind = True
                                     self.after(2500, explanation)
@@ -6397,7 +6469,8 @@ class TeraTermUI(customtkinter.CTk):
                                     def explanation():
                                         self.destroy_windows()
                                         if self.enrolled_classes_table is not None:
-                                            self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
+                                            self.bind("<KeyRelease-Return>",
+                                                      lambda event: self.submit_modify_classes_handler())
                                             self.submit_my_classes.configure(state="normal")
                                         self.not_rebind = False
                                         if not self.disable_audio:
@@ -6406,7 +6479,7 @@ class TeraTermUI(customtkinter.CTk):
                                         CTkMessagebox(title=translation["automation_error_title"], icon="cancel",
                                                       message=translation["section_closed"], button_width=380)
 
-                                    self.unbind("<Return>")
+                                    self.unbind("<KeyRelease-Return>")
                                     self.submit_my_classes.configure(state="disabled")
                                     self.not_rebind = True
                                     self.after(2500, explanation)
@@ -6418,7 +6491,7 @@ class TeraTermUI(customtkinter.CTk):
                                     def explanation():
                                         self.destroy_windows()
                                         if self.enrolled_classes_table is not None:
-                                            self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
+                                            self.bind("<KeyRelease-Return>", lambda event: self.submit_modify_classes_handler())
                                             self.submit_my_classes.configure(state="normal")
                                         self.not_rebind = False
                                         if not self.disable_audio:
@@ -6427,7 +6500,7 @@ class TeraTermUI(customtkinter.CTk):
                                         CTkMessagebox(title=translation["automation_error_title"], icon="cancel",
                                                       message=translation["co_requisite"], button_width=380)
 
-                                    self.unbind("<Return>")
+                                    self.unbind("<KeyRelease-Return>")
                                     self.submit_my_classes.configure(state="disabled")
                                     self.not_rebind = True
                                     self.after(2500, explanation)
@@ -6453,7 +6526,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.after(100, self.show_error_message, 315, 225,
                                                    translation["failed_modify"])
                                         if not self.modify_error_check:
-                                            self.unbind("<Return>")
+                                            self.unbind("<KeyRelease-Return>")
                                             self.submit_my_classes.configure(state="disabled")
                                             self.not_rebind = True
                                             self.after(2500, self.show_modify_classes_information)
@@ -6462,7 +6535,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.after(100, self.show_error_message, 315, 225,
                                                    translation["failed_modify"])
                                         if not self.modify_error_check:
-                                            self.unbind("<Return>")
+                                            self.unbind("<KeyRelease-Return>")
                                             self.submit_my_classes.configure(state="disabled")
                                             self.not_rebind = True
                                             self.after(2500, self.show_modify_classes_information)
@@ -6510,7 +6583,7 @@ class TeraTermUI(customtkinter.CTk):
 
                     self.after(50, error_automation)
                 if not self.not_rebind:
-                    self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
+                    self.bind("<KeyRelease-Return>", lambda event: self.submit_modify_classes_handler())
                 ctypes.windll.user32.BlockInput(False)
 
     # checks whether the program can continue its normal execution or if the server is on maintenance
@@ -6857,7 +6930,7 @@ class TeraTermUI(customtkinter.CTk):
         self.submit_multiple.configure(state="normal")
         self.not_rebind = False
         if self.in_multiple_screen:
-            self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
+            self.bind("<KeyRelease-Return>", lambda event: self.submit_multiple_event_handler())
         else:
             self.switch_tab()
         if self.enrollment_error_check:
@@ -6932,7 +7005,7 @@ class TeraTermUI(customtkinter.CTk):
         self.submit_multiple.configure(state="normal")
         self.not_rebind = False
         if self.in_multiple_screen:
-            self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
+            self.bind("<KeyRelease-Return>", lambda event: self.submit_multiple_event_handler())
         else:
             self.switch_tab()
         if self.enrollment_error_check:
@@ -6952,7 +7025,7 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language(lang)
         if self.modify_error_check:
             if self.enrolled_classes_table is not None:
-                self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
+                self.bind("<KeyRelease-Return>", lambda event: self.submit_modify_classes_handler())
                 self.submit_my_classes.configure(state="normal")
             self.not_rebind = False
             if not self.disable_audio:
@@ -7000,7 +7073,7 @@ class TeraTermUI(customtkinter.CTk):
         self.focus_set()
         self.destroy_windows()
         self.hide_sidebar_windows()
-        self.unbind("<Return>")
+        self.unbind("<KeyRelease-Return>")
         if self.tooltip is not None and self.tooltip.winfo_exists():
             self.tooltip.destroy()
         ctypes.windll.user32.BlockInput(True)
@@ -7490,10 +7563,10 @@ class TeraTermUI(customtkinter.CTk):
                 self.start_check_idle_thread()
                 if self.in_multiple_screen:
                     self.set_focus_to_tkinter()
-                    self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
+                    self.bind("<KeyRelease-Return>", lambda event: self.submit_multiple_event_handler())
                 elif not self.in_multiple_screen and self.enrolled_classes_table is None:
                     self.set_focus_to_tkinter()
-                    self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
+                    self.bind("<KeyRelease-Return>", lambda event: self.submit_modify_classes_handler())
                 else:
                     self.set_focus_to_tkinter()
                     self.switch_tab()
@@ -7620,9 +7693,9 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<Control-s>")
             self.unbind("<Control-S>")
             if not self.not_rebind:
-                self.bind("<Return>", lambda event: self.submit_event_handler())
+                self.bind("<KeyRelease-Return>", lambda event: self.submit_event_handler())
             else:
-                self.unbind("<Return>")
+                self.unbind("<KeyRelease-Return>")
         elif self.tabview.get() == self.search_tab:
             self.search_scrollbar.configure(width=600, height=293)
             if hasattr(self, "table") and self.table is not None:
@@ -7633,13 +7706,14 @@ class TeraTermUI(customtkinter.CTk):
                 self.next_button.grid_forget()
                 self.remove_button.grid_forget()
                 self.download_search_pdf.grid_forget()
+                self.sort_by.grid_forget()
                 self.search_scrollbar.scroll_to_top()
                 self.after(100, self.load_table)
                 self.bind("<Control-s>", lambda event: self.download_search_classes_as_pdf())
                 self.bind("<Control-S>", lambda event: self.download_search_classes_as_pdf())
             self.in_enroll_frame = False
             self.in_search_frame = True
-            self.bind("<Return>", lambda event: self.search_event_handler())
+            self.bind("<KeyRelease-Return>", lambda event: self.search_event_handler())
             self.search_scrollbar.bind("<Button-1>", lambda event: self.search_scrollbar.focus_set())
             self.bind("<Up>", lambda event: self.move_up_scrollbar())
             self.bind("<Down>", lambda event: self.move_down_scrollbar())
@@ -7655,7 +7729,7 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<End>")
             self.unbind("<Control-s>")
             self.unbind("<Control-S>")
-            self.bind("<Return>", lambda event: self.option_menu_event_handler())
+            self.bind("<KeyRelease-Return>", lambda event: self.option_menu_event_handler())
         self.after(0, self.focus_set)
 
     def load_table(self):
@@ -8663,7 +8737,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.after(100, self.auto_enroll.deselect)
             return False
 
-        self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
+        self.bind("<KeyRelease-Return>", lambda event: self.submit_multiple_event_handler())
         return True
 
 
@@ -9697,4 +9771,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
