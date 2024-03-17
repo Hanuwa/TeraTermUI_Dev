@@ -11,7 +11,7 @@ pip search
 # Latest Releases Text
 Latest release of Tera Term UI,
 
-Tera Term must be installed in your computer
+Tera Term must be installed in your computer (Windows Only)
 
 Portable Version (Zip File)
 Installation File (64-Bit)
