@@ -139,7 +139,7 @@
 	"ctrl_y": "En una entrada, se utiliza para \nrehacer texto",
 	"ctrl_a": "En una entrada, se utiliza para\nseleccionar todo el texto",
 	"ctrl_s": "Para guardar los datos de las clases en un\nPDF o en la misma aplicación",
-	"mouse_2": "En una entrada, se utiliza para mostrar\nel menú contextual",
+	"mouse_2": "En una entrada, se utiliza para mostrar el menú\ncontextual, también ofrece funcionalidad\nadicional para las tablas de clases buscadas",
 	"home": "En una entrada, se utiliza para mover\nel cursor al principio, pero también se puede\nusar par deslizar a el tope de la página",
 	"end": "En una entrada, se utiliza para mover\n el cursor al final, pero también se puede\nusar para deslizar al fondo de la página",
 	"F1": "Abre la ventana de \"Ayuda\"",
