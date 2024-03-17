@@ -3099,7 +3099,7 @@ class TeraTermUI(customtkinter.CTk):
             self.update_idletasks()
             time.sleep(0.5)
             timeout_counter += 1
-            if timeout_counter > 7:
+            if timeout_counter > 10:
                 skip = True
                 break
         if TeraTermUI.window_exists("SSH Authentication") and not skip:
@@ -5211,6 +5211,14 @@ class TeraTermUI(customtkinter.CTk):
 
     @staticmethod
     def open_professor_profile(event, instructor_text):
+        def remove_prefixes(p_names):
+            cleaned_names = []
+            for name in p_names:
+                if name.lower() in ["de", "del"]:
+                    continue
+                cleaned_names.append(name)
+            return cleaned_names
+
         def attempt_open_url(p_names):
             first_name = p_names[2].lower()
             last_names = [p_names[0].lower(), "-".join(p_names[:2]).lower()]
@@ -5225,7 +5233,7 @@ class TeraTermUI(customtkinter.CTk):
                     print(f"Failed to open URL: {url}, Error: {e}")
                     continue
 
-        names = instructor_text.split()
+        names = remove_prefixes(instructor_text.split())
         if len(names) >= 3:
             thread = threading.Thread(target=attempt_open_url, args=(names,))
             thread.start()
