@@ -331,7 +331,7 @@
 	"sort_by": "Sort By",
 	"time_asc": "Time Ascending ↑",
 	"time_dec": "Time Descending ↓",
-	"av_asc": "Available Ascending ↑",
-	"av_dec": "Available Descending ↓",
+	"av_asc": "Availability Ascending ↑",
+	"av_dec": "Availability Descending ↓",
 	"original_data": "Original Tables"
 }
