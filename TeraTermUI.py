@@ -5399,6 +5399,7 @@ class TeraTermUI(customtkinter.CTk):
         self.download_search_pdf.grid(row=6, column=1, padx=(157, 0), pady=(10, 0), sticky="n")
         self.sort_by.grid(row=6, column=1, padx=(0, 157), pady=(10, 0), sticky="n")
         self.update_buttons()
+        self.search_scrollbar.scroll_to_top()
         table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/10"
         self.table_count.configure(text=table_count_label)
         if len(self.class_table_pairs) == 10:
@@ -5432,15 +5433,23 @@ class TeraTermUI(customtkinter.CTk):
                 times_key = tuple(row[time_index].strip().split("\n"))
                 if times_key in memoized_times:
                     return memoized_times[times_key]
-
-                try:
-                    time_minutes = sum(int(datetime.strptime(t, "%I:%M %p").strftime("%H")) * 60 + int(
-                        datetime.strptime(t, "%I:%M %p").strftime("%M")) for t in times_key)
-                    memoized_times[times_key] = time_minutes
-                    return time_minutes
-                except ValueError:
-                    memoized_times[times_key] = float("inf")
-                    return float("inf")
+                total_minutes = 0
+                for t in times_key:
+                    if t in memoized_times:
+                        minutes = memoized_times[t]
+                    else:
+                        try:
+                            minutes = int(datetime.strptime(t, "%I:%M %p").strftime("%H")) * 60 + int(
+                                datetime.strptime(t, "%I:%M %p").strftime("%M"))
+                            memoized_times[t] = minutes
+                        except ValueError:
+                            minutes = float("inf")
+                            memoized_times[t] = minutes
+                    if minutes == float("inf"):
+                        return minutes
+                    total_minutes += minutes
+                memoized_times[times_key] = total_minutes
+                return total_minutes
 
             valid_entries = [row for row in table_data[1:] if get_time_minutes(row) != float("inf")]
             non_standard_positions = [(i, row) for i, row in enumerate(table_data[1:]) if
