@@ -1,4 +1,4 @@
-# TeraTermUI_Dev
+# Tera Term UI Dev
 Dev Environment for Tera Term UI
 
 **Python Version:** "3.11.8"
