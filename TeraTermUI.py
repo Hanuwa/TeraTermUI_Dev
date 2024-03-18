@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/17/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/18/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -188,6 +188,7 @@ class TeraTermUI(customtkinter.CTk):
         self.download_search_pdf = None
         self.download_enrolled_pdf = None
         self.sort_by = None
+        self.sort_by_tooltip = None
         self.download_enrolled_pdf_tooltip = None
         self.table_count_tooltip = None
         self.previous_button_tooltip = None
@@ -3674,6 +3675,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.sort_by.configure(values=[translation["time_asc"], translation["time_dec"], translation["av_asc"],
                                                translation["av_dec"], translation["original_data"]])
                 self.sort_by.set(translation["sort_by"])
+                self.sort_by_tooltip.configure(translation["sort_by_tooltip"])
             if self.enrolled_classes_table is not None:
                 self.update_enrolled_classes_headers_tooltips()
                 title_my_classes = self.title_my_classes.cget("text").split(":")[1].strip()
@@ -5332,14 +5334,17 @@ class TeraTermUI(customtkinter.CTk):
                 translation["av_asc"], translation["av_dec"],
                 translation["original_data"]], command=self.sort_tables)
             self.sort_by.set(translation["sort_by"])
+            self.sort_by_tooltip = CTkToolTip(self.sort_by, message=translation["sort_by_tooltip"],
+                                              bg_color="#1E90FF")
 
         available_key = translation["av"]
         available_values = [row[available_key] for row in modified_data]
+        sorted_available_values = sorted(available_values)
         duplicate_index = self.find_duplicate(display_class, self.get_semester_for_pdf, self.show_all_sections,
-                                              available_values)
+                                              sorted_available_values)
         if duplicate_index is not None:
             _, _, _, _, existing_available_values, _ = self.class_table_pairs[duplicate_index]
-            if existing_available_values != available_values:
+            if sorted(existing_available_values) != sorted_available_values:
                 display_class_to_remove, table_to_remove, _, _, _, _ = self.class_table_pairs[duplicate_index]
                 display_class_to_remove.unbind("<Button-1>")
                 for cell in table_to_remove.get_all_cells():
@@ -5392,8 +5397,8 @@ class TeraTermUI(customtkinter.CTk):
             self.remove_button.grid_forget()
             self.next_button.grid_forget()
         self.remove_button.grid(row=5, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-        self.download_search_pdf.grid(row=6, column=1, padx=(150, 0), pady=(10, 0), sticky="n")
-        self.sort_by.grid(row=6, column=1, padx=(0, 150), pady=(10, 0), sticky="n")
+        self.download_search_pdf.grid(row=6, column=1, padx=(155, 0), pady=(10, 0), sticky="n")
+        self.sort_by.grid(row=6, column=1, padx=(0, 155), pady=(10, 0), sticky="n")
         self.update_buttons()
         table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/10"
         self.table_count.configure(text=table_count_label)
@@ -5404,11 +5409,13 @@ class TeraTermUI(customtkinter.CTk):
         self.bind("<Control-S>", lambda event: self.download_search_classes_as_pdf())
 
     def find_duplicate(self, new_display_class, new_semester, show_all_sections_state, available_values):
+        sorted_available_values = sorted(available_values)
         for index, (display_class, table, semester, existing_show_all_sections_state,
                     existing_available_values, _) in enumerate(self.class_table_pairs):
             if (display_class.cget("text").split("-")[0].strip() == new_display_class.cget("text").split("-")[0].strip()
-                    and semester == new_semester and existing_show_all_sections_state == show_all_sections_state and
-                    existing_available_values == available_values):
+                    and semester == new_semester
+                    and existing_show_all_sections_state == show_all_sections_state
+                    and sorted(existing_available_values) == sorted_available_values):
                 return index
         return None
 
@@ -5418,35 +5425,39 @@ class TeraTermUI(customtkinter.CTk):
         for _, table, _, _, _, _ in self.class_table_pairs:
             table_data = table.values
             headers = table_data[0]
-            time_index = headers.index("TIMES") if "TIMES" in headers else None
-            av_index = headers.index("AV") if "AV" in headers else None
-            valid_entries = []
-            non_standard_positions = []
+            time_index = headers.index("TIMES") if "TIMES" in headers else -1
+            av_index = headers.index("AV") if "AV" in headers else -1
+            memoized_times = {}
 
-            for i, row in enumerate(table_data[1:]):
-                time_minutes = float("inf")
-                if time_index is not None and row[time_index]:
-                    times = row[time_index].strip().split("\n")
-                    if len(times) == 2:
-                        try:
-                            time_minutes = sum(int(datetime.strptime(t, "%I:%M %p").strftime("%H")) * 60 + int(
-                                datetime.strptime(t, "%I:%M %p").strftime("%M")) for t in times)
-                        except ValueError:
-                            pass
-                if time_minutes != float("inf"):
-                    valid_entries.append(row)
-                else:
-                    non_standard_positions.append((i, row))
+            def get_time_minutes(row):
+                if time_index == -1 or not row[time_index]:
+                    return float("inf")
+                times_key = tuple(row[time_index].strip().split("\n"))
+                if times_key in memoized_times:
+                    return memoized_times[times_key]
 
-            if sort_by_option in [translation["time_asc"], translation["time_dec"]] and time_index is not None:
-                valid_entries.sort(key=lambda x: time_minutes, reverse=(sort_by_option == translation["time_dec"]))
+                try:
+                    time_minutes = sum(int(datetime.strptime(t, "%I:%M %p").strftime("%H")) * 60 + int(
+                        datetime.strptime(t, "%I:%M %p").strftime("%M")) for t in times_key)
+                    memoized_times[times_key] = time_minutes
+                    return time_minutes
+                except ValueError:
+                    memoized_times[times_key] = float("inf")
+                    return float("inf")
 
-            elif sort_by_option in [translation["av_asc"], translation["av_asc"]] and av_index is not None:
+            valid_entries = [row for row in table_data[1:] if get_time_minutes(row) != float("inf")]
+            non_standard_positions = [(i, row) for i, row in enumerate(table_data[1:]) if
+                                      get_time_minutes(row) == float("inf")]
+            if sort_by_option in [translation["time_asc"], translation["time_dec"]] and time_index != -1:
+                valid_entries.sort(key=get_time_minutes, reverse=(sort_by_option == translation["time_dec"]))
+            elif sort_by_option in [translation["av_asc"], translation["av_dec"]] and av_index != -1:
                 valid_entries.sort(key=lambda x: int(x[av_index]) if x[av_index].isdigit() else float("inf"),
                                    reverse=(sort_by_option == translation["av_dec"]))
-            for pos, row in non_standard_positions:
+            for pos, row in sorted(non_standard_positions, reverse=True):
                 valid_entries.insert(pos, row)
+
             table.update_values([headers] + valid_entries)
+            self.search_scrollbar.scroll_to_top()
 
     def check_and_update_labels(self):
         class_info = {}
