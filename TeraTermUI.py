@@ -5338,13 +5338,12 @@ class TeraTermUI(customtkinter.CTk):
                                               bg_color="#1E90FF")
 
         available_key = translation["av"]
-        available_values = [row[available_key] for row in modified_data]
-        sorted_available_values = sorted(available_values)
+        available_values = sorted([row[available_key] for row in modified_data])
         duplicate_index = self.find_duplicate(display_class, self.get_semester_for_pdf, self.show_all_sections,
-                                              sorted_available_values)
+                                              available_values)
         if duplicate_index is not None:
             _, _, _, _, existing_available_values, _ = self.class_table_pairs[duplicate_index]
-            if sorted(existing_available_values) != sorted_available_values:
+            if sorted(existing_available_values) != available_values:
                 display_class_to_remove, table_to_remove, _, _, _, _ = self.class_table_pairs[duplicate_index]
                 display_class_to_remove.unbind("<Button-1>")
                 for cell in table_to_remove.get_all_cells():
@@ -5397,8 +5396,8 @@ class TeraTermUI(customtkinter.CTk):
             self.remove_button.grid_forget()
             self.next_button.grid_forget()
         self.remove_button.grid(row=5, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-        self.download_search_pdf.grid(row=6, column=1, padx=(155, 0), pady=(10, 0), sticky="n")
-        self.sort_by.grid(row=6, column=1, padx=(0, 155), pady=(10, 0), sticky="n")
+        self.download_search_pdf.grid(row=6, column=1, padx=(157, 0), pady=(10, 0), sticky="n")
+        self.sort_by.grid(row=6, column=1, padx=(0, 157), pady=(10, 0), sticky="n")
         self.update_buttons()
         table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/10"
         self.table_count.configure(text=table_count_label)
@@ -5409,13 +5408,11 @@ class TeraTermUI(customtkinter.CTk):
         self.bind("<Control-S>", lambda event: self.download_search_classes_as_pdf())
 
     def find_duplicate(self, new_display_class, new_semester, show_all_sections_state, available_values):
-        sorted_available_values = sorted(available_values)
         for index, (display_class, table, semester, existing_show_all_sections_state,
                     existing_available_values, _) in enumerate(self.class_table_pairs):
             if (display_class.cget("text").split("-")[0].strip() == new_display_class.cget("text").split("-")[0].strip()
-                    and semester == new_semester
-                    and existing_show_all_sections_state == show_all_sections_state
-                    and sorted(existing_available_values) == sorted_available_values):
+                    and semester == new_semester and existing_show_all_sections_state == show_all_sections_state
+                    and sorted(existing_available_values) == sorted(available_values)):
                 return index
         return None
 
