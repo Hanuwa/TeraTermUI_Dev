@@ -329,9 +329,10 @@
 	"epic_games": "NOTICE\n\nFor unknown reasons, it has been observed that the\nEpic Games Launcher may slow down the performance\n of this application. For optimal performance, consider\nclosing the Epic Games Launcher",
 	"current": "Current",
 	"sort_by": "Sort By",
+	"sort_by_tooltip": "Customize the table arrangement by\nselecting your preferred sorting criteria",
 	"time_asc": "Time Ascending ↑",
 	"time_dec": "Time Descending ↓",
-	"av_asc": "Availability Ascending ↑",
-	"av_dec": "Availability Descending ↓",
+	"av_asc": "Av. Ascending ↑",
+	"av_dec": "Av. Descending ↓",
 	"original_data": "Original Tables"
 }
