@@ -329,9 +329,10 @@
 	"epic_games": "AVISO\n\nPor razones desconocidas, se ha observado que el\niniciador de Epic Games puede disminuir el rendimiento\nde esta aplicación. Para un rendimiento óptimo, considere\ncerrar el iniciador de Epic Games",
 	"current": "Actual",
 	"sort_by": "Ordenar Por",
+	"sort_by_tooltip": "Personaliza la disposición de la\ntabla seleccionando tus criterios\nde ordenación preferidos",
 	"time_asc": "Horas Ascendente ↑",
 	"time_dec": "Horas Descendente ↓",
-	"av_asc": "Disponibilidad Ascendente ↑",
-	"av_dec": "Disponibilidad Descendente ↓",
+	"av_asc": "Disp. Ascendente ↑",
+	"av_dec": "Disp. Descendente ↓",
 	"original_data": "Tablas Originales"
 }
