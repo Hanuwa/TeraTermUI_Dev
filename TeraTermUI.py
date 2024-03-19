@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/18/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/19/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -5139,9 +5139,12 @@ class TeraTermUI(customtkinter.CTk):
     def copy_cell_data_to_clipboard(self, cell_data):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        cell_value = cell_data["value"]
+        cell_value = cell_data["value"].replace("\n", "")
         if not cell_value.strip():
             return
+
+        if re.match(r"\d{1,2}:\d{2} [APM]{2}\d{1,2}:\d{2} [APM]{2}", cell_value):
+            cell_value = re.sub(r"([APM]{2})(\d{1,2}:\d{2})", r"\1 - \2", cell_value)
 
         self.focus_set()
         self.clipboard_clear()
@@ -5208,6 +5211,10 @@ class TeraTermUI(customtkinter.CTk):
         self.tooltip.after(3500, self.destroy_tooltip)
 
     @staticmethod
+    def open_student_help():
+        webbrowser.open("https://studenthelp.uprb.edu/")
+
+    @staticmethod
     def open_professor_profile(event, instructor_text):
         def remove_prefixes(p_names):
             cleaned_names = []
@@ -5230,6 +5237,20 @@ class TeraTermUI(customtkinter.CTk):
                 except requests.RequestException as e:
                     print(f"Failed to open URL: {url}, Error: {e}")
                     continue
+
+        url_mapping = {
+            "LA LUZ CONCEPCION JOSE J": "https://notaso.com/professors/jose-la-luz/",
+            "MARRERO CARRASQUILLO ALB": "https://notaso.com/professors/alberto-marrero/",
+            "VAZQUEZ DE SERRANO EILEE": "https://notaso.com/professors/eileen-vazquez-de-serrano/",
+            "GARCIA CUEVAS EUGENIO": "https://notaso.com/professors/eugenio-garcia-perez/",
+            "MEDINA CRUZ OLGA L.": "https://notaso.com/professors/olga-l-medina-cruz/"
+        }
+        hardcoded_name = " ".join(instructor_text.split())
+        if hardcoded_name in url_mapping:
+            hard_coded_url = url_mapping[hardcoded_name]
+            thread = threading.Thread(target=webbrowser.open, args=(hard_coded_url,))
+            thread.start()
+            return
 
         names = remove_prefixes(instructor_text.split())
         if len(names) >= 3:
@@ -5299,6 +5320,12 @@ class TeraTermUI(customtkinter.CTk):
             if instructor_text.strip():
                 instructor_cell.bind("<Button-3>", lambda event,
                                      instructor=instructor_text: TeraTermUI.open_professor_profile(event, instructor))
+        av_col_index = headers.index(translation["av"])
+        for row in range(1, num_rows):
+            av_cell = new_table.get_cell(row, av_col_index)
+            av_text = av_cell.cget("text")
+            if av_text == "RSVD":
+                av_cell.bind("<Button-3>", lambda event: TeraTermUI.open_student_help())
         for col_index in range(len(headers)):
             header_cell = new_table.get_cell(0, col_index)
             header_cell.bind("<Button-3>", lambda event: self.move_tables_overlay_event())
@@ -5916,6 +5943,8 @@ class TeraTermUI(customtkinter.CTk):
                         "AV": match.group(7).strip() if match.group(7) else "0",
                         "INSTRUCTOR": instructor
                     }
+                    if current_section["AV"] == "999":
+                        current_section["AV"] = "RSVD"
                     data.append(current_section)
             else:
                 time_match = time_pattern.search(line)
