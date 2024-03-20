@@ -60,7 +60,6 @@ class CTkTable(customtkinter.CTkFrame):
         self.corner = corner_radius
         self.write = write
         self.justify = justify
-        self.binded_objects = []
 
         if self.write:
             border_width = border_width = +1
@@ -99,6 +98,7 @@ class CTkTable(customtkinter.CTkFrame):
 
         self.frame = {}
         self.corner_buttons = {}
+        self.cell_bindings = {}
         self.draw_table(**kwargs)
 
     def draw_table(self, **kwargs):
@@ -278,11 +278,12 @@ class CTkTable(customtkinter.CTkFrame):
                     if hover_modify:
                         self.dynamic_hover(self.frame[i, j], i, j)
 
+                if (i, j) in self.cell_bindings:
+                    for sequence, func in self.cell_bindings[(i, j)]:
+                        self.frame[i, j].bind(sequence, func)
+
                 self.rowconfigure(i, weight=1)
                 self.columnconfigure(j, weight=1)
-        for x in self.frame:
-            for y in self.binded_objects:
-                self.frame[x].bind(*y)
 
     def dynamic_hover(self, frame, i, j):
         """ internal function to change corner cell colors """
@@ -360,14 +361,24 @@ class CTkTable(customtkinter.CTkFrame):
                 self.dynamic_hover(self.corner_buttons[i, column], i, column)
         self.update_data()
 
-    def update_values(self, values, **kwargs):
-        """ update all values at once """
-        for i in self.frame.values():
-            i.destroy()
-        self.frame = {}
-        self.values = values
-        self.draw_table(**kwargs)
-        self.update_data()
+    def update_values(self, new_values):
+        """
+        Update the table with new values.
+        Only cells whose values have changed are updated.
+        """
+        for row_index in range(min(len(new_values), self.rows)):
+            for col_index in range(min(len(new_values[row_index]), self.columns)):
+                new_value = str(new_values[row_index][col_index])
+                cell = self.get_cell(row_index, col_index)
+                if cell:
+                    current_value = cell.get() if self.write else cell.cget('text')
+                    if current_value != new_value:
+                        if self.write:
+                            cell.delete(0, customtkinter.END)
+                            cell.insert(0, new_value)
+                        else:
+                            cell.configure(text=new_value)
+        self.values = new_values
 
     def add_row(self, values, index=None, **kwargs):
         """ add a new row """
@@ -433,7 +444,8 @@ class CTkTable(customtkinter.CTkFrame):
         self.update_data()
 
     def get_cell(self, row, column):
-        return self.frame.get((row, column), None)
+        """ Retrieve a specific cell widget from the table. """
+        return self.frame.get((row, column))
 
     def get_all_cells(self):
         """
@@ -757,32 +769,45 @@ class CTkTable(customtkinter.CTkFrame):
         return super().cget(param)
 
     def bind(self, sequence: str = None, command=None, add=True):
-        """ bind all cells """
-        self.binded_objects.append([sequence, command, add])
-
+        """ Bind an event to the entire table """
         super().bind(sequence, command, add)
-        for i in self.frame:
-            self.frame[i].bind(sequence, command, add)
         self.inside_frame.bind(sequence, command, add)
 
     def unbind(self, sequence: str = None, funcid: str = None):
-        for i in self.binded_objects:
-            if sequence in i:
-                self.binded_objects.remove(i)
-
+        """ Unbind an event from the entire table """
         super().unbind(sequence, funcid)
-        for i in self.frame:
-            self.frame[i].unbind(sequence, funcid)
         self.inside_frame.unbind(sequence, funcid)
 
-    def destroy(self):
-        for cell in self.frame.values():
-            for bind_info in self.binded_objects:
-                sequence, _, _ = bind_info
+    def bind_cell(self, row, column, sequence, func):
+        """ Bind an event to a specific cell """
+        if (row, column) not in self.cell_bindings:
+            self.cell_bindings[(row, column)] = []
+        self.cell_bindings[(row, column)].append((sequence, func))
+        cell = self.get_cell(row, column)
+        if cell:
+            cell.bind(sequence, func)
+
+    def unbind_cell(self, row, column, sequence=None):
+        """ Unbind an event from a specific cell """
+        cell = self.get_cell(row, column)
+        if cell and (row, column) in self.cell_bindings:
+            if sequence:
                 cell.unbind(sequence)
+                self.cell_bindings[(row, column)] = [(seq, func) for seq, func in self.cell_bindings[(row, column)] if
+                                                     seq != sequence]
+            else:
+                for seq, _ in self.cell_bindings[(row, column)]:
+                    cell.unbind(seq)
+                del self.cell_bindings[(row, column)]
+
+    def destroy(self):
+        for (row, column), cell in self.frame.items():
+            if (row, column) in self.cell_bindings:
+                for sequence, _ in self.cell_bindings[(row, column)]:
+                    self.unbind_cell(row, column, sequence)
             cell.destroy()
         self.frame.clear()
-        self.binded_objects.clear()
+        self.cell_bindings.clear()
         if self.inside_frame:
             self.inside_frame.destroy()
             self.inside_frame = None
