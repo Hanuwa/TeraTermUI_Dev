@@ -5311,24 +5311,25 @@ class TeraTermUI(customtkinter.CTk):
         for row in range(1, num_rows):
             section_cell = new_table.get_cell(row, 0)
             section_text = section_cell.cget("text")
-            section_cell.bind("<Button-3>", lambda event, section=section_text: self.transfer_class_data_to_enroll_tab(
-                event, section) if section.strip() else None)
+            new_table.bind_cell(row, 0, "<Button-3>", lambda event, section=section_text:
+                                self.transfer_class_data_to_enroll_tab(event, section) if section.strip() else None)
         instructor_col_index = headers.index(translation["instructor"])
         for row in range(1, num_rows):
             instructor_cell = new_table.get_cell(row, instructor_col_index)
             instructor_text = instructor_cell.cget("text")
             if instructor_text.strip():
-                instructor_cell.bind("<Button-3>", lambda event,
-                                     instructor=instructor_text: TeraTermUI.open_professor_profile(event, instructor))
+                new_table.bind_cell(row, instructor_col_index, "<Button-3>", lambda event,
+                                    instructor=instructor_text: TeraTermUI.open_professor_profile(event, instructor))
         av_col_index = headers.index(translation["av"])
         for row in range(1, num_rows):
             av_cell = new_table.get_cell(row, av_col_index)
             av_text = av_cell.cget("text")
             if av_text == "RSVD":
-                av_cell.bind("<Button-3>", lambda event: TeraTermUI.open_student_help())
+                new_table.bind_cell(row, av_col_index, "<Button-3>", lambda event:
+                                    TeraTermUI.open_student_help())
         for col_index in range(len(headers)):
-            header_cell = new_table.get_cell(0, col_index)
-            header_cell.bind("<Button-3>", lambda event: self.move_tables_overlay_event())
+            new_table.bind_cell(0, col_index, "<Button-3>",
+                                lambda event: self.move_tables_overlay_event())
 
         display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_pdf,
                                                font=customtkinter.CTkFont(size=15, weight="bold", underline=True))
@@ -5482,10 +5483,15 @@ class TeraTermUI(customtkinter.CTk):
             non_standard_positions = [(i, row) for i, row in enumerate(table_data[1:]) if
                                       get_time_minutes(row) == float("inf")]
             if sort_by_option in [translation["time_asc"], translation["time_dec"]] and time_index != -1:
-                valid_entries.sort(key=get_time_minutes, reverse=(sort_by_option == translation["time_dec"]))
+                reverse_sort = (sort_by_option == translation["time_dec"])
+                valid_entries.sort(key=lambda x: (get_time_minutes(x),
+                                                  int(x[av_index]) if x[av_index].isdigit() else float("inf")),
+                                   reverse=reverse_sort)
             elif sort_by_option in [translation["av_asc"], translation["av_dec"]] and av_index != -1:
-                valid_entries.sort(key=lambda x: int(x[av_index]) if x[av_index].isdigit() else float("inf"),
-                                   reverse=(sort_by_option == translation["av_dec"]))
+                reverse_sort = (sort_by_option == translation["av_dec"])
+                valid_entries.sort(key=lambda x: (int(x[av_index]) if x[av_index].isdigit() else float("inf"),
+                                                  get_time_minutes(x)),
+                                   reverse=reverse_sort)
             for pos, row in sorted(non_standard_positions, reverse=True):
                 valid_entries.insert(pos, row)
 
