@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/19/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/20/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -5206,6 +5206,7 @@ class TeraTermUI(customtkinter.CTk):
         label = tk.Label(self.tooltip, text=translation["pasted"],
                          bg="#145DA0", fg="#fff", font=("Arial", 10, "bold"))
         label.pack(padx=5, pady=5)
+        self.update_idletasks()
 
         # Auto-destroy after 3.5 seconds and reset the tooltip variable
         self.tooltip.after(3500, self.destroy_tooltip)
@@ -5600,6 +5601,7 @@ class TeraTermUI(customtkinter.CTk):
         self.move_tables_overlay.geometry(f"{total_width}x{85}+{center_x + 103}+{center_y + 15}")
         self.after(0, self.move_tables_overlay.focus_force)
         self.highlight_selected_table_in_grid()
+        self.update_idletasks()
         self.move_tables_overlay.bind("<FocusOut>", lambda event: self.on_move_window_close())
 
     def on_move_window_close(self):
@@ -5684,12 +5686,12 @@ class TeraTermUI(customtkinter.CTk):
             self.current_class = None
             self.table_count.grid_forget()
             self.remove_button.grid_forget()
-            self.download_search_pdf.grid_forget()
-            self.sort_by.grid_forget()
-            self.search_scrollbar.scroll_to_top()
             self.after(0, display_class_to_remove.destroy)
             self.after(0, table_to_remove.destroy)
             self.after(0, self.focus_set)
+            self.download_search_pdf.grid_forget()
+            self.sort_by.grid_forget()
+            self.search_scrollbar.scroll_to_top()
             return
 
         self.current_table_index = max(0, self.current_table_index - 1)
