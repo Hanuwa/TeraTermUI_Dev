@@ -261,7 +261,7 @@ class CTkScrollbar(CTkBaseClass):
         min_speed = 400  # Minimum speed
         max_speed = 1000  # Maximum speed
         min_rate = 0.0167  # Refresh rate for minimum speed
-        max_rate = 0.0267  # Refresh rate for maximum speed
+        max_rate = 0.0333  # Refresh rate for maximum speed
 
         # Calculate the slope of the line
         slope = (max_rate - min_rate) / (max_speed - min_speed)
@@ -278,33 +278,26 @@ class CTkScrollbar(CTkBaseClass):
     def _on_motion(self, event):
         current_time = time.time()
         current_position = event.y if self._orientation == "vertical" else event.x
-        time_diff = current_time - self._last_motion_time
+
+        time_diff = max(current_time - self._last_motion_time, 1e-6)  # Prevent division by zero
         position_diff = abs(current_position - self._last_event_position)
+        speed = position_diff / time_diff
 
         if time_diff > self._motion_refresh_rate:
+            self._adjust_refresh_rate(speed)
             self._last_motion_time = current_time
             self._last_event_position = current_position
 
-            # Calculate scrolling speed (position units per second)
-            speed = position_diff / time_diff if time_diff > 0 else 0
+            scrollbar_length = self._end_value - self._start_value
+            relative_pos = (current_position - self._border_spacing) / (
+                    self._current_height - 2 * self._border_spacing) \
+                if self._orientation == "vertical" else (current_position - self._border_spacing) / (
+                    self._current_width - 2 * self._border_spacing)
+            new_value = self._reverse_widget_scaling(relative_pos) + self._motion_center_offset
+            new_value = max(scrollbar_length / 2, min(new_value, 1 - scrollbar_length / 2))
 
-            # Time-based throttling for refresh rate adjustment
-            refresh_rate_adjustment_interval = 0.1
-            if current_time - self._last_refresh_time > refresh_rate_adjustment_interval:
-                self._adjust_refresh_rate(speed)
-                self._last_refresh_time = current_time
-
-            if self._orientation == "vertical":
-                value = self._reverse_widget_scaling(((event.y - self._border_spacing) /
-                                                      (self._current_height - 2 * self._border_spacing))) + self._motion_center_offset
-            else:
-                value = self._reverse_widget_scaling(((event.x - self._border_spacing) /
-                                                      (self._current_width - 2 * self._border_spacing))) + self._motion_center_offset
-
-            current_scrollbar_length = self._end_value - self._start_value
-            value = max(current_scrollbar_length / 2, min(value, 1 - (current_scrollbar_length / 2)))
-            self._start_value = value - (current_scrollbar_length / 2)
-            self._end_value = value + (current_scrollbar_length / 2)
+            self._start_value = new_value - (scrollbar_length / 2)
+            self._end_value = new_value + (scrollbar_length / 2)
             self._needs_redraw = True
 
             if self._command is not None:
