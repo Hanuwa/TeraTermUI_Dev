@@ -102,30 +102,23 @@ class CTkTable(customtkinter.CTkFrame):
         self.draw_table(**kwargs)
 
     def draw_table(self, **kwargs):
-
         """ draw the table """
+
+        for i in range(self.rows):
+            self.inside_frame.grid_rowconfigure(i, weight=1)
+        for j in range(self.columns):
+            self.inside_frame.grid_columnconfigure(j, weight=1)
+
+        row_colors = [self.fg_color if i % 2 == 0 else self.fg_color2 for i in range(self.rows)]
+        column_colors = [self.fg_color if j % 2 == 0 else self.fg_color2 for j in range(self.columns)]
+
         for i in range(self.rows):
             for j in range(self.columns):
-                self.inside_frame.grid_rowconfigure(i, weight=1)
-                self.inside_frame.grid_columnconfigure(j, weight=1)
-                if self.phase == "horizontal":
-                    if i % 2 == 0:
-                        fg = self.fg_color
-                    else:
-                        fg = self.fg_color2
-                else:
-                    if j % 2 == 0:
-                        fg = self.fg_color
-                    else:
-                        fg = self.fg_color2
+                fg = row_colors[i] if self.phase == "horizontal" else column_colors[j]
 
-                if self.header_color:
-                    if self.orient == "horizontal":
-                        if i == 0:
-                            fg = self.header_color
-                    else:
-                        if j == 0:
-                            fg = self.header_color
+                if self.header_color and (
+                        (self.orient == "horizontal" and i == 0) or (self.orient != "horizontal" and j == 0)):
+                    fg = self.header_color
 
                 corner_radius = self.corner
                 if (self.border_width >= 5) and (self.corner >= 5):
@@ -235,10 +228,8 @@ class CTkTable(customtkinter.CTkFrame):
                     if value is None:
                         value = " "
                     self.frame[i, j].insert(0, str(value))
-                    self.frame[i, j].bind("<Key>", lambda e, row=i, column=j, data=self.data: self.after(100,
-                                                                                                         lambda: self.manipulate_data(
-                                                                                                             row,
-                                                                                                             column)))
+                    self.frame[i, j].bind("<Key>", lambda e, row=i, column=j, data=self.data:
+                                          self.after(100, lambda: self.manipulate_data(row, column)))
                     self.frame[i, j].grid(column=j, row=i, padx=padx, pady=pady, sticky="nsew")
 
                     if self.header_color:
