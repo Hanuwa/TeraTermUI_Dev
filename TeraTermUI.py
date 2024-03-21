@@ -5316,15 +5316,15 @@ class TeraTermUI(customtkinter.CTk):
         for row in range(1, num_rows):
             section_cell = new_table.get_cell(row, 0)
             section_text = section_cell.cget("text")
-            new_table.bind_cell(row, 0, "<Button-3>", lambda event, cell=section_cell:
-                                self.transfer_class_data_to_enroll_tab(event, cell) if section_text.strip() else None)
+            new_table.bind_cell(row, 0, "<Button-3>", lambda event, t_cell=section_cell:
+                                self.transfer_class_data_to_enroll_tab(event, t_cell) if section_text.strip() else None)
         instructor_col_index = headers.index(translation["instructor"])
         for row in range(1, num_rows):
             instructor_cell = new_table.get_cell(row, instructor_col_index)
             instructor_text = instructor_cell.cget("text")
             if instructor_text.strip():
                 new_table.bind_cell(row, instructor_col_index, "<Button-3>", lambda event,
-                                    cell=instructor_cell: TeraTermUI.open_professor_profile(event, cell))
+                                    t_cell=instructor_cell: TeraTermUI.open_professor_profile(event, t_cell))
         av_col_index = headers.index(translation["av"])
         for row in range(1, num_rows):
             av_cell = new_table.get_cell(row, av_col_index)
