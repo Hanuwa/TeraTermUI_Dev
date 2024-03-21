@@ -10,27 +10,23 @@ from colorama import init, Fore, Style
 
 
 def extract_second_date_from_file(filepath):
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         for line in f:
-            # Find all date patterns in the line
-            dates = re.findall(r'\d{1,2}/\d{1,2}/\d{2,4}', line)
-
-            # Check if at least two dates are found
+            dates = re.findall(r"\d{1,2}/\d{1,2}/\d{2,4}", line)
             if len(dates) >= 2:
                 return dates[1]
         return None
 
 
 def extract_version_main_file(filepath):
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         for line in f:
-            # Check if the line contains the word "v" followed by a numeric character
-            if 'v' in line:
-                positions = [pos for pos, char in enumerate(line) if char == 'v']
+            if "v" in line:
+                positions = [pos for pos, char in enumerate(line) if char == "v"]
                 for pos in positions:
                     if line[pos+1].isdigit():
                         start_pos = pos + 1
-                        end_pos = line[start_pos:].find(' ')
+                        end_pos = line[start_pos:].find(" ")
                         return line[start_pos:start_pos+end_pos]
         return None
 
@@ -87,12 +83,11 @@ username = os.getlogin()
 project_directory = r"C:\Users\\" + username + r"\PycharmProjects\TeraTermUI"
 inno_directory = r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 app_folder = "TeraTermUI"
-# Prompt user for version input until a valid format is received
 while True:
     user_input = input(Fore.BLUE + "Please enter the update version number"
                        " (e.g., v1.0.0 or 1.0.0): " + Style.RESET_ALL).replace(" ", "").strip()
     if validate_version(user_input):
-        user_input_segments = user_input.lower().replace('v', '').split('.')
+        user_input_segments = user_input.lower().replace("v", "").split(".")
         if len(user_input_segments) == 2:
             user_input = f"{user_input_segments[0]}.{user_input_segments[1]}"
         elif len(user_input_segments) == 3:
@@ -105,16 +100,15 @@ while True:
     print(Fore.RED + "\nInvalid format. Please provide an update version number"
           " in the format x.x.x or vx.x.x (e.g., v1.0.0 or 1.0.0): \n" + Style.RESET_ALL)
 user_input = user_input.lower()
-if user_input.startswith('v'):
+if user_input.startswith("v"):
     update = user_input
     update_without_v = user_input[1:]
 else:
     update_without_v = user_input
     update = "v" + update_without_v
-versions = ['installer', 'portable']
+versions = ["installer", "portable"]
 output_directory = os.path.join(r"C:\Users\\" + username + r"\OneDrive\Documentos", "TeraTermUI_" + update)
 
-# If process gets abruptly interrupted, load backup file
 program_backup = project_directory + r"\TeraTermUI.BAK.py"
 check_and_restore_backup()
 shutil.copy2(project_directory + r"\TeraTermUI.py", program_backup)
@@ -125,8 +119,8 @@ current_date = datetime.datetime.now().strftime("%m/%d/%Y")
 version_file_path = os.path.join(project_directory, "VERSION.txt")
 with open(version_file_path, "r") as file:
     version_file_content = file.read()
-version_file_content = re.sub(r'(?<=Version Number: ).*', update, version_file_content)
-version_file_content = re.sub(r'(?<=Release Date: ).*', current_date, version_file_content)
+version_file_content = re.sub(r"(?<=Version Number: ).*", update, version_file_content)
+version_file_content = re.sub(r"(?<=Release Date: ).*", current_date, version_file_content)
 with open(version_file_path, "w") as file:
     file.write(version_file_content)
 
@@ -139,7 +133,6 @@ try:
         dst = os.path.join(output_directory, filename)
         if os.path.isfile(src):
             shutil.copy2(src, dst)
-    # Open the inno script to overwrite it
     inno_file_path = os.path.join(output_directory, "InstallerScript.iss")
     with open(inno_file_path, "r") as file:
         lines = file.readlines()
@@ -187,7 +180,6 @@ nuitka_command = (
 )
 
 try:
-    # Execute the DELETE SQL command
     connection = sqlite3.connect(r"C:\Users" + "\\" + username + r"\PycharmProjects\TeraTermUI\database.db")
     cursor = connection.cursor()
     cursor.execute("DELETE FROM user_data")
@@ -203,15 +195,14 @@ except Exception as e:
     os.remove(program_backup)
     print(Fore.RED + f"Failed to reset database: {e}\n" + Style.RESET_ALL)
 try:
-    # Check current state of the script to decide the order of versions
-    with open(project_directory+r"\TeraTermUI.py", 'r', encoding='utf-8') as file:
+    with open(project_directory+r"\TeraTermUI.py", "r", encoding="utf-8") as file:
         data = file.read()
     if 'self.mode = "Portable"' in data:
-        versions = ['installer', 'portable']
+        versions = ["installer", "portable"]
     else:
         versions = ['portable', 'installer']
     data = re.sub(r'self.USER_APP_VERSION = ".*?"', f'self.USER_APP_VERSION = "{update_without_v}"', data)
-    with open(project_directory+r"\TeraTermUI.py", 'w', encoding='utf-8') as file:
+    with open(project_directory+r"\TeraTermUI.py", "w", encoding="utf-8") as file:
         file.write(data)
 except KeyboardInterrupt as e:
     shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
@@ -226,10 +217,9 @@ except Exception as e:
 for version in versions:
     script = None
     try:
-        with open(project_directory+r"\TeraTermUI.py", 'r', encoding='utf-8') as file:
+        with open(project_directory+r"\TeraTermUI.py", "r", encoding="utf-8") as file:
             data = file.read()
-        # Replace old text with new text for portable and installer versions
-        if version == 'installer':
+        if version == "installer":
             script = "installer"
             data = data.replace('self.mode = "Portable"',
                                 'self.mode = "Installation"')
@@ -264,7 +254,7 @@ for version in versions:
                                 'with open(TeraTermUI.get_absolute_path("logs.txt"), "a")')
             print(Fore.GREEN + "Successfully started portable version\n" + Style.RESET_ALL)
 
-        with open(project_directory+r"\TeraTermUI.py", 'w', encoding='utf-8') as file:
+        with open(project_directory+r"\TeraTermUI.py", "w", encoding="utf-8") as file:
             file.write(data)
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
@@ -351,7 +341,7 @@ for version in versions:
         try:
             os.rename(output_directory + r"\TeraTermUI.dist", output_directory + r"\TeraTermUI")
             zip_file_path = output_directory + fr"\{app_folder}-"+update+""
-            shutil.make_archive(zip_file_path, 'zip', output_directory, app_folder)
+            shutil.make_archive(zip_file_path, "zip", output_directory, app_folder)
             print(Fore.GREEN + "\nSuccessfully completed portable version\n" + Style.RESET_ALL)
         except KeyboardInterrupt as e:
             shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
