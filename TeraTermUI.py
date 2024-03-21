@@ -7160,7 +7160,7 @@ class TeraTermUI(customtkinter.CTk):
                     elif isinstance(widget, customtkinter.CTkOptionMenu):
                         current_color = widget.cget("button_color")
                         if current_color == "#c30101":
-                            widget.button_color = customtkinter.ThemeManager.theme["CTkEntry"]["button_color"]
+                            widget.button_color = customtkinter.ThemeManager.theme["CTkOptionMenu"]["button_color"]
                             widget.configure(button_color=widget.button_color)
                 if hasattr(widget, "winfo_children"):
                     stack.append(widget)
