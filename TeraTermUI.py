@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/20/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/21/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -7145,11 +7145,32 @@ class TeraTermUI(customtkinter.CTk):
         self.unload_image("information")
         self.information.destroy()
 
+    @staticmethod
+    def check_and_update_border_color(container):
+        stack = [container]
+        while stack:
+            current_container = stack.pop()
+            for widget in current_container.winfo_children():
+                if widget.winfo_viewable():
+                    if isinstance(widget, (CustomEntry, CustomComboBox)):
+                        current_color = widget.cget("border_color")
+                        if current_color == "#c30101":
+                            widget.border_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
+                            widget.configure(border_color=widget.border_color)
+                    elif isinstance(widget, customtkinter.CTkOptionMenu):
+                        current_color = widget.cget("button_color")
+                        if current_color == "#c30101":
+                            widget.button_color = customtkinter.ThemeManager.theme["CTkEntry"]["button_color"]
+                            widget.configure(button_color=widget.button_color)
+                if hasattr(widget, "winfo_children"):
+                    stack.append(widget)
+
     def automation_preparations(self):
         self.focus_set()
         self.destroy_windows()
         self.hide_sidebar_windows()
         self.unbind("<Return>")
+        TeraTermUI.check_and_update_border_color(self)
         if self.tooltip is not None and self.tooltip.winfo_exists():
             self.tooltip.destroy()
         ctypes.windll.user32.BlockInput(True)
