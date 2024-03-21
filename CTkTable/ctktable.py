@@ -275,6 +275,7 @@ class CTkTable(customtkinter.CTkFrame):
 
                 self.rowconfigure(i, weight=1)
                 self.columnconfigure(j, weight=1)
+        self.update_idletasks()
 
     def dynamic_hover(self, frame, i, j):
         """ internal function to change corner cell colors """
