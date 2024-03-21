@@ -535,8 +535,9 @@ class TeraTermUI(customtkinter.CTk):
         self.enrolled_classes_list = None
         self.dropped_classes_list = None
         self.class_table_pairs = []
-        self.current_table_index = -1
         self.table_tooltips = {}
+        self.original_table_data = {}
+        self.current_table_index = -1
         self.table_count = None
         self.table = None
         self.current_class = None
@@ -5180,7 +5181,8 @@ class TeraTermUI(customtkinter.CTk):
 
         self.after(100, self.lift_tooltip)
 
-    def transfer_class_data_to_enroll_tab(self, event, section_text):
+    def transfer_class_data_to_enroll_tab(self, event, cell):
+        section_text = cell.cget("text")
         self.e_classes_entry.delete(0, "end")
         self.e_section_entry.delete(0, "end")
         display_class, _, semester_text, _, _, _ = self.class_table_pairs[self.current_table_index]
@@ -5216,7 +5218,7 @@ class TeraTermUI(customtkinter.CTk):
         webbrowser.open("https://studenthelp.uprb.edu/")
 
     @staticmethod
-    def open_professor_profile(event, instructor_text):
+    def open_professor_profile(event, cell):
         def remove_prefixes(p_names):
             cleaned_names = []
             for name in p_names:
@@ -5246,6 +5248,7 @@ class TeraTermUI(customtkinter.CTk):
             "GARCIA CUEVAS EUGENIO": "https://notaso.com/professors/eugenio-garcia-perez/",
             "MEDINA CRUZ OLGA L.": "https://notaso.com/professors/olga-l-medina-cruz/"
         }
+        instructor_text = cell.cget("text")
         hardcoded_name = " ".join(instructor_text.split())
         if hardcoded_name in url_mapping:
             hard_coded_url = url_mapping[hardcoded_name]
@@ -5308,19 +5311,20 @@ class TeraTermUI(customtkinter.CTk):
                 tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#989898", alpha=0.90)
                 self.table_tooltips[cell] = tooltip
         self.table = new_table
+        self.original_table_data[new_table] = table_values
 
         for row in range(1, num_rows):
             section_cell = new_table.get_cell(row, 0)
             section_text = section_cell.cget("text")
-            new_table.bind_cell(row, 0, "<Button-3>", lambda event, section=section_text:
-                                self.transfer_class_data_to_enroll_tab(event, section) if section.strip() else None)
+            new_table.bind_cell(row, 0, "<Button-3>", lambda event, cell=section_cell:
+                                self.transfer_class_data_to_enroll_tab(event, cell) if section_text.strip() else None)
         instructor_col_index = headers.index(translation["instructor"])
         for row in range(1, num_rows):
             instructor_cell = new_table.get_cell(row, instructor_col_index)
             instructor_text = instructor_cell.cget("text")
             if instructor_text.strip():
                 new_table.bind_cell(row, instructor_col_index, "<Button-3>", lambda event,
-                                    instructor=instructor_text: TeraTermUI.open_professor_profile(event, instructor))
+                                    cell=instructor_cell: TeraTermUI.open_professor_profile(event, cell))
         av_col_index = headers.index(translation["av"])
         for row in range(1, num_rows):
             av_cell = new_table.get_cell(row, av_col_index)
@@ -5379,6 +5383,8 @@ class TeraTermUI(customtkinter.CTk):
                     if cell in self.table_tooltips:
                         self.table_tooltips[cell].destroy()
                         del self.table_tooltips[cell]
+                if table_to_remove in self.original_table_data:
+                    del self.original_table_data[table_to_remove]
                 self.after(0, display_class_to_remove.destroy)
                 self.after(0, table_to_remove.destroy)
                 del self.class_table_pairs[duplicate_index]
@@ -5402,6 +5408,8 @@ class TeraTermUI(customtkinter.CTk):
                 if cell in self.table_tooltips:
                     self.table_tooltips[cell].destroy()
                     del self.table_tooltips[cell]
+            if table_to_remove in self.original_table_data:
+                del self.original_table_data[table_to_remove]
             if more_sections:
                 self.search_next_page.grid_forget()
                 self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
@@ -5449,6 +5457,13 @@ class TeraTermUI(customtkinter.CTk):
     def sort_tables(self, sort_by_option):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
+        if sort_by_option == translation["original_data"]:
+            for _, table, _, _, _, _ in self.class_table_pairs:
+                original_data = self.original_table_data[table]
+                table.update_values(original_data)
+            self.search_scrollbar.scroll_to_top()
+            return
+
         for _, table, _, _, _, _ in self.class_table_pairs:
             table_data = table.values
             headers = table_data[0]
@@ -5656,6 +5671,8 @@ class TeraTermUI(customtkinter.CTk):
             if cell in self.table_tooltips:
                 self.table_tooltips[cell].destroy()
                 del self.table_tooltips[cell]
+        if table_to_remove in self.original_table_data:
+            del self.original_table_data[table_to_remove]
         if more_sections and self.search_next_page.grid_info():
             next_index = min(self.current_table_index + 1, len(self.class_table_pairs) - 1)
             prev_index = max(self.current_table_index - 1, 0)
