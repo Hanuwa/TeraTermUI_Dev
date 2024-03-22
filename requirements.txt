@@ -65,7 +65,7 @@ pyzipper==0.3.6
 pyzstd==0.15.9
 reportlab==4.1.0
 requests==2.31.0
-requests-oauthlib==1.4.0
+requests-oauthlib==2.0.0
 rsa==4.9
 screeninfo==0.8.1
 six==1.16.0
