@@ -8,7 +8,8 @@ ctk_textbox.py, ctk_scrollbar.py, ctk_checkbox.py, ctk_radiobutton.py, ctk_switc
 dropdown_menu.py, scaling_tracker.py, scaling_base_class.py and ctk_base_class.py**" are included here because they have some modifications.
 
 Priorities of the development of the application is working on improving the UI since it's a bit too simple and not polished,
-funtionality wise the application is mostly feature-complete but it could use some performance improvements.
+funtionality wise the application is mostly feature-complete but it could use some performance/optimization improvements since
+the application sometimes suffers from slowdows and it can feel sluggish to use sometimes too.
 
 # Tesseract OCR
 Must install this application under a folder within the TeraTermUI.py app called "Tesseract-OCR".
