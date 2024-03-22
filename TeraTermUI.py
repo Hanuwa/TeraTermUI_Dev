@@ -5415,6 +5415,8 @@ class TeraTermUI(customtkinter.CTk):
         self.table_count.configure(text=table_count_label)
         if len(self.class_table_pairs) == 10:
             self.table_count.configure(text_color="red")
+        if self.sort_by.get() != translation["sort_by"]:
+            self.sort_by.set(translation["sort_by"])
         self.table_count.bind("<Button-1>", lambda event: self.focus_set())
         self.bind("<Control-s>", lambda event: self.download_search_classes_as_pdf())
         self.bind("<Control-S>", lambda event: self.download_search_classes_as_pdf())
@@ -5678,6 +5680,8 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Right>", self.move_slider_right)
 
         elif len(self.class_table_pairs) == 0:
+            if self.sort_by.get() != translation["sort_by"]:
+                self.sort_by.set(translation["sort_by"])
             self.table = None
             self.current_class = None
             self.table_count.grid_forget()
