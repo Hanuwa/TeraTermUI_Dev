@@ -8828,6 +8828,16 @@ class CustomButton(customtkinter.CTkButton):
     def on_leave(self, event):
         self.configure(cursor="")
 
+    def destroy(self):
+        self.text = None
+        self.image = None
+        self.is_pressed = None
+        self.unbind("<Enter>")
+        self.unbind("<Leave>")
+        self.unbind("<ButtonPress-1>")
+        self.unbind("<ButtonRelease-1>")
+        super().destroy()
+
 
 class CustomScrollableFrame(customtkinter.CTkScrollableFrame):
     def __init__(self, *args, **kwargs):
@@ -9180,8 +9190,44 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.yview_scroll(scroll_units, "units")
 
     def destroy(self):
+        self.unbind("<Button-1>")
+        self.unbind("<MouseWheel>")
+        self.unbind("<FocusIn>")
+        self.unbind("<FocusOut>")
+        if hasattr(self, "_y_scrollbar"):
+            self._y_scrollbar.unbind("<Button-1>")
+            self._y_scrollbar.unbind("<B1-Motion>")
+        if hasattr(self, "_x_scrollbar"):
+            self._x_scrollbar.unbind("<Button-1>")
+            self._x_scrollbar.unbind("<B1-Motion>")
+        self.unbind("<Control-z>")
+        self.unbind("<Control-Z>")
+        self.unbind("<Control-y>")
+        self.unbind("<Control-Y>")
+        self.unbind("<Control-v>")
+        self.unbind("<Control-V>")
+        self.unbind("<Control-x>")
+        self.unbind("<Control-X>")
+        self.unbind("<Control-a>")
+        self.unbind("<Control-A>")
+        self.unbind("<Button-2>")
+        self.unbind("<Button-3>")
+        self.unbind("<KeyRelease>")
+        if self.read_only:
+            self.unbind("<Up>")
+            self.unbind("<Down>")
+        self.auto_scroll = None
+        self.lang = None
+        self.read_only = None
+        self.disabled_autoscroll = None
+        self.after_id = None
+        self.select = None
+        self.teraterm_ui = None
+        self.context_menu = None
         self._undo_stack.clear()
         self._redo_stack.clear()
+        self._undo_stack = None
+        self._redo_stack = None
         super().destroy()
 
 
@@ -9436,8 +9482,31 @@ class CustomEntry(customtkinter.CTkEntry):
         self.teraterm_ui.search_classes(None)
 
     def destroy(self):
+        self.unbind("<FocusIn>")
+        self.unbind("<FocusOut>")
+        self.unbind("<Control-z>")
+        self.unbind("<Control-Z>")
+        self.unbind("<Control-y>")
+        self.unbind("<Control-Y>")
+        self.unbind("<Control-v>")
+        self.unbind("<Control-V>")
+        self.unbind("<Control-x>")
+        self.unbind("<Control-X>")
+        self.unbind("<Control-a>")
+        self.unbind("<Control-A>")
+        self.unbind("<Button-2>")
+        self.unbind("<Button-3>")
+        self.unbind("<KeyRelease>")
+        self.lang = None
+        self.is_listbox_entry = None
+        self.select = None
+        self.border_color = None
+        self.teraterm_ui = None
+        self.context_menu = None
         self._undo_stack.clear()
         self._redo_stack.clear()
+        self._undo_stack = None
+        self._redo_stack = None
         super().destroy()
 
 
@@ -9625,8 +9694,26 @@ class CustomComboBox(customtkinter.CTkComboBox):
         return "break"
 
     def destroy(self):
+        self.unbind("<FocusIn>")
+        self.unbind("<FocusOut>")
+        self.unbind("<Control-z>")
+        self.unbind("<Control-Z>")
+        self.unbind("<Control-y>")
+        self.unbind("<Control-Y>")
+        self.unbind("<Control-v>")
+        self.unbind("<Control-V>")
+        self.unbind("<Control-x>")
+        self.unbind("<Control-X>")
+        self.unbind("<Control-a>")
+        self.unbind("<Control-A>")
+        self.unbind("<Button-2>")
+        self.unbind("<KeyRelease>")
+        self.border_color = None
+        self.teraterm_ui = None
         self._undo_stack.clear()
         self._redo_stack.clear()
+        self._undo_stack = None
+        self._redo_stack = None
         super().destroy()
 
 
