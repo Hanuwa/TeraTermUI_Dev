@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/21/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/22/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -563,6 +563,7 @@ class TeraTermUI(customtkinter.CTk):
         self.information = None
         self.run_fix = False
         self.teraterm_not_found = False
+        self.teraterm5_first_boot = False
         self.tesseract_unzipped = False
         self.in_multiple_screen = False
         self.started_auto_enroll = False
@@ -2929,7 +2930,12 @@ class TeraTermUI(customtkinter.CTk):
                                 dont_close = True
                                 return
                         try:
-                            if self.download or self.teraterm_not_found:
+                            if self.teraterm5_first_boot:
+                                first_boot = Application(backend="uia").start(self.location, timeout=3).connect(
+                                    title="Tera Term - [disconnected] VT", timeout=3)
+                                first_boot.kill(soft=True)
+                                self.set_focus_to_tkinter()
+                            if self.download or self.teraterm_not_found or self.teraterm5_first_boot:
                                 self.edit_teraterm_ini(self.teraterm_file)
                             if not new_connection:
                                 self.uprb = Application(backend="uia").start(
@@ -6716,6 +6722,7 @@ class TeraTermUI(customtkinter.CTk):
             if appdata_ini_path:
                 file_path = appdata_ini_path
             else:
+                self.teraterm5_first_boot = True
                 return
 
         # backup for config file of tera term
@@ -8526,7 +8533,9 @@ class TeraTermUI(customtkinter.CTk):
             appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
             if appdata_ini_path:
                 file_path = appdata_ini_path
+                self.teraterm5_first_boot = False
             else:
+                self.teraterm5_first_boot = True
                 return
 
         if TeraTermUI.is_file_in_directory("ttermpro.exe", self.teraterm_directory):
@@ -8556,6 +8565,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.can_edit = True
                 with open(file_path, "w", encoding=detected_encoding) as file:
                     file.writelines(lines)
+                self.teraterm_not_found = False
+                self.download = False
             except FileNotFoundError:
                 return
             # If something goes wrong, restore the backup
@@ -8564,6 +8575,8 @@ class TeraTermUI(customtkinter.CTk):
                 print("Restoring from backup...")
                 shutil.copyfile(backup_path, file_path)
             del line, lines
+        else:
+            self.teraterm_not_found = True
 
     # Restores the original font option the user had
     def restore_original_font(self, file_path):
