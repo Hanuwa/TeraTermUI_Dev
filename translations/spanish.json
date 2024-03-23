@@ -334,5 +334,9 @@
 	"time_dec": "Horas Descendente ↓",
 	"av_asc": "Disp. Ascendente ↑",
 	"av_dec": "Disp. Descendente ↓",
-	"original_data": "Tabla Original"
+	"original_data": "Tabla Original",
+	"show_tray": "Mostrar",
+	"hide_tray": "Ocultar",
+	"exit_tray": "Salir",
+	"notif_countdown": "\n--------------------> ¡ATENCIÓN! <--------------------\n\nEl proceso de Auto-Matrícula para el siguiente semestre: \"{semester}\" comenzará en menos de un minuto"
 }
