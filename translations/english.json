@@ -334,5 +334,9 @@
 	"time_dec": "Time Descending ↓",
 	"av_asc": "Av. Ascending ↑",
 	"av_dec": "Av. Descending ↓",
-	"original_data": "Original Table"
+	"original_data": "Original Table",
+	"show_tray": "Show",
+	"hide_tray": "Hide",
+	"exit_tray": "Exit",
+	"notif_countdown": "\n--------------------> ATTENTION! <--------------------\n\nThe Auto-Enrollment process for the following semester: \"{semester}\" will begin in less than a minute"
 }
