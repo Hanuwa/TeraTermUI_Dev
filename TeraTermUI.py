@@ -3960,8 +3960,6 @@ class TeraTermUI(customtkinter.CTk):
     # Starts the countdown on when the auto-enroll process will occur
     def countdown(self, your_date):
         import pytz
-        import win32con
-        import win32gui
 
         lang = self.language_menu.get()
         translation = self.load_language(lang)
@@ -4967,9 +4965,7 @@ class TeraTermUI(customtkinter.CTk):
 
     @staticmethod
     def close_matching_windows(titles_to_close):
-        import win32con
-        import win32gui
-
+    
         def window_enum_handler(hwnd, titles):
             if win32gui.IsWindowVisible(hwnd) and win32gui.GetWindowText(hwnd) in titles:
                 win32gui.SendMessage(hwnd, win32con.WM_CLOSE, 0, 0)
@@ -4996,7 +4992,6 @@ class TeraTermUI(customtkinter.CTk):
     # captures a screenshot of tera term and performs OCR
     def capture_screenshot(self):
         import pyautogui
-        import win32gui
 
         self.update_idletasks()
         time.sleep(1)
@@ -5281,7 +5276,8 @@ class TeraTermUI(customtkinter.CTk):
             "MARRERO CARRASQUILLO ALB": "https://notaso.com/professors/alberto-marrero/",
             "VAZQUEZ DE SERRANO EILEE": "https://notaso.com/professors/eileen-vazquez-de-serrano/",
             "GARCIA CUEVAS EUGENIO": "https://notaso.com/professors/eugenio-garcia-perez/",
-            "MEDINA CRUZ OLGA L.": "https://notaso.com/professors/olga-l-medina-cruz/"
+            "MEDINA CRUZ OLGA L.": "https://notaso.com/professors/olga-l-medina-cruz/",
+            "RODRIGUEZ VALENTIN JOSE A": "https://notaso.com/professors/jose-rodriguez-valentin-2/"
         }
         instructor_text = cell.cget("text")
         hardcoded_name = " ".join(instructor_text.split())
@@ -5998,7 +5994,7 @@ class TeraTermUI(customtkinter.CTk):
                 match = pattern.search(line)
                 if match:
                     instructor = match.group(8)
-                    instructor = re.sub(r"\bN\b", "", instructor)
+                    instructor = re.sub(r"\bN\b(?!\.)", "", instructor)
                     instructor = re.sub(r"\bFULL\b", "", instructor)
                     instructor = re.sub(r"\bRSVD\b", "", instructor)
                     instructor = re.sub(r"\bRSTR\b", "", instructor)
