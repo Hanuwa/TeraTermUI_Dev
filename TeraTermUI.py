@@ -771,7 +771,7 @@ class TeraTermUI(customtkinter.CTk):
         )
 
     def hide_all_windows(self):
-        if self.state() == "withdrawn":
+        if self.state() == "withdrawn" or (self.loading_screen is not None and self.loading_screen.winfo_exists()):
             return
 
         self.withdraw()
@@ -792,10 +792,14 @@ class TeraTermUI(customtkinter.CTk):
                 win32gui.ShowWindow(hwnd, win32con.SW_HIDE)
 
     def show_all_windows(self):
-        if self.state() == "normal":
+        if self.state() == "normal" and (self.loading_screen is not None and self.loading_screen.winfo_exists()):
+            return
+        elif self.state() == "normal" and self.loading_screen is None:
             self.set_focus_to_tkinter()
             return
 
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
         self.iconify()
         if self.status is not None and self.status.winfo_exists() and not self.status_minimized:
             self.status.iconify()
@@ -803,6 +807,8 @@ class TeraTermUI(customtkinter.CTk):
             self.help.iconify()
         if self.timer_window is not None and self.timer_window.winfo_exists():
             self.timer_window.iconify()
+            timer = gw.getWindowsWithTitle(translation["auto_enroll"])[0]
+            self.after(200, timer.restore)
         app = gw.getWindowsWithTitle("Tera Term UI")[0]
         self.after(150, app.restore)
         hwnd = win32gui.FindWindow(None, "uprbay.uprb.edu - Tera Term VT")
@@ -4828,14 +4834,6 @@ class TeraTermUI(customtkinter.CTk):
     def disable_loading_screen_close():
         return "break"
 
-    # hides the loading screen
-    def hide_loading_screen(self):
-        self.loading_screen.withdraw()
-
-    # bring the loading screen back
-    def show_loading_screen_again(self):
-        self.loading_screen.deiconify()
-
     # tells the loading screen when it should stop and close
     def update_loading_screen(self, loading_screen, task_done):
         current_time = time.time()
@@ -4843,7 +4841,7 @@ class TeraTermUI(customtkinter.CTk):
             self.attributes("-disabled", False)
             self.update_widgets()
             if self.loading_screen is not None and self.loading_screen.winfo_exists():
-                self.hide_loading_screen()
+                self.loading_screen.withdraw()
             self.progress_bar.stop()
             loading_screen.destroy()
             self.loading_screen = None
@@ -5014,10 +5012,10 @@ class TeraTermUI(customtkinter.CTk):
             height = bottom - y
             crop_margin = (2, 10, 10, 2)
             if self.loading_screen is not None and self.loading_screen.winfo_exists():
-                self.hide_loading_screen()
+                self.loading_screen.withdraw()
             screenshot = pyautogui.screenshot(region=(x, y, width, height))
             if self.loading_screen is not None and self.loading_screen.winfo_exists():
-                self.show_loading_screen_again()
+                self.loading_screen.deiconify()
             screenshot = screenshot.crop((crop_margin[0], crop_margin[1], width - crop_margin[2],
                                           height - crop_margin[3])).convert("L")
             # screenshot = screenshot.resize((screenshot.width * 2, screenshot.height * 2), resample=Image.BICUBIC)
@@ -5791,7 +5789,7 @@ class TeraTermUI(customtkinter.CTk):
                 timings.Timings.window_find_retry = original_retry
         self.uprb.UprbayTeraTermVt.type_keys("%c")
         if self.loading_screen is not None and self.loading_screen.winfo_exists():
-            self.hide_loading_screen()
+            self.loading_screen.withdraw()
         original_position = pyautogui.position()
         self.uprbay_window.click_input(button="left")
         try:
@@ -5799,7 +5797,7 @@ class TeraTermUI(customtkinter.CTk):
         except pyautogui.FailSafeException as e:
             print("An error occurred:", e)
         if self.loading_screen is not None and self.loading_screen.winfo_exists():
-            self.show_loading_screen_again()
+            self.loading_screen.deiconify()
 
     @staticmethod
     def get_latest_term(input_text):
