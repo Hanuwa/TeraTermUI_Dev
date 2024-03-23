@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/22/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/23/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with 9000 lines of codes, it definitely makes things harder to work with
+# and with 10000 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -31,6 +31,7 @@ import psutil
 import py7zr
 import pygetwindow as gw
 import pyperclip
+import pystray
 import pytesseract
 import re
 import requests
@@ -46,6 +47,8 @@ import tkinter as tk
 import time
 import warnings
 import webbrowser
+import win32con
+import win32gui
 import winsound
 from collections import deque, defaultdict
 from concurrent.futures import ThreadPoolExecutor
@@ -577,6 +580,7 @@ class TeraTermUI(customtkinter.CTk):
         self.updating_app = False
         self.main_menu = True
         self.not_rebind = False
+        self.notification_sent = False
         self.a_counter = 0
         self.m_counter = 0
         self.e_counter = 0
@@ -587,6 +591,9 @@ class TeraTermUI(customtkinter.CTk):
         self.curr_lang = self.language_menu.get()
         SPANISH = 0x0A
         language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
+        # System tray for the application
+        self.tray = pystray.Icon("tera-term", Image.open(self.icon_path), "Tera Term UI", self.create_tray_menu())
+        self.tray.run_detached()
         # default location of Tera Term
         teraterm_directory = TeraTermUI.find_teraterm_directory()
         if teraterm_directory:
@@ -725,7 +732,7 @@ class TeraTermUI(customtkinter.CTk):
         except Exception as e:
             db_path = TeraTermUI.get_absolute_path("database.db")
             en_path = TeraTermUI.get_absolute_path("translations/english.json")
-            es_path =  TeraTermUI.get_absolute_path("translations/spanish.json")
+            es_path = TeraTermUI.get_absolute_path("translations/spanish.json")
             print(f"An unexpected error occurred: {e}")
             self.log_error(e)
             if not os.path.isfile(db_path) or not os.access(db_path, os.R_OK):
@@ -754,6 +761,59 @@ class TeraTermUI(customtkinter.CTk):
         del user_data_fields, results, SPANISH, language_id, scaling_factor, screen_width, screen_height, width, \
             height, x, y, db_path, en_path, es_path
 
+    def create_tray_menu(self):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        return pystray.Menu(
+            pystray.MenuItem(translation["hide_tray"], self.hide_all_windows),
+            pystray.MenuItem(translation["show_tray"], self.show_all_windows, default=True),
+            pystray.MenuItem(translation["exit_tray"], self.direct_close_on_tray)
+        )
+
+    def hide_all_windows(self):
+        if self.state() == "withdrawn":
+            return
+
+        self.withdraw()
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        if TeraTermUI.window_exists(translation["dialog_title"]):
+            self.dialog.destroy()
+        if self.status is not None and self.status.winfo_exists() and not self.status_minimized:
+            self.status.withdraw()
+        if self.help is not None and self.help.winfo_exists() and not self.help_minimized:
+            self.help.withdraw()
+        if self.timer_window is not None and self.timer_window.winfo_exists():
+            self.timer_window.withdraw()
+        if not TeraTermUI.window_exists("Tera Term - [disconnected] VT") and \
+                not TeraTermUI.window_exists("SSH Authentication"):
+            hwnd = win32gui.FindWindow(None, "uprbay.uprb.edu - Tera Term VT")
+            if hwnd and win32gui.IsWindowVisible(hwnd):
+                win32gui.ShowWindow(hwnd, win32con.SW_HIDE)
+
+    def show_all_windows(self):
+        if self.state() == "normal":
+            self.set_focus_to_tkinter()
+            return
+
+        self.iconify()
+        if self.status is not None and self.status.winfo_exists() and not self.status_minimized:
+            self.status.iconify()
+        if self.help is not None and self.help.winfo_exists() and not self.help_minimized:
+            self.help.iconify()
+        if self.timer_window is not None and self.timer_window.winfo_exists():
+            self.timer_window.iconify()
+        app = gw.getWindowsWithTitle("Tera Term UI")[0]
+        self.after(150, app.restore)
+        hwnd = win32gui.FindWindow(None, "uprbay.uprb.edu - Tera Term VT")
+        if hwnd and not win32gui.IsWindowVisible(hwnd):
+            win32gui.ShowWindow(hwnd, win32con.SW_SHOW)
+            win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+
+    def direct_close_on_tray(self):
+        self.tray.stop()
+        self.after(0, self.direct_close)
+
     # function that when the user tries to close the application a confirm dialog opens up
     def on_closing(self):
         if hasattr(self, "is_exit_dialog_open") and self.is_exit_dialog_open or \
@@ -773,6 +833,7 @@ class TeraTermUI(customtkinter.CTk):
         response, self.checkbox_state = msg.get()
         self.is_exit_dialog_open = False
         if response == "Yes" or response == "Sí":
+            self.tray.stop()
             if hasattr(self, "boot_up_thread") and self.boot_up_thread.is_alive():
                 self.boot_up_thread.join()
             if hasattr(self, "check_idle_thread") and self.check_idle_thread is not None \
@@ -802,6 +863,11 @@ class TeraTermUI(customtkinter.CTk):
         if self.loading_screen is not None and self.loading_screen.winfo_exists():
             return
 
+        hwnd = win32gui.FindWindow(None, "uprbay.uprb.edu - Tera Term VT")
+        if hwnd and not win32gui.IsWindowVisible(hwnd):
+            win32gui.ShowWindow(hwnd, win32con.SW_SHOW)
+            win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+        self.tray.stop()
         if hasattr(self, "boot_up_thread") and self.boot_up_thread.is_alive():
             self.boot_up_thread.join()
         if hasattr(self, "check_idle_thread") and self.check_idle_thread is not None \
@@ -3074,8 +3140,9 @@ class TeraTermUI(customtkinter.CTk):
             self.after(50, self.login_frame)
             self.in_auth_frame = True
         elif TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT") and not skip:
-            self.unfocus_tkinter()
             self.connect_to_uprb()
+            if self.tera_term_window.isMinimized:
+                self.tera_term_window.restore()
             text_output = self.capture_screenshot()
             to_continue = "return to continue"
             count_to_continue = text_output.count(to_continue)
@@ -3396,6 +3463,13 @@ class TeraTermUI(customtkinter.CTk):
         appearance = self.appearance_mode_optionemenu.get()
         self.curr_lang = lang
         self.focus_set()
+        new_menu = pystray.Menu(
+            pystray.MenuItem(translation["hide_tray"], self.hide_all_windows),
+            pystray.MenuItem(translation["show_tray"], self.show_all_windows, default=True),
+            pystray.MenuItem(translation["exit_tray"], self.direct_close_on_tray)
+        )
+        self.tray.menu = new_menu
+        self.tray.update_menu()
         self.status_button.configure(text=translation["status_button"])
         self.help_button.configure(text=translation["help_button"])
         self.scaling_label.configure(text=translation["option_label"])
@@ -3824,8 +3898,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.running_countdown = customtkinter.BooleanVar()
                                     self.running_countdown.set(True)
                                     self.started_auto_enroll = True
-                                    self.after(0, self.submit_multiple_event_handler)
-                                    self.after(0, self.end_countdown)
+                                    self.after(150, self.submit_multiple_event_handler)
                                 else:
                                     self.after(100, self.show_error_message, 300, 215,
                                                translation["date_past"])
@@ -3891,7 +3964,7 @@ class TeraTermUI(customtkinter.CTk):
         time_difference = your_date - current_date
         total_seconds = time_difference.total_seconds()
         if self.running_countdown.get():
-            if not TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
+            if not TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT") and self.state() != "withdrawn":
                 self.forceful_end_countdown()
             if total_seconds <= 0:
                 # Enrollment function
@@ -3899,6 +3972,17 @@ class TeraTermUI(customtkinter.CTk):
                                            font=customtkinter.CTkFont(size=17))
                 self.timer_label.pack(pady=30)
                 self.cancel_button.pack_forget()
+                if self.state() == "withdrawn":
+                    self.timer_window.iconify()
+                    self.iconify()
+                    hwnd = win32gui.FindWindow(None, "uprbay.uprb.edu - Tera Term VT")
+                    if hwnd and not win32gui.IsWindowVisible(hwnd):
+                        win32gui.ShowWindow(hwnd, win32con.SW_SHOW)
+                        win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+                    app = gw.getWindowsWithTitle("Tera Term UI")[0]
+                    app.restore()
+                    timer = gw.getWindowsWithTitle(translation["auto_enroll"])[0]
+                    timer.restore()
                 self.timer_window.lift()
                 self.timer_window.focus_force()
                 self.timer_window.attributes("-topmost", 1)
@@ -3966,7 +4050,7 @@ class TeraTermUI(customtkinter.CTk):
                         seconds_until_next_minute = 60 - current_date.second
                         self.timer_window.after(
                             seconds_until_next_minute * 1000, lambda: self.countdown(your_date)
-                            if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
+                            if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT") or self.state() == "withdrawn"
                             else self.forceful_end_countdown())
 
                 else:  # When there's less than an hour remaining
@@ -4009,17 +4093,22 @@ class TeraTermUI(customtkinter.CTk):
                         seconds_until_next_minute = 60 - current_date.second
                         self.timer_window.after(
                             seconds_until_next_minute * 1000, lambda: self.countdown(your_date)
-                            if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
+                            if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT") or self.state() == "withdrawn"
                             else self.forceful_end_countdown())
                     else:  # update every second if there's less than or equal to 60 seconds left
+                        if not self.notification_sent:
+                            self.tray.notify(translation["notif_countdown"].replace(
+                                "{semester}", self.m_semester_entry[0].get()), title="Tera Term UI")
+                            self.notification_sent = True
                         self.timer_window.after(
                             1000, lambda: self.countdown(your_date)
-                            if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
+                            if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT") or self.state() == "withdrawn"
                             else self.forceful_end_countdown())
 
     def end_countdown(self):
         self.auto_enroll_bool = False
         self.countdown_running = False
+        self.notification_sent = False
         self.running_countdown.set(False)
         if self.timer_window and self.timer_window.winfo_exists():
             self.timer_window.destroy()
@@ -4071,8 +4160,7 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         if self.window_exists(translation["auto_enroll"]):
-            timer_title = translation["auto_enroll"]
-            timer = gw.getWindowsWithTitle(timer_title)[0]
+            timer = gw.getWindowsWithTitle(translation["auto_enroll"])[0]
             if timer.isMinimized:
                 timer.restore()
             try:
@@ -4871,8 +4959,11 @@ class TeraTermUI(customtkinter.CTk):
     @staticmethod
     def window_exists(title):
         try:
-            window = gw.getWindowsWithTitle(title)[0]
-            return True
+            windows = gw.getWindowsWithTitle(title)
+            for window in windows:
+                if window.title == title:
+                    return True
+            return False
         except IndexError:
             return False
 
@@ -7525,7 +7616,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.idle_warning.close_messagebox()
                             try:
                                 main_window = self.uprb_32.window(title="uprbay.uprb.edu - Tera Term VT")
-                                main_window.wait("visible", 3)
+                                main_window.wait("exists", 3)
                             except Exception as e:
                                 print("An error occurred: ", e)
                                 self.search_function_counter = 0
@@ -8268,9 +8359,6 @@ class TeraTermUI(customtkinter.CTk):
     def help_widgets(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        bg_color = "#0e95eb"
-        fg_color = "#333333"
-        listbox_font = ("Arial", 11)
         self.help_frame = customtkinter.CTkScrollableFrame(self.help, width=475, height=280,
                                                            fg_color=("#e6e6e6", "#222222"))
         self.help_title = customtkinter.CTkLabel(self.help_frame, text=translation["help"],
@@ -8280,7 +8368,7 @@ class TeraTermUI(customtkinter.CTk):
         self.searchbox_text = customtkinter.CTkLabel(self.help_frame, text=translation["searchbox_title"])
         self.search_box = CustomEntry(self.help_frame, self, lang, placeholder_text=translation["searchbox"])
         self.search_box.is_listbox_entry = True
-        self.class_list = tk.Listbox(self.help_frame, width=35, bg=bg_color, fg=fg_color, font=listbox_font)
+        self.class_list = tk.Listbox(self.help_frame, width=35, bg="#0e95eb", fg="#333333", font=("Roboto", 12))
         self.curriculum_text = customtkinter.CTkLabel(self.help_frame, text=translation["curriculums_title"])
         self.curriculum = customtkinter.CTkOptionMenu(self.help_frame,
                                                       values=[translation["dep"], translation["acc"],
@@ -8650,7 +8738,6 @@ class TeraTermUI(customtkinter.CTk):
     def show_sidebar_windows(self):
         if self.status is not None and self.status.winfo_exists() and not self.status_minimized:
             self.status.iconify()
-
         if self.help is not None and self.help.winfo_exists() and not self.help_minimized:
             self.help.iconify()
 
@@ -8897,6 +8984,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.disabled_autoscroll = False
         self.after_id = None
         self.select = False
+        self.saved_cursor_position = None
 
         self.teraterm_ui = teraterm_ui_instance
 
@@ -9052,6 +9140,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
             return "break"
 
     def show_menu(self, event):
+        self.saved_cursor_position = self.index(tk.INSERT)
         self.stop_autoscroll(event=None)
         self.mark_set(tk.INSERT, "end")
         self.select = True
@@ -9097,10 +9186,12 @@ class CustomTextBox(customtkinter.CTkTextbox):
 
     def cut(self):
         self.focus_set()
+        if self.saved_cursor_position is not None:
+            self.mark_set(tk.INSERT, self.saved_cursor_position)
+            self.saved_cursor_position = None
         if not self.tag_ranges(tk.SEL):
             current_line = self.index(tk.INSERT).split(".")[0]
             self.tag_add(tk.SEL, f"{current_line}.0", f"{current_line}.end")
-
         try:
             selected_text = self.selection_get()
             self.clipboard_clear()
@@ -9134,6 +9225,9 @@ class CustomTextBox(customtkinter.CTkTextbox):
 
     def paste(self, event=None):
         self.focus_set()
+        if self.saved_cursor_position is not None:
+            self.mark_set(tk.INSERT, self.saved_cursor_position)
+            self.saved_cursor_position = None
         try:
             clipboard_text = self.clipboard_get()
             max_paste_length = 10000  # Set a limit for the max paste length
@@ -9224,6 +9318,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.select = None
         self.teraterm_ui = None
         self.context_menu = None
+        self.saved_cursor_position = None
         self._undo_stack.clear()
         self._redo_stack.clear()
         self._undo_stack = None
