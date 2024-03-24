@@ -157,8 +157,8 @@ except Exception as e:
     print(Fore.RED + f"Error modifying creating distribution directory: {e}\n" + Style.RESET_ALL)
 
 nuitka_command = (
-    r'cd /d "' + project_directory + r'\.venv\Scripts" & python -m nuitka '
-    r'--standalone "' + project_directory + r'\TeraTermUI.py" --disable-console '
+    r'cd /d "' + project_directory + r'\.venv\Scripts" & python -m nuitka --standalone '
+    r'--deployment "' + project_directory + r'\TeraTermUI.py" --disable-console '
     r'--enable-plugin=tk-inter --include-data-dir="' + project_directory + r'\.venv\Lib\site-packages'
     r'\customtkinter=customtkinter" --include-data-dir="' + project_directory + r'\.venv\Lib\site-packages'
     r'\CTkMessageBox=CTkMessageBox" --include-package=CTkToolTip --include-package=CTkTable '
