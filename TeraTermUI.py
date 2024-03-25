@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/24/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/25/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -3883,14 +3883,14 @@ class TeraTermUI(customtkinter.CTk):
                             is_past_date = current_date > your_date
                             is_future_date = current_date < your_date
                             is_next_date = (your_date.date() - current_date.date() == timedelta(days=1))
-                            is_time_difference_within_8_hours = \
-                                timedelta(hours=8, minutes=15) >= time_difference >= timedelta()
+                            is_time_difference_within_12_hours = \
+                                timedelta(hours=12, minutes=55) >= time_difference >= timedelta()
                             is_more_than_one_day = (your_date.date() - current_date.date() > timedelta(days=1))
                             is_current_time_ahead = current_date.time() > your_date.time()
                             is_current_time_24_hours_ahead = time_difference >= timedelta(hours=-24)
                             # Comparing Dates
-                            if (is_same_date and is_time_difference_within_8_hours) or \
-                                    (is_next_date and is_time_difference_within_8_hours):
+                            if (is_same_date and is_time_difference_within_12_hours) or \
+                                    (is_next_date and is_time_difference_within_12_hours):
                                 self.countdown_running = True
                                 self.after(0, self.disable_enable_gui)
                                 # Create timer window
@@ -3912,10 +3912,10 @@ class TeraTermUI(customtkinter.CTk):
                                     self.auto_enroll_bool = False
                                     self.after(100, self.auto_enroll.deselect)
                             elif (is_future_date or is_more_than_one_day) or \
-                                    (is_same_date and not is_time_difference_within_8_hours) or \
-                                    (is_next_date and not is_time_difference_within_8_hours):
+                                    (is_same_date and not is_time_difference_within_12_hours) or \
+                                    (is_next_date and not is_time_difference_within_12_hours):
                                 self.after(100, self.show_error_message, 320, 235,
-                                           translation["date_not_within_8_hours"])
+                                           translation["date_not_within_12_hours"])
                                 self.auto_enroll_bool = False
                                 self.after(100, self.auto_enroll.deselect)
                             if ("INVALID ACTION" in text_output and "PANTALLAS MATRICULA" in text_output) or \
