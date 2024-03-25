@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/23/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/24/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -943,142 +943,143 @@ class TeraTermUI(customtkinter.CTk):
 
     # Enrolling/Searching classes Frame
     def student_event(self, task_done):
-        try:
-            self.automation_preparations()
-            lang = self.language_menu.get()
-            translation = self.load_language(lang)
-            aes_key = secrets.token_bytes(32)  # 256-bit key
-            mac_key = secrets.token_bytes(32)  # separate 256-bit key for HMAC
+        # Deletes these encrypted variables from memory
+        def secure_delete(variable):
+            if isinstance(variable, bytes):
+                variable_len = len(variable)
+                new_value = secrets.token_bytes(variable_len)
+                ctypes.memset(id(variable) + 0x10, 0, variable_len)
+                variable = new_value
+            elif isinstance(variable, int):
+                new_value = secrets.randbits(variable.bit_length())
+                variable = new_value
+            return variable
 
-            # Deletes these encrypted variables from memory
-            def secure_delete(variable):
-                if isinstance(variable, bytes):
-                    variable_len = len(variable)
-                    new_value = secrets.token_bytes(variable_len)
-                    ctypes.memset(id(variable) + 0x10, 0, variable_len)
-                    variable = new_value
-                elif isinstance(variable, int):
-                    new_value = secrets.randbits(variable.bit_length())
-                    variable = new_value
-                return variable
+        # Encrypt and compute MAC
+        def aes_encrypt_then_mac(plaintext, key, inner_mac_key):
+            # Generate a new IV for each encryption
+            inner_iv = get_random_bytes(16)  # for AES CBC mode
+            cipher = AES.new(key, AES.MODE_CBC, iv=inner_iv)
+            ciphertext = cipher.encrypt(pad(plaintext.encode(), AES.block_size))
+            # Compute a MAC over the ciphertext
+            hmac = HMAC.new(inner_mac_key, digestmod=SHA256)
+            hmac.update(ciphertext)
+            mac = hmac.digest()
+            # Prepend the IV to the ciphertext and append the MAC
+            return inner_iv + ciphertext + mac
 
-            # Encrypt and compute MAC
-            def aes_encrypt_then_mac(plaintext, key, inner_mac_key):
-                # Generate a new IV for each encryption
-                inner_iv = get_random_bytes(16)  # for AES CBC mode
-                cipher = AES.new(key, AES.MODE_CBC, iv=inner_iv)
-                ciphertext = cipher.encrypt(pad(plaintext.encode(), AES.block_size))
-                # Compute a MAC over the ciphertext
-                hmac = HMAC.new(inner_mac_key, digestmod=SHA256)
-                hmac.update(ciphertext)
-                mac = hmac.digest()
-                # Prepend the IV to the ciphertext and append the MAC
-                return inner_iv + ciphertext + mac
+        # Decrypt and verify MAC
+        def aes_decrypt_and_verify_mac(ciphertext_with_iv_mac, key, inner_mac_key):
+            # Extract the IV from the beginning of the data
+            inner_iv = ciphertext_with_iv_mac[:16]
+            ciphertext_with_mac = ciphertext_with_iv_mac[16:]
+            # Separate the MAC from the ciphertext
+            ciphertext = ciphertext_with_mac[:-SHA256.digest_size]
+            mac = ciphertext_with_mac[-SHA256.digest_size:]
+            # Compute the expected MAC over the ciphertext
+            hmac = HMAC.new(inner_mac_key, digestmod=SHA256)
+            hmac.update(ciphertext)
+            expected_mac = hmac.digest()
+            # Verify the MAC
+            if expected_mac != mac:
+                raise ValueError("MAC check failed")
+            # If the MAC is valid, decrypt the ciphertext
+            cipher = AES.new(key, AES.MODE_CBC, iv=inner_iv)
+            plaintext = unpad(cipher.decrypt(ciphertext), AES.block_size).decode()
+            return plaintext
 
-            # Decrypt and verify MAC
-            def aes_decrypt_and_verify_mac(ciphertext_with_iv_mac, key, inner_mac_key):
-                # Extract the IV from the beginning of the data
-                inner_iv = ciphertext_with_iv_mac[:16]
-                ciphertext_with_mac = ciphertext_with_iv_mac[16:]
-                # Separate the MAC from the ciphertext
-                ciphertext = ciphertext_with_mac[:-SHA256.digest_size]
-                mac = ciphertext_with_mac[-SHA256.digest_size:]
-                # Compute the expected MAC over the ciphertext
-                hmac = HMAC.new(inner_mac_key, digestmod=SHA256)
-                hmac.update(ciphertext)
-                expected_mac = hmac.digest()
-                # Verify the MAC
-                if expected_mac != mac:
-                    raise ValueError("MAC check failed")
-                # If the MAC is valid, decrypt the ciphertext
-                cipher = AES.new(key, AES.MODE_CBC, iv=inner_iv)
-                plaintext = unpad(cipher.decrypt(ciphertext), AES.block_size).decode()
-                return plaintext
-
-            if asyncio.run(self.test_connection(lang)) and self.check_server():
-                if TeraTermUI.checkIfProcessRunning("ttermpro"):
-                    student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
-                    code = self.code_entry.get().replace(" ", "")
-                    student_id_enc = aes_encrypt_then_mac(str(student_id), aes_key, mac_key)
-                    code_enc = aes_encrypt_then_mac(str(code), aes_key, mac_key)
-                    if ((re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", student_id) or
-                         re.match(r"^\d{9}$", student_id)) and code.isdigit() and len(code) == 4):
-                        secure_delete(student_id)
-                        secure_delete(code)
-                        if self.tera_term_window.isMinimized:
-                            self.tera_term_window.restore()
-                        self.wait_for_window()
-                        self.uprb.UprbayTeraTermVt.type_keys("{TAB}")
-                        self.uprb.UprbayTeraTermVt.type_keys(
-                            aes_decrypt_and_verify_mac(student_id_enc, aes_key, mac_key))
-                        self.uprb.UprbayTeraTermVt.type_keys(
-                            aes_decrypt_and_verify_mac(code_enc, aes_key, mac_key))
-                        self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                        text_output = self.capture_screenshot()
-                        if "SIGN-IN" in text_output:
-                            self.reset_activity_timer()
-                            self.start_check_idle_thread()
-                            self.start_check_process_thread()
-                            self.after(0, self.initialization_class)
-                            self.after(0, self.destroy_student)
-                            self.after(50, self.student_info_frame)
-                            self.run_fix = True
-                            if self.help is not None and self.help.winfo_exists():
-                                self.fix.configure(state="normal")
-                            self.in_student_frame = False
-                            secure_delete(student_id_enc)
-                            secure_delete(code_enc)
-                            secure_delete(aes_key)
-                            secure_delete(mac_key)
-                            del student_id, code, student_id_enc, code_enc, aes_key, mac_key
-                            self.switch_tab()
+        with self.lock_thread:
+            try:
+                self.automation_preparations()
+                lang = self.language_menu.get()
+                translation = self.load_language(lang)
+                aes_key = secrets.token_bytes(32)  # 256-bit key
+                mac_key = secrets.token_bytes(32)  # separate 256-bit key for HMAC
+                if asyncio.run(self.test_connection(lang)) and self.check_server():
+                    if TeraTermUI.checkIfProcessRunning("ttermpro"):
+                        student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
+                        code = self.code_entry.get().replace(" ", "")
+                        student_id_enc = aes_encrypt_then_mac(str(student_id), aes_key, mac_key)
+                        code_enc = aes_encrypt_then_mac(str(code), aes_key, mac_key)
+                        if ((re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", student_id) or
+                             re.match(r"^\d{9}$", student_id)) and code.isdigit() and len(code) == 4):
+                            secure_delete(student_id)
+                            secure_delete(code)
+                            if self.tera_term_window.isMinimized:
+                                self.tera_term_window.restore()
+                            self.wait_for_window()
+                            self.uprb.UprbayTeraTermVt.type_keys("{TAB}")
+                            self.uprb.UprbayTeraTermVt.type_keys(
+                                aes_decrypt_and_verify_mac(student_id_enc, aes_key, mac_key))
+                            self.uprb.UprbayTeraTermVt.type_keys(
+                                aes_decrypt_and_verify_mac(code_enc, aes_key, mac_key))
+                            self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                            text_output = self.capture_screenshot()
+                            if "SIGN-IN" in text_output:
+                                self.reset_activity_timer()
+                                self.start_check_idle_thread()
+                                self.start_check_process_thread()
+                                self.after(0, self.initialization_class)
+                                self.after(0, self.destroy_student)
+                                self.after(50, self.student_info_frame)
+                                self.run_fix = True
+                                if self.help is not None and self.help.winfo_exists():
+                                    self.fix.configure(state="normal")
+                                self.in_student_frame = False
+                                secure_delete(student_id_enc)
+                                secure_delete(code_enc)
+                                secure_delete(aes_key)
+                                secure_delete(mac_key)
+                                del student_id, code, student_id_enc, code_enc, aes_key, mac_key
+                                self.switch_tab()
+                            else:
+                                self.after(350, self.bind, "<Return>", lambda event: self.student_event_handler())
+                                if "ON FILE" in text_output or "ERRORS FOUND" in text_output:
+                                    self.uprb.UprbayTeraTermVt.type_keys("{TAB 3}")
+                                elif "PIN NUMBER" in text_output:
+                                    self.uprb.UprbayTeraTermVt.type_keys("{TAB 2}")
+                                self.after(100, self.show_error_message, 300, 215, translation["error_student"])
                         else:
                             self.after(350, self.bind, "<Return>", lambda event: self.student_event_handler())
-                            if "ON FILE" in text_output or "ERRORS FOUND" in text_output:
-                                self.uprb.UprbayTeraTermVt.type_keys("{TAB 3}")
-                            elif "PIN NUMBER" in text_output:
-                                self.uprb.UprbayTeraTermVt.type_keys("{TAB 2}")
-                            self.after(100, self.show_error_message, 300, 215, translation["error_student"])
+                            if (not student_id or len(student_id) != 9) and (not code.isdigit or len(code) != 4):
+                                self.after(0, self.student_id_entry.configure(border_color="#c30101"))
+                                self.after(0, self.code_entry.configure(border_color="#c30101"))
+                                self.after(100, self.show_error_message, 300, 215, translation["error_student_id_code"])
+                            elif not student_id or len(student_id) != 9:
+                                self.after(0, self.student_id_entry.configure(border_color="#c30101"))
+                                self.after(100, self.show_error_message, 315, 230, translation["error_student_id"])
+                            elif not code.isdigit or len(code) != 4:
+                                self.after(0, self.code_entry.configure(border_color="#c30101"))
+                                self.after(100, self.show_error_message, 315, 230, translation["error_code"])
                     else:
                         self.after(350, self.bind, "<Return>", lambda event: self.student_event_handler())
-                        if (not student_id or len(student_id) != 9) and (not code.isdigit or len(code) != 4):
-                            self.after(0, self.student_id_entry.configure(border_color="#c30101"))
-                            self.after(0, self.code_entry.configure(border_color="#c30101"))
-                            self.after(100, self.show_error_message, 300, 215, translation["error_student_id_code"])
-                        elif not student_id or len(student_id) != 9:
-                            self.after(0, self.student_id_entry.configure(border_color="#c30101"))
-                            self.after(100, self.show_error_message, 315, 230, translation["error_student_id"])
-                        elif not code.isdigit or len(code) != 4:
-                            self.after(0, self.code_entry.configure(border_color="#c30101"))
-                            self.after(100, self.show_error_message, 315, 230, translation["error_code"])
+                        self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
                 else:
                     self.after(350, self.bind, "<Return>", lambda event: self.student_event_handler())
-                    self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
-            else:
-                self.after(350, self.bind, "<Return>", lambda event: self.student_event_handler())
-        except Exception as e:
-            print("An error occurred: ", e)
-            self.error_occurred = True
-            self.log_error(e)
-        finally:
-            task_done.set()
-            lang = self.language_menu.get()
-            translation = self.load_language(lang)
-            self.reset_activity_timer()
-            self.after(100, self.set_focus_to_tkinter)
-            self.after(100, self.show_sidebar_windows)
-            if self.error_occurred:
-                def error_automation():
-                    self.destroy_windows()
-                    if not self.disable_audio:
-                        winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/notification.wav"), winsound.SND_ASYNC)
-                    CTkMessagebox(title=translation["automation_error_title"], message=translation["automation_error"],
-                                  icon="warning", button_width=380)
-                    self.after(350, self.bind, "<Return>", lambda event: self.student_event_handler())
-                    self.error_occurred = False
+            except Exception as e:
+                print("An error occurred: ", e)
+                self.error_occurred = True
+                self.log_error(e)
+            finally:
+                task_done.set()
+                lang = self.language_menu.get()
+                translation = self.load_language(lang)
+                self.reset_activity_timer()
+                self.after(100, self.set_focus_to_tkinter)
+                self.after(100, self.show_sidebar_windows)
+                if self.error_occurred:
+                    def error_automation():
+                        self.destroy_windows()
+                        if not self.disable_audio:
+                            winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/notification.wav"),
+                                               winsound.SND_ASYNC)
+                        CTkMessagebox(title=translation["automation_error_title"],
+                                      message=translation["automation_error"], icon="warning", button_width=380)
+                        self.after(350, self.bind, "<Return>", lambda event: self.student_event_handler())
+                        self.error_occurred = False
 
-                self.after(50, error_automation)
-            ctypes.windll.user32.BlockInput(False)
+                    self.after(50, error_automation)
+                ctypes.windll.user32.BlockInput(False)
 
     def student_info_frame(self):
         if not self.init_multiple:
