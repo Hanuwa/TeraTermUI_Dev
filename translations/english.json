@@ -186,6 +186,7 @@
 	"server_maintenance": "Error! The university's server is currently on maintenance, please try again later.\n\nClosing Tera Term and returning to main menu",
 	"automation_error_title": "Error Information",
 	"automation_error": "Error while performing and automating tasks! Please make sure not to interrupt the execution of the applications\n\nMight need to restart Tera Term UI",
+	"timeout_error": "Error while performing and automating tasks! The task took too long to complete so it was forced to end",
 	"success_enrolled": "Enrolled class successfully",
 	"success_dropped": "Dropped class successfully",
 	"success_modify": "Modified the enrolled\nclasses succesfully",
