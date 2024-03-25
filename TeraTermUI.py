@@ -4835,7 +4835,7 @@ class TeraTermUI(customtkinter.CTk):
     # tells the loading screen when it should stop and close
     def update_loading_screen(self, loading_screen, task_done):
         current_time = time.time()
-        if task_done.is_set() or (current_time - self.loading_screen_start_time > 25):
+        if task_done.is_set() or current_time - self.loading_screen_start_time > 35:
             self.attributes("-disabled", False)
             self.update_widgets()
             if self.loading_screen is not None and self.loading_screen.winfo_exists():
@@ -4843,6 +4843,13 @@ class TeraTermUI(customtkinter.CTk):
             self.progress_bar.stop()
             loading_screen.destroy()
             self.loading_screen = None
+            if current_time - self.loading_screen_start_time > 35:
+                lang = self.language_menu.get()
+                translation = self.load_language(lang)
+                if not self.disable_audio:
+                    winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/error.wav"), winsound.SND_ASYNC)
+                CTkMessagebox(title=translation["automation_error_title"], message=translation["timeout_error"],
+                              icon="warning", button_width=380)
         else:
             self.after(100, self.update_loading_screen, loading_screen, task_done)
 
