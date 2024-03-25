@@ -321,8 +321,7 @@ class TeraTermUI(customtkinter.CTk):
                               "experience"
                               " make sure to click the buttons on the sidebar, the application is also planned to be"
                               " open source for anyone who is interested in working/seeing the project. \n\n" +
-                              "IMPORTANT: DO NOT USE WHILE HAVING ANOTHER INSTANCE OF THE APPLICATION OPENED.  "
-                              "")
+                              "IMPORTANT: DO NOT USE WHILE HAVING ANOTHER INSTANCE OF THE APPLICATION OPENED.""")
         self.intro_box.configure(state="disabled", wrap="word", border_spacing=7)
         self.intro_box.grid(row=1, column=1, padx=(20, 0), pady=(0, 150))
 
@@ -4836,7 +4835,7 @@ class TeraTermUI(customtkinter.CTk):
     # tells the loading screen when it should stop and close
     def update_loading_screen(self, loading_screen, task_done):
         current_time = time.time()
-        if task_done.is_set() or (current_time - self.loading_screen_start_time > 30):
+        if task_done.is_set() or (current_time - self.loading_screen_start_time > 25):
             self.attributes("-disabled", False)
             self.update_widgets()
             if self.loading_screen is not None and self.loading_screen.winfo_exists():
