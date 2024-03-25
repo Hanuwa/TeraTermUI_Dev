@@ -173,10 +173,10 @@ nuitka_command = (
     r'--include-data-file="' + project_directory + r'\LICENSE.txt=LICENSE.txt" '                                                     
     r'--output-dir="' + output_directory + r'" --python-flag=no_asserts '
     r'--windows-icon-from-ico="' + project_directory + r'\images\tera-term.ico" '
-    r'--nofollow-import-to=unittest --nofollow-import-to=reportlab.graphics.testshapes '
-    r'--company-name="Armando Del Valle Tejada" --product-name="Tera Term UI" --file-description="TeraTermUI" '  
+    r'--nofollow-import-to=unittest --python-flag=no_docstrings --product-name="Tera Term UI" '
+    r'--company-name="Armando Del Valle Tejada" --file-description="TeraTermUI" '  
     r'--file-version="' + update_without_v + r'" --product-version="' + update_without_v + r'" '
-    r'--copyright="Copyright © 2024 Armando Del Valle Tejada" --python-flag=no_docstrings '
+    r'--copyright="Copyright © 2024 Armando Del Valle Tejada" '
 )
 
 try:
