@@ -4520,7 +4520,7 @@ class TeraTermUI(customtkinter.CTk):
             self.s_classes.bind("<Button-1>", lambda event: self.focus_set())
             self.s_semester.bind("<Button-1>", lambda event: self.focus_set())
             self.s_classes_entry.bind("<FocusIn>", lambda e:
-                                      self.search_scrollbar.scroll_to_widget(self.s_classes_entry)) 
+                                      self.search_scrollbar.scroll_to_widget(self.s_classes_entry))
             self.show_all.bind("<space>", lambda event: self.spacebar_event())
 
             # Third Tab
@@ -5184,12 +5184,12 @@ class TeraTermUI(customtkinter.CTk):
     def copy_cell_data_to_clipboard(self, cell_data):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        cell_value = cell_data["value"].replace("\n", "")
+        cell_value = re.sub(r"\n\s*", " ", cell_data["value"])
         if not cell_value.strip():
             return
 
-        if re.match(r"\d{1,2}:\d{2} [APM]{2}\d{1,2}:\d{2} [APM]{2}", cell_value):
-            cell_value = re.sub(r"([APM]{2})(\d{1,2}:\d{2})", r"\1 - \2", cell_value)
+        if re.match(r"\d{1,2}:\d{2} [APM]{2} \d{1,2}:\d{2} [APM]{2}", cell_value):
+            cell_value = re.sub(r"([APM]{2}) (\d{1,2}:\d{2})", r"\1 - \2", cell_value)
 
         self.focus_set()
         self.clipboard_clear()
@@ -5291,7 +5291,8 @@ class TeraTermUI(customtkinter.CTk):
             "VAZQUEZ DE SERRANO EILEE": "https://notaso.com/professors/eileen-vazquez-de-serrano/",
             "GARCIA CUEVAS EUGENIO": "https://notaso.com/professors/eugenio-garcia-perez/",
             "MEDINA CRUZ OLGA L.": "https://notaso.com/professors/olga-l-medina-cruz/",
-            "RODRIGUEZ VALENTIN JOSE A": "https://notaso.com/professors/jose-rodriguez-valentin-2/"
+            "RODRIGUEZ VALENTIN JOSE A": "https://notaso.com/professors/jose-rodriguez-valentin-2/",
+            "VILLARONGA SWEET LUIS G.": "https://notaso.com/professors/gabriel-villaronga-sweet/"
         }
         instructor_text = cell.cget("text")
         hardcoded_name = " ".join(instructor_text.split())
@@ -5316,10 +5317,8 @@ class TeraTermUI(customtkinter.CTk):
                    translation["days"], translation["times"], translation["av"],
                    translation["instructor"]]
         header_mapping = dict(zip(original_headers, headers))
-        modified_data = []
-        for item in spec_data:
-            modified_item = {header_mapping[key]: value for key, value in item.items() if key in header_mapping}
-            modified_data.append(modified_item)
+        modified_data = [{header_mapping[key]: value for key, value in item.items() if key in header_mapping}
+                         for item in spec_data]
         if not modified_data:
             self.after(100, self.show_error_message, 320, 235, translation["failed_to_search"])
             return
@@ -5335,9 +5334,6 @@ class TeraTermUI(customtkinter.CTk):
             hover_color="#339CFF",
             command=self.copy_cell_data_to_clipboard,
         )
-        for i in range(4):
-            new_table.edit_column(i, width=55)
-        new_table.edit_column(5, width=55)
         tooltip_messages = {
             translation["sec"]: translation["tooltip_sec"],
             translation["m"]: translation["tooltip_m"],
@@ -5348,6 +5344,8 @@ class TeraTermUI(customtkinter.CTk):
             translation["instructor"]: translation["tooltip_instructor"],
         }
         for i, header in enumerate(headers):
+            if i < 4 or i == 5:
+                new_table.edit_column(i, width=55)
             cell = new_table.get_cell(0, i)
             tooltip_message = tooltip_messages[header]
             if cell in self.table_tooltips:
@@ -5358,25 +5356,26 @@ class TeraTermUI(customtkinter.CTk):
         self.table = new_table
         self.original_table_data[new_table] = table_values
 
+        instructor_col_index = headers.index(translation["instructor"])
+        av_col_index = headers.index(translation["av"])
         for row in range(1, num_rows):
             section_cell = new_table.get_cell(row, 0)
             section_text = section_cell.cget("text")
-            new_table.bind_cell(row, 0, "<Button-3>", lambda event, t_cell=section_cell:
-                                self.transfer_class_data_to_enroll_tab(event, t_cell) if section_text.strip() else None)
-        instructor_col_index = headers.index(translation["instructor"])
-        for row in range(1, num_rows):
+            if section_text.strip():
+                new_table.bind_cell(row, 0, "<Button-3>",
+                                    lambda event, t_cell=section_cell:
+                                    self.transfer_class_data_to_enroll_tab(event, t_cell))
             instructor_cell = new_table.get_cell(row, instructor_col_index)
             instructor_text = instructor_cell.cget("text")
             if instructor_text.strip():
-                new_table.bind_cell(row, instructor_col_index, "<Button-3>", lambda event,
-                                    t_cell=instructor_cell: TeraTermUI.open_professor_profile(event, t_cell))
-        av_col_index = headers.index(translation["av"])
-        for row in range(1, num_rows):
+                new_table.bind_cell(row, instructor_col_index, "<Button-3>",
+                                    lambda event, t_cell=instructor_cell:
+                                    TeraTermUI.open_professor_profile(event, t_cell))
             av_cell = new_table.get_cell(row, av_col_index)
             av_text = av_cell.cget("text")
             if av_text == "RSVD":
-                new_table.bind_cell(row, av_col_index, "<Button-3>", lambda event:
-                                    TeraTermUI.open_student_help())
+                new_table.bind_cell(row, av_col_index, "<Button-3>",
+                                    lambda event: TeraTermUI.open_student_help())
         for col_index in range(len(headers)):
             new_table.bind_cell(0, col_index, "<Button-3>",
                                 lambda event: self.move_tables_overlay_event())
@@ -5445,10 +5444,10 @@ class TeraTermUI(customtkinter.CTk):
         self.check_and_update_labels()
         self.current_table_index = len(self.class_table_pairs) - 1
         if len(self.class_table_pairs) > 10:
-            display_class_to_remove, table_to_remove, _, _, more_sections = self.class_table_pairs[0]
+            display_class_to_remove, table_to_remove, _, _, _, more_sections = self.class_table_pairs[0]
+            display_class_to_remove.grid_forget()
             display_class_to_remove.unbind("<Button-1>")
-            self.after(0, display_class_to_remove.destroy)
-            self.after(0, table_to_remove.destroy)
+            table_to_remove.grid_forget()
             for cell in table_to_remove.get_all_cells():
                 if cell in self.table_tooltips:
                     self.table_tooltips[cell].destroy()
@@ -5461,6 +5460,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.search.configure(width=140)
                 self.search_next_page_status = False
             del self.class_table_pairs[0]
+            self.after(0, display_class_to_remove.destroy)
+            self.after(0, table_to_remove.destroy)
             self.current_table_index = max(0, self.current_table_index - 1)
             self.table_count.configure(text_color=("black", "white"))
 
@@ -5759,6 +5760,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.sort_by.set(translation["sort_by"])
             self.table = None
             self.current_class = None
+            self.last_sort_option = ()
             self.table_count.grid_forget()
             self.remove_button.grid_forget()
             self.after(0, display_class_to_remove.destroy)
@@ -6257,7 +6259,6 @@ class TeraTermUI(customtkinter.CTk):
             translation["times"]: translation["tooltip_times"],
             translation["room"]: translation["tooltip_croom"]
         }
-
         for i, header in enumerate(headers):
             self.enrolled_classes_table.edit_column(i, width=column_widths[header])
             cell = self.enrolled_classes_table.get_cell(0, i)
