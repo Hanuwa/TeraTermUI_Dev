@@ -268,6 +268,25 @@ class CTkScrollableFrame(tkinter.Frame, CTkAppearanceModeBaseClass, CTkScalingBa
                     if self._parent_canvas.yview() != (0.0, 1.0):
                         self._parent_canvas.yview("scroll", -event.delta, "units")
 
+    def scroll_to_widget(self, widget):
+        self.update_idletasks()
+        widget_y = widget.winfo_y()
+        widget_height = widget.winfo_height()
+        visible_y1 = self._parent_canvas.canvasy(0)
+        visible_y2 = self._parent_canvas.canvasy(self._parent_canvas.winfo_height())
+
+        if not (visible_y1 <= widget_y and (widget_y + widget_height) <= visible_y2):
+            if widget_y < visible_y1:
+                scroll_amount = widget_y - visible_y1
+            elif (widget_y + widget_height) > visible_y2:
+                scroll_amount = (widget_y + widget_height) - visible_y2
+            else:
+                return
+            scroll_region_str = self._parent_canvas.cget("scrollregion")
+            scroll_region = [float(num) for num in scroll_region_str.split(' ') if num]
+            scroll_amount = max(min(scroll_amount, scroll_region[3]), -scroll_region[3])
+            self._parent_canvas.yview_scroll(int(scroll_amount), 'units')
+
     def _keyboard_shift_press_all(self, event):
         self._shift_pressed = True
 
