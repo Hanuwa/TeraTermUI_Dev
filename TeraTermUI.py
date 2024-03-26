@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/25/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/26/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -4519,6 +4519,11 @@ class TeraTermUI(customtkinter.CTk):
             self.title_search.bind("<Button-1>", lambda event: self.focus_set())
             self.s_classes.bind("<Button-1>", lambda event: self.focus_set())
             self.s_semester.bind("<Button-1>", lambda event: self.focus_set())
+            self.s_classes_entry.bind("<FocusIn>", lambda e:
+                                      self.search_scrollbar.scroll_to_widget(self.s_classes_entry))
+            self.s_semester_entry.bind("<FocusIn>", lambda e:
+                                       self.search_scrollbar.scroll_to_widget(self.s_semester_entry))
+            self.show_all.bind("<FocusIn>", lambda e: self.search_scrollbar.scroll_to_widget(self.show_all))
             self.show_all.bind("<space>", lambda event: self.spacebar_event())
 
             # Third Tab
@@ -5487,6 +5492,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.sort_by.get() != translation["sort_by"]:
             self.sort_by.set(translation["sort_by"])
         self.table_count.bind("<Button-1>", lambda event: self.focus_set())
+        self.sort_by.bind("<FocusIn>", lambda e: self.search_scrollbar.scroll_to_widget(self.sort_by))
         self.bind("<Control-s>", lambda event: self.download_search_classes_as_pdf())
         self.bind("<Control-S>", lambda event: self.download_search_classes_as_pdf())
         self.bind("<Control-w>", lambda event: self.remove_current_table())
@@ -7988,6 +7994,7 @@ class TeraTermUI(customtkinter.CTk):
         self.notaso.bind("<Button-1>", lambda event: self.status_frame.focus_set())
         self.faq_text.bind("<Button-1>", lambda event: self.status_frame.focus_set())
         self.status.bind("<Control-space>", lambda event: self.status.focus_set())
+        self.feedback_text.bind("<FocusIn>", lambda e: self.status_frame.scroll_to_widget(self.feedback_text))
         self.status.bind("<Up>", lambda event: self.status_scroll_up())
         self.status.bind("<Down>", lambda event: self.status_scroll_down())
         self.status.bind("<Home>", lambda event: self.status_move_top_scrollbar())
@@ -8007,6 +8014,13 @@ class TeraTermUI(customtkinter.CTk):
         self.website.unbind("<Button-1>")
         self.notaso.unbind("<Button-1>")
         self.faq_text.unbind("<Button-1>")
+        self.status.unbind("<Control-space>")
+        self.feedback_text.unbind("<FocusIn>")
+        self.status.unbind("<Up>")
+        self.status.unbind("<Down>")
+        self.status.unbind("<Home>")
+        self.status.unbind("<End>")
+        self.status.unbind("<Escape>")
         self.move_slider_left_enabled = True
         self.move_slider_right_enabled = True
         self.up_arrow_key_enabled = True
@@ -8532,7 +8546,9 @@ class TeraTermUI(customtkinter.CTk):
         self.help_frame.bind("<Button-3>", lambda event: self.help_frame.focus_set())
         self.class_list.bind("<<ListboxSelect>>", self.show_class_code)
         self.class_list.bind("<MouseWheel>", self.disable_scroll)
+        self.class_list.bind("<FocusIn>", lambda e: self.help_frame.scroll_to_widget(self.class_list))
         self.search_box.bind("<KeyRelease>", self.search_classes)
+        self.search_box.bind("<FocusIn>", lambda e: self.help_frame.scroll_to_widget(self.search_box))
         self.help_title.bind("<Button-1>", lambda event: self.help_frame.focus_set())
         self.notice.bind("<Button-1>", lambda event: self.help_frame.focus_set())
         self.searchbox_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
@@ -8544,6 +8560,10 @@ class TeraTermUI(customtkinter.CTk):
         self.disable_idle_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
         self.disable_audio_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
         self.fix_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
+        self.curriculum.bind("<FocusIn>", lambda e: self.help_frame.scroll_to_widget(self.curriculum))
+        self.skip_auth_switch.bind("<FocusIn>", lambda e: self.help_frame.scroll_to_widget(self.skip_auth_switch))
+        self.disable_idle.bind("<FocusIn>", lambda e: self.help_frame.scroll_to_widget(self.disable_idle))
+        self.disable_audio_val.bind("<FocusIn>", lambda e: self.help_frame.scroll_to_widget(self.disable_audio_val))
         self.help.bind("<Control-space>", lambda event: self.help.focus_set())
         self.help.bind("<Up>", lambda event: None if self.is_listbox_focused() else self.help_scroll_up())
         self.help.bind("<Down>", lambda event: None if self.is_listbox_focused() else self.help_scroll_down())
@@ -8560,7 +8580,9 @@ class TeraTermUI(customtkinter.CTk):
         self.help_frame.unbind("<Button-3>")
         self.class_list.unbind("<<ListboxSelect>>")
         self.class_list.unbind("<MouseWheel>")
+        self.class_list.unbind("<FocusIn>")
         self.search_box.unbind("<KeyRelease>")
+        self.search_box.unbind("<FocusIn>")
         self.help_title.unbind("<Button-1>")
         self.notice.unbind("<Button-1>")
         self.searchbox_text.unbind("<Button-1>")
@@ -8572,6 +8594,16 @@ class TeraTermUI(customtkinter.CTk):
         self.disable_idle_text.unbind("<Button-1>")
         self.disable_audio_text.unbind("<Button-1>")
         self.fix_text.unbind("<Button-1>")
+        self.curriculum.unbind("<FocusIn>")
+        self.skip_auth_switch.unbind("<FocusIn>")
+        self.disable_idle.unbind("<FocusIn>")
+        self.disable_audio_val.unbind("<FocusIn>")
+        self.help.unbind("<Control-space>")
+        self.help.unbind("<Up>")
+        self.help.unbind("<Down>")
+        self.help.unbind("<Home>")
+        self.help.unbind("<End>")
+        self.help.unbind("<Escape>")
         self.move_slider_left_enabled = True
         self.move_slider_right_enabled = True
         self.up_arrow_key_enabled = True
