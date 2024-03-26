@@ -4520,10 +4520,7 @@ class TeraTermUI(customtkinter.CTk):
             self.s_classes.bind("<Button-1>", lambda event: self.focus_set())
             self.s_semester.bind("<Button-1>", lambda event: self.focus_set())
             self.s_classes_entry.bind("<FocusIn>", lambda e:
-                                      self.search_scrollbar.scroll_to_widget(self.s_classes_entry))
-            self.s_semester_entry.bind("<FocusIn>", lambda e:
-                                       self.search_scrollbar.scroll_to_widget(self.s_semester_entry))
-            self.show_all.bind("<FocusIn>", lambda e: self.search_scrollbar.scroll_to_widget(self.show_all))
+                                      self.search_scrollbar.scroll_to_widget(self.s_classes_entry)) 
             self.show_all.bind("<space>", lambda event: self.spacebar_event())
 
             # Third Tab
