@@ -270,22 +270,25 @@ class CTkScrollableFrame(tkinter.Frame, CTkAppearanceModeBaseClass, CTkScalingBa
 
     def scroll_to_widget(self, widget):
         self.update_idletasks()
-        widget_y = widget.winfo_y()
-        widget_height = widget.winfo_height()
-        visible_y1 = self._parent_canvas.canvasy(0)
-        visible_y2 = self._parent_canvas.canvasy(self._parent_canvas.winfo_height())
+        self._parent_canvas.update_idletasks()
 
-        if not (visible_y1 <= widget_y and (widget_y + widget_height) <= visible_y2):
-            if widget_y < visible_y1:
-                scroll_amount = widget_y - visible_y1
-            elif (widget_y + widget_height) > visible_y2:
-                scroll_amount = (widget_y + widget_height) - visible_y2
-            else:
-                return
-            scroll_region_str = self._parent_canvas.cget("scrollregion")
-            scroll_region = [float(num) for num in scroll_region_str.split(' ') if num]
-            scroll_amount = max(min(scroll_amount, scroll_region[3]), -scroll_region[3])
-            self._parent_canvas.yview_scroll(int(scroll_amount), 'units')
+        widget_y = self._parent_canvas.winfo_rooty() + widget.winfo_y()
+        widget_height = widget.winfo_height()
+        canvas_height = self._parent_canvas.winfo_height()
+        canvas_top = self._parent_canvas.winfo_rooty()
+
+        visible_top = self._parent_canvas.canvasy(0) + canvas_top
+        visible_bottom = visible_top + canvas_height
+
+        relative_position_top = widget_y - visible_top
+        relative_position_bottom = widget_y + widget_height - visible_bottom
+
+        if relative_position_top >= 0 and relative_position_bottom <= 0:
+            return
+        if relative_position_top < 0:
+            self._parent_canvas.yview_scroll(int(relative_position_top), "units")
+        elif relative_position_bottom > 0:
+            self._parent_canvas.yview_scroll(int(relative_position_bottom), "units")
 
     def _keyboard_shift_press_all(self, event):
         self._shift_pressed = True
