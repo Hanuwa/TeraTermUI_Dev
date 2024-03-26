@@ -1868,6 +1868,8 @@ class TeraTermUI(customtkinter.CTk):
         self.in_search_frame = False
         self.in_multiple_screen = True
         self.unbind("<Control-Tab>")
+        self.unbind("<Control-w>")
+        self.unbind("<Control-W>")
         self.bind("<Control-s>", self.keybind_save_classes)
         self.bind("<Control-S>", self.keybind_save_classes)
         self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
@@ -3293,6 +3295,8 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<End>")
             self.unbind("<Control-s>")
             self.unbind("<Control-S>")
+            self.unbind("<Control-w>")
+            self.unbind("<Control-W>")
             self.unbind("<Control-Tab>")
             self.unbind("<Control-BackSpace>")
             self.bind("<Return>", lambda event: self.login_event_handler())
@@ -3354,7 +3358,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.move_slider_right_enabled or self.move_slider_left_enabled:
             self.go_back_event2()
 
-    # function that goes back to Enrolling frame screen
+    # function that goes back to the tabview frame screen
     def go_back_event2(self):
         self.unbind("<Return>")
         self.unbind("<Up>")
@@ -3568,6 +3572,7 @@ class TeraTermUI(customtkinter.CTk):
                              ["<Ctrl-Y>", translation["ctrl_y"]],
                              ["<Ctrl-A>", translation["ctrl_a"]],
                              ["<Ctrl-S>", translation["ctrl_s"]],
+                             ["<Ctrl-W>", translation["ctrl_w"]],
                              ["<Right-Click>", translation["mouse_2"]],
                              ["<Home>", translation["home"]],
                              ["<End>", translation["end"]],
@@ -5484,6 +5489,8 @@ class TeraTermUI(customtkinter.CTk):
         self.table_count.bind("<Button-1>", lambda event: self.focus_set())
         self.bind("<Control-s>", lambda event: self.download_search_classes_as_pdf())
         self.bind("<Control-S>", lambda event: self.download_search_classes_as_pdf())
+        self.bind("<Control-w>", lambda event: self.remove_current_table())
+        self.bind("<Control-W>", lambda event: self.remove_current_table())
 
     def find_duplicate(self, new_display_class, new_semester, show_all_sections_state, available_values):
         for index, (display_class, table, semester, existing_show_all_sections_state,
@@ -5757,6 +5764,10 @@ class TeraTermUI(customtkinter.CTk):
             self.download_search_pdf.grid_forget()
             self.sort_by.grid_forget()
             self.search_scrollbar.scroll_to_top()
+            self.unbind("<Control-s>")
+            self.unbind("<Control-S>")
+            self.unbind("<Control-w>")
+            self.unbind("<Control-W>")
             return
 
         self.current_table_index = max(0, self.current_table_index - 1)
@@ -6174,6 +6185,8 @@ class TeraTermUI(customtkinter.CTk):
 
     def display_enrolled_data(self, data, creds):
         self.unbind("<Control-Tab>")
+        self.unbind("<Control-w>")
+        self.unbind("<Control-W>")
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         if self.enrolled_classes_table is not None:
@@ -7827,6 +7840,8 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<End>")
             self.unbind("<Control-s>")
             self.unbind("<Control-S>")
+            self.unbind("<Control-w>")
+            self.unbind("<Control-W>")
             if not self.not_rebind:
                 self.after(350, self.bind, "<Return>", lambda event: self.submit_event_handler())
             else:
@@ -7846,6 +7861,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.after(100, self.load_table)
                 self.bind("<Control-s>", lambda event: self.download_search_classes_as_pdf())
                 self.bind("<Control-S>", lambda event: self.download_search_classes_as_pdf())
+                self.bind("<Control-w>", lambda event: self.remove_current_table())
+                self.bind("<Control-W>", lambda event: self.remove_current_table())
             self.in_enroll_frame = False
             self.in_search_frame = True
             self.after(350, self.bind, "<Return>", lambda event: self.search_event_handler())
@@ -7864,6 +7881,8 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<End>")
             self.unbind("<Control-s>")
             self.unbind("<Control-S>")
+            self.unbind("<Control-w>")
+            self.unbind("<Control-W>")
             self.after(350, self.bind, "<Return>", lambda event: self.option_menu_event_handler())
         self.after(0, self.focus_set)
 
@@ -8401,6 +8420,7 @@ class TeraTermUI(customtkinter.CTk):
                          ["<Ctrl-Y>", translation["ctrl_y"]],
                          ["<Ctrl-A>", translation["ctrl_a"]],
                          ["<Ctrl-S>", translation["ctrl_s"]],
+                         ["<Ctrl-W>", translation["ctrl_w"]],
                          ["<Right-Click>", translation["mouse_2"]],
                          ["<Home>", translation["home"]],
                          ["<End>", translation["end"]],
