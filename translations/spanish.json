@@ -138,6 +138,7 @@
 	"ctrl_z": "En una entrada, se utiliza para\ndeshacer texto",
 	"ctrl_y": "En una entrada, se utiliza para \nrehacer texto",
 	"ctrl_a": "En una entrada, se utiliza para\nseleccionar todo el texto",
+	"ctrl_w": "Para eliminar/Borrar las tablas\nde las clases buscadas",
 	"ctrl_s": "Para guardar los datos de las clases en un\nPDF o en la misma aplicación",
 	"mouse_2": "En una entrada, se utiliza para mostrar el\nmenú contextual, también ofrece mucha\nfuncionalidad adicional para las tablas\nde clases buscadas",
 	"home": "En una entrada, se utiliza para mover\nel cursor al principio, pero también se puede\nusar par deslizar a el tope de la página",
