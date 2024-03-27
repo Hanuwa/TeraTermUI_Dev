@@ -691,9 +691,9 @@ class TeraTermUI(customtkinter.CTk):
                     self.bind("<F1>", lambda event: self.help_button_event())
                     row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
                     if not row_exists:
-                        self.cursor.execute("INSERT INTO user_data (welcome) VALUES (?)", ("Checked",))
+                        self.cursor.execute("INSERT INTO user_data (welcome) VALUES (?)", ("Done",))
                     else:
-                        self.cursor.execute("UPDATE user_data SET welcome=?", ("Checked",))
+                        self.cursor.execute("UPDATE user_data SET welcome=?", ("Done",))
                     del row_exists, translation
 
                 self.after(3500, show_message_box)
@@ -832,7 +832,7 @@ class TeraTermUI(customtkinter.CTk):
                             button_color=("#c30101", "#c30101", "#145DA0", "use_default"),
                             option_1_type="checkbox", hover_color=("darkred", "darkred", "use_default"))
         on_exit = self.cursor.execute("SELECT exit FROM user_data").fetchone()
-        if on_exit and on_exit[0] is not None and on_exit[0] == "1":
+        if on_exit and on_exit[0] is not None and on_exit[0] == 1:
             msg.check_checkbox()
         response, self.checkbox_state = msg.get()
         self.is_exit_dialog_open = False
