@@ -619,8 +619,8 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Control-space>", lambda event: self.focus_set())
             self.bind("<Escape>", lambda event: self.on_closing())
             self.bind("<Alt-F4>", lambda event: self.direct_close())
-            user_data_fields = ["location", "config", "directory", "host", "language", "appearance",
-                                "scaling", "welcome", "default_semester", "audio", "skip_auth"]
+            user_data_fields = ["location", "config", "directory", "host", "language", "appearance", "scaling",
+                                "welcome", "default_semester", "audio", "skip_auth", "height", "width"]
             results = {}
             for field in user_data_fields:
                 query_user = f"SELECT {field} FROM user_data"
@@ -653,12 +653,11 @@ class TeraTermUI(customtkinter.CTk):
                     self.appearance_mode_optionemenu.set(results["appearance"])
                     self.change_appearance_mode_event(results["appearance"])
             if results["scaling"]:
-                if float(results["scaling"]) != 100.0:
-                    x = (screen_width - width * scaling_factor) / 2
-                    y = (screen_height - height * scaling_factor) / 2
-                    self.geometry(f"{width}x{height}+{int(x) + 125}+{int(y + 50)}")
+                if float(results["scaling"]) != 100:
                     self.scaling_slider.set(float(results["scaling"]))
                     self.change_scaling_event(float(results["scaling"]))
+            if results["height"] and results["width"]:
+                self.geometry(f"{width}x{height}+{results['height']}+{results['width']}")
             if results["audio"] == "Disabled":
                 self.disable_audio = True
             if results["skip_auth"] == "Yes":
@@ -1158,10 +1157,10 @@ class TeraTermUI(customtkinter.CTk):
         }
         save = self.cursor.execute("SELECT class, section, semester, action FROM save_classes"
                                    " WHERE class IS NOT NULL").fetchall()
-        save_check = self.cursor.execute('SELECT "check" FROM save_classes').fetchone()
+        save_check = self.cursor.execute('SELECT "id" FROM save_classes').fetchone()
 
         if save_check and save_check[0] is not None:
-            if save_check[0] == "Yes":
+            if save_check[0] == 1:
                 self.save_data.select()
                 self.changed_classes = set()
                 self.changed_sections = set()
@@ -4701,6 +4700,8 @@ class TeraTermUI(customtkinter.CTk):
             "language": self.language_menu.get(),
             "appearance": self.appearance_mode_optionemenu.get(),
             "scaling": self.scaling_slider.get(),
+            "height":  self.winfo_x(),
+            "width": self.winfo_y(),
             "exit": self.checkbox_state,
         }
         for field, value in field_values.items():
@@ -4759,9 +4760,9 @@ class TeraTermUI(customtkinter.CTk):
                         "^[A-Z]{2}[A-Z0-9]$", section_value, flags=re.IGNORECASE):
                     is_invalid_format = True
                 else:
-                    self.cursor.execute("INSERT INTO save_classes (class, section, semester, action, 'check')"
-                                        " VALUES (?, ?, ?, ?, ?)",
-                                        (class_value, section_value, semester_value, register_value, "Yes"))
+                    self.cursor.execute("INSERT INTO save_classes (class, section, semester, action)"
+                                        " VALUES (?, ?, ?, ?)",
+                                        (class_value, section_value, semester_value, register_value))
                     self.connection.commit()
 
             if is_empty:
