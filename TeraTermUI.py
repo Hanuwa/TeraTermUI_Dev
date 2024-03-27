@@ -620,7 +620,7 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Escape>", lambda event: self.on_closing())
             self.bind("<Alt-F4>", lambda event: self.direct_close())
             user_data_fields = ["location", "config", "directory", "host", "language", "appearance", "scaling",
-                                "welcome", "default_semester", "audio", "skip_auth", "height", "width"]
+                                "welcome", "default_semester", "audio", "skip_auth", "win_pos_x", "win_pos_y"]
             results = {}
             for field in user_data_fields:
                 query_user = f"SELECT {field} FROM user_data"
@@ -656,8 +656,8 @@ class TeraTermUI(customtkinter.CTk):
                 if float(results["scaling"]) != 100:
                     self.scaling_slider.set(float(results["scaling"]))
                     self.change_scaling_event(float(results["scaling"]))
-            if results["height"] and results["width"]:
-                self.geometry(f"{width}x{height}+{results['height']}+{results['width']}")
+            if results["win_pos_x"] and results["win_pos_y"]:
+                self.geometry(f"{width}x{height}+{results['win_pos_x']}+{results['win_pos_y']}")
             if results["audio"] == "Disabled":
                 self.disable_audio = True
             if results["skip_auth"] == "Yes":
@@ -4700,8 +4700,8 @@ class TeraTermUI(customtkinter.CTk):
             "language": self.language_menu.get(),
             "appearance": self.appearance_mode_optionemenu.get(),
             "scaling": self.scaling_slider.get(),
-            "height":  self.winfo_x(),
-            "width": self.winfo_y(),
+            "win_pos_x":  self.winfo_x(),
+            "win_pos_y": self.winfo_y(),
             "exit": self.checkbox_state,
         }
         for field, value in field_values.items():
