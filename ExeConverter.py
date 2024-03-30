@@ -196,10 +196,14 @@ try:
                 print(Fore.RED + "updater.py does not exist. Exiting the script" + Style.RESET_ALL)
                 sys.exit(1)
             nuitka_updater_command = (
-                r'cd /d "' + project_directory + r'\.venv\Scripts" & python -m nuitka ' + '"' + updater_py_path +
-                r'" --onefile --deployment --enable-plugin=tk-inter --disable-console --python-flag=no_asserts ' +
-                r'--nofollow-import-to=unittest --python-flag=no_docstrings --python-flag=no_site'
-                r' --output-dir="' + project_directory + r'"'
+                    r'cd /d "' + project_directory + r'\.venv\Scripts" & python -m nuitka "' + updater_py_path +
+                    r'" --onefile --deployment --enable-plugin=tk-inter --disable-console --python-flag=no_asserts ' +
+                    r'--nofollow-import-to=unittest --python-flag=no_docstrings --python-flag=no_site ' +
+                    r'--output-dir="' + project_directory + r'" ' + '--product-name="Tera Term UI Updater" ' +
+                    r'--company-name="Armando Del Valle Tejada" ' + '--file-description="TeraTermUI Updater" ' +
+                    r'--file-version="' + update_without_v + r'" --product-version="' + update_without_v + r'" ' +
+                    r'--copyright="Copyright © 2024 Armando Del Valle Tejada" --file-version=1.0.0 '
+                    r'--product-version==1.0.0'
             )
             subprocess.run(nuitka_updater_command, shell=True, check=True)
             shutil.copy2(updater_exe_path, updater_dist_path)
