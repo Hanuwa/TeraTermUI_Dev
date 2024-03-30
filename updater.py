@@ -1,4 +1,3 @@
-import requests
 import os
 import shutil
 import subprocess
@@ -6,6 +5,7 @@ import sys
 import tempfile
 import time
 import tkinter as tk
+import urllib.request
 import zipfile
 from tkinter import ttk
 
@@ -56,49 +56,41 @@ class UpdateGUI:
 
 def download_update(gui, mode, version):
     base_url = "https://github.com/Hanuwa/TeraTermUI/releases/latest"
-    file_name = ""
-    if mode == "Portable":
-        file_name = f"TeraTermUI-v{version}.zip"
-    elif mode == "Installation":
-        file_name = f"TeraTermUI_64-bit_Installer-v{version}.exe"
+    file_name = f"TeraTermUI-v{version}.zip" if mode == "Portable" else f"TeraTermUI_64-bit_Installer-v{version}.exe"
     download_url = f"{base_url}/download/{file_name}"
-
-    response = requests.get(download_url, stream=True)
-    total_length = response.headers.get("content-length")
-
-    if response.status_code == 200:
-        temp_folder = os.path.join(tempfile.gettempdir(), "TeraTermUI")
-        os.makedirs(temp_folder, exist_ok=True)
-        file_path = os.path.join(temp_folder, file_name)
-        with open(file_path, "wb") as file:
-            if total_length is None:
-                file.write(response.content)
-            else:
-                downloaded = 0
-                total_length = int(total_length)
-                last_updated_percentage = 0
-
-                for data in response.iter_content(chunk_size=4096):
-                    if gui.cancel_requested:
-                        file.close()
-                        os.remove(file_path)
-                        return None
-                    downloaded += len(data)
-                    file.write(data)
-
-                    current_percentage = (downloaded / total_length) * 100
-                    scaled_percentage = current_percentage * 0.25
-
-                    if scaled_percentage - last_updated_percentage >= 0.25:
-                        gui.update_progress(scaled_percentage, f"Downloading Update: {int(scaled_percentage * 4)}%")
-                        last_updated_percentage = scaled_percentage
+    temp_folder = os.path.join(tempfile.gettempdir(), "TeraTermUI")
+    os.makedirs(temp_folder, exist_ok=True)
+    file_path = os.path.join(temp_folder, file_name)
+    try:
+        with urllib.request.urlopen(download_url) as response:
+            total_length = response.getheader("content-length")
+            total_length = int(total_length) if total_length else None
+            with open(file_path, "wb") as file:
+                if total_length is None:
+                    file.write(response.read())
+                else:
+                    downloaded = 0
+                    last_updated_percentage = 0
+                    while True:
+                        data = response.read(4096)
+                        if not data:
+                            break
+                        file.write(data)
+                        downloaded += len(data)
+                        current_percentage = (downloaded / total_length) * 100
+                        scaled_percentage = current_percentage * 0.25
+                        if scaled_percentage - last_updated_percentage >= 0.25:
+                            gui.update_progress(scaled_percentage, f"Downloading Update: {int(scaled_percentage * 4)}%")
+                            last_updated_percentage = scaled_percentage
 
         gui.update_progress(25, "Download Completed!")
         time.sleep(1)
         return file_path
-    else:
-        gui.update_progress(0, "Download failed. Check your connection or try again later")
-        time.sleep(1)
+
+    except Exception as e:
+        gui.update_progress(0, f"Download failed: {str(e)}")
+        if os.path.exists(file_path):
+            os.remove(file_path)
         return None
 
 
@@ -115,10 +107,8 @@ def install_extract_update(gui, mode, update_db, version, downloaded_file, app_d
     download_dir = os.path.dirname(downloaded_file)
     temp_extract_folder = os.path.join(download_dir, f"TeraTermUI_{version}_Extraction")
     backup_folder = os.path.join(download_dir, f"TeraTermUI_{version}_Backup")
-
     gui.disable_close()
     gui.cancel_button.pack_forget()
-
     try:
         if mode == "Portable":
             if not has_write_permission(app_directory):
