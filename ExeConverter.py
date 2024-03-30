@@ -198,7 +198,8 @@ try:
             nuitka_updater_command = (
                 r'cd /d "' + project_directory + r'\.venv\Scripts" & python -m nuitka ' + '"' + updater_py_path +
                 r'" --onefile --deployment --enable-plugin=tk-inter --disable-console --python-flag=no_asserts ' +
-                r'--nofollow-import-to=unittest --python-flag=no_docstrings --output-dir="' + project_directory + r'"'
+                r'--nofollow-import-to=unittest --python-flag=no_docstrings --python-flag=no_site'
+                r' --output-dir="' + project_directory + r'"'
             )
             subprocess.run(nuitka_updater_command, shell=True, check=True)
             shutil.copy2(updater_exe_path, updater_dist_path)
