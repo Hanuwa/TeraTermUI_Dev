@@ -261,7 +261,7 @@ class CTkScrollbar(CTkBaseClass):
         min_speed = 400  # Minimum speed
         max_speed = 1000  # Maximum speed
         min_rate = 0.0167  # Refresh rate for minimum speed
-        max_rate = 0.0333  # Refresh rate for maximum speed
+        max_rate = 0.025  # Refresh rate for maximum speed
 
         # Calculate the slope of the line
         slope = (max_rate - min_rate) / (max_speed - min_speed)
