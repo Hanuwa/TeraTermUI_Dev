@@ -211,6 +211,8 @@ try:
                 folder_path = os.path.join(project_directory, folder)
                 if os.path.exists(folder_path):
                     shutil.rmtree(folder_path)
+            manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
+            attach_manifest(updater_exe_path, manifest_path)
             print(Fore.GREEN + "\nSuccessfully compiled updater.py\n" + Style.RESET_ALL)
 except Exception as e:
     print(Fore.RED + f"An error occurred: {e}\n" + Style.RESET_ALL)
