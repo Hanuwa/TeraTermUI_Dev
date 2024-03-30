@@ -13,7 +13,7 @@ from tkinter import ttk
 class UpdateGUI:
     def __init__(self, root, app_directory):
         self.root = root
-        self.root.title("Tera Term UI Update")
+        self.root.title("Tera Term UI Updater")
         self.root.configure(bg="gray")
         self.app_directory = app_directory
         self.root.protocol("WM_DELETE_WINDOW", lambda: self.cancel_download(self.app_directory))
