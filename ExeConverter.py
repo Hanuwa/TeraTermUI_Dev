@@ -170,7 +170,8 @@ nuitka_command = (
     r'--include-data-file="' + project_directory + r'\Tesseract-OCR.7z=Tesseract-OCR.7z" '
     r'--include-data-file="' + project_directory + r'\feedback.zip=feedback.zip" '
     r'--include-data-file="' + project_directory + r'\VERSION.txt=VERSION.txt" '
-    r'--include-data-file="' + project_directory + r'\LICENSE.txt=LICENSE.txt" '                                                     
+    r'--include-data-file="' + project_directory + r'\LICENSE.txt=LICENSE.txt" '   
+    r'--include-data-file="' + project_directory + r'\updater.exe=updater.exe" '                                                
     r'--output-dir="' + output_directory + r'" --python-flag=no_asserts '
     r'--windows-icon-from-ico="' + project_directory + r'\images\tera-term.ico" '
     r'--nofollow-import-to=unittest --python-flag=no_docstrings --product-name="Tera Term UI" '
@@ -178,7 +179,38 @@ nuitka_command = (
     r'--file-version="' + update_without_v + r'" --product-version="' + update_without_v + r'" '
     r'--copyright="Copyright © 2024 Armando Del Valle Tejada" '
 )
-
+try:
+    updater_exe_path = os.path.join(project_directory, "updater.exe")
+    updater_dist_path = os.path.join(project_directory, "dist", "updater.exe")
+    if not os.path.isfile(updater_exe_path) or not os.path.isfile(updater_dist_path):
+        if os.path.isfile(updater_exe_path):
+            shutil.copy2(updater_exe_path, updater_dist_path)
+            shutil.copy2(updater_exe_path, output_directory)
+            print(Fore.GREEN + "Copied updater.exe to 'dist' directory\n" + Style.RESET_ALL)
+        elif os.path.isfile(updater_dist_path):
+            shutil.copy2(updater_dist_path, updater_exe_path)
+            print(Fore.GREEN + "Copied updater.exe to project directory\n" + Style.RESET_ALL)
+        else:
+            updater_py_path = os.path.join(project_directory, "updater.py")
+            if not os.path.isfile(updater_py_path):
+                print(Fore.RED + "updater.py does not exist. Exiting the script" + Style.RESET_ALL)
+                sys.exit(1)
+            nuitka_updater_command = (
+                r'cd /d "' + project_directory + r'\.venv\Scripts" & python -m nuitka ' + '"' + updater_py_path +
+                r'" --onefile --deployment --enable-plugin=tk-inter --disable-console --python-flag=no_asserts ' +
+                r'--nofollow-import-to=unittest --python-flag=no_docstrings --output-dir="' + project_directory + r'"'
+            )
+            subprocess.run(nuitka_updater_command, shell=True, check=True)
+            shutil.copy2(updater_exe_path, updater_dist_path)
+            shutil.copy2(updater_exe_path, output_directory)
+            for folder in ["updater.build", "updater.onefile-build", "updater.dist"]:
+                folder_path = os.path.join(project_directory, folder)
+                if os.path.exists(folder_path):
+                    shutil.rmtree(folder_path)
+            print(Fore.GREEN + "\nSuccessfully compiled updater.py\n" + Style.RESET_ALL)
+except Exception as e:
+    print(Fore.RED + f"An error occurred: {e}\n" + Style.RESET_ALL)
+    sys.exit(1)
 try:
     connection = sqlite3.connect(r"C:\Users" + "\\" + username + r"\PycharmProjects\TeraTermUI\database.db")
     cursor = connection.cursor()
@@ -253,7 +285,6 @@ for version in versions:
             data = data.replace('with open(self.logs, "a")',
                                 'with open(TeraTermUI.get_absolute_path("logs.txt"), "a")')
             print(Fore.GREEN + "Successfully started portable version\n" + Style.RESET_ALL)
-
         with open(project_directory+r"\TeraTermUI.py", "w", encoding="utf-8") as file:
             file.write(data)
     except KeyboardInterrupt as e:
@@ -265,7 +296,6 @@ for version in versions:
         shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
         os.remove(program_backup)
         print(Fore.RED + f"Error modifying script: {e}\n" + Style.RESET_ALL)
-
     try:
         subprocess.run(nuitka_command, shell=True, check=True)
         print(Fore.GREEN + "\nSuccessfully completed nuitka script\n" + Style.RESET_ALL)
@@ -296,10 +326,10 @@ for version in versions:
             shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
             os.remove(program_backup)
             print(Fore.RED + f"Error renaming folder: {e}\n" + Style.RESET_ALL)
-
         try:
             os.remove(os.path.join(output_directory, "TeraTermUI_installer", "database.db"))
             os.remove(os.path.join(output_directory, "TeraTermUI_installer", "feedback.zip"))
+            os.remove(os.path.join(output_directory, "TeraTermUI_installer", "updater.exe"))
         except KeyboardInterrupt as e:
             shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
             os.remove(program_backup)
@@ -309,7 +339,6 @@ for version in versions:
             shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
             os.remove(program_backup)
             print(Fore.RED + f"Error removing files: {e}\n" + Style.RESET_ALL)
-
         try:
             subprocess.run([inno_directory, output_directory + r"\InstallerScript.iss"], check=True)
             print(Fore.GREEN + "Successfully compiled TeraTermUI installer\n" + Style.RESET_ALL)
@@ -322,7 +351,6 @@ for version in versions:
             shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
             os.remove(program_backup)
             print(Fore.RED + f"Error compiling Inno Setup script: {e}\n" + Style.RESET_ALL)
-
         try:
             shutil.move(output_directory + r"\output\TeraTermUI_64-bit_Installer-"+update+".exe", output_directory)
             shutil.rmtree(output_directory + r"\output")
