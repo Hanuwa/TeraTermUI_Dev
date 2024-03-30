@@ -201,9 +201,8 @@ try:
                     r'--nofollow-import-to=unittest --python-flag=no_docstrings --python-flag=no_site ' +
                     r'--output-dir="' + project_directory + r'" ' + '--product-name="Tera Term UI Updater" ' +
                     r'--company-name="Armando Del Valle Tejada" ' + '--file-description="TeraTermUI Updater" ' +
-                    r'--file-version="' + update_without_v + r'" --product-version="' + update_without_v + r'" ' +
-                    r'--copyright="Copyright © 2024 Armando Del Valle Tejada" --file-version=1.0.0 '
-                    r'--product-version==1.0.0'
+                    r'--copyright="Copyright © 2024 Armando Del Valle Tejada" --file-version="1.0.0" '
+                    r'--product-version="1.0.0" '
             )
             subprocess.run(nuitka_updater_command, shell=True, check=True)
             shutil.copy2(updater_exe_path, updater_dist_path)
