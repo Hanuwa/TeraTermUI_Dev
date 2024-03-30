@@ -84,7 +84,6 @@ from tkinter import filedialog
 from tkinter import messagebox
 from PIL import Image
 
-# from memory_profiler import profile
 
 customtkinter.set_appearance_mode("System")
 customtkinter.set_default_color_theme("blue")
