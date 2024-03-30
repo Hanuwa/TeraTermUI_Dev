@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/28/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/30/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with 10000 lines of codes, it definitely makes things harder to work with
+# and with over 10000 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -125,6 +125,7 @@ class TeraTermUI(customtkinter.CTk):
         self.icon_path = TeraTermUI.get_absolute_path("images/tera-term.ico")
         self.iconbitmap(self.icon_path)
         self.mode = "Portable"
+        self.update_db = False
         self.bind("<Button-2>", lambda event: self.focus_set())
         self.bind("<Button-3>", lambda event: self.focus_set())
 
@@ -6927,7 +6928,23 @@ class TeraTermUI(customtkinter.CTk):
                             hover_color=("darkred", "use_default", "use_default"))
         response = msg.get()
         if response[0] == "Yes" or response[0] == "Sí":
-            webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
+            try:
+                updater_exe_dest = None
+                if self.mode == "Portable":
+                    updater_exe_src = Path(sys.path[0]) / "updater.exe"
+                    updater_exe_dest = Path(self.app_temp_dir) / "updater.exe"
+                    shutil.copy2(str(updater_exe_src), str(updater_exe_dest))
+                elif self.mode == "Installation":
+                    appdata_path = os.environ.get("PROGRAMDATA")
+                    updater_exe_dest = os.path.join(appdata_path, "TeraTermUI", "updater.exe")
+                updater_args = [str(updater_exe_dest), self.mode, latest_version,
+                                str(self.update_db), str(sys.path[0])]
+                subprocess.Popen(updater_args)
+                self.direct_close()
+            except Exception as e:
+                print(f"Failed to launch the updater script: {e}")
+                self.log_error(e)
+                webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
 
     # Deletes Tesseract OCR and tera term config file from the temp folder
     def cleanup_temp(self):
@@ -7471,7 +7488,23 @@ class TeraTermUI(customtkinter.CTk):
                                         hover_color=("darkred", "use_default", "use_default"))
                     response = msg.get()
                     if response[0] == "Yes" or response[0] == "Sí":
-                        webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
+                        try:
+                            updater_exe_dest = None
+                            if self.mode == "Portable":
+                                updater_exe_src = Path(sys.path[0]) / "updater.exe"
+                                updater_exe_dest = Path(self.app_temp_dir) / "updater.exe"
+                                shutil.copy2(str(updater_exe_src), str(updater_exe_dest))
+                            elif self.mode == "Installation":
+                                appdata_path = os.environ.get("PROGRAMDATA")
+                                updater_exe_dest = os.path.join(appdata_path, "TeraTermUI", "updater.exe")
+                            updater_args = [str(updater_exe_dest), self.mode, latest_version,
+                                            str(self.update_db), str(sys.path[0])]
+                            subprocess.Popen(updater_args)
+                            self.direct_close()
+                        except Exception as e:
+                            print(f"Failed to launch the updater script: {e}")
+                            self.log_error(e)
+                            webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
 
                 self.after(50, update)
             else:
