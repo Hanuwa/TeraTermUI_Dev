@@ -205,14 +205,14 @@ try:
                     r'--product-version="1.0.0" '
             )
             subprocess.run(nuitka_updater_command, shell=True, check=True)
+            manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
+            attach_manifest(updater_exe_path, manifest_path)
             shutil.copy2(updater_exe_path, updater_dist_path)
             shutil.copy2(updater_exe_path, output_directory)
             for folder in ["updater.build", "updater.onefile-build", "updater.dist"]:
                 folder_path = os.path.join(project_directory, folder)
                 if os.path.exists(folder_path):
                     shutil.rmtree(folder_path)
-            manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
-            attach_manifest(updater_exe_path, manifest_path)
             print(Fore.GREEN + "\nSuccessfully compiled updater.py\n" + Style.RESET_ALL)
 except Exception as e:
     print(Fore.RED + f"An error occurred: {e}\n" + Style.RESET_ALL)
