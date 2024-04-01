@@ -262,8 +262,8 @@ class CTkScrollbar(CTkBaseClass):
         mid_speed = 850  # Mid speed
         max_speed = 1250  # Maximum speed
         min_rate = 0.0167  # Refresh rate for minimum speed
-        mid_rate = 0.025  # Refresh rate for mid speed
-        max_rate = 0.033  # Refresh rate for maximum speed
+        mid_rate = 0.02  # Refresh rate for mid speed
+        max_rate = 0.025  # Refresh rate for maximum speed
 
         # Calculate the slopes for each segment
         slope1 = (mid_rate - min_rate) / (mid_speed - min_speed)
