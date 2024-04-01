@@ -36,7 +36,7 @@ Nuitka==2.1.4
 oauthlib==3.2.2
 ordered-set==4.1.0
 packaging==24.0
-pillow==10.2.0
+pillow==10.3.0
 proto-plus==1.23.0
 protobuf==4.25.3
 psutil==5.9.8
