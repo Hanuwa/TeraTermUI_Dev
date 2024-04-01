@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/30/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 1/4/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -5811,11 +5811,15 @@ class TeraTermUI(customtkinter.CTk):
         if self.loading_screen is not None and self.loading_screen.winfo_exists():
             self.loading_screen.withdraw()
         original_position = pyautogui.position()
-        self.uprbay_window.click_input(button="left")
         try:
-            pyautogui.moveTo(original_position.x, original_position.y)
+            quarter_width = self.tera_term_window.width // 4
+            center_x = self.tera_term_window.left + quarter_width
+            center_y = self.tera_term_window.top + self.tera_term_window.height // 2
+            pyautogui.click(center_x, center_y)
         except pyautogui.FailSafeException as e:
             print("An error occurred:", e)
+        finally:
+            pyautogui.moveTo(original_position)
         if self.loading_screen is not None and self.loading_screen.winfo_exists():
             self.loading_screen.deiconify()
 
@@ -10100,4 +10104,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
