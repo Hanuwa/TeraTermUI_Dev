@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 1/4/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/4/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -706,7 +706,7 @@ class TeraTermUI(customtkinter.CTk):
                 date_record = self.cursor.execute("SELECT update_date FROM user_data").fetchone()
                 if date_record is None or date_record[0] is None or not date_record[0].strip() or (
                         datetime.strptime(current_date, "%Y-%m-%d")
-                        - datetime.strptime(date_record[0], "%Y-%m-%d")).days >= 7:
+                        - datetime.strptime(date_record[0], "%Y-%m-%d")).days >= 14:
                     try:
                         self.check_update = True
                         latest_version = self.get_latest_release()
