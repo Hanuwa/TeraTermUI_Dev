@@ -1,7 +1,7 @@
 import datetime
+import hashlib
 import re
 import os
-import signal
 import shutil
 import sqlite3
 import subprocess
@@ -66,11 +66,44 @@ def attach_manifest(executable_path, manifest_path):
         print(Fore.RED + f"Failed to attach manifest: {e}\n" + Style.RESET_ALL)
 
 
-def terminate_process(signum, frame):
-    shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
-    os.remove(program_backup)
-    print(Fore.RED + "Script execution was externally terminated.\n" + Style.RESET_ALL)
-    sys.exit(-1)
+def generate_checksum(version_filename, executable_filename):
+    try:
+        sha256_hash = hashlib.sha256()
+        with open(executable_filename, "rb") as f:
+            for byte_block in iter(lambda: f.read(4096), b""):
+                sha256_hash.update(byte_block)
+        sha256_checksum = sha256_hash.hexdigest()
+
+        try:
+            with open(version_filename, "r") as file:
+                lines = file.readlines()
+        except FileNotFoundError:
+            lines = []
+
+        checksum_line = f"SHA-256 Checksum: {sha256_checksum}\n"
+        checksum_updated = False
+
+        with open(version_filename, "w") as file:
+            for line in lines:
+                if line.startswith("SHA-256 Checksum:"):
+                    file.write(checksum_line)
+                    checksum_updated = True
+                else:
+                    file.write(line)
+
+            if not checksum_updated:
+                file.write("\n" + checksum_line)
+
+        print(Fore.GREEN + "\nSuccessfully generated and updated SHA-256 Checksum" + Style.RESET_ALL)
+    except KeyboardInterrupt as e:
+        shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+        os.remove(program_backup)
+        print(Fore.RED + f"Failed to generate SHA-256 Checksum: {e}\n" + Style.RESET_ALL)
+        sys.exit(1)
+    except Exception as e:
+        shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+        os.remove(program_backup)
+        print(Fore.RED + f"Failed to generate SHA-256 Checksum {e}\n" + Style.RESET_ALL)
 
 
 def validate_version(ver_str: str) -> bool:
@@ -108,13 +141,9 @@ else:
     update = "v" + update_without_v
 versions = ["installer", "portable"]
 output_directory = os.path.join(r"C:\Users\\" + username + r"\OneDrive\Documentos", "TeraTermUI_" + update)
-
 program_backup = project_directory + r"\TeraTermUI.BAK.py"
 check_and_restore_backup()
 shutil.copy2(project_directory + r"\TeraTermUI.py", program_backup)
-signal.signal(signal.SIGTERM, terminate_process)
-signal.signal(signal.SIGINT, terminate_process)
-
 current_date = datetime.datetime.now().strftime("%m/%d/%Y")
 version_file_path = os.path.join(project_directory, "VERSION.txt")
 with open(version_file_path, "r") as file:
@@ -123,7 +152,6 @@ version_file_content = re.sub(r"(?<=Version Number: ).*", update, version_file_c
 version_file_content = re.sub(r"(?<=Release Date: ).*", current_date, version_file_content)
 with open(version_file_path, "w") as file:
     file.write(version_file_content)
-
 try:
     if os.path.exists(output_directory):
         shutil.rmtree(output_directory)
@@ -238,7 +266,7 @@ try:
     if 'self.mode = "Portable"' in data:
         versions = ["installer", "portable"]
     else:
-        versions = ['portable', 'installer']
+        versions = ["portable", "installer"]
     data = re.sub(r'self.USER_APP_VERSION = ".*?"', f'self.USER_APP_VERSION = "{update_without_v}"', data)
     with open(project_directory+r"\TeraTermUI.py", "w", encoding="utf-8") as file:
         file.write(data)
@@ -306,8 +334,10 @@ for version in versions:
         subprocess.run(nuitka_command, shell=True, check=True)
         print(Fore.GREEN + "\nSuccessfully completed nuitka script\n" + Style.RESET_ALL)
         executable_path = os.path.join(output_directory, "TeraTermUI.dist", "TeraTermUI.exe")
+        version_path = os.path.join(output_directory, "TeraTermUI.dist", "VERSION.txt")
         manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
         attach_manifest(executable_path, manifest_path)
+        generate_checksum(version_path, executable_path)
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
         os.remove(program_backup)
