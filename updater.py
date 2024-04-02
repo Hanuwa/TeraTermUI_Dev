@@ -246,7 +246,7 @@ def start_update(gui):
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:
-        sys.exit(1)
+        sys.exit(0)
 
     root = tk.Tk()
     width, height = 425, 225
