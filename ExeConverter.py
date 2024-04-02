@@ -94,7 +94,7 @@ def generate_checksum(version_filename, executable_filename):
             if not checksum_updated:
                 file.write("\n" + checksum_line)
 
-        print(Fore.GREEN + "\nSuccessfully generated and updated SHA-256 Checksum" + Style.RESET_ALL)
+        print(Fore.GREEN + "\nSuccessfully generated SHA-256 Checksum" + Style.RESET_ALL)
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
         os.remove(program_backup)
