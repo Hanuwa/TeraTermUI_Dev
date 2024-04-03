@@ -859,7 +859,8 @@ class TeraTermUI(customtkinter.CTk):
                         except Exception as e:
                             print("An error occurred: ", e)
                             TeraTermUI.terminate_process()
-                    elif TeraTermUI.window_exists("Tera Term - [disconnected] VT"):
+                    elif TeraTermUI.window_exists("Tera Term - [disconnected] VT") or \
+                            TeraTermUI.window_exists("Tera Term - [connecting...] VT"):
                         TeraTermUI.terminate_process()
             sys.exit(0)
 
@@ -3282,7 +3283,8 @@ class TeraTermUI(customtkinter.CTk):
                 except Exception as e:
                     print("An error occurred: ", e)
                     TeraTermUI.terminate_process()
-            elif TeraTermUI.window_exists("Tera Term - [disconnected] VT"):
+            elif TeraTermUI.window_exists("Tera Term - [disconnected] VT") or \
+                    TeraTermUI.window_exists("Tera Term - [connecting...] VT"):
                 TeraTermUI.terminate_process()
         if self.error_occurred or (response and (response[0] == "Yes" or response[0] == "Sí")):
             self.is_idle_thread_running = False
