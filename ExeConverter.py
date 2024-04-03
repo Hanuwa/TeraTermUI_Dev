@@ -352,7 +352,6 @@ for version in versions:
         try:
             os.rename(output_directory + r"\TeraTermUI.dist",
                       output_directory + r"\TeraTermUI_installer")
-            print(Fore.GREEN + "\nSuccessfully created TeraTermUI installer folder\n" + Style.RESET_ALL)
         except KeyboardInterrupt as e:
             shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
             os.remove(program_backup)
@@ -377,7 +376,7 @@ for version in versions:
             print(Fore.RED + f"Error removing files: {e}\n" + Style.RESET_ALL)
         try:
             subprocess.run([inno_directory, output_directory + r"\InstallerScript.iss"], check=True)
-            print(Fore.GREEN + "Successfully compiled TeraTermUI installer\n" + Style.RESET_ALL)
+            print(Fore.GREEN + "Successfully compiled installer script\n" + Style.RESET_ALL)
         except KeyboardInterrupt as e:
             shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
             os.remove(program_backup)
