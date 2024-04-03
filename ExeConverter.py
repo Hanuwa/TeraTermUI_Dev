@@ -205,7 +205,7 @@ nuitka_command = (
     r'--nofollow-import-to=unittest --python-flag=no_docstrings --product-name="Tera Term UI" '
     r'--company-name="Armando Del Valle Tejada" --file-description="TeraTermUI" '  
     r'--file-version="' + update_without_v + r'" --product-version="' + update_without_v + r'" '
-    r'--copyright="Copyright © 2024 Armando Del Valle Tejada" '
+    r'--copyright="Copyright (c) 2024 Armando Del Valle Tejada" '
 )
 try:
     updater_exe_path = os.path.join(project_directory, "updater.exe")
@@ -229,7 +229,7 @@ try:
                     r'--nofollow-import-to=unittest --python-flag=no_docstrings --python-flag=no_site ' +
                     r'--output-dir="' + project_directory + r'" ' + '--product-name="Tera Term UI Updater" ' +
                     r'--company-name="Armando Del Valle Tejada" ' + '--file-description="TeraTermUI Updater" ' +
-                    r'--copyright="Copyright © 2024 Armando Del Valle Tejada" --file-version="1.0.0" '
+                    r'--copyright="Copyright (c) 2024 Armando Del Valle Tejada" --file-version="1.0.0" '
                     r'--product-version="1.0.0" '
             )
             subprocess.run(nuitka_updater_command, shell=True, check=True)
