@@ -797,6 +797,7 @@ class CTkTable(customtkinter.CTkFrame):
             if (row, column) in self.cell_bindings:
                 for sequence, _ in self.cell_bindings[(row, column)]:
                     self.unbind_cell(row, column, sequence)
+            cell.configure(command=None)
             cell.destroy()
         self.frame.clear()
         self.cell_bindings.clear()
