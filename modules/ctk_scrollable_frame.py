@@ -93,6 +93,7 @@ class CTkScrollableFrame(tkinter.Frame, CTkAppearanceModeBaseClass, CTkScalingBa
     def destroy(self):
         tkinter.Frame.destroy(self)
         self._parent_frame.destroy()
+        self._parent_frame = None
         CTkAppearanceModeBaseClass.destroy(self)
         CTkScalingBaseClass.destroy(self)
 
