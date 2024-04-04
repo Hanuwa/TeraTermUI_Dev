@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/4/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/4/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -4321,6 +4321,7 @@ class TeraTermUI(customtkinter.CTk):
             self.title_login.destroy()
             self.title_login = None
             self.uprb_image = None
+            self.uprb_image_grid.configure(command=None)
             self.uprb_image_grid.destroy()
             self.uprb_image_grid = None
             self.disclaimer.destroy()
@@ -4332,8 +4333,10 @@ class TeraTermUI(customtkinter.CTk):
             self.username_entry = None
             self.username_tooltip.destroy()
             self.username_tooltip = None
+            self.auth.configure(command=None)
             self.auth.destroy()
             self.auth = None
+            self.back.configure(command=None)
             self.back.destroy()
             self.back = None
             self.back_tooltip.destroy()
@@ -4412,6 +4415,7 @@ class TeraTermUI(customtkinter.CTk):
             self.title_student.destroy()
             self.title_student = None
             self.lock = None
+            self.lock_grid.configure(command=None)
             self.lock_grid.destroy()
             self.lock_grid = None
             self.student_id.destroy()
@@ -4428,10 +4432,13 @@ class TeraTermUI(customtkinter.CTk):
             self.code_entry = None
             self.code_tooltip.destroy()
             self.code_tooltip = None
+            self.show.configure(command=None)
             self.show.destroy()
             self.show = None
+            self.system.configure(command=None)
             self.system.destroy()
             self.system = None
+            self.back_student.configure(command=None)
             self.back_student.destroy()
             self.back_student = None
             self.back_student_tooltip.destroy()
@@ -5766,9 +5773,6 @@ class TeraTermUI(customtkinter.CTk):
             self.last_sort_option = ()
             self.table_count.grid_forget()
             self.remove_button.grid_forget()
-            self.after(0, display_class_to_remove.destroy)
-            self.after(0, table_to_remove.destroy)
-            self.after(0, self.focus_set)
             self.download_search_pdf.grid_forget()
             self.sort_by.grid_forget()
             self.search_scrollbar.scroll_to_top()
@@ -5776,6 +5780,7 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<Control-S>")
             self.unbind("<Control-w>")
             self.unbind("<Control-W>")
+            self.after(0, self.focus_set)
             return
 
         self.current_table_index = max(0, self.current_table_index - 1)
@@ -6348,10 +6353,13 @@ class TeraTermUI(customtkinter.CTk):
         self.title_my_classes = None
         self.total_credits_label.destroy()
         self.total_credits_label = None
+        self.submit_my_classes.configure(command=None)
         self.submit_my_classes.destroy()
         self.submit_my_classes = None
+        self.download_enrolled_pdf.configure(command=None)
         self.download_enrolled_pdf.destroy()
         self.download_enrolled_pdf = None
+        self.back_my_classes.configure(command=None)
         self.back_my_classes.destroy()
         self.back_my_classes = None
         self.modify_classes_title.destroy()
@@ -6376,6 +6384,7 @@ class TeraTermUI(customtkinter.CTk):
         self.change_section_entries = None
         for option_menu in self.mod_selection_list:
             if option_menu is not None:
+                option_menu.configure(command=None)
                 option_menu.destroy()
         self.mod_selection_list = None
         self.modify_classes_frame.destroy()
