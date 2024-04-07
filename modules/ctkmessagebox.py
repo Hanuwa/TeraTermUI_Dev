@@ -547,16 +547,10 @@ class CustomButton(customtkinter.CTkButton):
 
     def __init__(self, master=None, command=None, **kwargs):
         super().__init__(master, cursor="hand2", **kwargs)
-        self.text = kwargs.pop("text", None)
-        self.image = kwargs.pop("image", None)
-
         self.is_pressed = False
         self.click_command = command
-        if self.image and not self.text:
-            self.configure(image=self.image)
-        else:
-            self.bind("<Enter>", self.on_enter)
-            self.bind("<Leave>", self.on_leave)
+        self.bind("<Enter>", self.on_enter)
+        self.bind("<Leave>", self.on_leave)
         self.bind("<ButtonPress-1>", self.on_button_down)
         self.bind("<ButtonRelease-1>", self.on_button_up)
 
@@ -576,12 +570,33 @@ class CustomButton(customtkinter.CTkButton):
         self.is_pressed = False
 
     def on_enter(self, event):
-        self.configure(cursor="hand2")
+        width = self.winfo_width()
+        height = self.winfo_height()
+        if self.is_pressed and 0 <= event.x <= width and 0 <= event.y <= height:
+            self._on_enter()
+            self.configure(cursor="hand2")
 
     def on_leave(self, event):
-        self.configure(cursor="")
+        width = self.winfo_width()
+        height = self.winfo_height()
+        if self.is_pressed and (event.x < 0 or event.x >= width or event.y < 0 or event.y >= height):
+            self._on_leave()
+            self.configure(cursor="")
+        else:
+            if self.is_pressed:
+                self._on_enter()
+            else:
+                self.configure(cursor="hand2")
+
+    def destroy(self):
+        self.is_pressed = None
+        self.unbind("<Enter>")
+        self.unbind("<Leave>")
+        self.unbind("<ButtonPress-1>")
+        self.unbind("<ButtonRelease-1>")
+        super().destroy()
+
 
 if __name__ == "__main__":
     app = CTkMessagebox()
     app.mainloop()
-    
