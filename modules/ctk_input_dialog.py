@@ -155,6 +155,9 @@ class CustomButton(CTkButton):
         self.is_pressed = False
 
     def on_enter(self, event):
+        if self.cget("state") == "disabled":
+            self.configure(cursor="")
+            return
         width = self.winfo_width()
         height = self.winfo_height()
         if self.is_pressed and 0 <= event.x <= width and 0 <= event.y <= height:
@@ -162,6 +165,9 @@ class CustomButton(CTkButton):
             self.configure(cursor="hand2")
 
     def on_leave(self, event):
+        if self.cget("state") == "disabled":
+            self.configure(cursor="")
+            return
         width = self.winfo_width()
         height = self.winfo_height()
         if self.is_pressed and (event.x < 0 or event.x >= width or event.y < 0 or event.y >= height):
