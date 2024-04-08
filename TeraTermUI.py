@@ -8996,37 +8996,36 @@ class CustomButton(customtkinter.CTkButton):
     def on_button_up(self, event):
         if self.cget("state") == "disabled":
             return
-        width = self.winfo_width()
-        height = self.winfo_height()
-        if self.is_pressed and 0 <= event.x <= width and 0 <= event.y <= height:
+        if self.is_pressed and self.is_mouse_over_widget():
             if self.click_command:
                 self.click_command()
         self.is_pressed = False
+
+    def is_mouse_over_widget(self):
+        x, y = self.winfo_rootx(), self.winfo_rooty()
+        width, height = self.winfo_width(), self.winfo_height()
+        mouse_x, mouse_y = self.winfo_pointerx(), self.winfo_pointery()
+        return x <= mouse_x < x + width and y <= mouse_y < y + height
 
     def on_enter(self, event):
         if self.cget("state") == "disabled":
             self.configure(cursor="")
             return
-        width = self.winfo_width()
-        height = self.winfo_height()
-        if self.is_pressed and 0 <= event.x <= width and 0 <= event.y <= height:
-            self._on_enter()
+        if self.is_mouse_over_widget():
             self.configure(cursor="hand2")
 
     def on_leave(self, event):
         if self.cget("state") == "disabled":
             self.configure(cursor="")
             return
-        width = self.winfo_width()
-        height = self.winfo_height()
-        if self.is_pressed and (event.x < 0 or event.x >= width or event.y < 0 or event.y >= height):
+        self.configure(cursor="")
+        if self.is_mouse_over_widget() and not event.widget == self._text_label \
+                and not event.widget == self._image_label:
+            self._on_enter()
+            self.configure(cursor="hand2")
+        else:
             self._on_leave()
             self.configure(cursor="")
-        else:
-            if self.is_pressed:
-                self._on_enter()
-            else:
-                self.configure(cursor="hand2")
 
     def destroy(self):
         self.is_pressed = None
