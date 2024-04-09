@@ -549,8 +549,13 @@ class CustomButton(customtkinter.CTkButton):
         super().__init__(master, cursor="hand2", **kwargs)
         self.is_pressed = False
         self.click_command = command
-        self.bind("<Enter>", self.on_enter)
-        self.bind("<Leave>", self.on_leave)
+        self.text = kwargs.pop("text", None)
+        self.image = kwargs.pop("image", None)
+        if self.image and not self.text:
+            self.configure(image=self.image)
+        else:
+            self.bind("<Enter>", self.on_enter)
+            self.bind("<Leave>", self.on_leave)
         self.bind("<ButtonPress-1>", self.on_button_down)
         self.bind("<ButtonRelease-1>", self.on_button_up)
 
@@ -594,6 +599,8 @@ class CustomButton(customtkinter.CTkButton):
             self.configure(cursor="")
 
     def destroy(self):
+        self.text = None
+        self.image = None
         self.is_pressed = None
         self.unbind("<Enter>")
         self.unbind("<Leave>")
