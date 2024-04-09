@@ -73,6 +73,7 @@ class CTkOptionMenu(CTkBaseClass):
         self._state = state
         self._hover = hover
         self._dynamic_resizing = dynamic_resizing
+        self.canvas_bool = canvas_takefocus
         self._hover_state = False
         self.button_color_default = None
 
@@ -424,7 +425,8 @@ class CTkOptionMenu(CTkBaseClass):
 
         if self._command is not None:
             self._command(self._current_value)
-        self.focus_set()
+        if self.canvas_bool:
+            self.focus_set()
 
     def set(self, value: str):
         self._current_value = value
