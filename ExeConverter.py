@@ -376,7 +376,7 @@ for version in versions:
             print(Fore.RED + f"Error removing files: {e}\n" + Style.RESET_ALL)
         try:
             subprocess.run([inno_directory, output_directory + r"\InstallerScript.iss"], check=True)
-            print(Fore.GREEN + "Successfully compiled installer script\n" + Style.RESET_ALL)
+            print(Fore.GREEN + "\nSuccessfully compiled installer script\n" + Style.RESET_ALL)
         except KeyboardInterrupt as e:
             shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
             os.remove(program_backup)
