@@ -817,6 +817,7 @@ class TeraTermUI(customtkinter.CTk):
     def direct_close_on_tray(self):
         if self.loading_screen is not None and self.loading_screen.winfo_exists():
             return
+            
         self.tray.stop()
         self.after(0, self.direct_close)
 
@@ -825,6 +826,7 @@ class TeraTermUI(customtkinter.CTk):
         if hasattr(self, "is_exit_dialog_open") and self.is_exit_dialog_open or \
                 (self.loading_screen is not None and self.loading_screen.winfo_exists()):
             return
+                    
         self.is_exit_dialog_open = True
         lang = self.language_menu.get()
         translation = self.load_language(lang)
