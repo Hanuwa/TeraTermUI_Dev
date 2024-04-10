@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/8/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/9/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -5333,6 +5333,11 @@ class TeraTermUI(customtkinter.CTk):
             self.after(100, self.show_error_message, 320, 235, translation["failed_to_search"])
             return
         table_values = [headers] + [[item.get(header, "") for header in headers] for item in modified_data]
+        original_table_values = table_values.copy()
+        if self.sort_by is not None and self.sort_by.get() != translation["sort_by"] and \
+                self.sort_by.get() != translation["original_data"]:
+            sorted_data = self.sort_data(modified_data, self.sort_by.get())
+            table_values = [headers] + [[item.get(header, "") for header in headers] for item in sorted_data]
         num_rows = len(modified_data) + 1
 
         new_table = CTkTable(
@@ -5364,7 +5369,7 @@ class TeraTermUI(customtkinter.CTk):
                 tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#989898", alpha=0.90)
                 self.table_tooltips[cell] = tooltip
         self.table = new_table
-        self.original_table_data[new_table] = table_values
+        self.original_table_data[new_table] = original_table_values
 
         instructor_col_index = headers.index(translation["instructor"])
         av_col_index = headers.index(translation["av"])
@@ -5497,8 +5502,6 @@ class TeraTermUI(customtkinter.CTk):
         self.table_count.configure(text=table_count_label)
         if len(self.class_table_pairs) == 10:
             self.table_count.configure(text_color="red")
-        if self.sort_by.get() != translation["sort_by"]:
-            self.sort_by.set(translation["sort_by"])
         self.table_count.bind("<Button-1>", lambda event: self.focus_set())
         self.sort_by.bind("<FocusIn>", lambda e: self.search_scrollbar.scroll_to_widget(self.sort_by))
         self.bind("<Control-s>", lambda event: self.download_search_classes_as_pdf())
@@ -5515,6 +5518,56 @@ class TeraTermUI(customtkinter.CTk):
                 return index
         return None
 
+    def sort_data(self, data, sort_by_option):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        headers = list(data[0].keys()) if data else []
+        time_key = "TIMES" if "TIMES" in headers else None
+        av_key = "AV" if "AV" in headers else None
+        memoized_times = {}
+
+        def get_time_minutes(row):
+            if not time_key or not row.get(time_key):
+                return float("inf")
+            times_str = row.get(time_key, "")
+            times_key = tuple(times_str.strip().split("\n"))
+            if times_key in memoized_times:
+                return memoized_times[times_key]
+            total_minutes = 0
+            for t in times_key:
+                if t in memoized_times:
+                    minutes = memoized_times[t]
+                else:
+                    try:
+                        minutes = int(datetime.strptime(t, "%I:%M %p").strftime("%H")) * 60 + \
+                                  int(datetime.strptime(t, "%I:%M %p").strftime("%M"))
+                        memoized_times[t] = minutes
+                    except ValueError:
+                        minutes = float("inf")
+                        memoized_times[t] = minutes
+                if minutes == float("inf"):
+                    return minutes
+                total_minutes += minutes
+            memoized_times[times_key] = total_minutes
+            return total_minutes
+
+        valid_entries = [row for row in data if get_time_minutes(row) != float("inf")]
+        non_standard_positions = [(i, row) for i, row in enumerate(data) if get_time_minutes(row) == float("inf")]
+        if sort_by_option in [translation["time_asc"], translation["time_dec"]] and time_key:
+            reverse_sort = (sort_by_option == translation["time_dec"])
+            valid_entries.sort(
+                key=lambda x: (get_time_minutes(x), int(x[av_key]) if x[av_key].isdigit() else float("inf")),
+                reverse=reverse_sort)
+        elif sort_by_option in [translation["av_asc"], translation["av_dec"]] and av_key:
+            reverse_sort = (sort_by_option == translation["av_dec"])
+            valid_entries.sort(key=lambda x: (int(x[av_key]) if x[av_key].isdigit() else float("inf"),
+                                              get_time_minutes(x)),
+                               reverse=reverse_sort)
+        for pos, row in sorted(non_standard_positions, reverse=True):
+            valid_entries.insert(pos, row)
+
+        return valid_entries
+    
     def sort_tables(self, sort_by_option):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
