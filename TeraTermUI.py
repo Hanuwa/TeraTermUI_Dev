@@ -815,6 +815,8 @@ class TeraTermUI(customtkinter.CTk):
             win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
 
     def direct_close_on_tray(self):
+        if self.loading_screen is not None and self.loading_screen.winfo_exists():
+            return
         self.tray.stop()
         self.after(0, self.direct_close)
 
