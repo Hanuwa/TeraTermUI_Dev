@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/9/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/12/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -5585,6 +5585,7 @@ class TeraTermUI(customtkinter.CTk):
                 table.update_values(original_data)
             self.last_sort_option = (sort_by_option, len(self.class_table_pairs))
             self.after(0, self.search_scrollbar.scroll_to_top)
+            self.after(0, self.focus_set)
             return
 
         for _, table, _, _, _, _ in self.class_table_pairs:
@@ -5637,6 +5638,7 @@ class TeraTermUI(customtkinter.CTk):
             table.update_values([headers] + valid_entries)
             self.last_sort_option = (sort_by_option, len(self.class_table_pairs))
             self.after(0, self.search_scrollbar.scroll_to_top)
+            self.after(0, self.focus_set)
 
     def check_and_update_labels(self):
         class_info = {}
@@ -8011,7 +8013,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.remove_button.grid_forget()
                 self.next_button.grid_forget()
             self.remove_button.grid(row=5, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-            self.download_search_pdf.grid(row=6, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+            self.download_search_pdf.grid(row=6, column=1, padx=(157, 0), pady=(10, 0), sticky="n")
+            self.sort_by.grid(row=6, column=1, padx=(0, 157), pady=(10, 0), sticky="n")
             table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/10"
             self.table_count.configure(text=table_count_label)
 
