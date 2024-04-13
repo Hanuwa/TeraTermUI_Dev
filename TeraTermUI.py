@@ -4958,25 +4958,25 @@ class TeraTermUI(customtkinter.CTk):
     # function that checks if Tera Term is running or not
     @staticmethod
     def checkIfProcessRunning(processName):
-        for proc in psutil.process_iter():
-            try:
-                if processName.lower() in proc.name().lower():
+        try:
+            process_iter = psutil.process_iter(attrs=["name"])
+            for proc in process_iter:
+                if processName.lower() in proc.info["name"].lower():
                     return True
-            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
-                logging.error(f"Exception occurred: {e}")
-                pass
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
+            logging.error(f"Exception occurred: {e}")
         return False
 
     @staticmethod
     def countRunningProcesses(processName):
         count = 0
-        for proc in psutil.process_iter():
-            try:
-                if processName.lower() in proc.name().lower():
+        try:
+            process_iter = psutil.process_iter(attrs=["name"])
+            for proc in process_iter:
+                if processName.lower() in proc.info["name"].lower():
                     count += 1
-            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
-                logging.error(f"Exception occurred: {e}")
-                pass
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
+            logging.error(f"Exception occurred: {e}")
         return count
 
     # checks if the specified window exists
@@ -9065,7 +9065,8 @@ class CustomButton(customtkinter.CTkButton):
             if self.click_command:
                 self.click_command()
         self.is_pressed = False
-        self._on_leave(event)
+        if self.winfo_exists():
+            self._on_leave(event)
 
     def is_mouse_over_widget(self):
         x, y = self.winfo_rootx(), self.winfo_rooty()
