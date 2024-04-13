@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/12/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/13/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -9065,6 +9065,7 @@ class CustomButton(customtkinter.CTkButton):
             if self.click_command:
                 self.click_command()
         self.is_pressed = False
+        self._on_leave(event)
 
     def is_mouse_over_widget(self):
         x, y = self.winfo_rootx(), self.winfo_rooty()
