@@ -2996,8 +2996,8 @@ class TeraTermUI(customtkinter.CTk):
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if host == "uprbay.uprb.edu" or host == "uprbayuprbedu" or host == "uprb":
                         if TeraTermUI.checkIfProcessRunning("ttermpro"):
-                            count = TeraTermUI.countRunningProcesses("ttermpro")
-                            if count > 1:
+                            count, is_multiple = TeraTermUI.countRunningProcesses("ttermpro")
+                            if is_multiple:
                                 self.after(100, self.show_error_message, 450, 270, translation["count_processes"])
                                 self.after(350, self.bind, "<Return>", lambda event: self.login_event_handler())
                                 return
@@ -4961,8 +4961,9 @@ class TeraTermUI(customtkinter.CTk):
         process = processName.lower()
         try:
             for proc in psutil.process_iter(attrs=["name", "status"]):
-                if proc.info["status"] == "running" and process in proc.info["name"].lower():
-                    return True
+                if proc.info["name"].lower().startswith("t") and proc.info["status"] == "running":
+                    if process in proc.info["name"].lower():
+                        return True
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
             logging.error(f"Exception occurred: {e}")
         return False
@@ -4974,11 +4975,12 @@ class TeraTermUI(customtkinter.CTk):
         processName = processName.lower()
         try:
             for proc in psutil.process_iter(attrs=["name", "status"]):
-                if proc.info["status"] == "running" and processName in proc.info["name"].lower():
-                    count += 1
+                if proc.info["name"].lower().startswith("t") and proc.info["status"] == "running":
+                    if processName in proc.info["name"].lower():
+                        count += 1
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
             logging.error(f"Exception occurred: {e}")
-        return count
+        return count, (count > 1)
 
     # checks if the specified window exists
     @staticmethod
