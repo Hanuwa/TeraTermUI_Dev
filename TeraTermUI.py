@@ -4958,13 +4958,12 @@ class TeraTermUI(customtkinter.CTk):
     # function that checks if Tera Term is running or not
     @staticmethod
     def checkIfProcessRunning(processName):
-        process_lower = processName.lower()
+        process = processName.lower()
         try:
-            running_processes = [proc for proc in psutil.process_iter(attrs=["name", "create_time"])
-                                 if proc.info["name"] and proc.info[
-                                     "name"].lower() == process_lower and proc.status() == "running"]
-            running_processes.sort(key=lambda x: x.info["create_time"], reverse=True)
-            return bool(running_processes)
+            for proc in psutil.process_iter(attrs=["name"]):
+                proc_name = proc.info.get("name", "").lower()
+                if process in proc_name:
+                    return True
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
             logging.error(f"Exception occurred: {e}")
         return False
@@ -4973,17 +4972,15 @@ class TeraTermUI(customtkinter.CTk):
     @staticmethod
     def countRunningProcesses(processName):
         count = 0
-        process_lower = processName.lower()
+        process = processName.lower()
         try:
-            relevant_processes = [proc for proc in psutil.process_iter(attrs=["name", "create_time"])
-                                  if proc.info["name"] and proc.info[
-                                      "name"].lower() == process_lower and proc.status() == "running"]
-            count = len(relevant_processes)
-            relevant_processes.sort(key=lambda x: x.info["create_time"], reverse=True)
-            return count, (count > 1)
+            for proc in psutil.process_iter(attrs=["name"]):
+                proc_name = proc.info.get("name", "").lower()
+                if process in proc_name:
+                    count += 1
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
             logging.error(f"Exception occurred: {e}")
-        return count, False
+        return count, (count > 1)
 
     # checks if the specified window exists
     @staticmethod
