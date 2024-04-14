@@ -5244,6 +5244,9 @@ class TeraTermUI(customtkinter.CTk):
 
     def transfer_class_data_to_enroll_tab(self, event, cell):
         section_text = cell.cget("text")
+        if not section_text.strip():
+            return
+            
         self.e_classes_entry.delete(0, "end")
         self.e_section_entry.delete(0, "end")
         display_class, _, semester_text, _, _, _ = self.class_table_pairs[self.current_table_index]
@@ -5275,8 +5278,10 @@ class TeraTermUI(customtkinter.CTk):
         self.tooltip.after(3500, self.destroy_tooltip)
 
     @staticmethod
-    def open_student_help():
-        webbrowser.open("https://studenthelp.uprb.edu/")
+    def open_student_help(event, cell):
+        av_value = cell.cget("text")
+        if av_value == "RSVD":
+            webbrowser.open("https://studenthelp.uprb.edu/")
 
     @staticmethod
     def open_professor_profile(event, cell):
@@ -5296,6 +5301,10 @@ class TeraTermUI(customtkinter.CTk):
                 except requests.RequestException as e:
                     print(f"Failed to open URL: {url}, Error: {e}")
 
+        instructor_text = cell.cget("text")
+        if not instructor_text.strip():
+            return
+
         url_mapping = {
             "LA LUZ CONCEPCION JOSE J": "https://notaso.com/professors/jose-la-luz/",
             "MARRERO CARRASQUILLO ALB": "https://notaso.com/professors/alberto-marrero/",
@@ -5305,7 +5314,6 @@ class TeraTermUI(customtkinter.CTk):
             "RODRIGUEZ VALENTIN JOSE A": "https://notaso.com/professors/jose-rodriguez-valentin-2/",
             "VILLARONGA SWEET LUIS G.": "https://notaso.com/professors/gabriel-villaronga-sweet/"
         }
-        instructor_text = cell.cget("text")
         hardcoded_name = " ".join(instructor_text.split())
         if hardcoded_name in url_mapping:
             hard_coded_url = url_mapping[hardcoded_name]
@@ -5374,22 +5382,14 @@ class TeraTermUI(customtkinter.CTk):
         av_col_index = headers.index(translation["av"])
         for row in range(1, num_rows):
             section_cell = new_table.get_cell(row, 0)
-            section_text = section_cell.cget("text")
-            if section_text.strip():
-                new_table.bind_cell(row, 0, "<Button-3>",
-                                    lambda event, t_cell=section_cell:
-                                    self.transfer_class_data_to_enroll_tab(event, t_cell))
+            new_table.bind_cell(row, 0, "<Button-3>", lambda event, t_cell=section_cell:
+                                self.transfer_class_data_to_enroll_tab(event, t_cell))
             instructor_cell = new_table.get_cell(row, instructor_col_index)
-            instructor_text = instructor_cell.cget("text")
-            if instructor_text.strip():
-                new_table.bind_cell(row, instructor_col_index, "<Button-3>",
-                                    lambda event, t_cell=instructor_cell:
-                                    TeraTermUI.open_professor_profile(event, t_cell))
+            new_table.bind_cell(row, instructor_col_index, "<Button-3>", lambda event, t_cell=instructor_cell:
+                                TeraTermUI.open_professor_profile(event, t_cell))
             av_cell = new_table.get_cell(row, av_col_index)
-            av_text = av_cell.cget("text")
-            if av_text == "RSVD":
-                new_table.bind_cell(row, av_col_index, "<Button-3>",
-                                    lambda event: TeraTermUI.open_student_help())
+            new_table.bind_cell(row, av_col_index, "<Button-3>", lambda event, t_cell=av_cell:
+                                TeraTermUI.open_student_help(event, t_cell))
         for col_index in range(len(headers)):
             new_table.bind_cell(0, col_index, "<Button-3>",
                                 lambda event: self.move_tables_overlay_event())
@@ -5550,19 +5550,25 @@ class TeraTermUI(customtkinter.CTk):
             memoized_times[times_key] = total_minutes
             return total_minutes
 
-        valid_entries = [row for row in data if get_time_minutes(row) != float("inf")]
+        def parse_av_value(av_value):
+            try:
+                return int(av_value)
+            except ValueError:
+                return float("inf")
+
         non_standard_positions = [(i, row) for i, row in enumerate(data) if get_time_minutes(row) == float("inf")]
+        valid_entries = [row for i, row in enumerate(data) if i not in [pos for pos, _ in non_standard_positions]]
         if sort_by_option in [translation["time_asc"], translation["time_dec"]] and time_key:
             reverse_sort = (sort_by_option == translation["time_dec"])
-            valid_entries.sort(
-                key=lambda x: (get_time_minutes(x), int(x[av_key]) if x[av_key].isdigit() else float("inf")),
-                reverse=reverse_sort)
+            valid_entries.sort(key=lambda x: (get_time_minutes(x),
+                                              parse_av_value(x.get(av_key, '')) if av_key else float("inf")),
+                               reverse=reverse_sort)
         elif sort_by_option in [translation["av_asc"], translation["av_dec"]] and av_key:
             reverse_sort = (sort_by_option == translation["av_dec"])
-            valid_entries.sort(key=lambda x: (int(x[av_key]) if x[av_key].isdigit() else float("inf"),
+            valid_entries.sort(key=lambda x: (parse_av_value(x.get(av_key, '')) if av_key else float("inf"),
                                               get_time_minutes(x)),
                                reverse=reverse_sort)
-        for pos, row in sorted(non_standard_positions, reverse=True):
+        for pos, row in sorted(non_standard_positions, key=lambda x: x[0]):
             valid_entries.insert(pos, row)
 
         return valid_entries
@@ -5614,20 +5620,27 @@ class TeraTermUI(customtkinter.CTk):
                 memoized_times[times_key] = total_minutes
                 return total_minutes
 
-            valid_entries = [row for row in table_data[1:] if get_time_minutes(row) != float("inf")]
+            def parse_av_value(av_value):
+                try:
+                    return int(av_value)
+                except ValueError:
+                    return float("inf")
+
             non_standard_positions = [(i, row) for i, row in enumerate(table_data[1:]) if
                                       get_time_minutes(row) == float("inf")]
+            valid_entries = [row for i, row in enumerate(table_data[1:]) if i not in [
+                pos for pos, _ in non_standard_positions]]
             if sort_by_option in [translation["time_asc"], translation["time_dec"]] and time_index != -1:
                 reverse_sort = (sort_by_option == translation["time_dec"])
                 valid_entries.sort(key=lambda x: (get_time_minutes(x),
-                                                  int(x[av_index]) if x[av_index].isdigit() else float("inf")),
+                                                  parse_av_value(x[av_index]) if av_index != -1 else float("inf")),
                                    reverse=reverse_sort)
             elif sort_by_option in [translation["av_asc"], translation["av_dec"]] and av_index != -1:
                 reverse_sort = (sort_by_option == translation["av_dec"])
-                valid_entries.sort(key=lambda x: (int(x[av_index]) if x[av_index].isdigit() else float("inf"),
+                valid_entries.sort(key=lambda x: (parse_av_value(x[av_index]) if av_index != -1 else float("inf"),
                                                   get_time_minutes(x)),
                                    reverse=reverse_sort)
-            for pos, row in sorted(non_standard_positions, reverse=True):
+            for pos, row in non_standard_positions:
                 valid_entries.insert(pos, row)
 
             table.update_values([headers] + valid_entries)
@@ -6080,26 +6093,26 @@ class TeraTermUI(customtkinter.CTk):
             r"^(\s+)(\w{2})\s+([\dAMP\-]+)\s*$"
         )
         for line in lines:
-            if "LEC" in line or "LAB" in line or "INT" in line or "PRA" in line or "SEM" in line:
+            if any(x in line for x in ["LEC", "LAB", "INT", "PRA", "SEM"]):
                 match = pattern.search(line)
                 if match:
                     instructor = match.group(8)
-                    instructor = re.sub(r"\bN\b(?!\.)", "", instructor)
-                    instructor = re.sub(r"\bFULL\b", "", instructor)
-                    instructor = re.sub(r"\bRSVD\b", "", instructor)
-                    instructor = re.sub(r"\bRSTR\b", "", instructor)
-                    instructor = instructor.strip()
+                    instructor_cleaned = re.sub(r"\bN\b(?!\.)", "", instructor)
+                    instructor_cleaned = re.sub(r"\bFULL\b", "", instructor_cleaned)
+                    instructor_cleaned = re.sub(r"\bRSVD\b", "", instructor_cleaned)
+                    instructor_cleaned = re.sub(r"\bRSTR\b", "", instructor_cleaned)
+                    instructor_cleaned = instructor_cleaned.strip()
+                    av_value = "RSVD" if "RSVD" in instructor else "RSTR" if "RSTR" in instructor else \
+                        "999" if "999" in instructor else match.group(7).strip() if match.group(7) else "0"
                     current_section = {
                         "SEC": match.group(1),
                         "M": match.group(2),
                         "CRED": match.group(4),
                         "DAYS": [match.group(5)],
                         "TIMES": [match.group(6)],
-                        "AV": match.group(7).strip() if match.group(7) else "0",
-                        "INSTRUCTOR": instructor
+                        "AV": av_value,
+                        "INSTRUCTOR": instructor_cleaned
                     }
-                    if current_section["AV"] == "999":
-                        current_section["AV"] = "RSVD"
                     data.append(current_section)
             else:
                 time_match = time_pattern.search(line)
@@ -6112,7 +6125,7 @@ class TeraTermUI(customtkinter.CTk):
             section["TIMES"] = ", ".join(section["TIMES"])
 
         return data, course_found, invalid_action, y_n_found, y_n_value, term_value
-
+        
     def extract_my_enrolled_classes(self, text):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
