@@ -4958,22 +4958,23 @@ class TeraTermUI(customtkinter.CTk):
     # function that checks if Tera Term is running or not
     @staticmethod
     def checkIfProcessRunning(processName):
+        process = processName.lower()
         try:
-            process_iter = psutil.process_iter(attrs=["name"])
-            for proc in process_iter:
-                if processName.lower() in proc.info["name"].lower():
+            for proc in psutil.process_iter(attrs=["name", "status"]):
+                if proc.info["status"] == "running" and process in proc.info["name"].lower():
                     return True
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
             logging.error(f"Exception occurred: {e}")
         return False
 
+    # function that checks if there's more than 1 instance of Tera Term running
     @staticmethod
     def countRunningProcesses(processName):
         count = 0
+        processName = processName.lower()
         try:
-            process_iter = psutil.process_iter(attrs=["name"])
-            for proc in process_iter:
-                if processName.lower() in proc.info["name"].lower():
+            for proc in psutil.process_iter(attrs=["name", "status"]):
+                if proc.info["status"] == "running" and processName in proc.info["name"].lower():
                     count += 1
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
             logging.error(f"Exception occurred: {e}")
