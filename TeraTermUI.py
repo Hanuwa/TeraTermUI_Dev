@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/13/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/14/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -679,7 +679,7 @@ class TeraTermUI(customtkinter.CTk):
                 def show_message_box():
                     translation = self.load_language(self.language_menu.get())
                     if not self.disable_audio:
-                        winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/notification.wav"), winsound.SND_ASYNC)
+                        winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/welcome.wav"), winsound.SND_ASYNC)
                     CTkMessagebox(title=translation["welcome_title"], message=translation["welcome_message"],
                                   button_width=380)
                     self.slideshow_frame.go_to_first_image()
@@ -4958,12 +4958,13 @@ class TeraTermUI(customtkinter.CTk):
     # function that checks if Tera Term is running or not
     @staticmethod
     def checkIfProcessRunning(processName):
-        process = processName.lower()
+        process_lower = processName.lower()
         try:
-            for proc in psutil.process_iter(attrs=["name", "status"]):
-                if proc.info["name"].lower().startswith("t") and proc.info["status"] == "running":
-                    if process in proc.info["name"].lower():
-                        return True
+            running_processes = [proc for proc in psutil.process_iter(attrs=["name", "create_time"])
+                                 if proc.info["name"] and proc.info[
+                                     "name"].lower() == process_lower and proc.status() == "running"]
+            running_processes.sort(key=lambda x: x.info["create_time"], reverse=True)
+            return bool(running_processes)
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
             logging.error(f"Exception occurred: {e}")
         return False
@@ -4972,15 +4973,17 @@ class TeraTermUI(customtkinter.CTk):
     @staticmethod
     def countRunningProcesses(processName):
         count = 0
-        processName = processName.lower()
+        process_lower = processName.lower()
         try:
-            for proc in psutil.process_iter(attrs=["name", "status"]):
-                if proc.info["name"].lower().startswith("t") and proc.info["status"] == "running":
-                    if processName in proc.info["name"].lower():
-                        count += 1
+            relevant_processes = [proc for proc in psutil.process_iter(attrs=["name", "create_time"])
+                                  if proc.info["name"] and proc.info[
+                                      "name"].lower() == process_lower and proc.status() == "running"]
+            count = len(relevant_processes)
+            relevant_processes.sort(key=lambda x: x.info["create_time"], reverse=True)
+            return count, (count > 1)
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
             logging.error(f"Exception occurred: {e}")
-        return count, (count > 1)
+        return count, False
 
     # checks if the specified window exists
     @staticmethod
