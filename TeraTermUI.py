@@ -5281,12 +5281,7 @@ class TeraTermUI(customtkinter.CTk):
     @staticmethod
     def open_professor_profile(event, cell):
         def remove_prefixes(p_names):
-            cleaned_names = []
-            for name in p_names:
-                if name.lower() in ["de", "del"]:
-                    continue
-                cleaned_names.append(name)
-            return cleaned_names
+            return [name for name in p_names if name.lower() not in ["de", "del"]]
 
         def attempt_open_url(p_names):
             first_name = p_names[2].lower()
@@ -5300,7 +5295,6 @@ class TeraTermUI(customtkinter.CTk):
                         return
                 except requests.RequestException as e:
                     print(f"Failed to open URL: {url}, Error: {e}")
-                    continue
 
         url_mapping = {
             "LA LUZ CONCEPCION JOSE J": "https://notaso.com/professors/jose-la-luz/",
@@ -5315,14 +5309,12 @@ class TeraTermUI(customtkinter.CTk):
         hardcoded_name = " ".join(instructor_text.split())
         if hardcoded_name in url_mapping:
             hard_coded_url = url_mapping[hardcoded_name]
-            thread = threading.Thread(target=webbrowser.open, args=(hard_coded_url,))
-            thread.start()
+            threading.Thread(target=webbrowser.open, args=(hard_coded_url,)).start()
             return
 
         names = remove_prefixes(instructor_text.split())
         if len(names) >= 3:
-            thread = threading.Thread(target=attempt_open_url, args=(names,))
-            thread.start()
+            threading.Thread(target=attempt_open_url, args=(names,)).start()
 
     # displays the extracted data into a table
     def display_data(self, data):
