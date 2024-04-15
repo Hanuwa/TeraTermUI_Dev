@@ -201,6 +201,7 @@ class TeraTermUI(customtkinter.CTk):
         self.remove_button_tooltip = None
         self.download_search_pdf_tooltip = None
         self.tooltip = None
+        self.last_closing_time = None
         self.is_exit_dialog_open = False
         self.dialog = None
         self.dialog_input = None
@@ -823,7 +824,9 @@ class TeraTermUI(customtkinter.CTk):
 
     # function that when the user tries to close the application a confirm dialog opens up
     def on_closing(self):
-        if hasattr(self, "is_exit_dialog_open") and self.is_exit_dialog_open or \
+        current_time = time.time()
+        if (self.last_closing_time is not None and (current_time - self.last_closing_time) < 0.25) or \
+                (hasattr(self, "is_exit_dialog_open") and self.is_exit_dialog_open) or \
                 (self.loading_screen is not None and self.loading_screen.winfo_exists()):
             return
                     
@@ -867,6 +870,7 @@ class TeraTermUI(customtkinter.CTk):
                             TeraTermUI.window_exists("Tera Term - [connecting...] VT"):
                         TeraTermUI.terminate_process()
             sys.exit(0)
+        self.last_closing_time = current_time
 
     def direct_close(self):
         if self.loading_screen is not None and self.loading_screen.winfo_exists():
@@ -9086,7 +9090,7 @@ class CustomButton(customtkinter.CTkButton):
                 self.click_command()
         self.is_pressed = False
         if self.winfo_exists():
-            self.after(0, self._on_leave, event)
+            self.after(100, self._on_leave, event)
 
     def is_mouse_over_widget(self):
         x, y = self.winfo_rootx(), self.winfo_rooty()
