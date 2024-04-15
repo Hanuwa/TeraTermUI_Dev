@@ -4322,33 +4322,37 @@ class TeraTermUI(customtkinter.CTk):
             self.title_login.unbind("<Button-1>")
             self.disclaimer.unbind("<Button-1>")
             self.username.unbind("<Button-1>")
-            self.title_login.destroy()
-            self.title_login = None
-            self.uprb_image = None
-            self.uprb_image_grid.configure(command=None)
-            self.uprb_image_grid.destroy()
-            self.uprb_image_grid = None
-            self.disclaimer.destroy()
-            self.disclaimer = None
-            self.username.destroy()
-            self.username = None
-            self.username_entry.lang = None
-            self.username_entry.destroy()
-            self.username_entry = None
-            self.username_tooltip.destroy()
-            self.username_tooltip = None
-            self.auth.configure(command=None)
-            self.auth.destroy()
-            self.auth = None
-            self.back.configure(command=None)
-            self.back.destroy()
-            self.back = None
-            self.back_tooltip.destroy()
-            self.back_tooltip = None
-            self.authentication_frame.destroy()
-            self.authentication_frame = None
-            self.a_buttons_frame.destroy()
-            self.a_buttons_frame = None
+
+            def destroy():
+                self.title_login.destroy()
+                self.title_login = None
+                self.uprb_image = None
+                self.uprb_image_grid.configure(command=None)
+                self.uprb_image_grid.destroy()
+                self.uprb_image_grid = None
+                self.disclaimer.destroy()
+                self.disclaimer = None
+                self.username.destroy()
+                self.username = None
+                self.username_entry.lang = None
+                self.username_entry.destroy()
+                self.username_entry = None
+                self.username_tooltip.destroy()
+                self.username_tooltip = None
+                self.auth.configure(command=None)
+                self.auth.destroy()
+                self.auth = None
+                self.back.configure(command=None)
+                self.back.destroy()
+                self.back = None
+                self.back_tooltip.destroy()
+                self.back_tooltip = None
+                self.authentication_frame.destroy()
+                self.authentication_frame = None
+                self.a_buttons_frame.destroy()
+                self.a_buttons_frame = None
+
+            self.after(100, destroy)
 
     def initialization_student(self):
         # Student Information
@@ -4416,41 +4420,45 @@ class TeraTermUI(customtkinter.CTk):
             self.student_id.unbind("<Button-1>")
             self.code.unbind("<Button-1>")
             self.show.unbind("<space>")
-            self.title_student.destroy()
-            self.title_student = None
-            self.lock = None
-            self.lock_grid.configure(command=None)
-            self.lock_grid.destroy()
-            self.lock_grid = None
-            self.student_id.destroy()
-            self.student_id = None
-            for entry in [self.student_id_entry, self.code_entry]:
-                entry.lang = None
-            self.student_id_entry.destroy()
-            self.student_id_entry = None
-            self.student_id_tooltip.destroy()
-            self.student_id_tooltip = None
-            self.code.destroy()
-            self.code = None
-            self.code_entry.destroy()
-            self.code_entry = None
-            self.code_tooltip.destroy()
-            self.code_tooltip = None
-            self.show.configure(command=None)
-            self.show.destroy()
-            self.show = None
-            self.system.configure(command=None)
-            self.system.destroy()
-            self.system = None
-            self.back_student.configure(command=None)
-            self.back_student.destroy()
-            self.back_student = None
-            self.back_student_tooltip.destroy()
-            self.back_student_tooltip = None
-            self.student_frame.destroy()
-            self.student_frame = None
-            self.s_buttons_frame.destroy()
-            self.s_buttons_frame = None
+
+            def destroy():
+                self.title_student.destroy()
+                self.title_student = None
+                self.lock = None
+                self.lock_grid.configure(command=None)
+                self.lock_grid.destroy()
+                self.lock_grid = None
+                self.student_id.destroy()
+                self.student_id = None
+                for entry in [self.student_id_entry, self.code_entry]:
+                    entry.lang = None
+                self.student_id_entry.destroy()
+                self.student_id_entry = None
+                self.student_id_tooltip.destroy()
+                self.student_id_tooltip = None
+                self.code.destroy()
+                self.code = None
+                self.code_entry.destroy()
+                self.code_entry = None
+                self.code_tooltip.destroy()
+                self.code_tooltip = None
+                self.show.configure(command=None)
+                self.show.destroy()
+                self.show = None
+                self.system.configure(command=None)
+                self.system.destroy()
+                self.system = None
+                self.back_student.configure(command=None)
+                self.back_student.destroy()
+                self.back_student = None
+                self.back_student_tooltip.destroy()
+                self.back_student_tooltip = None
+                self.student_frame.destroy()
+                self.student_frame = None
+                self.s_buttons_frame.destroy()
+                self.s_buttons_frame = None
+
+            self.after(100, destroy)
 
     def initialization_class(self):
         # Classes
@@ -6416,49 +6424,53 @@ class TeraTermUI(customtkinter.CTk):
         self.modify_classes_frame.unbind("<Button-1>")
         self.title_my_classes.unbind("<Button-1>")
         self.total_credits_label.unbind("<Button-1>")
-        self.enrolled_classes_data = None
-        self.title_my_classes.destroy()
-        self.title_my_classes = None
-        self.total_credits_label.destroy()
-        self.total_credits_label = None
-        self.submit_my_classes.configure(command=None)
-        self.submit_my_classes.destroy()
-        self.submit_my_classes = None
-        self.download_enrolled_pdf.configure(command=None)
-        self.download_enrolled_pdf.destroy()
-        self.download_enrolled_pdf = None
-        self.back_my_classes.configure(command=None)
-        self.back_my_classes.destroy()
-        self.back_my_classes = None
-        self.modify_classes_title.destroy()
-        self.modify_classes_title = None
-        self.download_enrolled_pdf_tooltip.destroy()
-        self.download_enrolled_pdf_tooltip = None
-        self.submit_my_classes_tooltip.destroy()
-        self.submit_my_classes_tooltip = None
-        self.back_my_classes_tooltip.destroy()
-        self.back_my_classes_tooltip = None
-        for cell, tooltip in self.enrolled_header_tooltips.items():
-            tooltip.destroy()
-        for tooltip in self.enrolled_tooltips:
-            tooltip.destroy()
-        self.enrolled_header_tooltips = {}
-        self.enrolled_tooltips = []
-        self.enrolled_classes_table.destroy()
-        self.enrolled_classes_table = None
-        for entry in self.change_section_entries:
-            if entry is not None:
-                entry.destroy()
-        self.change_section_entries = None
-        for option_menu in self.mod_selection_list:
-            if option_menu is not None:
-                option_menu.configure(command=None)
-                option_menu.destroy()
-        self.mod_selection_list = None
-        self.modify_classes_frame.destroy()
-        self.modify_classes_frame = None
-        self.my_classes_frame.destroy()
-        self.my_classes_frame = None
+
+        def destroy():
+            self.enrolled_classes_data = None
+            self.title_my_classes.destroy()
+            self.title_my_classes = None
+            self.total_credits_label.destroy()
+            self.total_credits_label = None
+            self.submit_my_classes.configure(command=None)
+            self.submit_my_classes.destroy()
+            self.submit_my_classes = None
+            self.download_enrolled_pdf.configure(command=None)
+            self.download_enrolled_pdf.destroy()
+            self.download_enrolled_pdf = None
+            self.back_my_classes.configure(command=None)
+            self.back_my_classes.destroy()
+            self.back_my_classes = None
+            self.modify_classes_title.destroy()
+            self.modify_classes_title = None
+            self.download_enrolled_pdf_tooltip.destroy()
+            self.download_enrolled_pdf_tooltip = None
+            self.submit_my_classes_tooltip.destroy()
+            self.submit_my_classes_tooltip = None
+            self.back_my_classes_tooltip.destroy()
+            self.back_my_classes_tooltip = None
+            for cell, tooltip in self.enrolled_header_tooltips.items():
+                tooltip.destroy()
+            for tooltip in self.enrolled_tooltips:
+                tooltip.destroy()
+            self.enrolled_header_tooltips = {}
+            self.enrolled_tooltips = []
+            self.enrolled_classes_table.destroy()
+            self.enrolled_classes_table = None
+            for entry in self.change_section_entries:
+                if entry is not None:
+                    entry.destroy()
+            self.change_section_entries = None
+            for option_menu in self.mod_selection_list:
+                if option_menu is not None:
+                    option_menu.configure(command=None)
+                    option_menu.destroy()
+            self.mod_selection_list = None
+            self.modify_classes_frame.destroy()
+            self.modify_classes_frame = None
+            self.my_classes_frame.destroy()
+            self.my_classes_frame = None
+
+        self.after(100, destroy)
 
     def modify_enrolled_classes(self, mod, row_index):
         lang = self.language_menu.get()
