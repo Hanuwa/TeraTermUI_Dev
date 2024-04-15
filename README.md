@@ -9,7 +9,7 @@ dropdown_menu.py, scaling_tracker.py, scaling_base_class.py and ctk_base_class.p
 
 Priorities of the development of the application is working on improving the UI since it's a bit too simple and not polished,
 funtionality wise the application is mostly feature-complete but it could use some performance/optimization improvements since
-the application sometimes suffers from slowdows and it can feel sluggish to use sometimes too.
+the application sometimes suffers from slowdows which can make it feel sluggish to use.
 
 # Tesseract OCR
 Must install this application under a folder within the TeraTermUI.py app called "Tesseract-OCR".
