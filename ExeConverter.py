@@ -405,6 +405,9 @@ for version in versions:
             os.rename(output_directory + r"\TeraTermUI.dist", output_directory + r"\TeraTermUI")
             zip_file_path = output_directory + fr"\{app_folder}-"+update+""
             shutil.make_archive(zip_file_path, "zip", output_directory, app_folder)
+            version_path = os.path.join(output_directory, app_folder, "VERSION.txt")
+            destination_path = os.path.join(project_directory, "VERSION.txt")
+            shutil.copy(version_path, destination_path)
             print(Fore.GREEN + "\nSuccessfully completed portable version\n" + Style.RESET_ALL)
         except KeyboardInterrupt as e:
             shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
