@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/14/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/15/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1160,9 +1160,9 @@ class TeraTermUI(customtkinter.CTk):
                 "Current": "Actual"
             }
         }
-        save = self.cursor.execute("SELECT class, section, semester, action FROM save_classes"
+        save = self.cursor.execute("SELECT class, section, semester, action FROM saved_classes"
                                    " WHERE class IS NOT NULL").fetchall()
-        save_check = self.cursor.execute('SELECT "id" FROM save_classes').fetchone()
+        save_check = self.cursor.execute('SELECT "id" FROM saved_classes').fetchone()
 
         if save_check and save_check[0] is not None:
             if save_check[0] == 1:
@@ -1906,7 +1906,7 @@ class TeraTermUI(customtkinter.CTk):
         self.auto_enroll.grid(row=0, column=0, padx=(0, 0), pady=(0, 0))
 
     def detect_change(self, event=None):
-        self.cursor.execute("SELECT COUNT(*) FROM save_classes")
+        self.cursor.execute("SELECT COUNT(*) FROM saved_classes")
         count = self.cursor.fetchone()[0]
         if count == 0:
             return
@@ -1940,7 +1940,7 @@ class TeraTermUI(customtkinter.CTk):
                 if entry_value in ["CURRENT", "ACTUAL"]:
                     entry_value = "CURRENT"
             db_row_number = entry_index + 1
-            query = f"SELECT {column_name} FROM save_classes LIMIT 1 OFFSET ?"
+            query = f"SELECT {column_name} FROM saved_classes LIMIT 1 OFFSET ?"
             self.cursor.execute(query, (db_row_number - 1,))
             result = self.cursor.fetchone()
             if column_name == "semester" and result:
@@ -1957,7 +1957,7 @@ class TeraTermUI(customtkinter.CTk):
 
     def detect_register_menu_change(self, selected_value, index):
         self.focus_set()
-        self.cursor.execute("SELECT COUNT(*) FROM save_classes")
+        self.cursor.execute("SELECT COUNT(*) FROM saved_classes")
         count = self.cursor.fetchone()[0]
         if count == 0:
             return
@@ -1967,7 +1967,7 @@ class TeraTermUI(customtkinter.CTk):
             return
 
         db_row_number = index + 1
-        self.cursor.execute("SELECT action FROM save_classes LIMIT 1 OFFSET ?", (db_row_number - 1,))
+        self.cursor.execute("SELECT action FROM saved_classes LIMIT 1 OFFSET ?", (db_row_number - 1,))
         result = self.cursor.fetchone()
 
         if result:
@@ -4758,7 +4758,7 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         if save == "on":
-            self.cursor.execute("DELETE FROM save_classes")
+            self.cursor.execute("DELETE FROM saved_classes")
             self.connection.commit()
             is_empty = False
             is_invalid_format = False
@@ -4781,7 +4781,7 @@ class TeraTermUI(customtkinter.CTk):
                         "^[A-Z]{2}[A-Z0-9]$", section_value, flags=re.IGNORECASE):
                     is_invalid_format = True
                 else:
-                    self.cursor.execute("INSERT INTO save_classes (class, section, semester, action)"
+                    self.cursor.execute("INSERT INTO saved_classes (class, section, semester, action)"
                                         " VALUES (?, ?, ?, ?)",
                                         (class_value, section_value, semester_value, register_value))
                     self.connection.commit()
@@ -4793,7 +4793,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.show_error_message(330, 255, translation["failed_saved_invalid_info"])
                 self.save_data.deselect()
             else:
-                self.cursor.execute("SELECT COUNT(*) FROM save_classes")
+                self.cursor.execute("SELECT COUNT(*) FROM saved_classes")
                 row_count = self.cursor.fetchone()[0]
                 if row_count == 0:
                     self.show_error_message(330, 255, translation["failed_saved_invalid_info"])
@@ -4810,7 +4810,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.m_section_entry[i].bind("<FocusOut>", self.detect_change)
                     self.show_success_message(350, 265, translation["saved_classes_success"])
         if save == "off":
-            self.cursor.execute("DELETE FROM save_classes")
+            self.cursor.execute("DELETE FROM saved_classes")
             self.connection.commit()
             for i in range(6):
                 self.m_register_menu[i].configure(command=lambda value: self.focus_set())
