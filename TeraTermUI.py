@@ -10046,11 +10046,12 @@ class SmoothFadeToplevel(customtkinter.CTkToplevel):
 
 
 class SmoothFadeInputDialog(customtkinter.CTkInputDialog):
-    __slots__ = "fade_duration"
+    __slots__ = "fade_duration", "final_alpha"
 
-    def __init__(self, fade_duration=15, *args, **kwargs):
+    def __init__(self, fade_duration=15, final_alpha=1.0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fade_duration = fade_duration
+        self.final_alpha = final_alpha
         self.alpha = 0.0
         self.fade_direction = 1  # 1 for fade-in, -1 for fade-out
         self.after_idle(self._start_fade_in)
@@ -10060,9 +10061,11 @@ class SmoothFadeInputDialog(customtkinter.CTkInputDialog):
         self._fade()
 
     def _fade(self):
-        self.alpha += self.fade_direction / self.fade_duration
+        self.alpha += self.fade_direction * (self.final_alpha / self.fade_duration)
+        # Ensure alpha stays within valid range
+        self.alpha = max(0, min(self.alpha, self.final_alpha))
         self.attributes("-alpha", self.alpha)
-        if 0 < self.alpha < 1:
+        if 0 < self.alpha < self.final_alpha:
             self.after(5, self._fade)
         elif self.alpha <= 0:
             self.destroy()
