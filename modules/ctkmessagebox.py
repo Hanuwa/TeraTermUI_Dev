@@ -569,10 +569,10 @@ class CustomButton(customtkinter.CTkButton):
             return
         if self.is_pressed and self.is_mouse_over_widget():
             if self.click_command:
+                if self.winfo_exists():
+                    self.after(250, self._on_leave, event)
                 self.click_command()
         self.is_pressed = False
-        if self.winfo_exists():
-            self.after(100, self._on_leave, event)
 
     def is_mouse_over_widget(self):
         x, y = self.winfo_rootx(), self.winfo_rooty()
