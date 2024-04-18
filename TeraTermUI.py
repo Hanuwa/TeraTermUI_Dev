@@ -4906,6 +4906,7 @@ class TeraTermUI(customtkinter.CTk):
             loading_screen.destroy()
             self.loading_screen = None
             if current_time - self.loading_screen_start_time > 35:
+                task_done.set()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 if not self.disable_audio:
