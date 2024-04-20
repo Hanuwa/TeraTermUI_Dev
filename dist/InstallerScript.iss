@@ -82,3 +82,69 @@ begin
     end;
   end;
 end;
+
+const
+  ComtypesCacheDirName = 'comtypes_cache';
+  TeraTermUIDirPrefix = 'TeraTermUI-';
+function IsDirectoryEmpty(const DirPath: string): Boolean;
+var
+  FindRec: TFindRec;
+begin
+  Result := True;
+  if FindFirst(DirPath + '*', FindRec) then
+  begin
+    try
+      repeat
+        if (FindRec.Name <> '.') and (FindRec.Name <> '..') then
+        begin
+          Result := False;
+          Break;
+        end;
+      until not FindNext(FindRec);
+    finally
+      FindClose(FindRec);
+    end;
+  end;
+end;
+
+procedure DeleteTeraTermUIDirectories(const ParentDir: string);
+var
+  FindRec: TFindRec;
+  SubDirName: string;
+begin
+  if FindFirst(ParentDir + '*', FindRec) then
+  begin
+    try
+      repeat
+        if ((FindRec.Attributes and FILE_ATTRIBUTE_DIRECTORY) <> 0) and 
+           (FindRec.Name <> '.') and (FindRec.Name <> '..') and 
+           (Pos(TeraTermUIDirPrefix, FindRec.Name) = 1) then
+        begin
+          SubDirName := ParentDir + FindRec.Name;
+          DelTree(SubDirName, True, True, True);
+        end;
+      until not FindNext(FindRec);
+    finally
+      FindClose(FindRec);
+    end;
+  end;
+  if IsDirectoryEmpty(ParentDir) then
+  begin
+    RemoveDir(ParentDir);
+  end;
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  TempDir, ComtypesCacheDir: string;
+begin
+  if CurUninstallStep = usPostUninstall then
+  begin
+    TempDir := GetTempDir;
+    ComtypesCacheDir := AddBackslash(TempDir) + ComtypesCacheDirName;
+    if DirExists(ComtypesCacheDir) then
+    begin
+      DeleteTeraTermUIDirectories(AddBackslash(ComtypesCacheDir));
+    end;
+  end;
+end;
