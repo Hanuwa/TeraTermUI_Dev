@@ -3058,8 +3058,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.select_screen_item = edit_menu.child_window(
                                 title="Select screen", control_type="MenuItem", auto_id="50280")
                             disconnected = self.uprb.window(title="Tera Term - [disconnected] VT")
-                            disconnected.wait("visible", timeout=3)
-                            self.uprb.wait_cpu_usage_lower()
+                            disconnected.wait("active", timeout=3)
                             if new_connection:
                                 TeraTermUI.new_connection(disconnected)
                             host_input = self.uprb.TeraTermDisconnectedVt.child_window(
