@@ -63,7 +63,6 @@ from CTkToolTip import CTkToolTip
 from ctypes import wintypes
 from datetime import datetime, timedelta
 from filelock import FileLock, Timeout
-from functools import wraps
 from pathlib import Path
 try:
     from pywinauto.application import Application, AppStartError
@@ -111,7 +110,7 @@ def measure_time(threshold):
 
 def cancel_automation():
     def decorator(func):
-        @wraps(func)
+        @functools.wraps(func)
         def wrapper(*args, **kwargs):
             result = None
             start_time = time.time()
