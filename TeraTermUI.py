@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/18/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/19/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -3059,6 +3059,7 @@ class TeraTermUI(customtkinter.CTk):
                                 title="Select screen", control_type="MenuItem", auto_id="50280")
                             disconnected = self.uprb.window(title="Tera Term - [disconnected] VT")
                             disconnected.wait("visible", timeout=3)
+                            self.uprb.wait_cpu_usage_lower()
                             if new_connection:
                                 TeraTermUI.new_connection(disconnected)
                             host_input = self.uprb.TeraTermDisconnectedVt.child_window(
@@ -9120,7 +9121,7 @@ class CustomButton(customtkinter.CTkButton):
         if self.is_pressed and self.is_mouse_over_widget():
             if self.click_command:
                 if self.winfo_exists():
-                    self.after(250, self._on_leave, event)
+                    self.after(350, self._on_leave, event)
                 self.click_command()
         self.is_pressed = False
 
