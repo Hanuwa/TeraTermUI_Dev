@@ -5792,15 +5792,16 @@ class TeraTermUI(customtkinter.CTk):
         self.after(0, self.move_tables_overlay.focus_force)
         self.highlight_selected_table_in_grid()
         self.update_idletasks()
-        self.move_tables_overlay.bind("<FocusOut>", lambda event: self.on_move_window_close())
+        self.move_tables_overlay.bind("<FocusOut>", self.on_move_window_close)
+        self.move_tables_overlay.bind("<Escape>", self.on_move_window_close)
 
-    def on_move_window_close(self):
+    def on_move_window_close(self, event):
         current_focus = self.move_tables_overlay.focus_get()
-        if current_focus is None:
+        if current_focus is None or event.keysym == "Escape":
             checkboxes_container = self.move_tables_overlay.winfo_children()[1]
             for widget in checkboxes_container.winfo_children():
                 if isinstance(widget, customtkinter.CTkCheckBox):
-                    widget.unbind("<space>")
+                    widget.destroy()
             self.move_tables_overlay.destroy()
 
     def highlight_selected_table_in_grid(self):
