@@ -870,9 +870,9 @@ class TeraTermUI(customtkinter.CTk):
             if hasattr(self, "check_process_thread") and self.check_process_thread is not None \
                     and self.check_process_thread.is_alive():
                 self.stop_is_check_process.set()
-            self.thread_pool.shutdown(wait=True)
+            self.thread_pool.shutdown(wait=False)
             self.save_user_data()
-            self.destroy()
+            self.end_app()
             if self.checkbox_state:
                 if TeraTermUI.checkIfProcessRunning("ttermpro"):
                     if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
@@ -906,14 +906,27 @@ class TeraTermUI(customtkinter.CTk):
         if hasattr(self, "check_process_thread") and self.check_process_thread is not None \
                 and self.check_process_thread.is_alive():
             self.stop_is_check_process.set()
-        self.thread_pool.shutdown(wait=True)
+        self.thread_pool.shutdown(wait=False)
         self.save_user_data(include_exit=False)
-        self.destroy()
+        self.end_app()
         sys.exit(0)
 
+    def end_app(self):
+        try:
+            self.destroy()
+        except Exception as e:
+            print("Force closing due to an error:", e)
+            self.log_error(e)
+            sys.exit(1)
+
     def forceful_end_app(self):
-        self.destroy()
-        sys.exit(1)
+        try:
+            self.destroy()
+        except Exception as e:
+            print("Force closing due to an error:", e)
+            self.log_error(e)
+        finally:
+            sys.exit(1)
 
     @staticmethod
     def get_absolute_path(relative_path):
@@ -3451,8 +3464,7 @@ class TeraTermUI(customtkinter.CTk):
                                          "Puede ser que sea necesario reinstalar el programa.\n\n"
                                          "La aplicación se cerrará ahora.")
                 # Exit the application
-                self.destroy()
-                sys.exit(1)
+                self.forceful_end_app()
 
         # If the language is not supported, return an empty dictionary or raise an exception
         return {}
