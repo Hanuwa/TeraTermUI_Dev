@@ -5387,7 +5387,8 @@ class TeraTermUI(customtkinter.CTk):
             sorted_data = self.sort_data(modified_data, self.sort_by.get())
             table_values = [headers] + [[item.get(header, "") for header in headers] for item in sorted_data]
         else:
-            self.sort_by.set(translation["sort_by"])
+            if self.sort_by is not None and self.sort_by.get() == translation["original_data"]:
+                self.sort_by.set(translation["sort_by"])
         num_rows = len(modified_data) + 1
 
         new_table = CTkTable(
@@ -5778,7 +5779,7 @@ class TeraTermUI(customtkinter.CTk):
             checkbox.grid(row=0, column=index, padx=checkbox_padding, pady=10)
             checkbox.bind("<space>", lambda event, idx=index: self.select_new_position(idx))
 
-        total_width = total_checkbox_width + 100
+        total_width = total_checkbox_width + 110
         self.move_tables_overlay.grid_rowconfigure(0, weight=1)
         self.move_tables_overlay.grid_rowconfigure(1, weight=1)
         self.move_tables_overlay.grid_columnconfigure(0, weight=1)
