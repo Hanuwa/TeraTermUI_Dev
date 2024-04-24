@@ -208,6 +208,7 @@ class CustomEntry(CTkEntry):
         self.lang = lang
         self.is_listbox_entry = False
         self.select = False
+        self.border_color = None
 
         self.teraterm_ui = teraterm_ui_instance
         self.bind("<FocusIn>", self.disable_slider_keys)
@@ -242,6 +243,11 @@ class CustomEntry(CTkEntry):
         self.bind("<Button-3>", self.show_menu)
 
     def disable_slider_keys(self, event=None):
+        if self.cget("border_color") == "#c30101":
+            if self.border_color is None:
+                self.border_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
+            self.configure(border_color=self.border_color)
+
         if self.select_present() and self.select:
             self.select_clear()
 
@@ -374,7 +380,7 @@ class CustomEntry(CTkEntry):
         self.focus_set()
         try:
             clipboard_text = self.clipboard_get()
-            max_paste_length = 1000  # Set a limit for the max paste length
+            max_paste_length = 250  # Set a limit for the max paste length
             if len(clipboard_text) > max_paste_length:
                 clipboard_text = clipboard_text[:max_paste_length]  # Truncate to max length
                 print("Pasted content truncated to maximum length.")
@@ -439,3 +445,31 @@ class CustomEntry(CTkEntry):
 
     def update_listbox(self):
         self.teraterm_ui.search_classes(None)
+
+    def destroy(self):
+        self.unbind("<FocusIn>")
+        self.unbind("<FocusOut>")
+        self.unbind("<Control-z>")
+        self.unbind("<Control-Z>")
+        self.unbind("<Control-y>")
+        self.unbind("<Control-Y>")
+        self.unbind("<Control-v>")
+        self.unbind("<Control-V>")
+        self.unbind("<Control-x>")
+        self.unbind("<Control-X>")
+        self.unbind("<Control-a>")
+        self.unbind("<Control-A>")
+        self.unbind("<Button-2>")
+        self.unbind("<Button-3>")
+        self.unbind("<KeyRelease>")
+        self.lang = None
+        self.is_listbox_entry = None
+        self.select = None
+        self.border_color = None
+        self.teraterm_ui = None
+        self.context_menu = None
+        self._undo_stack.clear()
+        self._redo_stack.clear()
+        self._undo_stack = None
+        self._redo_stack = None
+        super().destroy()
