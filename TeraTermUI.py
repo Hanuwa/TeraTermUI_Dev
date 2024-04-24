@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/23/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/24/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -728,11 +728,20 @@ class TeraTermUI(customtkinter.CTk):
                     try:
                         self.check_update = True
                         latest_version = self.get_latest_release()
+
+                        def enable():
+                            self.log_in.configure(state="normal")
+                            self.bind("<Return>", lambda event: self.login_event_handler())
+                            self.bind("<F1>", lambda event: self.help_button_event())
+
                         if latest_version is None:
                             print("No latest release found. Starting app with the current version.")
                             latest_version = self.USER_APP_VERSION
                         if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION):
                             self.after(1000, self.update_app, latest_version)
+                            self.after(1250, enable)
+                        else:
+                            enable()
                         row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
                         if not row_exists:
                             self.cursor.execute("INSERT INTO user_data (update_date) VALUES (?)",
@@ -835,7 +844,7 @@ class TeraTermUI(customtkinter.CTk):
     def direct_close_on_tray(self):
         if self.loading_screen is not None and self.loading_screen.winfo_exists():
             return
-            
+
         self.tray.stop()
         self.after(0, self.direct_close)
 
@@ -846,7 +855,7 @@ class TeraTermUI(customtkinter.CTk):
                 (hasattr(self, "is_exit_dialog_open") and self.is_exit_dialog_open) or \
                 (self.loading_screen is not None and self.loading_screen.winfo_exists()):
             return
-                    
+
         self.is_exit_dialog_open = True
         lang = self.language_menu.get()
         translation = self.load_language(lang)
@@ -5049,7 +5058,7 @@ class TeraTermUI(customtkinter.CTk):
 
     @staticmethod
     def close_matching_windows(titles_to_close):
-    
+
         def window_enum_handler(hwnd, titles):
             if win32gui.IsWindowVisible(hwnd) and win32gui.GetWindowText(hwnd) in titles:
                 win32gui.SendMessage(hwnd, win32con.WM_CLOSE, 0, 0)
@@ -5299,7 +5308,7 @@ class TeraTermUI(customtkinter.CTk):
         section_text = cell.cget("text")
         if not section_text.strip():
             return
-            
+
         self.e_classes_entry.delete(0, "end")
         self.e_section_entry.delete(0, "end")
         display_class, _, semester_text, _, _, _ = self.class_table_pairs[self.current_table_index]
@@ -5628,7 +5637,7 @@ class TeraTermUI(customtkinter.CTk):
             valid_entries.insert(pos, row)
 
         return valid_entries
-    
+
     def sort_tables(self, sort_by_option):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
@@ -6182,7 +6191,7 @@ class TeraTermUI(customtkinter.CTk):
             section["TIMES"] = ", ".join(section["TIMES"])
 
         return data, course_found, invalid_action, y_n_found, y_n_value, term_value
-        
+
     def extract_my_enrolled_classes(self, text):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
@@ -9158,7 +9167,7 @@ class CustomButton(customtkinter.CTkButton):
             return
         self.configure(cursor="")
         if self.is_mouse_over_widget() and not event.widget == self._text_label \
-                and not event.widget == self._image_label:
+                and not event.widget == self._image_label and self.is_pressed:
             self._on_enter()
             self.configure(cursor="hand2")
         else:
