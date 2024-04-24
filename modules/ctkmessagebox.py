@@ -593,7 +593,7 @@ class CustomButton(customtkinter.CTkButton):
             return
         self.configure(cursor="")
         if self.is_mouse_over_widget() and not event.widget == self._text_label \
-                and not event.widget == self._image_label:
+                and not event.widget == self._image_label and self.is_pressed:
             self._on_enter()
             self.configure(cursor="hand2")
         else:
