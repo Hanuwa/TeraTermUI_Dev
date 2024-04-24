@@ -1542,9 +1542,11 @@ class TeraTermUI(customtkinter.CTk):
                             try:
                                 clipboard_content = self.clipboard_get()
                             except tk.TclError:
-                                print("Clipboard contains non-text data, possibly an image or other formats")
+                                pass
+                                # print("Clipboard contains non-text data, possibly an image or other formats")
                             except Exception as e:
                                 print("Error handling clipboard content:", e)
+                                self.log_error(e)
                             if self.search_function_counter == 0 and "\"R-AOOO7" not in text_output and \
                                     "*R-A0007" not in text_output:
                                 ctypes.windll.user32.BlockInput(False)
@@ -1760,9 +1762,11 @@ class TeraTermUI(customtkinter.CTk):
                                 try:
                                     clipboard_content = self.clipboard_get()
                                 except tk.TclError:
-                                    print("Clipboard contains non-text data, possibly an image or other formats")
+                                    pass
+                                    # print("Clipboard contains non-text data, possibly an image or other formats")
                                 except Exception as e:
                                     print("Error handling clipboard content:", e)
+                                    self.log_error(e)
                                 ctypes.windll.user32.BlockInput(False)
                                 self.automate_copy_class_data()
                                 ctypes.windll.user32.BlockInput(True)
@@ -2753,9 +2757,11 @@ class TeraTermUI(customtkinter.CTk):
                         try:
                             clipboard_content = self.clipboard_get()
                         except tk.TclError:
-                            print("Clipboard contains non-text data, possibly an image or other formats")
+                            pass
+                            # print("Clipboard contains non-text data, possibly an image or other formats")
                         except Exception as e:
                             print("Error handling clipboard content:", e)
+                            self.log_error(e)
                         ctypes.windll.user32.BlockInput(False)
                         self.automate_copy_class_data()
                         ctypes.windll.user32.BlockInput(True)
@@ -6720,9 +6726,11 @@ class TeraTermUI(customtkinter.CTk):
                                     try:
                                         clipboard_content = self.clipboard_get()
                                     except tk.TclError:
-                                        print("Clipboard contains non-text data, possibly an image or other formats")
+                                        pass
+                                        # print("Clipboard contains non-text data, possibly an image or other formats")
                                     except Exception as e:
                                         print("Error handling clipboard content:", e)
+                                        self.log_error(e)
                                     ctypes.windll.user32.BlockInput(False)
                                     self.automate_copy_class_data()
                                     ctypes.windll.user32.BlockInput(True)
