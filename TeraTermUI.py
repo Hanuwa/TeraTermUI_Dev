@@ -1918,6 +1918,7 @@ class TeraTermUI(customtkinter.CTk):
         self.in_enroll_frame = False
         self.in_search_frame = False
         self.in_multiple_screen = True
+        self.add_key_bindings(event=None)
         self.unbind("<Control-Tab>")
         self.unbind("<Control-w>")
         self.unbind("<Control-W>")
@@ -3395,6 +3396,7 @@ class TeraTermUI(customtkinter.CTk):
             self.in_search_frame = False
             self.skipped_login = False
             self.main_menu = True
+            self.add_key_bindings(event=None)
             if self.error_occurred:
                 self.destroy_windows()
                 if self.server_status != "Maintenance message found" and self.server_status != "Timeout" \
@@ -6461,6 +6463,9 @@ class TeraTermUI(customtkinter.CTk):
                 pad_y = 45
         if self.countdown_running:
             self.submit_my_classes.configure(state="disabled")
+        self.in_enroll_frame = False
+        self.in_search_frame = False
+        self.add_key_bindings(event=None)
         self.after(350, self.bind, "<Return>", lambda event: self.submit_modify_classes_handler())
         self.bind("<Up>", lambda event: self.move_up_scrollbar())
         self.bind("<Down>", lambda event: self.move_down_scrollbar())
@@ -7419,12 +7424,13 @@ class TeraTermUI(customtkinter.CTk):
         self.curr_appearance = new_appearance_mode
 
     def add_key_bindings(self, event):
-        self.bind("<Left>", self.move_slider_left)
-        self.bind("<Right>", self.move_slider_right)
-        if self.tabview.get() == self.search_tab:
+        if self.in_search_frame:
             if len(self.class_table_pairs) > 1:
                 self.bind("<Left>", self.keybind_previous_table)
                 self.bind("<Right>", self.keybind_next_table)
+        else:
+            self.bind("<Left>", self.move_slider_left)
+            self.bind("<Right>", self.move_slider_right)
 
     def remove_key_bindings(self, event):
         self.unbind("<Left>")
@@ -8021,7 +8027,6 @@ class TeraTermUI(customtkinter.CTk):
     # Changes keybind depending on the tab the user is currently on
     def switch_tab(self):
         self.destroy_tooltip()
-        self.add_key_bindings(event=None)
         if self.tabview.get() == self.enroll_tab:
             self.search_scrollbar.configure(width=None, height=None)
             self.in_search_frame = False
@@ -8076,6 +8081,7 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<Control-w>")
             self.unbind("<Control-W>")
             self.after(350, self.bind, "<Return>", lambda event: self.option_menu_event_handler())
+        self.add_key_bindings(event=None)
         self.after(0, self.focus_set)
 
     def load_table(self):
