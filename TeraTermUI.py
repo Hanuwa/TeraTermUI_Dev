@@ -5870,7 +5870,7 @@ class TeraTermUI(customtkinter.CTk):
 
     def keybind_remove_current_table(self):
         current_time = time.time()
-        if hasattr(self, "last_remove_time") and current_time - self.last_remove_time < 0.75 or \
+        if hasattr(self, "last_remove_time") and current_time - self.last_remove_time < 0.250 or \
                 (self.loading_screen is not None and self.loading_screen.winfo_exists()):
             return
 
