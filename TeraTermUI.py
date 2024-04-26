@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/24/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/26/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -603,6 +603,7 @@ class TeraTermUI(customtkinter.CTk):
         self.e_counter = 0
         self.search_function_counter = 0
         self.last_switch_time = 0
+        self.last_remove_time = 0
         # Storing translations for languages in cache to reuse
         self.translations_cache = {}
         self.curr_lang = self.language_menu.get()
@@ -5578,8 +5579,8 @@ class TeraTermUI(customtkinter.CTk):
         self.sort_by.bind("<FocusIn>", lambda e: self.search_scrollbar.scroll_to_widget(self.sort_by))
         self.bind("<Control-s>", lambda event: self.download_search_classes_as_pdf())
         self.bind("<Control-S>", lambda event: self.download_search_classes_as_pdf())
-        self.bind("<Control-w>", lambda event: self.remove_current_table())
-        self.bind("<Control-W>", lambda event: self.remove_current_table())
+        self.bind("<Control-w>", lambda event: self.keybind_remove_current_table())
+        self.bind("<Control-W>", lambda event: self.keybind_remove_current_table())
 
     def find_duplicate(self, new_display_class, new_semester, show_all_sections_state, available_values):
         for index, (display_class, table, semester, existing_show_all_sections_state,
@@ -5867,6 +5868,15 @@ class TeraTermUI(customtkinter.CTk):
         self.display_current_table()
         self.update_buttons()
 
+    def keybind_remove_current_table(self):
+        current_time = time.time()
+        if hasattr(self, "last_remove_time") and current_time - self.last_remove_time < 0.75 or \
+                (self.loading_screen is not None and self.loading_screen.winfo_exists()):
+            return
+
+        self.remove_current_table()
+        self.last_remove_time = current_time
+    
     def remove_current_table(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
@@ -8066,8 +8076,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.after(100, self.load_table)
                 self.bind("<Control-s>", lambda event: self.download_search_classes_as_pdf())
                 self.bind("<Control-S>", lambda event: self.download_search_classes_as_pdf())
-                self.bind("<Control-w>", lambda event: self.remove_current_table())
-                self.bind("<Control-W>", lambda event: self.remove_current_table())
+                self.bind("<Control-w>", lambda event: self.keybind_remove_current_table())
+                self.bind("<Control-W>", lambda event: self.keybind_remove_current_table())
             self.in_enroll_frame = False
             self.in_search_frame = True
             self.after(350, self.bind, "<Return>", lambda event: self.search_event_handler())
