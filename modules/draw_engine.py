@@ -1,7 +1,9 @@
 from __future__ import annotations
+import hashlib
 import sys
 import math
 import tkinter
+from functools import lru_cache
 from typing import Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -40,10 +42,19 @@ class DrawEngine:
         self._last_slider_settings = None
         self._last_scrollbar_settings = None
 
+    @staticmethod
+    def calculate_hash(*args) -> str:
+        """Create a hash of given arguments to track changes in values."""
+        hash_object = hashlib.md5()
+        combined = ''.join(str(arg) for arg in args).encode()
+        hash_object.update(combined)
+        return hash_object.hexdigest()
+
     def set_round_to_even_numbers(self, round_width_to_even_numbers: bool = True, round_height_to_even_numbers: bool = True):
         self._round_width_to_even_numbers: bool = round_width_to_even_numbers
         self._round_height_to_even_numbers: bool = round_height_to_even_numbers
 
+    @lru_cache(maxsize=128)
     def __calc_optimal_corner_radius(self, user_corner_radius: Union[float, int]) -> Union[float, int]:
         # optimize for drawing with polygon shapes
         if self.preferred_drawing_method == "polygon_shapes":
@@ -70,7 +81,7 @@ class DrawEngine:
 
     def draw_background_corners(self, width: Union[float, int], height: Union[float, int], ):
         current_settings = (width, height)
-        if hasattr(self, "_last_background_corners") and self._last_background_corners == current_settings:
+        if self._last_background_corners == current_settings:
             return False
 
         if self._round_width_to_even_numbers:
@@ -113,8 +124,9 @@ class DrawEngine:
 
             returns bool if recoloring is necessary """
 
-        current_settings = (width, height, corner_radius, border_width, overwrite_preferred_drawing_method)
-        if hasattr(self, "_last_rounded_rect_settings") and self._last_rounded_rect_settings == current_settings:
+        current_settings = self.calculate_hash(width, height, corner_radius, border_width,
+                                                overwrite_preferred_drawing_method)
+        if self._last_rounded_rect_settings == current_settings:
             return False
 
         if self._round_width_to_even_numbers:
@@ -717,8 +729,9 @@ class DrawEngine:
 
             returns bool if recoloring is necessary """
 
-        current_settings = (width, height, corner_radius, border_width, progress_value_1, progress_value_2, orientation)
-        if hasattr(self, "_last_progress_bar_settings") and self._last_progress_bar_settings == current_settings:
+        current_settings = self.calculate_hash(width, height, corner_radius, border_width,
+                                               progress_value_1, progress_value_2, orientation)
+        if self._last_progress_bar_settings == current_settings:
             return False
 
         if self._round_width_to_even_numbers:
@@ -897,9 +910,9 @@ class DrawEngine:
                                                    border_width: Union[float, int], button_length: Union[float, int], button_corner_radius: Union[float, int],
                                                    slider_value: float, orientation: str) -> bool:
 
-        current_settings = (width, height, corner_radius, border_width, button_length,
-                            button_corner_radius, slider_value, orientation)
-        if hasattr(self, "_last_scrollbar_settings") and self._last_scrollbar_settings == current_settings:
+        current_settings = self.calculate_hash(width, height, corner_radius, border_width, button_length,
+                                               button_corner_radius, slider_value, orientation)
+        if self._last_scrollbar_settings == current_settings:
             return False
 
         if self._round_width_to_even_numbers:
@@ -1063,8 +1076,9 @@ class DrawEngine:
     def draw_rounded_scrollbar(self, width: Union[float, int], height: Union[float, int], corner_radius: Union[float, int],
                                border_spacing: Union[float, int], start_value: float, end_value: float, orientation: str) -> bool:
 
-        current_settings = (width, height, corner_radius, border_spacing, start_value, end_value, orientation)
-        if hasattr(self, "_last_scrollbar_settings") and self._last_scrollbar_settings == current_settings:
+        current_settings = self.calculate_hash(width, height, corner_radius, border_spacing,
+                                                start_value, end_value, orientation)
+        if self._last_scrollbar_settings == current_settings:
             return False
 
         if self._round_width_to_even_numbers:
@@ -1216,7 +1230,7 @@ class DrawEngine:
             returns bool if recoloring is necessary """
 
         current_settings = (width, height, size)
-        if hasattr(self, "_last_checkmark_settings") and self._last_checkmark_settings == current_settings:
+        if self._last_checkmark_settings == current_settings:
             return False
 
         size = round(size)
@@ -1251,7 +1265,7 @@ class DrawEngine:
             returns bool if recoloring is necessary """
 
         current_settings = (x_position, y_position, size)
-        if hasattr(self, "_last_dropdown_arrow") and self._last_dropdown_arrow == current_settings:
+        if self._last_dropdown_arrow == current_settings:
             return False
 
         x_position, y_position, size = round(x_position), round(y_position), round(size)
