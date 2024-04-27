@@ -812,7 +812,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.timer_window is not None and self.timer_window.winfo_exists():
             self.timer_window.withdraw()
         if not TeraTermUI.window_exists("Tera Term - [disconnected] VT") and \
-                not TeraTermUI.window_exists("SSH Authentication"):
+                not TeraTermUI.window_exists("SSH Authentication") and not self.in_student_frame:
             hwnd = win32gui.FindWindow(None, "uprbay.uprb.edu - Tera Term VT")
             if hwnd and win32gui.IsWindowVisible(hwnd):
                 win32gui.ShowWindow(hwnd, win32con.SW_HIDE)
