@@ -1,5 +1,4 @@
 from __future__ import annotations
-import hashlib
 import sys
 import math
 import tkinter
@@ -45,10 +44,11 @@ class DrawEngine:
     @staticmethod
     def calculate_hash(*args) -> str:
         """Create a hash of given arguments to track changes in values."""
-        hash_object = hashlib.md5()
-        combined = ''.join(str(arg) for arg in args).encode()
-        hash_object.update(combined)
-        return hash_object.hexdigest()
+        try:
+            return hash(
+                tuple(arg if isinstance(arg, (int, float, str, bool, type(None), tuple)) else str(arg) for arg in args))
+        except TypeError:
+            return hash(tuple(str(arg) for arg in args))
 
     def set_round_to_even_numbers(self, round_width_to_even_numbers: bool = True, round_height_to_even_numbers: bool = True):
         self._round_width_to_even_numbers: bool = round_width_to_even_numbers
@@ -151,7 +151,7 @@ class DrawEngine:
         else:
             preferred_drawing_method = self.preferred_drawing_method
 
-        self._last_checkmark_settings = current_settings
+        self._last_rounded_rect_settings = current_settings
 
         if preferred_drawing_method == "polygon_shapes":
             return self.__draw_rounded_rect_with_border_polygon_shapes(width, height, corner_radius, border_width, inner_corner_radius)
@@ -912,7 +912,7 @@ class DrawEngine:
 
         current_settings = self.calculate_hash(width, height, corner_radius, border_width, button_length,
                                                button_corner_radius, slider_value, orientation)
-        if self._last_scrollbar_settings == current_settings:
+        if self._last_slider_settings == current_settings:
             return False
 
         if self._round_width_to_even_numbers:
@@ -936,7 +936,7 @@ class DrawEngine:
         else:
             inner_corner_radius = 0
 
-        self._last_scrollbar_settings = current_settings
+        self._last_slider_settings = current_settings
 
         if self.preferred_drawing_method == "polygon_shapes" or self.preferred_drawing_method == "circle_shapes":
             return self.__draw_rounded_slider_with_border_and_button_polygon_shapes(width, height, corner_radius, border_width, inner_corner_radius,
