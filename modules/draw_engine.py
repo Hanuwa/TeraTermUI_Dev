@@ -54,7 +54,7 @@ class DrawEngine:
         self._round_width_to_even_numbers: bool = round_width_to_even_numbers
         self._round_height_to_even_numbers: bool = round_height_to_even_numbers
 
-    @lru_cache(maxsize=2048)
+    @lru_cache(maxsize=4096)
     def __calc_optimal_corner_radius(self, user_corner_radius: Union[float, int]) -> Union[float, int]:
         # optimize for drawing with polygon shapes
         if self.preferred_drawing_method == "polygon_shapes":
