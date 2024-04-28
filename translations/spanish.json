@@ -177,7 +177,6 @@
 	"exit": "Salir",
 	"exit_message": "¿Estás seguro que quieres salir de la aplicación?",
 	"close_tera_term": "¿Cerrar Tera Term?",
-	"error_student": "¡Error! Número o PIN\nde Estudiante Incorrecto",
 	"error_student_id_code": "¡Error! Número o PIN\nde Estudiante Invalido",
 	"error_student_id": "¡Error! Formato Invalido\n\ndel Número de Estudiante",
 	"error_code": "¡Error! Formato Invalido del\n\nNúmero de PIN",
