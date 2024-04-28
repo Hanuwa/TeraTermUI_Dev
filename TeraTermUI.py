@@ -1082,11 +1082,16 @@ class TeraTermUI(customtkinter.CTk):
                                 self.switch_tab()
                             else:
                                 self.after(350, self.bind, "<Return>", lambda event: self.student_event_handler())
-                                if "ON FILE" in text_output or "ERRORS FOUND" in text_output:
+                                if "ON FILE" in text_output:
                                     self.uprb.UprbayTeraTermVt.type_keys("{TAB 3}")
+                                    self.after(100, self.show_error_message, 315, 230, translation["error_student_id"])
                                 elif "PIN NUMBER" in text_output:
                                     self.uprb.UprbayTeraTermVt.type_keys("{TAB 2}")
-                                self.after(100, self.show_error_message, 300, 215, translation["error_student"])
+                                    self.after(100, self.show_error_message, 315, 230, translation["error_code"])
+                                elif "ERRORS FOUND" in text_output:
+                                    self.uprb.UprbayTeraTermVt.type_keys("{TAB 3}")
+                                    self.after(100, self.show_error_message, 300, 215,
+                                               translation["error_student_id_code"])
                         else:
                             self.after(350, self.bind, "<Return>", lambda event: self.student_event_handler())
                             if (not student_id or len(student_id) != 9) and (not code.isdigit or len(code) != 4):
