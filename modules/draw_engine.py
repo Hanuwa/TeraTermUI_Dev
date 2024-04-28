@@ -80,7 +80,7 @@ class DrawEngine:
                 return user_corner_radius
 
     def draw_background_corners(self, width: Union[float, int], height: Union[float, int], ):
-        current_settings = (width, height)
+        current_settings = self.calculate_hash(width, height)
         if self._last_background_corners == current_settings:
             return False
 
@@ -1229,7 +1229,7 @@ class DrawEngine:
 
             returns bool if recoloring is necessary """
 
-        current_settings = (width, height, size)
+        current_settings = self.calculate_hash(width, height, size)
         if self._last_checkmark_settings == current_settings:
             return False
 
@@ -1264,7 +1264,7 @@ class DrawEngine:
 
             returns bool if recoloring is necessary """
 
-        current_settings = (x_position, y_position, size)
+        current_settings = self.calculate_hash(x_position, y_position, size)
         if self._last_dropdown_arrow == current_settings:
             return False
 
