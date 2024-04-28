@@ -5383,7 +5383,8 @@ class TeraTermUI(customtkinter.CTk):
             "GARCIA CUEVAS EUGENIO": "https://notaso.com/professors/eugenio-garcia-perez/",
             "MEDINA CRUZ OLGA L.": "https://notaso.com/professors/olga-l-medina-cruz/",
             "RODRIGUEZ VALENTIN JOSE A": "https://notaso.com/professors/jose-rodriguez-valentin-2/",
-            "VILLARONGA SWEET LUIS G.": "https://notaso.com/professors/gabriel-villaronga-sweet/"
+            "VILLARONGA SWEET LUIS G.": "https://notaso.com/professors/gabriel-villaronga-sweet/",
+            "GONZALEZ GONZALEZ ORLAND": "https://notaso.com/professors/orlando-gonzalez/"
         }
         hardcoded_name = " ".join(instructor_text.split())
         if hardcoded_name in url_mapping:
@@ -5748,6 +5749,8 @@ class TeraTermUI(customtkinter.CTk):
         curr_table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
         self.table = curr_table
         self.current_class = display_class
+        self.s_classes_entry.delete(0, "end")
+        self.s_classes_entry.insert(0, display_class.cget("text"))
         self.after(0, self.focus_set)
 
     def update_buttons(self):
@@ -9288,8 +9291,8 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self._x_scrollbar.bind("<B1-Motion>", self.stop_autoscroll)
 
         initial_state = self.get("1.0", "end-1c")
-        self._undo_stack = deque([initial_state], maxlen=50)
-        self._redo_stack = deque(maxlen=50)
+        self._undo_stack = deque([initial_state], maxlen=100)
+        self._redo_stack = deque(maxlen=100)
 
         # Bind Control-Z to undo and Control-Y to redo
         self.bind("<Control-z>", self.undo)
@@ -9616,8 +9619,8 @@ class CustomEntry(customtkinter.CTkEntry):
         super().__init__(master, *args, **kwargs)
 
         initial_state = self.get()
-        self._undo_stack = deque([initial_state], maxlen=25)
-        self._redo_stack = deque(maxlen=25)
+           self._undo_stack = deque([initial_state], maxlen=50)
+        self._redo_stack = deque(maxlen=50)
         self.lang = lang
         self.is_listbox_entry = False
         self.select = False
