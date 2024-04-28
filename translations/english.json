@@ -177,7 +177,6 @@
 	"exit": "Exit",
 	"exit_message": "Are you sure you want to exit the application?",
 	"close_tera_term": "Close Tera Term?",
-	"error_student": "Error! Incorrect Student ID or PIN",
 	"error_student_id_code": "Error! Invalid Student ID or PIN",
 	"error_student_id": "Error! Invalid Student ID Format",
 	"error_code": "Error! Invalid PIN Number Format",
