@@ -146,7 +146,7 @@ class TeraTermUI(customtkinter.CTk):
         self.bind("<Button-3>", lambda event: self.focus_set())
 
         # creates separate threads from the main application
-        self.last_activity = time.time()
+        self.last_activity = None
         self.is_idle_thread_running = False
         self.stop_check_idle = threading.Event()
         self.is_check_process_thread_running = False
@@ -7503,10 +7503,6 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Left>", self.move_slider_left)
             self.bind("<Right>", self.move_slider_right)
 
-    def remove_key_bindings(self, event):
-        self.unbind("<Left>")
-        self.unbind("<Right>")
-
     # Moves the scaling slider to the left
     def move_slider_left(self, event):
         if self.move_slider_left_enabled:
@@ -9670,7 +9666,7 @@ class CustomEntry(customtkinter.CTkEntry):
         super().__init__(master, *args, **kwargs)
 
         initial_state = self.get()
-           self._undo_stack = deque([initial_state], maxlen=50)
+        self._undo_stack = deque([initial_state], maxlen=50)
         self._redo_stack = deque(maxlen=50)
         self.lang = lang
         self.is_listbox_entry = False
