@@ -203,8 +203,8 @@ class CustomEntry(CTkEntry):
         super().__init__(master, *args, **kwargs)
 
         initial_state = self.get()
-        self._undo_stack = deque([initial_state], maxlen=25)
-        self._redo_stack = deque(maxlen=25)
+        self._undo_stack = deque([initial_state], maxlen=50)
+        self._redo_stack = deque(maxlen=50)
         self.lang = lang
         self.is_listbox_entry = False
         self.select = False
