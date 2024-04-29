@@ -1367,7 +1367,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(section)
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                     self.update_idletasks()
-                                    time.sleep(1.5)
+                                    time.sleep(2)
                                     text_output = self.capture_screenshot()
                                     enrolled_classes = "ENROLLED"
                                     count_enroll = text_output.count(enrolled_classes)
@@ -2148,7 +2148,7 @@ class TeraTermUI(customtkinter.CTk):
                                     else:
                                         self.uprb.UprbayTeraTermVt.type_keys("{TAB}")
                                 self.update_idletasks()
-                                time.sleep(1.5)
+                                time.sleep(2)
                                 text_output = self.capture_screenshot()
                                 dropped_classes = "DROPPED"
                                 count_dropped = text_output.count(dropped_classes)
@@ -3918,6 +3918,7 @@ class TeraTermUI(customtkinter.CTk):
             try:
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
+                semester = self.m_semester_entry[0].get().upper().replace(" ", "")
                 self.automation_preparations()
                 self.auto_enroll_bool = True
                 if asyncio.run(self.test_connection(lang)) and self.check_server() and self.check_format():
@@ -3953,6 +3954,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(100, self.auto_enroll.deselect)
                                 self.auto_enroll_bool = False
                                 return
+                            active_semesters = TeraTermUI.get_latest_term(copy)
                             date_time_string = re.sub(r"[^a-zA-Z0-9:/ ]", "", date_time_string)
                             date_time_naive = datetime.strptime(date_time_string, "%m/%d/%Y %I:%M %p")
                             puerto_rico_tz = pytz.timezone("America/Puerto_Rico")
@@ -3970,6 +3972,12 @@ class TeraTermUI(customtkinter.CTk):
                             is_more_than_one_day = (your_date.date() - current_date.date() > timedelta(days=1))
                             is_current_time_ahead = current_date.time() > your_date.time()
                             is_current_time_24_hours_ahead = time_difference >= timedelta(hours=-24)
+                            if active_semesters["percent"] and active_semesters["asterisk"] \
+                                    and semester == active_semesters["percent"]:
+                                self.after(100, self.show_error_message, 300, 215, translation["date_past"])
+                                self.auto_enroll_bool = False
+                                self.after(100, self.auto_enroll.deselect)
+                                return
                             # Comparing Dates
                             if (is_same_date and is_time_difference_within_12_hours) or \
                                     (is_next_date and is_time_difference_within_12_hours):
@@ -6032,20 +6040,24 @@ class TeraTermUI(customtkinter.CTk):
             pyautogui.moveTo(original_position)
         if self.loading_screen is not None and self.loading_screen.winfo_exists():
             self.loading_screen.deiconify()
-
+            
     @staticmethod
     def get_latest_term(input_text):
-        term_pattern = r"\b[A-Z][0-9]{2}%"
-        match = re.search(term_pattern, input_text, re.IGNORECASE)
+        term_pattern = r"\b[A-Z][0-9]{2}[%*]"
+        matches = re.findall(term_pattern, input_text, re.IGNORECASE)
+        results = {"percent": None, "asterisk": None}
 
-        if match:
-            latest_term = match.group()
-            return latest_term.replace("%", "")
-        else:
+        for match in matches:
+            if match.endswith("%"):
+                results["percent"] = match[:-1]
+            elif match.endswith("*"):
+                results["asterisk"] = match[:-1]
+        if not matches:
             if "OPCIONES PARA EL ESTUDIANTE" not in input_text:
                 return "Latest term not found"
             else:
                 return "No active semester"
+        return results
 
     def handle_current_semester(self):
         if not self.found_latest_semester:
@@ -6076,17 +6088,17 @@ class TeraTermUI(customtkinter.CTk):
                     self.reset_activity_timer()
                 self.after(100, self.show_error_message, 320, 235, translation["no_active_semester"])
                 return "negative"
-            else:
+            elif latest_term["percent"]:
                 self.DEFAULT_SEMESTER = latest_term
                 row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
                 if not row_exists:
-                    self.cursor.execute("INSERT INTO user_data (default_semester) VALUES (?)",
-                                        (self.DEFAULT_SEMESTER,))
+                    self.cursor.execute("INSERT INTO user_data (default_semester) VALUES (?)",(self.DEFAULT_SEMESTER,))
                 else:
-                    self.cursor.execute("UPDATE user_data SET default_semester=?",
-                                        (self.DEFAULT_SEMESTER,))
+                    self.cursor.execute("UPDATE user_data SET default_semester=?",(self.DEFAULT_SEMESTER,))
                 self.found_latest_semester = True
                 return latest_term
+            else:
+                return self.DEFAULT_SEMESTER
         else:
             return self.DEFAULT_SEMESTER
 
@@ -6708,7 +6720,7 @@ class TeraTermUI(customtkinter.CTk):
                                     if mod == translation["drop"] or mod == translation["section"]:
                                         if not first_loop:
                                             self.update_idletasks()
-                                            time.sleep(1.5)
+                                            time.sleep(2)
                                             text_output = self.capture_screenshot()
                                             enrolled_classes = "ENROLLED"
                                             count_enroll = text_output.count(enrolled_classes)
@@ -6771,7 +6783,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                 self.reset_activity_timer()
                                 self.update_idletasks()
-                                time.sleep(1.5)
+                                time.sleep(2)
                                 text_output = self.capture_screenshot()
                                 self.reset_activity_timer()
                                 if "CONFIRMED" in text_output:
