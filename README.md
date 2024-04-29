@@ -22,9 +22,8 @@ https://github.com/UB-Mannheim/tesseract/wiki
 
 # GUI Framework
 The whole GUI is made using customtkinter, read wiki to familiarize yourself with it, can work in conjunction with the normal tkinter too.
-It is versatile and really good looking but also very incomplete, which is why I have customized and modified some of the internal files within the framework.
-https://github.com/TomSchimansky/CustomTkinter &
-https://customtkinter.tomschimansky.com
+It is versatile and really good looking but also very incomplete and its performance is lackluster, which is why I have customized and
+https://github.com/TomSchimansky/CustomTkinter & https://customtkinter.tomschimansky.com
       
 # Convert from .py to .exe
 We convert the application to an executable using Nuitka, which is a library that basically coverts your python code into C then it compiles and bundles your application together
