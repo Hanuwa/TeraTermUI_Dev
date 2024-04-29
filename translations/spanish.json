@@ -180,6 +180,8 @@
 	"error_student_id_code": "¡Error! Número o PIN\nde Estudiante Invalido",
 	"error_student_id": "¡Error! Formato Invalido\n\ndel Número de Estudiante",
 	"error_code": "¡Error! Formato Invalido del\n\nNúmero de PIN",
+	"error_invalid_student_id": "¡Error! Número de Estudiante\n\nInvalido",
+	"error_invalid_code": "¡Error! Número de PIN Invalido",
 	"tera_term_not_running": "¡Error! Tera Term no está corriendo",
 	"tera_term_stopped_running": "¡Aviso! ¡El programa Tera Term ya no está corriendo!\n\nEsto podría deberse a que hubo un mantenimiento del servidor por parte de la universidad o se cerró por sí mismo debido a inactividad",
 	"server_maintenance_title": "Mantenimiento del Servidor",
