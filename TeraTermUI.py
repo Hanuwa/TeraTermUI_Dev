@@ -1947,6 +1947,7 @@ class TeraTermUI(customtkinter.CTk):
         self.bind("<Up>", lambda event: self.add_event_up_arrow_key())
         self.bind("<Down>", lambda event: self.remove_event_down_arrow_key())
         self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event2())
+        self.destroy_tooltip()
         self.multiple_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 30))
         self.multiple_frame.grid_columnconfigure(2, weight=1)
         self.m_button_frame.grid(row=3, column=1, columnspan=4, rowspan=4, padx=(0, 0), pady=(0, 10))
@@ -3045,7 +3046,7 @@ class TeraTermUI(customtkinter.CTk):
         label = tk.Label(self.tooltip, text=text, bg="#FFD700", fg="#000", font=("Verdana", 11, "bold"))
         label.pack(padx=5, pady=5)
         self.lift_tooltip()
-        self.tooltip.after(12500, self.destroy_tooltip)
+        self.tooltip.after(15000, self.destroy_tooltip)
         self.tooltip.bind("<Button-1>", lambda e: self.destroy_tooltip())
         self.tooltip.bind("<Button-2>", lambda e: self.destroy_tooltip())
         self.tooltip.bind("<Button-3>", lambda e: self.destroy_tooltip())
@@ -3380,6 +3381,7 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<Control-Tab>")
             self.unbind("<Control-BackSpace>")
             self.bind("<Return>", lambda event: self.login_event_handler())
+            self.destroy_tooltip()
             if self.in_auth_frame:
                 self.destroy_auth()
             elif self.in_student_frame:
@@ -3450,6 +3452,7 @@ class TeraTermUI(customtkinter.CTk):
         self.unbind("<Control-S>")
         self.bind("<Control-Tab>", lambda event: self.on_ctrl_tab_pressed())
         self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
+        self.destroy_tooltip()
         if self.in_multiple_screen:
             self.multiple_frame.grid_forget()
             self.m_button_frame.grid_forget()
