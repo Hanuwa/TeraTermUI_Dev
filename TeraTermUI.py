@@ -1239,7 +1239,7 @@ class TeraTermUI(customtkinter.CTk):
 
         if save:
             num_rows = len(save)
-            max_entries = 5
+            max_entries = 6
             for index, row in enumerate(save[:max_entries], start=1):
                 class_value, section_value, semester_value, register_value = row
                 display_register_value = reverse_language_mapping.get(lang, {}).get(register_value, register_value)
@@ -1252,7 +1252,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.m_semester_entry[index - 1].set(display_semester_value)
                 self.m_register_menu[index - 1].set(display_register_value)
 
-            for _ in range(min(num_rows - 1, 5)):
+            for _ in range(min(num_rows - 1, 6)):
                 self.add_event()
 
     def submit_event_handler(self):
