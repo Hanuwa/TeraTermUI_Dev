@@ -1370,9 +1370,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(classes)
                                     self.uprb.UprbayTeraTermVt.type_keys(section)
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                                    self.update_idletasks()
-                                    time.sleep(2)
-                                    text_output = self.capture_screenshot()
+                                    text_output = self.wait_for_response("CONFIRMED", "DROPPED")
                                     enrolled_classes = "ENROLLED"
                                     count_enroll = text_output.count(enrolled_classes)
                                     dropped_classes = "DROPPED"
@@ -2152,9 +2150,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                     else:
                                         self.uprb.UprbayTeraTermVt.type_keys("{TAB}")
-                                self.update_idletasks()
-                                time.sleep(2)
-                                text_output = self.capture_screenshot()
+                                text_output = self.wait_for_response("CONFIRMED", "DROPPED")
                                 dropped_classes = "DROPPED"
                                 count_dropped = text_output.count(dropped_classes)
                                 self.reset_activity_timer()
@@ -2769,7 +2765,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.wait_for_window()
                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                         self.update_idletasks()
-                        time.sleep(0.3)
+                        time.sleep(0.5)
                         clipboard_content = None
                         try:
                             clipboard_content = self.clipboard_get()
@@ -5141,7 +5137,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.loading_screen.deiconify()
             screenshot = screenshot.crop((crop_margin[0], crop_margin[1], width - crop_margin[2],
                                           height - crop_margin[3])).convert("L")
-            # screenshot = screenshot.resize((screenshot.width * 2, screenshot.height * 2), resample=Image.BICUBIC)
+            screenshot = screenshot.resize((screenshot.width * 2, screenshot.height * 2),
+                                           resample=Image.Resampling.LANCZOS)
             # screenshot.save("screenshot.png")
             custom_config = r"--oem 3 --psm 6"
             text = pytesseract.image_to_string(screenshot, config=custom_config)
@@ -6190,17 +6187,24 @@ class TeraTermUI(customtkinter.CTk):
                     modified_item["DAYS"] = day
                     modified_item["TIMES"] = time
 
-                # Process times to have proper format for each entry
-                times_parts = modified_item["TIMES"].split("-")
-                if len(times_parts) == 2:
-                    start, end = times_parts
-                    start = start.lstrip("0")
-                    end = end.lstrip("0")
-                    start = start[:-4] + ":" + start[-4:-2] + " " + start[-2:]
-                    end = end[:-4] + ":" + end[-4:-2] + " " + end[-2:]
-                    modified_item["TIMES"] = "\n".join([start, end])
+                # Check if the time is just a dash, handle it specifically
+                if modified_item["TIMES"] == "-":
+                    modified_item["TIMES"] = "-"
                 else:
-                    modified_item["TIMES"] = modified_item["TIMES"].lstrip("0")
+                    # Process times to have proper format for each entry
+                    times_parts = modified_item["TIMES"].split("-")
+                    if len(times_parts) == 2:
+                        start, end = times_parts
+                        start = start.lstrip("0")
+                        end = end.lstrip("0")
+                        if len(start) > 2:
+                            start = start[:-4] + ":" + start[-4:-2] + " " + start[-2:]
+                        if len(end) > 2:
+                            end = end[:-4] + ":" + end[-4:-2] + " " + end[-2:]
+                        modified_item["TIMES"] = "\n".join([start, end])
+                    else:
+                        # If it does not follow the expected pattern, leave it as is
+                        modified_item["TIMES"] = modified_item["TIMES"]
 
                 modified_data.append(modified_item)
 
@@ -6789,10 +6793,8 @@ class TeraTermUI(customtkinter.CTk):
                                                 self.enrolled_classes_list[old_section] = course_code_no_section
                                 self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                 self.reset_activity_timer()
-                                self.update_idletasks()
-                                time.sleep(2)
-                                text_output = self.capture_screenshot()
-                                self.reset_activity_timer()
+                                text_output = self.wait_for_response("CONFIRMED",
+                                                                     "DROPPED", timeout=1.5)
                                 if "CONFIRMED" in text_output:
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                 if "DROPPED" in text_output:
@@ -6813,6 +6815,8 @@ class TeraTermUI(customtkinter.CTk):
                                     except Exception as e:
                                         print("Error handling clipboard content:", e)
                                         self.log_error(e)
+                                    self.update_idletasks()
+                                    time.sleep(1)
                                     ctypes.windll.user32.BlockInput(False)
                                     self.automate_copy_class_data()
                                     ctypes.windll.user32.BlockInput(True)
@@ -6973,7 +6977,7 @@ class TeraTermUI(customtkinter.CTk):
                 if not self.not_rebind:
                     self.after(350, self.bind, "<Return>", lambda event: self.submit_modify_classes_handler())
                 ctypes.windll.user32.BlockInput(False)
-
+    
     # checks whether the program can continue its normal execution or if the server is on maintenance
     def wait_for_prompt(self, prompt_text, maintenance_text, timeout=15):
         self.update_idletasks()
@@ -6990,6 +6994,22 @@ class TeraTermUI(customtkinter.CTk):
             self.update_idletasks()
             time.sleep(0.5)  # Adjust the delay between screenshots as needed
 
+    def wait_for_response(self, confirmed, dropped, timeout=3):
+        self.update_idletasks()
+        time.sleep(1)
+        start_time = time.time()
+        last_text_output = ""
+
+        while time.time() - start_time <= timeout:
+            text_output = self.capture_screenshot()
+            if confirmed in text_output or dropped in text_output:
+                return text_output
+            last_text_output = text_output
+            self.update_idletasks()
+            time.sleep(0.5)
+
+        return last_text_output
+    
     def wait_for_window(self):
         try:
             self.uprbay_window.wait("visible", timeout=3)
@@ -7384,21 +7404,12 @@ class TeraTermUI(customtkinter.CTk):
             self.after(2500, explanation)
         if not found_errors and text != "Error":
             for i in range(self.a_counter + 1):
-                self.m_classes_entry[i].configure(state="normal")
-                self.m_section_entry[i].configure(state="normal")
                 self.m_classes_entry[i].delete(0, "end")
                 self.m_section_entry[i].delete(0, "end")
-                self.m_classes_entry[i].configure(state="disabled")
-                self.m_section_entry[i].configure(state="disabled")
-            for i in range(6):
-                self.m_classes_entry[i].configure(state="normal")
-                self.m_section_entry[i].configure(state="normal")
                 self.m_classes_entry[i].configure(
                     placeholder_text=self.placeholder_texts_classes[i])
                 self.m_section_entry[i].configure(
                     placeholder_text=self.placeholder_texts_sections[i])
-                self.m_classes_entry[i].configure(state="disabled")
-                self.m_section_entry[i].configure(state="disabled")
         self.submit.configure(state="normal")
         self.submit_multiple.configure(state="normal")
         self.not_rebind = False
