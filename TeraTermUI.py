@@ -1381,6 +1381,10 @@ class TeraTermUI(customtkinter.CTk):
                                         self.e_section_entry.configure(state="normal")
                                         self.e_classes_entry.delete(0, "end")
                                         self.e_section_entry.delete(0, "end")
+                                        self.e_classes_entry.configure(
+                                            placeholder_text="MATE3032")
+                                        self.e_section_entry.configure(
+                                            placeholder_text="LM1")
                                         self.e_classes_entry.configure(state="disabled")
                                         self.e_section_entry.configure(state="disabled")
                                         self.e_counter -= count_dropped
