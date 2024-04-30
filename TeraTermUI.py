@@ -1219,8 +1219,11 @@ class TeraTermUI(customtkinter.CTk):
         save = self.cursor.execute("SELECT class, section, semester, action FROM saved_classes"
                                    " WHERE class IS NOT NULL").fetchall()
         save_check = self.cursor.execute('SELECT "id" FROM saved_classes').fetchone()
-
+        semester = self.cursor.execute("SELECT semester FROM saved_classes ORDER BY id LIMIT 1").fetchone()
         if save_check and save_check[0] is not None:
+            if semester[0] != self.DEFAULT_SEMESTER:
+                self.cursor.execute("DELETE FROM saved_classes")
+                return
             if save_check[0] == 1:
                 self.save_data.select()
                 self.changed_classes = set()
