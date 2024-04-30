@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/29/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/30/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1223,6 +1223,7 @@ class TeraTermUI(customtkinter.CTk):
         if save_check and save_check[0] is not None:
             if semester[0] != self.DEFAULT_SEMESTER:
                 self.cursor.execute("DELETE FROM saved_classes")
+                self.connection.commit()
                 return
             if save_check[0] == 1:
                 self.save_data.select()
@@ -1238,21 +1239,21 @@ class TeraTermUI(customtkinter.CTk):
 
         if save:
             num_rows = len(save)
-            for index, row in enumerate(save, start=1):
+            max_entries = 5
+            for index, row in enumerate(save[:max_entries], start=1):
                 class_value, section_value, semester_value, register_value = row
-
                 display_register_value = reverse_language_mapping.get(lang, {}).get(register_value, register_value)
                 display_semester_value = reverse_language_mapping.get(lang, {}).get(semester_value, semester_value)
-                if index <= num_rows:
-                    self.m_classes_entry[index - 1].delete(0, "end")
-                    self.m_classes_entry[index - 1].insert(0, class_value)
-                    self.m_section_entry[index - 1].delete(0, "end")
-                    self.m_section_entry[index - 1].insert(0, section_value)
-                    if index == 1:
-                        self.m_semester_entry[index - 1].set(display_semester_value)
-                    self.m_register_menu[index - 1].set(display_register_value)
-                else:
-                    break
+                self.m_classes_entry[index - 1].delete(0, "end")
+                self.m_classes_entry[index - 1].insert(0, class_value)
+                self.m_section_entry[index - 1].delete(0, "end")
+                self.m_section_entry[index - 1].insert(0, section_value)
+                if index == 1:
+                    self.m_semester_entry[index - 1].set(display_semester_value)
+                self.m_register_menu[index - 1].set(display_register_value)
+
+            for _ in range(min(num_rows - 1, 5)):
+                self.add_event()
 
     def submit_event_handler(self):
         if self.countdown_running:
@@ -4798,7 +4799,7 @@ class TeraTermUI(customtkinter.CTk):
             for entry in [self.m_classes_entry, self.m_section_entry]:
                 for sub_entry in entry:
                     sub_entry.lang = lang
-        self.load_saved_classes()
+            self.load_saved_classes()
 
     # saves the information to the database when the app closes
     def save_user_data(self, include_exit=True):
