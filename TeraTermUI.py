@@ -6266,7 +6266,8 @@ class TeraTermUI(customtkinter.CTk):
                     instructor_cleaned = re.sub(r"\bRSTR\b", "", instructor_cleaned)
                     instructor_cleaned = instructor_cleaned.strip()
                     av_value = "RSVD" if "RSVD" in instructor else "RSTR" if "RSTR" in instructor else \
-                        "999" if "999" in instructor else match.group(7).strip() if match.group(7) else "0"
+                               "999" if "999" in instructor else "998" if "998" in instructor else \
+                               match.group(7).strip() if match.group(7) else "0"
                     current_section = {
                         "SEC": match.group(1),
                         "M": match.group(2),
@@ -6288,7 +6289,7 @@ class TeraTermUI(customtkinter.CTk):
             section["TIMES"] = ", ".join(section["TIMES"])
 
         return data, course_found, invalid_action, y_n_found, y_n_value, term_value
-
+        
     def extract_my_enrolled_classes(self, text):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
