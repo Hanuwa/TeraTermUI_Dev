@@ -205,7 +205,7 @@ nuitka_command = (
     r'--nofollow-import-to=unittest --python-flag=no_docstrings --product-name="Tera Term UI" '
     r'--company-name="Armando Del Valle Tejada" --file-description="TeraTermUI" '  
     r'--file-version="' + update_without_v + r'" --product-version="' + update_without_v + r'" '
-    r'--copyright="Copyright (c) 2024 Armando Del Valle Tejada" '
+    r'--copyright="Copyright (c) 2024 Armando Del Valle Tejada" --noinclude-setuptools-mode=nofollow '
 )
 try:
     updater_exe_path = os.path.join(project_directory, "updater.exe")
