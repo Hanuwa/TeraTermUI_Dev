@@ -3013,6 +3013,13 @@ class TeraTermUI(customtkinter.CTk):
         self.back_student.configure(state="normal")
         self.ask_skip_auth = False
 
+    def keybind_disable_enable_auth(self):
+        if self.skip_auth_switch.get() == "on":
+            self.skip_auth_switch.deselect()
+        elif self.skip_auth_switch.get() == "off":
+            self.skip_auth_switch.select()
+        self.disable_enable_auth()
+    
     def disable_enable_auth(self):
         row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
         if self.skip_auth_switch.get() == "on":
@@ -7984,6 +7991,13 @@ class TeraTermUI(customtkinter.CTk):
         self.last_activity = time.time()
         self.idle_num_check = 0
 
+    def keybind_disable_enable_idle(self):
+        if self.disable_idle.get() == "on":
+            self.disable_idle.deselect()
+        elif self.disable_idle.get() == "off":
+            self.disable_idle.select()
+        self.disable_enable_idle()
+    
     # Disables check_idle functionality
     def disable_enable_idle(self):
         row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
@@ -8023,6 +8037,13 @@ class TeraTermUI(customtkinter.CTk):
                 ctypes.windll.user32.BlockInput(False)
         self.connection.commit()
 
+    def keybind_disable_enable_audio(self):
+        if self.disable_audio_val.get() == "on":
+            self.disable_audio_val.deselect()
+        elif self.disable_audio_val.get() == "off":
+            self.disable_audio_val.select()
+        self.disable_enable_audio()
+    
     def disable_enable_audio(self):
         row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
         if self.disable_audio_val.get() == "on":
@@ -8840,6 +8861,9 @@ class TeraTermUI(customtkinter.CTk):
         self.help_frame.bind("<Button-1>", lambda event: self.help_frame.focus_set())
         self.help_frame.bind("<Button-2>", lambda event: self.help_frame.focus_set())
         self.help_frame.bind("<Button-3>", lambda event: self.help_frame.focus_set())
+        self.disable_idle.bind("<space>", lambda event: self.keybind_disable_enable_idle())
+        self.disable_audio_val.bind("<space>", lambda event: self.keybind_disable_enable_audio())
+        self.skip_auth_switch.bind("<space>", lambda event: self.keybind_disable_enable_auth())
         self.class_list.bind("<<ListboxSelect>>", self.show_class_code)
         self.class_list.bind("<MouseWheel>", self.disable_scroll)
         self.class_list.bind("<FocusIn>", lambda e: self.help_frame.scroll_to_widget(self.class_list))
@@ -8874,6 +8898,9 @@ class TeraTermUI(customtkinter.CTk):
         self.help_frame.unbind("<Button-1>")
         self.help_frame.unbind("<Button-2>")
         self.help_frame.unbind("<Button-3>")
+        self.disable_idle.unbind("<space>")
+        self.disable_audio_val.unbind("<space>")
+        self.skip_auth_switch.unbind("<space>")
         self.class_list.unbind("<<ListboxSelect>>")
         self.class_list.unbind("<MouseWheel>")
         self.class_list.unbind("<FocusIn>")
