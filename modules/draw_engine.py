@@ -1229,10 +1229,6 @@ class DrawEngine:
 
             returns bool if recoloring is necessary """
 
-        current_settings = self.calculate_hash(width, height, size)
-        if self._last_checkmark_settings == current_settings:
-            return False
-
         size = round(size)
         requires_recoloring = False
 
@@ -1254,8 +1250,6 @@ class DrawEngine:
                 requires_recoloring = True
 
             self._canvas.coords("checkmark", round(width / 2), round(height / 2))
-
-        self._last_checkmark_settings = current_settings
 
         return requires_recoloring
 
