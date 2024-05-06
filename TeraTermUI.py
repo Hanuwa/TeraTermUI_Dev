@@ -6104,14 +6104,14 @@ class TeraTermUI(customtkinter.CTk):
                 self.after(100, self.show_error_message, 320, 235, translation["no_active_semester"])
                 return "negative"
             elif latest_term["percent"]:
-                self.DEFAULT_SEMESTER = latest_term
+                self.DEFAULT_SEMESTER = latest_term["percent"]
                 row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
                 if not row_exists:
                     self.cursor.execute("INSERT INTO user_data (default_semester) VALUES (?)",(self.DEFAULT_SEMESTER,))
                 else:
                     self.cursor.execute("UPDATE user_data SET default_semester=?",(self.DEFAULT_SEMESTER,))
                 self.found_latest_semester = True
-                return latest_term
+                return latest_term["percent"]
             else:
                 return self.DEFAULT_SEMESTER
         else:
