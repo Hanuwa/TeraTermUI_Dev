@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 5/5/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 5/6/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -598,6 +598,7 @@ class TeraTermUI(customtkinter.CTk):
         self.main_menu = True
         self.not_rebind = False
         self.notification_sent = False
+        self.first_time_adding = True
         self.a_counter = 0
         self.m_counter = 0
         self.e_counter = 0
@@ -1843,6 +1844,12 @@ class TeraTermUI(customtkinter.CTk):
         curr_sem = translation["current"].upper()
         if re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE) or semester == curr_sem:
             if self.a_counter + 1 < len(self.m_semester_entry):
+                if self.a_counter == 0 and self.m_register_menu[0].get() == translation["register"] \
+                        and self.first_time_adding:
+                    register_menu_values = [menu.get() for menu in self.m_register_menu]
+                    if all(value == translation["choose"] for value in register_menu_values[1:]):
+                        for menu in self.m_register_menu:
+                            menu.set(translation["register"])
                 self.m_num_class[self.a_counter + 1].grid(row=self.a_counter + 2, column=0, padx=(0, 8), pady=(20, 0))
                 self.m_classes_entry[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(0, 500),
                                                               pady=(20, 0))
@@ -1859,6 +1866,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.m_register_menu[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(500, 0),
                                                               pady=(20, 0))
                 self.a_counter += 1
+                self.first_time_adding = False
                 if self.a_counter > 0:
                     self.m_remove.configure(state="normal")
 
@@ -6303,8 +6311,8 @@ class TeraTermUI(customtkinter.CTk):
 
         class_pattern = re.compile(
             r"(\b[A-Z])\s+([A-Z]{4}\d{4}[A-Z]{2}\d)\s+([A-Z])?\s+(.*?)\s+([A-Z]{2})\s*([A-FI-NPW]*)\s+"
-            r"([A-Z]{1,2}|TBA)\s+(\d{4}[AP]M-\d{4}[AP]M|TBA)\s*(?:\s+([\dA-Z]*?)\s+([A-Z\d]{3,4})?)?"
-            r"(?:\s+([A-Z]{1,2}|TBA)\s+(\d{4}[AP]M-\d{4}[AP]M|TBA)\s*(?:\s+([\dA-Z]*?)\s+([A-Z\d]{3,4})?)?)"
+            r"([A-Z]{1,5}|TBA)\s+(\d{4}[AP]M-\d{4}[AP]M|TBA)\s*(?:\s+([\dA-Z]*?)\s+([A-Z\d]{3,4})?)?"
+            r"(?:\s+([A-Z]{1,5}|TBA)\s+(\d{4}[AP]M-\d{4}[AP]M|TBA)\s*(?:\s+([\dA-Z]*?)\s+([A-Z\d]{3,4})?)?)"
             r"?(?=\s+\b[A-Z]|\s*$)",
             re.DOTALL
         )
