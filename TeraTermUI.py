@@ -1866,10 +1866,10 @@ class TeraTermUI(customtkinter.CTk):
                 self.m_register_menu[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(500, 0),
                                                               pady=(20, 0))
                 self.a_counter += 1
-                self.first_time_adding = False
+                if self.m_register_menu[0].get() == translation["register"]:
+                    self.first_time_adding = False
                 if self.a_counter > 0:
                     self.m_remove.configure(state="normal")
-
                 if self.a_counter == 5:
                     self.m_add.configure(state="disabled")
         else:
