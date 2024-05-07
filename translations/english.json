@@ -203,6 +203,7 @@
 	"co_requisite_warning": "Sorry! but you can't modify classes that depend on each other in this screen (lab classes), for this you need to first drop both of those classes at the same time which you can do in the \"Multiple\" screen\n\nThe following classes are: ",
 	"invalid_semester": "¡Error! Invalid Semester",
 	"failed_semester": "Error! Failed to open enrolled\n\nclasses screen",
+	"semester_no_data": "Error! Not enrolled in any class\nin this semester: ",
 	"no_active_semester": "Error! No Current Active\n\nSemesters Available",
 	"missing_info": "Error! Missing information about\nthe class you want to enroll",
 	"class_format_error": "Error! Wrong Format for Class",
