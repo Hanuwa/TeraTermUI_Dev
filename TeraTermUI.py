@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 5/6/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 5/7/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1792,7 +1792,6 @@ class TeraTermUI(customtkinter.CTk):
                                 copy = pyperclip.paste()
                                 enrolled_classes, total_credits = self.extract_my_enrolled_classes(copy)
                                 self.after(0, self.enable_widgets, self)
-                                self.after(0, self.tabview.grid_forget)
                                 self.after(50, self.display_enrolled_data, enrolled_classes, total_credits)
                                 self.clipboard_clear()
                                 if clipboard_content is not None:
@@ -6452,17 +6451,18 @@ class TeraTermUI(customtkinter.CTk):
         self.unbind("<Control-W>")
         lang = self.language_menu.get()
         translation = self.load_language(lang)
+        semester = self.dialog_input.upper().replace(" ", "")
         headers = [translation["course"], translation["grade"], translation["days"],
                    translation["times"], translation["room"]]
         if not data:
-            self.after(100, self.show_error_message, 320, 235, translation["failed_semester"])
+            self.after(100, self.show_error_message, 320, 235, translation["semester_no_data"] + semester)
             return
+        self.tabview.grid_forget()
         table_values = [headers] + [[cls.get(header, "") for header in headers] for cls in data]
         enrolled_rows = len(data) + 1
         if self.enrolled_classes_table is not None:
             self.destroy_enrolled_frame(when="Now")
         self.enrolled_classes_data = data
-        semester = self.dialog_input.upper().replace(" ", "")
         self.my_classes_frame = customtkinter.CTkScrollableFrame(self, corner_radius=10, width=620, height=320)
         self.title_my_classes = customtkinter.CTkLabel(self.my_classes_frame,
                                                        text=translation["my_classes"] + semester,
