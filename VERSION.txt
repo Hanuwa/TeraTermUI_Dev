@@ -1,8 +1,8 @@
 Version Number: v0.9.0
 
-SHA-256 Checksum: 43e015398cd1e4664b06d1d183109c9c840733ceb91c2fb0846b266395e630af
+SHA-256 Checksum: 14b7e79bd9fb0ebd9029e8771c3a3e0e2e97a9869d89d4ee46d354b7e65b66c7
 
-Release Date: 05/07/2024
+Release Date: 05/08/2024
 
 Patch Notes:
  - Introducing the first public release!
@@ -23,7 +23,7 @@ Updating: To update, simply run the installer or
 replace the existing files in the "TeraTermUI" directory with the new ones.
 
 Reporting Issues/Bugs/Feedback: Feedback can be submitted directly through the app
-via the "Status" window, or on the Github repository.
+via the "Status" window, or on the GitHub repository.
 
 *Note: As this application is in the early stages of development, some bugs and issues are anticipated.
 Your feedback and bug reports are invaluable and greatly assist in further development and enhancements.
