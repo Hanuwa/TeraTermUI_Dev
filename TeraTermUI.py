@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 5/8/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 5/9/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -8693,6 +8693,7 @@ class TeraTermUI(customtkinter.CTk):
         if not results:  # if there are no results, display a message
             self.class_list.delete(0, tk.END)
             self.class_list.insert(tk.END, translation["no_results"])
+            self.search_box.configure(border_color="#c30101")
         else:
             for row in results:
                 self.class_list.insert(tk.END, row[0])
@@ -8710,9 +8711,11 @@ class TeraTermUI(customtkinter.CTk):
         if result is None:
             self.class_list.delete(0, tk.END)
             self.class_list.insert(tk.END, translation["no_results"])
+            self.search_box.configure(border_color="#c30101")
         else:
             self.search_box.delete(0, tk.END)
             self.search_box.insert(0, result[0])
+            self.search_box.configure(border_color="#228B22")
 
     def help_widgets(self):
         lang = self.language_menu.get()
@@ -9775,7 +9778,7 @@ class CustomEntry(customtkinter.CTkEntry):
         self.bind("<Button-3>", self.show_menu)
 
     def disable_slider_keys(self, event=None):
-        if self.cget("border_color") == "#c30101":
+        if self.cget("border_color") == "#c30101" or self.cget("border_color") == "#228B22":
             if self.border_color is None:
                 self.border_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
             self.configure(border_color=self.border_color)
