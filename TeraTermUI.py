@@ -8696,6 +8696,9 @@ class TeraTermUI(customtkinter.CTk):
             self.search_box.configure(border_color="#c30101")
         else:
             for row in results:
+                default_border_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
+                if self.search_box.border_color != default_border_color:
+                    self.search_box.configure(border_color=default_border_color)
                 self.class_list.insert(tk.END, row[0])
 
     # query for searching for either class code or name
