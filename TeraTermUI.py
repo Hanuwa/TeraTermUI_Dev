@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 5/9/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 5/11/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -552,6 +552,7 @@ class TeraTermUI(customtkinter.CTk):
         self.submit_feedback_event_completed = True
         self.found_latest_semester = False
         self.error_occurred = False
+        self.timeout_occurred = False
         self.can_edit = False
         self.original_font = None
         self.enrolled_classes_list = {}
@@ -1127,7 +1128,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.reset_activity_timer()
                 self.after(100, self.set_focus_to_tkinter)
                 self.after(100, self.show_sidebar_windows)
-                if self.error_occurred:
+                if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
                         self.destroy_windows()
                         if not self.disable_audio:
@@ -1491,7 +1492,7 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language(lang)
                 self.after(100, self.set_focus_to_tkinter)
                 self.after(100, self.show_sidebar_windows)
-                if self.error_occurred:
+                if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
                         self.destroy_windows()
                         if not self.disable_audio:
@@ -1693,7 +1694,7 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language(lang)
                 self.after(100, self.set_focus_to_tkinter)
                 self.after(100, self.show_sidebar_windows)
-                if self.error_occurred:
+                if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
                         self.destroy_windows()
                         if not self.disable_audio:
@@ -1819,7 +1820,7 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language(lang)
                 self.after(100, self.set_focus_to_tkinter)
                 self.after(100, self.show_sidebar_windows)
-                if self.error_occurred:
+                if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
                         self.destroy_windows()
                         if not self.disable_audio:
@@ -2267,7 +2268,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.after(100, self.show_sidebar_windows)
                 if not self.error_auto_enroll:
                     self.started_auto_enroll = False
-                if self.error_occurred:
+                if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
                         self.destroy_windows()
                         if not self.disable_audio:
@@ -2636,7 +2637,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.after(100, self.unfocus_tkinter)
                 self.after(100, self.show_sidebar_windows)
                 self.focus_or_not = False
-                if self.error_occurred:
+                if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
                         self.destroy_windows()
                         if not self.disable_audio:
@@ -2739,7 +2740,7 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     self.after(100, self.unfocus_tkinter)
                 self.after(100, self.show_sidebar_windows)
-                if self.error_occurred:
+                if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
                         self.destroy_windows()
                         if not self.disable_audio:
@@ -2818,7 +2819,7 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language(lang)
                 self.after(100, self.set_focus_to_tkinter)
                 self.after(100, self.show_sidebar_windows)
-                if self.error_occurred:
+                if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
                         self.destroy_windows()
                         if not self.disable_audio:
@@ -3180,7 +3181,7 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language(lang)
                 self.after(100, self.set_focus_to_tkinter)
                 self.after(100, self.show_sidebar_windows)
-                if self.error_occurred:
+                if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
                         self.destroy_windows()
                         if not dont_close:
@@ -4055,7 +4056,7 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language(lang)
                 self.after(100, self.set_focus_to_tkinter)
                 self.after(100, self.show_sidebar_windows)
-                if self.error_occurred:
+                if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
                         self.destroy_windows()
                         if not self.disable_audio:
@@ -4978,10 +4979,12 @@ class TeraTermUI(customtkinter.CTk):
                 task_done.set()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
+                self.timeout_occurred = True
                 if not self.disable_audio:
                     winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/error.wav"), winsound.SND_ASYNC)
                 CTkMessagebox(title=translation["automation_error_title"], message=translation["timeout_error"],
                               icon="warning", button_width=380)
+                self.timeout_occurred = False
         else:
             self.after(100, self.update_loading_screen, loading_screen, task_done)
 
@@ -6982,7 +6985,7 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language(lang)
                 self.after(100, self.set_focus_to_tkinter)
                 self.after(100, self.show_sidebar_windows)
-                if self.error_occurred:
+                if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
                         self.destroy_windows()
                         if not self.disable_audio:
