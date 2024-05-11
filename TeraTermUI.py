@@ -33,6 +33,7 @@ import pygetwindow as gw
 import pyperclip
 import pystray
 import pytesseract
+import random
 import re
 import requests
 import secrets
@@ -7890,8 +7891,6 @@ class TeraTermUI(customtkinter.CTk):
         self.check_process_thread.start()
 
     def check_process_periodically(self):
-        import random
-
         self.update_idletasks()
         time.sleep(30 + random.uniform(5, 25))
         not_running_count = 0
@@ -10318,7 +10317,7 @@ class ImageSlideshow(customtkinter.CTkFrame):
 
     def load_images(self):
         image_files = [f for f in os.listdir(self.image_folder) if f.endswith(("png", "jpg", "jpeg"))]
-        self.image_files = sorted(image_files)
+        self.image_files = random.sample(image_files, len(image_files))
 
     def show_image(self):
         # Delete the previous image from memory
