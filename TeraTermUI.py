@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 5/11/24
+# DATE - Started 1/1/23, Current Build v0.9.0 - 5/16/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -2337,7 +2337,10 @@ class TeraTermUI(customtkinter.CTk):
                             if self.tera_term_window.isMinimized:
                                 self.tera_term_window.restore()
                             self.wait_for_window()
+                            result = None
                             if semester == curr_sem:
+                                self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                                self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                 result = self.handle_current_semester()
                                 if result == "error":
                                     self.focus_or_not = True
@@ -2349,8 +2352,9 @@ class TeraTermUI(customtkinter.CTk):
                                     semester = result
                             match menu:
                                 case "SRM":
-                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                    if result is None:
+                                        self.uprb.UprbayTeraTermVt.type_keys("SRM")
+                                        self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                     self.after(0, self.disable_go_next_buttons)
                                 case "004":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
