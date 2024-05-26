@@ -163,7 +163,7 @@ class TeraTermUI(customtkinter.CTk):
         self.RANGE_NAME = "Sheet1!A:A"
         self.credentials = None
         self.GITHUB_REPO = "https://api.github.com/repos/Hanuwa/TeraTermUI"
-        self.USER_APP_VERSION = "0.9.0"
+        self.USER_APP_VERSION = "0.9.5"
         # disabled/enables keybind events
         self.move_slider_left_enabled = True
         self.move_slider_right_enabled = True
