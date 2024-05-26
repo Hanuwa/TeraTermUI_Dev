@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 5/24/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 5/25/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -5652,7 +5652,7 @@ class TeraTermUI(customtkinter.CTk):
         memoized_times = {}
 
         def get_time_minutes(t_row):
-            if not time_key or not t_row.get(time_key):
+            if not time_key or not t_row.get(time_key) or t_row.get(time_key).strip().lower() == "tba":
                 return float("inf")
             times_str = t_row.get(time_key, "")
             times_key = tuple(times_str.strip().split("\n"))
@@ -5677,6 +5677,8 @@ class TeraTermUI(customtkinter.CTk):
             return total_minutes
 
         def parse_av_value(av_value):
+            if av_value in ["998", "999"]:
+                return float("inf")
             try:
                 return int(av_value)
             except ValueError:
@@ -5687,9 +5689,6 @@ class TeraTermUI(customtkinter.CTk):
         non_standard_positions = []
         last_section_key = None
         for i, row in enumerate(data):
-            if get_time_minutes(row) == float("inf"):
-                non_standard_positions.append((i, row))
-                continue
             if section_key and row.get(section_key):
                 section = row.get(section_key).strip()
                 entries_with_section.append((section, row))
@@ -5698,15 +5697,33 @@ class TeraTermUI(customtkinter.CTk):
                 if last_section_key not in entries_without_section:
                     entries_without_section[last_section_key] = []
                 entries_without_section[last_section_key].append(row)
+            else:
+                non_standard_positions.append((i, row))
+
+        def sort_key(entry, primary_key, secondary_key):
+            if primary_key == time_key:
+                primary_value = get_time_minutes(entry[1])
+            else:
+                primary_value = parse_av_value(entry[1].get(primary_key, ""))
+
+            if primary_value == float("inf"):
+                primary_value = float("-inf") if reverse_sort else float("inf")
+
+            if secondary_key == time_key:
+                secondary_value = get_time_minutes(entry[1])
+            else:
+                secondary_value = parse_av_value(entry[1].get(secondary_key, ""))
+
+            return primary_value, secondary_value
 
         if sort_by_option in [translation["time_asc"], translation["time_dec"]] and time_key:
             reverse_sort = (sort_by_option == translation["time_dec"])
-            entries_with_section.sort(key=lambda x: (get_time_minutes(x[1]), parse_av_value(x[1].get(av_key, ''))
-                                      if av_key else float("inf")), reverse=reverse_sort)
+            entries_with_section.sort(key=lambda x: sort_key(x, time_key, av_key), reverse=reverse_sort)
+            non_standard_positions.sort(key=lambda x: sort_key(x, time_key, av_key), reverse=reverse_sort)
         elif sort_by_option in [translation["av_asc"], translation["av_dec"]] and av_key:
             reverse_sort = (sort_by_option == translation["av_dec"])
-            entries_with_section.sort(key=lambda x: (parse_av_value(x[1].get(av_key, ''))
-                                      if av_key else float("inf"), get_time_minutes(x[1])), reverse=reverse_sort)
+            entries_with_section.sort(key=lambda x: sort_key(x, av_key, time_key), reverse=reverse_sort)
+            non_standard_positions.sort(key=lambda x: sort_key(x, av_key, time_key), reverse=reverse_sort)
 
         sorted_data = []
         for section, row in entries_with_section:
@@ -5714,7 +5731,7 @@ class TeraTermUI(customtkinter.CTk):
             if section in entries_without_section:
                 sorted_data.extend(entries_without_section[section])
         for pos, row in non_standard_positions:
-            sorted_data.insert(pos, row)
+            sorted_data.append(row)
 
         return sorted_data
 
@@ -5743,7 +5760,7 @@ class TeraTermUI(customtkinter.CTk):
             memoized_times = {}
 
             def get_time_minutes(t_row):
-                if time_index == -1 or not t_row[time_index]:
+                if time_index == -1 or not t_row[time_index] or t_row[time_index].strip().lower() == "tba":
                     return float("inf")
                 times_key = tuple(t_row[time_index].strip().split("\n"))
                 if times_key in memoized_times:
@@ -5767,6 +5784,8 @@ class TeraTermUI(customtkinter.CTk):
                 return total_minutes
 
             def parse_av_value(av_value):
+                if av_value in ["998", "999"]:
+                    return float("inf")
                 try:
                     return int(av_value)
                 except ValueError:
@@ -5775,11 +5794,9 @@ class TeraTermUI(customtkinter.CTk):
             entries_with_section = []
             entries_without_section = {}
             non_standard_positions = []
+
             last_section_key = None
             for i, row in enumerate(table_data[1:]):
-                if get_time_minutes(row) == float("inf"):
-                    non_standard_positions.append((i + 1, row))
-                    continue
                 if section_index != -1 and row[section_index].strip():
                     section_key = row[section_index].strip()
                     entries_with_section.append((section_key, row))
@@ -5788,25 +5805,43 @@ class TeraTermUI(customtkinter.CTk):
                     if last_section_key not in entries_without_section:
                         entries_without_section[last_section_key] = []
                     entries_without_section[last_section_key].append(row)
+                else:
+                    non_standard_positions.append((i + 1, row))
+
+            def sort_key(entry, primary_index, secondary_index):
+                if primary_index == time_index:
+                    primary_value = get_time_minutes(entry[1])
+                else:
+                    primary_value = parse_av_value(entry[1][primary_index])
+
+                if primary_value == float("inf"):
+                    primary_value = float("-inf") if reverse_sort else float("inf")
+
+                if secondary_index == time_index:
+                    secondary_value = get_time_minutes(entry[1])
+                else:
+                    secondary_value = parse_av_value(entry[1][secondary_index])
+
+                return primary_value, secondary_value
 
             if sort_by_option in [translation["time_asc"], translation["time_dec"]] and time_index != -1:
                 reverse_sort = (sort_by_option == translation["time_dec"])
-                entries_with_section.sort(key=lambda x: (get_time_minutes(x[1]), parse_av_value(x[1][av_index])
-                                          if av_index != -1 else float("inf")), reverse=reverse_sort)
+                entries_with_section.sort(key=lambda x: sort_key(x, time_index, av_index), reverse=reverse_sort)
+                non_standard_positions.sort(key=lambda x: sort_key(x, time_index, av_index), reverse=reverse_sort)
             elif sort_by_option in [translation["av_asc"], translation["av_dec"]] and av_index != -1:
                 reverse_sort = (sort_by_option == translation["av_dec"])
-                entries_with_section.sort(key=lambda x: (parse_av_value(x[1][av_index]) if av_index != -1
-                                          else float("inf"), get_time_minutes(x[1])), reverse=reverse_sort)
+                entries_with_section.sort(key=lambda x: sort_key(x, av_index, time_index), reverse=reverse_sort)
+                non_standard_positions.sort(key=lambda x: sort_key(x, av_index, time_index), reverse=reverse_sort)
 
             final_data = [headers]
             for section_key, row in entries_with_section:
                 final_data.append(row)
                 if section_key in entries_without_section:
                     final_data.extend(entries_without_section[section_key])
-            for pos, row in non_standard_positions:
+            for _, row in non_standard_positions:
                 final_data.append(row)
             table.update_values(final_data)
-            
+
             self.last_sort_option = (sort_by_option, len(self.class_table_pairs))
             self.after(0, self.search_scrollbar.scroll_to_top)
             self.after(0, self.focus_set)
