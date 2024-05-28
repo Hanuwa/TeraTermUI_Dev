@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 5/25/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 5/27/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -8091,17 +8091,21 @@ class TeraTermUI(customtkinter.CTk):
     def disable_enable_audio(self):
         row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
         if self.disable_audio_val.get() == "on":
+            self.set_beep_sound(self.teraterm_file)
             if not row_exists:
                 self.cursor.execute("INSERT INTO user_data (audio) VALUES (?)", ("Disabled",))
             else:
                 self.cursor.execute("UPDATE user_data SET audio=?", ("Disabled",))
-            self.disable_audio = True
+            if not self.disable_audio:
+                self.disable_audio = True
         elif self.disable_audio_val.get() == "off":
+            self.set_beep_sound(self.teraterm_file, False)
             if not row_exists:
                 self.cursor.execute("INSERT INTO user_data (audio) VALUES (?)", ("Enabled",))
             else:
                 self.cursor.execute("UPDATE user_data SET audio=?", ("Enabled",))
-            self.disable_audio = False
+            if self.disable_audio:
+                self.disable_audio = False
         self.connection.commit()
 
     @staticmethod
@@ -9041,6 +9045,90 @@ class TeraTermUI(customtkinter.CTk):
                 return True
         return len(latest_version_parts) <= len(user_version_parts)
 
+    def set_beep_sound(self, file_path, disable_beep=True):
+        if not self.can_edit:
+            return
+
+        if "teraterm5" in file_path:
+            appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
+            if appdata_ini_path:
+                file_path = appdata_ini_path
+            else:
+                return
+
+        if self.is_file_in_directory("ttermpro.exe", self.teraterm_directory):
+            backup_path = os.path.join(self.app_temp_dir, "TERATERM.ini.bak")
+            if not os.path.exists(backup_path):
+                backup_path = os.path.join(self.app_temp_dir, os.path.basename(file_path) + ".bak")
+                try:
+                    shutil.copyfile(file_path, backup_path)
+                except FileNotFoundError:
+                    print("Tera Term probably not installed or installed\n"
+                          " in a different location from the default")
+            try:
+                with open(file_path, "rb") as file:
+                    raw_data = file.read()
+                    encoding_info = chardet.detect(raw_data)
+                    detected_encoding = encoding_info["encoding"]
+                with open(file_path, "r", encoding=detected_encoding) as file:
+                    lines = file.readlines()
+                beep_setting = "off" if disable_beep else "on"
+                for index, line in enumerate(lines):
+                    if line.startswith("Beep="):
+                        lines[index] = f"Beep={beep_setting}\n"
+                        self.disable_audio = disable_beep
+                with open(file_path, "w", encoding=detected_encoding) as file:
+                    file.writelines(lines)
+            except FileNotFoundError:
+                return
+            except Exception as e:
+                print(f"Error occurred: {e}")
+                print("Restoring from backup...")
+                shutil.copyfile(backup_path, file_path)
+            del line, lines
+
+    def set_beep_sound(self, file_path, disable_beep=True):
+        if not self.can_edit:
+            return
+
+        if "teraterm5" in file_path:
+            appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
+            if appdata_ini_path:
+                file_path = appdata_ini_path
+            else:
+                return
+
+        if TeraTermUI.is_file_in_directory("ttermpro.exe", self.teraterm_directory):
+            backup_path = os.path.join(self.app_temp_dir, "TERATERM.ini.bak")
+            if not os.path.exists(backup_path):
+                backup_path = os.path.join(self.app_temp_dir, os.path.basename(file_path) + ".bak")
+                try:
+                    shutil.copyfile(file_path, backup_path)
+                except FileNotFoundError:
+                    print("Tera Term probably not installed or installed\n"
+                          " in a different location from the default")
+            try:
+                with open(file_path, "rb") as file:
+                    raw_data = file.read()
+                    encoding_info = chardet.detect(raw_data)
+                    detected_encoding = encoding_info["encoding"]
+                with open(file_path, "r", encoding=detected_encoding) as file:
+                    lines = file.readlines()
+                beep_setting = "off" if disable_beep else "on"
+                for index, line in enumerate(lines):
+                    if line.startswith("Beep="):
+                        lines[index] = f"Beep={beep_setting}\n"
+                        self.disable_audio = disable_beep
+                with open(file_path, "w", encoding=detected_encoding) as file:
+                    file.writelines(lines)
+            except FileNotFoundError:
+                return
+            except Exception as e:
+                print(f"Error occurred: {e}")
+                print("Restoring from backup...")
+                shutil.copyfile(backup_path, file_path)
+            del line, lines
+
     # Edits the font that tera term uses to "Terminal" to mitigate the chance of the OCR mistaking words
     def edit_teraterm_ini(self, file_path):
         if "teraterm5" in file_path:
@@ -9053,20 +9141,19 @@ class TeraTermUI(customtkinter.CTk):
                 return
 
         if TeraTermUI.is_file_in_directory("ttermpro.exe", self.teraterm_directory):
-            backup_path = self.app_temp_dir / "TERATERM.ini.bak"
+            backup_path = os.path.join(self.app_temp_dir, "TERATERM.ini.bak")
             if not os.path.exists(backup_path):
                 backup_path = os.path.join(self.app_temp_dir, os.path.basename(file_path) + ".bak")
                 try:
                     shutil.copyfile(file_path, backup_path)
                 except FileNotFoundError:
-                    print("Tera Term Probably not installed\n"
-                          "or installed in a different location from the default")
+                    print("Tera Term probably not installed or installed\n"
+                          " in a different location from the default")
             try:
                 with open(file_path, "rb") as file:
                     raw_data = file.read()
                     encoding_info = chardet.detect(raw_data)
                     detected_encoding = encoding_info["encoding"]
-
                 with open(file_path, "r", encoding=detected_encoding) as file:
                     lines = file.readlines()
                 for index, line in enumerate(lines):
@@ -9083,7 +9170,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.download = False
             except FileNotFoundError:
                 return
-            # If something goes wrong, restore the backup
             except Exception as e:
                 print(f"Error occurred: {e}")
                 print("Restoring from backup...")
@@ -9104,13 +9190,12 @@ class TeraTermUI(customtkinter.CTk):
             else:
                 return
 
-        backup_path = self.app_temp_dir / "TERATERM.ini.bak"
+        backup_path = os.path.join(self.app_temp_dir, "TERATERM.ini.bak")
         try:
             with open(file_path, "rb") as file:
                 raw_data = file.read()
                 encoding_info = chardet.detect(raw_data)
                 detected_encoding = encoding_info["encoding"]
-
             with open(file_path, "r", encoding=detected_encoding) as file:
                 lines = file.readlines()
             with open(backup_path, "r", encoding=detected_encoding) as backup_file:
@@ -9122,12 +9207,21 @@ class TeraTermUI(customtkinter.CTk):
                     break
             if backup_font is None:
                 return
+
             for index, line in enumerate(lines):
                 if line.startswith("VTFont="):
                     if backup_font.split(",")[0].lower() != self.original_font.split(",")[0].lower():
                         lines[index] = f"VTFont={backup_font}\n"
                     else:
                         lines[index] = f"VTFont={self.original_font}\n"
+            if self.disable_audio:
+                for index, line in enumerate(lines):
+                    if line.startswith("Beep=") and line.strip() != "Beep=off":
+                        lines[index] = "Beep=off\n"
+            else:
+                for index, line in enumerate(lines):
+                    if line.startswith("Beep=") and line.strip() != "Beep=on":
+                        lines[index] = "Beep=on\n"
             with open(file_path, "w", encoding=detected_encoding) as file:
                 file.writelines(lines)
         except FileNotFoundError:
@@ -9139,7 +9233,7 @@ class TeraTermUI(customtkinter.CTk):
                 shutil.copyfile(backup_path, file_path)
             except FileNotFoundError:
                 print(f"The backup file at {backup_path} was not found.")
-
+                
     # When the user performs an action to do something in tera term it hides the sidebar windows, so they don't
     # interfere with the execution on tera term
     def hide_sidebar_windows(self):
