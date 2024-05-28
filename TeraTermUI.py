@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 5/27/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 5/28/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -7192,6 +7192,10 @@ class TeraTermUI(customtkinter.CTk):
                             updated_value = "Lucida Console" + current_value[len(font_name):]
                             lines[index] = f"VTFont={updated_value}\n"
                             self.can_edit = True
+                        if line.startswith("AuthBanner="):
+                            current_value = line.strip().split("=")[1]
+                            if current_value not in ["0", "1"]:
+                                lines[index] = "AuthBanner=1\n"
                     with open(file_path, "w", encoding=detected_encoding) as file:
                         file.writelines(lines)
                     del line, lines
@@ -9164,6 +9168,10 @@ class TeraTermUI(customtkinter.CTk):
                         updated_value = "Lucida Console" + current_value[len(font_name):]
                         lines[index] = f"VTFont={updated_value}\n"
                         self.can_edit = True
+                    if line.startswith("AuthBanner="):
+                        current_value = line.strip().split("=")[1]
+                        if current_value not in ["0", "1"]:
+                            lines[index] = "AuthBanner=1\n"
                 with open(file_path, "w", encoding=detected_encoding) as file:
                     file.writelines(lines)
                 self.teraterm_not_found = False
