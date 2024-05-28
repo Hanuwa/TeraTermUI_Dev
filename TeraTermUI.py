@@ -716,7 +716,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.cursor.execute("INSERT INTO user_data (welcome) VALUES (?)", ("Done",))
                     else:
                         self.cursor.execute("UPDATE user_data SET welcome=?", ("Done",))
-                    del row_exists, translation
+                    del row_check, translation
 
                 self.after(3500, show_message_box)
             else:
