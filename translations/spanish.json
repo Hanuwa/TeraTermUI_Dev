@@ -73,7 +73,7 @@
 	"back_multiple": "Volver a la pantalla\nanterior",
 	"show_all_tooltip": "Muestre todas las secciones\no solamente las que están\n abiertas",
 	"show_classes_tooltip": "Enseña las clases que tienes\nmatriculadas en un semestre",
-	"conflict_tooltip": "Esta sección tiene un conflicto\ncon el horario con otra sección",
+	"conflict_tooltip": "Esta sección podría tener un conflicto\ncon el horario de otra sección",
 	"add_tooltip": "Añade más clases",
 	"m_remove_tooltip": "Eliminar clases",
 	"multiple_tooltip": "Matricula múltiples\nclases a la misma vez",
