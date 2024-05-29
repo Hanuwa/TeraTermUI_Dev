@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 10400 lines of codes, it definitely makes things harder to work with
+# and with over 10600 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
