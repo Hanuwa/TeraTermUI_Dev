@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 5/28/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 5/29/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -464,6 +464,7 @@ class TeraTermUI(customtkinter.CTk):
         self.m_section_entry = []
         self.m_semester_entry = []
         self.m_register_menu = []
+        self.m_tooltips = []
         self.placeholder_texts_classes = ("ESPA3101", "INGL3101", "BIOL3011", "MATE3001", "CISO3121", "HUMA3101")
         self.placeholder_texts_sections = ("LM1", "KM1", "KH1", "LH1", "KN1", "LN1")
         self.m_add = None
@@ -1238,7 +1239,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.m_register_menu[i].configure(
                         command=lambda value, idx=i: self.detect_register_menu_change(value, idx))
                     self.m_classes_entry[i].bind("<FocusOut>", self.detect_change)
-                    self.m_section_entry[i].bind("<FocusOut>", self.detect_change)
+                    self.m_section_entry[i].bind("<FocusOut>", self.section_bind_wrapper)
 
         if save:
             num_rows = len(save)
@@ -3792,6 +3793,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.m_register_menu[i].set(translation["register"])
                 elif self.m_register_menu[i].get() == "Drop" or self.m_register_menu[i].get() == "Baja":
                     self.m_register_menu[i].set(translation["drop"])
+                self.m_tooltips[i].configure(message=translation["conflict_tooltip"])
             self.auto_enroll.configure(text=translation["auto_enroll"])
             self.save_data.configure(text=translation["save_data"])
             self.register_tooltip.configure(message=translation["register_tooltip"])
@@ -3887,7 +3889,84 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     self.m_semester_entry[i].set(semester)
                 self.m_semester_entry[i].configure(state="disabled")
+                
+    def section_bind_wrapper(self, event):
+        self.detect_change(event)
+        self.check_class_conflicts(event)
 
+    @staticmethod
+    def generate_schedule():
+        days = {
+            "Monday": "L",
+            "Wednesday": "M",
+            "Tuesday": "K",
+            "Thursday": "J",
+            "Friday": "V"
+        }
+
+        time_intervals = [
+            ("07:00", "08:20", "G"),
+            ("08:30", "10:00", "H"),
+            ("09:00", "11:20", "I"),
+            ("10:00", "11:20", "J"),
+            ("11:20", "12:50", "K"),
+            ("13:00", "14:20", "M"),
+            ("14:30", "15:50", "N"),
+            ("15:00", "16:20", "O"),
+            ("16:00", "17:20", "P"),
+            ("18:00", "20:50", "R")
+        ]
+
+        schedule_map = {}
+
+        for day, prefix in days.items():
+            section_count = {}
+
+            for start_time, end_time, interval_code in time_intervals:
+                if day in ["Tuesday", "Thursday"] and start_time == "11:20":
+                    continue  # Skip this slot for Tuesday and Thursday
+
+                if day not in section_count:
+                    section_count[day] = {}
+
+                if interval_code not in section_count[day]:
+                    section_count[day][interval_code] = 1
+                else:
+                    section_count[day][interval_code] += 1
+
+                section_number = section_count[day][interval_code]
+                section_code = f"{prefix}{interval_code}{section_number}"
+                schedule_map[section_code] = (day, start_time, end_time)
+
+        return schedule_map
+
+    def check_class_conflicts(self, event=None):
+        class_codes = [entry.get().upper().replace(" ", "") for entry in self.m_section_entry if entry.get().strip()]
+        schedule_map = TeraTermUI.generate_schedule()
+        schedule = []
+        conflict_entries = []
+
+        for class_code in class_codes:
+            if class_code in schedule_map:
+                day, start_time, end_time = schedule_map[class_code]
+                schedule.append((day, start_time, end_time))
+
+        schedule.sort()
+        for i in range(len(schedule) - 1):
+            current_day, current_start, current_end = schedule[i]
+            next_day, next_start, next_end = schedule[i + 1]
+            if current_day == next_day and current_end > next_start:
+                conflict_entries = [self.m_section_entry[j] for j in range(len(class_codes))]
+                break
+
+        for i, entry in enumerate(self.m_section_entry):
+            if entry in conflict_entries:
+                entry.configure(border_color="#CC5500")
+                self.m_tooltips[i].show()
+            else:
+                entry.configure(border_color=customtkinter.ThemeManager.theme["CTkEntry"]["border_color"])
+                self.m_tooltips[i].hide()
+    
     def keybind_auto_enroll(self):
         if self.auto_enroll.get() == "on":
             self.auto_enroll.deselect()
@@ -4767,6 +4846,8 @@ class TeraTermUI(customtkinter.CTk):
                                                         placeholder_text=self.placeholder_texts_classes[i]))
                 self.m_section_entry.append(CustomEntry(self.multiple_frame, self, lang,
                                                         placeholder_text=self.placeholder_texts_sections[i]))
+                self.m_tooltips.append(CTkToolTip(self.m_section_entry[i], message=translation["conflict_tooltip"],
+                                                  bg_color="#F28C28", visibility=False))
                 self.m_semester_entry.append(CustomComboBox(self.multiple_frame, self,
                                                             values=self.semester_values + [translation["current"]],
                                                             command=self.change_semester))
@@ -4916,7 +4997,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.m_register_menu[i].configure(
                             command=lambda value, idx=i: self.detect_register_menu_change(value, idx))
                         self.m_classes_entry[i].bind("<FocusOut>", self.detect_change)
-                        self.m_section_entry[i].bind("<FocusOut>", self.detect_change)
+                        self.m_section_entry[i].bind("<FocusOut>", self.section_bind_wrapper)
                     self.show_success_message(350, 265, translation["saved_classes_success"])
         if save == "off":
             self.cursor.execute("DELETE FROM saved_classes")
