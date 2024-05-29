@@ -14,7 +14,7 @@ class CTkToolTip(Toplevel):
     Creates a ToolTip (pop-up) widget for customtkinter.
     """
     __slots__ = ("widget", "message", "delay", "follow", "x_offset", "y_offset", "bg_color", "corner_radius",
-                 "border_width", "border_color", "alpha", "padding")
+                 "border_width", "border_color", "alpha", "padding", "visibility")
 
     def __init__(
             self,
@@ -30,6 +30,7 @@ class CTkToolTip(Toplevel):
             border_color: str = None,
             alpha: float = 0.95,
             padding: tuple = (10, 2),
+            visibility: bool = True,
             **message_kwargs):
 
         super().__init__()
@@ -75,7 +76,7 @@ class CTkToolTip(Toplevel):
         self.padding = padding
         self.bg_color = customtkinter.ThemeManager.theme["CTkFrame"]["fg_color"] if bg_color is None else bg_color
         self.border_color = border_color
-        self.disable = False
+        self.disable = not visibility  # Initialize visibility
 
         # visibility status of the ToolTip inside|outside|visible
         self.status = "outside"
@@ -136,7 +137,7 @@ class CTkToolTip(Toplevel):
         if self.status == "outside":
             self.status = "inside"
 
-        # If the follow flag is not set, motion within the widget will make the ToolTip dissapear
+        # If the follow flag is not set, motion within the widget will make the ToolTip disappear
         if not self.follow:
             self.status = "inside"
             self.withdraw()
@@ -154,7 +155,7 @@ class CTkToolTip(Toplevel):
         if space_on_right < text_width + 20:  # Adjust the threshold as needed
             offset_x = -text_width - 20  # Negative offset when space is limited on the right side
 
-        # Offsets the ToolTip using the coordinates od an event as an origin
+        # Offsets the ToolTip using the coordinates of an event as an origin
         self.geometry(f"+{event.x_root + offset_x}+{event.y_root + self.y_offset}")
 
         # Time is in integer: milliseconds
@@ -165,7 +166,8 @@ class CTkToolTip(Toplevel):
         Hides the ToolTip temporarily.
         """
 
-        if self.disable: return
+        if self.disable:
+            return
         self.status = "outside"
         self.withdraw()
 
@@ -208,27 +210,29 @@ class CTkToolTip(Toplevel):
 
     def is_disabled(self) -> None:
         """
-        Return the window state
+        Return the window state.
         """
         return self.disable
 
-    def get(self) -> None:
+    def get(self) -> str:
         """
         Returns the text on the tooltip.
         """
         return self.messageVar.get()
 
-    def configure(self, message: str = None, delay: float = None, bg_color: str = None, **kwargs):
+    def configure(self, message: str = None, delay: float = None, bg_color: str = None, **kwargs) -> None:
         """
         Set new message or configure the label parameters.
         """
-        if delay: self.delay = delay
-        if bg_color: self.frame.configure(fg_color=bg_color)
+        if delay:
+            self.delay = delay
+        if bg_color:
+            self.frame.configure(fg_color=bg_color)
 
         self.messageVar.set(message)
         self.message_label.configure(**kwargs)
 
-    def destroy(self):
+    def destroy(self) -> None:
         if self.widget is not None and self.widget.winfo_exists():
             self.widget.unbind("<Enter>")
             self.widget.unbind("<Leave>")
@@ -245,5 +249,3 @@ class CTkToolTip(Toplevel):
             self.transparent_frame.destroy()
             self.transparent_frame = None
         super().destroy()
-
-
