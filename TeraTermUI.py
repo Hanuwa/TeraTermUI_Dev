@@ -3941,31 +3941,34 @@ class TeraTermUI(customtkinter.CTk):
         return schedule_map
 
     def check_class_conflicts(self, event=None):
-        class_codes = [entry.get().upper().replace(" ", "") for entry in self.m_section_entry if entry.get().strip()]
         schedule_map = TeraTermUI.generate_schedule()
+        class_codes = [entry.get().upper().replace(" ", "") for entry in self.m_section_entry if entry.get().strip()]
         schedule = []
-        conflict_entries = []
+        conflict_entries = set()
 
         for class_code in class_codes:
             if class_code in schedule_map:
                 day, start_time, end_time = schedule_map[class_code]
-                schedule.append((day, start_time, end_time))
+                schedule.append((day, start_time, end_time, class_code))
 
-        schedule.sort()
+        schedule.sort(key=lambda x: (x[0], x[1]))
         for i in range(len(schedule) - 1):
-            current_day, current_start, current_end = schedule[i]
-            next_day, next_start, next_end = schedule[i + 1]
+            current_day, current_start, current_end, current_code = schedule[i]
+            next_day, next_start, next_end, next_code = schedule[i + 1]
             if current_day == next_day and current_end > next_start:
-                conflict_entries = [self.m_section_entry[j] for j in range(len(class_codes))]
-                break
+                conflict_entries.add(current_code)
+                conflict_entries.add(next_code)
 
         for i, entry in enumerate(self.m_section_entry):
-            if entry in conflict_entries:
-                entry.configure(border_color="#CC5500")
-                self.m_tooltips[i].show()
+            class_code = entry.get().upper().replace(" ", "")
+            if class_code in conflict_entries:
+                if entry.cget("border_color") != "#CC5500":
+                    entry.configure(border_color="#CC5500")
+                    self.m_tooltips[i].show()
             else:
-                entry.configure(border_color=customtkinter.ThemeManager.theme["CTkEntry"]["border_color"])
-                self.m_tooltips[i].hide()
+                if entry.cget("border_color") == "#CC5500":
+                    entry.configure(border_color=customtkinter.ThemeManager.theme["CTkEntry"]["border_color"])
+                    self.m_tooltips[i].hide()
     
     def keybind_auto_enroll(self):
         if self.auto_enroll.get() == "on":
@@ -7630,7 +7633,7 @@ class TeraTermUI(customtkinter.CTk):
                 if widget.winfo_viewable():
                     if isinstance(widget, (CustomEntry, CustomComboBox)):
                         current_color = widget.cget("border_color")
-                        if current_color == "#c30101":
+                        if current_color == "#c30101" or current_color == "#CC5500":
                             widget.border_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
                             widget.configure(border_color=widget.border_color)
                     elif isinstance(widget, customtkinter.CTkOptionMenu):
