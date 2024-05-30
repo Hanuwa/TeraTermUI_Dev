@@ -3898,13 +3898,13 @@ class TeraTermUI(customtkinter.CTk):
     @staticmethod
     def generate_schedule():
         days = {
-            "Monday": "L",
+            "Monday, Wednesday": "L",
             "Wednesday": "M",
-            "Tuesday": "K",
+            "Tuesday, Thursday": "K",
             "Thursday": "J",
             "Friday": "V"
         }
-        time_intervals = [
+        standard_time_intervals = [
             ("07:00", "08:20", "G"),
             ("08:30", "09:50", "H"),
             ("09:00", "11:20", "I"),
@@ -3916,15 +3916,27 @@ class TeraTermUI(customtkinter.CTk):
             ("16:00", "17:20", "P"),
             ("18:00", "20:50", "R")
         ]
+        special_time_intervals = [
+            ("07:00", "09:50", "G"),
+            ("08:30", "11:20", "H"),
+            ("10:30", "12:50", "J"),
+            ("13:00", "15:50", "M"),
+            ("16:00", "18:50", "P"),
+            ("18:00", "20:50", "R"),
+        ]
         schedule_map = {}
 
         for day, prefix in days.items():
-            for start_time, end_time, interval_code in time_intervals:
-                if day in ["Tuesday", "Thursday"] and start_time == "11:20":
-                    continue  # Skip this slot for Tuesday and Thursday
-
-                section_code = f"{prefix}{interval_code}"
-                schedule_map[section_code] = (day, start_time, end_time)
+            if prefix in ["L", "K"]:
+                for start_time, end_time, interval_code in standard_time_intervals:
+                    if day in ["Tuesday, Thursday", "Thursday"] and start_time == "11:30":
+                        continue
+                    section_code = f"{prefix}{interval_code}"
+                    schedule_map[section_code] = (day, start_time, end_time)
+            else:
+                for start_time, end_time, interval_code in special_time_intervals:
+                    section_code = f"{prefix}{interval_code}"
+                    schedule_map[section_code] = (day, start_time, end_time)
 
         return schedule_map
 
@@ -3936,19 +3948,24 @@ class TeraTermUI(customtkinter.CTk):
 
         for class_code in class_codes:
             if class_code[:2] in schedule_map:
-                day, start_time, end_time = schedule_map[class_code[:2]]
-                schedule.append((day, start_time, end_time, class_code))
+                days, start_time, end_time = schedule_map[class_code[:2]]
+                for day in days.split(", "):
+                    schedule.append((day, start_time, end_time, class_code))
 
-        for i in range(len(schedule)):
-            current_day, current_start, current_end, current_code = schedule[i]
-            for j in range(i + 1, len(schedule)):
-                next_day, next_start, next_end, next_code = schedule[j]
-                if current_day == next_day and current_end > next_start:
-                    conflict_entries.add(current_code)
-                    conflict_entries.add(next_code)
-                elif current_code[1:] == next_code[1:] and current_end > next_start:
-                    conflict_entries.add(current_code)
-                    conflict_entries.add(next_code)
+        def time_overlaps(start1, end1, start2, end2):
+            return max(start1, start2) < min(end1, end2)
+
+        schedule.sort(key=lambda x: (x[0], x[1]))
+
+        for day, day_schedule in groupby(schedule, key=lambda x: x[0]):
+            day_schedule = list(day_schedule)
+            for i in range(len(day_schedule)):
+                current_start, current_end, current_code = day_schedule[i][1:]
+                for j in range(i + 1, len(day_schedule)):
+                    next_start, next_end, next_code = day_schedule[j][1:]
+                    if time_overlaps(current_start, current_end, next_start, next_end):
+                        conflict_entries.add(current_code)
+                        conflict_entries.add(next_code)
 
         for i, entry in enumerate(self.m_section_entry):
             class_code = entry.get().upper().replace(" ", "")
@@ -3960,7 +3977,7 @@ class TeraTermUI(customtkinter.CTk):
                 if entry.cget("border_color") == "#CC5500":
                     entry.configure(border_color=customtkinter.ThemeManager.theme["CTkEntry"]["border_color"])
                     self.m_tooltips[i].hide()
-    
+
     def keybind_auto_enroll(self):
         if self.auto_enroll.get() == "on":
             self.auto_enroll.deselect()
@@ -4842,6 +4859,7 @@ class TeraTermUI(customtkinter.CTk):
                                                         placeholder_text=self.placeholder_texts_sections[i]))
                 self.m_tooltips.append(CTkToolTip(self.m_section_entry[i], message=translation["conflict_tooltip"],
                                                   bg_color="#F28C28", visibility=False))
+                self.m_section_entry[i].bind("<FocusOut>", self.section_bind_wrapper)
                 self.m_semester_entry.append(CustomComboBox(self.multiple_frame, self,
                                                             values=self.semester_values + [translation["current"]],
                                                             command=self.change_semester))
