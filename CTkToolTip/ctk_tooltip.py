@@ -14,7 +14,7 @@ class CTkToolTip(Toplevel):
     Creates a ToolTip (pop-up) widget for customtkinter.
     """
     __slots__ = ("widget", "message", "delay", "follow", "x_offset", "y_offset", "bg_color", "corner_radius",
-                 "border_width", "border_color", "alpha", "padding", "visibility")
+                 "border_width", "border_color", "alpha", "padding", "visibility", "disable")
 
     def __init__(
             self,
@@ -76,7 +76,8 @@ class CTkToolTip(Toplevel):
         self.padding = padding
         self.bg_color = customtkinter.ThemeManager.theme["CTkFrame"]["fg_color"] if bg_color is None else bg_color
         self.border_color = border_color
-        self.disable = not visibility  # Initialize visibility
+        self.visibility = visibility  # Initialize visibility
+        self.disable = not visibility  # Initialize disable attribute
 
         # visibility status of the ToolTip inside|outside|visible
         self.status = "outside"
@@ -122,6 +123,7 @@ class CTkToolTip(Toplevel):
         """
         Enable the widget.
         """
+        self.visibility = True
         self.disable = False
 
     def on_enter(self, event) -> None:
@@ -208,7 +210,7 @@ class CTkToolTip(Toplevel):
         self.withdraw()
         self.disable = True
 
-    def is_disabled(self) -> None:
+    def is_disabled(self) -> bool:
         """
         Return the window state.
         """
@@ -220,7 +222,7 @@ class CTkToolTip(Toplevel):
         """
         return self.messageVar.get()
 
-    def configure(self, message: str = None, delay: float = None, bg_color: str = None, **kwargs) -> None:
+    def configure(self, message: str = None, delay: float = None, bg_color: str = None, visibility: bool = None, **kwargs) -> None:
         """
         Set new message or configure the label parameters.
         """
@@ -228,9 +230,27 @@ class CTkToolTip(Toplevel):
             self.delay = delay
         if bg_color:
             self.frame.configure(fg_color=bg_color)
+        if visibility is not None:
+            self.visibility = visibility
+            if self.visibility:
+                self.show()
+            else:
+                self.hide()
 
         self.messageVar.set(message)
         self.message_label.configure(**kwargs)
+
+    def cget(self, option: str):
+        """
+        Get the value of the given configuration option.
+        """
+        options = {
+            "message": self.messageVar.get(),
+            "delay": self.delay,
+            "bg_color": self.frame.cget("fg_color"),
+            "visibility": self.visibility,
+        }
+        return options.get(option, None)
 
     def destroy(self) -> None:
         if self.widget is not None and self.widget.winfo_exists():
