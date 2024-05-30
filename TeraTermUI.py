@@ -64,6 +64,7 @@ from CTkToolTip import CTkToolTip
 from ctypes import wintypes
 from datetime import datetime, timedelta
 from filelock import FileLock, Timeout
+from itertools import groupby
 from pathlib import Path
 try:
     from pywinauto.application import Application, AppStartError
