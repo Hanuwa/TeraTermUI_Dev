@@ -71,7 +71,7 @@
 	"code_tooltip": "4 digit code included in the\npre-enrollment ticket email",
 	"back_tooltip": "Go back to the home screen\n of the application",
 	"back_multiple": "Go back to the previous\nscreen",
-	"conflict_tooltip": "Section potentially conflicting with the\nschedule of another section",
+	"conflict_tooltip": "Section potentially conflicting with the\nschedule of another section\n*EST. ",
 	"show_all_tooltip": "Display all sections or\nonly ones with spaces",
 	"show_classes_tooltip": "Shows the classes you are\nenrolled in for a\nspecific semester",
 	"add_tooltip": "Add more classes",
