@@ -1260,6 +1260,8 @@ class TeraTermUI(customtkinter.CTk):
 
             for _ in range(min(num_rows - 1, 6)):
                 self.add_event()
+                
+            self.check_class_conflicts()
 
     def submit_event_handler(self):
         if self.countdown_running:
@@ -3789,13 +3791,16 @@ class TeraTermUI(customtkinter.CTk):
             self.submit_multiple.configure(text=translation["submit"])
             for i in range(6):
                 self.m_register_menu[i].configure(values=[translation["register"], translation["drop"]])
+                if self.m_section_entry[i].cget("border_color") == "#CC5500":
+                    current_message = self.m_tooltips[i].cget("message")
+                    conflict_time = current_message.split("*EST. ")[-1].strip()
+                    self.m_tooltips[i].configure(message=f"{translation['conflict_tooltip']}{conflict_time}")
                 if self.m_register_menu[i].get() == "Choose" or self.m_register_menu[i].get() == "Escoge":
                     self.m_register_menu[i].set(translation["choose"])
                 elif self.m_register_menu[i].get() == "Register" or self.m_register_menu[i].get() == "Registra":
                     self.m_register_menu[i].set(translation["register"])
                 elif self.m_register_menu[i].get() == "Drop" or self.m_register_menu[i].get() == "Baja":
                     self.m_register_menu[i].set(translation["drop"])
-                self.m_tooltips[i].configure(message=translation["conflict_tooltip"])
             self.auto_enroll.configure(text=translation["auto_enroll"])
             self.save_data.configure(text=translation["save_data"])
             self.register_tooltip.configure(message=translation["register_tooltip"])
@@ -3941,7 +3946,14 @@ class TeraTermUI(customtkinter.CTk):
 
         return schedule_map
 
+    @staticmethod
+    def convert_to_12_hour_format(time_str):
+        time_obj = datetime.strptime(time_str, "%H:%M")
+        return time_obj.strftime("%I:%M %p").lstrip("0")
+
     def check_class_conflicts(self, event=None):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
         schedule_map = self.schedule_map
         class_codes = [entry.get().upper().replace(" ", "") for entry in self.m_section_entry if entry.get().strip()]
         schedule = []
@@ -3965,19 +3977,38 @@ class TeraTermUI(customtkinter.CTk):
                 for j in range(i + 1, len(day_schedule)):
                     next_start, next_end, next_code = day_schedule[j][1:]
                     if time_overlaps(current_start, current_end, next_start, next_end):
-                        conflict_entries.add(current_code)
-                        conflict_entries.add(next_code)
+                        conflict_entries.add((current_code, current_start, current_end))
+                        conflict_entries.add((next_code, next_start, next_end))
 
         for i, entry in enumerate(self.m_section_entry):
             class_code = entry.get().upper().replace(" ", "")
-            if class_code in conflict_entries:
+            conflict = next((conflict for conflict in conflict_entries if conflict[0] == class_code), None)
+            if conflict:
+                conflict_time = (f"{TeraTermUI.convert_to_12_hour_format(conflict[1])} - "
+                                 f"{TeraTermUI.convert_to_12_hour_format(conflict[2])}")
+                current_message = self.m_tooltips[i].cget("message")
+                new_message = f"{translation['conflict_tooltip']}{conflict_time}"
                 if entry.cget("border_color") != "#CC5500":
                     entry.configure(border_color="#CC5500")
-                    self.m_tooltips[i].show()
-            else:
+                if current_message != new_message:
+                    self.m_tooltips[i].configure(message=new_message, visibility=True, bg_color="#CC5500")
+            elif class_code and class_code[:2] in schedule_map:
+                day, start_time, end_time = schedule_map[class_code[:2]]
+                time_info = (f"{TeraTermUI.convert_to_12_hour_format(start_time)} - "
+                             f"{TeraTermUI.convert_to_12_hour_format(end_time)}")
+                current_message = self.m_tooltips[i].cget("message")
+                new_message = f"*EST. {time_info}"
                 if entry.cget("border_color") == "#CC5500":
                     entry.configure(border_color=customtkinter.ThemeManager.theme["CTkEntry"]["border_color"])
-                    self.m_tooltips[i].hide()
+                if current_message != new_message:
+                    self.m_tooltips[i].configure(message=new_message, visibility=True, bg_color="#1E90FF")
+            else:
+                current_message = self.m_tooltips[i].cget("message")
+                new_message = ""
+                if entry.cget("border_color") == "#CC5500":
+                    entry.configure(border_color=customtkinter.ThemeManager.theme["CTkEntry"]["border_color"])
+                if current_message != new_message:
+                    self.m_tooltips[i].configure(message=new_message, visibility=False, bg_color="#1E90FF")
 
     def keybind_auto_enroll(self):
         if self.auto_enroll.get() == "on":
@@ -4858,8 +4889,8 @@ class TeraTermUI(customtkinter.CTk):
                                                         placeholder_text=self.placeholder_texts_classes[i]))
                 self.m_section_entry.append(CustomEntry(self.multiple_frame, self, lang,
                                                         placeholder_text=self.placeholder_texts_sections[i]))
-                self.m_tooltips.append(CTkToolTip(self.m_section_entry[i], message=translation["conflict_tooltip"],
-                                                  bg_color="#F28C28", visibility=False))
+                self.m_tooltips.append(CTkToolTip(self.m_section_entry[i], message="", bg_color="#1E90FF",
+                                                  visibility=False))
                 self.m_section_entry[i].bind("<FocusOut>", self.section_bind_wrapper)
                 self.m_semester_entry.append(CustomComboBox(self.multiple_frame, self,
                                                             values=self.semester_values + [translation["current"]],
