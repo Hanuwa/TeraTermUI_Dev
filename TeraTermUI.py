@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 5/29/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 5/30/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -465,6 +465,7 @@ class TeraTermUI(customtkinter.CTk):
         self.m_semester_entry = []
         self.m_register_menu = []
         self.m_tooltips = []
+        self.schedule_map = TeraTermUI.generate_schedule()
         self.placeholder_texts_classes = ("ESPA3101", "INGL3101", "BIOL3011", "MATE3001", "CISO3121", "HUMA3101")
         self.placeholder_texts_sections = ("LM1", "KM1", "KH1", "LH1", "KN1", "LN1")
         self.m_add = None
@@ -3903,61 +3904,51 @@ class TeraTermUI(customtkinter.CTk):
             "Thursday": "J",
             "Friday": "V"
         }
-
         time_intervals = [
             ("07:00", "08:20", "G"),
-            ("08:30", "10:00", "H"),
+            ("08:30", "9:50", "H"),
             ("09:00", "11:20", "I"),
             ("10:00", "11:20", "J"),
-            ("11:20", "12:50", "K"),
+            ("11:30", "12:50", "K"),
             ("13:00", "14:20", "M"),
             ("14:30", "15:50", "N"),
             ("15:00", "16:20", "O"),
             ("16:00", "17:20", "P"),
             ("18:00", "20:50", "R")
         ]
-
         schedule_map = {}
 
         for day, prefix in days.items():
-            section_count = {}
-
             for start_time, end_time, interval_code in time_intervals:
                 if day in ["Tuesday", "Thursday"] and start_time == "11:20":
                     continue  # Skip this slot for Tuesday and Thursday
 
-                if day not in section_count:
-                    section_count[day] = {}
-
-                if interval_code not in section_count[day]:
-                    section_count[day][interval_code] = 1
-                else:
-                    section_count[day][interval_code] += 1
-
-                section_number = section_count[day][interval_code]
-                section_code = f"{prefix}{interval_code}{section_number}"
+                section_code = f"{prefix}{interval_code}"
                 schedule_map[section_code] = (day, start_time, end_time)
 
         return schedule_map
 
     def check_class_conflicts(self, event=None):
-        schedule_map = TeraTermUI.generate_schedule()
+        schedule_map = self.schedule_map
         class_codes = [entry.get().upper().replace(" ", "") for entry in self.m_section_entry if entry.get().strip()]
         schedule = []
         conflict_entries = set()
 
         for class_code in class_codes:
-            if class_code in schedule_map:
-                day, start_time, end_time = schedule_map[class_code]
+            if class_code[:2] in schedule_map:
+                day, start_time, end_time = schedule_map[class_code[:2]]
                 schedule.append((day, start_time, end_time, class_code))
 
-        schedule.sort(key=lambda x: (x[0], x[1]))
-        for i in range(len(schedule) - 1):
+        for i in range(len(schedule)):
             current_day, current_start, current_end, current_code = schedule[i]
-            next_day, next_start, next_end, next_code = schedule[i + 1]
-            if current_day == next_day and current_end > next_start:
-                conflict_entries.add(current_code)
-                conflict_entries.add(next_code)
+            for j in range(i + 1, len(schedule)):
+                next_day, next_start, next_end, next_code = schedule[j]
+                if current_day == next_day and current_end > next_start:
+                    conflict_entries.add(current_code)
+                    conflict_entries.add(next_code)
+                elif current_code[1:] == next_code[1:] and current_end > next_start:
+                    conflict_entries.add(current_code)
+                    conflict_entries.add(next_code)
 
         for i, entry in enumerate(self.m_section_entry):
             class_code = entry.get().upper().replace(" ", "")
