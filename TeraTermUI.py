@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 5/30/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 5/31/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -90,6 +90,7 @@ from PIL import Image
 customtkinter.set_appearance_mode("System")
 customtkinter.set_default_color_theme("blue")
 warnings.filterwarnings("ignore", message="32-bit application should be automated using 32-bit Python")
+gc.set_threshold(2000, 30, 20)
 
 
 def measure_time(threshold):
