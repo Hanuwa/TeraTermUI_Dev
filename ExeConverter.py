@@ -225,12 +225,12 @@ try:
                 sys.exit(1)
             nuitka_updater_command = (
                     r'cd /d "' + project_directory + r'\.venv\Scripts" & python -m nuitka "' + updater_py_path +
-                    r'" --onefile --deployment --enable-plugin=tk-inter --windows-console-mode=disable --python-flag=no_asserts ' +
+                    r'" --onefile --deployment --enable-plugin=tk-inter --python-flag=no_asserts ' +
                     r'--nofollow-import-to=unittest --python-flag=no_docstrings --python-flag=no_site ' +
                     r'--output-dir="' + project_directory + r'" ' + '--product-name="Tera Term UI Updater" ' +
                     r'--company-name="Armando Del Valle Tejada" ' + '--file-description="TeraTermUI Updater" ' +
                     r'--copyright="Copyright (c) 2024 Armando Del Valle Tejada" --file-version="1.0.0" '
-                    r'--product-version="1.0.0" '
+                    r'--product-version="1.0.0" --windows-console-mode=disable '
             )
             subprocess.run(nuitka_updater_command, shell=True, check=True)
             manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
