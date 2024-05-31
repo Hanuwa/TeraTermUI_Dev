@@ -186,7 +186,7 @@ except Exception as e:
 
 nuitka_command = (
     r'cd /d "' + project_directory + r'\.venv\Scripts" & python -m nuitka --standalone '
-    r'--deployment "' + project_directory + r'\TeraTermUI.py" --disable-console '
+    r'--deployment "' + project_directory + r'\TeraTermUI.py" --windows-console-mode=disable '
     r'--enable-plugin=tk-inter --include-data-dir="' + project_directory + r'\.venv\Lib\site-packages'
     r'\customtkinter=customtkinter" --include-data-dir="' + project_directory + r'\.venv\Lib\site-packages'
     r'\CTkMessageBox=CTkMessageBox" --include-package=CTkToolTip --include-package=CTkTable '
@@ -225,7 +225,7 @@ try:
                 sys.exit(1)
             nuitka_updater_command = (
                     r'cd /d "' + project_directory + r'\.venv\Scripts" & python -m nuitka "' + updater_py_path +
-                    r'" --onefile --deployment --enable-plugin=tk-inter --disable-console --python-flag=no_asserts ' +
+                    r'" --onefile --deployment --enable-plugin=tk-inter --windows-console-mode=disable --python-flag=no_asserts ' +
                     r'--nofollow-import-to=unittest --python-flag=no_docstrings --python-flag=no_site ' +
                     r'--output-dir="' + project_directory + r'" ' + '--product-name="Tera Term UI Updater" ' +
                     r'--company-name="Armando Del Valle Tejada" ' + '--file-description="TeraTermUI Updater" ' +
