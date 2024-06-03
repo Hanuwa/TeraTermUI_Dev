@@ -1765,7 +1765,7 @@ class TeraTermUI(customtkinter.CTk):
                 task_done = threading.Event()
                 loading_screen = self.show_loading_screen()
                 self.update_loading_screen(loading_screen, task_done)
-                self.thread_pool.submit(self.my_classes_event, dialog_input,  task_done=task_done)
+                self.thread_pool.submit(self.my_classes_event, dialog_input, task_done=task_done)
                 self.my_classes_event_completed = False
             else:
                 self.dialog.destroy()
