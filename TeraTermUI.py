@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 5/31/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 6/3/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 10600 lines of codes, it definitely makes things harder to work with
+# and with over 10700 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -399,6 +399,7 @@ class TeraTermUI(customtkinter.CTk):
         self.e_classes_entry = None
         self.e_section = None
         self.e_section_entry = None
+        self.e_section_tooltip = None
         self.e_semester = None
         self.e_semester_entry = None
         self.radio_var = None
@@ -492,6 +493,7 @@ class TeraTermUI(customtkinter.CTk):
         self.my_classes_frame = None
         self.enrolled_classes_table = None
         self.enrolled_classes_data = None
+        self.enrolled_classes_credits = None
         self.title_my_classes = None
         self.total_credits_label = None
         self.submit_my_classes = None
@@ -1725,30 +1727,50 @@ class TeraTermUI(customtkinter.CTk):
     def my_classes_event_handler(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        main_window_x = self.winfo_x()
-        main_window_y = self.winfo_y()
-        main_window_width = self.winfo_width()
-        main_window_height = self.winfo_height()
-        dialog_width = 300
-        dialog_height = 300
-        dialog_x = main_window_x + (main_window_width - dialog_width) / 2
-        dialog_y = main_window_y + (main_window_height - dialog_height) / 2
-        self.dialog = SmoothFadeInputDialog(text=translation["dialog_message"], title=translation["dialog_title"],
-                                            ok_text=translation["submit"], cancel_text=translation["option_1"],
-                                            lang=lang)
-        self.dialog.geometry("+%d+%d" % (dialog_x + 75, dialog_y + 60))
-        self.dialog.iconbitmap(self.icon_path)
-        self.dialog.bind("<Escape>", lambda event: self.dialog.destroy())
-        self.prev_dialog_input = self.dialog_input
-        self.dialog_input = self.dialog.get_input()
-        if self.dialog_input is not None:
-            task_done = threading.Event()
-            loading_screen = self.show_loading_screen()
-            self.update_loading_screen(loading_screen, task_done)
-            self.thread_pool.submit(self.my_classes_event, task_done=task_done)
-            self.my_classes_event_completed = False
+        if self.my_classes_frame is not None and not self.my_classes_frame.grid_info():
+            self.my_classes_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
+            self.modify_classes_frame.grid(row=2, column=2, sticky="nw", padx=(15, 0))
+            self.back_my_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
+            self.tabview.grid_forget()
+            self.in_enroll_frame = False
+            self.in_search_frame = False
+            self.add_key_bindings(event=None)
+            self.show_classes.configure(text=translation["show_my_new"])
+            self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
+            self.bind("<Up>", lambda event: self.move_up_scrollbar())
+            self.bind("<Down>", lambda event: self.move_down_scrollbar())
+            self.bind("<Home>", lambda event: self.move_top_scrollbar())
+            self.bind("<End>", lambda event: self.move_bottom_scrollbar())
+            self.bind("<Control-s>", lambda event: self.download_enrolled_classes_as_pdf(
+                self.enrolled_classes_data, self.enrolled_classes_credits))
+            self.bind("<Control-S>", lambda event: self.download_enrolled_classes_as_pdf(
+                self.enrolled_classes_data, self.enrolled_classes_credits))
+            self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event2())
         else:
-            self.dialog.destroy()
+            main_window_x = self.winfo_x()
+            main_window_y = self.winfo_y()
+            main_window_width = self.winfo_width()
+            main_window_height = self.winfo_height()
+            dialog_width = 300
+            dialog_height = 300
+            dialog_x = main_window_x + (main_window_width - dialog_width) / 2
+            dialog_y = main_window_y + (main_window_height - dialog_height) / 2
+            self.dialog = SmoothFadeInputDialog(text=translation["dialog_message"], title=translation["dialog_title"],
+                                                ok_text=translation["submit"], cancel_text=translation["option_1"],
+                                                lang=lang)
+            self.dialog.geometry("+%d+%d" % (dialog_x + 75, dialog_y + 60))
+            self.dialog.iconbitmap(self.icon_path)
+            self.dialog.bind("<Escape>", lambda event: self.dialog.destroy())
+            self.dialog_input = self.dialog.get_input()
+            if self.dialog_input is not None:
+                self.prev_dialog_input = self.dialog_input
+                task_done = threading.Event()
+                loading_screen = self.show_loading_screen()
+                self.update_loading_screen(loading_screen, task_done)
+                self.thread_pool.submit(self.my_classes_event, task_done=task_done)
+                self.my_classes_event_completed = False
+            else:
+                self.dialog.destroy()
 
     # function for seeing the classes you are currently enrolled for
     @cancel_automation()
@@ -1951,7 +1973,12 @@ class TeraTermUI(customtkinter.CTk):
         self.tabview.grid_forget()
         self.t_buttons_frame.grid_forget()
         if self.enrolled_classes_table is not None:
-            self.destroy_enrolled_frame()
+            lang = self.language_menu.get()
+            translation = self.load_language(lang)
+            self.my_classes_frame.grid_forget()
+            self.modify_classes_frame.grid_forget()
+            self.back_my_classes.grid_forget()
+            self.show_classes.configure(text=translation["show_my_classes"])
         self.in_enroll_frame = False
         self.in_search_frame = False
         self.in_multiple_screen = True
@@ -3487,7 +3514,12 @@ class TeraTermUI(customtkinter.CTk):
             self.save_frame.grid_forget()
             self.auto_frame.grid_forget()
         if not self.in_multiple_screen:
-            self.destroy_enrolled_frame()
+            lang = self.language_menu.get()
+            translation = self.load_language(lang)
+            self.my_classes_frame.grid_forget()
+            self.modify_classes_frame.grid_forget()
+            self.back_my_classes.grid_forget()
+            self.show_classes.configure(text=translation["show_my_classes"])
         self.tabview.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 85))
         self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 20))
         self.back_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
@@ -3744,6 +3776,7 @@ class TeraTermUI(customtkinter.CTk):
             self.e_semester_entry.configure(values=["C31", "C32", "C33", "C41", "C42", "C43", translation["current"]])
             self.register.configure(text=translation["register"])
             self.drop.configure(text=translation["drop"])
+            self.update_section_tooltip(lang)
             self.title_search.configure(text=translation["title_search"])
             self.s_classes.configure(text=translation["class"])
             self.s_semester.configure(text=translation["semester"])
@@ -3779,7 +3812,10 @@ class TeraTermUI(customtkinter.CTk):
             self.menu_submit.configure(text=translation["submit"])
             self.submit.configure(text=translation["submit"])
             self.search.configure(text=translation["search"])
-            self.show_classes.configure(text=translation["show_my_classes"])
+            if self.my_classes_frame is not None and self.my_classes_frame.grid_info():
+                self.show_classes.configure(text=translation["show_my_new"])
+            else:
+                self.show_classes.configure(text=translation["show_my_classes"])
             self.back_classes.configure(text=translation["back"])
             self.multiple.configure(text=translation["multiple"])
             self.title_multiple.configure(text=translation["title_multiple"])
@@ -3879,6 +3915,31 @@ class TeraTermUI(customtkinter.CTk):
         self.tabview.rename(self.other_tab, translation["other_tab"])
         self.other_tab = translation["other_tab"]
 
+    def update_section_tooltip(self, new_lang):
+        day_translations = {
+            "Monday": "Lunes",
+            "Tuesday": "Martes",
+            "Wednesday": "Miércoles",
+            "Thursday": "Jueves",
+            "Friday": "Viernes",
+            "Saturday": "Sábado",
+            "Sunday": "Domingo"
+        }
+        reverse_day_translations = {v: k for k, v in day_translations.items()}
+        current_message = self.e_section_tooltip.cget("message")
+        if not current_message:
+            return
+        lines = current_message.split("\n")
+        if len(lines) != 2:
+            return
+        days, time_info = lines
+        time_info = time_info.replace("*EST. ", "").strip()
+        if new_lang == "Español":
+            translated_days = ", ".join(day_translations.get(day, day) for day in days.split(", "))
+        else:
+            translated_days = ", ".join(reverse_day_translations.get(day, day) for day in days.split(", "))
+        self.e_section_tooltip.configure(message=f"{translated_days}\n*EST. {time_info}", visibility=True)
+
     def change_semester(self, event_type=None):
         if event_type != "focus_out":
             self.focus_set()
@@ -3952,19 +4013,47 @@ class TeraTermUI(customtkinter.CTk):
         time_obj = datetime.strptime(time_str, "%H:%M")
         return time_obj.strftime("%I:%M %p").lstrip("0")
 
+    def check_class_time(self):
+        lang = self.language_menu.get()
+        day_translations = {
+            "Monday": "Lunes",
+            "Tuesday": "Martes",
+            "Wednesday": "Miércoles",
+            "Thursday": "Jueves",
+            "Friday": "Viernes",
+            "Saturday": "Sábado",
+            "Sunday": "Domingo"
+        }
+        section = self.e_section_entry.get().upper().replace(" ", "")
+        schedule_map = self.schedule_map
+        if section[:2] in schedule_map:
+            days, start_time, end_time = schedule_map[section[:2]]
+            start_time_12hr = TeraTermUI.convert_to_12_hour_format(start_time)
+            end_time_12hr = TeraTermUI.convert_to_12_hour_format(end_time)
+            if lang == "Español":
+                translated_days = ", ".join(day_translations.get(day, day) for day in days.split(", "))
+            else:
+                translated_days = days
+            self.e_section_tooltip.configure(message=f"{translated_days}\n *EST. {start_time_12hr} - {end_time_12hr}",
+                                             visibility=True)
+        else:
+            self.e_section_tooltip.configure(message="", visibility=False)
+
     def check_class_conflicts(self, event=None):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         schedule_map = self.schedule_map
-        class_codes = [entry.get().upper().replace(" ", "") for entry in self.m_section_entry if entry.get().strip()]
+        sections = [entry.get().upper().replace(" ", "") for entry in self.m_section_entry if entry.get().strip()]
         schedule = []
         conflict_entries = set()
+        if not sections:
+            return
 
-        for class_code in class_codes:
-            if class_code[:2] in schedule_map:
-                days, start_time, end_time = schedule_map[class_code[:2]]
+        for class_section in sections:
+            if class_section[:2] in schedule_map:
+                days, start_time, end_time = schedule_map[class_section[:2]]
                 for day in days.split(", "):
-                    schedule.append((day, start_time, end_time, class_code))
+                    schedule.append((day, start_time, end_time, class_section))
 
         def time_overlaps(start1, end1, start2, end2):
             return max(start1, start2) < min(end1, end2)
@@ -3981,36 +4070,36 @@ class TeraTermUI(customtkinter.CTk):
                         conflict_entries.add((current_code, current_start, current_end))
                         conflict_entries.add((next_code, next_start, next_end))
 
-        for i, entry in enumerate(self.m_section_entry):
-            class_code = entry.get().upper().replace(" ", "")
-            conflict = next((conflict for conflict in conflict_entries if conflict[0] == class_code), None)
+        for idx, entry in enumerate(self.m_section_entry):
+            section = entry.get().upper().replace(" ", "")
+            conflict = next((conflict for conflict in conflict_entries if conflict[0] == section), None)
             if conflict:
                 conflict_time = (f"{TeraTermUI.convert_to_12_hour_format(conflict[1])} - "
                                  f"{TeraTermUI.convert_to_12_hour_format(conflict[2])}")
-                current_message = self.m_tooltips[i].cget("message")
+                current_message = self.m_tooltips[idx].cget("message")
                 new_message = f"{translation['conflict_tooltip']}{conflict_time}"
                 if entry.cget("border_color") != "#CC5500":
                     entry.configure(border_color="#CC5500")
                 if current_message != new_message:
-                    self.m_tooltips[i].configure(message=new_message, visibility=True, bg_color="#CC5500")
-            elif class_code and class_code[:2] in schedule_map:
-                day, start_time, end_time = schedule_map[class_code[:2]]
+                    self.m_tooltips[idx].configure(message=new_message, visibility=True, bg_color="#CC5500")
+            elif section and section[:2] in schedule_map:
+                day, start_time, end_time = schedule_map[section[:2]]
                 time_info = (f"{TeraTermUI.convert_to_12_hour_format(start_time)} - "
                              f"{TeraTermUI.convert_to_12_hour_format(end_time)}")
-                current_message = self.m_tooltips[i].cget("message")
+                current_message = self.m_tooltips[idx].cget("message")
                 new_message = f"*EST. {time_info}"
                 if entry.cget("border_color") == "#CC5500":
                     entry.configure(border_color=customtkinter.ThemeManager.theme["CTkEntry"]["border_color"])
                 if current_message != new_message:
-                    self.m_tooltips[i].configure(message=new_message, visibility=True, bg_color="#1E90FF")
+                    self.m_tooltips[idx].configure(message=new_message, visibility=True, bg_color="#1E90FF")
             else:
-                current_message = self.m_tooltips[i].cget("message")
+                current_message = self.m_tooltips[idx].cget("message")
                 new_message = ""
                 if entry.cget("border_color") == "#CC5500":
                     entry.configure(border_color=customtkinter.ThemeManager.theme["CTkEntry"]["border_color"])
                 if current_message != new_message:
-                    self.m_tooltips[i].configure(message=new_message, visibility=False, bg_color="#1E90FF")
-
+                    self.m_tooltips[idx].configure(message=new_message, visibility=False, bg_color="#1E90FF")
+                    
     def keybind_auto_enroll(self):
         if self.auto_enroll.get() == "on":
             self.auto_enroll.deselect()
@@ -4717,6 +4806,7 @@ class TeraTermUI(customtkinter.CTk):
             self.e_section = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab),
                                                     text=translation["section"])
             self.e_section_entry = CustomEntry(self.tabview.tab(self.enroll_tab), self, lang, placeholder_text="LM1")
+            self.e_section_tooltip = CTkToolTip(self.e_section_entry, message="", bg_color="#1E90FF", visibility=False)
             self.e_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab),
                                                      text=translation["semester"])
             self.e_semester_entry = CustomComboBox(self.tabview.tab(self.enroll_tab), self,
@@ -4737,6 +4827,7 @@ class TeraTermUI(customtkinter.CTk):
             self.title_enroll.bind("<Button-1>", lambda event: self.focus_set())
             self.e_classes.bind("<Button-1>", lambda event: self.focus_set())
             self.e_section.bind("<Button-1>", lambda event: self.focus_set())
+            self.e_section_entry.bind("<FocusOut>", lambda event: self.check_class_time())
             self.e_semester.bind("<Button-1>", lambda event: self.focus_set())
             self.register.bind("<space>", lambda event: self.spacebar_event())
             self.register.bind("<FocusOut>", lambda event: self.drop._on_leave())
@@ -5501,6 +5592,7 @@ class TeraTermUI(customtkinter.CTk):
         self.e_section_entry.insert(0, section_text)
         self.e_semester_entry.set(semester_text)
         self.register.select()
+        self.check_class_time()
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         self.focus_set()
@@ -6626,8 +6718,9 @@ class TeraTermUI(customtkinter.CTk):
         table_values = [headers] + [[cls.get(header, "") for header in headers] for cls in data]
         enrolled_rows = len(data) + 1
         if self.enrolled_classes_table is not None:
-            self.destroy_enrolled_frame(when="Now")
+            self.destroy_enrolled_frame()
         self.enrolled_classes_data = data
+        self.enrolled_classes_credits = creds
         self.my_classes_frame = customtkinter.CTkScrollableFrame(self, corner_radius=10, width=620, height=320)
         self.title_my_classes = customtkinter.CTkLabel(self.my_classes_frame,
                                                        text=translation["my_classes"] + semester,
@@ -6637,7 +6730,7 @@ class TeraTermUI(customtkinter.CTk):
         self.submit_my_classes = CustomButton(self.my_classes_frame, border_width=2,
                                               text=translation["submit"], text_color=("gray10", "#DCE4EE"),
                                               command=self.submit_modify_classes_handler)
-        self.submit_my_classes_tooltip = CTkToolTip(self.submit_my_classes, alpha=0.90, bg_color="#1E90FF",
+        self.submit_my_classes_tooltip = CTkToolTip(self.submit_my_classes, bg_color="#1E90FF",
                                                     message=translation["submit_modify_tooltip"])
         self.download_enrolled_pdf = CustomButton(self.my_classes_frame, text=translation["pdf_save_as"],
                                                   hover_color="#173518", fg_color="#2e6930",
@@ -6720,9 +6813,9 @@ class TeraTermUI(customtkinter.CTk):
                                                    placeholder_text=placeholder_text, width=50)
                 mod_selection.grid(row=row_index, column=0, padx=(0, 100), pady=(pad_y, 0))
                 change_section_entry.grid(row=row_index, column=0, padx=(50, 0), pady=(pad_y, 0))
-                mod_selection_tooltip = CTkToolTip(mod_selection, alpha=0.90, bg_color="#1E90FF",
+                mod_selection_tooltip = CTkToolTip(mod_selection, bg_color="#1E90FF",
                                                    message=translation["mod_selection"])
-                change_section_entry_tooltip = CTkToolTip(change_section_entry, alpha=0.90, bg_color="#1E90FF",
+                change_section_entry_tooltip = CTkToolTip(change_section_entry, bg_color="#1E90FF",
                                                           message=translation["change_section_entry"])
                 change_section_entry.configure(state="disabled")
                 self.mod_selection_list.append(mod_selection)
@@ -6736,6 +6829,7 @@ class TeraTermUI(customtkinter.CTk):
                 pad_y = 45
         if self.countdown_running:
             self.submit_my_classes.configure(state="disabled")
+        self.show_classes.configure(text=translation["show_my_new"])
         self.in_enroll_frame = False
         self.in_search_frame = False
         self.add_key_bindings(event=None)
@@ -6752,10 +6846,9 @@ class TeraTermUI(customtkinter.CTk):
         self.modify_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
         self.total_credits_label.bind("<Button-1>", lambda event: self.focus_set())
 
-    def destroy_enrolled_frame(self, when="Later"):
+    def destroy_enrolled_frame(self):
         self.my_classes_frame.grid_forget()
         self.modify_classes_frame.grid_forget()
-        self.back_my_classes.grid_forget()
         self.my_classes_frame.unbind("<Button-1>")
         self.modify_classes_frame.unbind("<Button-1>")
         self.title_my_classes.unbind("<Button-1>")
@@ -6763,6 +6856,7 @@ class TeraTermUI(customtkinter.CTk):
 
         def destroy():
             self.enrolled_classes_data = None
+            self.enrolled_classes_credits = None
             self.title_my_classes.destroy()
             self.title_my_classes = None
             self.total_credits_label.destroy()
@@ -6773,17 +6867,12 @@ class TeraTermUI(customtkinter.CTk):
             self.download_enrolled_pdf.configure(command=None)
             self.download_enrolled_pdf.destroy()
             self.download_enrolled_pdf = None
-            self.back_my_classes.configure(command=None)
-            self.back_my_classes.destroy()
-            self.back_my_classes = None
             self.modify_classes_title.destroy()
             self.modify_classes_title = None
             self.download_enrolled_pdf_tooltip.destroy()
             self.download_enrolled_pdf_tooltip = None
             self.submit_my_classes_tooltip.destroy()
             self.submit_my_classes_tooltip = None
-            self.back_my_classes_tooltip.destroy()
-            self.back_my_classes_tooltip = None
             for cell, tooltip in self.enrolled_header_tooltips.items():
                 tooltip.destroy()
             for tooltip in self.enrolled_tooltips:
@@ -6806,10 +6895,7 @@ class TeraTermUI(customtkinter.CTk):
             self.my_classes_frame.destroy()
             self.my_classes_frame = None
 
-        if when == "Now":
-            destroy()
-        elif when == "Later":
-            self.after(100, destroy)
+        destroy()
 
     def modify_enrolled_classes(self, mod, row_index):
         lang = self.language_menu.get()
