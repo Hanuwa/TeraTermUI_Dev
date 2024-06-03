@@ -1,5 +1,5 @@
 # Tera Term UI Dev
-Dev Environment for Tera Term UI
+Dev Environment for Tera Term UI (Virtualenv)
 
 **App Version:** "0.9.5" | **Python Version:** "3.12.3"
 
