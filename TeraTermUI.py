@@ -8324,7 +8324,7 @@ class TeraTermUI(customtkinter.CTk):
         import aiohttp
 
         try:
-            async with session.get(url, timeout=3.0) as response:
+            async with session.get(url, timeout=5.0) as response:
                 if response.status != 200:
                     print(f"Non-200 response code: {response.status}")
                     return False
@@ -8345,13 +8345,14 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language(lang)
         urls = ["https://www.google.com/", "https://www.bing.com/", "https://www.yahoo.com/"]
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=3)) as session:
-            tasks = [TeraTermUI.fetch(session, url) for url in urls]
-            results = await asyncio.gather(*tasks)
-        connected = any(results)
-        if not connected and not self.check_update:
-            self.after(100, self.show_error_message, 300, 215, translation["no_internet"])
-        if self.check_update:
-            self.check_update = False
+            tasks = [self.fetch(session, url) for url in urls]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+        connected = any(result for result in results if result is True)
+        if not connected:
+            if not self.check_update:
+                self.after(100, self.show_error_message, 300, 215, translation["no_internet"])
+            if self.check_update:
+                self.check_update = False
         return connected
 
     # Set focus on the UI application window
