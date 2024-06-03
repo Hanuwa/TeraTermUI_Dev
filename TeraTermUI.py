@@ -225,7 +225,6 @@ class TeraTermUI(customtkinter.CTk):
         self.is_exit_dialog_open = False
         self.dialog = None
         self.dialog_input = None
-        self.prev_dialog_input = None
         self.move_tables_overlay = None
 
         self.image_cache = {}
@@ -1761,26 +1760,25 @@ class TeraTermUI(customtkinter.CTk):
             self.dialog.geometry("+%d+%d" % (dialog_x + 75, dialog_y + 60))
             self.dialog.iconbitmap(self.icon_path)
             self.dialog.bind("<Escape>", lambda event: self.dialog.destroy())
-            self.dialog_input = self.dialog.get_input()
-            if self.dialog_input is not None:
-                self.prev_dialog_input = self.dialog_input
+            dialog_input = self.dialog.get_input()
+            if dialog_input is not None:
                 task_done = threading.Event()
                 loading_screen = self.show_loading_screen()
                 self.update_loading_screen(loading_screen, task_done)
-                self.thread_pool.submit(self.my_classes_event, task_done=task_done)
+                self.thread_pool.submit(self.my_classes_event, dialog_input,  task_done=task_done)
                 self.my_classes_event_completed = False
             else:
                 self.dialog.destroy()
 
     # function for seeing the classes you are currently enrolled for
     @cancel_automation()
-    def my_classes_event(self, task_done):
+    def my_classes_event(self, dialog_input, task_done):
         with self.lock_thread:
             try:
                 self.automation_preparations()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
-                dialog_input = self.dialog_input.upper().replace(" ", "")
+                dialog_input = dialog_input.upper().replace(" ", "")
                 curr_sem = translation["current"].upper()
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
@@ -1801,7 +1799,6 @@ class TeraTermUI(customtkinter.CTk):
                                     return
                                 else:
                                     dialog_input = result
-                                    self.dialog_input = result
                             self.uprb.UprbayTeraTermVt.type_keys(dialog_input)
                             self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                             self.after(0, self.disable_go_next_buttons)
@@ -1822,7 +1819,8 @@ class TeraTermUI(customtkinter.CTk):
                                 copy = pyperclip.paste()
                                 enrolled_classes, total_credits = self.extract_my_enrolled_classes(copy)
                                 self.after(0, self.enable_widgets, self)
-                                self.after(50, self.display_enrolled_data, enrolled_classes, total_credits)
+                                self.after(50, self.display_enrolled_data, enrolled_classes,
+                                           total_credits, dialog_input)
                                 self.clipboard_clear()
                                 if clipboard_content is not None:
                                     self.clipboard_append(clipboard_content)
@@ -6682,10 +6680,7 @@ class TeraTermUI(customtkinter.CTk):
 
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        if self.dialog_input is not None:
-            semester = self.dialog_input.upper().replace(" ", "")
-        else:
-            semester = self.prev_dialog_input.upper().replace(" ", "")
+        semester = self.dialog_input.upper().replace(" ", "")
 
         # Define where the PDF will be saved
         home = os.path.expanduser("~")
@@ -6702,18 +6697,19 @@ class TeraTermUI(customtkinter.CTk):
         self.create_enrolled_classes_pdf(data, creds, semester, filepath)
         self.show_success_message(350, 265, translation["pdf_save_success"])
 
-    def display_enrolled_data(self, data, creds):
+    def display_enrolled_data(self, data, creds, dialog_input):
         self.unbind("<Control-Tab>")
         self.unbind("<Control-w>")
         self.unbind("<Control-W>")
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        semester = self.dialog_input.upper().replace(" ", "")
+        semester = dialog_input.upper().replace(" ", "")
         headers = [translation["course"], translation["grade"], translation["days"],
                    translation["times"], translation["room"]]
         if not data:
             self.after(100, self.show_error_message, 320, 235, translation["semester_no_data"] + semester)
             return
+        self.dialog_input = dialog_input
         self.tabview.grid_forget()
         table_values = [headers] + [[cls.get(header, "") for header in headers] for cls in data]
         enrolled_rows = len(data) + 1
@@ -6936,10 +6932,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.automation_preparations()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
-                if self.dialog_input is not None:
-                    dialog_input = self.dialog_input.upper().replace(" ", "")
-                else:
-                    dialog_input = self.prev_dialog_input.upper().replace(" ", "")
+                dialog_input = self.dialog_input.upper().replace(" ", "")
                 show_error = False
                 first_loop = True
                 section_closed = False
