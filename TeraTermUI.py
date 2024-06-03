@@ -1726,7 +1726,7 @@ class TeraTermUI(customtkinter.CTk):
     def my_classes_event_handler(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        if self.my_classes_frame is not None and not self.my_classes_frame.grid_info():
+        if self.enrolled_classes_table is not None and not self.my_classes_frame.grid_info():
             self.my_classes_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
             self.modify_classes_frame.grid(row=2, column=2, sticky="nw", padx=(15, 0))
             self.back_my_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
@@ -3810,7 +3810,7 @@ class TeraTermUI(customtkinter.CTk):
             self.menu_submit.configure(text=translation["submit"])
             self.submit.configure(text=translation["submit"])
             self.search.configure(text=translation["search"])
-            if self.my_classes_frame is not None and self.my_classes_frame.grid_info():
+            if self.enrolled_classes_table is not None and self.my_classes_frame.grid_info():
                 self.show_classes.configure(text=translation["show_my_new"])
             else:
                 self.show_classes.configure(text=translation["show_my_classes"])
@@ -4514,6 +4514,8 @@ class TeraTermUI(customtkinter.CTk):
             self.m_remove.configure(state="disabled")
             self.auto_enroll.configure(state="normal")
             self.save_data.configure(state="normal")
+            if self.enrolled_classes_table is not None:
+                self.submit_my_classes.configure(state="disabled")
         else:
             self.submit_multiple.configure(state="normal")
             self.submit.configure(state="normal")
