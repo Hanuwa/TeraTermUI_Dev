@@ -112,12 +112,12 @@ def validate_version(ver_str: str) -> bool:
 
 
 def freeze_requirements(project_directory):
-    requirements_path = os.path.join(project_directory, "requirements.txt")
+    scripts_directory = os.path.join(project_directory, ".venv", "Scripts")
+    requirements_path = os.path.join(scripts_directory, "requirements.txt")
     original_dir = os.getcwd()
     try:
-        os.chdir(os.path.join(project_directory, ".venv", "Scripts"))
+        os.chdir(scripts_directory)
         subprocess.run(f'pip freeze > "{requirements_path}"', shell=True, check=True)
-        print(Fore.GREEN + "Successfully created requirements.txt" + Style.RESET_ALL)
     except subprocess.CalledProcessError as e:
         print(Fore.RED + f"Failed to create requirements.txt: {e}" + Style.RESET_ALL)
     finally:
