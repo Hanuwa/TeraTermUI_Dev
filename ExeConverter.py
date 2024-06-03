@@ -111,6 +111,19 @@ def validate_version(ver_str: str) -> bool:
     return bool(re.match(pattern, ver_str, re.IGNORECASE))
 
 
+def freeze_requirements(project_directory):
+    requirements_path = os.path.join(project_directory, "requirements.txt")
+    original_dir = os.getcwd()
+    try:
+        os.chdir(os.path.join(project_directory, ".venv", "Scripts"))
+        subprocess.run(f'pip freeze > "{requirements_path}"', shell=True, check=True)
+        print(Fore.GREEN + "Successfully created requirements.txt" + Style.RESET_ALL)
+    except subprocess.CalledProcessError as e:
+        print(Fore.RED + f"Failed to create requirements.txt: {e}" + Style.RESET_ALL)
+    finally:
+        os.chdir(original_dir)
+
+
 init()
 username = os.getlogin()
 project_directory = r"C:\Users\\" + username + r"\PycharmProjects\TeraTermUI"
@@ -132,6 +145,7 @@ while True:
         break
     print(Fore.RED + "\nInvalid format. Please provide an update version number"
           " in the format x.x.x or vx.x.x (e.g., v1.0.0 or 1.0.0): \n" + Style.RESET_ALL)
+freeze_requirements(project_directory)
 user_input = user_input.lower()
 if user_input.startswith("v"):
     update = user_input
