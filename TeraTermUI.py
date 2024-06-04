@@ -889,10 +889,10 @@ class TeraTermUI(customtkinter.CTk):
         if response == "Yes" or response == "Sí":
             self.tray.stop()
             if hasattr(self, "check_idle_thread") and self.check_idle_thread is not None \
-                    and self.check_idle_thread.is_alive():
+                    and self.is_idle_thread_running and self.check_idle_thread.is_alive():
                 self.stop_check_idle.set()
             if hasattr(self, "check_process_thread") and self.check_process_thread is not None \
-                    and self.check_process_thread.is_alive():
+                    and self.is_idle_thread_running and self.check_process_thread.is_alive():
                 self.stop_is_check_process.set()
             self.thread_pool.shutdown(wait=True)
             self.save_user_data()
@@ -923,10 +923,10 @@ class TeraTermUI(customtkinter.CTk):
             win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
         self.tray.stop()
         if hasattr(self, "check_idle_thread") and self.check_idle_thread is not None \
-                and self.check_idle_thread.is_alive():
+                and self.is_idle_thread_running and self.check_idle_thread.is_alive():
             self.stop_check_idle.set()
         if hasattr(self, "check_process_thread") and self.check_process_thread is not None \
-                and self.check_process_thread.is_alive():
+                and self.is_idle_thread_running and self.check_process_thread.is_alive():
             self.stop_is_check_process.set()
         self.thread_pool.shutdown(wait=True)
         self.save_user_data(include_exit=False)
