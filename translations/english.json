@@ -326,7 +326,7 @@
 	"previous": "Previous",
 	"next": "Next",
 	"remove": "Remove",
-	"table_count_tooltip": "Can only have up to\n10 tables of classes at once.\nThis will keep track of how many\nclasses you got already",
+	"table_count_tooltip": "Can only have up to 10 tables of\nclasses at once. This will keep track\nof how many classes you got already",
 	"previous_tooltip": "Go back to the\npreviously searched table",
 	"next_tooltip": "Go to the next table",
 	"remove_tooltip": "Removes the table\nyou are currently seeing",
