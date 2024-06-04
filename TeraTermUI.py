@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 6/3/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 6/4/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -26,6 +26,7 @@ import functools
 import gc
 import json
 import logging
+import mss
 import os
 import psutil
 import py7zr
@@ -193,6 +194,7 @@ class TeraTermUI(customtkinter.CTk):
         self.cancel_button = None
         self.running_countdown = None
         self.progress_bar = None
+        self.loading_label = None
         self.check_idle_thread = None
         self.check_process_thread = None
         self.idle_num_check = None
@@ -226,6 +228,9 @@ class TeraTermUI(customtkinter.CTk):
         self.dialog = None
         self.dialog_input = None
         self.move_tables_overlay = None
+        self.move_title_label = None
+        self.tables_container = None
+        self.tables_checkboxes = []
 
         self.image_cache = {}
 
@@ -586,6 +591,7 @@ class TeraTermUI(customtkinter.CTk):
         self.error = None
         self.success = None
         self.loading_screen = None
+        self.loading_screen_status = None
         self.loading_screen_start_time = None
         self.information = None
         self.run_fix = False
@@ -805,7 +811,8 @@ class TeraTermUI(customtkinter.CTk):
         )
 
     def hide_all_windows(self):
-        if self.state() == "withdrawn" or (self.loading_screen is not None and self.loading_screen.winfo_exists()):
+        if self.state() == "withdrawn" or (self.loading_screen_status is not None and
+                                           self.loading_screen_status.winfo_exists()):
             return
 
         self.withdraw()
@@ -826,9 +833,10 @@ class TeraTermUI(customtkinter.CTk):
                 win32gui.ShowWindow(hwnd, win32con.SW_HIDE)
 
     def show_all_windows(self):
-        if self.state() == "normal" and (self.loading_screen is not None and self.loading_screen.winfo_exists()):
+        if self.state() == "normal" and (self.loading_screen_status is not None and
+                                         self.loading_screen_status.winfo_exists()):
             return
-        elif self.state() == "normal" and self.loading_screen is None:
+        elif self.state() == "normal" and self.loading_screen_status is None:
             self.set_focus_to_tkinter()
             return
 
@@ -851,7 +859,7 @@ class TeraTermUI(customtkinter.CTk):
             win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
 
     def direct_close_on_tray(self):
-        if self.loading_screen is not None and self.loading_screen.winfo_exists():
+        if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
             return
 
         self.tray.stop()
@@ -862,7 +870,7 @@ class TeraTermUI(customtkinter.CTk):
         current_time = time.time()
         if (self.last_closing_time is not None and (current_time - self.last_closing_time) < 0.25) or \
                 (hasattr(self, "is_exit_dialog_open") and self.is_exit_dialog_open) or \
-                (self.loading_screen is not None and self.loading_screen.winfo_exists()):
+                (self.loading_screen_status is not None and self.loading_screen_status.winfo_exists()):
             return
 
         self.is_exit_dialog_open = True
@@ -908,7 +916,7 @@ class TeraTermUI(customtkinter.CTk):
         self.last_closing_time = current_time
 
     def direct_close(self):
-        if self.loading_screen is not None and self.loading_screen.winfo_exists():
+        if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
             return
 
         hwnd = win32gui.FindWindow(None, "uprbay.uprb.edu - Tera Term VT")
@@ -1923,7 +1931,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.m_remove.configure(state="disabled")
 
     def add_event_up_arrow_key(self):
-        if self.loading_screen is not None and self.loading_screen.winfo_exists() or \
+        if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists() or \
                 self.countdown_running or self.started_auto_enroll:
             return
 
@@ -1931,7 +1939,7 @@ class TeraTermUI(customtkinter.CTk):
             self.add_event()
 
     def remove_event_down_arrow_key(self):
-        if self.loading_screen is not None and self.loading_screen.winfo_exists() or \
+        if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists() or \
                 self.countdown_running or self.started_auto_enroll:
             return
 
@@ -2844,6 +2852,12 @@ class TeraTermUI(customtkinter.CTk):
                                 self.search_next_page_status = False
 
                             self.after(0, hide_next_button)
+                        section = self.s_classes_entry.get().upper().replace(" ", "").replace("-", "")
+                        if section != self.get_class_for_pdf:
+                            self.s_classes_entry.configure(state="normal")
+                            self.s_classes_entry.delete(0, "end")
+                            self.s_classes_entry.insert(0, self.get_class_for_pdf)
+                            self.s_classes_entry.configure(state="disabled")
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             except Exception as e:
@@ -3393,7 +3407,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # function that lets user go back to the initial screen
     def go_back_event(self):
-        if self.loading_screen is not None and self.loading_screen.winfo_exists() \
+        if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists() \
                 and not self.error_occurred or self.countdown_running:
             return
         response = None
@@ -3488,7 +3502,7 @@ class TeraTermUI(customtkinter.CTk):
             self.error_occurred = False
 
     def keybind_go_back_event2(self):
-        if self.loading_screen is not None and self.loading_screen.winfo_exists():
+        if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
             return
 
         if self.move_slider_right_enabled or self.move_slider_left_enabled:
@@ -4532,31 +4546,6 @@ class TeraTermUI(customtkinter.CTk):
             if self.enrolled_classes_table is not None:
                 self.submit_my_classes.configure(state="normal")
 
-    @staticmethod
-    def get_window_monitor(window_x, window_y, window_width=None, window_height=None):
-        from screeninfo import get_monitors
-
-        # If width and height are not provided, assume a small window size
-        if window_width is None:
-            window_width = 10
-        if window_height is None:
-            window_height = 10
-
-        for monitor in get_monitors():
-            corners = [
-                (window_x, window_y),
-                (window_x + window_width, window_y),
-                (window_x, window_y + window_height),
-                (window_x + window_width, window_y + window_height)
-            ]
-
-            for (x, y) in corners:
-                if monitor.x <= x <= monitor.x + monitor.width and \
-                        monitor.y <= y <= monitor.y + monitor.height:
-                    return monitor
-
-        return None
-
     def move_window(self):
         try:
             window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
@@ -4566,15 +4555,6 @@ class TeraTermUI(customtkinter.CTk):
         # Get Tkinter window's current position
         tk_x = self.winfo_x()
         tk_y = self.winfo_y()
-        # Identify which monitor the Tkinter window and Tera Term window are in
-        tk_monitor = TeraTermUI.get_window_monitor(tk_x, tk_y, self.winfo_width(), self.winfo_height())
-        tera_monitor = TeraTermUI.get_window_monitor(window.left, window.top, window.width, window.height)
-        # print(f"Tkinter window is on monitor {tk_monitor} at position ({tk_x}, {tk_y}).")
-        # print(f"Tera Term window is on monitor {tera_monitor} at position ({window.left}, {window.top}).")
-        # If they're not on the same monitor, don't move the Tera Term window
-        if tk_monitor != tera_monitor:
-            print("Windows are on different monitors. Not moving Tera Term window.")
-            return
         # Calculate the target position for the Tera Term window with an offset
         offset_x = 10
         offset_y = 10
@@ -5070,7 +5050,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.connection.commit()
 
     def keybind_save_classes(self, event=None):
-        if self.loading_screen is not None and self.loading_screen.winfo_exists():
+        if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
             return
 
         self.save_data.toggle()
@@ -5147,9 +5127,42 @@ class TeraTermUI(customtkinter.CTk):
     def show_loading_screen(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        self.loading_screen = SmoothFadeToplevel(fade_duration=10, final_alpha=0.90)
+        if self.loading_screen is None or not self.loading_screen.winfo_exists():
+            self.loading_screen = SmoothFadeToplevel(fade_duration=10, final_alpha=0.90)
+            self.loading_screen_geometry()
+            self.loading_screen.overrideredirect(True)
+            self.loading_screen.attributes("-topmost", True)
+            self.loading_screen.iconbitmap(self.icon_path)
+            self.loading_label = customtkinter.CTkLabel(self.loading_screen, text=translation["loading"],
+                                                        font=customtkinter.CTkFont(size=20, weight="bold"))
+            self.loading_label.pack(pady=(48, 12))
+            self.progress_bar = customtkinter.CTkProgressBar(self.loading_screen, mode="indeterminate",
+                                                             height=15, width=230, indeterminate_speed=1.5)
+            self.progress_bar.pack(pady=1)
+            self.loading_screen.protocol("WM_DELETE_WINDOW", TeraTermUI.disable_loading_screen_close)
+        else:
+            self.loading_screen_geometry()
+            self.loading_screen.deiconify()
+        self.loading_screen_status = self.loading_screen
+        if self.auto_search or self.updating_app:
+            self.loading_label.configure(text=translation["searching_exe"])
+            self.auto_search = False
+            self.updating_app = False
+        elif self.sending_feedback:
+            self.loading_label.configure(text=translation["sending_feedback"])
+            self.sending_feedback = False
+        else:
+            self.loading_label.configure(text=translation["loading"])
+        self.progress_bar.start()
+        self.attributes("-disabled", True)
+        self.disable_widgets(self)
+        self.loading_screen_start_time = time.time()
+        return self.loading_screen
+
+    def loading_screen_geometry(self):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
         self.loading_screen.title(translation["loading"])
-        self.loading_screen.overrideredirect(True)
         width = 275
         height = 150
         main_window_x = self.winfo_x()
@@ -5161,27 +5174,6 @@ class TeraTermUI(customtkinter.CTk):
         center_x = main_window_x + (main_window_width // 2) - (loading_screen_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (loading_screen_height // 2)
         self.loading_screen.geometry(f"{width}x{height}+{center_x + 105}+{center_y}")
-        self.loading_screen.attributes("-topmost", True)
-        self.loading_screen.iconbitmap(self.icon_path)
-        loading = customtkinter.CTkLabel(self.loading_screen, text=translation["loading"],
-                                         font=customtkinter.CTkFont(size=20, weight="bold"))
-        if self.auto_search or self.updating_app:
-            loading.configure(text=translation["searching_exe"])
-            self.auto_search = False
-            self.updating_app = False
-        elif self.sending_feedback:
-            loading.configure(text=translation["sending_feedback"])
-            self.sending_feedback = False
-        loading.pack(pady=(48, 12))
-        self.progress_bar = customtkinter.CTkProgressBar(self.loading_screen, mode="indeterminate",
-                                                         height=15, width=230, indeterminate_speed=1.5)
-        self.progress_bar.pack(pady=1)
-        self.loading_screen.protocol("WM_DELETE_WINDOW", TeraTermUI.disable_loading_screen_close)
-        self.progress_bar.start()
-        self.attributes("-disabled", True)
-        self.disable_widgets(self)
-        self.loading_screen_start_time = time.time()
-        return self.loading_screen
 
     @staticmethod
     def disable_loading_screen_close():
@@ -5195,9 +5187,8 @@ class TeraTermUI(customtkinter.CTk):
             self.update_widgets()
             if self.loading_screen is not None and self.loading_screen.winfo_exists():
                 self.loading_screen.withdraw()
-            self.progress_bar.stop()
-            loading_screen.destroy()
-            self.loading_screen = None
+            self.progress_bar.reset()
+            self.loading_screen_status = None
             if current_time - self.loading_screen_start_time > 40:
                 task_done.set()
                 lang = self.language_menu.get()
@@ -5359,8 +5350,6 @@ class TeraTermUI(customtkinter.CTk):
 
     # captures a screenshot of tera term and performs OCR
     def capture_screenshot(self):
-        import pyautogui
-
         self.update_idletasks()
         time.sleep(1)
         lang = self.language_menu.get()
@@ -5374,19 +5363,26 @@ class TeraTermUI(customtkinter.CTk):
             width = right - x
             height = bottom - y
             crop_margin = (2, 10, 10, 2)
-            if self.loading_screen is not None and self.loading_screen.winfo_exists():
+            if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
                 self.loading_screen.withdraw()
-            screenshot = pyautogui.screenshot(region=(x, y, width, height))
-            if self.loading_screen is not None and self.loading_screen.winfo_exists():
-                self.loading_screen.deiconify()
-            screenshot = screenshot.crop((crop_margin[0], crop_margin[1], width - crop_margin[2],
-                                          height - crop_margin[3])).convert("L")
-            screenshot = screenshot.resize((screenshot.width * 2, screenshot.height * 2),
-                                           resample=Image.Resampling.LANCZOS)
-            # screenshot.save("screenshot.png")
-            custom_config = r"--oem 3 --psm 6"
-            text = pytesseract.image_to_string(screenshot, config=custom_config)
-            return text
+            with mss.mss() as sct:
+                monitor = {
+                    "top": y,
+                    "left": x,
+                    "width": width,
+                    "height": height
+                }
+                screenshot = sct.grab(monitor)
+                img = Image.frombytes('RGB', (screenshot.width, screenshot.height), screenshot.rgb)
+                if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
+                    self.loading_screen.deiconify()
+                img = img.crop((crop_margin[0], crop_margin[1], img.width - crop_margin[2],
+                                img.height - crop_margin[3])).convert("L")
+                img = img.resize((img.width * 2, img.height * 2), resample=Image.Resampling.LANCZOS)
+                # img.save("screenshot.png")
+                custom_config = r"--oem 3 --psm 6"
+                text = pytesseract.image_to_string(img, config=custom_config)
+                return text
         else:
             try:
                 with py7zr.SevenZipFile(self.zip_path, mode="r") as z:
@@ -5493,7 +5489,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # function for the user to download the created pdf to their computer
     def download_search_classes_as_pdf(self):
-        if self.loading_screen is not None and self.loading_screen.winfo_exists():
+        if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
             return
 
         lang = self.language_menu.get()
@@ -6090,8 +6086,11 @@ class TeraTermUI(customtkinter.CTk):
         curr_table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
         self.table = curr_table
         self.current_class = display_class
-        self.s_classes_entry.delete(0, "end")
-        self.s_classes_entry.insert(0, display_class.cget("text"))
+        section = self.s_classes_entry.get().upper().replace(" ", "").replace("-", "")
+        display_class_text = display_class.cget("text").split(" ")[0]
+        if section != display_class_text and self.loading_screen_status is None:
+            self.s_classes_entry.delete(0, "end")
+            self.s_classes_entry.insert(0, display_class_text)
         self.after(0, self.focus_set)
 
     def update_buttons(self):
@@ -6133,26 +6132,33 @@ class TeraTermUI(customtkinter.CTk):
 
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        self.move_tables_overlay = SmoothFadeToplevel(fade_duration=10, final_alpha=0.90)
-        self.move_tables_overlay.title(translation["move_classes"])
-        self.move_tables_overlay.overrideredirect(True)
+        if self.move_tables_overlay is None:
+            self.move_tables_overlay = SmoothFadeToplevel(fade_duration=10, final_alpha=0.90)
+            self.move_tables_overlay.overrideredirect(True)
+            self.move_title_label = customtkinter.CTkLabel(self.move_tables_overlay, text=translation["move_classes"],
+                                                           font=customtkinter.CTkFont(size=16, weight="bold"))
+            self.move_title_label.grid(row=0, column=1, padx=10, pady=(10, 0))
+            self.tables_container = customtkinter.CTkFrame(self.move_tables_overlay, fg_color="transparent")
+            self.tables_container.grid(row=1, column=1, padx=(7, 0), pady=(0, 10))
+            self.tables_checkboxes = []
+        self.update_table_checkboxes()
+        self.highlight_selected_table_in_grid()
+        self.move_tables_geometry()
+        self.move_tables_overlay.deiconify()
+        self.after(0, self.move_tables_overlay.focus_force)
+        self.update_idletasks()
+        self.move_tables_overlay.bind("<FocusOut>", self.on_move_window_close)
+        self.move_tables_overlay.bind("<Escape>", self.on_move_window_close)
 
-        title_label = customtkinter.CTkLabel(self.move_tables_overlay, text=translation["move_classes"],
-                                             font=customtkinter.CTkFont(size=16, weight="bold"))
-        title_label.grid(row=0, column=1, padx=10, pady=(10, 0))
-        checkboxes_container = customtkinter.CTkFrame(self.move_tables_overlay, fg_color="transparent")
-        checkboxes_container.grid(row=1, column=1, padx=(7, 0), pady=(0, 10))
+    def move_tables_geometry(self):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        self.move_tables_overlay.title(translation["move_classes"])
+        self.move_title_label.configure(text=translation["move_classes"])
         num_tables = len(self.class_table_pairs)
         checkbox_width = 30
         checkbox_padding = 2
         total_checkbox_width = num_tables * (checkbox_width + checkbox_padding)
-        for index in range(num_tables):
-            checkbox = customtkinter.CTkCheckBox(
-                checkboxes_container, text="", width=checkbox_width, checkbox_width=30, checkbox_height=30,
-                command=lambda idx=index: self.select_new_position(idx))
-            checkbox.grid(row=0, column=index, padx=checkbox_padding, pady=10)
-            checkbox.bind("<space>", lambda event, idx=index: self.select_new_position(idx))
-
         total_width = total_checkbox_width + 110
         self.move_tables_overlay.grid_rowconfigure(0, weight=1)
         self.move_tables_overlay.grid_rowconfigure(1, weight=1)
@@ -6166,36 +6172,45 @@ class TeraTermUI(customtkinter.CTk):
         center_x = main_window_x + (main_window_width // 2) - (total_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (85 // 2)
         self.move_tables_overlay.geometry(f"{total_width}x{85}+{center_x + 103}+{center_y + 15}")
-        self.after(0, self.move_tables_overlay.focus_force)
-        self.highlight_selected_table_in_grid()
-        self.update_idletasks()
-        self.move_tables_overlay.bind("<FocusOut>", self.on_move_window_close)
-        self.move_tables_overlay.bind("<Escape>", self.on_move_window_close)
+
+    def update_table_checkboxes(self):
+        for widget in self.tables_container.winfo_children():
+            widget.grid_remove()
+
+        num_tables = len(self.class_table_pairs)
+        checkbox_width = 30
+        checkbox_padding = 2
+        for index in range(num_tables):
+            if index < len(self.tables_checkboxes):
+                checkbox = self.tables_checkboxes[index]
+            else:
+                checkbox = customtkinter.CTkCheckBox(
+                    self.tables_container, text="", width=checkbox_width, checkbox_width=30, checkbox_height=30,
+                    command=lambda idx=index: self.select_new_position(idx))
+                self.tables_checkboxes.append(checkbox)
+            checkbox.grid(row=0, column=index, padx=checkbox_padding, pady=10)
+            checkbox.bind("<space>", lambda event, idx=index: self.select_new_position(idx))
 
     def on_move_window_close(self, event):
         current_focus = self.move_tables_overlay.focus_get()
         if current_focus is None or event.keysym == "Escape":
-            checkboxes_container = self.move_tables_overlay.winfo_children()[1]
-            for widget in checkboxes_container.winfo_children():
-                if isinstance(widget, customtkinter.CTkCheckBox):
-                    widget.destroy()
-            self.move_tables_overlay.destroy()
+            self.move_tables_overlay.withdraw()
 
     def highlight_selected_table_in_grid(self):
-        checkboxes_container = self.move_tables_overlay.winfo_children()[1]
-        for idx, widget in enumerate(checkboxes_container.winfo_children()):
-            if isinstance(widget, customtkinter.CTkCheckBox):
-                if idx == self.current_table_index:
-                    widget.select()
-                    widget.configure(state="disabled", canvas_takefocus=False)
-                else:
-                    widget.deselect()
-                    widget.configure(state="normal")
+        for idx, checkbox in enumerate(self.tables_checkboxes):
+            if idx == self.current_table_index:
+                if not checkbox.get():
+                    checkbox.select()
+                checkbox.configure(state="disabled", canvas_takefocus=False)
+            else:
+                if checkbox.get():
+                    checkbox.deselect()
+                checkbox.configure(state="normal")
 
     def select_new_position(self, target_index):
         if target_index != self.current_table_index:
             self.rearrange_tables(self.current_table_index, target_index)
-        self.move_tables_overlay.destroy()
+        self.move_tables_overlay.withdraw()
 
     def rearrange_tables(self, source_index, target_index):
         self.class_table_pairs[source_index], self.class_table_pairs[target_index] = \
@@ -6215,7 +6230,7 @@ class TeraTermUI(customtkinter.CTk):
     def keybind_remove_current_table(self):
         current_time = time.time()
         if hasattr(self, "last_remove_time") and current_time - self.last_remove_time < 0.250 or \
-                (self.loading_screen is not None and self.loading_screen.winfo_exists()):
+                (self.loading_screen_status is not None and self.loading_screen_status.winfo_exists()):
             return
 
         self.remove_current_table()
@@ -6310,7 +6325,7 @@ class TeraTermUI(customtkinter.CTk):
                 timings.Timings.window_find_timeout = original_timeout
                 timings.Timings.window_find_retry = original_retry
         self.uprb.UprbayTeraTermVt.type_keys("%c")
-        if self.loading_screen is not None and self.loading_screen.winfo_exists():
+        if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
             self.loading_screen.withdraw()
         original_position = pyautogui.position()
         try:
@@ -6322,7 +6337,7 @@ class TeraTermUI(customtkinter.CTk):
             print("An error occurred:", e)
         finally:
             pyautogui.moveTo(original_position)
-        if self.loading_screen is not None and self.loading_screen.winfo_exists():
+        if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
             self.loading_screen.deiconify()
             
     @staticmethod
@@ -6677,7 +6692,7 @@ class TeraTermUI(customtkinter.CTk):
         pdf.build(elems)
 
     def download_enrolled_classes_as_pdf(self, data, creds):
-        if self.loading_screen is not None and self.loading_screen.winfo_exists():
+        if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
             return
 
         lang = self.language_menu.get()
@@ -8141,7 +8156,7 @@ class TeraTermUI(customtkinter.CTk):
         time.sleep(30 + random.uniform(5, 25))
         not_running_count = 0
         while self.is_check_process_thread_running and not self.stop_is_check_process.is_set():
-            if self.loading_screen is None:
+            if self.loading_screen_status is None:
                 is_running = TeraTermUI.checkIfProcessRunning("ttermpro")
                 if is_running:
                     if not_running_count > 1 and not self.is_idle_thread_running:
@@ -8395,7 +8410,7 @@ class TeraTermUI(customtkinter.CTk):
     def tab_switcher(self):
         current_time = time.time()
         if hasattr(self, "last_switch_time") and current_time - self.last_switch_time < 0.150 or \
-                (self.loading_screen is not None and self.loading_screen.winfo_exists()):
+                (self.loading_screen_status is not None and self.loading_screen_status.winfo_exists()):
             return
 
         self.last_switch_time = current_time
@@ -9055,7 +9070,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # Creates the Help window
     def help_button_event(self):
-        if self.loading_screen is not None and self.loading_screen.winfo_exists():
+        if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
             return
 
         if self.help is not None and self.help.winfo_exists():
