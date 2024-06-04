@@ -353,7 +353,6 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                 self.button1.focus()
                 self.button1.bind("<Return>", lambda event: self.button_event(self.option_text_1))
 
-        self.bind("<Escape>", lambda e: self.button_event())
 
     def focus_button(self, option_focus):
         try:
@@ -423,16 +422,16 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         return self.ICONS[icon]
 
     def return_key_handler(self, event):
-        if not hasattr(self, 'option_text_3') and not hasattr(self, 'option_text_2') \
-                and hasattr(self, 'option_text_1') and self.option_text_1:
+        if not hasattr(self, "option_text_3") and not hasattr(self, "option_text_2") \
+                and hasattr(self, "option_text_1") and self.option_text_1:
             self.button_event(self.option_text_1)
-        elif hasattr(self, 'option_text_3') and self.option_text_3:
+        elif hasattr(self, "option_text_3") and self.option_text_3:
             self.button_event(self.option_text_3)
 
     def escape_key_handler(self, event):
-        if hasattr(self, 'option_text_1') and self.option_text_1:
+        if hasattr(self, "option_text_1") and self.option_text_1:
             self.button_event(self.option_text_1)
-        elif hasattr(self, 'option_text_2') and self.option_text_2:
+        elif hasattr(self, "option_text_2") and self.option_text_2:
             self.button_event(self.option_text_2)
 
     def close_messagebox(self):
@@ -457,14 +456,14 @@ class CTkMessagebox(customtkinter.CTkToplevel):
     def get(self):
         if self.winfo_exists():
             self.master.wait_window(self)
-        if hasattr(self, 'button1_var'):
+        if hasattr(self, "button1_var"):
             checkbox_state = self.button1_var.get()
             return self.event, checkbox_state
         else:
             return self.event, None
 
     def toggle_checkbox(self, event):
-        if hasattr(self, 'button1_var'):
+        if hasattr(self, "button1_var"):
             current_state = self.button1_var.get()
 
             if current_state == 0:
@@ -473,11 +472,11 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                 self.button1.deselect()
 
     def check_checkbox(self):
-        if hasattr(self, 'button1_var'):
+        if hasattr(self, "button1_var"):
             self.button1.select()
 
     def uncheck_checkbox(self):
-        if hasattr(self, 'button1_var'):
+        if hasattr(self, "button1_var"):
             self.button1.deselect()
 
     def oldxyset(self, event):
@@ -497,48 +496,15 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         except AttributeError:
             pass
 
-        if isinstance(event, str) and event == self.option_text_1:
-            self.event = event
-            if self.fade:
-                self.fade_out()
-            self.grab_release()
-            self.destroy()
-        elif event:
-            self.event = event
-            if self.fade:
-                self.fade_out()
-            self.grab_release()
-            self.destroy()
-        else:
-            self.event = event
-            if self.fade:
-                self.fade_out()
-            self.grab_release()
-            self.destroy()
+        self.event = event
+        if self.fade:
+            self.fade_out()
+        self.grab_release()
+        self.destroy()
 
     def destroy(self):
         self.unbind("<Return>")
         self.unbind("<Escape>")
-        self.frame_top.unbind("<B1-Motion>")
-        self.frame_top.unbind("<ButtonPress-1>")
-        if hasattr(self, "button_close"):
-            self.button_close.unbind("<ButtonPress-1>")
-            self.button_close.unbind("<ButtonRelease-1>")
-            self.button_close.unbind("<Enter>")
-            self.button_close.unbind("<Leave>")
-            self.button_close.destroy()
-        if hasattr(self, "title_label"):
-            self.title_label.unbind("<B1-Motion>")
-            self.title_label.unbind("<ButtonPress-1>")
-            self.title_label.destroy()
-        if hasattr(self, "info"):
-            self.info.destroy()
-        if hasattr(self, "button1"):
-            self.button1.destroy()
-        if hasattr(self, "button_2"):
-            self.button_2.destroy()
-        if hasattr(self, "button_3"):
-            self.button_3.destroy()
         super().destroy()
 
 
