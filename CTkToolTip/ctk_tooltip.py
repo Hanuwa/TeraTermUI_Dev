@@ -20,7 +20,7 @@ class CTkToolTip(Toplevel):
             self,
             widget: any = None,
             message: str = None,
-            delay: float = 0.2,
+            delay: float = 0.1,
             follow: bool = True,
             x_offset: int = +20,
             y_offset: int = +10,
