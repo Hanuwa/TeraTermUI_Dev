@@ -3432,17 +3432,18 @@ class TeraTermUI(customtkinter.CTk):
                 and not self.error_occurred or self.countdown_running:
             return
         response = None
+        checkbox = None
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         if not self.error_occurred:
             msg = CTkMessagebox(title=translation["go_back_title"], message=translation["go_back"], icon="question",
-                                option_1=translation["option_1"], option_2=translation["option_2"],
-                                option_3=translation["option_3"],
-                                icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
-                                hover_color=("darkred", "use_default", "use_default"))
-            response = msg.get()
+                                option_1=translation["close_tera_term"], option_2=translation["option_2"],
+                                option_3=translation["option_3"], icon_size=(65, 65), button_color=(
+                                "#c30101", "#c30101", "#145DA0", "use_default"), option_1_type="checkbox",
+                                hover_color=("darkred", "darkred", "use_default"))
+            response, checkbox = msg.get()
         if TeraTermUI.checkIfProcessRunning("ttermpro") and (
-                self.error_occurred or (response and (response[0] == "Yes" or response[0] == "Sí"))):
+                self.error_occurred or (response and (response == "Yes" or response == "Sí" and checkbox))):
             if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
                 try:
                     self.uprb.kill(soft=True)
@@ -3454,7 +3455,7 @@ class TeraTermUI(customtkinter.CTk):
             elif TeraTermUI.window_exists("Tera Term - [disconnected] VT") or \
                     TeraTermUI.window_exists("Tera Term - [connecting...] VT"):
                 TeraTermUI.terminate_process()
-        if self.error_occurred or (response and (response[0] == "Yes" or response[0] == "Sí")):
+        if self.error_occurred or (response and (response == "Yes" or response == "Sí")):
             self.is_idle_thread_running = False
             self.is_check_process_thread_running = False
             self.reset_activity_timer()
@@ -5671,7 +5672,13 @@ class TeraTermUI(customtkinter.CTk):
             "MEDINA CRUZ OLGA L.": "https://notaso.com/professors/olga-l-medina-cruz/",
             "RODRIGUEZ VALENTIN JOSE A": "https://notaso.com/professors/jose-rodriguez-valentin-2/",
             "VILLARONGA SWEET LUIS G.": "https://notaso.com/professors/gabriel-villaronga-sweet/",
-            "GONZALEZ GONZALEZ ORLAND": "https://notaso.com/professors/orlando-gonzalez/"
+            "GONZALEZ GONZALEZ ORLAND": "https://notaso.com/professors/orlando-gonzalez/",
+            "DE JESUS CARDONA HECTOR": "https://notaso.com/professors/hector-de-jesus-cardona/",
+            "SEPULVEDA NIEVES FRANCIS": "https://notaso.com/professors/francisco-sepulveda/",
+            "DE MOYA FIGUEROA DORIS C": "https://notaso.com/professors/doris-de-moya/",
+            "LA TORRE RODRIGUEZ ANGEL": "https://notaso.com/professors/angel-la-torre/",
+            "PABON BATLLE LUIS H.": "https://notaso.com/professors/luis-h-pabon-battle-3/",
+            "VAZQUEZ LAZO NIEVE DE LO": "https://notaso.com/professors/nieves-vazquez/"
         }
         hardcoded_name = " ".join(instructor_text.split())
         if hardcoded_name in url_mapping:
@@ -9438,10 +9445,6 @@ class TeraTermUI(customtkinter.CTk):
                 for index, line in enumerate(lines):
                     if line.startswith("Beep=") and line.strip() != "Beep=off":
                         lines[index] = "Beep=off\n"
-            elif self.disable_audio_val is not None and self.disable_audio_val.get() == "off":
-                for index, line in enumerate(lines):
-                    if line.startswith("Beep=") and line.strip() != "Beep=on":
-                        lines[index] = "Beep=on\n"
             with open(file_path, "w", encoding=detected_encoding) as file:
                 file.writelines(lines)
         except FileNotFoundError:
