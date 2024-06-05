@@ -91,7 +91,7 @@ from PIL import Image
 customtkinter.set_appearance_mode("System")
 customtkinter.set_default_color_theme("blue")
 warnings.filterwarnings("ignore", message="32-bit application should be automated using 32-bit Python")
-gc.set_threshold(2000, 30, 20)
+gc.set_threshold(2100, 40, 20)
 
 
 def measure_time(threshold):
@@ -444,6 +444,8 @@ class TeraTermUI(customtkinter.CTk):
         self._409_screen = False
         self._683_screen = False
         self._4CM_screen = False
+        self.went_to_1PL_screen = False
+        self.went_to_683_screen = False
 
         # Bottom Screen Buttons
         self.back_classes = None
