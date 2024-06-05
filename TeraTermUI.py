@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 6/4/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 6/5/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1072,7 +1072,8 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys(
                                 aes_decrypt_and_verify_mac(code_enc, aes_key, mac_key))
                             self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                            text_output = self.capture_screenshot()
+                            text_output = self.wait_for_response(["SIGN-IN", "ON FILE", "PIN NUMBER",
+                                                                  "ERRORS FOUND"], init_timeout=False, timeout=5)
                             if "SIGN-IN" in text_output:
                                 self.reset_activity_timer()
                                 self.start_check_idle_thread()
@@ -1108,6 +1109,8 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(0, self.code_entry.configure(border_color="#c30101"))
                                     self.after(100, self.show_error_message, 300, 215,
                                                translation["error_student_id_code"])
+                                else:
+                                    self.after(100, self.show_error_message, 315, 230, translation["error_sign-in"])
                         else:
                             self.after(350, self.bind, "<Return>", lambda event: self.student_event_handler())
                             if (not student_id or len(student_id) != 9) and (not code.isdigit or len(code) != 4):
@@ -1382,7 +1385,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(classes)
                                     self.uprb.UprbayTeraTermVt.type_keys(section)
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                                    text_output = self.wait_for_response("CONFIRMED", "DROPPED")
+                                    text_output = self.wait_for_response(["CONFIRMED", "DROPPED"])
                                     enrolled_classes = "ENROLLED"
                                     count_enroll = text_output.count(enrolled_classes)
                                     dropped_classes = "DROPPED"
@@ -2196,7 +2199,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                     else:
                                         self.uprb.UprbayTeraTermVt.type_keys("{TAB}")
-                                text_output = self.wait_for_response("CONFIRMED", "DROPPED")
+                                text_output = self.wait_for_response(["CONFIRMED", "DROPPED"])
                                 dropped_classes = "DROPPED"
                                 count_dropped = text_output.count(dropped_classes)
                                 self.reset_activity_timer()
@@ -2450,11 +2453,6 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                     self.after(0, self.disable_go_next_buttons)
-                                    self._1VE_screen = True
-                                    self._1GP_screen = False
-                                    self._409_screen = False
-                                    self._683_screen = False
-                                    self._4CM_screen = False
                                     text_output = self.capture_screenshot()
                                     if "CONFLICT" in text_output:
                                         self.focus_or_not = True
@@ -2473,6 +2471,11 @@ class TeraTermUI(customtkinter.CTk):
                                                    translation["invalid_semester"])
                                     if "CONFLICT" not in text_output or "INVALID TERM SELECTION" not in text_output:
                                         def go_next_grid():
+                                            self._1VE_screen = True
+                                            self._1GP_screen = False
+                                            self._409_screen = False
+                                            self._683_screen = False
+                                            self._4CM_screen = False
                                             self.menu_submit.configure(width=100)
                                             self.menu_submit.grid(row=5, column=1, padx=(0, 110), pady=(40, 0),
                                                                   sticky="n")
@@ -2533,11 +2536,6 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(semester)
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                     self.after(0, self.disable_go_next_buttons)
-                                    self._1VE_screen = False
-                                    self._1GP_screen = False
-                                    self._409_screen = False
-                                    self._683_screen = True
-                                    self._4CM_screen = False
                                     text_output = self.capture_screenshot()
                                     if "CONFLICT" in text_output:
                                         self.focus_or_not = True
@@ -2547,12 +2545,17 @@ class TeraTermUI(customtkinter.CTk):
                                                    translation["hold_flag"])
                                     if "CONFLICT" not in text_output:
                                         def go_next_grid():
-                                            self.submit.configure(width=100)
+                                            self._1VE_screen = False
+                                            self._1GP_screen = False
+                                            self._409_screen = False
+                                            self._683_screen = True
+                                            self._4CM_screen = False
+                                            self.menu_submit.configure(width=100)
                                             self.menu_submit.grid(row=5, column=1, padx=(0, 110), pady=(40, 0),
                                                                   sticky="n")
                                             self.go_next_683.grid(row=5, column=1, padx=(110, 0), pady=(40, 0),
                                                                   sticky="n")
-
+                                            
                                         self.after(0, go_next_grid)
                                 case "1PL":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -2578,6 +2581,19 @@ class TeraTermUI(customtkinter.CTk):
                                             self.after(100, self.show_error_message, 325, 240,
                                                        "¡Error! No se pudo entrar \n a la pantalla" +
                                                        self.menu_entry.get())
+                                    else:
+                                        def warning():
+                                            if not self.disable_audio:
+                                                winsound.PlaySound(
+                                                    TeraTermUI.get_absolute_path("sounds/notification.wav"),
+                                                    winsound.SND_ASYNC)
+                                            CTkMessagebox(title=translation["warning_title"],
+                                                          message=translation["1PL_pdata"], icon="warning",
+                                                          button_width=380)
+                                            self.went_to_1PL_screen = True
+
+                                        self.focus_or_not = True
+                                        self.after(100, warning)
                                 case "4CM":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
@@ -2638,6 +2654,18 @@ class TeraTermUI(customtkinter.CTk):
                                             self.after(100, self.show_error_message, 325, 240,
                                                        "Error! No se pudo entrar"
                                                        "\n a la pantalla" + self.menu_entry.get())
+                                    else:
+                                        def warning():
+                                            if not self.disable_audio:
+                                                winsound.PlaySound(
+                                                    TeraTermUI.get_absolute_path("sounds/notification.wav"),
+                                                    winsound.SND_ASYNC)
+                                            CTkMessagebox(title=translation["warning_title"],
+                                                          message=translation["4SP_ext"], icon="warning",
+                                                          button_width=380)
+
+                                        self.focus_or_not = True
+                                        self.after(100, warning)
                                 case "SO":
                                     self.focus_or_not = True
                                     self.after(50, self.sign_out)
@@ -2746,11 +2774,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                             self.reset_activity_timer()
                         elif self._683_screen:
-                            self.submit.configure(state="disabled")
-                            self.search.configure(state="disabled")
-                            self.multiple.configure(state="disabled")
-                            self.menu_submit.configure(state="disabled")
-                            self.show_classes.configure(state="disabled")
+                            self.went_to_683_screen = True
                             self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                             self.reset_activity_timer()
                         elif self._4CM_screen:
@@ -2764,7 +2788,6 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(0, self.disable_go_next_buttons)
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
-
             except Exception as e:
                 print("An error occurred: ", e)
                 self.error_occurred = True
@@ -3332,7 +3355,9 @@ class TeraTermUI(customtkinter.CTk):
             elif "STUDENTS REQ/DROP" in text_output or "HOLD FLAGS" in text_output or \
                     "PROGRAMA DE CLASES" in text_output or "ACADEMIC STATISTICS" in text_output or \
                     "SNAPSHOT" in text_output or "SOLICITUD DE PRORROGA" in text_output or \
-                    "LISTA DE SECCIONES":
+                    "LISTA DE SECCIONES" in text_output or "AYUDA ECONOMICA" in text_output or \
+                    "EXPEDIENTE ACADEMICO" in text_output or "AUDIT" in text_output or \
+                    "PERSONAL DATA" in text_output or "COMPUTO DE MATRICULA" in text_output:
                 self.uprb.UprbayTeraTermVt.type_keys("{VK_RIGHT}")
                 self.uprb.UprbayTeraTermVt.type_keys("{VK_LEFT}")
                 self.connect_to_uprb()
@@ -3474,6 +3499,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.fix.configure(state="disabled")
                 self.files.configure(state="normal")
             self.run_fix = False
+            self.went_to_1PL_screen = False
+            self.went_to_683_screen = False
             self.in_auth_frame = False
             self.in_student_frame = False
             self.in_enroll_frame = False
@@ -7067,8 +7094,7 @@ class TeraTermUI(customtkinter.CTk):
                                                 self.enrolled_classes_list[old_section] = course_code_no_section
                                 self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                 self.reset_activity_timer()
-                                text_output = self.wait_for_response("CONFIRMED",
-                                                                     "DROPPED", timeout=1.5)
+                                text_output = self.wait_for_response(["CONFIRMED", "DROPPED"], timeout=1.5)
                                 if "CONFIRMED" in text_output:
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                 if "DROPPED" in text_output:
@@ -7268,16 +7294,17 @@ class TeraTermUI(customtkinter.CTk):
             self.update_idletasks()
             time.sleep(0.5)  # Adjust the delay between screenshots as needed
 
-    def wait_for_response(self, confirmed, dropped, timeout=3):
+    def wait_for_response(self, keywords, init_timeout=True, timeout=3.0):
         self.update_idletasks()
-        time.sleep(1)
+        if init_timeout:
+            time.sleep(1)
         start_time = time.time()
         last_text_output = ""
-
         while time.time() - start_time <= timeout:
             text_output = self.capture_screenshot()
-            if confirmed in text_output or dropped in text_output:
-                return text_output
+            for keyword in keywords:
+                if keyword in text_output:
+                    return text_output
             last_text_output = text_output
             self.update_idletasks()
             time.sleep(0.5)
@@ -7287,6 +7314,14 @@ class TeraTermUI(customtkinter.CTk):
     def wait_for_window(self):
         try:
             self.uprbay_window.wait("visible", timeout=3)
+            if self.went_to_1PL_screen and self.run_fix:
+                self.uprb.UprbayTeraTermVt.type_keys("X")
+                self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                self.went_to_1PL_screen = False
+            elif self.went_to_683_screen and self.run_fix:
+                self.uprb.UprbayTeraTermVt.type_keys("00")
+                self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                self.went_to_683_screen = False
         except Exception as e:
             print("An error occurred: ", e)
             self.search_function_counter = 0
