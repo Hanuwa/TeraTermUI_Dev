@@ -73,7 +73,7 @@
 	"back_tooltip": "Volver a la pantalla principal\nde la aplicación",
 	"back_multiple": "Volver a la pantalla\nanterior",
 	"show_all_tooltip": "Muestre todas las secciones\no solamente las que están\n abiertas",
-	"show_classes_tooltip": "Enseña las clases que tienes\nmatriculadas en un semestre",
+	"show_classes_tooltip": "Muestra las clases que\ntienes matriculadas en un\nsemestre específico",
 	"conflict_tooltip": "Esta sección podría tener un conflicto\ncon el horario de otra sección\n*EST. ",
 	"add_tooltip": "Añade más clases",
 	"m_remove_tooltip": "Eliminar clases",
@@ -96,7 +96,7 @@
 	"q": "Pregunta",
 	"a": "Respuesta",
 	"q1": "¿Es seguro poner \nmi información aquí?",
-	"a1": "Sí, la aplicación no almacena su data\npersonal pero, si todavía estás escéptico,\nentonces puedes ver que información sí\nalmacenamos accediendo al archivo\nllamado database.db y cosas como el\nnúmero de estudiante o el ssn son\nencriptados usando una llave asimétrica.",
+	"a1": "Sí, la aplicación no almacena su data\npersonal pero, si todavía estás escéptico,\nentonces puedes ver que información sí\nalmacenamos accediendo al archivo\nllamado database.db y cosas como el\nnúmero de estudiante o el ssn son\ncifrados usando una llave asimétrica.",
 	"q2": "¿Qué es una sección?",
 	"a2": "La sección determina qué días y a qué\nhoras tomas tus clases, por ejemplo,\n\"LM1\" la L y la M te dice que las clases\nson los lunes y miercoles y el 1 te\ndice que empiezan a las 1:00 PM.",
 	
