@@ -74,7 +74,7 @@
 	"back_multiple": "Go back to the previous\nscreen",
 	"conflict_tooltip": "Section potentially conflicting with the\nschedule of another section\n*EST. ",
 	"show_all_tooltip": "Display all sections or\nonly ones with spaces",
-	"show_classes_tooltip": "Shows the classes you are\nenrolled in for a\nspecific semester",
+	"show_classes_tooltip": "Displays the classes you\nare enrolled in for a\nspecific semester",
 	"add_tooltip": "Add more classes",
 	"m_remove_tooltip": "Remove classes",
 	"multiple_tooltip": "Enroll multiple classes\nat once",
