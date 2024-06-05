@@ -261,7 +261,7 @@
 	"failed_saved_lack_info": "No classes were saved\ndue to missing information",
 	"failed_saved_invalid_info": "No classes were saved\ndue to incorrect information",
 	"saved_classes_success": "Saved classes successfully",
-	"loading": "Loading...",
+	"loading": "Processing...",
 	"searching_exe": "Searching...",
 	"sending_feedback": "Sending...",
 	"move_classes": "Move Tables",
