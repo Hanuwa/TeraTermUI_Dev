@@ -3443,7 +3443,7 @@ class TeraTermUI(customtkinter.CTk):
                                 hover_color=("darkred", "darkred", "use_default"))
             response, checkbox = msg.get()
         if TeraTermUI.checkIfProcessRunning("ttermpro") and (
-                self.error_occurred or (response and (response == "Yes" or response == "Sí" and checkbox))):
+                self.error_occurred or (response and (response == "Yes" or response == "Sí") and checkbox)):
             if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
                 try:
                     self.uprb.kill(soft=True)
