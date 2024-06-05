@@ -251,7 +251,7 @@
 	"count_processes": "¡Error! Tienes más de una instancia de Tera Term\n\nabierta. Elige cuál sesión deseas usar\n\ny cierra las demás",
 	"tera_term_forced_to_close": "¡Error mientras se realizaban y automatizaban tareas! Por favor trate de no interrumpir la ejecución de las aplicaciones\n\nTera Term fue forzado a cerrar",
 	"go_back_title": "¿Ir atrás?",
-	"go_back": "¿Estás seguro que quieres volver al la pantalla principal?\n\nWARNING: Tera Term va a cerrar",
+	"go_back": "¿Estás seguro que quieres volver al la pantalla principal?",
 	"auto_enroll_idle": "Anti-Inactivo tiene que estar activado para usar la Auto-Matrícula",
 	"failed_to_find_date": "No se pudo encontrar\nla fecha de matricula",
 	"date_past": "La fecha de matricula ya pasó",
