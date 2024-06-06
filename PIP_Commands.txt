@@ -11,13 +11,14 @@ pip search
 # Latest Releases Text
 Latest release of Tera Term UI,
 
-Tera Term must be installed in your computer (Windows Only)
+**Tera Term must be installed in your computer (Windows Only)**
 
-Portable Version (Zip File)
-Installation File (64-Bit)
+1. Portable Version (Zip File)
+2. Installation File (64-Bit)
 
 If you run the application as an Administrator, it grants the benefit of disabling user input when the application is automating and performing tasks in Tera Term, good to mitigate the chance of the user interrupting the executions of actions by Tera Term UI.
 
-Note* Installation File includes option to install Tera Term, although it is recommended to setup all of Tera Term's configurations before using this application, please refer to: https://osi.uprb.edu/manuales/Conexion_SSH_TeraTerm_TTSSH_STUDENTS.pdf
+**Note*** Installation File includes option to install Tera Term, although it is recommended to setup all of Tera Term's configurations before using this application, please refer to: https://osi.uprb.edu/manuales/Conexion_SSH_TeraTerm_TTSSH_STUDENTS.pdf
 
-Make sure to check for new updates relatively frequently for new features and bug fixes!
+Be sure to check out the "VERSION.txt" file for patch notes and the SHA-256 checksum. 
+Stay updated regularly for new features and bug fixes!
