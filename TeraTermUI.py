@@ -87,7 +87,6 @@ from tkinter import filedialog
 from tkinter import messagebox
 from PIL import Image
 
-
 customtkinter.set_appearance_mode("System")
 customtkinter.set_default_color_theme("blue")
 warnings.filterwarnings("ignore", message="32-bit application should be automated using 32-bit Python")
@@ -105,23 +104,6 @@ def measure_time(threshold):
             print(f"Elapsed time: {elapsed_time:.2f} seconds")
             if elapsed_time > threshold or TeraTermUI.checkIfProcessRunning("EpicGamesLauncher"):
                 self.after(350, self.notice_user)
-            return result
-
-        return wrapper
-
-    return decorator
-
-
-def cancel_automation():
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            result = None
-            start_time = time.time()
-            while not kwargs.get("task_done").is_set():
-                result = func(*args, **kwargs)
-                if time.time() - start_time > 45:
-                    break
             return result
 
         return wrapper
@@ -1001,7 +983,6 @@ class TeraTermUI(customtkinter.CTk):
         self.thread_pool.submit(self.student_event, task_done=task_done)
 
     # Enrolling/Searching classes Frame
-    @cancel_automation()
     def student_event(self, task_done):
         # Deletes these encrypted variables from memory
         def secure_delete(variable):
@@ -1328,7 +1309,6 @@ class TeraTermUI(customtkinter.CTk):
             self.thread_pool.submit(self.submit_event, task_done=task_done)
 
     # function for registering/dropping classes
-    @cancel_automation()
     def submit_event(self, task_done):
         with self.lock_thread:
             try:
@@ -1530,7 +1510,6 @@ class TeraTermUI(customtkinter.CTk):
         self.search_event_completed = False
 
     # function for searching for classes
-    @cancel_automation()
     def search_event(self, task_done):
         with self.lock_thread:
             try:
@@ -1778,7 +1757,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.dialog.destroy()
 
     # function for seeing the classes you are currently enrolled for
-    @cancel_automation()
     def my_classes_event(self, dialog_input, task_done):
         with self.lock_thread:
             try:
@@ -2138,7 +2116,6 @@ class TeraTermUI(customtkinter.CTk):
         self.thread_pool.submit(self.submit_multiple_event, task_done=task_done)
 
     # function that enrolls multiple classes with one click
-    @cancel_automation()
     def submit_multiple_event(self, task_done):
         with self.lock_thread:
             try:
@@ -2330,7 +2307,6 @@ class TeraTermUI(customtkinter.CTk):
         self.option_menu_event_completed = False
 
     # changes to the respective screen the user chooses
-    @cancel_automation()
     def option_menu_event(self, task_done):
         with self.lock_thread:
             try:
@@ -2752,7 +2728,6 @@ class TeraTermUI(customtkinter.CTk):
         self.go_next_event_completed = False
 
     # go through each page of the different screens
-    @cancel_automation()
     def go_next_page_event(self, task_done):
         with self.lock_thread:
             try:
@@ -2827,7 +2802,6 @@ class TeraTermUI(customtkinter.CTk):
         self.search_go_next_event_completed = False
 
     # Goes through more sections available for the searched class
-    @cancel_automation()
     def search_go_next(self, task_done):
         with self.lock_thread:
             try:
@@ -2932,7 +2906,6 @@ class TeraTermUI(customtkinter.CTk):
         self.thread_pool.submit(self.auth_event, task_done=task_done)
 
     # Authentication required frame, where user is asked to input his username
-    @cancel_automation()
     def auth_event(self, task_done):
         with self.lock_thread:
             try:
@@ -3144,7 +3117,6 @@ class TeraTermUI(customtkinter.CTk):
         self.thread_pool.submit(self.login_event, task_done=task_done)
 
     # logs in the user to the respective university, opens up Tera Term
-    @cancel_automation()
     @measure_time(threshold=10)
     def login_event(self, task_done):
         with self.lock_thread:
@@ -4200,7 +4172,6 @@ class TeraTermUI(customtkinter.CTk):
             self.auto_enroll.configure(state="disabled")
 
     # Auto-Enroll classes
-    @cancel_automation()
     def auto_enroll_event(self, task_done):
         import pytz
 
@@ -6992,7 +6963,6 @@ class TeraTermUI(customtkinter.CTk):
             self.update_loading_screen(loading_screen, task_done)
             self.thread_pool.submit(self.submit_modify_classes, task_done=task_done)
 
-    @cancel_automation()
     def submit_modify_classes(self, task_done):
         with self.lock_thread:
             try:
@@ -8139,7 +8109,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.fix_execution_event_completed = False
 
     # If user messes up the execution of the program this can solve it and make program work as expected
-    @cancel_automation()
     def fix_execution(self, task_done):
         with self.lock_thread:
             try:
@@ -8257,7 +8226,7 @@ class TeraTermUI(customtkinter.CTk):
         self.last_activity = time.time()
         try:
             while self.is_idle_thread_running and not self.stop_check_idle.is_set():
-                if time.time() - self.last_activity >= 270:
+                if time.time() - self.last_activity >= 240:
                     with self.lock_thread:
                         if TeraTermUI.checkIfProcessRunning("ttermpro"):
                             lang = self.language_menu.get()
