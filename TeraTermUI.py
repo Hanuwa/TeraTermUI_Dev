@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 6/5/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 6/6/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -4014,31 +4014,45 @@ class TeraTermUI(customtkinter.CTk):
             ("09:00", "11:20", "I"),
             ("10:00", "11:20", "J"),
             ("11:30", "12:50", "K"),
+            ("12:00", "12:50", "L"),
             ("13:00", "14:20", "M"),
             ("14:30", "15:50", "N"),
             ("15:00", "16:20", "O"),
             ("16:00", "17:20", "P"),
+            ("17:00", "17:50", "Q"),
             ("18:00", "20:50", "R")
         ]
         special_time_intervals = [
             ("07:00", "09:50", "G"),
             ("08:30", "11:20", "H"),
+            ("09:00", "09:50", "I"),
             ("10:30", "12:50", "J"),
+            ("12:00", "12:50", "L"),
             ("13:00", "15:50", "M"),
             ("16:00", "18:50", "P"),
+            ("17:00", "17:50", "Q"),
             ("18:00", "20:50", "R"),
         ]
         schedule_map = {}
 
+        def overlaps(time_range, block_start, block_end):
+            start, end = map(lambda t: int(t.replace(":", "")), time_range)
+            block_start, block_end = int(block_start.replace(":", "")), int(block_end.replace(":", ""))
+            return not (end <= block_start or start >= block_end)
+
         for day, prefix in days.items():
             if prefix in ["L", "K"]:
                 for start_time, end_time, interval_code in standard_time_intervals:
-                    if day in ["Tuesday, Thursday", "Thursday"] and start_time == "11:30":
+                    if day in ["Tuesday, Thursday", "Thursday"] and overlaps(
+                            (start_time, end_time), "11:30", "12:50"):
                         continue
                     section_code = f"{prefix}{interval_code}"
                     schedule_map[section_code] = (day, start_time, end_time)
             else:
                 for start_time, end_time, interval_code in special_time_intervals:
+                    if day in ["Tuesday, Thursday", "Thursday"] and overlaps(
+                            (start_time, end_time), "11:30", "12:50"):
+                        continue
                     section_code = f"{prefix}{interval_code}"
                     schedule_map[section_code] = (day, start_time, end_time)
 
@@ -5678,7 +5692,13 @@ class TeraTermUI(customtkinter.CTk):
             "DE MOYA FIGUEROA DORIS C": "https://notaso.com/professors/doris-de-moya/",
             "LA TORRE RODRIGUEZ ANGEL": "https://notaso.com/professors/angel-la-torre/",
             "PABON BATLLE LUIS H.": "https://notaso.com/professors/luis-h-pabon-battle-3/",
-            "VAZQUEZ LAZO NIEVE DE LO": "https://notaso.com/professors/nieves-vazquez/"
+            "VAZQUEZ LAZO NIEVE DE LO": "https://notaso.com/professors/nieves-vazquez/",
+            "CRESPO KEBLER ELIZABETH": "https://notaso.com/professors/dra-elizabeth-crespo/",
+            "LAUREANO MOLINA FRANCISC": "https://notaso.com/professors/francisco-laureano/",
+            "FEBLES IGUINA ISABEL M.": "https://notaso.com/professors/prof-febles/",
+            "MARICHAL LUGO CARLOS J.": "https://notaso.com/professors/carlos-j-marichal-lugo/",
+            "COSTA COLON MARIA DEL RO": "https://notaso.com/professors/maria-del-rocio-costa/",
+            "OLAVARRIA FULLERTON JENI": "https://notaso.com/professors/jenifier-olavarria/"
         }
         hardcoded_name = " ".join(instructor_text.split())
         if hardcoded_name in url_mapping:
