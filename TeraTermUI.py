@@ -120,7 +120,7 @@ def cancel_automation():
             start_time = time.time()
             while not kwargs.get("task_done").is_set():
                 result = func(*args, **kwargs)
-                if time.time() - start_time > 40:
+                if time.time() - start_time > 45:
                     break
             return result
 
@@ -5220,14 +5220,14 @@ class TeraTermUI(customtkinter.CTk):
     # tells the loading screen when it should stop and close
     def update_loading_screen(self, loading_screen, task_done):
         current_time = time.time()
-        if task_done.is_set() or current_time - self.loading_screen_start_time > 40:
+        if task_done.is_set() or current_time - self.loading_screen_start_time > 45:
             self.attributes("-disabled", False)
             self.update_widgets()
             if self.loading_screen is not None and self.loading_screen.winfo_exists():
                 self.loading_screen.withdraw()
             self.progress_bar.reset()
             self.loading_screen_status = None
-            if current_time - self.loading_screen_start_time > 40:
+            if current_time - self.loading_screen_start_time > 45:
                 task_done.set()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
