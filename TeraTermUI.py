@@ -5191,14 +5191,14 @@ class TeraTermUI(customtkinter.CTk):
     # tells the loading screen when it should stop and close
     def update_loading_screen(self, loading_screen, task_done):
         current_time = time.time()
-        if task_done.is_set() or current_time - self.loading_screen_start_time > 45:
+        if task_done.is_set() or current_time - self.loading_screen_start_time > 60:
             self.attributes("-disabled", False)
             self.update_widgets()
             if self.loading_screen is not None and self.loading_screen.winfo_exists():
                 self.loading_screen.withdraw()
             self.progress_bar.reset()
             self.loading_screen_status = None
-            if current_time - self.loading_screen_start_time > 45:
+            if current_time - self.loading_screen_start_time > 60:
                 task_done.set()
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
