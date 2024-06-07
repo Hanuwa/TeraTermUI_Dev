@@ -6078,12 +6078,18 @@ class TeraTermUI(customtkinter.CTk):
             if display_class_text not in class_info:
                 class_info[display_class_text] = []
             class_info[display_class_text].append((display_class, semester))
+
         for display_class_text, class_semesters in class_info.items():
             if len(class_semesters) > 1:
                 for display_class, semester in class_semesters:
                     new_text = f"{display_class_text} - {semester}"
                     if display_class.cget("text") != new_text:
                         display_class.configure(text=new_text)
+            else:
+                display_class, _ = class_semesters[0]
+                new_text = display_class_text
+                if display_class.cget("text") != new_text:
+                    display_class.configure(text=new_text)
 
     def display_current_table(self):
         # Hide all tables and display_classes
@@ -6261,12 +6267,15 @@ class TeraTermUI(customtkinter.CTk):
         display_class_to_remove.grid_forget()
         display_class_to_remove.unbind("<Button-1>")
         table_to_remove.grid_forget()
+
         for cell in table_to_remove.get_all_cells():
             if cell in self.table_tooltips:
                 self.table_tooltips[cell].destroy()
                 del self.table_tooltips[cell]
+
         if table_to_remove in self.original_table_data:
             del self.original_table_data[table_to_remove]
+
         if more_sections and self.search_next_page.grid_info():
             next_index = min(self.current_table_index + 1, len(self.class_table_pairs) - 1)
             prev_index = max(self.current_table_index - 1, 0)
@@ -6277,10 +6286,13 @@ class TeraTermUI(customtkinter.CTk):
                 self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
                 self.search.configure(width=140)
                 self.search_next_page_status = False
+
         self.after(0, display_class_to_remove.destroy)
         self.after(0, table_to_remove.destroy)
+
         if len(self.class_table_pairs) == 20:
             self.table_count.configure(text_color=("black", "white"))
+
         del self.class_table_pairs[self.current_table_index]
 
         table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/20"
@@ -6291,7 +6303,6 @@ class TeraTermUI(customtkinter.CTk):
             self.next_button.grid_forget()
             self.bind("<Left>", self.move_slider_left)
             self.bind("<Right>", self.move_slider_right)
-
         elif len(self.class_table_pairs) == 0:
             if self.sort_by.get() != translation["sort_by"]:
                 self.sort_by.set(translation["sort_by"])
@@ -6312,9 +6323,10 @@ class TeraTermUI(customtkinter.CTk):
 
         self.current_table_index = max(0, self.current_table_index - 1)
         self.display_current_table()
+        self.check_and_update_labels()
         self.update_buttons()
         self.search_scrollbar.scroll_to_top()
-
+        
     def automate_copy_class_data(self):
         import pyautogui
 
