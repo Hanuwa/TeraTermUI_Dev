@@ -330,7 +330,7 @@
     	"previous": "Anterior",
     	"next": "Siguiente",
     	"remove": "Eliminar",
-    	"table_count_tooltip": "Solo se pueden tener hasta\n10 tablas de clases a la vez.\nEsto mantendrá un registro\nde cuántas clases ya tienes",
+    	"table_count_tooltip": "Solo se pueden tener hasta\n20 tablas de clases a la vez.\nEsto mantendrá un registro\nde cuántas clases ya tienes",
     	"previous_tooltip": "Volver a la tabla\nbuscada anteriormente",
     	"next_tooltip": "Ir a la siguiente tabla",
     	"remove_tooltip": "Elimina la tabla\nque estás viendo actualmente",
