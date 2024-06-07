@@ -106,22 +106,27 @@ def generate_checksum(version_filename, executable_filename):
         print(Fore.RED + f"Failed to generate SHA-256 Checksum {e}\n" + Style.RESET_ALL)
 
 
-def validate_version(ver_str: str) -> bool:
-    pattern = r"^[vV]?([0-9]{1,3}\.[0-9]{1,3}(\.[0-9]{1,3})?|[0-9]{1,3})$"
-    return bool(re.match(pattern, ver_str, re.IGNORECASE))
-
-
 def freeze_requirements(project_directory):
     scripts_directory = os.path.join(project_directory, ".venv", "Scripts")
     requirements_path = os.path.join(scripts_directory, "requirements.txt")
+    clear_comtypes_cache_path = os.path.join(scripts_directory, "clear_comtypes_cache.exe")
     original_dir = os.getcwd()
     try:
         os.chdir(scripts_directory)
         subprocess.run(f'pip freeze > "{requirements_path}"', shell=True, check=True)
+        process = subprocess.Popen([clear_comtypes_cache_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        process.communicate(input='y\n')
+        if process.returncode != 0:
+            print(Fore.RED + "Failed to clear comtypes cache" + Style.RESET_ALL)
     except subprocess.CalledProcessError as e:
         print(Fore.RED + f"Failed to create requirements.txt: {e}" + Style.RESET_ALL)
     finally:
         os.chdir(original_dir)
+        
+
+def validate_version(ver_str: str) -> bool:
+    pattern = r"^[vV]?([0-9]{1,3}\.[0-9]{1,3}(\.[0-9]{1,3})?|[0-9]{1,3})$"
+    return bool(re.match(pattern, ver_str, re.IGNORECASE))
 
 
 init()
