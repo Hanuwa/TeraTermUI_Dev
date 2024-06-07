@@ -5729,7 +5729,7 @@ class TeraTermUI(customtkinter.CTk):
                                                font=customtkinter.CTkFont(size=15, weight="bold", underline=True))
         display_class.bind("<Button-1>", lambda event: self.focus_set())
         if self.table_count is None:
-            table_count_label = f" {len(self.class_table_pairs)}/10"
+            table_count_label = f" {len(self.class_table_pairs)}/20"
             self.table_count = customtkinter.CTkLabel(self.search_scrollbar, text=table_count_label)
             self.previous_button = CustomButton(self.search_scrollbar, text=translation["previous"],
                                                 command=self.show_previous_table)
@@ -5788,7 +5788,7 @@ class TeraTermUI(customtkinter.CTk):
                                        self.show_all_sections, available_values, self.search_next_page_status))
         self.check_and_update_labels()
         self.current_table_index = len(self.class_table_pairs) - 1
-        if len(self.class_table_pairs) > 10:
+        if len(self.class_table_pairs) > 20:
             display_class_to_remove, table_to_remove, _, _, _, more_sections = self.class_table_pairs[0]
             display_class_to_remove.grid_forget()
             display_class_to_remove.unbind("<Button-1>")
@@ -5828,9 +5828,9 @@ class TeraTermUI(customtkinter.CTk):
         self.sort_by.grid(row=6, column=1, padx=(0, 157), pady=(10, 0), sticky="n")
         self.update_buttons()
         self.search_scrollbar.scroll_to_top()
-        table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/10"
+        table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/20"
         self.table_count.configure(text=table_count_label)
-        if len(self.class_table_pairs) == 10:
+        if len(self.class_table_pairs) == 20:
             self.table_count.configure(text_color="red")
         self.table_count.bind("<Button-1>", lambda event: self.focus_set())
         self.sort_by.bind("<FocusIn>", lambda e: self.search_scrollbar.scroll_to_widget(self.sort_by))
@@ -6150,8 +6150,11 @@ class TeraTermUI(customtkinter.CTk):
         num_tables = len(self.class_table_pairs)
         checkbox_width = 30
         checkbox_padding = 2
-        total_checkbox_width = num_tables * (checkbox_width + checkbox_padding)
+        checkboxes_per_row = 10
+        total_rows = (num_tables + checkboxes_per_row - 1) // checkboxes_per_row
+        total_checkbox_width = min(num_tables, checkboxes_per_row) * (checkbox_width + checkbox_padding)
         total_width = total_checkbox_width + 110
+        total_height = total_rows * 32 + 50
         self.move_tables_overlay.grid_rowconfigure(0, weight=1)
         self.move_tables_overlay.grid_rowconfigure(1, weight=1)
         self.move_tables_overlay.grid_columnconfigure(0, weight=1)
@@ -6162,9 +6165,9 @@ class TeraTermUI(customtkinter.CTk):
         main_window_width = self.winfo_width()
         main_window_height = self.winfo_height()
         center_x = main_window_x + (main_window_width // 2) - (total_width // 2)
-        center_y = main_window_y + (main_window_height // 2) - (85 // 2)
-        self.move_tables_overlay.geometry(f"{total_width}x{85}+{center_x + 103}+{center_y + 15}")
-
+        center_y = main_window_y + (main_window_height // 2) - (total_height // 2)
+        self.move_tables_overlay.geometry(f"{total_width}x{total_height}+{center_x + 103}+{center_y + 13}")
+    
     def update_table_checkboxes(self):
         for widget in self.tables_container.winfo_children():
             widget.grid_remove()
@@ -6172,6 +6175,7 @@ class TeraTermUI(customtkinter.CTk):
         num_tables = len(self.class_table_pairs)
         checkbox_width = 30
         checkbox_padding = 2
+        checkboxes_per_row = 10
         for index in range(num_tables):
             if index < len(self.tables_checkboxes):
                 checkbox = self.tables_checkboxes[index]
@@ -6180,7 +6184,9 @@ class TeraTermUI(customtkinter.CTk):
                     self.tables_container, text="", width=checkbox_width, checkbox_width=30, checkbox_height=30,
                     command=lambda idx=index: self.select_new_position(idx))
                 self.tables_checkboxes.append(checkbox)
-            checkbox.grid(row=0, column=index, padx=checkbox_padding, pady=10)
+            row = index // checkboxes_per_row
+            column = index % checkboxes_per_row
+            checkbox.grid(row=row, column=column, padx=checkbox_padding, pady=3)
             checkbox.bind("<space>", lambda event, idx=index: self.select_new_position(idx))
 
     def on_move_window_close(self, event):
@@ -6254,11 +6260,11 @@ class TeraTermUI(customtkinter.CTk):
                 self.search_next_page_status = False
         self.after(0, display_class_to_remove.destroy)
         self.after(0, table_to_remove.destroy)
-        if len(self.class_table_pairs) == 10:
+        if len(self.class_table_pairs) == 20:
             self.table_count.configure(text_color=("black", "white"))
         del self.class_table_pairs[self.current_table_index]
 
-        table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/10"
+        table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/20"
         self.table_count.configure(text=table_count_label)
 
         if len(self.class_table_pairs) == 1:
@@ -8498,7 +8504,7 @@ class TeraTermUI(customtkinter.CTk):
             self.remove_button.grid(row=5, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
             self.download_search_pdf.grid(row=6, column=1, padx=(157, 0), pady=(10, 0), sticky="n")
             self.sort_by.grid(row=6, column=1, padx=(0, 157), pady=(10, 0), sticky="n")
-            table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/10"
+            table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/20"
             self.table_count.configure(text=table_count_label)
 
     def status_widgets(self):
