@@ -53,7 +53,7 @@ import win32con
 import win32gui
 import winsound
 from collections import deque, defaultdict
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import closing
 from Cryptodome.Hash import HMAC, SHA256
 from Cryptodome.Cipher import AES
@@ -877,7 +877,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.thread_pool.shutdown(wait=False)
             else:
                 for future in as_completed([self.future_tesseract, self.future_backup, self.future_feedback]):
-                    future.result()  
+                    future.result()
             self.save_user_data()
             self.end_app()
             if self.checkbox_state:
@@ -7326,9 +7326,9 @@ class TeraTermUI(customtkinter.CTk):
 
     # Necessary things to do while the application is booting, gets done on a separate thread
     def boot_up(self, file_path):
-        self.thread_pool.submit(self.setup_tesseract)
-        self.thread_pool.submit(self.backup_and_config_ini, file_path)
-        self.thread_pool.submit(self.setup_feedback)
+        self.future_tesseract = self.thread_pool.submit(self.setup_tesseract)
+        self.future_backup = self.thread_pool.submit(self.backup_and_config_ini, file_path)
+        self.future_feedback = self.thread_pool.submit(self.setup_feedback)
 
     def setup_tesseract(self):
         # If Tesseract-OCR already in the temp folder don't unzip
