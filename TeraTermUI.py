@@ -920,6 +920,14 @@ class TeraTermUI(customtkinter.CTk):
         except Exception as e:
             print("Force closing due to an error:", e)
             self.log_error()
+            sys.exit(1)
+
+    def forceful_end_app(self):
+        try:
+            self.destroy()
+        except Exception as e:
+            print("Force closing due to an error:", e)
+            self.log_error()
         finally:
             sys.exit(1)
 
@@ -2895,6 +2903,7 @@ class TeraTermUI(customtkinter.CTk):
                         if username in allowed_roles:
                             username = "students"
                             self.wait_for_window()
+                            TeraTermUI.check_window_exists("SSH Authentication")
                             user = self.uprb.UprbayTeraTermVt.child_window(title="User name:", control_type="Edit")
                             if user.get_value() != username:
                                 user.set_text(username)
@@ -3088,7 +3097,7 @@ class TeraTermUI(customtkinter.CTk):
         self.thread_pool.submit(self.login_event, task_done=task_done)
 
     # logs in the user to the respective university, opens up Tera Term
-    @measure_time(threshold=10)
+    @measure_time(threshold=12)
     def login_event(self, task_done):
         with self.lock_thread:
             try:
@@ -3132,6 +3141,7 @@ class TeraTermUI(customtkinter.CTk):
                                 title="Select screen", control_type="MenuItem", auto_id="50280")
                             disconnected = self.uprb.window(title="Tera Term - [disconnected] VT")
                             disconnected.wait("visible", timeout=3)
+                            TeraTermUI.check_window_exists("Tera Term: New connection")
                             if new_connection:
                                 TeraTermUI.new_connection(disconnected)
                             host_input = self.uprb.TeraTermDisconnectedVt.child_window(
@@ -3347,7 +3357,7 @@ class TeraTermUI(customtkinter.CTk):
     @staticmethod
     def new_connection(window):
         new_connection = window.child_window(title="Tera Term: New connection")
-        new_connection.wait("visible", timeout=3)
+        new_connection.wait("visible", timeout=7)
         tcp_ip_radio = new_connection.child_window(title="TCP/IP", control_type="RadioButton")
         if not tcp_ip_radio.is_selected():
             tcp_ip_radio.click()
@@ -3538,7 +3548,7 @@ class TeraTermUI(customtkinter.CTk):
                                          "Puede ser que sea necesario reinstalar el programa.\n\n"
                                          "La aplicación se cerrará ahora.")
                 # Exit the application
-                self.end_app()
+                self.forceful_end_app()
 
         # If the language is not supported, return an empty dictionary or raise an exception
         return {}
@@ -5311,6 +5321,15 @@ class TeraTermUI(customtkinter.CTk):
 
         win32gui.EnumWindows(window_enum_handler, titles_to_close)
 
+    @staticmethod
+    def check_window_exists(window_title, retries=7, delay=1):
+        for _ in range(retries):
+            windows = gw.getWindowsWithTitle(window_title)
+            if windows:
+                return True
+            time.sleep(delay)
+        raise Exception(f"The window with title '{window_title}' was not found after {retries} retries.")
+
     # function that checks if UPRB server is currently running
     def check_server(self):
         lang = self.language_menu.get()
@@ -6141,7 +6160,7 @@ class TeraTermUI(customtkinter.CTk):
         self.update_idletasks()
         self.move_tables_overlay.bind("<FocusOut>", self.on_move_window_close)
         self.move_tables_overlay.bind("<Escape>", self.on_move_window_close)
-
+    
     def move_tables_geometry(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
@@ -7368,7 +7387,7 @@ class TeraTermUI(customtkinter.CTk):
                         messagebox.showerror("Error", f"¡Error Fatal!\n\n{str(e)}")
                     else:
                         messagebox.showerror("Error", f"Fatal Error!\n\n{str(e)}")
-                    self.after(0, self.end_app)
+                    self.after(0, self.forceful_end_app)
 
     @staticmethod
     def find_appdata_teraterm_ini():
