@@ -8226,7 +8226,7 @@ class TeraTermUI(customtkinter.CTk):
         self.last_activity = time.time()
         try:
             while self.is_idle_thread_running and not self.stop_check_idle.is_set():
-                if time.time() - self.last_activity >= 240:
+                if time.time() - self.last_activity >= 270:
                     with self.lock_thread:
                         if TeraTermUI.checkIfProcessRunning("ttermpro"):
                             lang = self.language_menu.get()
