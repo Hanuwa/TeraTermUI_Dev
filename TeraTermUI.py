@@ -1041,8 +1041,8 @@ class TeraTermUI(customtkinter.CTk):
                         code = self.code_entry.get().replace(" ", "")
                         student_id_enc = aes_encrypt_then_mac(str(student_id), aes_key, mac_key)
                         code_enc = aes_encrypt_then_mac(str(code), aes_key, mac_key)
-                        if ((re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", student_id) or
-                             re.match(r"^\d{9}$", student_id)) and code.isdigit() and len(code) == 4):
+                        if ((re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", student_id) or 
+                             (student_id.isdigit() and len(student_id) == 9)) and code.isdigit() and len(code) == 4):
                             secure_delete(student_id)
                             secure_delete(code)
                             self.wait_for_window()
@@ -1093,11 +1093,12 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(100, self.show_error_message, 315, 230, translation["error_sign-in"])
                         else:
                             self.after(350, self.bind, "<Return>", lambda event: self.student_event_handler())
-                            if (not student_id or len(student_id) != 9) and (not code.isdigit() or len(code) != 4):
+                            if (not student_id or not student_id.isdigit() or len(student_id) != 9) and \
+                                    (not code.isdigit() or len(code) != 4):
                                 self.after(0, self.student_id_entry.configure(border_color="#c30101"))
                                 self.after(0, self.code_entry.configure(border_color="#c30101"))
                                 self.after(100, self.show_error_message, 300, 215, translation["error_student_id_code"])
-                            elif not student_id or len(student_id) != 9:
+                            elif not student_id or not student_id.isdigit() or len(student_id) != 9:
                                 self.after(0, self.student_id_entry.configure(border_color="#c30101"))
                                 self.after(100, self.show_error_message, 315, 230, translation["error_student_id"])
                             elif not code.isdigit() or len(code) != 4:
