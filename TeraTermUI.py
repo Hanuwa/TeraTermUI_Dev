@@ -7376,7 +7376,10 @@ class TeraTermUI(customtkinter.CTk):
 
         def get_tesseract_version(location):
             try:
-                output = subprocess.check_output([location, "--version"], stderr=subprocess.STDOUT)
+                startupinfo = subprocess.STARTUPINFO()
+                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                output = subprocess.check_output([location, "--version"], stderr=subprocess.STDOUT,
+                                                 startupinfo=startupinfo)
                 version_info = output.decode("utf-8")
                 version_line = version_info.split("\n")[0]
                 version_number = version_line.split()[1].lstrip("v")
