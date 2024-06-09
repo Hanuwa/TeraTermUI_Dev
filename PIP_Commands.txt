@@ -20,5 +20,7 @@ If you run the application as an Administrator, it grants the benefit of disabli
 
 **Note*** Installation File includes option to install Tera Term, although it is recommended to setup all of Tera Term's configurations before using this application, please refer to: https://osi.uprb.edu/manuales/Conexion_SSH_TeraTerm_TTSSH_STUDENTS.pdf
 
+**Important*** After downloading the Installation File, right-click on the file, select Properties, and then check the "Unblock" box next to the security section if it is present. This ensures the file is not blocked by Windows security features.
+
 Be sure to check out the "VERSION.txt" file for patch notes and the SHA-256 checksum. 
 Stay updated regularly for new features and bug fixes!
