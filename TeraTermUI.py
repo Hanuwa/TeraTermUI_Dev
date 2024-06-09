@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 6/8/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 6/9/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -5355,7 +5355,8 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         tesseract_dir_path = self.app_temp_dir / "Tesseract-OCR"
-        if self.tesseract_unzipped and tesseract_dir_path.is_dir():
+        default_tesseract_path = Path("C:/Program Files/Tesseract-OCR/tesseract.exe")
+        if self.tesseract_unzipped and (tesseract_dir_path.is_dir() or default_tesseract_path.is_file()):
             window_title = "uprbay.uprb.edu - Tera Term VT"
             hwnd = win32gui.FindWindow(None, window_title)
             self.focus_tera_term()
@@ -7372,11 +7373,26 @@ class TeraTermUI(customtkinter.CTk):
         unzip_tesseract = True
         tesseract_dir_path = self.app_temp_dir / "Tesseract-OCR"
         default_tesseract_path = Path("C:/Program Files/Tesseract-OCR/tesseract.exe")
+
+        def get_tesseract_version(location):
+            try:
+                output = subprocess.check_output([location, "--version"], stderr=subprocess.STDOUT)
+                version_info = output.decode("utf-8")
+                version_line = version_info.split("\n")[0]
+                version_number = version_line.split()[1].lstrip("v")
+                return version_number
+            except subprocess.CalledProcessError:
+                return None
+            except FileNotFoundError:
+                return None
+
         # Check if Tesseract is installed in the default location
         if default_tesseract_path.is_file():
-            pytesseract.pytesseract.tesseract_cmd = str(default_tesseract_path)
-            unzip_tesseract = False
-            self.tesseract_unzipped = True
+            installed_version = get_tesseract_version(str(default_tesseract_path))
+            if installed_version and tuple(map(int, installed_version.split("."))) >= (5, 0, 0):
+                pytesseract.pytesseract.tesseract_cmd = str(default_tesseract_path)
+                unzip_tesseract = False
+                self.tesseract_unzipped = True
         # If Tesseract-OCR already in the temp folder don't unzip
         elif tesseract_dir_path.is_dir():
             tesseract_dir = tesseract_dir_path
