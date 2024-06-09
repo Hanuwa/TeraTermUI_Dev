@@ -123,7 +123,7 @@ class TeraTermUI(customtkinter.CTk):
         screen_height = self.winfo_screenheight()
         x = (screen_width - width * scaling_factor) / 2
         y = (screen_height - height * scaling_factor) / 2
-        self.geometry(f"{width}x{height}+{int(x) + 125}+{int(y + 50)}")
+        self.geometry(f"{width}x{height}+{int(x) + 90}+{int(y + 50)}")
         self.icon_path = TeraTermUI.get_absolute_path("images/tera-term.ico")
         self.iconbitmap(self.icon_path)
         self.mode = "Portable"
@@ -7369,15 +7369,20 @@ class TeraTermUI(customtkinter.CTk):
         self.future_feedback = self.thread_pool.submit(self.setup_feedback)
 
     def setup_tesseract(self):
-        # If Tesseract-OCR already in the temp folder don't unzip
         unzip_tesseract = True
         tesseract_dir_path = self.app_temp_dir / "Tesseract-OCR"
-        if tesseract_dir_path.is_dir():
-            tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
+        default_tesseract_path = Path("C:/Program Files/Tesseract-OCR/tesseract.exe")
+        # Check if Tesseract is installed in the default location
+        if default_tesseract_path.is_file():
+            pytesseract.pytesseract.tesseract_cmd = str(default_tesseract_path)
+            unzip_tesseract = False
+            self.tesseract_unzipped = True
+        # If Tesseract-OCR already in the temp folder don't unzip
+        elif tesseract_dir_path.is_dir():
+            tesseract_dir = tesseract_dir_path
             pytesseract.pytesseract.tesseract_cmd = str(tesseract_dir / "tesseract.exe")
             unzip_tesseract = False
             self.tesseract_unzipped = True
-
         # Unzips Tesseract OCR
         if unzip_tesseract:
             try:
