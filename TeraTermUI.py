@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 6/9/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 6/10/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -458,8 +458,9 @@ class TeraTermUI(customtkinter.CTk):
         self.m_register_menu = []
         self.m_tooltips = []
         self.schedule_map = TeraTermUI.generate_schedule()
-        self.placeholder_texts_classes = ("ESPA3101", "INGL3101", "BIOL3011", "MATE3001", "CISO3121", "HUMA3101")
-        self.placeholder_texts_sections = ("LM1", "KM1", "KH1", "LH1", "KN1", "LN1")
+        self.placeholder_texts_classes = ("ESPA3101", "INGL3101", "ADMI4005", "BIOL3011", "MATE3001",
+                                          "CISO3121", "HUMA3101", "MECU3031")
+        self.placeholder_texts_sections = ("LM1", "KM1", "LH1", "KH1", "LN1", "KN1", "LJ1", "KJ1")
         self.m_add = None
         self.m_add_tooltip = None
         self.m_remove = None
@@ -1225,7 +1226,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.changed_sections = set()
                 self.changed_semesters = set()
                 self.changed_registers = set()
-                for i in range(6):
+                for i in range(8):
                     self.m_register_menu[i].configure(
                         command=lambda value, idx=i: self.detect_register_menu_change(value, idx))
                     self.m_classes_entry[i].bind("<FocusOut>", self.detect_change)
@@ -1233,7 +1234,7 @@ class TeraTermUI(customtkinter.CTk):
 
         if save:
             num_rows = len(save)
-            max_entries = 6
+            max_entries = 8
             for index, row in enumerate(save[:max_entries], start=1):
                 class_value, section_value, semester_value, register_value = row
                 display_register_value = reverse_language_mapping.get(lang, {}).get(register_value, register_value)
@@ -1246,7 +1247,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.m_semester_entry[index - 1].set(display_semester_value)
                 self.m_register_menu[index - 1].set(display_register_value)
 
-            for _ in range(min(num_rows - 1, 6)):
+            for _ in range(min(num_rows - 1, 8)):
                 self.add_event()
                 
             self.check_class_conflicts()
@@ -1874,7 +1875,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.first_time_adding = False
                 if self.a_counter > 0:
                     self.m_remove.configure(state="normal")
-                if self.a_counter == 5:
+                if self.a_counter == 7:
                     self.m_add.configure(state="disabled")
         else:
             if not semester:
@@ -1904,7 +1905,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.countdown_running or self.started_auto_enroll:
             return
 
-        if self.up_arrow_key_enabled and self.a_counter != 5:
+        if self.up_arrow_key_enabled and self.a_counter != 7:
             self.add_event()
 
     def remove_event_down_arrow_key(self):
@@ -1968,9 +1969,9 @@ class TeraTermUI(customtkinter.CTk):
         self.bind("<Down>", lambda event: self.remove_event_down_arrow_key())
         self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event2())
         self.destroy_tooltip()
-        self.multiple_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 30))
+        self.multiple_frame.grid(row=0, column=1, columnspan=4, rowspan=4, padx=(0, 0), pady=(0, 50))
         self.multiple_frame.grid_columnconfigure(2, weight=1)
-        self.m_button_frame.grid(row=3, column=1, columnspan=4, rowspan=4, padx=(0, 0), pady=(0, 10))
+        self.m_button_frame.grid(row=3, column=1, columnspan=4, rowspan=4, padx=(0, 0), pady=(0, 8))
         self.m_button_frame.grid_columnconfigure(2, weight=1)
         self.save_frame.grid(row=3, column=2, padx=(0, 50), pady=(0, 8), sticky="e")
         self.save_frame.grid_columnconfigure(2, weight=1)
@@ -3816,7 +3817,7 @@ class TeraTermUI(customtkinter.CTk):
             self.m_choice.configure(text=translation["choice"])
             self.back_multiple.configure(text=translation["back"])
             self.submit_multiple.configure(text=translation["submit"])
-            for i in range(6):
+            for i in range(8):
                 self.m_register_menu[i].configure(values=[translation["register"], translation["drop"]])
                 if self.m_section_entry[i].cget("border_color") == "#CC5500":
                     current_message = self.m_tooltips[i].cget("message")
@@ -4525,9 +4526,9 @@ class TeraTermUI(customtkinter.CTk):
             self.back_classes.configure(state="normal")
             if self.a_counter > 0:
                 self.m_remove.configure(state="normal")
-            if self.a_counter < 5:
+            if self.a_counter < 7:
                 self.m_add.configure(state="normal")
-            for i in range(6):
+            for i in range(8):
                 self.m_classes_entry[i].configure(state="normal")
                 self.m_section_entry[i].configure(state="normal")
                 self.m_register_menu[i].configure(state="normal")
@@ -4944,32 +4945,32 @@ class TeraTermUI(customtkinter.CTk):
             self.m_section = customtkinter.CTkLabel(master=self.multiple_frame, text=translation["section"])
             self.m_semester = customtkinter.CTkLabel(master=self.multiple_frame, text=translation["semester"])
             self.m_choice = customtkinter.CTkLabel(master=self.multiple_frame, text=translation["choice"])
-            for i in range(6):
-                self.m_num_class.append(customtkinter.CTkLabel(master=self.multiple_frame, text=f"{i + 1}."))
+            for i in range(8):
+                self.m_num_class.append(customtkinter.CTkLabel(master=self.multiple_frame, text=f"{i + 1}.", height=26))
                 self.m_classes_entry.append(CustomEntry(self.multiple_frame, self, lang,
-                                                        placeholder_text=self.placeholder_texts_classes[i]))
+                                                        placeholder_text=self.placeholder_texts_classes[i], height=26))
                 self.m_section_entry.append(CustomEntry(self.multiple_frame, self, lang,
-                                                        placeholder_text=self.placeholder_texts_sections[i]))
+                                                        placeholder_text=self.placeholder_texts_sections[i], height=26))
                 self.m_tooltips.append(CTkToolTip(self.m_section_entry[i], message="", bg_color="#1E90FF",
                                                   visibility=False))
                 self.m_section_entry[i].bind("<FocusOut>", self.section_bind_wrapper)
                 self.m_semester_entry.append(CustomComboBox(self.multiple_frame, self,
                                                             values=self.semester_values + [translation["current"]],
-                                                            command=self.change_semester))
+                                                            command=self.change_semester, height=26))
                 self.m_semester_entry[i].set(self.DEFAULT_SEMESTER)
                 self.m_register_menu.append(customtkinter.CTkOptionMenu(
                     master=self.multiple_frame, values=[translation["register"], translation["drop"]],
-                    command=lambda value: self.focus_set()))
+                    command=lambda value: self.focus_set(), height=26))
                 self.m_register_menu[i].set(translation["choose"])
                 self.m_num_class[i].bind("<Button-1>", lambda event: self.focus_set())
             self.m_semester_entry[0].bind(
                 "<FocusOut>", lambda event: self.change_semester(event_type="focus_out"))
             self.m_add = CustomButton(master=self.m_button_frame, border_width=2, text="+",
-                                      text_color=("gray10", "#DCE4EE"), command=self.add_event, height=40, width=50,
+                                      text_color=("gray10", "#DCE4EE"), command=self.add_event, height=38, width=50,
                                       fg_color="#0F52BA")
             self.m_add_tooltip = CTkToolTip(self.m_add, message=translation["add_tooltip"], bg_color="#0F52BA")
             self.m_remove = CustomButton(master=self.m_button_frame, border_width=2, text="-",
-                                         text_color=("gray10", "#DCE4EE"), command=self.remove_event, height=40,
+                                         text_color=("gray10", "#DCE4EE"), command=self.remove_event, height=38,
                                          width=50, fg_color="#DC143C", hover_color="darkred",
                                          state="disabled")
             self.m_remove_tooltip = CTkToolTip(self.m_remove, message=translation["m_remove_tooltip"],
@@ -5100,7 +5101,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.changed_sections = set()
                     self.changed_semesters = set()
                     self.changed_registers = set()
-                    for i in range(6):
+                    for i in range(8):
                         self.m_register_menu[i].configure(
                             command=lambda value, idx=i: self.detect_register_menu_change(value, idx))
                         self.m_classes_entry[i].bind("<FocusOut>", self.detect_change)
@@ -5109,7 +5110,7 @@ class TeraTermUI(customtkinter.CTk):
         if save == "off":
             self.cursor.execute("DELETE FROM saved_classes")
             self.connection.commit()
-            for i in range(6):
+            for i in range(8):
                 self.m_register_menu[i].configure(command=lambda value: self.focus_set())
                 self.m_classes_entry[i].unbind("<FocusOut>")
                 self.m_section_entry[i].unbind("<FocusOut>")
@@ -5697,8 +5698,36 @@ class TeraTermUI(customtkinter.CTk):
         else:
             if self.sort_by is not None and self.sort_by.get() == translation["original_data"]:
                 self.sort_by.set(translation["sort_by"])
-        num_rows = len(modified_data) + 1
 
+        available_key = translation["av"]
+        available_values = sorted([row[available_key] for row in modified_data])
+        display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_pdf,
+                                               font=customtkinter.CTkFont(size=15, weight="bold", underline=True))
+        duplicate_index = self.find_duplicate(display_class, self.get_semester_for_pdf, self.show_all_sections,
+                                              available_values)
+        if duplicate_index is not None:
+            _, _, _, _, existing_available_values, _ = self.class_table_pairs[duplicate_index]
+            if sorted(existing_available_values) != available_values:
+                display_class_to_remove, table_to_remove, _, _, _, _ = self.class_table_pairs[duplicate_index]
+                display_class_to_remove.unbind("<Button-1>")
+                for cell in table_to_remove.get_all_cells():
+                    if cell in self.table_tooltips:
+                        self.table_tooltips[cell].destroy()
+                        del self.table_tooltips[cell]
+                if table_to_remove in self.original_table_data:
+                    del self.original_table_data[table_to_remove]
+                self.after(0, display_class_to_remove.destroy)
+                self.after(0, table_to_remove.destroy)
+                del self.class_table_pairs[duplicate_index]
+            else:
+                self.current_table_index = duplicate_index
+                self.search_scrollbar.scroll_to_top()
+                self.update_buttons()
+                self.after(0, display_class.destroy)
+                self.after(75, self.display_current_table)
+                return
+
+        num_rows = len(modified_data) + 1
         new_table = CTkTable(
             self.search_scrollbar,
             column=len(headers),
@@ -5746,8 +5775,6 @@ class TeraTermUI(customtkinter.CTk):
             new_table.bind_cell(0, col_index, "<Button-3>",
                                 lambda event: self.move_tables_overlay_event())
 
-        display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_pdf,
-                                               font=customtkinter.CTkFont(size=15, weight="bold", underline=True))
         display_class.bind("<Button-1>", lambda event: self.focus_set())
         if self.table_count is None:
             table_count_label = f" {len(self.class_table_pairs)}/20"
@@ -5779,32 +5806,6 @@ class TeraTermUI(customtkinter.CTk):
             self.sort_by.set(translation["sort_by"])
             self.sort_by_tooltip = CTkToolTip(self.sort_by, message=translation["sort_by_tooltip"],
                                               bg_color="#1E90FF")
-
-        available_key = translation["av"]
-        available_values = sorted([row[available_key] for row in modified_data])
-        duplicate_index = self.find_duplicate(display_class, self.get_semester_for_pdf, self.show_all_sections,
-                                              available_values)
-        if duplicate_index is not None:
-            _, _, _, _, existing_available_values, _ = self.class_table_pairs[duplicate_index]
-            if sorted(existing_available_values) != available_values:
-                display_class_to_remove, table_to_remove, _, _, _, _ = self.class_table_pairs[duplicate_index]
-                display_class_to_remove.unbind("<Button-1>")
-                for cell in table_to_remove.get_all_cells():
-                    if cell in self.table_tooltips:
-                        self.table_tooltips[cell].destroy()
-                        del self.table_tooltips[cell]
-                if table_to_remove in self.original_table_data:
-                    del self.original_table_data[table_to_remove]
-                self.after(0, display_class_to_remove.destroy)
-                self.after(0, table_to_remove.destroy)
-                del self.class_table_pairs[duplicate_index]
-            else:
-                self.current_table_index = duplicate_index
-                self.display_current_table()
-                self.update_buttons()
-                self.search_scrollbar.scroll_to_top()
-                return
-
         self.class_table_pairs.append((display_class, new_table, self.get_semester_for_pdf,
                                        self.show_all_sections, available_values, self.search_next_page_status))
         self.check_and_update_labels()
@@ -6126,16 +6127,16 @@ class TeraTermUI(customtkinter.CTk):
     def show_previous_table(self):
         if self.current_table_index > 0:
             self.current_table_index -= 1
-            self.display_current_table()
-            self.update_buttons()
             self.search_scrollbar.scroll_to_top()
+            self.update_buttons()
+            self.after(75, self.display_current_table)
 
     def show_next_table(self):
         if self.current_table_index < len(self.class_table_pairs) - 1:
             self.current_table_index += 1
-            self.display_current_table()
-            self.update_buttons()
             self.search_scrollbar.scroll_to_top()
+            self.update_buttons()
+            self.after(75, self.display_current_table)
 
     def keybind_previous_table(self, event):
         if self.move_slider_left_enabled:
@@ -6324,11 +6325,26 @@ class TeraTermUI(customtkinter.CTk):
             return
 
         self.current_table_index = max(0, self.current_table_index - 1)
-        self.display_current_table()
+        self.table_count.grid_forget()
+        self.remove_button.grid_forget()
+        self.download_search_pdf.grid_forget()
+        self.sort_by.grid_forget()
+        self.search_scrollbar.scroll_to_top()
         self.check_and_update_labels()
         self.update_buttons()
-        self.search_scrollbar.scroll_to_top()
-        
+
+        def reshow_widgets():
+            self.table_count.grid(row=4, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+            if len(self.class_table_pairs) > 1:
+                self.previous_button.grid(row=5, column=1, padx=(0, 300), pady=(10, 0), sticky="n")
+                self.next_button.grid(row=5, column=1, padx=(300, 0), pady=(10, 0), sticky="n")
+            self.remove_button.grid(row=5, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+            self.download_search_pdf.grid(row=6, column=1, padx=(157, 0), pady=(10, 0), sticky="n")
+            self.sort_by.grid(row=6, column=1, padx=(0, 157), pady=(10, 0), sticky="n")
+
+        self.after(100, self.display_current_table)
+        self.after(115, reshow_widgets)
+
     def automate_copy_class_data(self):
         import pyautogui
 
