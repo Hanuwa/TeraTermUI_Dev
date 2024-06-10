@@ -1594,7 +1594,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.get_class_for_pdf = classes
                                     self.get_semester_for_pdf = semester
                                     self.show_all_sections = show_all
-                                    self.after(0, self.display_data, data)
+                                    self.after(0, self.display_searched_class_data, data)
                                     self.clipboard_clear()
                                     if clipboard_content is not None:
                                         self.clipboard_append(clipboard_content)
@@ -1653,7 +1653,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.get_class_for_pdf = classes
                                 self.get_semester_for_pdf = semester
                                 self.show_all_sections = show_all
-                                self.after(0, self.display_data, data)
+                                self.after(0, self.display_searched_class_data, data)
                                 self.clipboard_clear()
                                 if clipboard_content is not None:
                                     self.clipboard_append(clipboard_content)
@@ -2814,7 +2814,7 @@ class TeraTermUI(customtkinter.CTk):
                         copy = pyperclip.paste()
                         data, course_found, invalid_action, \
                             y_n_found, y_n_value, term_value = TeraTermUI.extract_class_data(copy)
-                        self.after(0, self.display_data, data)
+                        self.after(0, self.display_searched_class_data, data)
                         self.clipboard_clear()
                         if clipboard_content is not None:
                             self.clipboard_append(clipboard_content)
@@ -5674,8 +5674,8 @@ class TeraTermUI(customtkinter.CTk):
         if len(names) >= 3:
             threading.Thread(target=attempt_open_url, args=(names,)).start()
 
-    # displays the extracted data into a table
-    def display_data(self, data):
+    # displays the extracted data of searched classes into a table
+    def display_searched_class_data(self, data):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         spec_data = TeraTermUI.specific_class_data(data)
@@ -5701,9 +5701,7 @@ class TeraTermUI(customtkinter.CTk):
 
         available_key = translation["av"]
         available_values = sorted([row[available_key] for row in modified_data])
-        display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_pdf,
-                                               font=customtkinter.CTkFont(size=15, weight="bold", underline=True))
-        duplicate_index = self.find_duplicate(display_class, self.get_semester_for_pdf, self.show_all_sections,
+        duplicate_index = self.find_duplicate(self.get_class_for_pdf, self.get_semester_for_pdf, self.show_all_sections,
                                               available_values)
         if duplicate_index is not None:
             _, _, _, _, existing_available_values, _ = self.class_table_pairs[duplicate_index]
@@ -5723,7 +5721,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.current_table_index = duplicate_index
                 self.search_scrollbar.scroll_to_top()
                 self.update_buttons()
-                self.after(0, display_class.destroy)
                 self.after(75, self.display_current_table)
                 return
 
@@ -5775,6 +5772,8 @@ class TeraTermUI(customtkinter.CTk):
             new_table.bind_cell(0, col_index, "<Button-3>",
                                 lambda event: self.move_tables_overlay_event())
 
+        display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_pdf,
+                                               font=customtkinter.CTkFont(size=15, weight="bold", underline=True))
         display_class.bind("<Button-1>", lambda event: self.focus_set())
         if self.table_count is None:
             table_count_label = f" {len(self.class_table_pairs)}/20"
@@ -5864,7 +5863,7 @@ class TeraTermUI(customtkinter.CTk):
     def find_duplicate(self, new_display_class, new_semester, show_all_sections_state, available_values):
         for index, (display_class, table, semester, existing_show_all_sections_state,
                     existing_available_values, _) in enumerate(self.class_table_pairs):
-            if (display_class.cget("text").split("-")[0].strip() == new_display_class.cget("text").split("-")[0].strip()
+            if (display_class.cget("text").split("-")[0].strip() == new_display_class
                     and semester == new_semester and existing_show_all_sections_state == show_all_sections_state
                     and sorted(existing_available_values) == sorted(available_values)):
                 return index
