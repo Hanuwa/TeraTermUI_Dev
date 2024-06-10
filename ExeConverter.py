@@ -114,7 +114,8 @@ def freeze_requirements(project_directory):
     try:
         os.chdir(scripts_directory)
         subprocess.run(f'pip freeze > "{requirements_path}"', shell=True, check=True)
-        process = subprocess.Popen([clear_comtypes_cache_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        process = subprocess.Popen([clear_comtypes_cache_path], stdin=subprocess.PIPE,
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         process.communicate(input='y\n')
         if process.returncode != 0:
             print(Fore.RED + "Failed to clear comtypes cache" + Style.RESET_ALL)
@@ -219,8 +220,8 @@ nuitka_command = (
     r'--include-data-file="' + project_directory + r'\VERSION.txt=VERSION.txt" '
     r'--include-data-file="' + project_directory + r'\LICENSE.txt=LICENSE.txt" '   
     r'--include-data-file="' + project_directory + r'\updater.exe=updater.exe" '                                                
-    r'--output-dir="' + output_directory + r'" --python-flag=no_asserts '
-    r'--windows-icon-from-ico="' + project_directory + r'\images\tera-term.ico" '
+    r'--output-dir="' + output_directory + r'" --python-flag=no_asserts --noinclude-data-files=*.pyc '
+    r'--windows-icon-from-ico="' + project_directory + r'\images\tera-term.ico" --lto=yes '
     r'--nofollow-import-to=unittest --python-flag=no_docstrings --product-name="Tera Term UI" '
     r'--company-name="Armando Del Valle Tejada" --file-description="TeraTermUI" '  
     r'--file-version="' + update_without_v + r'" --product-version="' + update_without_v + r'" '
