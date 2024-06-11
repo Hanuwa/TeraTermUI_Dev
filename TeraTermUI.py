@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 6/10/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 6/11/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -30,6 +30,7 @@ import pystray
 import pytesseract
 import random
 import re
+import requests
 import secrets
 import shutil
 import socket
@@ -63,7 +64,6 @@ from itertools import groupby
 from mss import mss
 from py7zr import SevenZipFile
 from pathlib import Path
-from requests import get as rq_get, head as rq_head, RequestException
 from psutil import process_iter, NoSuchProcess, AccessDenied, ZombieProcess
 from win32con import SW_HIDE, SW_SHOW, SW_RESTORE, WM_CLOSE
 try:
@@ -749,7 +749,7 @@ class TeraTermUI(customtkinter.CTk):
                         else:
                             self.cursor.execute("UPDATE user_data SET update_date=?", (current_date,))
                         self.connection.commit()
-                    except RequestException as err:
+                    except requests.exceptions.RequestException as err:
                         print(f"Error occurred while fetching latest release information: {err}")
                         print("Please check your internet connection and try again.")
                     del latest_version, row_exists
@@ -5630,11 +5630,11 @@ class TeraTermUI(customtkinter.CTk):
             for ln in last_names:
                 url = f"https://notaso.com/professors/{first_name}-{ln}/"
                 try:
-                    response = rq_head(url)
+                    response = requests.head(url)
                     if response.status_code == 200:
                         webbrowser.open(url)
                         return
-                except RequestException as e:
+                except requests.exceptions.RequestException as e:
                     print(f"Failed to open URL: {url}, Error: {e}")
 
         instructor_text = cell.cget("text")
@@ -9310,7 +9310,7 @@ class TeraTermUI(customtkinter.CTk):
         if asyncio.run(self.test_connection(lang)):
             url = f"{self.GITHUB_REPO}/releases/latest"
             try:
-                response = rq_get(url)
+                response = requests.get(url)
 
                 if response.status_code != 200:
                     print(f"Error fetching release information: {response.status_code}")
@@ -9324,7 +9324,7 @@ class TeraTermUI(customtkinter.CTk):
 
                 return latest_version
 
-            except RequestException as e:
+            except requests.exceptionsRequestException as e:
                 print(f"Request failed: {e}")
                 return None
             except Exception as e:
