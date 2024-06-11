@@ -8238,8 +8238,11 @@ class TeraTermUI(customtkinter.CTk):
             if self.loading_screen_status is None:
                 idle_time = get_idle_duration()
                 if idle_time >= 180:
-                    move(1, 0)
-                    move(-1, 0)
+                    try:
+                        move(1, 0)
+                        move(-1, 0)
+                    except FailSafeException as e:
+                        print("An error occurred during move operation:", e)
                 is_running = TeraTermUI.checkIfProcessRunning("ttermpro")
                 if is_running:
                     if not_running_count > 1 and not self.is_idle_thread_running:
