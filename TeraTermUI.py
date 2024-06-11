@@ -8237,7 +8237,7 @@ class TeraTermUI(customtkinter.CTk):
         while self.is_check_process_thread_running and not self.stop_is_check_process.is_set():
             if self.loading_screen_status is None:
                 idle_time = get_idle_duration()
-                if idle_time > 180:
+                if idle_time >= 180:
                     move(1, 0)
                     move(-1, 0)
                 is_running = TeraTermUI.checkIfProcessRunning("ttermpro")
