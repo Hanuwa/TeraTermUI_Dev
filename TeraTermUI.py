@@ -5721,7 +5721,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.current_table_index = duplicate_index
                 self.search_scrollbar.scroll_to_top()
                 self.update_buttons()
-                self.after(75, self.display_current_table)
+                self.after(100, self.display_current_table)
                 return
 
         num_rows = len(modified_data) + 1
@@ -6128,14 +6128,14 @@ class TeraTermUI(customtkinter.CTk):
             self.current_table_index -= 1
             self.search_scrollbar.scroll_to_top()
             self.update_buttons()
-            self.after(75, self.display_current_table)
+            self.after(100, self.display_current_table)
 
     def show_next_table(self):
         if self.current_table_index < len(self.class_table_pairs) - 1:
             self.current_table_index += 1
             self.search_scrollbar.scroll_to_top()
             self.update_buttons()
-            self.after(75, self.display_current_table)
+            self.after(100, self.display_current_table)
 
     def keybind_previous_table(self, event):
         if self.move_slider_left_enabled:
