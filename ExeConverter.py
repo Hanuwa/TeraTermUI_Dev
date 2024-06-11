@@ -32,24 +32,34 @@ def extract_version_main_file(filepath):
 
 
 def check_and_restore_backup():
+    main_file_path = os.path.join(project_directory, "TeraTermUI.py")
+    if os.path.exists(main_file_path) and os.path.getsize(main_file_path) > 0:
+        main_file_empty = False
+    else:
+        main_file_empty = True
     if os.path.exists(program_backup):
-        program_backup_date = extract_second_date_from_file(program_backup)
-        tera_term_ui_date = extract_second_date_from_file(project_directory + r"\TeraTermUI.py")
-        tera_term_ui_version = extract_version_main_file(project_directory + r"\TeraTermUI.py")
-        if program_backup_date != tera_term_ui_date:
-            print(Fore.YELLOW + "\nDate mismatch detected between the main file and the backup one. "
-                                "\nRestoration from backup skipped. Delete backup file if no longer needed"
-                  + Style.RESET_ALL)
-        elif tera_term_ui_version != update_without_v:
-            print(Fore.YELLOW + "\nVersion mismatch detected between the main file and the backup one. "
-                                "\nRestoration from backup skipped. Delete backup file if no longer needed"
-                  + Style.RESET_ALL)
-        else:
-            shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
-            print(
-                Fore.YELLOW + "\nPrevious session was interrupted. Restoration from backup completed." +
-                Style.RESET_ALL)
+        if main_file_empty:
+            shutil.copy2(program_backup, main_file_path)
+            print(Fore.YELLOW + "\nMain file is empty. Restoration from backup completed." + Style.RESET_ALL)
             os.remove(program_backup)
+        else:
+            program_backup_date = extract_second_date_from_file(program_backup)
+            tera_term_ui_date = extract_second_date_from_file(main_file_path)
+            tera_term_ui_version = extract_version_main_file(main_file_path)
+            if program_backup_date != tera_term_ui_date:
+                print(Fore.YELLOW + "\nDate mismatch detected between the main file and the backup one. "
+                                    "\nRestoration from backup skipped. Delete backup file if no longer needed"
+                      + Style.RESET_ALL)
+            elif tera_term_ui_version != update_without_v:
+                print(Fore.YELLOW + "\nVersion mismatch detected between the main file and the backup one. "
+                                    "\nRestoration from backup skipped. Delete backup file if no longer needed"
+                      + Style.RESET_ALL)
+            else:
+                shutil.copy2(program_backup, main_file_path)
+                print(
+                    Fore.YELLOW + "\nPrevious session was interrupted. Restoration from backup completed." +
+                    Style.RESET_ALL)
+                os.remove(program_backup)
 
 
 def attach_manifest(executable_path, manifest_path):
@@ -290,6 +300,7 @@ try:
     data = re.sub(r'self.USER_APP_VERSION = ".*?"', f'self.USER_APP_VERSION = "{update_without_v}"', data)
     with open(project_directory+r"\TeraTermUI.py", "w", encoding="utf-8") as file:
         file.write(data)
+    shutil.copy2(project_directory + r"\TeraTermUI.py", program_backup)
 except KeyboardInterrupt as e:
     shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
     os.remove(program_backup)
