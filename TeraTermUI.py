@@ -6139,11 +6139,11 @@ class TeraTermUI(customtkinter.CTk):
 
     def keybind_previous_table(self, event):
         if self.move_slider_left_enabled:
-            self.after(100, self.show_previous_table)
+            self.after(0, self.show_previous_table)
 
     def keybind_next_table(self, event):
         if self.move_slider_left_enabled:
-            self.after(100, self.show_next_table)
+            self.after(0, self.show_next_table)
 
     def move_tables_overlay_event(self):
         if len(self.class_table_pairs) == 1:
