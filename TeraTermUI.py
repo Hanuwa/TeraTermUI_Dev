@@ -3125,22 +3125,27 @@ class TeraTermUI(customtkinter.CTk):
                         try:
                             if self.teraterm5_first_boot:
                                 first_boot = Application(backend="uia").start(self.location, timeout=3).connect(
-                                    title="Tera Term - [disconnected] VT", timeout=3)
+                                    title="Tera Term - [disconnected] VT", timeout=3,
+                                    class_name="VTWin32", control_type="Window")
                                 first_boot.kill(soft=True)
                                 self.set_focus_to_tkinter()
                             if self.download or self.teraterm_not_found or self.teraterm5_first_boot:
                                 self.edit_teraterm_ini(self.teraterm_file)
                             if not new_connection:
-                                self.uprb = Application(backend="uia").start(
-                                    self.location, timeout=3).connect(title="Tera Term - [disconnected] VT", timeout=3)
+                                self.uprb = Application(backend="uia").start(self.location, timeout=3).connect(
+                                    title="Tera Term - [disconnected] VT", timeout=3,
+                                    class_name="VTWin32", control_type="Window")
                             else:
                                 self.uprb = Application(backend="uia").connect(
-                                    title="Tera Term - [disconnected] VT", timeout=3)
-                            self.uprb_32 = Application().connect(title="Tera Term - [disconnected] VT", timeout=3)
+                                    title="Tera Term - [disconnected] VT", timeout=3,
+                                    class_name="VTWin32", control_type="Window")
+                            self.uprb_32 = Application().connect(title="Tera Term - [disconnected] VT",
+                                                                 timeout=3, class_name="VTWin32")
                             edit_menu = self.uprb.UprbayTeraTermVt.child_window(title="Edit", control_type="MenuItem")
                             self.select_screen_item = edit_menu.child_window(
                                 title="Select screen", control_type="MenuItem", auto_id="50280")
-                            disconnected = self.uprb.window(title="Tera Term - [disconnected] VT")
+                            disconnected = self.uprb.window(title="Tera Term - [disconnected] VT", class_name="VTWin32",
+                                                            control_type="Window")
                             disconnected.wait("visible", timeout=3)
                             TeraTermUI.check_window_exists("Tera Term: New connection")
                             if new_connection:
@@ -3151,7 +3156,7 @@ class TeraTermUI(customtkinter.CTk):
                                 host_input.set_text("uprbay.uprb.edu")
                             self.uprb.TeraTermDisconnectedVt.child_window(title="OK", control_type="Button").click()
                             self.uprbay_window = self.uprb.window(
-                                title="uprbay.uprb.edu - Tera Term VT", class_name="VTWin32")
+                                title="uprbay.uprb.edu - Tera Term VT", class_name="VTWin32", control_type="Window")
                             self.uprbay_window.wait("visible", timeout=3)
                             self.tera_term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if self.uprbay_window.child_window(title="Continue", control_type="Button").exists(
@@ -3345,10 +3350,11 @@ class TeraTermUI(customtkinter.CTk):
 
     def connect_to_uprb(self):
         self.uprb = Application(backend="uia").connect(
-            title="uprbay.uprb.edu - Tera Term VT", timeout=3, class_name="VTWin32")
+            title="uprbay.uprb.edu - Tera Term VT", timeout=3, class_name="VTWin32", control_type="Window")
         self.uprb_32 = Application().connect(
             title="uprbay.uprb.edu - Tera Term VT", timeout=3, class_name="VTWin32")
-        self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT", class_name="VTWin32")
+        self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT",
+                                              class_name="VTWin32", control_type="Window")
         self.uprbay_window.wait("visible", timeout=3)
         edit_menu = self.uprb.UprbayTeraTermVt.child_window(title="Edit", control_type="MenuItem")
         self.select_screen_item = edit_menu.child_window(
@@ -8283,11 +8289,12 @@ class TeraTermUI(customtkinter.CTk):
                                 print("An error occurred: ", e)
                                 self.search_function_counter = 0
                                 self.uprb = Application(backend="uia").connect(
-                                    title="uprbay.uprb.edu - Tera Term VT", timeout=3, class_name="VTWin32")
+                                    title="uprbay.uprb.edu - Tera Term VT", timeout=3, class_name="VTWin32",
+                                    control_type="Window")
                                 self.uprb_32 = Application().connect(
                                     title="uprbay.uprb.edu - Tera Term VT", timeout=3, class_name="VTWin32")
                                 self.uprbay_window = self.uprb.window(
-                                    title="uprbay.uprb.edu - Tera Term VT", class_name="VTWin32")
+                                    title="uprbay.uprb.edu - Tera Term VT", class_name="VTWin32", control_type="Window")
                                 main_window = self.uprb_32.window(
                                     title="uprbay.uprb.edu - Tera Term VT", class_name="VTWin32")
                                 edit_menu = self.uprb.UprbayTeraTermVt.child_window(
