@@ -838,6 +838,7 @@ class TeraTermUI(customtkinter.CTk):
             self.after(200, timer.restore)
         app = gw.getWindowsWithTitle("Tera Term UI")[0]
         self.after(150, app.restore)
+        self.after(200, self.set_focus_to_tkinter)
         hwnd = win32gui.FindWindow(None, "uprbay.uprb.edu - Tera Term VT")
         if hwnd and not win32gui.IsWindowVisible(hwnd):
             win32gui.ShowWindow(hwnd, SW_SHOW)
@@ -6347,7 +6348,7 @@ class TeraTermUI(customtkinter.CTk):
             self.sort_by.grid(row=6, column=1, padx=(0, 157), pady=(10, 0), sticky="n")
 
         self.after(100, self.display_current_table)
-        self.after(115, reshow_widgets)
+        self.after(125, reshow_widgets)
 
     def automate_copy_class_data(self):
         from pyautogui import position, click, moveTo, FailSafeException
@@ -8228,11 +8229,17 @@ class TeraTermUI(customtkinter.CTk):
         self.check_process_thread.start()
 
     def check_process_periodically(self):
+        from pyautogui import move
+        
         self.update_idletasks()
         time.sleep(30 + random.uniform(5, 25))
         not_running_count = 0
         while self.is_check_process_thread_running and not self.stop_is_check_process.is_set():
             if self.loading_screen_status is None:
+                idle_time = get_idle_duration()
+                if idle_time > 180:
+                    move(1, 0)
+                    move(-1, 0)
                 is_running = TeraTermUI.checkIfProcessRunning("ttermpro")
                 if is_running:
                     if not_running_count > 1 and not self.is_idle_thread_running:
@@ -10776,6 +10783,19 @@ def get_window_rect(hwnd):
     DwmGetWindowAttribute(hwnd, DWMWA_EXTENDED_FRAME_BOUNDS, ctypes.byref(rect), ctypes.sizeof(rect))
     return rect.left, rect.top, rect.right, rect.bottom
 
+
+def get_idle_duration():
+    class LASTINPUTINFO(ctypes.Structure):
+        _fields_ = [("cbSize", ctypes.c_uint),
+                    ("dwTime", ctypes.c_uint)]
+
+    lii = LASTINPUTINFO()
+    lii.cbSize = ctypes.sizeof(LASTINPUTINFO)
+    if not ctypes.windll.user32.GetLastInputInfo(ctypes.byref(lii)):
+        raise ctypes.WinError()
+    millis = ctypes.windll.kernel32.GetTickCount() - lii.dwTime
+    return millis / 1000.0
+    
 
 def bring_to_front(window_title):
     try:
