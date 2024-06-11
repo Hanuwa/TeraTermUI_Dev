@@ -19,24 +19,17 @@
 
 import asyncio
 import atexit
-import chardet
 import ctypes
 import customtkinter
-import functools
 import gc
 import json
-import logging
-import mss
 import os
-import psutil
-import py7zr
 import pygetwindow as gw
 import pyperclip
 import pystray
 import pytesseract
 import random
 import re
-import requests
 import secrets
 import shutil
 import socket
@@ -49,9 +42,9 @@ import tkinter as tk
 import time
 import warnings
 import webbrowser
-import win32con
 import win32gui
 import winsound
+from chardet import detect as chardet_detect
 from collections import deque, defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import closing
@@ -65,8 +58,14 @@ from CTkToolTip import CTkToolTip
 from ctypes import wintypes
 from datetime import datetime, timedelta
 from filelock import FileLock, Timeout
+from functools import wraps
 from itertools import groupby
+from mss import mss
+from py7zr import SevenZipFile
 from pathlib import Path
+from requests import get as rq_get, head as rq_head, RequestException
+from psutil import process_iter, NoSuchProcess, AccessDenied, ZombieProcess
+from win32con import SW_HIDE, SW_SHOW, SW_RESTORE, WM_CLOSE
 try:
     from pywinauto.application import Application, AppStartError
     from pywinauto.findwindows import ElementNotFoundError
@@ -95,7 +94,7 @@ gc.set_threshold(2100, 40, 20)
 
 def measure_time(threshold):
     def decorator(func):
-        @functools.wraps(func)
+        @wraps(func)
         def wrapper(self, *args, **kwargs):
             start_time = time.time()
             result = func(self, *args, **kwargs)
@@ -750,7 +749,7 @@ class TeraTermUI(customtkinter.CTk):
                         else:
                             self.cursor.execute("UPDATE user_data SET update_date=?", (current_date,))
                         self.connection.commit()
-                    except requests.exceptions.RequestException as err:
+                    except RequestException as err:
                         print(f"Error occurred while fetching latest release information: {err}")
                         print("Please check your internet connection and try again.")
                     del latest_version, row_exists
@@ -816,7 +815,7 @@ class TeraTermUI(customtkinter.CTk):
                 not TeraTermUI.window_exists("SSH Authentication") and not self.in_student_frame:
             hwnd = win32gui.FindWindow(None, "uprbay.uprb.edu - Tera Term VT")
             if hwnd and win32gui.IsWindowVisible(hwnd):
-                win32gui.ShowWindow(hwnd, win32con.SW_HIDE)
+                win32gui.ShowWindow(hwnd, SW_HIDE)
 
     def show_all_windows(self):
         if self.state() == "normal" and (self.loading_screen_status is not None and
@@ -841,8 +840,8 @@ class TeraTermUI(customtkinter.CTk):
         self.after(150, app.restore)
         hwnd = win32gui.FindWindow(None, "uprbay.uprb.edu - Tera Term VT")
         if hwnd and not win32gui.IsWindowVisible(hwnd):
-            win32gui.ShowWindow(hwnd, win32con.SW_SHOW)
-            win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+            win32gui.ShowWindow(hwnd, SW_SHOW)
+            win32gui.ShowWindow(hwnd, SW_RESTORE)
 
     def direct_close_on_tray(self):
         if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
@@ -903,8 +902,8 @@ class TeraTermUI(customtkinter.CTk):
 
         hwnd = win32gui.FindWindow(None, "uprbay.uprb.edu - Tera Term VT")
         if hwnd and not win32gui.IsWindowVisible(hwnd):
-            win32gui.ShowWindow(hwnd, win32con.SW_SHOW)
-            win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+            win32gui.ShowWindow(hwnd, SW_SHOW)
+            win32gui.ShowWindow(hwnd, SW_RESTORE)
         self.tray.stop()
         if all(future.done() for future in [self.future_tesseract, self.future_backup, self.future_feedback]):
             self.thread_pool.shutdown(wait=False)
@@ -4156,7 +4155,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # Auto-Enroll classes
     def auto_enroll_event(self, task_done):
-        import pytz
+        from pytz import timezone
 
         with self.lock_thread:
             try:
@@ -4199,7 +4198,7 @@ class TeraTermUI(customtkinter.CTk):
                             active_semesters = TeraTermUI.get_latest_term(copy)
                             date_time_string = re.sub(r"[^a-zA-Z0-9:/ ]", "", date_time_string)
                             date_time_naive = datetime.strptime(date_time_string, "%m/%d/%Y %I:%M %p")
-                            puerto_rico_tz = pytz.timezone("America/Puerto_Rico")
+                            puerto_rico_tz = timezone("America/Puerto_Rico")
                             your_date = puerto_rico_tz.localize(date_time_naive, is_dst=None)
                             # Get current datetime
                             current_date = datetime.now(puerto_rico_tz)
@@ -4292,11 +4291,11 @@ class TeraTermUI(customtkinter.CTk):
 
     # Starts the countdown on when the auto-enroll process will occur
     def countdown(self, your_date):
-        import pytz
+        from pytz import timezone
 
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        puerto_rico_tz = pytz.timezone("America/Puerto_Rico")
+        puerto_rico_tz = timezone("America/Puerto_Rico")
         current_date = datetime.now(puerto_rico_tz)
         time_difference = your_date - current_date
         total_seconds = time_difference.total_seconds()
@@ -4314,8 +4313,8 @@ class TeraTermUI(customtkinter.CTk):
                     self.iconify()
                     hwnd = win32gui.FindWindow(None, "uprbay.uprb.edu - Tera Term VT")
                     if hwnd and not win32gui.IsWindowVisible(hwnd):
-                        win32gui.ShowWindow(hwnd, win32con.SW_SHOW)
-                        win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+                        win32gui.ShowWindow(hwnd, SW_SHOW)
+                        win32gui.ShowWindow(hwnd, SW_RESTORE)
                     app = gw.getWindowsWithTitle("Tera Term UI")[0]
                     app.restore()
                     timer = gw.getWindowsWithTitle(translation["auto_enroll"])[0]
@@ -4330,7 +4329,7 @@ class TeraTermUI(customtkinter.CTk):
                 if TeraTermUI.window_exists(translation["save_pdf"]):
                     def close_file_dialog():
                         file_dialog_hwnd = win32gui.FindWindow("#32770", translation["save_pdf"])
-                        win32gui.PostMessage(file_dialog_hwnd, win32con.WM_CLOSE, 0, 0)
+                        win32gui.PostMessage(file_dialog_hwnd, WM_CLOSE, 0, 0)
                     self.after(2500, close_file_dialog)
                 titles_to_close = [
                     translation["exit"],
@@ -5280,12 +5279,12 @@ class TeraTermUI(customtkinter.CTk):
     def checkIfProcessRunning(processName):
         process = processName.lower()
         try:
-            for proc in psutil.process_iter(attrs=["name"]):
+            for proc in process_iter(attrs=["name"]):
                 proc_name = proc.info.get("name", "").lower()
                 if process in proc_name:
                     return True
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
-            logging.error(f"Exception occurred: {e}")
+        except (NoSuchProcess, AccessDenied, ZombieProcess) as e:
+            print(f"Exception occurred: {e}")
         return False
 
     # function that checks if there's more than 1 instance of Tera Term running
@@ -5294,12 +5293,12 @@ class TeraTermUI(customtkinter.CTk):
         count = 0
         process = processName.lower()
         try:
-            for proc in psutil.process_iter(attrs=["name"]):
+            for proc in process_iter(attrs=["name"]):
                 proc_name = proc.info.get("name", "").lower()
                 if process in proc_name:
                     count += 1
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
-            logging.error(f"Exception occurred: {e}")
+        except (NoSuchProcess, AccessDenied, ZombieProcess) as e:
+            print(f"Exception occurred: {e}")
         return count, (count > 1)
 
     # checks if the specified window exists
@@ -5319,7 +5318,7 @@ class TeraTermUI(customtkinter.CTk):
 
         def window_enum_handler(hwnd, titles):
             if win32gui.IsWindowVisible(hwnd) and win32gui.GetWindowText(hwnd) in titles:
-                win32gui.SendMessage(hwnd, win32con.WM_CLOSE, 0, 0)
+                win32gui.SendMessage(hwnd, WM_CLOSE, 0, 0)
 
         win32gui.EnumWindows(window_enum_handler, titles_to_close)
 
@@ -5367,7 +5366,7 @@ class TeraTermUI(customtkinter.CTk):
             crop_margin = (2, 10, 10, 2)
             if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
                 self.loading_screen.withdraw()
-            with mss.mss() as sct:
+            with mss() as sct:
                 monitor = {
                     "top": y,
                     "left": x,
@@ -5387,7 +5386,7 @@ class TeraTermUI(customtkinter.CTk):
                 return text
         else:
             try:
-                with py7zr.SevenZipFile(self.zip_path, mode="r") as z:
+                with SevenZipFile(self.zip_path, mode="r") as z:
                     z.extractall(self.app_temp_dir)
                 tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
                 pytesseract.pytesseract.tesseract_cmd = str(tesseract_dir / "tesseract.exe")
@@ -5631,11 +5630,11 @@ class TeraTermUI(customtkinter.CTk):
             for ln in last_names:
                 url = f"https://notaso.com/professors/{first_name}-{ln}/"
                 try:
-                    response = requests.head(url)
+                    response = rq_head(url)
                     if response.status_code == 200:
                         webbrowser.open(url)
                         return
-                except requests.RequestException as e:
+                except RequestException as e:
                     print(f"Failed to open URL: {url}, Error: {e}")
 
         instructor_text = cell.cget("text")
@@ -6345,7 +6344,7 @@ class TeraTermUI(customtkinter.CTk):
         self.after(115, reshow_widgets)
 
     def automate_copy_class_data(self):
-        import pyautogui
+        from pyautogui import position, click, moveTo, FailSafeException
 
         max_retries = 5
         original_timeout = timings.Timings.window_find_timeout
@@ -6373,16 +6372,16 @@ class TeraTermUI(customtkinter.CTk):
         self.uprb.UprbayTeraTermVt.type_keys("%c")
         if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
             self.loading_screen.withdraw()
-        original_position = pyautogui.position()
+        original_position = position()
         try:
             quarter_width = self.tera_term_window.width // 4
             center_x = self.tera_term_window.left + quarter_width
             center_y = self.tera_term_window.top + self.tera_term_window.height // 2
-            pyautogui.click(center_x, center_y)
-        except pyautogui.FailSafeException as e:
+            click(center_x, center_y)
+        except FailSafeException as e:
             print("An error occurred:", e)
         finally:
-            pyautogui.moveTo(original_position)
+            moveTo(original_position)
         if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
             self.loading_screen.deiconify()
             
@@ -7420,7 +7419,7 @@ class TeraTermUI(customtkinter.CTk):
         # Unzips Tesseract OCR
         if unzip_tesseract:
             try:
-                with py7zr.SevenZipFile(self.zip_path, mode="r") as z:
+                with SevenZipFile(self.zip_path, mode="r") as z:
                     z.extractall(self.app_temp_dir)
                 tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
                 pytesseract.pytesseract.tesseract_cmd = str(tesseract_dir / "tesseract.exe")
@@ -7475,7 +7474,7 @@ class TeraTermUI(customtkinter.CTk):
                 try:
                     with open(file_path, "rb") as file:
                         raw_data = file.read()
-                        encoding_info = chardet.detect(raw_data)
+                        encoding_info = chardet_detect(raw_data)
                         detected_encoding = encoding_info["encoding"]
 
                     with open(file_path, "r", encoding=detected_encoding) as file:
@@ -7507,13 +7506,13 @@ class TeraTermUI(customtkinter.CTk):
             self.teraterm_not_found = True
 
     def setup_feedback(self):
-        import pyzipper
         from google.oauth2 import service_account
+        from pyzipper import AESZipFile
 
         # Reads from the feedback.json file to connect to Google's Sheets Api for user feedback
         try:
             with open(self.SERVICE_ACCOUNT_FILE, "rb"):
-                archive = pyzipper.AESZipFile(self.SERVICE_ACCOUNT_FILE)
+                archive = AESZipFile(self.SERVICE_ACCOUNT_FILE)
                 archive.setpassword(self.REAZIONE.encode())
                 file_contents = archive.read("feedback.json")
                 credentials_dict = json.loads(file_contents.decode())
@@ -8405,7 +8404,7 @@ class TeraTermUI(customtkinter.CTk):
 
     @staticmethod
     async def fetch(session, url):
-        import aiohttp
+        from aiohttp import ClientConnectionError
 
         try:
             async with session.get(url, timeout=5.0) as response:
@@ -8413,7 +8412,7 @@ class TeraTermUI(customtkinter.CTk):
                     print(f"Non-200 response code: {response.status}")
                     return False
                 return True
-        except aiohttp.ClientConnectionError:
+        except ClientConnectionError:
             print(f"Failed to connect to {url}")
             return False
         except asyncio.TimeoutError:
@@ -8424,11 +8423,11 @@ class TeraTermUI(customtkinter.CTk):
             return False
 
     async def test_connection(self, lang):
-        import aiohttp
+        from aiohttp import ClientSession, TCPConnector
 
         translation = self.load_language(lang)
         urls = ["https://www.google.com/", "https://www.bing.com/", "https://www.yahoo.com/"]
-        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=3)) as session:
+        async with ClientSession(connector=TCPConnector(limit=3)) as session:
             tasks = [self.fetch(session, url) for url in urls]
             results = await asyncio.gather(*tasks, return_exceptions=True)
         connected = any(result for result in results if result is True)
@@ -9311,7 +9310,7 @@ class TeraTermUI(customtkinter.CTk):
         if asyncio.run(self.test_connection(lang)):
             url = f"{self.GITHUB_REPO}/releases/latest"
             try:
-                response = requests.get(url)
+                response = rq_get(url)
 
                 if response.status_code != 200:
                     print(f"Error fetching release information: {response.status_code}")
@@ -9325,7 +9324,7 @@ class TeraTermUI(customtkinter.CTk):
 
                 return latest_version
 
-            except requests.exceptions.RequestException as e:
+            except RequestException as e:
                 print(f"Request failed: {e}")
                 return None
             except Exception as e:
@@ -9370,7 +9369,7 @@ class TeraTermUI(customtkinter.CTk):
             try:
                 with open(file_path, "rb") as file:
                     raw_data = file.read()
-                    encoding_info = chardet.detect(raw_data)
+                    encoding_info = chardet_detect(raw_data)
                     detected_encoding = encoding_info["encoding"]
                 with open(file_path, "r", encoding=detected_encoding) as file:
                     lines = file.readlines()
@@ -9412,7 +9411,7 @@ class TeraTermUI(customtkinter.CTk):
             try:
                 with open(file_path, "rb") as file:
                     raw_data = file.read()
-                    encoding_info = chardet.detect(raw_data)
+                    encoding_info = chardet_detect(raw_data)
                     detected_encoding = encoding_info["encoding"]
                 with open(file_path, "r", encoding=detected_encoding) as file:
                     lines = file.readlines()
@@ -9458,7 +9457,7 @@ class TeraTermUI(customtkinter.CTk):
         try:
             with open(file_path, "rb") as file:
                 raw_data = file.read()
-                encoding_info = chardet.detect(raw_data)
+                encoding_info = chardet_detect(raw_data)
                 detected_encoding = encoding_info["encoding"]
             with open(file_path, "r", encoding=detected_encoding) as file:
                 lines = file.readlines()
