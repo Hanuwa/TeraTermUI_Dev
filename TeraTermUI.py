@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 6/11/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 6/12/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -8229,7 +8229,7 @@ class TeraTermUI(customtkinter.CTk):
         self.check_process_thread.start()
 
     def check_process_periodically(self):
-        from pyautogui import move, moveTo, press, FailSafeException
+        from pyautogui import press
 
         self.update_idletasks()
         time.sleep(30 + random.uniform(5, 25))
@@ -8238,14 +8238,8 @@ class TeraTermUI(customtkinter.CTk):
             if self.loading_screen_status is None:
                 idle_time = get_idle_duration()
                 if idle_time >= 180:
-                    try:
-                        move(1, 0)
-                        move(-1, 0)
-                        press("shift")
-                    except FailSafeException as e:
-                        print("An error occurred during move operation:", e)
-                        press("shift")
-                        moveTo(100, 100)
+                    press("scrollock")
+                    self.after(1000, press, "scrollock")
                 is_running = TeraTermUI.checkIfProcessRunning("ttermpro")
                 if is_running:
                     if not_running_count > 1 and not self.is_idle_thread_running:
