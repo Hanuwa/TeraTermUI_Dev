@@ -8229,8 +8229,8 @@ class TeraTermUI(customtkinter.CTk):
         self.check_process_thread.start()
 
     def check_process_periodically(self):
-        from pyautogui import move, moveTo, FailSafeException
-        
+        from pyautogui import move, moveTo, press, FailSafeException
+
         self.update_idletasks()
         time.sleep(30 + random.uniform(5, 25))
         not_running_count = 0
@@ -8241,8 +8241,10 @@ class TeraTermUI(customtkinter.CTk):
                     try:
                         move(1, 0)
                         move(-1, 0)
+                        press("shift")
                     except FailSafeException as e:
                         print("An error occurred during move operation:", e)
+                        press("shift")
                         moveTo(100, 100)
                 is_running = TeraTermUI.checkIfProcessRunning("ttermpro")
                 if is_running:
