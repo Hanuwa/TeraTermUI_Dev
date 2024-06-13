@@ -8295,9 +8295,9 @@ class TeraTermUI(customtkinter.CTk):
                     idle_time = get_idle_duration()
                     if idle_time >= threshold:
                         pyautogui.FAILSAFE = False
-                        pyautogui.press("capslock")
+                        pyautogui.press("volumedown")
                         time.sleep(1)
-                        pyautogui.press("capslock")
+                        pyautogui.press("volumeup")
                 is_running = TeraTermUI.checkIfProcessRunning("ttermpro")
                 if is_running:
                     if not_running_count > 1 and not self.is_idle_thread_running:
