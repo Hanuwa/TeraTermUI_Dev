@@ -8289,14 +8289,17 @@ class TeraTermUI(customtkinter.CTk):
                 threshold = power_timeout["AC Power Setting"] / 2
             else:
                 threshold = 120
+        pyautogui.FAILSAFE = False
         while self.is_check_process_thread_running and not self.stop_is_check_process.is_set():
             if self.loading_screen_status is None:
                 if threshold is not None:
                     idle_time = get_idle_duration()
                     if idle_time >= threshold:
-                        pyautogui.FAILSAFE = False
-                        for i in range(0, 3): 
-                            pyautogui.press("shift")
+                        ES_DISPLAY_REQUIRED = 0x00000002
+                        ctypes.windll.kernel32.SetThreadExecutionState(ES_DISPLAY_REQUIRED)
+                        pyautogui.press("scrolllock")
+                        time.sleep(1)
+                        pyautogui.press("scrolllock")
                 is_running = TeraTermUI.checkIfProcessRunning("ttermpro")
                 if is_running:
                     if not_running_count > 1 and not self.is_idle_thread_running:
