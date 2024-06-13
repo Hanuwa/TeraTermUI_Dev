@@ -8279,7 +8279,7 @@ class TeraTermUI(customtkinter.CTk):
         power_timeout = TeraTermUI.get_power_timeout()
         device_type = TeraTermUI.get_device_type()
         if power_timeout is None:
-            threshold = 150
+            threshold = 120
         elif power_timeout == "off":
             threshold = None
         else:
@@ -8288,16 +8288,15 @@ class TeraTermUI(customtkinter.CTk):
             elif device_type == "desktop":
                 threshold = power_timeout["AC Power Setting"] / 2
             else:
-                threshold = 150
+                threshold = 120
         while self.is_check_process_thread_running and not self.stop_is_check_process.is_set():
             if self.loading_screen_status is None:
                 if threshold is not None:
                     idle_time = get_idle_duration()
                     if idle_time >= threshold:
                         pyautogui.FAILSAFE = False
-                        pyautogui.press("volumedown")
-                        time.sleep(1)
-                        pyautogui.press("volumeup")
+                        for i in range(0, 3): 
+                            pyautogui.press("shift")
                 is_running = TeraTermUI.checkIfProcessRunning("ttermpro")
                 if is_running:
                     if not_running_count > 1 and not self.is_idle_thread_running:
@@ -8321,7 +8320,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.is_idle_thread_running = False
                         self.reset_activity_timer()
             self.update_idletasks()
-            time.sleep(30 + random.uniform(5, 25))
+            time.sleep(30 + random.uniform(5, 15))
 
     # Starts the check for idle thread
     def start_check_idle_thread(self):
