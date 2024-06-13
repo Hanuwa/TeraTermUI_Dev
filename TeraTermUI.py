@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 6/12/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 6/13/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -6351,7 +6351,7 @@ class TeraTermUI(customtkinter.CTk):
         self.after(125, reshow_widgets)
 
     def automate_copy_class_data(self):
-        from pyautogui import position, click, moveTo, FailSafeException
+        import pyautogui
 
         max_retries = 5
         original_timeout = timings.Timings.window_find_timeout
@@ -6379,16 +6379,13 @@ class TeraTermUI(customtkinter.CTk):
         self.uprb.UprbayTeraTermVt.type_keys("%c")
         if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
             self.loading_screen.withdraw()
-        original_position = position()
-        try:
-            quarter_width = self.tera_term_window.width // 4
-            center_x = self.tera_term_window.left + quarter_width
-            center_y = self.tera_term_window.top + self.tera_term_window.height // 2
-            click(center_x, center_y)
-        except FailSafeException as e:
-            print("An error occurred:", e)
-        finally:
-            moveTo(original_position)
+        pyautogui.FAILSAFE = False
+        original_position = pyautogui.position()
+        quarter_width = self.tera_term_window.width // 4
+        center_x = self.tera_term_window.left + quarter_width
+        center_y = self.tera_term_window.top + self.tera_term_window.height // 2
+        pyautogui.click(center_x, center_y)
+        pyautogui.moveTo(original_position)
         if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
             self.loading_screen.deiconify()
             
@@ -8222,6 +8219,51 @@ class TeraTermUI(customtkinter.CTk):
                 ctypes.windll.user32.BlockInput(False)
                 self.fix_execution_event_completed = True
 
+    @staticmethod
+    def get_device_type():
+        try:
+            result = subprocess.run(
+                ["powershell", "-Command", "(Get-WmiObject -Class Win32_Battery).Status"],
+                stdout=subprocess.PIPE, text=True, creationflags=subprocess.CREATE_NO_WINDOW
+            )
+            if "BatteryStatus" in result.stdout:
+                return "laptop"
+            else:
+                return "desktop"
+        except Exception as e:
+            print(f"Error determining device type: {e}")
+            return None
+
+    @staticmethod
+    def get_power_timeout():
+        def query_timeout(subgroup, setting):
+            try:
+                result = subprocess.run(
+                    ["powercfg", "/query", "SCHEME_CURRENT", subgroup, setting],
+                    stdout=subprocess.PIPE, text=True, creationflags=subprocess.CREATE_NO_WINDOW
+                )
+                output = result.stdout
+                ac_match = re.search(r"Current AC Power Setting Index: 0x([0-9a-fA-F]+)", output)
+                dc_match = re.search(r"Current DC Power Setting Index: 0x([0-9a-fA-F]+)", output)
+                if ac_match and dc_match:
+                    ac_setting = int(ac_match.group(1), 16)
+                    dc_setting = int(dc_match.group(1), 16)
+                    if ac_setting == 0xffffffff and dc_setting == 0xffffffff:
+                        return "off"
+
+                    return {
+                        "AC Power Setting": ac_setting,
+                        "DC Power Setting": dc_setting
+                    }
+            except Exception as e:
+                print(f"Error querying power settings: {e}")
+                return None
+
+        power_timeout = query_timeout("SUB_VIDEO", "VIDEOIDLE") or \
+                        query_timeout("SUB_SLEEP", "HIBERNATEIDLE")
+
+        return power_timeout if power_timeout else None
+
     def start_check_process_thread(self):
         self.is_check_process_thread_running = True
         self.check_process_thread = threading.Thread(target=self.check_process_periodically)
@@ -8229,17 +8271,33 @@ class TeraTermUI(customtkinter.CTk):
         self.check_process_thread.start()
 
     def check_process_periodically(self):
-        from pyautogui import press
+        import pyautogui
 
         self.update_idletasks()
         time.sleep(30 + random.uniform(5, 25))
         not_running_count = 0
+        power_timeout = TeraTermUI.get_power_timeout()
+        device_type = TeraTermUI.get_device_type()
+        if power_timeout is None:
+            threshold = 150
+        elif power_timeout == "off":
+            threshold = None
+        else:
+            if device_type == "laptop":
+                threshold = power_timeout["DC Power Setting"] * 3 / 4
+            elif device_type == "desktop":
+                threshold = power_timeout["AC Power Setting"] * 3 / 4
+            else:
+                threshold = 150
         while self.is_check_process_thread_running and not self.stop_is_check_process.is_set():
             if self.loading_screen_status is None:
-                idle_time = get_idle_duration()
-                if idle_time >= 180:
-                    press("scrollock")
-                    self.after(1000, press, "scrollock")
+                if threshold is not None:
+                    idle_time = get_idle_duration()
+                    if idle_time >= threshold:
+                        pyautogui.FAILSAFE = False
+                        pyautogui.press("capslock")
+                        time.sleep(1)
+                        pyautogui.press("capslock")
                 is_running = TeraTermUI.checkIfProcessRunning("ttermpro")
                 if is_running:
                     if not_running_count > 1 and not self.is_idle_thread_running:
