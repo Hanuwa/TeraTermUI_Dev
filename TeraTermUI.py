@@ -8284,9 +8284,9 @@ class TeraTermUI(customtkinter.CTk):
             threshold = None
         else:
             if device_type == "laptop":
-                threshold = power_timeout["DC Power Setting"] * 3 / 4
+                threshold = power_timeout["DC Power Setting"] / 2
             elif device_type == "desktop":
-                threshold = power_timeout["AC Power Setting"] * 3 / 4
+                threshold = power_timeout["AC Power Setting"] / 2
             else:
                 threshold = 150
         while self.is_check_process_thread_running and not self.stop_is_check_process.is_set():
