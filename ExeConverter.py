@@ -109,9 +109,7 @@ def generate_checksum(version_filename, executable_filename, manifest_filename):
             manifest_content = file.read()
         new_manifest_content = re.sub(
             r'<file name="TeraTermUI\.exe" hashalg="SHA256" hash=".*?"/>',
-            f'<file name="TeraTermUI.exe" hashalg="SHA256" hash="{sha256_checksum}"/>',
-            manifest_content
-        )
+            f'<file name="TeraTermUI.exe" hashalg="SHA256" hash="{sha256_checksum}"/>', manifest_content)
         with open(manifest_filename, "w") as file:
             file.write(new_manifest_content)
         print(Fore.GREEN + "\nSuccessfully generated SHA-256 Checksum\n" + Style.RESET_ALL)
@@ -460,6 +458,15 @@ for version in versions:
             shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
             os.remove(program_backup)
             print(Fore.RED + f"Error creating zip file: {e}\n" + Style.RESET_ALL)
+
+manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
+with open(manifest_path, "r") as file:
+    manifest_content = file.read()
+    cleared_manifest_content = re.sub(
+            r'<file name="TeraTermUI\.exe" hashalg="SHA256" hash=".*?"/>',
+            '<file name="TeraTermUI.exe" hashalg="SHA256" hash=""/>', manifest_content)
+with open(manifest_path, "w") as file:
+    file.write(cleared_manifest_content)
 
 print(Fore.GREEN + "Both versions (installer and portable) have been created successfully.\n"
       + Style.RESET_ALL)
