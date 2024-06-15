@@ -468,7 +468,6 @@ with open(manifest_path, "r") as file:
 with open(manifest_path, "w") as file:
     file.write(cleared_manifest_content)
 
-print(Fore.GREEN + "Both versions (installer and portable) have been created successfully.\n"
-      + Style.RESET_ALL)
+print(Fore.GREEN + "Both versions (installer and portable) have been created successfully.\n" + Style.RESET_ALL)
 os.remove(program_backup)
 sys.exit(0)
