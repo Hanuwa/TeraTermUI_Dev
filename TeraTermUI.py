@@ -89,7 +89,7 @@ from PIL import Image
 customtkinter.set_appearance_mode("System")
 customtkinter.set_default_color_theme("blue")
 warnings.filterwarnings("ignore", message="32-bit application should be automated using 32-bit Python")
-gc.set_threshold(3500, 100, 100)
+gc.set_threshold(5000, 100, 100)
 
 
 def measure_time(threshold):
