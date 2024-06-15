@@ -14,11 +14,6 @@
       />
     </dependentAssembly>
   </dependency>
-  <supportedOS>
-    <osVersion name="Windows 11"/>
-    <osVersion name="Windows 10"/>
-    <osVersion name="Windows 8.1"/>
-  </supportedOS>
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
     <security>
       <requestedPrivileges>
@@ -31,5 +26,15 @@
       <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/pm</dpiAware>
     </windowsSettings>
   </application>
+  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+    <application>
+      <!-- Windows 11 -->
+      <supportedOS Id="{d5ab07d4-2026-4b08-8f59-a18dcbb5d8ff}"/>
+      <!-- Windows 10 -->
+      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"/>
+      <!-- Windows 8.1 -->
+      <supportedOS Id="{4f3a8aa2-8503-47f4-a5b9-d19f1f98d442}"/>
+    </application>
+  </compatibility>
   <file name="TeraTermUI.exe" hashalg="SHA256" hash=""/>
 </assembly>
