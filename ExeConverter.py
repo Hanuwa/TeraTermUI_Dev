@@ -112,7 +112,7 @@ def generate_checksum(version_filename, executable_filename, manifest_filename):
             f'<file name="TeraTermUI.exe" hashalg="SHA256" hash="{sha256_checksum}"/>', manifest_content)
         with open(manifest_filename, "w") as file:
             file.write(new_manifest_content)
-        print(Fore.GREEN + "\nSuccessfully generated SHA-256 Checksum\n" + Style.RESET_ALL)
+        print(Fore.GREEN + "Successfully generated SHA-256 Checksum\n" + Style.RESET_ALL)
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
         os.remove(program_backup)
