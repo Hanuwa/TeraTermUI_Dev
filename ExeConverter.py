@@ -76,7 +76,7 @@ def attach_manifest(executable_path, manifest_path):
         print(Fore.RED + f"Failed to attach manifest: {e}\n" + Style.RESET_ALL)
 
 
-def generate_checksum(version_filename, executable_filename):
+def generate_checksum(version_filename, executable_filename, manifest_filename):
     try:
         sha256_hash = hashlib.sha256()
         with open(executable_filename, "rb") as f:
@@ -84,27 +84,37 @@ def generate_checksum(version_filename, executable_filename):
                 sha256_hash.update(byte_block)
         sha256_checksum = sha256_hash.hexdigest()
 
-        try:
-            with open(version_filename, "r") as file:
-                lines = file.readlines()
-        except FileNotFoundError:
-            lines = []
+        if version_filename:
+            try:
+                with open(version_filename, "r") as file:
+                    lines = file.readlines()
+            except FileNotFoundError:
+                lines = []
 
-        checksum_line = f"SHA-256 Checksum: {sha256_checksum}\n"
-        checksum_updated = False
+            checksum_line = f"SHA-256 Checksum: {sha256_checksum}\n"
+            checksum_updated = False
 
-        with open(version_filename, "w") as file:
-            for line in lines:
-                if line.startswith("SHA-256 Checksum:"):
-                    file.write(checksum_line)
-                    checksum_updated = True
-                else:
-                    file.write(line)
+            with open(version_filename, "w") as file:
+                for line in lines:
+                    if line.startswith("SHA-256 Checksum:"):
+                        file.write(checksum_line)
+                        checksum_updated = True
+                    else:
+                        file.write(line)
 
-            if not checksum_updated:
-                file.write("\n" + checksum_line)
+                if not checksum_updated:
+                    file.write("\n" + checksum_line)
 
-        print(Fore.GREEN + "\nSuccessfully generated SHA-256 Checksum" + Style.RESET_ALL)
+        with open(manifest_filename, "r") as file:
+            manifest_content = file.read()
+        new_manifest_content = re.sub(
+            r'<file name="TeraTermUI\.exe" hashalg="SHA256" hash=".*?"/>',
+            f'<file name="TeraTermUI.exe" hashalg="SHA256" hash="{sha256_checksum}"/>',
+            manifest_content
+        )
+        with open(manifest_filename, "w") as file:
+            file.write(new_manifest_content)
+        print(Fore.GREEN + "\nSuccessfully generated SHA-256 Checksum\n" + Style.RESET_ALL)
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
         os.remove(program_backup)
@@ -264,6 +274,7 @@ try:
             )
             subprocess.run(nuitka_updater_command, shell=True, check=True)
             manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
+            generate_checksum(None, updater_exe_path, manifest_path)
             attach_manifest(updater_exe_path, manifest_path)
             shutil.copy2(updater_exe_path, updater_dist_path)
             shutil.copy2(updater_exe_path, output_directory)
@@ -367,8 +378,8 @@ for version in versions:
         executable_path = os.path.join(output_directory, "TeraTermUI.dist", "TeraTermUI.exe")
         version_path = os.path.join(output_directory, "TeraTermUI.dist", "VERSION.txt")
         manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
+        generate_checksum(version_path, executable_path, manifest_path)
         attach_manifest(executable_path, manifest_path)
-        generate_checksum(version_path, executable_path)
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
         os.remove(program_backup)
