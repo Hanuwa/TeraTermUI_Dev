@@ -8287,9 +8287,9 @@ class TeraTermUI(customtkinter.CTk):
             threshold = None
         else:
             if device_type == "laptop":
-                threshold = power_timeout["DC Power Setting"] * 3/10
+                threshold = power_timeout["DC Power Setting"] * 1 / 4
             elif device_type == "desktop":
-                threshold = power_timeout["AC Power Setting"] * 3/10
+                threshold = power_timeout["AC Power Setting"] * 1 / 4
             else:
                 threshold = 120
         pyautogui.FAILSAFE = False
