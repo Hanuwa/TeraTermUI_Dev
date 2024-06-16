@@ -89,7 +89,7 @@ def attach_manifest(executable_path, manifest_path):
         )
         with open(manifest_path, "w") as file:
             file.write(cleared_manifest_content)
-        print(Fore.GREEN + "Successfully attached manifest\n" + Style.RESET_ALL)
+        print(Fore.GREEN + "Successfully attached manifest" + Style.RESET_ALL)
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
         os.remove(program_backup)
