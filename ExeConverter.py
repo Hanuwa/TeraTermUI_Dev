@@ -24,10 +24,10 @@ def extract_version_main_file(filepath):
             if "v" in line:
                 positions = [pos for pos, char in enumerate(line) if char == "v"]
                 for pos in positions:
-                    if line[pos+1].isdigit():
+                    if line[pos + 1].isdigit():
                         start_pos = pos + 1
                         end_pos = line[start_pos:].find(" ")
-                        return line[start_pos:start_pos+end_pos]
+                        return line[start_pos:start_pos + end_pos]
         return None
 
 
@@ -64,7 +64,32 @@ def check_and_restore_backup():
 
 def attach_manifest(executable_path, manifest_path):
     try:
-        subprocess.run(f"mt.exe -manifest {manifest_path} -outputresource:{executable_path};1",  check=True)
+        sha1_hash = hashlib.sha1()
+        with open(executable_path, "rb") as f:
+            for byte_block in iter(lambda: f.read(4096), b""):
+                sha1_hash.update(byte_block)
+        sha1_checksum = sha1_hash.hexdigest()
+
+        with open(manifest_path, "r") as file:
+            manifest_content = file.read()
+        updated_manifest_content = re.sub(
+            r'<file name="TeraTermUI\.exe" hashalg="SHA1" hash=".*?"/>',
+            f'<file name="TeraTermUI.exe" hashalg="SHA1" hash="{sha1_checksum}"/>',
+            manifest_content
+        )
+        with open(manifest_path, "w") as file:
+            file.write(updated_manifest_content)
+
+        subprocess.run(f"mt.exe -manifest {manifest_path} -outputresource:{executable_path};1", check=True)
+
+        cleared_manifest_content = re.sub(
+            r'<file name="TeraTermUI\.exe" hashalg="SHA1" hash=".*?"/>',
+            '<file name="TeraTermUI.exe" hashalg="SHA1" hash=""/>',
+            updated_manifest_content
+        )
+        with open(manifest_path, "w") as file:
+            file.write(cleared_manifest_content)
+        print(Fore.GREEN + "Successfully attached manifest\n" + Style.RESET_ALL)
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
         os.remove(program_backup)
@@ -76,7 +101,7 @@ def attach_manifest(executable_path, manifest_path):
         print(Fore.RED + f"Failed to attach manifest: {e}\n" + Style.RESET_ALL)
 
 
-def generate_checksum(version_filename, executable_filename, manifest_filename):
+def generate_checksum(version_filename, executable_filename):
     try:
         sha256_hash = hashlib.sha256()
         with open(executable_filename, "rb") as f:
@@ -104,14 +129,6 @@ def generate_checksum(version_filename, executable_filename, manifest_filename):
 
                 if not checksum_updated:
                     file.write("\n" + checksum_line)
-
-        with open(manifest_filename, "r") as file:
-            manifest_content = file.read()
-        new_manifest_content = re.sub(
-            r'<file name="TeraTermUI\.exe" hashalg="SHA256" hash=".*?"/>',
-            f'<file name="TeraTermUI.exe" hashalg="SHA256" hash="{sha256_checksum}"/>', manifest_content)
-        with open(manifest_filename, "w") as file:
-            file.write(new_manifest_content)
         print(Fore.GREEN + "Successfully generated SHA-256 Checksum\n" + Style.RESET_ALL)
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
@@ -141,7 +158,7 @@ def freeze_requirements(project_directory):
         print(Fore.RED + f"Failed to create requirements.txt: {e}" + Style.RESET_ALL)
     finally:
         os.chdir(original_dir)
-        
+
 
 def validate_version(ver_str: str) -> bool:
     pattern = r"^[vV]?([0-9]{1,3}\.[0-9]{1,3}(\.[0-9]{1,3})?|[0-9]{1,3})$"
@@ -272,7 +289,7 @@ try:
             )
             subprocess.run(nuitka_updater_command, shell=True, check=True)
             manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
-            generate_checksum(None, updater_exe_path, manifest_path)
+            generate_checksum(None, updater_exe_path)
             attach_manifest(updater_exe_path, manifest_path)
             shutil.copy2(updater_exe_path, updater_dist_path)
             shutil.copy2(updater_exe_path, output_directory)
@@ -300,14 +317,14 @@ except Exception as e:
     os.remove(program_backup)
     print(Fore.RED + f"Failed to reset database: {e}\n" + Style.RESET_ALL)
 try:
-    with open(project_directory+r"\TeraTermUI.py", "r", encoding="utf-8") as file:
+    with open(project_directory + r"\TeraTermUI.py", "r", encoding="utf-8") as file:
         data = file.read()
     if 'self.mode = "Portable"' in data:
         versions = ["installer", "portable"]
     else:
         versions = ["portable", "installer"]
     data = re.sub(r'self.USER_APP_VERSION = ".*?"', f'self.USER_APP_VERSION = "{update_without_v}"', data)
-    with open(project_directory+r"\TeraTermUI.py", "w", encoding="utf-8") as file:
+    with open(project_directory + r"\TeraTermUI.py", "w", encoding="utf-8") as file:
         file.write(data)
     shutil.copy2(project_directory + r"\TeraTermUI.py", program_backup)
 except KeyboardInterrupt as e:
@@ -323,7 +340,7 @@ except Exception as e:
 for version in versions:
     script = None
     try:
-        with open(project_directory+r"\TeraTermUI.py", "r", encoding="utf-8") as file:
+        with open(project_directory + r"\TeraTermUI.py", "r", encoding="utf-8") as file:
             data = file.read()
         if version == "installer":
             script = "installer"
@@ -359,7 +376,7 @@ for version in versions:
             data = data.replace('with open(self.logs, "a")',
                                 'with open(TeraTermUI.get_absolute_path("logs.txt"), "a")')
             print(Fore.GREEN + "Successfully started portable version\n" + Style.RESET_ALL)
-        with open(project_directory+r"\TeraTermUI.py", "w", encoding="utf-8") as file:
+        with open(project_directory + r"\TeraTermUI.py", "w", encoding="utf-8") as file:
             file.write(data)
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
@@ -376,7 +393,7 @@ for version in versions:
         executable_path = os.path.join(output_directory, "TeraTermUI.dist", "TeraTermUI.exe")
         version_path = os.path.join(output_directory, "TeraTermUI.dist", "VERSION.txt")
         manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
-        generate_checksum(version_path, executable_path, manifest_path)
+        generate_checksum(version_path, executable_path)
         attach_manifest(executable_path, manifest_path)
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
@@ -427,7 +444,7 @@ for version in versions:
             os.remove(program_backup)
             print(Fore.RED + f"Error compiling Inno Setup script: {e}\n" + Style.RESET_ALL)
         try:
-            shutil.move(output_directory + r"\output\TeraTermUI_64-bit_Installer-"+update+".exe", output_directory)
+            shutil.move(output_directory + r"\output\TeraTermUI_64-bit_Installer-" + update + ".exe", output_directory)
             shutil.rmtree(output_directory + r"\output")
             print(Fore.GREEN + "Successfully completed installer version\n" + Style.RESET_ALL)
         except KeyboardInterrupt as e:
@@ -443,7 +460,7 @@ for version in versions:
     elif script == "portable":
         try:
             os.rename(output_directory + r"\TeraTermUI.dist", output_directory + r"\TeraTermUI")
-            zip_file_path = output_directory + fr"\{app_folder}-"+update+""
+            zip_file_path = output_directory + fr"\{app_folder}-" + update + ""
             shutil.make_archive(zip_file_path, "zip", output_directory, app_folder)
             version_path = os.path.join(output_directory, app_folder, "VERSION.txt")
             destination_path = os.path.join(project_directory, "VERSION.txt")
@@ -458,15 +475,6 @@ for version in versions:
             shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
             os.remove(program_backup)
             print(Fore.RED + f"Error creating zip file: {e}\n" + Style.RESET_ALL)
-
-manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
-with open(manifest_path, "r") as file:
-    manifest_content = file.read()
-    cleared_manifest_content = re.sub(
-            r'<file name="TeraTermUI\.exe" hashalg="SHA256" hash=".*?"/>',
-            '<file name="TeraTermUI.exe" hashalg="SHA256" hash=""/>', manifest_content)
-with open(manifest_path, "w") as file:
-    file.write(cleared_manifest_content)
 
 print(Fore.GREEN + "Both versions (installer and portable) have been created successfully.\n" + Style.RESET_ALL)
 os.remove(program_backup)
