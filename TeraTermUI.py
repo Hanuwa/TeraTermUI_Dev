@@ -8306,7 +8306,6 @@ class TeraTermUI(customtkinter.CTk):
                         self.after(50, not_running)
                     if not_running_count > 1:
                         self.stop_check_process_thread()
-
             time.sleep(30 + random.uniform(5, 15))
 
     def stop_check_idle_thread(self):
