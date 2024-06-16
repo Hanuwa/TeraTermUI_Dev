@@ -8284,7 +8284,6 @@ class TeraTermUI(customtkinter.CTk):
                         pyautogui.press("scrolllock")
                         time.sleep(1)
                         pyautogui.press("scrolllock")
-                        self.update_idletasks()
                 is_running = TeraTermUI.checkIfProcessRunning("ttermpro")
                 if is_running:
                     if not_running_count > 1 and self.stop_check_idle.is_set():
