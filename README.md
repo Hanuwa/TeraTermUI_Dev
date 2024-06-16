@@ -1,7 +1,7 @@
 # Tera Term UI Dev
 Dev Environment for Tera Term UI (Virtualenv)
 
-**App Version:** "0.9.5" | **Python Version:** "3.12.4" | **Tesseract Version:** "5.4.0"
+**App Version:** "0.9.5" | **Python Version:** "3.12.4" | **Tesseract Version:** "5.4.0" | **C Compiler: MSVC**
 
 **Important** modules of "**ctkmessagebox.py, ctk_input_dialog.py, ctk_scrollable_frame.py, ctk_tabview.py, ctk_toplevel.py,
 ctk_textbox.py, ctk_scrollbar.py, ctk_checkbox.py, ctk_radiobutton.py, ctk_switch.py, ctk_optionmenu.py, appearance_mode_tracker.py,
@@ -27,4 +27,4 @@ https://github.com/TomSchimansky/CustomTkinter & https://customtkinter.tomschima
       
 # Convert from .py to .exe
 We convert the application to an executable using Nuitka, which is a library that basically coverts your python code into C then it compiles and bundles your application together
-and makes the .py file into an executable, it's a really good tool and it even increases the performance of some tasks. https://github.com/Nuitka/Nuitka 
+and makes the .py file into an executable **(C compiler required)**, it's a really good tool and it even increases the performance of some tasks. https://github.com/Nuitka/Nuitka 
