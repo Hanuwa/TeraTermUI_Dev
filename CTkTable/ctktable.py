@@ -371,6 +371,7 @@ class CTkTable(customtkinter.CTkFrame):
                         else:
                             cell.configure(text=new_value)
         self.values = new_values
+        self.update_idletasks()
 
     def add_row(self, values, index=None, **kwargs):
         """ add a new row """
@@ -807,3 +808,4 @@ class CTkTable(customtkinter.CTkFrame):
         self.data.clear()
         self.values = None
         super().destroy()
+        
