@@ -17,7 +17,7 @@ class ScalingTracker:
 
     update_loop_running = False
     update_loop_interval = 500  # ms
-    loop_pause_after_new_scaling = 2000  # ms
+    loop_pause_after_new_scaling = 1000  # ms
 
     @classmethod
     def get_widget_scaling(cls, widget) -> float:
