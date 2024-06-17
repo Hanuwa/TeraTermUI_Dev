@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 6/16/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 6/17/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -185,8 +185,6 @@ class TeraTermUI(customtkinter.CTk):
         self.feedback_send = None
         self.search_box = None
         self.class_list = None
-        self.status_minimized = None
-        self.help_minimized = None
         self.checkbox_state = None
         self.get_class_for_pdf = None
         self.get_semester_for_pdf = None
@@ -803,9 +801,9 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language(lang)
         if TeraTermUI.window_exists(translation["dialog_title"]):
             self.dialog.destroy()
-        if self.status is not None and self.status.winfo_exists() and not self.status_minimized:
+        if self.status is not None and self.status.winfo_exists():
             self.status.withdraw()
-        if self.help is not None and self.help.winfo_exists() and not self.help_minimized:
+        if self.help is not None and self.help.winfo_exists():
             self.help.withdraw()
         if self.timer_window is not None and self.timer_window.winfo_exists():
             self.timer_window.withdraw()
@@ -826,9 +824,9 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         self.iconify()
-        if self.status is not None and self.status.winfo_exists() and not self.status_minimized:
+        if self.status is not None and self.status.winfo_exists():
             self.status.iconify()
-        if self.help is not None and self.help.winfo_exists() and not self.help_minimized:
+        if self.help is not None and self.help.winfo_exists():
             self.help.iconify()
         if self.timer_window is not None and self.timer_window.winfo_exists():
             self.timer_window.iconify()
@@ -1118,7 +1116,6 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language(lang)
                 self.reset_activity_timer()
                 self.after(100, self.set_focus_to_tkinter)
-                self.after(100, self.show_sidebar_windows)
                 if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -1480,7 +1477,6 @@ class TeraTermUI(customtkinter.CTk):
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 self.after(100, self.set_focus_to_tkinter)
-                self.after(100, self.show_sidebar_windows)
                 if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -1679,7 +1675,6 @@ class TeraTermUI(customtkinter.CTk):
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 self.after(100, self.set_focus_to_tkinter)
-                self.after(100, self.show_sidebar_windows)
                 if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -1821,7 +1816,6 @@ class TeraTermUI(customtkinter.CTk):
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 self.after(100, self.set_focus_to_tkinter)
-                self.after(100, self.show_sidebar_windows)
                 if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -2267,7 +2261,6 @@ class TeraTermUI(customtkinter.CTk):
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 self.after(100, self.set_focus_to_tkinter)
-                self.after(100, self.show_sidebar_windows)
                 if not self.error_auto_enroll:
                     self.started_auto_enroll = False
                 if self.error_occurred and not self.timeout_occurred:
@@ -2664,7 +2657,6 @@ class TeraTermUI(customtkinter.CTk):
                     self.after(100, self.set_focus_to_tkinter)
                 else:
                     self.after(100, self.focus_tera_term)
-                self.after(100, self.show_sidebar_windows)
                 self.focus_or_not = False
                 if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
@@ -2758,7 +2750,6 @@ class TeraTermUI(customtkinter.CTk):
                     self.after(100, self.set_focus_to_tkinter)
                 else:
                     self.after(100, self.focus_tera_term)
-                self.after(100, self.show_sidebar_windows)
                 if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -2839,7 +2830,6 @@ class TeraTermUI(customtkinter.CTk):
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 self.after(100, self.set_focus_to_tkinter)
-                self.after(100, self.show_sidebar_windows)
                 if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -2969,7 +2959,6 @@ class TeraTermUI(customtkinter.CTk):
                 task_done.set()
                 self.reset_activity_timer()
                 self.after(100, self.set_focus_to_tkinter)
-                self.after(100, self.show_sidebar_windows)
                 if self.server_status == "Maintenance message found" or self.server_status == "Timeout":
                     self.after(3500, self.go_back_event)
                 elif self.error_occurred:
@@ -3033,7 +3022,6 @@ class TeraTermUI(customtkinter.CTk):
         self.ask_skip_auth = False
         if self.help and self.help.winfo_exists():
             self.on_help_window_close()
-            self.help_button_event()
         self.bind("<Return>", lambda event: self.student_event_handler())
         self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
         self.system.configure(state="normal")
@@ -3204,7 +3192,6 @@ class TeraTermUI(customtkinter.CTk):
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 self.after(100, self.set_focus_to_tkinter)
-                self.after(100, self.show_sidebar_windows)
                 if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -4273,7 +4260,6 @@ class TeraTermUI(customtkinter.CTk):
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 self.after(100, self.set_focus_to_tkinter)
-                self.after(100, self.show_sidebar_windows)
                 if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -7275,7 +7261,6 @@ class TeraTermUI(customtkinter.CTk):
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
                 self.after(100, self.set_focus_to_tkinter)
-                self.after(100, self.show_sidebar_windows)
                 if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -7845,7 +7830,6 @@ class TeraTermUI(customtkinter.CTk):
     def automation_preparations(self):
         self.focus_set()
         self.destroy_windows()
-        self.hide_sidebar_windows()
         self.unbind("<Return>")
         TeraTermUI.check_and_update_border_color(self)
         if self.tooltip is not None and self.tooltip.winfo_exists():
@@ -8187,7 +8171,6 @@ class TeraTermUI(customtkinter.CTk):
                 lang = self.language_menu.get()
                 self.after(100, self.set_focus_to_tkinter)
                 self.after(0, self.switch_tab)
-                self.after(100, self.show_sidebar_windows)
                 translation = self.load_language(lang)
                 if error_occurred:
                     def error_automation():
@@ -8242,7 +8225,7 @@ class TeraTermUI(customtkinter.CTk):
                 print(f"Error querying power settings: {e}")
                 return None
 
-        power_timeout = (query_timeout("SUB_VIDEO", "VIDEOIDLE") or 
+        power_timeout = (query_timeout("SUB_VIDEO", "VIDEOIDLE") or
                          query_timeout("SUB_SLEEP", "HIBERNATEIDLE"))
 
         return power_timeout if power_timeout else None
@@ -8368,7 +8351,7 @@ class TeraTermUI(customtkinter.CTk):
         except Exception as e:
             print("An error occurred: ", e)
             self.log_error()
-    
+
     def keep_teraterm_open(self):
         try:
             main_window = self.uprb_32.window(title="uprbay.uprb.edu - Tera Term VT")
@@ -8393,7 +8376,7 @@ class TeraTermUI(customtkinter.CTk):
             self.move_window()
         main_window.send_keystrokes("{VK_RIGHT}")
         main_window.send_keystrokes("{VK_LEFT}")
-    
+
     # resets the idle timer when user interacts with something within the application
     def reset_activity_timer(self):
         self.last_activity = time.time()
@@ -8665,8 +8648,8 @@ class TeraTermUI(customtkinter.CTk):
     def status_button_event(self):
         if self.status is not None and self.status.winfo_exists():
             windows_status = gw.getWindowsWithTitle("Status") + gw.getWindowsWithTitle("Estado")
-            self.status_minimized = windows_status[0].isMinimized
-            if self.status_minimized:
+            min_win = windows_status[0].isMinimized
+            if min_win:
                 self.status.deiconify()
             self.status.lift()
             self.status.focus_set()
@@ -9202,8 +9185,8 @@ class TeraTermUI(customtkinter.CTk):
 
         if self.help is not None and self.help.winfo_exists():
             windows_help = gw.getWindowsWithTitle("Help") + gw.getWindowsWithTitle("Ayuda")
-            self.help_minimized = windows_help[0].isMinimized
-            if self.help_minimized:
+            min_win = windows_help[0].isMinimized
+            if min_win:
                 self.help.deiconify()
             self.help.lift()
             self.help.focus_set()
@@ -9545,33 +9528,6 @@ class TeraTermUI(customtkinter.CTk):
                 shutil.copyfile(backup_path, file_path)
             except FileNotFoundError:
                 print(f"The backup file at {backup_path} was not found.")
-                
-    # When the user performs an action to do something in tera term it hides the sidebar windows, so they don't
-    # interfere with the execution on tera term
-    def hide_sidebar_windows(self):
-        if gw.getWindowsWithTitle("Status") or gw.getWindowsWithTitle("Estado"):
-            windows_status = gw.getWindowsWithTitle("Status") + gw.getWindowsWithTitle("Estado")
-            if windows_status:
-                self.status_minimized = windows_status[0].isMinimized
-            else:
-                self.status_minimized = False
-        if gw.getWindowsWithTitle("Help") or gw.getWindowsWithTitle("Ayuda"):
-            windows_help = gw.getWindowsWithTitle("Help") + gw.getWindowsWithTitle("Ayuda")
-            if windows_help:
-                self.help_minimized = windows_help[0].isMinimized
-            else:
-                self.help_minimized = False
-        if self.status is not None and self.status.winfo_exists() and not self.status_minimized:
-            self.status.withdraw()
-        if self.help is not None and self.help.winfo_exists() and not self.help_minimized:
-            self.help.withdraw()
-
-    # Makes the sidebar reappear again
-    def show_sidebar_windows(self):
-        if self.status is not None and self.status.winfo_exists() and not self.status_minimized:
-            self.status.iconify()
-        if self.help is not None and self.help.winfo_exists() and not self.help_minimized:
-            self.help.iconify()
 
     # When the user performs an action to do something in tera term it destroys windows that might get in the way
     def destroy_windows(self):
