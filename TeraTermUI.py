@@ -5623,11 +5623,12 @@ class TeraTermUI(customtkinter.CTk):
             first_name = p_names[2].lower()
             last_names = [p_names[0].lower(), "-".join(p_names[:2]).lower()]
             urls = [f"https://notaso.com/professors/{first_name}-{ln}/" for ln in last_names]
-            headers = {"User-Agent": "Mozilla/5.0"}
+            headers = {"User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                                      "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")}
             with requests.Session() as session:
                 for url in urls:
                     try:
-                        response = session.head(url, headers=headers, timeout=3)
+                        response = session.head(url, headers=headers, timeout=5)
                         if response.status_code == 200:
                             webbrowser.open(url)
                             return
@@ -8241,8 +8242,8 @@ class TeraTermUI(customtkinter.CTk):
                 print(f"Error querying power settings: {e}")
                 return None
 
-        power_timeout = query_timeout("SUB_VIDEO", "VIDEOIDLE") or \
-                        query_timeout("SUB_SLEEP", "HIBERNATEIDLE")
+        power_timeout = (query_timeout("SUB_VIDEO", "VIDEOIDLE") or 
+                         query_timeout("SUB_SLEEP", "HIBERNATEIDLE"))
 
         return power_timeout if power_timeout else None
 
@@ -9361,22 +9362,22 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         if asyncio.run(self.test_connection(lang)):
             url = f"{self.GITHUB_REPO}/releases/latest"
+            headers = {"User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                                      "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")}
             try:
-                response = requests.get(url)
-
+                response = requests.get(url, headers=headers, timeout=3)
                 if response.status_code != 200:
                     print(f"Error fetching release information: {response.status_code}")
                     return None
 
                 release_data = response.json()
                 latest_version = release_data.get("tag_name")
-
                 if latest_version and latest_version.startswith("v"):
                     latest_version = latest_version[1:]
 
                 return latest_version
 
-            except requests.exceptionsRequestException as e:
+            except requests.exceptions.RequestException as e:
                 print(f"Request failed: {e}")
                 return None
             except Exception as e:
