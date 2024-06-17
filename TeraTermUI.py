@@ -5622,15 +5622,17 @@ class TeraTermUI(customtkinter.CTk):
         def attempt_open_url(p_names):
             first_name = p_names[2].lower()
             last_names = [p_names[0].lower(), "-".join(p_names[:2]).lower()]
-            for ln in last_names:
-                url = f"https://notaso.com/professors/{first_name}-{ln}/"
-                try:
-                    response = requests.head(url)
-                    if response.status_code == 200:
-                        webbrowser.open(url)
-                        return
-                except requests.exceptions.RequestException as e:
-                    print(f"Failed to open URL: {url}, Error: {e}")
+            urls = [f"https://notaso.com/professors/{first_name}-{ln}/" for ln in last_names]
+            headers = {"User-Agent": "Mozilla/5.0"}
+            with requests.Session() as session:
+                for url in urls:
+                    try:
+                        response = session.head(url, headers=headers, timeout=3)
+                        if response.status_code == 200:
+                            webbrowser.open(url)
+                            return
+                    except requests.exceptions.RequestException as e:
+                        print(f"Failed to open URL: {url}, Error: {e}")
 
         instructor_text = cell.cget("text")
         if not instructor_text.strip():
@@ -5656,7 +5658,8 @@ class TeraTermUI(customtkinter.CTk):
             "FEBLES IGUINA ISABEL M.": "https://notaso.com/professors/prof-febles/",
             "MARICHAL LUGO CARLOS J.": "https://notaso.com/professors/carlos-j-marichal-lugo/",
             "COSTA COLON MARIA DEL RO": "https://notaso.com/professors/maria-del-rocio-costa/",
-            "OLAVARRIA FULLERTON JENI": "https://notaso.com/professors/jenifier-olavarria/"
+            "OLAVARRIA FULLERTON JENI": "https://notaso.com/professors/jenifier-olavarria/",
+            "COUTIN RODICIO RICARDO": "https://notaso.com/professors/ricardo-coutin-rodicio-2/"
         }
         hardcoded_name = " ".join(instructor_text.split())
         if hardcoded_name in url_mapping:
