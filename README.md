@@ -12,7 +12,7 @@ funtionality wise the application is mostly feature-complete but it could use so
 the application sometimes suffers from slowdows which can make it feel sluggish to use.
 
 # Tesseract OCR
-Must install this application under a folder within the TeraTermUI.py app called "Tesseract-OCR".
+Must install this application under a folder within the TeraTermUI project called "Tesseract-OCR".
 This application is for OCR scanning, basically reading text from images, the reason we need this is
 because we don't have access to the database of the University and to error proof the application for things like
 the Social Security Number we have no way of validating that information so what we do is after the action is performed on Tera Term,
