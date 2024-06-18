@@ -13,8 +13,8 @@ Latest release of Tera Term UI,
 
 **Tera Term must be installed in your computer (Windows Only)**
 
-1. Portable Version (Zip File)
-2. Installation File (64-Bit)
+1. Portable Version (Zip File) - **Checksum** : ``` ```
+2. Installation File (64-Bit) - **Checksum** : ``` ```
 
 If you run the application as an Administrator, it grants the benefit of disabling user input when the application is automating and performing tasks in Tera Term, good to mitigate the chance of the user interrupting the executions of actions by Tera Term UI.
 
