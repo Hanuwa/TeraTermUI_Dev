@@ -38,8 +38,8 @@ ordered-set==4.1.0
 packaging==24.1
 pillow==10.3.0
 proto-plus==1.23.0
-protobuf==4.25.3
-psutil==5.9.8
+protobuf==5.27.1
+psutil==6.0.0
 py7zr==0.21.0
 pyasn1==0.6.0
 pyasn1_modules==0.4.0
@@ -51,7 +51,7 @@ pycryptodomex==3.20.0
 PyGetWindow==0.0.9
 PyMsgBox==1.0.9
 pyparsing==3.1.2
-pyperclip==1.8.2
+pyperclip==1.9.0
 pyppmd==1.1.0
 PyRect==0.2.0
 pyscreenshot==3.1
