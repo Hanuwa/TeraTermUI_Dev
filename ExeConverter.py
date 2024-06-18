@@ -444,8 +444,10 @@ for version in versions:
             os.remove(program_backup)
             print(Fore.RED + f"Error compiling Inno Setup script: {e}\n" + Style.RESET_ALL)
         try:
+            installer_executable_path = output_directory + r"\TeraTermUI_64-bit_Installer-" + update + ".exe"
             shutil.move(output_directory + r"\output\TeraTermUI_64-bit_Installer-" + update + ".exe", output_directory)
             shutil.rmtree(output_directory + r"\output")
+            generate_checksum(None, installer_executable_path)
             print(Fore.GREEN + "Successfully completed installer version\n" + Style.RESET_ALL)
         except KeyboardInterrupt as e:
             shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
