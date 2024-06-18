@@ -24,6 +24,7 @@ import customtkinter
 import gc
 import json
 import os
+import psutil
 import pygetwindow as gw
 import pyperclip
 import pystray
@@ -64,7 +65,6 @@ from itertools import groupby
 from mss import mss
 from py7zr import SevenZipFile
 from pathlib import Path
-from psutil import process_iter, NoSuchProcess, AccessDenied, ZombieProcess
 from win32con import SW_HIDE, SW_SHOW, SW_RESTORE, WM_CLOSE
 try:
     from pywinauto.application import Application, AppStartError
@@ -772,7 +772,9 @@ class TeraTermUI(customtkinter.CTk):
                     messagebox.showerror("Error", "Fatal Error! Failed to initialize language files.\n"
                                                   "Might need to reinstall the application")
             sys.exit(1)
-
+        if TeraTermUI.is_admin():
+            p = psutil.Process(os.getpid())
+            p.nice(psutil.HIGH_PRIORITY_CLASS)
         atexit.register(self.cleanup_temp)
         atexit.register(self.restore_original_font, self.teraterm_file)
         self.after(0, self.unload_image("uprb"))
@@ -927,6 +929,14 @@ class TeraTermUI(customtkinter.CTk):
             self.log_error()
         finally:
             sys.exit(1)
+
+    @staticmethod
+    def is_admin():
+        try:
+            return ctypes.windll.shell32.IsUserAnAdmin() == 1
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return False
 
     @staticmethod
     def get_absolute_path(relative_path):
@@ -1128,7 +1138,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.error_occurred = False
 
                     self.after(50, error_automation)
-                ctypes.windll.user32.BlockInput(False)
+                TeraTermUI.disable_user_input()
 
     def student_info_frame(self):
         if not self.init_multiple:
@@ -1490,7 +1500,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.after(50, error_automation)
                 if not self.not_rebind:
                     self.after(350, self.bind, "<Return>", lambda event: self.submit_event_handler())
-                ctypes.windll.user32.BlockInput(False)
+                TeraTermUI.disable_user_input()
 
     def search_event_handler(self):
         task_done = threading.Event()
@@ -1551,9 +1561,9 @@ class TeraTermUI(customtkinter.CTk):
                                 self.log_error()
                             if self.search_function_counter == 0 and "\"R-AOOO7" not in text_output and \
                                     "*R-A0007" not in text_output:
-                                ctypes.windll.user32.BlockInput(False)
+                                TeraTermUI.disable_user_input()
                                 self.automate_copy_class_data()
-                                ctypes.windll.user32.BlockInput(True)
+                                TeraTermUI.disable_user_input("on")
                                 copy = pyperclip.paste()
                                 data, course_found, invalid_action, \
                                     y_n_found, y_n_value, term_value = TeraTermUI.extract_class_data(copy)
@@ -1636,10 +1646,10 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(100, self.show_error_message, 320, 235, translation["failed_to_search"])
                                 self.search_function_counter += 1
                             else:
-                                ctypes.windll.user32.BlockInput(False)
+                                TeraTermUI.disable_user_input()
                                 self.search_function_counter += 1
                                 self.automate_copy_class_data()
-                                ctypes.windll.user32.BlockInput(True)
+                                TeraTermUI.disable_user_input("on")
                                 copy = pyperclip.paste()
                                 data, course_found, invalid_action, \
                                     y_n_found, y_n_value, term_value = TeraTermUI.extract_class_data(copy)
@@ -1687,7 +1697,7 @@ class TeraTermUI(customtkinter.CTk):
 
                     self.after(50, error_automation)
                 self.after(350, self.bind, "<Return>", lambda event: self.search_event_handler())
-                ctypes.windll.user32.BlockInput(False)
+                TeraTermUI.disable_user_input()
                 self.search_event_completed = True
 
     def search_next_page_layout(self):
@@ -1783,9 +1793,9 @@ class TeraTermUI(customtkinter.CTk):
                                 except Exception as e:
                                     print("Error handling clipboard content:", e)
                                     self.log_error()
-                                ctypes.windll.user32.BlockInput(False)
+                                TeraTermUI.disable_user_input()
                                 self.automate_copy_class_data()
-                                ctypes.windll.user32.BlockInput(True)
+                                TeraTermUI.disable_user_input("on")
                                 copy = pyperclip.paste()
                                 enrolled_classes, total_credits = self.extract_my_enrolled_classes(copy)
                                 self.after(0, self.enable_widgets, self)
@@ -1828,7 +1838,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.error_occurred = False
 
                     self.after(50, error_automation)
-                ctypes.windll.user32.BlockInput(False)
+                TeraTermUI.disable_user_input()
                 self.my_classes_event_completed = True
 
     # function that adds new entries
@@ -2276,7 +2286,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.after(50, error_automation)
                 if not self.not_rebind:
                     self.after(350, self.bind, "<Return>", lambda event: self.submit_multiple_event_handler())
-                ctypes.windll.user32.BlockInput(False)
+                TeraTermUI.disable_user_input()
 
     def option_menu_event_handler(self):
         task_done = threading.Event()
@@ -2670,7 +2680,7 @@ class TeraTermUI(customtkinter.CTk):
 
                     self.after(50, error_automation)
                 self.after(350, self.bind, "<Return>", lambda event: self.option_menu_event_handler())
-                ctypes.windll.user32.BlockInput(False)
+                TeraTermUI.disable_user_input()
                 self.option_menu_event_completed = True
 
     def sign_out(self):
@@ -2762,7 +2772,7 @@ class TeraTermUI(customtkinter.CTk):
 
                     self.after(50, error_automation)
                 self.after(350, self.bind, "<Return>", lambda event: self.option_menu_event_handler())
-                ctypes.windll.user32.BlockInput(False)
+                TeraTermUI.disable_user_input()
                 self.go_next_event_completed = True
 
     def go_next_search_handler(self):
@@ -2793,9 +2803,9 @@ class TeraTermUI(customtkinter.CTk):
                         except Exception as e:
                             print("Error handling clipboard content:", e)
                             self.log_error()
-                        ctypes.windll.user32.BlockInput(False)
+                        TeraTermUI.disable_user_input()
                         self.automate_copy_class_data()
-                        ctypes.windll.user32.BlockInput(True)
+                        TeraTermUI.disable_user_input("on")
                         copy = pyperclip.paste()
                         data, course_found, invalid_action, \
                             y_n_found, y_n_value, term_value = TeraTermUI.extract_class_data(copy)
@@ -2842,7 +2852,7 @@ class TeraTermUI(customtkinter.CTk):
 
                     self.after(50, error_automation)
                 self.after(350, self.bind, "<Return>", lambda event: self.search_event_handler())
-                ctypes.windll.user32.BlockInput(False)
+                TeraTermUI.disable_user_input()
                 self.search_go_next_event_completed = True
 
     # disable these buttons if the user changed screen
@@ -2965,7 +2975,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.after(0, self.go_back_event)
                 if self.log_in.cget("state") == "disabled":
                     self.log_in.configure(state="normal")
-                ctypes.windll.user32.BlockInput(False)
+                TeraTermUI.disable_user_input()
 
     def auth_info_frame(self):
         lang = self.language_menu.get()
@@ -3206,7 +3216,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.error_occurred = False
 
                     self.after(50, error_automation)
-                ctypes.windll.user32.BlockInput(False)
+                TeraTermUI.disable_user_input()
 
     def login_frame(self):
         lang = self.language_menu.get()
@@ -4164,9 +4174,9 @@ class TeraTermUI(customtkinter.CTk):
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                 self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                 self.reset_activity_timer()
-                            ctypes.windll.user32.BlockInput(False)
+                            TeraTermUI.disable_user_input()
                             self.automate_copy_class_data()
-                            ctypes.windll.user32.BlockInput(True)
+                            TeraTermUI.disable_user_input("on")
                             copy = pyperclip.paste()
                             turno_index = copy.find("TURNO MATRICULA:")
                             sliced_text = copy[turno_index:]
@@ -4272,7 +4282,7 @@ class TeraTermUI(customtkinter.CTk):
 
                     self.after(50, error_automation)
                 self.after(350, self.bind, "<Return>", lambda event: self.submit_multiple_event_handler())
-                ctypes.windll.user32.BlockInput(False)
+                TeraTermUI.disable_user_input()
 
     # Starts the countdown on when the auto-enroll process will occur
     def countdown(self, your_date):
@@ -5263,11 +5273,12 @@ class TeraTermUI(customtkinter.CTk):
     def checkIfProcessRunning(processName):
         process = processName.lower()
         try:
-            for proc in process_iter(attrs=["name"]):
-                proc_name = proc.info.get("name", "").lower()
+            for proc in psutil.process_iter(attrs=["name"]):
+                proc_info = proc.as_dict(attrs=["name"])
+                proc_name = proc_info.get("name", "").lower()
                 if process in proc_name:
                     return True
-        except (NoSuchProcess, AccessDenied, ZombieProcess) as e:
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
             print(f"Exception occurred: {e}")
         return False
 
@@ -5277,11 +5288,12 @@ class TeraTermUI(customtkinter.CTk):
         count = 0
         process = processName.lower()
         try:
-            for proc in process_iter(attrs=["name"]):
-                proc_name = proc.info.get("name", "").lower()
+            for proc in psutil.process_iter(attrs=["name"]):
+                proc_info = proc.as_dict(attrs=["name"])
+                proc_name = proc_info.get("name", "").lower()
                 if process in proc_name:
                     count += 1
-        except (NoSuchProcess, AccessDenied, ZombieProcess) as e:
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
             print(f"Exception occurred: {e}")
         return count, (count > 1)
 
@@ -6387,9 +6399,9 @@ class TeraTermUI(customtkinter.CTk):
     def handle_current_semester(self):
         if not self.found_latest_semester:
             time.sleep(1)
-            ctypes.windll.user32.BlockInput(False)
+            TeraTermUI.disable_user_input()
             self.automate_copy_class_data()
-            ctypes.windll.user32.BlockInput(True)
+            TeraTermUI.disable_user_input("on")
             copy = pyperclip.paste()
             latest_term = TeraTermUI.get_latest_term(copy)
             if latest_term == "Latest term not found":
@@ -7117,9 +7129,9 @@ class TeraTermUI(customtkinter.CTk):
                                         print("Error handling clipboard content:", e)
                                         self.log_error()
                                     time.sleep(1)
-                                    ctypes.windll.user32.BlockInput(False)
+                                    TeraTermUI.disable_user_input()
                                     self.automate_copy_class_data()
-                                    ctypes.windll.user32.BlockInput(True)
+                                    TeraTermUI.disable_user_input("on")
                                     copy = pyperclip.paste()
                                     enrolled_classes, total_credits = self.extract_my_enrolled_classes(copy)
                                     self.after(0, self.display_enrolled_data, enrolled_classes, total_credits)
@@ -7274,7 +7286,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.after(50, error_automation)
                 if not self.not_rebind:
                     self.after(350, self.bind, "<Return>", lambda event: self.submit_modify_classes_handler())
-                ctypes.windll.user32.BlockInput(False)
+                TeraTermUI.disable_user_input()
 
     # checks whether the program can continue its normal execution or if the server is on maintenance
     def wait_for_prompt(self, prompt_text, maintenance_text, timeout=15):
@@ -7827,6 +7839,14 @@ class TeraTermUI(customtkinter.CTk):
                 if hasattr(widget, "winfo_children"):
                     stack.append(widget)
 
+    @staticmethod
+    def disable_user_input(state="off"):
+        if TeraTermUI.is_admin():
+            if state == "on":
+                ctypes.windll.user32.BlockInput(True)
+            elif state == "off":
+                ctypes.windll.user32.BlockInput(False)
+
     def automation_preparations(self):
         self.focus_set()
         self.destroy_windows()
@@ -7834,7 +7854,7 @@ class TeraTermUI(customtkinter.CTk):
         TeraTermUI.check_and_update_border_color(self)
         if self.tooltip is not None and self.tooltip.winfo_exists():
             self.tooltip.destroy()
-        ctypes.windll.user32.BlockInput(True)
+        TeraTermUI.disable_user_input("on")
 
     # function that changes the theme of the application
     def change_appearance_mode_event(self, new_appearance_mode: str):
@@ -8182,7 +8202,7 @@ class TeraTermUI(customtkinter.CTk):
                                       message=translation["automation_error"], icon="warning", button_width=380)
 
                     self.after(50, error_automation)
-                ctypes.windll.user32.BlockInput(False)
+                TeraTermUI.disable_user_input()
                 self.fix_execution_event_completed = True
 
     @staticmethod
