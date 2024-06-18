@@ -7,6 +7,7 @@ pip show
 pip list
 pip check
 pip search
+certutil -hashfile [path_to_your_exe] SHA256
 
 # Latest Releases Text
 Latest release of Tera Term UI,
