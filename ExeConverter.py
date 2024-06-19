@@ -81,14 +81,6 @@ def attach_manifest(executable_path, manifest_path):
             file.write(updated_manifest_content)
 
         subprocess.run(f"mt.exe -manifest {manifest_path} -outputresource:{executable_path};1", check=True)
-
-        cleared_manifest_content = re.sub(
-            r'<file name="TeraTermUI\.exe" hashalg="SHA1" hash=".*?"/>',
-            '<file name="TeraTermUI.exe" hashalg="SHA1" hash=""/>',
-            updated_manifest_content
-        )
-        with open(manifest_path, "w") as file:
-            file.write(cleared_manifest_content)
         print(Fore.GREEN + "\nSuccessfully attached manifest" + Style.RESET_ALL)
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
