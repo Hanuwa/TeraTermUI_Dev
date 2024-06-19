@@ -1919,31 +1919,31 @@ class TeraTermUI(customtkinter.CTk):
 
     def move_up_scrollbar(self):
         if self.up_arrow_key_enabled:
-            if self.enrolled_classes_table is None:
-                self.search_scrollbar.scroll_more_up()
-            else:
+            if self.enrolled_classes_table is not None and self.my_classes_frame.grid_info():
                 self.my_classes_frame.scroll_more_up()
+            else:
+                self.search_scrollbar.scroll_more_up()
 
     def move_down_scrollbar(self):
         if self.down_arrow_key_enabled:
-            if self.enrolled_classes_table is None:
-                self.search_scrollbar.scroll_more_down()
-            else:
+            if self.enrolled_classes_table is not None and self.my_classes_frame.grid_info():
                 self.my_classes_frame.scroll_more_down()
+            else:
+                self.search_scrollbar.scroll_more_down()
 
     def move_top_scrollbar(self):
         if self.move_slider_right_enabled or self.move_slider_left_enabled:
-            if self.enrolled_classes_table is None:
-                self.search_scrollbar.scroll_to_top()
-            else:
+            if self.enrolled_classes_table is not None and self.my_classes_frame.grid_info():
                 self.my_classes_frame.scroll_to_top()
+            else:
+                self.search_scrollbar.scroll_to_top()
 
     def move_bottom_scrollbar(self):
         if self.move_slider_right_enabled or self.move_slider_left_enabled:
-            if self.enrolled_classes_table is None:
-                self.search_scrollbar.scroll_to_bottom()
-            else:
+            if self.enrolled_classes_table is not None and self.my_classes_frame.grid_info():
                 self.my_classes_frame.scroll_to_bottom()
+            else:
+                self.search_scrollbar.scroll_to_bottom()
 
     # multiple classes screen
     def multiple_classes_event(self):
@@ -3509,8 +3509,8 @@ class TeraTermUI(customtkinter.CTk):
         self.tabview.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 85))
         self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 20))
         self.back_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
-        self.after(0, self.switch_tab)
         self.in_multiple_screen = False
+        self.switch_tab()
 
     def load_language(self, lang):
         # Check if the translations for the requested language are in the cache
@@ -4278,6 +4278,7 @@ class TeraTermUI(customtkinter.CTk):
                                                winsound.SND_ASYNC)
                         CTkMessagebox(title=translation["automation_error_title"],
                                       message=translation["automation_error"], icon="warning", button_width=380)
+                        self.auto_enroll.deselect()
                         self.error_occurred = False
 
                     self.after(50, error_automation)
