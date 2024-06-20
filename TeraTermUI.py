@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 6/19/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 6/20/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -798,17 +798,37 @@ class TeraTermUI(customtkinter.CTk):
                                            self.loading_screen_status.winfo_exists()):
             return
 
-        self.withdraw()
         lang = self.language_menu.get()
         translation = self.load_language(lang)
+        self.withdraw()
+        self.destroy_windows()
         if TeraTermUI.window_exists(translation["dialog_title"]):
-            self.dialog.destroy()
+            my_classes_hwnd = win32gui.FindWindow(None, translation["dialog_title"])
+            win32gui.PostMessage(my_classes_hwnd, WM_CLOSE, 0, 0)
+        if TeraTermUI.window_exists("Tera Term"):
+            file_dialog_hwnd = win32gui.FindWindow("#32770", "Tera Term")
+            win32gui.PostMessage(file_dialog_hwnd, WM_CLOSE, 0, 0)
+        if TeraTermUI.window_exists("Error"):
+            file_dialog_hwnd = win32gui.FindWindow("#32770", "Error")
+            win32gui.PostMessage(file_dialog_hwnd, WM_CLOSE, 0, 0)
+        if TeraTermUI.window_exists(translation["save_pdf"]):
+            file_dialog_hwnd = win32gui.FindWindow("#32770", translation["save_pdf"])
+            win32gui.PostMessage(file_dialog_hwnd, WM_CLOSE, 0, 0)
+        if TeraTermUI.window_exists(translation["select_tera_term"]):
+            file_dialog_hwnd = win32gui.FindWindow("#32770", translation["select_tera_term"])
+            win32gui.PostMessage(file_dialog_hwnd, WM_CLOSE, 0, 0)
         if self.status is not None and self.status.winfo_exists():
             self.status.withdraw()
         if self.help is not None and self.help.winfo_exists():
             self.help.withdraw()
         if self.timer_window is not None and self.timer_window.winfo_exists():
             self.timer_window.withdraw()
+        for widget in self.winfo_children():
+            if isinstance(widget, tk.Toplevel):
+                if hasattr(widget, "is_ctkmessagebox") and widget.is_ctkmessagebox:
+                    widget.close_messagebox()
+                else:
+                    widget.destroy()
         if not TeraTermUI.window_exists("Tera Term - [disconnected] VT") and \
                 not TeraTermUI.window_exists("SSH Authentication") and not self.in_student_frame:
             hwnd = win32gui.FindWindow(None, "uprbay.uprb.edu - Tera Term VT")
@@ -915,6 +935,10 @@ class TeraTermUI(customtkinter.CTk):
 
     def end_app(self):
         try:
+            for widget in self.winfo_children():
+                if isinstance(widget, tk.Toplevel) and hasattr(widget, "is_ctkmessagebox") \
+                        and widget.is_ctkmessagebox:
+                    widget.close_messagebox()
             self.destroy()
         except Exception as e:
             print("Force closing due to an error:", e)
@@ -923,6 +947,10 @@ class TeraTermUI(customtkinter.CTk):
 
     def forceful_end_app(self):
         try:
+            for widget in self.winfo_children():
+                if isinstance(widget, tk.Toplevel) and hasattr(widget, "is_ctkmessagebox") \
+                        and widget.is_ctkmessagebox:
+                    widget.close_messagebox()
             self.destroy()
         except Exception as e:
             print("Force closing due to an error:", e)
