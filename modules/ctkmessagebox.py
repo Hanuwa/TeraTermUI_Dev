@@ -112,6 +112,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         self.round_corners = corner_radius if corner_radius<=30 else 30
         self.button_width = button_width if button_width else self.width/4
         self.button_height = button_height if button_height else 28
+        self.is_ctkmessagebox = True
 
         if self.fade: self.attributes("-alpha", 0)
 
