@@ -827,7 +827,7 @@ class TeraTermUI(customtkinter.CTk):
             if isinstance(widget, tk.Toplevel):
                 if hasattr(widget, "is_ctkmessagebox") and widget.is_ctkmessagebox:
                     widget.close_messagebox()
-                else:
+                elif widget is not self.status and widget is not self.help and widget is not self.timer_window:
                     widget.destroy()
         if not TeraTermUI.window_exists("Tera Term - [disconnected] VT") and \
                 not TeraTermUI.window_exists("SSH Authentication") and not self.in_student_frame:
