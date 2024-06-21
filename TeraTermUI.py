@@ -10843,21 +10843,53 @@ def get_idle_duration():
     return millis / 1000.0
     
 
-def bring_to_front(window_title):
-    try:
-        windows = gw.getWindowsWithTitle(window_title)
-        if windows:
-            window = windows[0]
-            if window.isMinimized:
-                window.restore()
-            try:
-                window.activate()
-            except:
-                pass
-        else:
-            print("Window not found.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+def bring_to_front():
+    def restore_window(title):
+        hwnd = win32gui.FindWindow(None, title)
+        if hwnd:
+            if not win32gui.IsWindowVisible(hwnd):
+                win32gui.ShowWindow(hwnd, SW_SHOW)
+            win32gui.ShowWindow(hwnd, SW_RESTORE)
+        return hwnd
+
+    window_titles = {
+        "main_app": ["Tera Term UI", "Tera Term UI"],
+        "loading_screen": ["Processing...", "Procesando..."],
+        "status": ["Status", "Estado"],
+        "help": ["Help", "Ayuda"],
+        "timer": ["Auto-Enroll", "Auto-Matrícula"],
+        "tera_term_vt": ["uprbay.uprb.edu - Tera Term VT", "uprbay.uprb.edu - Tera Term VT"]
+    }
+
+    for title in window_titles["loading_screen"]:
+        loading_screen_hwnd = win32gui.FindWindow(None, title)
+        if loading_screen_hwnd and win32gui.IsWindowVisible(loading_screen_hwnd):
+            return
+
+    for title in window_titles["main_app"]:
+        main_window_hwnd = win32gui.FindWindow(None, title)
+        if main_window_hwnd:
+            windows = gw.getWindowsWithTitle(title)
+            if windows:
+                window = windows[0]
+                if window.visible:
+                    if window.isMinimized:
+                        window.restore()
+                    try:
+                        window.activate()
+                    except:
+                        pass
+                    return
+
+    for window_type, titles in window_titles.items():
+        for title in titles:
+            hwnd = restore_window(title)
+            if window_type == "main_app" and hwnd:
+                main_window_hwnd = hwnd
+                try:
+                    win32gui.SetForegroundWindow(main_window_hwnd)
+                except:
+                    pass
 
 
 def main():
@@ -10871,7 +10903,7 @@ def main():
             app = TeraTermUI()
             app.mainloop()
     except Timeout:
-        bring_to_front("Tera Term UI")
+        bring_to_front()
         sys.exit(0)
     except KeyboardInterrupt:
         sys.exit(1)
