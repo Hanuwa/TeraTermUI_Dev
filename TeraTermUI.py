@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 6/20/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 6/21/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -67,6 +67,8 @@ from py7zr import SevenZipFile
 from pathlib import Path
 from win32con import SW_HIDE, SW_SHOW, SW_RESTORE, WM_CLOSE
 try:
+    sys.coinit_flags = 2
+    warnings.filterwarnings("ignore", message="Apply externally defined coinit_flags: 2")
     from pywinauto.application import Application, AppStartError
     from pywinauto.findwindows import ElementNotFoundError
     from pywinauto import timings
