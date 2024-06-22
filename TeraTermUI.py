@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 6/21/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 6/22/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -10891,7 +10891,13 @@ def bring_to_front():
     for window_type, titles in window_titles.items():
         for title in titles:
             hwnd = restore_window(title)
-            if window_type == "main_app" and hwnd:
+            if window_type == "timer" and hwnd:
+                try:
+                    win32gui.SetForegroundWindow(hwnd)
+                    return
+                except:
+                    pass
+            elif window_type == "main_app" and hwnd:
                 main_window_hwnd = hwnd
                 try:
                     win32gui.SetForegroundWindow(main_window_hwnd)
