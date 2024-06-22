@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 10800 lines of codes, it definitely makes things harder to work with
+# and with over 10900 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -187,7 +187,8 @@ class TeraTermUI(customtkinter.CTk):
         self.feedback_send = None
         self.search_box = None
         self.class_list = None
-        self.checkbox_state = None
+        self.back_checkbox_state = None
+        self.exit_checkbox_state = None
         self.get_class_for_pdf = None
         self.get_semester_for_pdf = None
         self.show_all_sections = None
@@ -890,7 +891,7 @@ class TeraTermUI(customtkinter.CTk):
         on_exit = self.cursor.execute("SELECT exit FROM user_data").fetchone()
         if on_exit and on_exit[0] is not None and on_exit[0] == 1:
             msg.check_checkbox()
-        response, self.checkbox_state = msg.get()
+        response, self.exit_checkbox_state = msg.get()
         self.is_exit_dialog_open = False
         if response == "Yes" or response == "Sí":
             self.tray.stop()
@@ -901,7 +902,7 @@ class TeraTermUI(customtkinter.CTk):
                     future.result()
             self.save_user_data()
             self.end_app()
-            if self.checkbox_state:
+            if self.exit_checkbox_state:
                 if TeraTermUI.checkIfProcessRunning("ttermpro"):
                     if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
                         try:
@@ -3422,7 +3423,13 @@ class TeraTermUI(customtkinter.CTk):
                                 option_3=translation["option_3"], icon_size=(65, 65), button_color=(
                                 "#c30101", "#c30101", "#145DA0", "use_default"), option_1_type="checkbox",
                                 hover_color=("darkred", "darkred", "use_default"))
-            response, checkbox = msg.get()
+            if self.back_checkbox_state is None:
+                response, checkbox = msg.get()
+                self.back_checkbox_state = checkbox
+            else:
+                if self.back_checkbox_state == 1:
+                    msg.check_checkbox()
+                response, self.back_checkbox_state = msg.get()
         if TeraTermUI.checkIfProcessRunning("ttermpro") and (
                 self.error_occurred or (response and (response == "Yes" or response == "Sí") and checkbox)):
             if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
@@ -5043,7 +5050,7 @@ class TeraTermUI(customtkinter.CTk):
             "scaling": self.scaling_slider.get(),
             "win_pos_x": self.winfo_x() if not self.state() == "zoomed" else None,
             "win_pos_y": self.winfo_y() if not self.state() == "zoomed" else None,
-            "exit": self.checkbox_state,
+            "exit": self.exit_checkbox_state,
         }
         for field, value in field_values.items():
             # Skip 'exit' field if include_exit is False
@@ -10841,7 +10848,7 @@ def get_idle_duration():
         raise ctypes.WinError()
     millis = ctypes.windll.kernel32.GetTickCount() - lii.dwTime
     return millis / 1000.0
-    
+
 
 def bring_to_front():
     def restore_window(title):
