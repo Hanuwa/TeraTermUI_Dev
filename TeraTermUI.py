@@ -5320,6 +5320,7 @@ class TeraTermUI(customtkinter.CTk):
                             TeraTermUI.window_exists("Tera Term - [connecting...] VT"):
                         return True
                     else:
+                        # Background Process
                         proc.terminate()
                         proc.wait()
                         return False
