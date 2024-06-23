@@ -5315,15 +5315,17 @@ class TeraTermUI(customtkinter.CTk):
                 proc_info = proc.as_dict(attrs=["name"])
                 proc_name = proc_info.get("name", "").lower()
                 if process in proc_name:
-                    if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT") or \
-                            TeraTermUI.window_exists("Tera Term - [disconnected] VT") or \
-                            TeraTermUI.window_exists("Tera Term - [connecting...] VT"):
-                        return True
-                    else:
-                        # Background Process
-                        proc.terminate()
-                        proc.wait()
-                        return False
+                    if process == "ttermpro":
+                        if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT") or \
+                                TeraTermUI.window_exists("Tera Term - [disconnected] VT") or \
+                                TeraTermUI.window_exists("Tera Term - [connecting...] VT"):
+                            return True
+                        else:
+                            # Background Process
+                            proc.terminate()
+                            proc.wait()
+                            return False
+                    return True
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
             print(f"Exception occurred: {e}")
         return False
