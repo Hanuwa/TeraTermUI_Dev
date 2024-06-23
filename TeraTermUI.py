@@ -915,6 +915,9 @@ class TeraTermUI(customtkinter.CTk):
                     elif TeraTermUI.window_exists("Tera Term - [disconnected] VT") or \
                             TeraTermUI.window_exists("Tera Term - [connecting...] VT"):
                         TeraTermUI.terminate_process()
+                    else:
+                        # Background Process
+                        TeraTermUI.terminate_process()
             sys.exit(0)
         self.last_closing_time = current_time
 
@@ -5315,7 +5318,14 @@ class TeraTermUI(customtkinter.CTk):
                 proc_info = proc.as_dict(attrs=["name"])
                 proc_name = proc_info.get("name", "").lower()
                 if process in proc_name:
-                    return True
+                    if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT") or \
+                            TeraTermUI.window_exists("Tera Term - [disconnected] VT") or \
+                            TeraTermUI.window_exists("Tera Term - [connecting...] VT"):
+                        return True
+                    else:
+                        proc.terminate()
+                        proc.wait()
+                        return False
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
             print(f"Exception occurred: {e}")
         return False
@@ -10891,13 +10901,7 @@ def bring_to_front():
     for window_type, titles in window_titles.items():
         for title in titles:
             hwnd = restore_window(title)
-            if window_type == "timer" and hwnd:
-                try:
-                    win32gui.SetForegroundWindow(hwnd)
-                    return
-                except:
-                    pass
-            elif window_type == "main_app" and hwnd:
+            if window_type == "main_app" and hwnd:
                 main_window_hwnd = hwnd
                 try:
                     win32gui.SetForegroundWindow(main_window_hwnd)
