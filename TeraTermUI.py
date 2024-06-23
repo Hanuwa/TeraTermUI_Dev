@@ -915,9 +915,6 @@ class TeraTermUI(customtkinter.CTk):
                     elif TeraTermUI.window_exists("Tera Term - [disconnected] VT") or \
                             TeraTermUI.window_exists("Tera Term - [connecting...] VT"):
                         TeraTermUI.terminate_process()
-                    else:
-                        # Background Process
-                        TeraTermUI.terminate_process()
             sys.exit(0)
         self.last_closing_time = current_time
 
