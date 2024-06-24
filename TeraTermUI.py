@@ -7614,7 +7614,7 @@ class TeraTermUI(customtkinter.CTk):
                     shutil.rmtree(tesseract_dir)
                     break  # If the directory was deleted successfully, exit the loop
                 except PermissionError:
-                    time.sleep(0.5)  # Wait for 1 second before the next attempt
+                    time.sleep(0.5)  # Wait for half a second before the next attempt
         # Delete the 'TERATERM.ini.bak' file
         if backup_file_path.exists() and not TeraTermUI.checkIfProcessRunning("ttermpro"):
             os.remove(backup_file_path)
