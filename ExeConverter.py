@@ -85,7 +85,7 @@ def attach_manifest(executable_path, manifest_path):
         if executable_path == updater:
             success_message = "\nSuccessfully attached manifest\n"
         else:
-            success_message = "Successfully attached manifest\n"
+            success_message = "\nSuccessfully attached manifest"
         print(Fore.GREEN + success_message + Style.RESET_ALL)
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
