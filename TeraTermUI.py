@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 6/22/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 6/24/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -63,8 +63,8 @@ from filelock import FileLock, Timeout
 from functools import wraps
 from itertools import groupby
 from mss import mss
-from py7zr import SevenZipFile
 from pathlib import Path
+from py7zr import SevenZipFile
 from win32con import SW_HIDE, SW_SHOW, SW_RESTORE, WM_CLOSE
 try:
     sys.coinit_flags = 2
@@ -7614,7 +7614,7 @@ class TeraTermUI(customtkinter.CTk):
                     shutil.rmtree(tesseract_dir)
                     break  # If the directory was deleted successfully, exit the loop
                 except PermissionError:
-                    time.sleep(1)  # Wait for 1 second before the next attempt
+                    time.sleep(0.5)  # Wait for 1 second before the next attempt
         # Delete the 'TERATERM.ini.bak' file
         if backup_file_path.exists() and not TeraTermUI.checkIfProcessRunning("ttermpro"):
             os.remove(backup_file_path)
