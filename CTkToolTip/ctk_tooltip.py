@@ -158,10 +158,11 @@ class CTkToolTip(Toplevel):
             offset_x = -text_width - 20  # Negative offset when space is limited on the right side
 
         # Offsets the ToolTip using the coordinates of an event as an origin
-        self.geometry(f"+{event.x_root + offset_x}+{event.y_root + self.y_offset}")
-
-        # Time is in integer: milliseconds
-        self.after(int(self.delay * 1000), self._show)
+        if event.x_root > 0 and event.y_root > 0:  # Ensure coordinates are valid
+            self.geometry(f"+{event.x_root + offset_x}+{event.y_root + self.y_offset}")
+            self.after(int(self.delay * 1000), self._show)
+        else:
+            self.withdraw()
 
     def on_leave(self, event=None) -> None:
         """
