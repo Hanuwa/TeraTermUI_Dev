@@ -220,7 +220,7 @@ try:
             elif line.startswith("OutputBaseFilename="):
                 line = 'OutputBaseFilename="TeraTermUI_64-bit_Installer-' + update + '"\n'
             file.write(line)
-    print(Fore.GREEN + "\nSuccessfully created distribution directory" + Style.RESET_ALL)
+    print(Fore.GREEN + "\nSuccessfully created distribution directory\n" + Style.RESET_ALL)
 except KeyboardInterrupt as e:
     shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
     os.remove(program_backup)
@@ -350,7 +350,7 @@ for version in versions:
                                 'archive = AESZipFile(self.ath)')
             data = data.replace('with open(TeraTermUI.get_absolute_path("logs.txt"), "a")',
                                 'with open(self.logs, "a")')
-            print(Fore.GREEN + "\nSuccessfully started installer version\n" + Style.RESET_ALL)
+            print(Fore.GREEN + "Successfully started installer version\n" + Style.RESET_ALL)
         else:
             script = "portable"
             data = data.replace('self.mode = "Installation"',
