@@ -81,7 +81,12 @@ def attach_manifest(executable_path, manifest_path):
             file.write(updated_manifest_content)
 
         subprocess.run(f"mt.exe -manifest {manifest_path} -outputresource:{executable_path};1", check=True)
-        print(Fore.GREEN + "\nSuccessfully attached manifest" + Style.RESET_ALL)
+        updater = os.path.join(project_directory, "updater.exe")
+        if executable_path == updater:
+            success_message = "\nSuccessfully attached manifest\n"
+        else:
+            success_message = "Successfully attached manifest\n"
+        print(Fore.GREEN + success_message + Style.RESET_ALL)
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
         os.remove(program_backup)
