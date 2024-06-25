@@ -64,12 +64,12 @@ pywin32==306
 pywinauto==0.6.8
 pyzipper==0.3.6
 pyzstd==0.16.0
-reportlab==4.2.0
+reportlab==4.2.2
 requests==2.32.3
 requests-oauthlib==2.0.0
 rsa==4.9
 screeninfo==0.8.1
-setuptools==70.1.0
+setuptools==70.1.1
 six==1.16.0
 soupsieve==2.5
 texttable==1.7.0
