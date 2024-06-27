@@ -7,6 +7,7 @@ import time
 import tkinter as tk
 import urllib.request
 import zipfile
+from tkinter import messagebox
 from tkinter import ttk
 
 
@@ -247,6 +248,12 @@ def start_update(gui):
 if __name__ == "__main__":
     if len(sys.argv) != 5:
         sys.exit(0)
+
+    app_directory = sys.argv[4]
+    if not has_write_permission(app_directory):
+        messagebox.showerror("Update Error", "The application cannot be updated due to insufficient "
+                                             "permissions to write to the application directory")
+        sys.exit(1)
 
     root = tk.Tk()
     width, height = 425, 225
