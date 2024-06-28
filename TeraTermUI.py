@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 6/24/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 6/28/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -991,10 +991,10 @@ class TeraTermUI(customtkinter.CTk):
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             # Get the current call stack and extract the function or module name
             stack = inspect.stack()
-            _, filename, _, function, _, _ = stack[1]
-            function_info = f"{filename}:{function}"
+            _, filename, lineno, function, code_context, _ = stack[1]
+            function_info = f"{filename}:{function}:{lineno}"
             # Capture the full traceback
-            traceback_summary = traceback.format_exc().strip().split('\n')[-1]
+            traceback_summary = traceback.format_exc().strip().split("\n")[-1]
             # Create a formatted error message with the app version and timestamp
             error_message = (f"[ERROR] [{self.mode}] [{self.USER_APP_VERSION}] [{timestamp}]"
                              f" [{function_info}] Traceback: {traceback_summary}")
@@ -3386,7 +3386,7 @@ class TeraTermUI(customtkinter.CTk):
     @staticmethod
     def new_connection(window):
         new_connection = window.child_window(title="Tera Term: New connection")
-        new_connection.wait("visible", timeout=7)
+        new_connection.wait("visible", timeout=5)
         tcp_ip_radio = new_connection.child_window(title="TCP/IP", control_type="RadioButton")
         if not tcp_ip_radio.is_selected():
             tcp_ip_radio.click()
@@ -5367,7 +5367,7 @@ class TeraTermUI(customtkinter.CTk):
         win32gui.EnumWindows(window_enum_handler, titles_to_close)
 
     @staticmethod
-    def check_window_exists(window_title, retries=7, delay=1):
+    def check_window_exists(window_title, retries=5, delay=1):
         for _ in range(retries):
             windows = gw.getWindowsWithTitle(window_title)
             if windows:
