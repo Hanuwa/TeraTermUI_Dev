@@ -1,7 +1,7 @@
 """
 CustomTkinter Messagebox
 Author: Akash Bora
-Version: 2.5
+Version: 2.7
 """
 
 import customtkinter
@@ -53,8 +53,8 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                  topmost: bool = False,
                  fade_in_duration: int = 0,
                  sound: bool = False,
+                 wraplength: int = 0,
                  option_focus: Literal[1, 2, 3] = None):
-        
         super().__init__()
 
         self.master_window = master
@@ -69,6 +69,8 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         self.title(title)
         self.resizable(width=False, height=False)
         self.fade = fade_in_duration
+        self.oldx = 0
+        self.oldy = 0
 
         if self.fade:
             self.fade = 20 if self.fade<20 else self.fade
@@ -118,6 +120,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
 
         if self.button_height>self.height/4: self.button_height = self.height/4 -20
         self.dot_color = cancel_button_color
+
         self.border_width = border_width if border_width<6 else 5
 
         if type(options) is list and len(options)>0:
@@ -132,6 +135,8 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         else:
             self.bg_color = bg_color
 
+        if self.dot_color == "transparent":
+            self.dot_color = self.bg_color
         if fg_color=="default":
             self.fg_color = self._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkFrame"]["top_fg_color"])
         else:
@@ -235,6 +240,9 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                                             fg_color=self.fg_color, hover=False, text_color=self.text_color, image=self.icon)
         self.info._text_label.configure(wraplength=self.width/2, justify="left")
         self.info.grid(row=1, column=0, columnspan=6, sticky="nwes", padx=self.border_width)
+
+        if wraplength > 0:
+            self.info._text_label.configure(wraplength=wraplength)
 
         if self.info._text_label.winfo_reqheight()>self.height/2:
             height_offset = int((self.info._text_label.winfo_reqheight())-(self.height/2) + self.height)
@@ -354,6 +362,13 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                 self.button1.focus()
                 self.button1.bind("<Return>", lambda event: self.button_event(self.option_text_1))
 
+    def place_widget(self, widget, x=10, y=10, **args):
+        if "master" in args:
+            del args["master"]
+
+        new_widget = widget(master=self.frame_top, **args)
+        new_widget.place(x=x, y=y)
+        return new_widget
 
     def focus_button(self, option_focus):
         try:
@@ -419,7 +434,8 @@ class CTkMessagebox(customtkinter.CTkToplevel):
             self.ICONS[icon] = customtkinter.CTkImage(Image.open(image_path), size=size)
             self.ICON_BITMAP[icon] = ImageTk.PhotoImage(file=image_path)
 
-        self.after(200, lambda: self.iconphoto(False, self.ICON_BITMAP[icon]))
+        if not sys.platform.startswith("darwin"):
+            self.after(200, lambda: self.iconphoto(False, self.ICON_BITMAP[icon]))
         return self.ICONS[icon]
 
     def return_key_handler(self, event):
@@ -502,6 +518,8 @@ class CTkMessagebox(customtkinter.CTkToplevel):
             self.fade_out()
         self.grab_release()
         self.destroy()
+        if self.master_window:
+            self.master_window.focus_force()
 
     def destroy(self):
         self.unbind("<Return>")
