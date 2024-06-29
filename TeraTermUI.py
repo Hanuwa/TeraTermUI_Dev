@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 6/28/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 6/29/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -81,8 +81,8 @@ except:
         comtypes_cache_dir = os.path.join(temp_dir, "comtypes_cache", cache_dir)
         if os.path.exists(comtypes_cache_dir):
             shutil.rmtree(comtypes_cache_dir)
-    current_executable = sys.argv[0]
-    subprocess.Popen([current_executable])
+    current_executable = os.path.abspath(sys.argv[0])
+    subprocess.run([current_executable])
     sys.exit(0)
 from tkinter import filedialog
 from tkinter import messagebox
@@ -7588,6 +7588,7 @@ class TeraTermUI(customtkinter.CTk):
         if response[0] == "Yes" or response[0] == "Sí":
             try:
                 updater_exe_dest = None
+                sys_path = Path(sys.path[0]).resolve()
                 if self.mode == "Portable":
                     updater_exe_src = Path(sys.path[0]) / "updater.exe"
                     updater_exe_dest = Path(self.app_temp_dir) / "updater.exe"
@@ -7596,8 +7597,8 @@ class TeraTermUI(customtkinter.CTk):
                     appdata_path = os.environ.get("PROGRAMDATA")
                     updater_exe_dest = os.path.join(appdata_path, "TeraTermUI", "updater.exe")
                 updater_args = [str(updater_exe_dest), self.mode, latest_version,
-                                str(self.update_db), str(sys.path[0])]
-                subprocess.Popen(updater_args)
+                                str(self.update_db), sys_path]
+                subprocess.run(updater_args)
                 self.direct_close()
             except Exception as e:
                 print(f"Failed to launch the updater script: {e}")
@@ -8142,6 +8143,7 @@ class TeraTermUI(customtkinter.CTk):
                     if response[0] == "Yes" or response[0] == "Sí":
                         try:
                             updater_exe_dest = None
+                            sys_path = Path(sys.path[0]).resolve()
                             if self.mode == "Portable":
                                 updater_exe_src = Path(sys.path[0]) / "updater.exe"
                                 updater_exe_dest = Path(self.app_temp_dir) / "updater.exe"
@@ -8150,8 +8152,8 @@ class TeraTermUI(customtkinter.CTk):
                                 appdata_path = os.environ.get("PROGRAMDATA")
                                 updater_exe_dest = os.path.join(appdata_path, "TeraTermUI", "updater.exe")
                             updater_args = [str(updater_exe_dest), self.mode, latest_version,
-                                            str(self.update_db), str(sys.path[0])]
-                            subprocess.Popen(updater_args)
+                                            str(self.update_db), sys_path]
+                            subprocess.run(updater_args)
                             self.direct_close()
                         except Exception as e:
                             print(f"Failed to launch the updater script: {e}")
