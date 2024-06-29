@@ -992,8 +992,13 @@ class TeraTermUI(customtkinter.CTk):
             # Get the current call stack and extract the function or module name
             stack = inspect.stack()
             _, filename, lineno, function, code_context, _ = stack[1]
-            function_info = f"{filename}:{function}:{lineno}"
             # Capture the full traceback
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            tb = traceback.extract_tb(exc_traceback)
+            # Get the last frame in the traceback, to capture the exact line that cause the exception
+            last_frame = tb[-1]
+            lineno = last_frame.lineno
+            function_info = f"{filename}:{function}:{lineno}"
             traceback_summary = traceback.format_exc().strip().split("\n")[-1]
             # Create a formatted error message with the app version and timestamp
             error_message = (f"[ERROR] [{self.mode}] [{self.USER_APP_VERSION}] [{timestamp}]"
