@@ -228,7 +228,7 @@ def copy_to_clipboard(gui, text):
 def restart_application(app_directory):
     executable_path = os.path.join(app_directory, "TeraTermUI.exe")
     if os.path.exists(executable_path):
-        subprocess.Popen(executable_path)
+        subprocess.run(executable_path)
     sys.exit(0)
 
 
