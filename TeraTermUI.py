@@ -5622,8 +5622,7 @@ class TeraTermUI(customtkinter.CTk):
         self.clipboard_append(cell_value)
 
         # Close existing tooltip if any
-        if self.tooltip:
-            self.tooltip.destroy()
+        self.destroy_tooltip()
 
         # Create new tooltip
         x, y = self.winfo_pointerxy()
@@ -5636,12 +5635,13 @@ class TeraTermUI(customtkinter.CTk):
         label = tk.Label(self.tooltip, text=translation["clipboard"],
                          bg="#145DA0", fg="#fff", font=("Arial", 10, "bold"))
         label.pack(padx=5, pady=5)
+        self.lift_tooltip()
 
         # Auto-destroy after 1.5 seconds and reset the tooltip variable
         self.tooltip.after(1500, self.destroy_tooltip)
 
     def destroy_tooltip(self):
-        if self.tooltip:
+        if self.tooltip is not None and self.tooltip.winfo_exists():
             self.tooltip.destroy()
             self.tooltip = None
 
@@ -5669,8 +5669,7 @@ class TeraTermUI(customtkinter.CTk):
         self.focus_set()
 
         # Close existing tooltip if any
-        if self.tooltip:
-            self.tooltip.destroy()
+        self.destroy_tooltip()
 
         # Create new tooltip
         x, y = self.winfo_pointerxy()
@@ -5683,6 +5682,7 @@ class TeraTermUI(customtkinter.CTk):
         label = tk.Label(self.tooltip, text=translation["pasted"],
                          bg="#145DA0", fg="#fff", font=("Arial", 10, "bold"))
         label.pack(padx=5, pady=5)
+        self.lift_tooltip()
 
         # Auto-destroy after 3.5 seconds and reset the tooltip variable
         self.tooltip.after(3500, self.destroy_tooltip)
@@ -7934,8 +7934,7 @@ class TeraTermUI(customtkinter.CTk):
         self.destroy_windows()
         self.unbind("<Return>")
         TeraTermUI.check_and_update_border_color(self)
-        if self.tooltip is not None and self.tooltip.winfo_exists():
-            self.tooltip.destroy()
+        self.destroy_tooltip()
         TeraTermUI.disable_user_input("on")
 
     # function that changes the theme of the application
