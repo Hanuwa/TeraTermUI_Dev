@@ -103,8 +103,10 @@ def measure_time(threshold):
             end_time = time.time()
             elapsed_time = end_time - start_time
             print(f"Elapsed time: {elapsed_time:.2f} seconds")
-            if elapsed_time > threshold or TeraTermUI.checkIfProcessRunning("EpicGamesLauncher"):
-                self.after(350, self.notice_user)
+            game_launchers = ["EpicGamesLauncher", "SteamWebHelper", "RockstarService"]
+            running_launchers = TeraTermUI.checkMultipleProcessesRunning(*game_launchers)
+            if elapsed_time > threshold or running_launchers:
+                self.after(350, self.notice_user, running_launchers)
             return result
 
         return wrapper
@@ -2946,8 +2948,8 @@ class TeraTermUI(customtkinter.CTk):
                             radio = self.uprb.UprbayTeraTermVt.child_window(
                                 title="Use plain password to log in", control_type="RadioButton")
                             if not radio.is_selected():
-                                radio.click()
-                            self.uprb.UprbayTeraTermVt.child_window(title="OK", control_type="Button").click()
+                                radio.invoke()
+                            self.uprb.UprbayTeraTermVt.child_window(title="OK", control_type="Button").invoke()
                             self.server_status = self.wait_for_prompt(
                                 "return to continue", "REGRESE PRONTO")
                             if self.server_status == "Maintenance message found":
@@ -3097,7 +3099,7 @@ class TeraTermUI(customtkinter.CTk):
             self.skip_auth = False
         self.connection.commit()
 
-    def notice_user(self):
+    def notice_user(self, running_launchers):
         if self.error is not None and self.error.winfo_exists():
             return
         lang = self.language_menu.get()
@@ -3106,10 +3108,17 @@ class TeraTermUI(customtkinter.CTk):
         main_window_y = self.winfo_y()
         self.tooltip = tk.Toplevel(self)
         self.tooltip.wm_overrideredirect(True)
+        self.tooltip.transient(self)
         self.tooltip.config(bg="#FFD700")
         self.tooltip.wm_geometry(f"+{main_window_x + 20}+{main_window_y + 20}")
-        if TeraTermUI.checkIfProcessRunning("EpicGamesLauncher"):
-            text = translation["epic_games"]
+        launcher_names = {
+            "EpicGamesLauncher": "Epic",
+            "SteamWebHelper": "Steam",
+            "RockstarService": "Rockstar"
+        }
+        if running_launchers:
+            launchers_list = ", ".join([launcher_names[launcher] for launcher in running_launchers])
+            text = translation["game_launchers"].format(launchers_list)
         else:
             text = translation["exec_time"]
         label = tk.Label(self.tooltip, text=text, bg="#FFD700", fg="#000", font=("Verdana", 11, "bold"))
@@ -3183,14 +3192,14 @@ class TeraTermUI(customtkinter.CTk):
                                 title="Host:", control_type="Edit")
                             if host_input.get_value() != "uprbay.uprb.edu":
                                 host_input.set_text("uprbay.uprb.edu")
-                            self.uprb.TeraTermDisconnectedVt.child_window(title="OK", control_type="Button").click()
+                            self.uprb.TeraTermDisconnectedVt.child_window(title="OK", control_type="Button").invoke()
                             self.uprbay_window = self.uprb.window(
                                 title="uprbay.uprb.edu - Tera Term VT", class_name="VTWin32", control_type="Window")
                             self.uprbay_window.wait("visible", timeout=3)
                             self.tera_term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if self.uprbay_window.child_window(title="Continue", control_type="Button").exists(
                                     timeout=1):
-                                self.uprbay_window.child_window(title="Continue", control_type="Button").click()
+                                self.uprbay_window.child_window(title="Continue", control_type="Button").invoke()
                             if not self.skip_auth:
                                 self.bind("<Return>", lambda event: self.auth_event_handler())
                                 self.after(0, self.initialization_auth)
@@ -3394,13 +3403,13 @@ class TeraTermUI(customtkinter.CTk):
         new_connection.wait("visible", timeout=5)
         tcp_ip_radio = new_connection.child_window(title="TCP/IP", control_type="RadioButton")
         if not tcp_ip_radio.is_selected():
-            tcp_ip_radio.click()
+            tcp_ip_radio.invoke()
         history_checkbox = new_connection.child_window(title="History", control_type="CheckBox")
         if not history_checkbox.get_toggle_state():
-            history_checkbox.click()
+            history_checkbox.invoke()
         ssh_radio = new_connection.child_window(title="SSH", control_type="RadioButton")
         if not ssh_radio.is_selected():
-            ssh_radio.click()
+            ssh_radio.invoke()
         tcp_port_edit = new_connection.child_window(title="TCP port#:", control_type="Edit")
         if tcp_port_edit.get_value() != "22":
             tcp_port_edit.set_text("22")
@@ -5158,7 +5167,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.loading_screen is None or not self.loading_screen.winfo_exists():
             self.loading_screen = SmoothFadeToplevel(fade_duration=10, final_alpha=0.90)
             self.loading_screen_geometry()
-            self.loading_screen.overrideredirect(True)
+            self.loading_screen.wm_overrideredirect(True)
             self.loading_screen.attributes("-topmost", True)
             self.loading_screen.iconbitmap(self.icon_path)
             self.loading_label = customtkinter.CTkLabel(self.loading_screen, text=translation["loading"],
@@ -5334,6 +5343,23 @@ class TeraTermUI(customtkinter.CTk):
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
             print(f"Exception occurred: {e}")
         return False
+
+    # function to check if multiple of the specified processes are running or not
+    @staticmethod
+    def checkMultipleProcessesRunning(*processNames):
+        running_processes = []
+        for processName in processNames:
+            process = processName.lower()
+            try:
+                for proc in psutil.process_iter(attrs=["name"]):
+                    proc_info = proc.as_dict(attrs=["name"])
+                    proc_name = proc_info.get("name", "").lower()
+                    if process in proc_name:
+                        running_processes.append(processName)
+                        break
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
+                print(f"Exception occurred: {e}")
+        return running_processes
 
     # function that checks if there's more than 1 instance of Tera Term running
     @staticmethod
@@ -5603,6 +5629,7 @@ class TeraTermUI(customtkinter.CTk):
         x, y = self.winfo_pointerxy()
         self.tooltip = tk.Toplevel(self)
         self.tooltip.wm_overrideredirect(True)
+        self.tooltip.transient(self)
         self.tooltip.config(bg="#145DA0")
         self.tooltip.wm_geometry(f"+{x + 20}+{y + 20}")
 
@@ -5649,6 +5676,7 @@ class TeraTermUI(customtkinter.CTk):
         x, y = self.winfo_pointerxy()
         self.tooltip = tk.Toplevel(self)
         self.tooltip.wm_overrideredirect(True)
+        self.tooltip.transient(self)
         self.tooltip.config(bg='#145DA0')
         self.tooltip.wm_geometry(f"+{x + 20}+{y + 20}")
 
@@ -6202,7 +6230,7 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language(lang)
         if self.move_tables_overlay is None:
             self.move_tables_overlay = SmoothFadeToplevel(fade_duration=10, final_alpha=0.90)
-            self.move_tables_overlay.overrideredirect(True)
+            self.move_tables_overlay.wm_overrideredirect(True)
             self.move_title_label = customtkinter.CTkLabel(self.move_tables_overlay, text=translation["move_classes"],
                                                            font=customtkinter.CTkFont(size=16, weight="bold"))
             self.move_title_label.grid(row=0, column=1, padx=10, pady=(10, 0))
