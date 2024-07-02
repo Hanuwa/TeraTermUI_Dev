@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 6/29/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 6/7/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1748,10 +1748,11 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         if self.enrolled_classes_table is not None and not self.my_classes_frame.grid_info():
+            self.tabview.grid_forget()
+            self.back_classes.grid_forget()
             self.my_classes_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
             self.modify_classes_frame.grid(row=2, column=2, sticky="nw", padx=(15, 0))
             self.back_my_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
-            self.tabview.grid_forget()
             self.in_enroll_frame = False
             self.in_search_frame = False
             self.add_key_bindings(event=None)
@@ -1837,7 +1838,7 @@ class TeraTermUI(customtkinter.CTk):
                                 copy = pyperclip.paste()
                                 enrolled_classes, total_credits = self.extract_my_enrolled_classes(copy)
                                 self.after(0, self.enable_widgets, self)
-                                self.after(50, self.display_enrolled_data, enrolled_classes,
+                                self.after(0, self.display_enrolled_data, enrolled_classes,
                                            total_credits, dialog_input)
                                 self.clipboard_clear()
                                 if clipboard_content is not None:
@@ -6846,7 +6847,6 @@ class TeraTermUI(customtkinter.CTk):
             self.after(100, self.show_error_message, 320, 235, translation["semester_no_data"] + semester)
             return
         self.dialog_input = dialog_input
-        self.tabview.grid_forget()
         table_values = [headers] + [[cls.get(header, "") for header in headers] for cls in data]
         enrolled_rows = len(data) + 1
         if self.enrolled_classes_table is not None:
@@ -6878,8 +6878,6 @@ class TeraTermUI(customtkinter.CTk):
                                                   message=translation["back_multiple"])
         self.modify_classes_title = customtkinter.CTkLabel(self.modify_classes_frame,
                                                            text=translation["mod_classes_title"])
-        self.back_classes.grid_forget()
-        self.back_my_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
 
         # Create the table widget
         self.enrolled_classes_table = CTkTable(
@@ -6912,6 +6910,8 @@ class TeraTermUI(customtkinter.CTk):
             tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#989898", alpha=0.90)
             self.enrolled_header_tooltips[cell] = tooltip
 
+        self.tabview.grid_forget()
+        self.back_classes.grid_forget()
         self.my_classes_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
         self.my_classes_frame.grid_columnconfigure(2, weight=1)
         self.title_my_classes.grid(row=1, column=1, padx=(180, 0), pady=(10, 10))
@@ -6921,6 +6921,7 @@ class TeraTermUI(customtkinter.CTk):
         self.download_enrolled_pdf.grid(row=5, column=1, padx=(180, 0), pady=(10, 0))
         self.modify_classes_frame.grid(row=2, column=2, sticky="nw", padx=(15, 0))
         self.modify_classes_title.grid(row=0, column=0, padx=(0, 30), pady=(0, 30))
+        self.back_my_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
 
         self.change_section_entries = []
         self.mod_selection_list = []
@@ -6981,6 +6982,7 @@ class TeraTermUI(customtkinter.CTk):
     def destroy_enrolled_frame(self):
         self.my_classes_frame.grid_forget()
         self.modify_classes_frame.grid_forget()
+        self.back_my_classes.grid_forget()
         self.my_classes_frame.unbind("<Button-1>")
         self.modify_classes_frame.unbind("<Button-1>")
         self.title_my_classes.unbind("<Button-1>")
@@ -7026,6 +7028,9 @@ class TeraTermUI(customtkinter.CTk):
             self.modify_classes_frame = None
             self.my_classes_frame.destroy()
             self.my_classes_frame = None
+            self.back_my_classes.configure(command=None)
+            self.back_my_classes.destroy()
+            self.back_my_classes = None
 
         destroy()
 
