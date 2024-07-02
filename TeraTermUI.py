@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 6/7/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 7/2/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -3438,13 +3438,10 @@ class TeraTermUI(customtkinter.CTk):
                                 option_3=translation["option_3"], icon_size=(65, 65), button_color=(
                                 "#c30101", "#c30101", "#145DA0", "use_default"), option_1_type="checkbox",
                                 hover_color=("darkred", "darkred", "use_default"))
-            if self.back_checkbox_state is None:
-                response, checkbox = msg.get()
-                self.back_checkbox_state = checkbox
-            else:
-                if self.back_checkbox_state == 1:
-                    msg.check_checkbox()
-                response, self.back_checkbox_state = msg.get()
+            if self.back_checkbox_state == 1:
+                msg.check_checkbox()
+            response, checkbox = msg.get()
+            self.back_checkbox_state = checkbox
         if TeraTermUI.checkIfProcessRunning("ttermpro") and (
                 self.error_occurred or (response and (response == "Yes" or response == "Sí") and checkbox)):
             if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
