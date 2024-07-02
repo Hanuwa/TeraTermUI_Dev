@@ -552,8 +552,7 @@ class TeraTermUI(customtkinter.CTk):
         self.timeout_occurred = False
         self.can_edit = False
         self.original_font = None
-        self.enrolled_classes_list = {}
-        self.dropped_classes_list = {}
+        self.classes_status = {}
         self.class_table_pairs = []
         self.table_tooltips = {}
         self.original_table_data = {}
@@ -1364,11 +1363,10 @@ class TeraTermUI(customtkinter.CTk):
                 semester = self.e_semester_entry.get().upper().replace(" ", "")
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
-                        if (choice == "register" and classes not in
-                            self.enrolled_classes_list.values() and section not in self.enrolled_classes_list) \
-                                or (choice == "drop" and classes
-                                    not in self.dropped_classes_list.values() and section
-                                    not in self.dropped_classes_list):
+                        if (choice == "register" and (
+                                section not in self.classes_status or self.classes_status[section][1] != "enrolled")) \
+                                or (choice == "drop" and (
+                                section not in self.classes_status or self.classes_status[section][1] != "dropped")):
                             if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE)
                                     and re.fullmatch("^[A-Z]{2}[A-Z0-9]$", section, flags=re.IGNORECASE)
                                     and re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE)
@@ -1429,13 +1427,11 @@ class TeraTermUI(customtkinter.CTk):
                                         if choice == "register":
                                             self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                             time.sleep(1)
-                                            self.dropped_classes_list.pop(section, None)
-                                            self.enrolled_classes_list[section] = classes
+                                            self.classes_status[section] = (classes, "enrolled")
                                             self.after(100, self.show_success_message, 350, 265,
                                                        translation["success_enrolled"])
                                         elif choice == "drop":
-                                            self.enrolled_classes_list.pop(section, None)
-                                            self.dropped_classes_list[section] = classes
+                                            self.classes_status[section] = (classes, "dropped")
                                             self.after(100, self.show_success_message, 350, 265,
                                                        translation["success_dropped"])
                                         if self.e_counter + self.m_counter == 15:
@@ -1510,9 +1506,9 @@ class TeraTermUI(customtkinter.CTk):
                                                translation["semester_format_error"])
                                     self.after(0, self.e_semester_entry.configure(border_color="#c30101"))
                         else:
-                            if classes in self.enrolled_classes_list.values() or section in self.enrolled_classes_list:
+                            if section in self.classes_status and self.classes_status[section][1] == "enrolled":
                                 self.after(100, self.show_error_message, 335, 240, translation["already_enrolled"])
-                            if classes in self.dropped_classes_list.values() or section in self.dropped_classes_list:
+                            elif section in self.classes_status and self.classes_status[section][1] == "dropped":
                                 self.after(100, self.show_error_message, 335, 240, translation["already_dropped"])
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
@@ -1753,10 +1749,12 @@ class TeraTermUI(customtkinter.CTk):
             self.my_classes_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
             self.modify_classes_frame.grid(row=2, column=2, sticky="nw", padx=(15, 0))
             self.back_my_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
+            if self.countdown_running:
+                self.submit_my_classes.configure(state="disabled")
+            self.show_classes.configure(text=translation["show_my_new"])
             self.in_enroll_frame = False
             self.in_search_frame = False
             self.add_key_bindings(event=None)
-            self.show_classes.configure(text=translation["show_my_new"])
             self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
             self.bind("<Up>", lambda event: self.move_up_scrollbar())
             self.bind("<Down>", lambda event: self.move_down_scrollbar())
@@ -2224,16 +2222,10 @@ class TeraTermUI(customtkinter.CTk):
                                     ]
                                     for c, cnt, sec, cls in choice:
                                         if sec:
-                                            if c == "Register" or c == "Registra":
-                                                if sec in self.dropped_classes_list:
-                                                    del self.dropped_classes_list[sec]
-                                                if sec not in self.enrolled_classes_list:
-                                                    self.enrolled_classes_list[sec] = cls
-                                            elif c == "Drop" or c == "Baja":
-                                                if sec in self.enrolled_classes_list:
-                                                    del self.enrolled_classes_list[sec]
-                                                if sec not in self.dropped_classes_list:
-                                                    self.dropped_classes_list[sec] = cls
+                                            if c in ["Register", "Registra"]:
+                                                self.classes_status[sec] = (cls, "enrolled")
+                                            elif c in ["Drop", "Baja"]:
+                                                self.classes_status[sec] = (cls, "dropped")
                                     self.submit_multiple.configure(state="disabled")
                                     self.unbind("<Return>")
                                     self.not_rebind = True
@@ -3488,8 +3480,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.search_function_counter = 0
                 self.e_counter = 0
                 self.m_counter = 0
-                self.enrolled_classes_list.clear()
-                self.dropped_classes_list.clear()
+                self.classes_status.clear()
             self.slideshow_frame.resume_cycle()
             self.intro_box.reset_autoscroll()
             if not self.intro_box.disabled_autoscroll:
@@ -6846,46 +6837,6 @@ class TeraTermUI(customtkinter.CTk):
         self.dialog_input = dialog_input
         table_values = [headers] + [[cls.get(header, "") for header in headers] for cls in data]
         enrolled_rows = len(data) + 1
-        if self.enrolled_classes_table is not None:
-            self.destroy_enrolled_frame()
-        self.enrolled_classes_data = data
-        self.enrolled_classes_credits = creds
-        self.my_classes_frame = customtkinter.CTkScrollableFrame(self, corner_radius=10, width=620, height=320)
-        self.title_my_classes = customtkinter.CTkLabel(self.my_classes_frame,
-                                                       text=translation["my_classes"] + semester,
-                                                       font=customtkinter.CTkFont(size=20, weight="bold"))
-        self.total_credits_label = customtkinter.CTkLabel(self.my_classes_frame,
-                                                          text=translation["total_creds"] + creds)
-        self.submit_my_classes = CustomButton(self.my_classes_frame, border_width=2,
-                                              text=translation["submit"], text_color=("gray10", "#DCE4EE"),
-                                              command=self.submit_modify_classes_handler)
-        self.submit_my_classes_tooltip = CTkToolTip(self.submit_my_classes, bg_color="#1E90FF",
-                                                    message=translation["submit_modify_tooltip"])
-        self.download_enrolled_pdf = CustomButton(self.my_classes_frame, text=translation["pdf_save_as"],
-                                                  hover_color="#173518", fg_color="#2e6930",
-                                                  command=lambda: self.download_enrolled_classes_as_pdf(data, creds))
-        self.download_enrolled_pdf_tooltip = CTkToolTip(self.download_enrolled_pdf,
-                                                        message=translation["download_pdf_enrolled_tooltip"],
-                                                        bg_color="green")
-        self.modify_classes_frame = customtkinter.CTkFrame(self.my_classes_frame)
-        self.back_my_classes = CustomButton(master=self.t_buttons_frame, fg_color="transparent", border_width=2,
-                                            text=translation["back"], hover_color=("#BEBEBE", "#4E4F50"),
-                                            text_color=("gray10", "#DCE4EE"), command=self.go_back_event2)
-        self.back_my_classes_tooltip = CTkToolTip(self.back_my_classes, alpha=0.90, bg_color="#989898",
-                                                  message=translation["back_multiple"])
-        self.modify_classes_title = customtkinter.CTkLabel(self.modify_classes_frame,
-                                                           text=translation["mod_classes_title"])
-
-        # Create the table widget
-        self.enrolled_classes_table = CTkTable(
-            self.my_classes_frame,
-            column=len(headers),
-            row=enrolled_rows,
-            values=table_values,
-            header_color="#145DA0",
-            hover_color="#339CFF",
-            command=self.copy_cell_data_to_clipboard,
-        )
         column_widths = {
             translation["course"]: 100,
             translation["grade"]: 50,
@@ -6900,81 +6851,191 @@ class TeraTermUI(customtkinter.CTk):
             translation["times"]: translation["tooltip_times"],
             translation["room"]: translation["tooltip_croom"]
         }
-        for i, header in enumerate(headers):
-            self.enrolled_classes_table.edit_column(i, width=column_widths[header])
-            cell = self.enrolled_classes_table.get_cell(0, i)
-            tooltip_message = tooltip_messages[header]
-            tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#989898", alpha=0.90)
-            self.enrolled_header_tooltips[cell] = tooltip
-
-        self.tabview.grid_forget()
-        self.back_classes.grid_forget()
-        self.my_classes_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
-        self.my_classes_frame.grid_columnconfigure(2, weight=1)
-        self.title_my_classes.grid(row=1, column=1, padx=(180, 0), pady=(10, 10))
-        self.enrolled_classes_table.grid(row=2, column=1, pady=(0, 5), padx=(10, 0))
-        self.total_credits_label.grid(row=3, column=1, padx=(180, 0), pady=(0, 15))
-        self.submit_my_classes.grid(row=4, column=1, padx=(180, 0))
-        self.download_enrolled_pdf.grid(row=5, column=1, padx=(180, 0), pady=(10, 0))
-        self.modify_classes_frame.grid(row=2, column=2, sticky="nw", padx=(15, 0))
-        self.modify_classes_title.grid(row=0, column=0, padx=(0, 30), pady=(0, 30))
-        self.back_my_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
-
-        self.change_section_entries = []
-        self.mod_selection_list = []
-        pad_y = 9
-
-        for row_index in range(len(self.enrolled_classes_data)):
-            if row_index == 0:
-                pad_y = 30
-            if self.enrolled_classes_data[row_index][translation["course"]] != "":
-                if row_index < len(self.placeholder_texts_sections):
-                    placeholder_text = self.placeholder_texts_sections[row_index]
+        if self.enrolled_classes_table is not None:
+            self.enrolled_classes_table.refresh_table(table_values)
+            self.total_credits_label.configure(text=translation["total_creds"] + creds)
+            self.title_my_classes.configure(text=translation["my_classes"] + semester)
+            self.download_enrolled_pdf.configure(command=lambda: self.download_enrolled_classes_as_pdf(data, creds))
+            self.submit_my_classes.configure(command=self.submit_modify_classes_handler)
+            self.modify_classes_title.configure(text=translation["mod_classes_title"])
+            for i, header in enumerate(headers):
+                self.enrolled_classes_table.edit_column(i, width=column_widths[header])
+                cell = self.enrolled_classes_table.get_cell(0, i)
+                tooltip_message = tooltip_messages[header]
+                tooltip = self.enrolled_header_tooltips.get(cell)
+                if tooltip:
+                    tooltip.configure(message=tooltip_message)
                 else:
-                    extra_placeholder_text = ["KJ1", "LJ1", "KI1", "LI1", "VM1", "JM1"]
-                    index_in_extra = (row_index - len(self.placeholder_texts_sections)) % len(extra_placeholder_text)
-                    placeholder_text = extra_placeholder_text[index_in_extra]
-                mod_selection = customtkinter.CTkOptionMenu(self.modify_classes_frame,
-                                                            values=[translation["choose"], translation["drop"],
-                                                                    translation["section"]], width=80,
-                                                            command=lambda value, index=row_index:
-                                                            self.modify_enrolled_classes(value, index))
-                change_section_entry = CustomEntry(self.modify_classes_frame, self, lang,
-                                                   placeholder_text=placeholder_text, width=50)
-                mod_selection.grid(row=row_index, column=0, padx=(0, 100), pady=(pad_y, 0))
-                change_section_entry.grid(row=row_index, column=0, padx=(50, 0), pady=(pad_y, 0))
-                mod_selection_tooltip = CTkToolTip(mod_selection, bg_color="#1E90FF",
-                                                   message=translation["mod_selection"])
-                change_section_entry_tooltip = CTkToolTip(change_section_entry, bg_color="#1E90FF",
-                                                          message=translation["change_section_entry"])
-                change_section_entry.configure(state="disabled")
-                self.mod_selection_list.append(mod_selection)
-                self.change_section_entries.append(change_section_entry)
-                self.enrolled_tooltips.append(mod_selection_tooltip)
-                self.enrolled_tooltips.append(change_section_entry_tooltip)
+                    tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#989898", alpha=0.90)
+                    self.enrolled_header_tooltips[cell] = tooltip
+            current_entries_count = len(self.change_section_entries)
+            new_entries_count = len(data)
+            previous_row_had_widgets = True
+            pad_y = 9
+            for row_index in range(min(current_entries_count, new_entries_count)):
+                if row_index == 0:
+                    pad_y = 30
+                self.change_section_entries[row_index].grid(row=row_index, column=0, padx=(50, 0), pady=(pad_y, 0))
+                self.mod_selection_list[row_index].grid(row=row_index, column=0, padx=(0, 100), pady=(pad_y, 0))
                 pad_y = 9
-            else:
-                self.mod_selection_list.append(None)
-                self.change_section_entries.append(None)
-                pad_y = 45
-        if self.countdown_running:
-            self.submit_my_classes.configure(state="disabled")
-        self.show_classes.configure(text=translation["show_my_new"])
-        self.in_enroll_frame = False
-        self.in_search_frame = False
-        self.add_key_bindings(event=None)
-        self.after(350, self.bind, "<Return>", lambda event: self.submit_modify_classes_handler())
-        self.bind("<Up>", lambda event: self.move_up_scrollbar())
-        self.bind("<Down>", lambda event: self.move_down_scrollbar())
-        self.bind("<Home>", lambda event: self.move_top_scrollbar())
-        self.bind("<End>", lambda event: self.move_bottom_scrollbar())
-        self.bind("<Control-s>", lambda event: self.download_enrolled_classes_as_pdf(data, creds))
-        self.bind("<Control-S>", lambda event: self.download_enrolled_classes_as_pdf(data, creds))
-        self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event2())
-        self.my_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
-        self.title_my_classes.bind("<Button-1>", lambda event: self.focus_set())
-        self.modify_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
-        self.total_credits_label.bind("<Button-1>", lambda event: self.focus_set())
+            if new_entries_count > current_entries_count:
+                for row_index in range(current_entries_count, new_entries_count):
+                    if row_index == 0:
+                        pad_y = 30
+                    else:
+                        pad_y = 9 if previous_row_had_widgets else 45
+
+                    if data[row_index][translation["course"]] != "":
+                        if row_index < len(self.placeholder_texts_sections):
+                            placeholder_text = self.placeholder_texts_sections[row_index]
+                        else:
+                            extra_placeholder_text = ["KJ1", "LJ1", "KI1", "LI1", "VM1", "JM1"]
+                            index_in_extra = (row_index - len(self.placeholder_texts_sections)) % len(
+                                extra_placeholder_text)
+                            placeholder_text = extra_placeholder_text[index_in_extra]
+
+                        mod_selection = customtkinter.CTkOptionMenu(self.modify_classes_frame,
+                                                                    values=[translation["choose"], translation["drop"],
+                                                                            translation["section"]], width=80,
+                                                                    command=lambda value, index=row_index:
+                                                                    self.modify_enrolled_classes(value, index))
+                        change_section_entry = CustomEntry(self.modify_classes_frame, self, lang,
+                                                           placeholder_text=placeholder_text, width=50)
+                        mod_selection.grid(row=row_index, column=0, padx=(0, 100), pady=(pad_y, 0))
+                        change_section_entry.grid(row=row_index, column=0, padx=(50, 0), pady=(pad_y, 0))
+                        mod_selection_tooltip = CTkToolTip(mod_selection, bg_color="#1E90FF",
+                                                           message=translation["mod_selection"])
+                        change_section_entry_tooltip = CTkToolTip(change_section_entry, bg_color="#1E90FF",
+                                                                  message=translation["change_section_entry"])
+                        change_section_entry.configure(state="disabled")
+                        self.mod_selection_list.append(mod_selection)
+                        self.change_section_entries.append(change_section_entry)
+                        self.enrolled_tooltips.append(mod_selection_tooltip)
+                        self.enrolled_tooltips.append(change_section_entry_tooltip)
+                        previous_row_had_widgets = True
+                    else:
+                        self.mod_selection_list.append(None)
+                        self.change_section_entries.append(None)
+                        previous_row_had_widgets = False
+            elif new_entries_count < current_entries_count:
+                for row_index in range(new_entries_count, current_entries_count):
+                    if self.change_section_entries[row_index] is not None:
+                        self.change_section_entries[row_index].grid_forget()
+                    if self.mod_selection_list[row_index] is not None:
+                        self.mod_selection_list[row_index].grid_forget()
+        else:
+            self.enrolled_classes_data = data
+            self.enrolled_classes_credits = creds
+            self.change_section_entries = []
+            self.mod_selection_list = []
+            self.my_classes_frame = customtkinter.CTkScrollableFrame(self, corner_radius=10, width=620, height=320)
+            self.title_my_classes = customtkinter.CTkLabel(self.my_classes_frame,
+                                                           text=translation["my_classes"] + semester,
+                                                           font=customtkinter.CTkFont(size=20, weight="bold"))
+            self.total_credits_label = customtkinter.CTkLabel(self.my_classes_frame,
+                                                              text=translation["total_creds"] + creds)
+            self.submit_my_classes = CustomButton(self.my_classes_frame, border_width=2,
+                                                  text=translation["submit"], text_color=("gray10", "#DCE4EE"),
+                                                  command=self.submit_modify_classes_handler)
+            self.submit_my_classes_tooltip = CTkToolTip(self.submit_my_classes, bg_color="#1E90FF",
+                                                        message=translation["submit_modify_tooltip"])
+            self.download_enrolled_pdf = CustomButton(self.my_classes_frame, text=translation["pdf_save_as"],
+                                                      hover_color="#173518", fg_color="#2e6930",
+                                                      command=lambda: self.download_enrolled_classes_as_pdf(data,
+                                                                                                            creds))
+            self.download_enrolled_pdf_tooltip = CTkToolTip(self.download_enrolled_pdf,
+                                                            message=translation["download_pdf_enrolled_tooltip"],
+                                                            bg_color="green")
+            self.modify_classes_frame = customtkinter.CTkFrame(self.my_classes_frame)
+            self.back_my_classes = CustomButton(master=self.t_buttons_frame, fg_color="transparent", border_width=2,
+                                                text=translation["back"], hover_color=("#BEBEBE", "#4E4F50"),
+                                                text_color=("gray10", "#DCE4EE"), command=self.go_back_event2)
+            self.back_my_classes_tooltip = CTkToolTip(self.back_my_classes, alpha=0.90, bg_color="#989898",
+                                                      message=translation["back_multiple"])
+            self.modify_classes_title = customtkinter.CTkLabel(self.modify_classes_frame,
+                                                               text=translation["mod_classes_title"])
+            self.enrolled_classes_table = CTkTable(
+                self.my_classes_frame,
+                column=len(headers),
+                row=enrolled_rows,
+                values=table_values,
+                header_color="#145DA0",
+                hover_color="#339CFF",
+                command=self.copy_cell_data_to_clipboard,
+            )
+            for i, header in enumerate(headers):
+                self.enrolled_classes_table.edit_column(i, width=column_widths[header])
+                cell = self.enrolled_classes_table.get_cell(0, i)
+                tooltip_message = tooltip_messages[header]
+                tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#989898", alpha=0.90)
+                self.enrolled_header_tooltips[cell] = tooltip
+
+            self.tabview.grid_forget()
+            self.back_classes.grid_forget()
+            self.my_classes_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
+            self.my_classes_frame.grid_columnconfigure(2, weight=1)
+            self.title_my_classes.grid(row=1, column=1, padx=(180, 0), pady=(10, 10))
+            self.enrolled_classes_table.grid(row=2, column=1, pady=(0, 5), padx=(10, 0))
+            self.total_credits_label.grid(row=3, column=1, padx=(180, 0), pady=(0, 15))
+            self.submit_my_classes.grid(row=4, column=1, padx=(180, 0))
+            self.download_enrolled_pdf.grid(row=5, column=1, padx=(180, 0), pady=(10, 0))
+            self.modify_classes_frame.grid(row=2, column=2, sticky="nw", padx=(15, 0))
+            self.modify_classes_title.grid(row=0, column=0, padx=(0, 30), pady=(0, 30))
+            self.back_my_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
+
+            pad_y = 9
+            for row_index in range(len(self.enrolled_classes_data)):
+                if row_index == 0:
+                    pad_y = 30
+                if self.enrolled_classes_data[row_index][translation["course"]] != "":
+                    if row_index < len(self.placeholder_texts_sections):
+                        placeholder_text = self.placeholder_texts_sections[row_index]
+                    else:
+                        extra_placeholder_text = ["KJ1", "LJ1", "KI1", "LI1", "VM1", "JM1"]
+                        index_in_extra = (row_index - len(self.placeholder_texts_sections)) % len(
+                            extra_placeholder_text)
+                        placeholder_text = extra_placeholder_text[index_in_extra]
+                    mod_selection = customtkinter.CTkOptionMenu(self.modify_classes_frame,
+                                                                values=[translation["choose"], translation["drop"],
+                                                                        translation["section"]], width=80,
+                                                                command=lambda value, index=row_index:
+                                                                self.modify_enrolled_classes(value, index))
+                    change_section_entry = CustomEntry(self.modify_classes_frame, self, lang,
+                                                       placeholder_text=placeholder_text, width=50)
+                    mod_selection.grid(row=row_index, column=0, padx=(0, 100), pady=(pad_y, 0))
+                    change_section_entry.grid(row=row_index, column=0, padx=(50, 0), pady=(pad_y, 0))
+                    mod_selection_tooltip = CTkToolTip(mod_selection, bg_color="#1E90FF",
+                                                       message=translation["mod_selection"])
+                    change_section_entry_tooltip = CTkToolTip(change_section_entry, bg_color="#1E90FF",
+                                                              message=translation["change_section_entry"])
+                    change_section_entry.configure(state="disabled")
+                    self.mod_selection_list.append(mod_selection)
+                    self.change_section_entries.append(change_section_entry)
+                    self.enrolled_tooltips.append(mod_selection_tooltip)
+                    self.enrolled_tooltips.append(change_section_entry_tooltip)
+                    pad_y = 9
+                else:
+                    self.mod_selection_list.append(None)
+                    self.change_section_entries.append(None)
+                    pad_y = 45
+            if self.countdown_running:
+                self.submit_my_classes.configure(state="disabled")
+            self.show_classes.configure(text=translation["show_my_new"])
+            self.in_enroll_frame = False
+            self.in_search_frame = False
+            self.add_key_bindings(event=None)
+            self.after(350, self.bind, "<Return>", lambda event: self.submit_modify_classes_handler())
+            self.bind("<Up>", lambda event: self.move_up_scrollbar())
+            self.bind("<Down>", lambda event: self.move_down_scrollbar())
+            self.bind("<Home>", lambda event: self.move_top_scrollbar())
+            self.bind("<End>", lambda event: self.move_bottom_scrollbar())
+            self.bind("<Control-s>", lambda event: self.download_enrolled_classes_as_pdf(data, creds))
+            self.bind("<Control-S>", lambda event: self.download_enrolled_classes_as_pdf(data, creds))
+            self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event2())
+            self.my_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
+            self.title_my_classes.bind("<Button-1>", lambda event: self.focus_set())
+            self.modify_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
+            self.total_credits_label.bind("<Button-1>", lambda event: self.focus_set())
 
     def destroy_enrolled_frame(self):
         self.my_classes_frame.grid_forget()
@@ -7144,8 +7205,9 @@ class TeraTermUI(customtkinter.CTk):
                                         if "REQUIRED CO-REQUISITE" in text_output:
                                             co_requisite = True
                                         else:
-                                            self.enrolled_classes_list.pop(old_section, None)
-                                            self.dropped_classes_list[old_section] = course_code_no_section
+                                            if old_section in self.classes_status:
+                                                self.classes_status.pop(old_section)
+                                            self.classes_status[old_section] = (course_code_no_section, "dropped")
                                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER 2}")
                                         self.reset_activity_timer()
                                         if mod == translation["section"]:
@@ -7180,14 +7242,19 @@ class TeraTermUI(customtkinter.CTk):
                                                 self.reset_activity_timer()
                                                 if "COURSE CLOSED" in text_output:
                                                     section_closed = True
-                                                    self.enrolled_classes_list.pop(old_section, None)
-                                                    self.dropped_classes_list[old_section] = course_code_no_section
+                                                    if old_section in self.classes_status:
+                                                        self.classes_status.pop(old_section)
+                                                    self.classes_status[old_section] = (
+                                                        course_code_no_section, "dropped")
                                                 else:
-                                                    self.dropped_classes_list.pop(old_section, None)
-                                                    self.enrolled_classes_list[old_section] = course_code_no_section
+                                                    if old_section in self.classes_status:
+                                                        self.classes_status.pop(old_section)
+                                                    self.classes_status[old_section] = (
+                                                        course_code_no_section, "enrolled")
                                             else:
-                                                self.dropped_classes_list.pop(old_section, None)
-                                                self.enrolled_classes_list[old_section] = course_code_no_section
+                                                if old_section in self.classes_status:
+                                                    self.classes_status.pop(old_section)
+                                                self.classes_status[old_section] = (course_code_no_section, "enrolled")
                                 self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                 self.reset_activity_timer()
                                 text_output = self.wait_for_response(["CONFIRMED", "DROPPED"], timeout=1.5)
@@ -7417,8 +7484,7 @@ class TeraTermUI(customtkinter.CTk):
             self.search_function_counter = 0
             self.e_counter = 0
             self.m_counter = 0
-            self.enrolled_classes_list.clear()
-            self.dropped_classes_list.clear()
+            self.classes_status.clear()
             self.connect_to_uprb()
             if not TeraTermUI.window_exists("SSH Authentication") and \
                     not TeraTermUI.window_exists("Tera Term - [disconnected] VT"):
@@ -7821,10 +7887,9 @@ class TeraTermUI(customtkinter.CTk):
                 CTkMessagebox(title=translation["automation_error_title"], icon="cancel",
                               message=translation["specific_enrollment_error"] + error_message_str, button_width=380)
                 for counter in range(self.a_counter + 1, 0, -1):
-                    if self.enrolled_classes_list:
-                        self.enrolled_classes_list.popitem()
-                    if self.dropped_classes_list:
-                        self.dropped_classes_list.popitem()
+                    if self.classes_status:
+                        last_item = list(self.classes_status.keys())[-1]
+                        self.classes_status.pop(last_item)
 
             self.after(2500, explanation)
         if not found_errors and text != "Error":
@@ -8259,8 +8324,7 @@ class TeraTermUI(customtkinter.CTk):
                 elif "PF4" in text_output:
                     self.error_occurred = True
                     self.after(250, self.go_back_event)
-                self.enrolled_classes_list = {}
-                self.dropped_classes_list = {}
+                self.classes_status.clear()
                 self.cursor.execute("UPDATE user_data SET default_semester=NULL")
                 self.connection.commit()
                 if not self.error_occurred:
@@ -9729,11 +9793,11 @@ class TeraTermUI(customtkinter.CTk):
                 error_entries.append(self.m_section_entry[i])
                 break
             if choices in ["Register", "Registra"]:
-                if sections in self.enrolled_classes_list and self.enrolled_classes_list[sections] == classes:
+                if sections in self.classes_status and self.classes_status[sections] == (classes, "enrolled"):
                     error_msg_long = translation["multiple_already_enrolled"]
                     break
             elif choices in ["Drop", "Baja"]:
-                if sections in self.dropped_classes_list and self.dropped_classes_list[sections] == classes:
+                if sections in self.classes_status and self.classes_status[sections] == (classes, "dropped"):
                     error_msg_long = translation["multiple_already_dropped"]
                     break
         if not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE) and semester != curr_sem:
