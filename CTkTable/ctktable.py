@@ -305,10 +305,10 @@ class CTkTable(customtkinter.CTkFrame):
             return
 
         frame.configure(background_corner_colors=corners, fg_color=fg)
-        frame.bind("<Enter>", lambda e, x=i, y=j, color=hover_corners, fg=hv:
-        self.frame[x, y].configure(background_corner_colors=color, fg_color=fg))
-        frame.bind("<Leave>", lambda e, x=i, y=j, color=corners, fg=fg:
-        self.frame[x, y].configure(background_corner_colors=color, fg_color=fg))
+        frame.bind("<Enter>", lambda e, x=i, y=j, color=hover_corners, fg_color=hv: self.frame[x, y].configure(
+            background_corner_colors=color, fg_color=fg_color))
+        frame.bind("<Leave>", lambda e, x=i, y=j, color=corners, fg_color=fg: self.frame[x, y].configure(
+            background_corner_colors=color, fg_color=fg_color))
 
     def manipulate_data(self, row, column):
         """ entry callback """
@@ -360,6 +360,37 @@ class CTkTable(customtkinter.CTkFrame):
         """
         for row_index in range(min(len(new_values), self.rows)):
             for col_index in range(min(len(new_values[row_index]), self.columns)):
+                new_value = str(new_values[row_index][col_index])
+                cell = self.get_cell(row_index, col_index)
+                if cell:
+                    current_value = cell.get() if self.write else cell.cget('text')
+                    if current_value != new_value:
+                        if self.write:
+                            cell.delete(0, customtkinter.END)
+                            cell.insert(0, new_value)
+                        else:
+                            cell.configure(text=new_value)
+        self.values = new_values
+        self.update_idletasks()
+
+    def refresh_table(self, new_values):
+        """
+        Update the table with new values.
+        Adjust the number of rows and columns if necessary.
+        """
+        new_rows = len(new_values)
+        new_columns = len(new_values[0]) if new_values else 0
+
+        if new_rows != self.rows or new_columns != self.columns:
+            self.rows = new_rows
+            self.columns = new_columns
+            for i in self.frame.values():
+                i.destroy()
+            self.frame = {}
+            self.draw_table()
+
+        for row_index in range(new_rows):
+            for col_index in range(new_columns):
                 new_value = str(new_values[row_index][col_index])
                 cell = self.get_cell(row_index, col_index)
                 if cell:
