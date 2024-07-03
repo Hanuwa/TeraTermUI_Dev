@@ -7024,6 +7024,7 @@ class TeraTermUI(customtkinter.CTk):
             self.in_enroll_frame = False
             self.in_search_frame = False
             self.add_key_bindings(event=None)
+            self.my_classes_frame.scroll_to_top()
             self.after(350, self.bind, "<Return>", lambda event: self.submit_modify_classes_handler())
             self.bind("<Up>", lambda event: self.move_up_scrollbar())
             self.bind("<Down>", lambda event: self.move_down_scrollbar())
