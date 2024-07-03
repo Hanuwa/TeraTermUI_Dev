@@ -1755,6 +1755,7 @@ class TeraTermUI(customtkinter.CTk):
             self.in_enroll_frame = False
             self.in_search_frame = False
             self.add_key_bindings(event=None)
+            self.my_classes_frame.scroll_to_top()
             self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
             self.bind("<Up>", lambda event: self.move_up_scrollbar())
             self.bind("<Down>", lambda event: self.move_down_scrollbar())
@@ -3140,7 +3141,7 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language(lang)
                 host = self.host_entry.get().replace(" ", "").lower()
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
-                    if host == "uprbay.uprb.edu" or host == "uprbayuprbedu" or host == "uprb":
+                    if host in ["uprbay.uprb.edu", "uprbayuprbedu", "uprb"]:
                         if TeraTermUI.checkIfProcessRunning("ttermpro"):
                             count, is_multiple = TeraTermUI.countRunningProcesses("ttermpro")
                             if is_multiple:
@@ -3208,7 +3209,7 @@ class TeraTermUI(customtkinter.CTk):
                             if not self.download:
                                 self.after(3500, self.download_teraterm)
                                 self.download = True
-                    elif host != "uprbay.uprb.edu":
+                    else:
                         self.after(350, self.bind, "<Return>", lambda event: self.login_event_handler())
                         self.after(100, self.show_error_message, 300, 215, translation["invalid_host"])
                         self.after(0, self.host_entry.configure(border_color="#c30101"))
@@ -7024,7 +7025,6 @@ class TeraTermUI(customtkinter.CTk):
             self.in_enroll_frame = False
             self.in_search_frame = False
             self.add_key_bindings(event=None)
-            self.my_classes_frame.scroll_to_top()
             self.after(350, self.bind, "<Return>", lambda event: self.submit_modify_classes_handler())
             self.bind("<Up>", lambda event: self.move_up_scrollbar())
             self.bind("<Down>", lambda event: self.move_down_scrollbar())
@@ -7037,6 +7037,7 @@ class TeraTermUI(customtkinter.CTk):
             self.title_my_classes.bind("<Button-1>", lambda event: self.focus_set())
             self.modify_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.total_credits_label.bind("<Button-1>", lambda event: self.focus_set())
+        self.my_classes_frame.scroll_to_top()
 
     def modify_enrolled_classes(self, mod, row_index):
         lang = self.language_menu.get()
