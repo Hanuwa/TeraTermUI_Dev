@@ -382,12 +382,21 @@ class CTkTable(customtkinter.CTkFrame):
         new_columns = len(new_values[0]) if new_values else 0
 
         if new_rows != self.rows or new_columns != self.columns:
+            if new_rows > self.rows:
+                for i in range(self.rows, new_rows):
+                    self.add_row([None] * self.columns)
+            elif new_rows < self.rows:
+                for i in range(new_rows, self.rows):
+                    self.delete_row()
+
+            if new_columns > self.columns:
+                for j in range(self.columns, new_columns):
+                    self.add_column([None] * self.rows)
+            elif new_columns < self.columns:
+                for j in range(new_columns, self.columns):
+                    self.delete_column()
             self.rows = new_rows
             self.columns = new_columns
-            for i in self.frame.values():
-                i.destroy()
-            self.frame = {}
-            self.draw_table()
 
         for row_index in range(new_rows):
             for col_index in range(new_columns):
