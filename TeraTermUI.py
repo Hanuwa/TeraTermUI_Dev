@@ -1765,7 +1765,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.enrolled_classes_data, self.enrolled_classes_credits))
             self.bind("<Control-S>", lambda event: self.download_enrolled_classes_as_pdf(
                 self.enrolled_classes_data, self.enrolled_classes_credits))
-            self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event2())
+            self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_menu())
         else:
             main_window_x = self.winfo_x()
             main_window_y = self.winfo_y()
@@ -2006,7 +2006,7 @@ class TeraTermUI(customtkinter.CTk):
         self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
         self.bind("<Up>", lambda event: self.add_event_up_arrow_key())
         self.bind("<Down>", lambda event: self.remove_event_down_arrow_key())
-        self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event2())
+        self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_menu())
         self.destroy_tooltip()
         self.multiple_frame.grid(row=0, column=1, columnspan=4, rowspan=4, padx=(0, 0), pady=(0, 50))
         self.multiple_frame.grid_columnconfigure(2, weight=1)
@@ -2245,7 +2245,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.after(100, self.show_success_message, 350, 265,
                                                    translation["dropped_multiple_success"])
                                     if self.e_counter + self.m_counter == 15:
-                                        self.go_back_event2()
+                                        self.go_back_menu()
                                         self.submit.configure(state="disabled")
                                         self.multiple.configure(state="disabled")
                                         self.after(2500, self.show_information_message, 350, 265,
@@ -3002,9 +3002,9 @@ class TeraTermUI(customtkinter.CTk):
                 self.reset_activity_timer()
                 self.after(100, self.set_focus_to_tkinter)
                 if self.server_status == "Maintenance message found" or self.server_status == "Timeout":
-                    self.after(3500, self.go_back_event)
+                    self.after(3500, self.go_back_home)
                 elif self.error_occurred:
-                    self.after(0, self.go_back_event)
+                    self.after(0, self.go_back_home)
                 if self.log_in.cget("state") == "disabled":
                     self.log_in.configure(state="normal")
                 TeraTermUI.disable_user_input()
@@ -3065,7 +3065,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.help and self.help.winfo_exists():
             self.on_help_window_close()
         self.bind("<Return>", lambda event: self.student_event_handler())
-        self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
+        self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_home())
         self.system.configure(state="normal")
         self.back_student.configure(state="normal")
         self.ask_skip_auth = False
@@ -3278,7 +3278,7 @@ class TeraTermUI(customtkinter.CTk):
             self.auth.grid(row=4, column=1, padx=(10, 0), pady=(0, 0))
         else:
             self.after(100, self.auth_event_handler)
-            self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
+            self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_home())
         self.main_menu = False
         if self.help is not None and self.help.winfo_exists():
             self.files.configure(state="disabled")
@@ -3330,7 +3330,7 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     self.uprb.UprbayTeraTermVt.type_keys("{VK_RIGHT}")
                     self.uprb.UprbayTeraTermVt.type_keys("{VK_LEFT}")
-                self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
+                self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_home())
                 self.bind("<Return>", lambda event: self.student_event_handler())
                 self.home_frame.grid_forget()
                 self.after(0, self.initialization_student)
@@ -3412,12 +3412,12 @@ class TeraTermUI(customtkinter.CTk):
             ssh_version_combo.expand()
             ssh_version_combo.child_window(title="SSH2", control_type="ListItem").select()
 
-    def keybind_go_back_event(self):
+    def keybind_go_back_home(self):
         if self.move_slider_right_enabled or self.move_slider_left_enabled:
-            self.go_back_event()
+            self.go_back_home()
 
-    # function that lets user go back to the initial screen
-    def go_back_event(self):
+    # function that lets user go back to the home screen
+    def go_back_home(self):
         if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists() \
                 and not self.error_occurred or self.countdown_running:
             return
@@ -3516,15 +3516,15 @@ class TeraTermUI(customtkinter.CTk):
                     self.after(50, error)
             self.error_occurred = False
 
-    def keybind_go_back_event2(self):
+    def keybind_go_back_menu(self):
         if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
             return
 
         if self.move_slider_right_enabled or self.move_slider_left_enabled:
-            self.go_back_event2()
+            self.go_back_menu()
 
     # function that goes back to the tabview frame screen
-    def go_back_event2(self):
+    def go_back_menu(self):
         self.unbind("<Return>")
         self.unbind("<Up>")
         self.unbind("<Down>")
@@ -3533,7 +3533,7 @@ class TeraTermUI(customtkinter.CTk):
         self.unbind("<Control-s>")
         self.unbind("<Control-S>")
         self.bind("<Control-Tab>", lambda event: self.on_ctrl_tab_pressed())
-        self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
+        self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_home())
         self.destroy_tooltip()
         if self.in_multiple_screen:
             self.multiple_frame.grid_forget()
@@ -4627,7 +4627,7 @@ class TeraTermUI(customtkinter.CTk):
                                      text_color=("gray10", "#DCE4EE"), command=self.auth_event_handler)
             self.back = CustomButton(master=self.a_buttons_frame, fg_color="transparent", border_width=2,
                                      text=translation["back"], hover_color=("#BEBEBE", "#4E4F50"),
-                                     text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
+                                     text_color=("gray10", "#DCE4EE"), command=self.go_back_home)
             self.back_tooltip = CTkToolTip(self.back, message=translation["back_tooltip"], bg_color="#989898",
                                            alpha=0.90)
             self.username_entry.lang = lang
@@ -4636,7 +4636,7 @@ class TeraTermUI(customtkinter.CTk):
             self.title_login.bind("<Button-1>", lambda event: self.focus_set())
             self.disclaimer.bind("<Button-1>", lambda event: self.focus_set())
             self.username.bind("<Button-1>", lambda event: self.focus_set())
-            self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event())
+            self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_home())
 
     def destroy_auth(self):
         if self.init_auth:
@@ -4716,7 +4716,7 @@ class TeraTermUI(customtkinter.CTk):
                                        text_color=("gray10", "#DCE4EE"), command=self.student_event_handler)
             self.back_student = CustomButton(master=self.s_buttons_frame, fg_color="transparent", border_width=2,
                                              text=translation["back"], hover_color=("#BEBEBE", "#4E4F50"),
-                                             text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
+                                             text_color=("gray10", "#DCE4EE"), command=self.go_back_home)
             self.back_student_tooltip = CTkToolTip(self.back_student, message=translation["back_tooltip"],
                                                    bg_color="#989898", alpha=0.90)
             self.student_frame.bind("<Button-1>", lambda event: self.focus_set())
@@ -4923,7 +4923,7 @@ class TeraTermUI(customtkinter.CTk):
             # Bottom Buttons
             self.back_classes = CustomButton(master=self.t_buttons_frame, fg_color="transparent", border_width=2,
                                              text=translation["back"], hover_color=("#BEBEBE", "#4E4F50"),
-                                             text_color=("gray10", "#DCE4EE"), command=self.go_back_event)
+                                             text_color=("gray10", "#DCE4EE"), command=self.go_back_home)
             self.back_classes_tooltip = CTkToolTip(self.back_classes, alpha=0.90, message=translation["back_tooltip"],
                                                    bg_color="#989898")
             self.submit = CustomButton(master=self.tabview.tab(self.enroll_tab), border_width=2,
@@ -5013,7 +5013,7 @@ class TeraTermUI(customtkinter.CTk):
             self.back_multiple = CustomButton(master=self.m_button_frame, fg_color="transparent", border_width=2,
                                               text=translation["back"], height=40, width=70,
                                               hover_color=("#BEBEBE", "#4E4F50"), text_color=("gray10", "#DCE4EE"),
-                                              command=self.go_back_event2)
+                                              command=self.go_back_menu)
             self.back_multiple_tooltip = CTkToolTip(self.back_multiple, alpha=0.90,
                                                     message=translation["back_multiple"], bg_color="#989898")
             self.submit_multiple = CustomButton(master=self.m_button_frame, border_width=2, text=translation["submit"],
@@ -6950,7 +6950,7 @@ class TeraTermUI(customtkinter.CTk):
             self.modify_classes_frame = customtkinter.CTkFrame(self.my_classes_frame)
             self.back_my_classes = CustomButton(master=self.t_buttons_frame, fg_color="transparent", border_width=2,
                                                 text=translation["back"], hover_color=("#BEBEBE", "#4E4F50"),
-                                                text_color=("gray10", "#DCE4EE"), command=self.go_back_event2)
+                                                text_color=("gray10", "#DCE4EE"), command=self.go_back_menu)
             self.back_my_classes_tooltip = CTkToolTip(self.back_my_classes, alpha=0.90, bg_color="#989898",
                                                       message=translation["back_multiple"])
             self.modify_classes_title = customtkinter.CTkLabel(self.modify_classes_frame,
@@ -7032,7 +7032,7 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<End>", lambda event: self.move_bottom_scrollbar())
             self.bind("<Control-s>", lambda event: self.download_enrolled_classes_as_pdf(data, creds))
             self.bind("<Control-S>", lambda event: self.download_enrolled_classes_as_pdf(data, creds))
-            self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_event2())
+            self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_menu())
             self.my_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.title_my_classes.bind("<Button-1>", lambda event: self.focus_set())
             self.modify_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
@@ -7238,7 +7238,7 @@ class TeraTermUI(customtkinter.CTk):
                                     time.sleep(1)
                                 except Exception as e:
                                     print("An error occurred: ", e)
-                                    self.go_back_event2()
+                                    self.go_back_menu()
                                 if show_error and not section_closed:
                                     self.after(100, self.show_error_message, 320, 240,
                                                translation["failed_change_section"])
@@ -8270,7 +8270,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.reset_activity_timer()
                 elif "PF4" in text_output:
                     self.error_occurred = True
-                    self.after(250, self.go_back_event)
+                    self.after(250, self.go_back_home)
                 self.classes_status.clear()
                 self.cursor.execute("UPDATE user_data SET default_semester=NULL")
                 self.connection.commit()
