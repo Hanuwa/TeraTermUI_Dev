@@ -831,14 +831,6 @@ class TeraTermUI(customtkinter.CTk):
             self.help.withdraw()
         if self.timer_window is not None and self.timer_window.winfo_exists():
             self.timer_window.withdraw()
-            new_menu = pystray.Menu(
-                pystray.MenuItem(translation["hide_tray"], self.hide_all_windows),
-                pystray.MenuItem(translation["show_tray"], self.show_all_windows, default=True),
-                pystray.MenuItem(translation["exit_tray"], self.direct_close_on_tray),
-                pystray.MenuItem(translation["countdown_win"], self.bring_back_timer_window)
-            )
-            self.tray.menu = new_menu
-            self.tray.update_menu()
         for widget in self.winfo_children():
             if isinstance(widget, tk.Toplevel) and not hasattr(widget, "is_ctktooltip"):
                 if hasattr(widget, "is_ctkmessagebox") and widget.is_ctkmessagebox:
@@ -4562,6 +4554,14 @@ class TeraTermUI(customtkinter.CTk):
                                           hover_color="darkred", fg_color="red",
                                           command=self.end_countdown)
         self.cancel_button.pack(pady=25)
+        new_menu = pystray.Menu(
+            pystray.MenuItem(translation["hide_tray"], self.hide_all_windows),
+            pystray.MenuItem(translation["show_tray"], self.show_all_windows, default=True),
+            pystray.MenuItem(translation["exit_tray"], self.direct_close_on_tray),
+            pystray.MenuItem(translation["countdown_win"], self.bring_back_timer_window)
+        )
+        self.tray.menu = new_menu
+        self.tray.update_menu()
         self.timer_window.bind("<Escape>", lambda event: self.end_countdown())
         self.timer_window.protocol("WM_DELETE_WINDOW", self.end_countdown)
 
