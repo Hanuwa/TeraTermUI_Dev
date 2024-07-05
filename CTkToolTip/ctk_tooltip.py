@@ -76,6 +76,7 @@ class CTkToolTip(Toplevel):
         self.padding = padding
         self.bg_color = customtkinter.ThemeManager.theme["CTkFrame"]["fg_color"] if bg_color is None else bg_color
         self.border_color = border_color
+        self.is_ctktooltip = True
         self.visibility = visibility  # Initialize visibility
         self.disable = not visibility  # Initialize disable attribute
 
