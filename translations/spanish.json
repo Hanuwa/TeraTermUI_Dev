@@ -310,6 +310,7 @@
 	"no_internet": "¡Error! No Conectado al internet",
 	"uprb_down": "¡Error! El servidor de la UPRB\nestá actualmente caído",
 	"unexpected_error": "Error inesperado y raro, no se pudo iniciar Tera Term, por favor intente iniciar sesión nuevamente\n\n(Se agradecería mucho informar sobre el problema)",
+	"countdown_win": "Ventana de Auto-Matrícula",
 	"end_countdown": "El evento Auto-Matrícula se forzó a terminar porque Tera Term no está corriendo\n\nSi se cerró por sí mismo, probablemente la universidad inicio un mantenimiento para el servidor",
 	
 	"feedback_unavailable": "¡Error! Mandar comentarios no esta disponible ahora mismo",
