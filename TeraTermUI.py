@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 7/4/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 7/5/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 10900 lines of codes, it definitely makes things harder to work with
+# and with over 11000 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -178,6 +178,7 @@ class TeraTermUI(customtkinter.CTk):
         self.timer_label = None
         self.message_label = None
         self.cancel_button = None
+        self.pr_date = None
         self.running_countdown = None
         self.progress_bar = None
         self.loading_label = None
@@ -775,6 +776,7 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     messagebox.showerror("Error", "Fatal Error! Failed to initialize language files.\n"
                                                   "Might need to reinstall the application")
+            self.tray.stop()
             sys.exit(1)
         if TeraTermUI.is_admin():
             p = psutil.Process(os.getpid())
@@ -800,6 +802,8 @@ class TeraTermUI(customtkinter.CTk):
     def hide_all_windows(self):
         if self.state() == "withdrawn" or (self.loading_screen_status is not None and
                                            self.loading_screen_status.winfo_exists()):
+            if self.timer_window is not None and self.timer_window.state() == "normal":
+                self.timer_window.withdraw()
             return
 
         lang = self.language_menu.get()
@@ -827,8 +831,16 @@ class TeraTermUI(customtkinter.CTk):
             self.help.withdraw()
         if self.timer_window is not None and self.timer_window.winfo_exists():
             self.timer_window.withdraw()
+            new_menu = pystray.Menu(
+                pystray.MenuItem(translation["hide_tray"], self.hide_all_windows),
+                pystray.MenuItem(translation["show_tray"], self.show_all_windows, default=True),
+                pystray.MenuItem(translation["exit_tray"], self.direct_close_on_tray),
+                pystray.MenuItem(translation["countdown_win"], self.bring_back_timer_window)
+            )
+            self.tray.menu = new_menu
+            self.tray.update_menu()
         for widget in self.winfo_children():
-            if isinstance(widget, tk.Toplevel):
+            if isinstance(widget, tk.Toplevel) and not hasattr(widget, "is_ctktooltip"):
                 if hasattr(widget, "is_ctkmessagebox") and widget.is_ctkmessagebox:
                     widget.close_messagebox()
                 elif widget is not self.status and widget is not self.help and widget is not self.timer_window:
@@ -855,7 +867,8 @@ class TeraTermUI(customtkinter.CTk):
         if self.help is not None and self.help.winfo_exists():
             self.help.iconify()
         if self.timer_window is not None and self.timer_window.winfo_exists():
-            self.timer_window.iconify()
+            if self.timer_window.state() == "withdrawn":
+                self.timer_window.iconify()
             timer = gw.getWindowsWithTitle(translation["auto_enroll"])[0]
             self.after(200, timer.restore)
         app = gw.getWindowsWithTitle("Tera Term UI")[0]
@@ -955,6 +968,7 @@ class TeraTermUI(customtkinter.CTk):
                 if isinstance(widget, tk.Toplevel) and hasattr(widget, "is_ctkmessagebox") \
                         and widget.is_ctkmessagebox:
                     widget.close_messagebox()
+            self.tray.stop()
             self.destroy()
         except Exception as e:
             print("Force closing due to an error:", e)
@@ -982,6 +996,12 @@ class TeraTermUI(customtkinter.CTk):
                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except subprocess.CalledProcessError:
             print("Could not terminate ttermpro.exe.")
+
+    @staticmethod
+    def check_tera_term_hidden():
+        hwnd_uprb = win32gui.FindWindow(None, "uprbay.uprb.edu - Tera Term VT")
+        if hwnd_uprb and not win32gui.IsWindowVisible(hwnd_uprb):
+            TeraTermUI.terminate_process()
 
     def log_error(self):
         import inspect
@@ -3145,6 +3165,7 @@ class TeraTermUI(customtkinter.CTk):
                 host = self.host_entry.get().replace(" ", "").lower()
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if host in ["uprbay.uprb.edu", "uprbayuprbedu", "uprb"]:
+                        TeraTermUI.check_tera_term_hidden()
                         if TeraTermUI.checkIfProcessRunning("ttermpro"):
                             count, is_multiple = TeraTermUI.countRunningProcesses("ttermpro")
                             if is_multiple:
@@ -3882,6 +3903,11 @@ class TeraTermUI(customtkinter.CTk):
             self.save_data_tooltip.configure(message=translation["save_data_tooltip"])
             self.auto_enroll_tooltip.configure(message=translation["auto_enroll_tooltip"])
             self.search_next_page_tooltip.configure(message=translation["search_next_page_tooltip"])
+            if self.timer_window is not None and self.timer_window.winfo_exists():
+                self.timer_window.title(translation["auto_enroll"])
+                self.message_label.configure(text=translation["auto_enroll_activated"])
+                self.cancel_button.configure(text=translation["option_1"])
+                self.countdown(self.pr_date)
             for entry in [self.e_classes_entry, self.e_section_entry, self.s_classes_entry, self.m_classes_entry,
                           self.m_section_entry]:
                 if isinstance(entry, list):
@@ -4239,19 +4265,19 @@ class TeraTermUI(customtkinter.CTk):
                             date_time_string = re.sub(r"[^a-zA-Z0-9:/ ]", "", date_time_string)
                             date_time_naive = datetime.strptime(date_time_string, "%m/%d/%Y %I:%M %p")
                             puerto_rico_tz = timezone("America/Puerto_Rico")
-                            your_date = puerto_rico_tz.localize(date_time_naive, is_dst=None)
+                            self.pr_date = puerto_rico_tz.localize(date_time_naive, is_dst=None)
                             # Get current datetime
                             current_date = datetime.now(puerto_rico_tz)
-                            time_difference = your_date - current_date
+                            time_difference = self.pr_date - current_date
                             # Dates
-                            is_same_date = (current_date.date() == your_date.date())
-                            is_past_date = current_date > your_date
-                            is_future_date = current_date < your_date
-                            is_next_date = (your_date.date() - current_date.date() == timedelta(days=1))
+                            is_same_date = (current_date.date() == self.pr_date.date())
+                            is_past_date = current_date > self.pr_date
+                            is_future_date = current_date < self.pr_date
+                            is_next_date = (self.pr_date.date() - current_date.date() == timedelta(days=1))
                             is_time_difference_within_12_hours = \
                                 timedelta(hours=12, minutes=55) >= time_difference >= timedelta()
-                            is_more_than_one_day = (your_date.date() - current_date.date() > timedelta(days=1))
-                            is_current_time_ahead = current_date.time() > your_date.time()
+                            is_more_than_one_day = (self.pr_date.date() - current_date.date() > timedelta(days=1))
+                            is_current_time_ahead = current_date.time() > self.pr_date.time()
                             is_current_time_24_hours_ahead = time_difference >= timedelta(hours=-24)
                             if active_semesters["percent"] and active_semesters["asterisk"] \
                                     and semester == active_semesters["percent"]:
@@ -4270,7 +4296,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.running_countdown = customtkinter.BooleanVar()
                                 self.running_countdown.set(True)
                                 # Start the countdown
-                                self.after(100, self.countdown, your_date)
+                                self.after(100, self.countdown, self.pr_date)
                             elif is_past_date or (is_same_date and is_current_time_ahead):
                                 if is_current_time_24_hours_ahead:
                                     self.running_countdown = customtkinter.BooleanVar()
@@ -4330,17 +4356,17 @@ class TeraTermUI(customtkinter.CTk):
                 TeraTermUI.disable_user_input()
 
     # Starts the countdown on when the auto-enroll process will occur
-    def countdown(self, your_date):
+    def countdown(self, pr_date):
         from pytz import timezone
 
         lang = self.language_menu.get()
         translation = self.load_language(lang)
         puerto_rico_tz = timezone("America/Puerto_Rico")
         current_date = datetime.now(puerto_rico_tz)
-        time_difference = your_date - current_date
+        time_difference = pr_date - current_date
         total_seconds = time_difference.total_seconds()
         if self.running_countdown.get():
-            if not TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT") and self.state() != "withdrawn":
+            if not TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
                 self.forceful_end_countdown()
             if total_seconds <= 0:
                 # Enrollment function
@@ -4349,7 +4375,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.timer_label.pack(pady=30)
                 self.cancel_button.pack_forget()
                 if self.state() == "withdrawn":
-                    self.timer_window.iconify()
+                    if self.timer_window.state() == "withdrawn":
+                        self.timer_window.iconify()
                     self.iconify()
                     hwnd = win32gui.FindWindow(None, "uprbay.uprb.edu - Tera Term VT")
                     if hwnd and not win32gui.IsWindowVisible(hwnd):
@@ -4425,8 +4452,8 @@ class TeraTermUI(customtkinter.CTk):
                     if total_seconds > 3600:
                         seconds_until_next_minute = 60 - current_date.second
                         self.timer_window.after(
-                            seconds_until_next_minute * 1000, lambda: self.countdown(your_date)
-                            if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT") or self.state() == "withdrawn"
+                            seconds_until_next_minute * 1000, lambda: self.countdown(pr_date)
+                            if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
                             else self.forceful_end_countdown())
 
                 else:  # When there's less than an hour remaining
@@ -4468,8 +4495,8 @@ class TeraTermUI(customtkinter.CTk):
                     if total_seconds > 60:
                         seconds_until_next_minute = 60 - current_date.second
                         self.timer_window.after(
-                            seconds_until_next_minute * 1000, lambda: self.countdown(your_date)
-                            if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT") or self.state() == "withdrawn"
+                            seconds_until_next_minute * 1000, lambda: self.countdown(pr_date)
+                            if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
                             else self.forceful_end_countdown())
                     else:  # update every second if there's less than or equal to 60 seconds left
                         if not self.notification_sent:
@@ -4477,16 +4504,22 @@ class TeraTermUI(customtkinter.CTk):
                                 "{semester}", self.m_semester_entry[0].get()), title="Tera Term UI")
                             self.notification_sent = True
                         self.timer_window.after(
-                            1000, lambda: self.countdown(your_date)
-                            if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT") or self.state() == "withdrawn"
+                            1000, lambda: self.countdown(pr_date)
+                            if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
                             else self.forceful_end_countdown())
 
     def end_countdown(self):
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
         self.auto_enroll_bool = False
         self.countdown_running = False
         self.notification_sent = False
         self.running_countdown.set(False)
         if self.timer_window and self.timer_window.winfo_exists():
+            if any(i.text == translation["countdown_win"] for i in self.tray.menu.items):
+                updated_menu_items = [i for i in self.tray.menu.items if i.text != translation["countdown_win"]]
+                self.tray.menu = pystray.Menu(*updated_menu_items)
+                self.tray.update_menu()
             self.timer_window.destroy()
         self.disable_enable_gui()
         self.auto_enroll.deselect()
@@ -4528,14 +4561,19 @@ class TeraTermUI(customtkinter.CTk):
         self.cancel_button = CustomButton(self.timer_window, text=translation["option_1"], width=260, height=32,
                                           hover_color="darkred", fg_color="red",
                                           command=self.end_countdown)
-        self.timer_window.bind("<Escape>", lambda event: self.end_countdown())
         self.cancel_button.pack(pady=25)
+        self.timer_window.bind("<Escape>", lambda event: self.end_countdown())
         self.timer_window.protocol("WM_DELETE_WINDOW", self.end_countdown)
 
     def bring_back_timer_window(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        if self.window_exists(translation["auto_enroll"]):
+        if self.timer_window is not None and self.timer_window.winfo_exists():
+            if self.timer_window.state() == "withdrawn":
+                self.timer_window.iconify()
+                timer = gw.getWindowsWithTitle(translation["auto_enroll"])[0]
+                self.after(200, timer.restore)
+                return
             timer = gw.getWindowsWithTitle(translation["auto_enroll"])[0]
             if timer.isMinimized:
                 timer.restore()
@@ -5313,7 +5351,7 @@ class TeraTermUI(customtkinter.CTk):
             self.student_id_entry.configure(show="*")
             self.code_entry.configure(show="*")
 
-    # function that checks if Tera Term is running or not
+    # function that checks if the specified program is running or not
     @staticmethod
     def checkIfProcessRunning(processName):
         process = processName.lower()
@@ -5322,16 +5360,6 @@ class TeraTermUI(customtkinter.CTk):
                 proc_info = proc.as_dict(attrs=["name"])
                 proc_name = proc_info.get("name", "").lower()
                 if process in proc_name:
-                    if process == "ttermpro":
-                        if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT") or \
-                                TeraTermUI.window_exists("Tera Term - [disconnected] VT") or \
-                                TeraTermUI.window_exists("Tera Term - [connecting...] VT"):
-                            return True
-                        else:
-                            # Background Process
-                            proc.terminate()
-                            proc.wait()
-                            return False
                     return True
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
             print(f"Exception occurred: {e}")
@@ -5372,14 +5400,10 @@ class TeraTermUI(customtkinter.CTk):
     # checks if the specified window exists
     @staticmethod
     def window_exists(title):
-        try:
-            windows = gw.getWindowsWithTitle(title)
-            for window in windows:
-                if window.title == title:
-                    return True
+        hwnd = win32gui.FindWindow(None, title)
+        if hwnd == 0:
             return False
-        except IndexError:
-            return False
+        return True
 
     @staticmethod
     def close_matching_windows(titles_to_close):
