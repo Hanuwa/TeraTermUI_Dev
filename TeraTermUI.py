@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 7/6/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 7/9/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -64,15 +64,28 @@ from functools import wraps
 from itertools import groupby
 from mss import mss
 from pathlib import Path
+from PIL import Image
 from py7zr import SevenZipFile
+from tkinter import filedialog
+from tkinter import messagebox
 from win32con import SW_HIDE, SW_SHOW, SW_RESTORE, WM_CLOSE
+MAX_RESTARTS = 5
+restart_count = 0
 try:
+    if len(sys.argv) > 1:
+        try:
+            restart_count = int(sys.argv[1])
+        except ValueError:
+            pass
     sys.coinit_flags = 2
     warnings.filterwarnings("ignore", message="Apply externally defined coinit_flags: 2")
     from pywinauto.application import Application, AppStartError
     from pywinauto.findwindows import ElementNotFoundError
     from pywinauto import timings
-except:
+except Exception as e:
+    print(f"Error occurred: {e}")
+    if restart_count >= MAX_RESTARTS:
+        sys.exit(1)
     temp_dir = tempfile.gettempdir()
     cache_pattern = os.path.join(temp_dir, "comtypes_cache", "TeraTermUI-*")
     cache_dirs = [d for d in os.listdir(os.path.join(temp_dir, "comtypes_cache")) if
@@ -82,11 +95,8 @@ except:
         if os.path.exists(comtypes_cache_dir):
             shutil.rmtree(comtypes_cache_dir)
     current_executable = os.path.abspath(sys.argv[0])
-    subprocess.run([current_executable])
+    subprocess.run([sys.executable, current_executable, str(restart_count + 1)])
     sys.exit(0)
-from tkinter import filedialog
-from tkinter import messagebox
-from PIL import Image
 
 customtkinter.set_appearance_mode("System")
 customtkinter.set_default_color_theme("blue")
