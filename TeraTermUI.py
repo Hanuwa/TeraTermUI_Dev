@@ -87,7 +87,7 @@ except Exception as e:
     if restart_count >= MAX_RESTARTS:
         sys.exit(1)
     temp_dir = tempfile.gettempdir()
-    exe_name = os.path.basename(sys.argv[0])
+    exe_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]
     cache_pattern = os.path.join(temp_dir, "comtypes_cache", f"{exe_name}-*")
     cache_dirs = [d for d in os.listdir(os.path.join(temp_dir, "comtypes_cache")) if
                   os.path.isdir(os.path.join(temp_dir, "comtypes_cache", d)) and d.startswith(f"{exe_name}-")]
