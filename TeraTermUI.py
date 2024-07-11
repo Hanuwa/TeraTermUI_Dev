@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 7/10/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 7/11/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -6891,11 +6891,12 @@ class TeraTermUI(customtkinter.CTk):
             translation["times"]: translation["tooltip_times"],
             translation["room"]: translation["tooltip_croom"]
         }
+        self.enrolled_classes_data = data
+        self.enrolled_classes_credits = creds
         if self.enrolled_classes_table is not None:
             self.enrolled_classes_table.refresh_table(table_values)
             self.total_credits_label.configure(text=translation["total_creds"] + creds)
             self.title_my_classes.configure(text=translation["my_classes"] + semester)
-            self.download_enrolled_pdf.configure(command=lambda: self.download_enrolled_classes_as_pdf(data, creds))
             self.submit_my_classes.configure(command=self.submit_modify_classes_handler)
             self.modify_classes_title.configure(text=translation["mod_classes_title"])
             for i, header in enumerate(headers):
@@ -6964,8 +6965,6 @@ class TeraTermUI(customtkinter.CTk):
                     if self.mod_selection_list[row_index] is not None:
                         self.mod_selection_list[row_index].grid_forget()
         else:
-            self.enrolled_classes_data = data
-            self.enrolled_classes_credits = creds
             self.change_section_entries = []
             self.mod_selection_list = []
             self.my_classes_frame = customtkinter.CTkScrollableFrame(self, corner_radius=10, width=620, height=320)
@@ -6981,8 +6980,8 @@ class TeraTermUI(customtkinter.CTk):
                                                         message=translation["submit_modify_tooltip"])
             self.download_enrolled_pdf = CustomButton(self.my_classes_frame, text=translation["pdf_save_as"],
                                                       hover_color="#173518", fg_color="#2e6930",
-                                                      command=lambda: self.download_enrolled_classes_as_pdf(data,
-                                                                                                            creds))
+                                                      command=lambda: self.download_enrolled_classes_as_pdf(
+                                                          self.enrolled_classes_data, self.enrolled_classes_credits))
             self.download_enrolled_pdf_tooltip = CTkToolTip(self.download_enrolled_pdf,
                                                             message=translation["download_pdf_enrolled_tooltip"],
                                                             bg_color="green")
@@ -7069,8 +7068,10 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Down>", lambda event: self.move_down_scrollbar())
             self.bind("<Home>", lambda event: self.move_top_scrollbar())
             self.bind("<End>", lambda event: self.move_bottom_scrollbar())
-            self.bind("<Control-s>", lambda event: self.download_enrolled_classes_as_pdf(data, creds))
-            self.bind("<Control-S>", lambda event: self.download_enrolled_classes_as_pdf(data, creds))
+            self.bind("<Control-s>", lambda event: self.download_enrolled_classes_as_pdf(
+                self.enrolled_classes_data, self.enrolled_classes_credits))
+            self.bind("<Control-S>", lambda event: self.download_enrolled_classes_as_pdf(
+                self.enrolled_classes_data, self.enrolled_classes_credits))
             self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_menu())
             self.my_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.title_my_classes.bind("<Button-1>", lambda event: self.focus_set())
