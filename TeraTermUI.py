@@ -8417,7 +8417,8 @@ class TeraTermUI(customtkinter.CTk):
                 threshold = 120
         pyautogui.FAILSAFE = False
         while not self.stop_check_process.is_set():
-            if self.loading_screen_status is None:
+            idle = self.cursor.execute("SELECT idle FROM user_data").fetchone()
+            if self.loading_screen_status is None and idle[0] != "Disabled":
                 if threshold is not None:
                     idle_time = get_idle_duration()
                     if idle_time >= threshold:
