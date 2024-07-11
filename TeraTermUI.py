@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 7/9/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 7/10/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -87,9 +87,10 @@ except Exception as e:
     if restart_count >= MAX_RESTARTS:
         sys.exit(1)
     temp_dir = tempfile.gettempdir()
-    cache_pattern = os.path.join(temp_dir, "comtypes_cache", "TeraTermUI-*")
+    exe_name = os.path.basename(sys.argv[0])
+    cache_pattern = os.path.join(temp_dir, "comtypes_cache", f"{exe_name}-*")
     cache_dirs = [d for d in os.listdir(os.path.join(temp_dir, "comtypes_cache")) if
-                  os.path.isdir(os.path.join(temp_dir, "comtypes_cache", d)) and d.startswith("TeraTermUI-")]
+                  os.path.isdir(os.path.join(temp_dir, "comtypes_cache", d)) and d.startswith(f"{exe_name}-")]
     for cache_dir in cache_dirs:
         comtypes_cache_dir = os.path.join(temp_dir, "comtypes_cache", cache_dir)
         if os.path.exists(comtypes_cache_dir):
