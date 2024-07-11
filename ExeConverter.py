@@ -6,6 +6,7 @@ import shutil
 import sqlite3
 import subprocess
 import sys
+import time
 from colorama import init, Fore, Style
 
 
@@ -403,18 +404,28 @@ for version in versions:
         print(Fore.RED + f"Failed to create executable with Nuitka: {e}\n" + Style.RESET_ALL)
 
     if script == "installer":
-        try:
-            os.rename(output_directory + r"\TeraTermUI.dist",
-                      output_directory + r"\TeraTermUI_installer")
-        except KeyboardInterrupt as e:
-            shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
-            os.remove(program_backup)
-            print(Fore.RED + f"Error renaming folder: {e}\n" + Style.RESET_ALL)
-            sys.exit(1)
-        except Exception as e:
-            shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
-            os.remove(program_backup)
-            print(Fore.RED + f"Error renaming folder: {e}\n" + Style.RESET_ALL)
+        retries = 5
+        delay = 1
+        for i in range(retries):
+            try:
+                os.rename(output_directory + r"\TeraTermUI.dist", output_directory + r"\TeraTermUI_installer")
+                break
+            except OSError as e:
+                if i < retries - 1:
+                    time.sleep(delay)
+                else:
+                    shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+                    os.remove(program_backup)
+                    print(Fore.RED + f"Error renaming folder: {e}\n" + Style.RESET_ALL)
+            except KeyboardInterrupt as e:
+                shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+                os.remove(program_backup)
+                print(Fore.RED + f"Error renaming folder: {e}\n" + Style.RESET_ALL)
+                sys.exit(1)
+            except Exception as e:
+                shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+                os.remove(program_backup)
+                print(Fore.RED + f"Error renaming folder: {e}\n" + Style.RESET_ALL)
         try:
             os.remove(os.path.join(output_directory, "TeraTermUI_installer", "database.db"))
             os.remove(os.path.join(output_directory, "TeraTermUI_installer", "feedback.zip"))
