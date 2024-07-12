@@ -13,6 +13,8 @@ certutil -hashfile [path_to_your_exe] SHA256
 # Latest Releases Text
 Latest release of Tera Term UI,
 
+Release Date: ** **
+
 **Tera Term must be installed in your computer (Windows Only)**
 
 1. Portable Version (Zip File) - **Checksum** : ``` ```
@@ -20,7 +22,7 @@ Latest release of Tera Term UI,
 
 If you run the application as an Administrator, it grants the benefit of disabling user input when the application is automating and performing tasks in Tera Term, good to mitigate the chance of the user interrupting the executions of actions by Tera Term UI.
 
-**Note*** Installation File includes option to install Tera Term, although it is recommended to setup all of Tera Term's configurations before using this application, please refer to: https://osi.uprb.edu/manuales/Conexion_SSH_TeraTerm_TTSSH_STUDENTS.pdf
+**Note*** Installation File includes an option to install Tera Term, although it is recommended to setup all of Tera Term's configurations before using this application, please refer to: https://osi.uprb.edu/manuales/Conexion_SSH_TeraTerm_TTSSH_STUDENTS.pdf
 
 **Important*** After downloading the Installation File, right-click on the file, select Properties, and then check the "Unblock" box next to the security section if it is present. This ensures the file is not blocked by Windows security features.
 
