@@ -11008,14 +11008,14 @@ def main():
         sys.exit(0)
     except KeyboardInterrupt:
         sys.exit(1)
-    except Exception as e:
+    except Exception as error:
         SPANISH = 0x0A
         language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
         if language_id & 0xFF == SPANISH:
-            messagebox.showerror("Error", "Ocurrió un error inesperado: " + str(e) +
+            messagebox.showerror("Error", "Ocurrió un error inesperado: " + str(error) +
                                  "\n\nPuede que necesite reinstalar la aplicación")
         else:
-            messagebox.showerror("Error", "An unexpected error occurred: " + str(e) +
+            messagebox.showerror("Error", "An unexpected error occurred: " + str(error) +
                                  "\n\nMight need to reinstall the application")
         sys.exit(1)
 
