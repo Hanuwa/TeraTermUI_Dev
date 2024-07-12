@@ -5813,8 +5813,7 @@ class TeraTermUI(customtkinter.CTk):
         if duplicate_index is not None:
             _, _, _, _, existing_available_values, _ = self.class_table_pairs[duplicate_index]
             if sorted(existing_available_values) != available_values:
-                display_class_update, table_update, _, _, _, _ = self.class_table_pairs[duplicate_index]
-                display_class_update.configure(text=self.get_class_for_pdf)
+                _, table_update, _, _, _, _ = self.class_table_pairs[duplicate_index]
                 new_row_count = len(table_values) - 1
                 current_row_count = len(table_update.values) if table_update.values else 0
                 if new_row_count > current_row_count:
