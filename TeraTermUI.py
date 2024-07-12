@@ -74,11 +74,12 @@ restart_count = 0
 try:
     if len(sys.argv) > 1:
         try:
-            restart_count = int(sys.argv[1])
+            restart_count = int(sys.argv[2])
         except ValueError:
             pass
     sys.coinit_flags = 2
     warnings.filterwarnings("ignore", message="Apply externally defined coinit_flags: 2")
+    import comtypes.stream
     from pywinauto.application import Application, AppStartError
     from pywinauto.findwindows import ElementNotFoundError
     from pywinauto import timings
