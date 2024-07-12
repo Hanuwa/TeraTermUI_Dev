@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 7/11/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 7/12/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -5813,23 +5813,19 @@ class TeraTermUI(customtkinter.CTk):
         if duplicate_index is not None:
             _, _, _, _, existing_available_values, _ = self.class_table_pairs[duplicate_index]
             if sorted(existing_available_values) != available_values:
-                display_class_to_remove, table_to_remove, _, _, _, _ = self.class_table_pairs[duplicate_index]
-                display_class_to_remove.unbind("<Button-1>")
-                for cell in table_to_remove.get_all_cells():
-                    if cell in self.table_tooltips:
-                        self.table_tooltips[cell].destroy()
-                        del self.table_tooltips[cell]
-                if table_to_remove in self.original_table_data:
-                    del self.original_table_data[table_to_remove]
-                self.after(0, display_class_to_remove.destroy)
-                self.after(0, table_to_remove.destroy)
-                del self.class_table_pairs[duplicate_index]
-            else:
-                self.current_table_index = duplicate_index
-                self.search_scrollbar.scroll_to_top()
-                self.update_buttons()
-                self.after(100, self.display_current_table)
-                return
+                display_class_update, table_update, _, _, _, _ = self.class_table_pairs[duplicate_index]
+                display_class_update.configure(text=self.get_class_for_pdf)
+                new_row_count = len(table_values) - 1
+                current_row_count = len(table_update.values) if table_update.values else 0
+                if new_row_count > current_row_count:
+                    table_update.refresh_table(table_values)
+                else:
+                    table_update.update_values(table_values)
+            self.current_table_index = duplicate_index
+            self.search_scrollbar.scroll_to_top()
+            self.update_buttons()
+            self.after(100, self.display_current_table)
+            return
 
         num_rows = len(modified_data) + 1
         new_table = CTkTable(
