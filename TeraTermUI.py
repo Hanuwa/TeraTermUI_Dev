@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 7/13/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 7/14/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -159,7 +159,8 @@ class TeraTermUI(customtkinter.CTk):
         # GitHub's information for feedback
         self.SERVICE_ACCOUNT_FILE = TeraTermUI.get_absolute_path("feedback.zip")
         self.SPREADSHEET_ID = "1ffJLgp8p-goOlxC10OFEu0JefBgQDsgEo_suis4k0Pw"
-        os.environ["REAZIONE"] = "F_QL^B#O_/r9|Rl0i=x),;!@en|V5qR%W(9;2^+f=lRPcw!+4"
+        parts = ["$QojxnTKT8ecke49mf%bd", "U64m#8XaR$QNog$QdPL1Fp", "3%fHhv^ds7@CDDSag8PYt", "dM&R8fqu*&bUjmSZfgM^%"]
+        os.environ["REAZIONE"] = TeraTermUI.purkaa_reazione(parts)
         self.REAZIONE = os.getenv("REAZIONE")
         self.RANGE_NAME = "Sheet1!A:A"
         self.credentials = None
@@ -7622,6 +7623,22 @@ class TeraTermUI(customtkinter.CTk):
         else:
             self.teraterm_not_found = True
 
+    @staticmethod
+    def purkaa_reazione(scrambled_parts):
+        original_parts = []
+        ascii_to_remove = [106, 97, 49]
+        for i, part in enumerate(scrambled_parts):
+            for ascii_code in ascii_to_remove:
+                part = part.replace(chr(ascii_code), "")
+            char_list = list(part)
+            original_order = list(range(len(char_list)))
+            random.seed(i)
+            random.shuffle(original_order)
+            original_order = sorted(range(len(original_order)), key=lambda k: original_order[k])
+            unscrambled_part = "".join(char_list[i] for i in original_order)
+            original_parts.append(unscrambled_part)
+        return "".join(original_parts)
+    
     def setup_feedback(self):
         from google.oauth2 import service_account
         from pyzipper import AESZipFile
