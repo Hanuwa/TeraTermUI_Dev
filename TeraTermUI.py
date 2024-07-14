@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 7/12/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 7/13/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -767,11 +767,11 @@ class TeraTermUI(customtkinter.CTk):
                         print("Please check your internet connection and try again.")
                     del latest_version, row_exists
                 del current_date, date_record
-        except Exception as e:
+        except Exception as err:
             db_path = TeraTermUI.get_absolute_path("database.db")
             en_path = TeraTermUI.get_absolute_path("translations/english.json")
             es_path = TeraTermUI.get_absolute_path("translations/spanish.json")
-            print(f"An unexpected error occurred: {e}")
+            print(f"An unexpected error occurred: {err}")
             self.log_error()
             if not os.path.isfile(db_path) or not os.access(db_path, os.R_OK):
                 if language_id & 0xFF == SPANISH:
@@ -927,8 +927,8 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.kill(soft=True)
                             if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
                                 TeraTermUI.terminate_process()
-                        except Exception as e:
-                            print("An error occurred: ", e)
+                        except Exception as err:
+                            print("An error occurred: ", err)
                             TeraTermUI.terminate_process()
                     elif TeraTermUI.window_exists("Tera Term - [disconnected] VT") or \
                             TeraTermUI.window_exists("Tera Term - [connecting...] VT"):
@@ -961,8 +961,8 @@ class TeraTermUI(customtkinter.CTk):
                         and widget.is_ctkmessagebox:
                     widget.close_messagebox()
             self.destroy()
-        except Exception as e:
-            print("Force closing due to an error:", e)
+        except Exception as err:
+            print("Force closing due to an error:", err)
             self.log_error()
             sys.exit(1)
 
@@ -974,8 +974,8 @@ class TeraTermUI(customtkinter.CTk):
                     widget.close_messagebox()
             self.tray.stop()
             self.destroy()
-        except Exception as e:
-            print("Force closing due to an error:", e)
+        except Exception as err:
+            print("Force closing due to an error:", err)
             self.log_error()
         finally:
             sys.exit(1)
@@ -984,8 +984,8 @@ class TeraTermUI(customtkinter.CTk):
     def is_admin():
         try:
             return ctypes.windll.shell32.IsUserAnAdmin() == 1
-        except Exception as e:
-            print(f"An error occurred: {e}")
+        except Exception as err:
+            print(f"An error occurred: {err}")
             return False
 
     @staticmethod
@@ -1040,8 +1040,8 @@ class TeraTermUI(customtkinter.CTk):
             # Write the formatted error message and separator to the log file
             with open(TeraTermUI.get_absolute_path("logs.txt"), "a") as file:
                 file.write(error_message + "\n" + separator)
-        except Exception as e:
-            print(f"An unexpected error occurred: {str(e)}")
+        except Exception as err:
+            print(f"An unexpected error occurred: {str(err)}")
 
     def student_event_handler(self):
         task_done = threading.Event()
@@ -1109,7 +1109,7 @@ class TeraTermUI(customtkinter.CTk):
                         code = self.code_entry.get().replace(" ", "")
                         student_id_enc = aes_encrypt_then_mac(str(student_id), aes_key, mac_key)
                         code_enc = aes_encrypt_then_mac(str(code), aes_key, mac_key)
-                        if ((re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", student_id) or 
+                        if ((re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", student_id) or
                              (student_id.isdigit() and len(student_id) == 9)) and code.isdigit() and len(code) == 4):
                             secure_delete(student_id)
                             secure_delete(code)
@@ -1177,8 +1177,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
                 else:
                     self.after(350, self.bind, "<Return>", lambda event: self.student_event_handler())
-            except Exception as e:
-                print("An error occurred: ", e)
+            except Exception as err:
+                print("An error occurred: ", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -1315,7 +1315,7 @@ class TeraTermUI(customtkinter.CTk):
 
             for _ in range(min(num_rows - 1, 8)):
                 self.add_event()
-                
+
             self.check_class_conflicts()
 
     def submit_event_handler(self):
@@ -1536,8 +1536,8 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(100, self.show_error_message, 335, 240, translation["already_dropped"])
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
-            except Exception as e:
-                print("An error occurred: ", e)
+            except Exception as err:
+                print("An error occurred: ", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -1614,8 +1614,8 @@ class TeraTermUI(customtkinter.CTk):
                             except tk.TclError:
                                 pass
                                 # print("Clipboard contains non-text data, possibly an image or other formats")
-                            except Exception as e:
-                                print("Error handling clipboard content:", e)
+                            except Exception as err:
+                                print("Error handling clipboard content:", err)
                                 self.log_error()
                             if self.search_function_counter == 0 and "\"R-AOOO7" not in text_output and \
                                     "*R-A0007" not in text_output:
@@ -1734,8 +1734,8 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(0, self.s_semester_entry.configure(border_color="#c30101"))
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
-            except Exception as e:
-                print("An error occurred: ", e)
+            except Exception as err:
+                print("An error occurred: ", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -1852,8 +1852,8 @@ class TeraTermUI(customtkinter.CTk):
                                 except tk.TclError:
                                     pass
                                     # print("Clipboard contains non-text data, possibly an image or other formats")
-                                except Exception as e:
-                                    print("Error handling clipboard content:", e)
+                                except Exception as err:
+                                    print("Error handling clipboard content:", err)
                                     self.log_error()
                                 TeraTermUI.disable_user_input()
                                 self.automate_copy_class_data()
@@ -1879,8 +1879,8 @@ class TeraTermUI(customtkinter.CTk):
                             self.after(100, self.show_error_message, 300, 215, translation["invalid_semester"])
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
-            except Exception as e:
-                print("An error occurred: ", e)
+            except Exception as err:
+                print("An error occurred: ", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -2318,8 +2318,8 @@ class TeraTermUI(customtkinter.CTk):
                                        translation["max_enroll"])
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
-            except Exception as e:
-                print("An error occurred: ", e)
+            except Exception as err:
+                print("An error occurred: ", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -2576,7 +2576,7 @@ class TeraTermUI(customtkinter.CTk):
                                                                   sticky="n")
                                             self.go_next_683.grid(row=5, column=1, padx=(110, 0), pady=(40, 0),
                                                                   sticky="n")
-                                            
+
                                         self.after(0, go_next_grid)
                                 case "1PL":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -2711,8 +2711,8 @@ class TeraTermUI(customtkinter.CTk):
                     else:
                         self.focus_or_not = True
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
-            except Exception as e:
-                print("An error occurred: ", e)
+            except Exception as err:
+                print("An error occurred: ", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -2803,8 +2803,8 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(0, self.disable_go_next_buttons)
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
-            except Exception as e:
-                print("An error occurred: ", e)
+            except Exception as err:
+                print("An error occurred: ", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -2856,8 +2856,8 @@ class TeraTermUI(customtkinter.CTk):
                         except tk.TclError:
                             pass
                             # print("Clipboard contains non-text data, possibly an image or other formats")
-                        except Exception as e:
-                            print("Error handling clipboard content:", e)
+                        except Exception as err:
+                            print("Error handling clipboard content:", err)
                             self.log_error()
                         TeraTermUI.disable_user_input()
                         self.automate_copy_class_data()
@@ -2887,8 +2887,8 @@ class TeraTermUI(customtkinter.CTk):
                             self.s_classes_entry.configure(state="disabled")
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
-            except Exception as e:
-                print("An error occurred: ", e)
+            except Exception as err:
+                print("An error occurred: ", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -3017,8 +3017,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
                 else:
                     self.after(350, self.bind, "<Return>", lambda event: self.auth_event_handler())
-            except Exception as e:
-                print("An error occurred: ", e)
+            except Exception as err:
+                print("An error occurred: ", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -3146,9 +3146,9 @@ class TeraTermUI(customtkinter.CTk):
             self.tooltip.after(15000, self.destroy_tooltip)
         else:
             self.tooltip.after(20000, self.destroy_tooltip)
-        self.tooltip.bind("<Button-1>", lambda e: self.destroy_tooltip())
-        self.tooltip.bind("<Button-2>", lambda e: self.destroy_tooltip())
-        self.tooltip.bind("<Button-3>", lambda e: self.destroy_tooltip())
+        self.tooltip.bind("<Button-1>", lambda event: self.destroy_tooltip())
+        self.tooltip.bind("<Button-2>", lambda event: self.destroy_tooltip())
+        self.tooltip.bind("<Button-3>", lambda event: self.destroy_tooltip())
 
     def login_event_handler(self):
         task_done = threading.Event()
@@ -3229,8 +3229,8 @@ class TeraTermUI(customtkinter.CTk):
                             else:
                                 self.after(0, self.log_in.configure(state="disabled"))
                             self.after(50, self.login_frame)
-                        except AppStartError as e:
-                            print("An error occurred: ", e)
+                        except AppStartError as err:
+                            print("An error occurred: ", err)
                             self.after(350, self.bind, "<Return>", lambda event: self.login_event_handler())
                             self.after(100, self.show_error_message, 425, 330,
                                        translation["tera_term_failed_to_start"])
@@ -3243,10 +3243,10 @@ class TeraTermUI(customtkinter.CTk):
                         self.after(0, self.host_entry.configure(border_color="#c30101"))
                 else:
                     self.after(350, self.bind, "<Return>", lambda event: self.login_event_handler())
-            except Exception as e:
+            except Exception as err:
                 lang = self.language_menu.get()
                 translation = self.load_language(lang)
-                error_message = str(e)
+                error_message = str(err)
                 if "catching classes that do not inherit from BaseException is not allowed" in error_message:
                     print("Caught the specific error message: ", error_message)
                     self.destroy_windows()
@@ -3470,8 +3470,8 @@ class TeraTermUI(customtkinter.CTk):
                     self.uprb.kill(soft=True)
                     if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
                         TeraTermUI.terminate_process()
-                except Exception as e:
-                    print("An error occurred: ", e)
+                except Exception as err:
+                    print("An error occurred: ", err)
                     TeraTermUI.terminate_process()
             elif TeraTermUI.window_exists("Tera Term - [disconnected] VT") or \
                     TeraTermUI.window_exists("Tera Term - [connecting...] VT"):
@@ -3601,8 +3601,8 @@ class TeraTermUI(customtkinter.CTk):
                     translations = json.load(f)
                 self.translations_cache[lang] = translations
                 return translations
-            except Exception as e:
-                print("An error occurred: ", e)
+            except Exception as err:
+                print("An error occurred: ", err)
                 if lang == "English":
                     messagebox.showerror("Error",
                                          "A critical error occurred while loading the languages.\n"
@@ -4018,7 +4018,7 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     self.m_semester_entry[i].set(semester)
                 self.m_semester_entry[i].configure(state="disabled")
-                
+
     def section_bind_wrapper(self, event):
         self.detect_change(event)
         self.check_class_conflicts(event)
@@ -4173,7 +4173,7 @@ class TeraTermUI(customtkinter.CTk):
                     entry.configure(border_color=customtkinter.ThemeManager.theme["CTkEntry"]["border_color"])
                 if current_message != new_message:
                     self.m_tooltips[idx].configure(message=new_message, visibility=False, bg_color="#1E90FF")
-                    
+
     def keybind_auto_enroll(self):
         if self.auto_enroll.get() == "on":
             self.auto_enroll.deselect()
@@ -4335,8 +4335,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
                         self.auto_enroll_bool = False
                         self.after(100, self.auto_enroll.deselect)
-            except Exception as e:
-                print("An error occurred: ", e)
+            except Exception as err:
+                print("An error occurred: ", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -4758,14 +4758,14 @@ class TeraTermUI(customtkinter.CTk):
             self.show = customtkinter.CTkSwitch(master=self.student_frame, text=translation["show"],
                                                 command=self.show_event, onvalue="on", offvalue="off")
             self.show.bind("<space>", lambda event: self.spacebar_event())
-            self.student_id_entry.bind("<Command-c>", lambda e: "break")
-            self.student_id_entry.bind("<Control-c>", lambda e: "break")
-            self.code_entry.bind("<Command-c>", lambda e: "break")
-            self.code_entry.bind("<Control-c>", lambda e: "break")
-            self.student_id_entry.bind("<Command-C>", lambda e: "break")
-            self.student_id_entry.bind("<Control-C>", lambda e: "break")
-            self.code_entry.bind("<Command-C>", lambda e: "break")
-            self.code_entry.bind("<Control-C>", lambda e: "break")
+            self.student_id_entry.bind("<Command-c>", lambda event: "break")
+            self.student_id_entry.bind("<Control-c>", lambda event: "break")
+            self.code_entry.bind("<Command-c>", lambda event: "break")
+            self.code_entry.bind("<Control-c>", lambda event: "break")
+            self.student_id_entry.bind("<Command-C>", lambda event: "break")
+            self.student_id_entry.bind("<Control-C>", lambda event: "break")
+            self.code_entry.bind("<Command-C>", lambda event: "break")
+            self.code_entry.bind("<Control-C>", lambda event: "break")
             self.system = CustomButton(master=self.s_buttons_frame, border_width=2, text=translation["system"],
                                        text_color=("gray10", "#DCE4EE"), command=self.student_event_handler)
             self.back_student = CustomButton(master=self.s_buttons_frame, fg_color="transparent", border_width=2,
@@ -4921,7 +4921,7 @@ class TeraTermUI(customtkinter.CTk):
             self.title_search.bind("<Button-1>", lambda event: self.focus_set())
             self.s_classes.bind("<Button-1>", lambda event: self.focus_set())
             self.s_semester.bind("<Button-1>", lambda event: self.focus_set())
-            self.s_classes_entry.bind("<FocusIn>", lambda e:
+            self.s_classes_entry.bind("<FocusIn>", lambda event:
                                       self.search_scrollbar.scroll_to_widget(self.s_classes_entry))
             self.show_all.bind("<space>", lambda event: self.spacebar_event())
 
@@ -5353,14 +5353,14 @@ class TeraTermUI(customtkinter.CTk):
             self.student_id_entry.configure(show="")
             self.code_entry.configure(show="")
         elif show == "off":
-            self.student_id_entry.bind("<Command-c>", lambda e: "break")
-            self.student_id_entry.bind("<Control-c>", lambda e: "break")
-            self.code_entry.bind("<Command-c>", lambda e: "break")
-            self.code_entry.bind("<Control-c>", lambda e: "break")
-            self.student_id_entry.bind("<Command-C>", lambda e: "break")
-            self.student_id_entry.bind("<Control-C>", lambda e: "break")
-            self.code_entry.bind("<Command-C>", lambda e: "break")
-            self.code_entry.bind("<Control-C>", lambda e: "break")
+            self.student_id_entry.bind("<Command-c>", lambda event: "break")
+            self.student_id_entry.bind("<Control-c>", lambda event: "break")
+            self.code_entry.bind("<Command-c>", lambda event: "break")
+            self.code_entry.bind("<Control-c>", lambda event: "break")
+            self.student_id_entry.bind("<Command-C>", lambda event: "break")
+            self.student_id_entry.bind("<Control-C>", lambda event: "break")
+            self.code_entry.bind("<Command-C>", lambda event: "break")
+            self.code_entry.bind("<Control-C>", lambda event: "break")
             self.student_id_entry.configure(show="*")
             self.code_entry.configure(show="*")
 
@@ -5374,8 +5374,8 @@ class TeraTermUI(customtkinter.CTk):
                 proc_name = proc_info.get("name", "").lower()
                 if process in proc_name:
                     return True
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
-            print(f"Exception occurred: {e}")
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as err:
+            print(f"Exception occurred: {err}")
         return False
 
     # function to check if multiple of the specified processes are running or not
@@ -5391,8 +5391,8 @@ class TeraTermUI(customtkinter.CTk):
                     if process in proc_name:
                         running_processes.append(processName)
                         break
-            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
-                print(f"Exception occurred: {e}")
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as err:
+                print(f"Exception occurred: {err}")
         return running_processes
 
     # function that checks if there's more than 1 instance of Tera Term running
@@ -5406,8 +5406,8 @@ class TeraTermUI(customtkinter.CTk):
                 proc_name = proc_info.get("name", "").lower()
                 if process in proc_name:
                     count += 1
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
-            print(f"Exception occurred: {e}")
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as err:
+            print(f"Exception occurred: {err}")
         return count, (count > 1)
 
     # checks if the specified window exists
@@ -5498,8 +5498,8 @@ class TeraTermUI(customtkinter.CTk):
                 del z, tesseract_dir, tesseract_dir_path
                 gc.collect()
                 return self.capture_screenshot()
-            except Exception as e:
-                print(f"Error occurred during unzipping: {str(e)}")
+            except Exception as err:
+                print(f"Error occurred during unzipping: {str(err)}")
                 self.tesseract_unzipped = False
                 self.after(100, self.show_error_message, 320, 225, translation["tesseract_error"])
                 return
@@ -5741,8 +5741,8 @@ class TeraTermUI(customtkinter.CTk):
                         if response.status_code == 200:
                             webbrowser.open(url)
                             return
-                    except requests.exceptions.RequestException as e:
-                        print(f"Failed to open URL: {url}, Error: {e}")
+                    except requests.exceptions.RequestException as err:
+                        print(f"Failed to open URL: {url}, Error: {err}")
 
         instructor_text = cell.cget("text")
         if not instructor_text.strip():
@@ -5956,7 +5956,7 @@ class TeraTermUI(customtkinter.CTk):
         if len(self.class_table_pairs) == 20:
             self.table_count.configure(text_color="red")
         self.table_count.bind("<Button-1>", lambda event: self.focus_set())
-        self.sort_by.bind("<FocusIn>", lambda e: self.search_scrollbar.scroll_to_widget(self.sort_by))
+        self.sort_by.bind("<FocusIn>", lambda event: self.search_scrollbar.scroll_to_widget(self.sort_by))
         self.bind("<Control-s>", lambda event: self.download_search_classes_as_pdf())
         self.bind("<Control-S>", lambda event: self.download_search_classes_as_pdf())
         self.bind("<Control-w>", lambda event: self.keybind_remove_current_table())
@@ -6269,7 +6269,7 @@ class TeraTermUI(customtkinter.CTk):
         self.after(0, self.move_tables_overlay.focus_force)
         self.move_tables_overlay.bind("<FocusOut>", self.on_move_window_close)
         self.move_tables_overlay.bind("<Escape>", self.on_move_window_close)
-    
+
     def move_tables_geometry(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
@@ -6295,7 +6295,7 @@ class TeraTermUI(customtkinter.CTk):
         center_x = main_window_x + (main_window_width // 2) - (total_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (total_height // 2)
         self.move_tables_overlay.geometry(f"{total_width}x{total_height}+{center_x + 103}+{center_y + 13}")
-    
+
     def update_table_checkboxes(self):
         for widget in self.tables_container.winfo_children():
             widget.grid_remove()
@@ -6361,7 +6361,7 @@ class TeraTermUI(customtkinter.CTk):
 
         self.remove_current_table()
         self.last_remove_time = current_time
-    
+
     def remove_current_table(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
@@ -6461,8 +6461,8 @@ class TeraTermUI(customtkinter.CTk):
                 if attempt >= 1:
                     self.select_screen_item.invoke()
                 break
-            except ElementNotFoundError as e:
-                print(f"An error occurred: {e}")
+            except ElementNotFoundError as err:
+                print(f"An error occurred: {err}")
                 if attempt < max_retries - 1:
                     pass
                 else:
@@ -6483,7 +6483,7 @@ class TeraTermUI(customtkinter.CTk):
         pyautogui.moveTo(original_position)
         if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
             self.loading_screen.deiconify()
-            
+
     @staticmethod
     def get_latest_term(input_text):
         term_pattern = r"\b[A-Z][0-9]{2}[%*]"
@@ -7258,8 +7258,8 @@ class TeraTermUI(customtkinter.CTk):
                                     except tk.TclError:
                                         pass
                                         # print("Clipboard contains non-text data, possibly an image or other formats")
-                                    except Exception as e:
-                                        print("Error handling clipboard content:", e)
+                                    except Exception as err:
+                                        print("Error handling clipboard content:", err)
                                         self.log_error()
                                     time.sleep(1)
                                     TeraTermUI.disable_user_input()
@@ -7272,8 +7272,8 @@ class TeraTermUI(customtkinter.CTk):
                                     if clipboard_content is not None:
                                         self.clipboard_append(clipboard_content)
                                     time.sleep(1)
-                                except Exception as e:
-                                    print("An error occurred: ", e)
+                                except Exception as err:
+                                    print("An error occurred: ", err)
                                     self.go_back_menu()
                                 if show_error and not section_closed:
                                     self.after(100, self.show_error_message, 320, 240,
@@ -7397,8 +7397,8 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(125, explanation)
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
-            except Exception as e:
-                print("An error occurred: ", e)
+            except Exception as err:
+                print("An error occurred: ", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -7462,8 +7462,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.uprb.UprbayTeraTermVt.type_keys("00")
                 self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                 self.went_to_683_screen = False
-        except Exception as e:
-            print("An error occurred: ", e)
+        except Exception as err:
+            print("An error occurred: ", err)
             self.search_function_counter = 0
             self.e_counter = 0
             self.m_counter = 0
@@ -7544,17 +7544,17 @@ class TeraTermUI(customtkinter.CTk):
                 self.tesseract_unzipped = True
                 del tesseract_dir_path, tesseract_dir
                 gc.collect()
-            except Exception as e:
+            except Exception as err:
                 SPANISH = 0x0A
                 language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
-                print(f"Error occurred during unzipping: {str(e)}")
+                print(f"Error occurred during unzipping: {str(err)}")
                 self.tesseract_unzipped = False
                 self.log_error()
-                if "[Errno 2] No such file or directory" in str(e):
+                if "[Errno 2] No such file or directory" in str(err):
                     if language_id & 0xFF == SPANISH:
-                        messagebox.showerror("Error", f"¡Error Fatal!\n\n{str(e)}")
+                        messagebox.showerror("Error", f"¡Error Fatal!\n\n{str(err)}")
                     else:
-                        messagebox.showerror("Error", f"Fatal Error!\n\n{str(e)}")
+                        messagebox.showerror("Error", f"Fatal Error!\n\n{str(err)}")
                     self.after(0, self.forceful_end_app)
 
     @staticmethod
@@ -7613,8 +7613,8 @@ class TeraTermUI(customtkinter.CTk):
                     del line, lines
                 except FileNotFoundError:
                     return
-                except IOError as e:
-                    print(f"Error occurred: {e}")
+                except IOError as err:
+                    print(f"Error occurred: {err}")
                     print("Restoring from backup...")
                     shutil.copyfile(backup_path, file_path)
                 del backup_path
@@ -7638,8 +7638,8 @@ class TeraTermUI(customtkinter.CTk):
                     scopes=["https://www.googleapis.com/auth/spreadsheets"]
                 )
                 del credentials_dict
-        except Exception as e:
-            print(f"Failed to load credentials: {str(e)}")
+        except Exception as err:
+            print(f"Failed to load credentials: {str(err)}")
             self.log_error()
             self.credentials = None
             self.disable_feedback = True
@@ -8313,8 +8313,8 @@ class TeraTermUI(customtkinter.CTk):
                 if not self.error_occurred:
                     self.after(100, self.show_information_message, 370, 250,
                                translation["fix_after"])
-            except Exception as e:
-                print("An error occurred: ", e)
+            except Exception as err:
+                print("An error occurred: ", err)
                 error_occurred = True
                 self.log_error()
             finally:
@@ -8347,8 +8347,8 @@ class TeraTermUI(customtkinter.CTk):
                 return "laptop"
             else:
                 return "desktop"
-        except Exception as e:
-            print(f"Error determining device type: {e}")
+        except Exception as err:
+            print(f"Error determining device type: {err}")
             return None
 
     @staticmethod
@@ -8372,8 +8372,8 @@ class TeraTermUI(customtkinter.CTk):
                         "AC Power Setting": ac_setting,
                         "DC Power Setting": dc_setting
                     }
-            except Exception as e:
-                print(f"Error querying power settings: {e}")
+            except Exception as err:
+                print(f"Error querying power settings: {err}")
                 return None
 
         power_timeout = (query_timeout("SUB_VIDEO", "VIDEOIDLE") or
@@ -8469,7 +8469,7 @@ class TeraTermUI(customtkinter.CTk):
         self.last_activity = time.time()
         try:
             while not self.stop_check_idle.is_set():
-                if time.time() - self.last_activity >= 240:
+                if time.time() - self.last_activity >= 210:
                     with self.lock_thread:
                         if TeraTermUI.checkIfProcessRunning("ttermpro"):
                             lang = self.language_menu.get()
@@ -8482,7 +8482,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.idle_num_check += 1
                             if self.countdown_running:
                                 self.idle_num_check = 1
-                            if self.idle_num_check == 29:
+                            if self.idle_num_check == 32:
                                 def idle_warning():
                                     if not self.disable_audio:
                                         winsound.PlaySound(
@@ -8497,19 +8497,19 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(50, idle_warning)
                         else:
                             self.stop_check_idle_thread()
-                if self.idle_num_check == 30:
+                if self.idle_num_check == 33:
                     self.stop_check_idle_thread()
                 time.sleep(30)
-        except Exception as e:
-            print("An error occurred: ", e)
+        except Exception as err:
+            print("An error occurred: ", err)
             self.log_error()
 
     def keep_teraterm_open(self):
         try:
             main_window = self.uprb_32.window(title="uprbay.uprb.edu - Tera Term VT")
             main_window.wait("exists", 3)
-        except Exception as e:
-            print("An error occurred: ", e)
+        except Exception as err:
+            print("An error occurred: ", err)
             self.search_function_counter = 0
             self.uprb = Application(backend="uia").connect(
                 title="uprbay.uprb.edu - Tera Term VT", timeout=3, class_name="VTWin32",
@@ -8525,7 +8525,8 @@ class TeraTermUI(customtkinter.CTk):
             self.select_screen_item = edit_menu.child_window(
                 title="Select screen", control_type="MenuItem", auto_id="50280")
             self.tera_term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
-            self.move_window()
+            if self.state() != "withdrawn":
+                self.move_window()
         main_window.send_keystrokes("{VK_RIGHT}")
         main_window.send_keystrokes("{VK_LEFT}")
 
@@ -8606,8 +8607,8 @@ class TeraTermUI(customtkinter.CTk):
         except asyncio.TimeoutError:
             print(f"Request to {url} timed out")
             return False
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+        except Exception as err:
+            print(f"An unexpected error occurred: {err}")
             return False
 
     async def test_connection(self, lang):
@@ -8848,7 +8849,7 @@ class TeraTermUI(customtkinter.CTk):
         self.notaso.bind("<Button-1>", lambda event: self.status_frame.focus_set())
         self.faq_text.bind("<Button-1>", lambda event: self.status_frame.focus_set())
         self.status.bind("<Control-space>", lambda event: self.status.focus_set())
-        self.feedback_text.bind("<FocusIn>", lambda e: self.status_frame.scroll_to_widget(self.feedback_text))
+        self.feedback_text.bind("<FocusIn>", lambda event: self.status_frame.scroll_to_widget(self.feedback_text))
         self.status.bind("<Up>", lambda event: self.status_scroll_up())
         self.status.bind("<Down>", lambda event: self.status_scroll_down())
         self.status.bind("<Home>", lambda event: self.status_move_top_scrollbar())
@@ -9030,8 +9031,8 @@ class TeraTermUI(customtkinter.CTk):
                                           icon="cancel", button_width=380)
 
                         self.after(50, show_error)
-            except Exception as e:
-                print("An error occurred: ", e)
+            except Exception as err:
+                print("An error occurred: ", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -9409,9 +9410,9 @@ class TeraTermUI(customtkinter.CTk):
         self.skip_auth_switch.bind("<space>", lambda event: self.keybind_disable_enable_auth())
         self.class_list.bind("<<ListboxSelect>>", self.show_class_code)
         self.class_list.bind("<MouseWheel>", self.disable_scroll)
-        self.class_list.bind("<FocusIn>", lambda e: self.help_frame.scroll_to_widget(self.class_list))
+        self.class_list.bind("<FocusIn>", lambda event: self.help_frame.scroll_to_widget(self.class_list))
         self.search_box.bind("<KeyRelease>", self.search_classes)
-        self.search_box.bind("<FocusIn>", lambda e: self.help_frame.scroll_to_widget(self.search_box))
+        self.search_box.bind("<FocusIn>", lambda event: self.help_frame.scroll_to_widget(self.search_box))
         self.help_title.bind("<Button-1>", lambda event: self.help_frame.focus_set())
         self.notice.bind("<Button-1>", lambda event: self.help_frame.focus_set())
         self.searchbox_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
@@ -9423,10 +9424,10 @@ class TeraTermUI(customtkinter.CTk):
         self.disable_idle_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
         self.disable_audio_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
         self.fix_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
-        self.curriculum.bind("<FocusIn>", lambda e: self.help_frame.scroll_to_widget(self.curriculum))
-        self.skip_auth_switch.bind("<FocusIn>", lambda e: self.help_frame.scroll_to_widget(self.skip_auth_switch))
-        self.disable_idle.bind("<FocusIn>", lambda e: self.help_frame.scroll_to_widget(self.disable_idle))
-        self.disable_audio_val.bind("<FocusIn>", lambda e: self.help_frame.scroll_to_widget(self.disable_audio_val))
+        self.curriculum.bind("<FocusIn>", lambda event: self.help_frame.scroll_to_widget(self.curriculum))
+        self.skip_auth_switch.bind("<FocusIn>", lambda event: self.help_frame.scroll_to_widget(self.skip_auth_switch))
+        self.disable_idle.bind("<FocusIn>", lambda event: self.help_frame.scroll_to_widget(self.disable_idle))
+        self.disable_audio_val.bind("<FocusIn>", lambda event: self.help_frame.scroll_to_widget(self.disable_audio_val))
         self.help.bind("<Control-space>", lambda event: self.help.focus_set())
         self.help.bind("<Up>", lambda event: None if self.is_listbox_focused() else self.help_scroll_up())
         self.help.bind("<Down>", lambda event: None if self.is_listbox_focused() else self.help_scroll_down())
@@ -9512,11 +9513,11 @@ class TeraTermUI(customtkinter.CTk):
 
                 return latest_version
 
-            except requests.exceptions.RequestException as e:
-                print(f"Request failed: {e}")
+            except requests.exceptions.RequestException as err:
+                print(f"Request failed: {err}")
                 return None
-            except Exception as e:
-                print(f"An error occurred while fetching the latest release: {e}")
+            except Exception as err:
+                print(f"An error occurred while fetching the latest release: {err}")
                 return None
 
     # Compares the current version that user is using with the latest available
@@ -9570,8 +9571,8 @@ class TeraTermUI(customtkinter.CTk):
                     file.writelines(lines)
             except FileNotFoundError:
                 return
-            except Exception as e:
-                print(f"Error occurred: {e}")
+            except Exception as err:
+                print(f"Error occurred: {err}")
                 print("Restoring from backup...")
                 shutil.copyfile(backup_path, file_path)
             del line, lines
@@ -9621,8 +9622,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.download = False
             except FileNotFoundError:
                 return
-            except Exception as e:
-                print(f"Error occurred: {e}")
+            except Exception as err:
+                print(f"Error occurred: {err}")
                 print("Restoring from backup...")
                 shutil.copyfile(backup_path, file_path)
             del line, lines
@@ -9673,8 +9674,8 @@ class TeraTermUI(customtkinter.CTk):
                 file.writelines(lines)
         except FileNotFoundError:
             print(f"File or backup not found.")
-        except IOError as e:
-            print(f"Error occurred: {e}")
+        except IOError as err:
+            print(f"Error occurred: {err}")
             print("Restoring from backup...")
             try:
                 shutil.copyfile(backup_path, file_path)
@@ -10945,13 +10946,13 @@ def get_idle_duration():
 
 
 def bring_to_front():
-    def restore_window(title):
-        hwnd = win32gui.FindWindow(None, title)
-        if hwnd:
-            if not win32gui.IsWindowVisible(hwnd):
-                win32gui.ShowWindow(hwnd, SW_SHOW)
-            win32gui.ShowWindow(hwnd, SW_RESTORE)
-        return hwnd
+    def restore_window(title_win):
+        t_hwnd = win32gui.FindWindow(None, title_win)
+        if t_hwnd:
+            if not win32gui.IsWindowVisible(t_hwnd):
+                win32gui.ShowWindow(t_hwnd, SW_SHOW)
+            win32gui.ShowWindow(t_hwnd, SW_RESTORE)
+        return t_hwnd
 
     window_titles = {
         "main_app": ["Tera Term UI", "Tera Term UI"],
