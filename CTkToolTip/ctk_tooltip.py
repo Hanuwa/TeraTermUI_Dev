@@ -36,6 +36,7 @@ class CTkToolTip(Toplevel):
         super().__init__()
 
         self.widget = widget
+        self.title("TTUI Tooltip")
 
         self.withdraw()
 
