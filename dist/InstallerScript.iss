@@ -148,3 +148,20 @@ begin
     end;
   end;
 end;
+
+function InitializeSetup(): Boolean;
+var
+  LanguageID: Integer;
+  Language: String;
+begin
+  Result := True;
+
+  LanguageID := GetWindowsLanguage;
+
+  case LanguageID of
+    $0A: Language := 'spanish'; 
+    else Language := 'english'; 
+  end;
+
+  SetSetupLanguage(Language);
+end;
