@@ -227,6 +227,9 @@ try:
                 line = 'OutputBaseFilename="TeraTermUI_64-bit_Installer-' + update + '"\n'
             file.write(line)
     print(Fore.GREEN + "\nSuccessfully created distribution directory\n" + Style.RESET_ALL)
+except PermissionError as e:
+    print(Fore.RED + f"Error: cannot access because it is being used by another process: {e}\n" + Style.RESET_ALL)
+    sys.exit(1)
 except KeyboardInterrupt as e:
     shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
     os.remove(program_backup)
