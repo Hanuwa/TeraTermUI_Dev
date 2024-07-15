@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 7/14/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 7/15/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -89,13 +89,18 @@ except Exception as e:
         sys.exit(1)
     temp_dir = tempfile.gettempdir()
     exe_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]
-    cache_pattern = os.path.join(temp_dir, "comtypes_cache", f"{exe_name}-*")
-    cache_dirs = [d for d in os.listdir(os.path.join(temp_dir, "comtypes_cache")) if
-                  os.path.isdir(os.path.join(temp_dir, "comtypes_cache", d)) and d.startswith(f"{exe_name}-")]
-    for cache_dir in cache_dirs:
-        comtypes_cache_dir = os.path.join(temp_dir, "comtypes_cache", cache_dir)
+    comtypes_cache_dir = os.path.join(temp_dir, "comtypes_cache")
+    cache_dirs = [d for d in os.listdir(comtypes_cache_dir) if
+                  os.path.isdir(os.path.join(comtypes_cache_dir, d))]
+    if len(cache_dirs) == 1 and cache_dirs[0].startswith(f"{exe_name}-"):
         if os.path.exists(comtypes_cache_dir):
             shutil.rmtree(comtypes_cache_dir)
+    else:
+        for cache_dir in cache_dirs:
+            if cache_dir.startswith(f"{exe_name}-"):
+                cache_dir_path = os.path.join(comtypes_cache_dir, cache_dir)
+                if os.path.exists(cache_dir_path):
+                    shutil.rmtree(cache_dir_path)
     current_executable = os.path.abspath(sys.argv[0])
     subprocess.run([sys.executable, current_executable, str(restart_count + 1)])
     sys.exit(0)
