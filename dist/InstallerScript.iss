@@ -156,10 +156,10 @@ var
 begin
   Result := True;
 
-  LanguageID := GetWindowsLanguage;
+  LanguageID := GetSystemDefaultLangID;
 
   case LanguageID of
-    $0A: Language := 'spanish'; 
+    LANG_SPANISH: Language := 'spanish'; 
     else Language := 'english'; 
   end;
 
