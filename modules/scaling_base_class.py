@@ -58,13 +58,19 @@ class CTkScalingBaseClass:
     def _get_window_scaling(self) -> float:
         return self.__window_scaling
 
-    def _apply_widget_scaling(self, value: Union[int, float]) -> Union[float]:
+    def _apply_widget_scaling(self, value: Union[int, float]) -> Union[int, float]:
         assert self.__scaling_type == "widget"
-        return value * self.__widget_scaling
+        if isinstance(value, float):
+            return value * self.__widget_scaling
+        else:
+            return int(value * self.__widget_scaling)
 
-    def _reverse_widget_scaling(self, value: Union[int, float]) -> Union[float]:
+    def _reverse_widget_scaling(self, value: Union[int, float]) -> Union[int, float]:
         assert self.__scaling_type == "widget"
-        return value / self.__widget_scaling
+        if isinstance(value, float):
+            return value / self.__widget_scaling
+        else:
+            return int(value / self.__widget_scaling)
 
     def _apply_window_scaling(self, value: Union[int, float]) -> int:
         assert self.__scaling_type == "window"
