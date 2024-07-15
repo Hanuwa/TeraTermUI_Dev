@@ -167,6 +167,7 @@ init()
 username = os.getlogin()
 project_directory = r"C:\Users\\" + username + r"\PycharmProjects\TeraTermUI"
 inno_directory = r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+current_year = datetime.datetime.now().year
 app_folder = "TeraTermUI"
 while True:
     user_input = input(Fore.BLUE + "Please enter the update version number"
@@ -205,6 +206,12 @@ version_file_content = re.sub(r"(?<=Version Number: ).*", update, version_file_c
 version_file_content = re.sub(r"(?<=Release Date: ).*", current_date, version_file_content)
 with open(version_file_path, "w") as file:
     file.write(version_file_content)
+license_file_path = os.path.join(project_directory, "LICENSE.txt")
+with open(license_file_path, "r") as file:
+    license_content = file.read()
+updated_license_content = re.sub(r"Copyright \(c\) \d{4}", f"Copyright (c) {current_year}", license_content)
+with open(license_file_path, "w") as file:
+    file.write(updated_license_content)
 try:
     if os.path.exists(output_directory):
         shutil.rmtree(output_directory)
@@ -261,7 +268,7 @@ nuitka_command = (
     r'--nofollow-import-to=unittest --python-flag=no_docstrings --product-name="Tera Term UI" '
     r'--company-name="Armando Del Valle Tejada" --file-description="TeraTermUI" '  
     r'--file-version="' + update_without_v + r'" --product-version="' + update_without_v + r'" '
-    r'--copyright="Copyright (c) 2024 Armando Del Valle Tejada" --noinclude-setuptools-mode=nofollow '
+    r'--copyright="Copyright (c) ' + str(current_year) + ' Armando Del Valle Tejada" '
 )
 try:
     updater_exe_path = os.path.join(project_directory, "updater.exe")
