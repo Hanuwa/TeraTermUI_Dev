@@ -5,13 +5,13 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 7/15/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 7/16/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
 # Application sometimes feels sluggish/slow to use, could use some efficiency/performance improvements.
 # The grid of the UI interface and placement of widgets could use some work.
-# Option Menu of all tera terms screens requires more work
+# Option Menu of all tera term's screens requires more work, project needs more documentation.
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
@@ -6660,8 +6660,10 @@ class TeraTermUI(customtkinter.CTk):
     # extracts the text from the searched class to get the important information
     @staticmethod
     def extract_class_data(text):
+        from typing import List
+
         lines = text.split("\n")
-        data = []
+        data: List[dict] = []
         course_found = False
         invalid_action = False
         y_n_found = False
@@ -6690,8 +6692,10 @@ class TeraTermUI(customtkinter.CTk):
             if "TERM:" in line:
                 term_value = line.split("TERM:")[-1].strip()[:3]
 
+        session_types = ["LEC", "LAB", "INT", "PRA", "SEM"]
+        session_pattern = "|".join(session_types)
         pattern = re.compile(
-            r"(\w+)\s+(\w)\s+(LEC|LAB|INT|PRA|SEM)\s+(\d+\.\d+)\s+(\w+)\s+([\dAMP\-TBA]+)\s+([\d\s]+)?\s+.*?\s*(["
+            rf"(\w+)\s+(\w)\s+({session_pattern})\s+(\d+\.\d+)\s+(\w+)\s+([\dAMP\-TBA]+)\s+([\d\s]+)?\s+.*?\s*(["
             r"NFUL\s]*.*)"
         )
         # Regex pattern to match additional time slots
@@ -6699,7 +6703,7 @@ class TeraTermUI(customtkinter.CTk):
             r"^(\s+)(\w{2})\s+([\dAMP\-]+)\s*$"
         )
         for line in lines:
-            if any(x in line for x in ["LEC", "LAB", "INT", "PRA", "SEM"]):
+            if any(x in line for x in session_types):
                 match = pattern.search(line)
                 if match:
                     instructor = match.group(8)
@@ -9072,7 +9076,7 @@ class TeraTermUI(customtkinter.CTk):
         ]
 
         # Function to search within a given path to a certain depth
-        def search_within_path(search_root, depth=7):
+        def search_within_path(search_root, depth=10):
             excluded_dirs = ["Recycler", "Recycled", "System Volume Information",
                              "$RECYCLE.BIN", "Prefetch", "Windows", "ProgramData",
                              "Temp", "System32", "SysWOW64", "Recovery", "Boot",
