@@ -44,9 +44,21 @@ class DrawEngine:
     @staticmethod
     def calculate_hash(*args) -> str:
         """Create a hash of given arguments to track changes in values."""
+        types_to_hash = (int, float, str, bool, type(None), tuple)
+
+        def convert_to_hashable(arg):
+            if isinstance(arg, types_to_hash):
+                return arg
+            elif isinstance(arg, list):
+                return tuple(convert_to_hashable(item) for item in arg)
+            elif isinstance(arg, dict):
+                return tuple((key, convert_to_hashable(value)) for key, value in sorted(arg.items()))
+            else:
+                return str(arg)
+
         try:
-            return hash(
-                tuple(arg if isinstance(arg, (int, float, str, bool, type(None), tuple)) else str(arg) for arg in args))
+            hashable_args = tuple(convert_to_hashable(arg) for arg in args)
+            return hash(hashable_args)
         except TypeError:
             return hash(tuple(str(arg) for arg in args))
 
