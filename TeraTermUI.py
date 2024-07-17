@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 7/16/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 7/17/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -571,6 +571,7 @@ class TeraTermUI(customtkinter.CTk):
         self.timeout_occurred = False
         self.can_edit = False
         self.original_font = None
+        self.original_color = None
         self.classes_status = {}
         self.class_table_pairs = []
         self.table_tooltips = {}
@@ -7613,11 +7614,16 @@ class TeraTermUI(customtkinter.CTk):
                             self.original_font = current_value
                             updated_value = "Lucida Console" + current_value[len(font_name):]
                             lines[index] = f"VTFont={updated_value}\n"
-                            self.can_edit = True
+                        if line.startswith("VTColor=") and not line.startswith(";"):
+                            current_value = line.strip().split("=")[1]
+                            if current_value != "255,255,255,0,0,0":
+                                self.original_color = current_value
+                                lines[index] = "VTColor=255,255,255,0,0,0\n"
                         if line.startswith("AuthBanner="):
                             current_value = line.strip().split("=")[1]
                             if current_value not in ["0", "1"]:
                                 lines[index] = "AuthBanner=1\n"
+                        self.can_edit = True
                     with open(file_path, "w", encoding=detected_encoding) as file:
                         file.writelines(lines)
                     del line, lines
@@ -7647,7 +7653,7 @@ class TeraTermUI(customtkinter.CTk):
             unscrambled_part = "".join(char_list[i] for i in original_order)
             original_parts.append(unscrambled_part)
         return "".join(original_parts)
-    
+
     def setup_feedback(self):
         from google.oauth2 import service_account
         from pyzipper import AESZipFile
@@ -9637,11 +9643,16 @@ class TeraTermUI(customtkinter.CTk):
                         self.original_font = current_value
                         updated_value = "Lucida Console" + current_value[len(font_name):]
                         lines[index] = f"VTFont={updated_value}\n"
-                        self.can_edit = True
+                    if line.startswith("VTColor=") and not line.startswith(";"):
+                        current_value = line.strip().split("=")[1]
+                        if current_value != "255,255,255,0,0,0":
+                            self.original_color = current_value
+                            lines[index] = "VTColor=255,255,255,0,0,0\n"
                     if line.startswith("AuthBanner="):
                         current_value = line.strip().split("=")[1]
                         if current_value not in ["0", "1"]:
                             lines[index] = "AuthBanner=1\n"
+                    self.can_edit = True
                 with open(file_path, "w", encoding=detected_encoding) as file:
                     file.writelines(lines)
                 self.teraterm_not_found = False
@@ -9679,19 +9690,20 @@ class TeraTermUI(customtkinter.CTk):
             with open(backup_path, "r", encoding=detected_encoding) as backup_file:
                 backup_lines = backup_file.readlines()
             backup_font = None
+            backup_color = None
             for line in backup_lines:
                 if line.startswith("VTFont="):
                     backup_font = line.strip().split("=")[1]
-                    break
-            if backup_font is None:
+                if line.startswith("VTColor=") and not line.startswith(";"):
+                    backup_color = line.strip().split("=")[1]
+            if backup_font is None or backup_color is None:
                 return
 
             for index, line in enumerate(lines):
                 if line.startswith("VTFont="):
-                    if backup_font.split(",")[0].lower() != self.original_font.split(",")[0].lower():
-                        lines[index] = f"VTFont={backup_font}\n"
-                    else:
-                        lines[index] = f"VTFont={self.original_font}\n"
+                    lines[index] = f"VTFont={backup_font}\n"
+                if line.startswith("VTColor=") and not line.startswith(";"):
+                    lines[index] = f"VTColor={backup_color}\n"
             if self.disable_audio_val is not None and self.disable_audio_val.get() == "on":
                 for index, line in enumerate(lines):
                     if line.startswith("Beep=") and line.strip() != "Beep=off":
