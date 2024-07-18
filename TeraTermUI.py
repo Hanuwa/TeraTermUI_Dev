@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 7/17/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 7/18/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -9533,17 +9533,17 @@ class TeraTermUI(customtkinter.CTk):
             headers = {"User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                                       "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")}
             try:
-                response = requests.get(url, headers=headers, timeout=3)
-                if response.status_code != 200:
-                    print(f"Error fetching release information: {response.status_code}")
-                    return None
+                with requests.get(url, headers=headers, timeout=3) as response:
+                    if response.status_code != 200:
+                        print(f"Error fetching release information: {response.status_code}")
+                        return None
 
-                release_data = response.json()
-                latest_version = release_data.get("tag_name")
-                if latest_version and latest_version.startswith("v"):
-                    latest_version = latest_version[1:]
+                    release_data = response.json()
+                    latest_version = release_data.get("tag_name")
+                    if latest_version and latest_version.startswith("v"):
+                        latest_version = latest_version[1:]
 
-                return latest_version
+                    return latest_version
 
             except requests.exceptions.RequestException as err:
                 print(f"Request failed: {err}")
