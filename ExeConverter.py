@@ -264,7 +264,7 @@ nuitka_command = (
     r'--include-data-file="' + project_directory + r'\LICENSE.txt=LICENSE.txt" '   
     r'--include-data-file="' + project_directory + r'\updater.exe=updater.exe" '                                                
     r'--output-dir="' + output_directory + r'" --python-flag=no_asserts '
-    r'--windows-icon-from-ico="' + project_directory + r'\images\tera-term.ico" --lto=yes '
+    r'--windows-icon-from-ico="' + project_directory + r'\images\tera-term.ico" '
     r'--nofollow-import-to=unittest --python-flag=no_docstrings --product-name="Tera Term UI" '
     r'--company-name="Armando Del Valle Tejada" --file-description="TeraTermUI" '  
     r'--file-version="' + update_without_v + r'" --product-version="' + update_without_v + r'" '
