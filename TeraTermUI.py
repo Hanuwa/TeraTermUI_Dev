@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 7/18/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 7/21/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -72,7 +72,7 @@ from win32con import SW_HIDE, SW_SHOW, SW_RESTORE, WM_CLOSE
 MAX_RESTARTS = 5
 restart_count = 0
 try:
-    if len(sys.argv) > 1:
+    if len(sys.argv) > 2:
         try:
             restart_count = int(sys.argv[2])
         except ValueError:
