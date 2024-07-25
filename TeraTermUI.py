@@ -9917,14 +9917,14 @@ class TeraTermUI(customtkinter.CTk):
                 if sections in self.classes_status:
                     status_entry = self.classes_status[sections]
                     if status_entry["status"] == "ENROLLED" and status_entry["classes"] == classes and \
-                            status_entry.get("semester") == semester:
+                            status_entry["semester"] == semester:
                         error_msg_long = translation["multiple_already_enrolled"]
                         break
             elif choices in ["Drop", "Baja"]:
                 if sections in self.classes_status:
                     status_entry = self.classes_status[sections]
                     if status_entry["status"] == "DROPPED" and status_entry["classes"] == classes and \
-                            status_entry.get("semester") == semester:
+                            status_entry["semester"] == semester:
                         error_msg_long = translation["multiple_already_dropped"]
                         break
 
