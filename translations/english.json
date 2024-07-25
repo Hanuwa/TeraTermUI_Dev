@@ -225,6 +225,7 @@
 	"add_no_semester": "Error! Must enter \n\nthe semester",
 	"add_invalid_semester": "Error! Must enter \n\na valid semester",
 	"enroll_multiple": "Are you sure you are ready to submit the classes?\n\nWARNING: Make sure the information is correct",
+	"refresh_semester": "Detected changes in this semester's classes: \"{semester}\"\n\nWould you like to refresh the information?",
 	"submit_modify": "Are you sure you are ready to submit and modify your currently enrolled classes?\n\nWARNING: Make sure the information is correct",
 	"auto_enroll_prompt": "Are you sure you are ready to submit the classes for them to be auto-enrolled?\n\nWARNING: Make sure the information is correct",
 	"enrolled_dropped_multiple_success": "Enrolled and dropped classes\nsuccessfully",
