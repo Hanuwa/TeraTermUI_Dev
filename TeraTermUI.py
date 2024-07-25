@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 7/21/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 7/25/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -229,6 +229,7 @@ class TeraTermUI(customtkinter.CTk):
         self.is_exit_dialog_open = False
         self.dialog = None
         self.dialog_input = None
+        self.ask_semester_refresh = True
         self.move_tables_overlay = None
         self.move_title_label = None
         self.tables_container = None
@@ -1395,13 +1396,17 @@ class TeraTermUI(customtkinter.CTk):
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if (choice == "register" and (
-                                section not in self.classes_status or self.classes_status[section][1] != "ENROLLED")) \
+                                section not in self.classes_status or
+                                self.classes_status[section]["status"] != "ENROLLED" or
+                                self.classes_status[section]["semester"] != semester)) \
                                 or (choice == "drop" and (
-                                section not in self.classes_status or self.classes_status[section][1] != "DROPPED")):
+                                section not in self.classes_status or
+                                self.classes_status[section]["status"] != "DROPPED" or
+                                self.classes_status[section]["semester"] != semester)):
                             if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE)
                                     and re.fullmatch("^[A-Z]{2}[A-Z0-9]$", section, flags=re.IGNORECASE)
-                                    and re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE)
-                                    or semester == curr_sem):
+                                    and (re.fullmatch("^[A-Z][0-9]{2}$", semester,
+                                                      flags=re.IGNORECASE) or semester == curr_sem)):
                                 self.wait_for_window()
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                 self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
@@ -1458,11 +1463,13 @@ class TeraTermUI(customtkinter.CTk):
                                         if choice == "register":
                                             self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                             time.sleep(1)
-                                            self.classes_status[section] = (classes, "ENROLLED")
+                                            self.classes_status[section] = {"classes": classes, "status": "ENROLLED",
+                                                                            "semester": semester}
                                             self.after(100, self.show_success_message, 350, 265,
                                                        translation["success_enrolled"])
                                         elif choice == "drop":
-                                            self.classes_status[section] = (classes, "DROPPED")
+                                            self.classes_status[section] = {"classes": classes, "status": "DROPPED",
+                                                                            "semester": semester}
                                             self.after(100, self.show_success_message, 350, 265,
                                                        translation["success_dropped"])
                                         if self.e_counter + self.m_counter == 15:
@@ -1537,9 +1544,9 @@ class TeraTermUI(customtkinter.CTk):
                                                translation["semester_format_error"])
                                     self.after(0, self.e_semester_entry.configure(border_color="#c30101"))
                         else:
-                            if section in self.classes_status and self.classes_status[section][1] == "ENROLLED":
+                            if section in self.classes_status and self.classes_status[section]["status"] == "ENROLLED":
                                 self.after(100, self.show_error_message, 335, 240, translation["already_enrolled"])
-                            elif section in self.classes_status and self.classes_status[section][1] == "DROPPED":
+                            elif section in self.classes_status and self.classes_status[section]["status"] == "DROPPED":
                                 self.after(100, self.show_error_message, 335, 240, translation["already_dropped"])
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
@@ -1771,6 +1778,63 @@ class TeraTermUI(customtkinter.CTk):
         self.search.grid(row=1, column=1, padx=(285, 0), pady=(0, 5), sticky="n")
         self.search_next_page.grid(row=1, column=1, padx=(465, 0), pady=(0, 5), sticky="n")
 
+    def check_refresh_semester(self):
+        if self.enrolled_classes_table is None or not self.ask_semester_refresh:
+            return False
+
+        lang = self.language_menu.get()
+        translation = self.load_language(lang)
+        headers = [translation["course"], translation["grade"], translation["days"],
+                   translation["times"], translation["room"]]
+        enrolled_courses = set()
+        discrepancies_found = False
+
+        for row_index in range(1, len(self.enrolled_classes_data) + 1):
+            cell = self.enrolled_classes_table.get_cell(row_index, headers.index(translation["course"]))
+            course_info = cell.cget("text")
+            course_parts = course_info.split("-")
+            if len(course_parts) >= 3:
+                course_name = f"{course_parts[0]}{course_parts[1]}"
+                course_section = course_parts[2]
+                enrolled_courses.add((course_name, course_section))
+
+        for section, status_entry in self.classes_status.items():
+            classes = status_entry["classes"]
+            status = status_entry["status"]
+            semester = status_entry["semester"]
+            if semester == self.dialog_input:
+                if (classes, section) not in enrolled_courses:
+                    if status == "ENROLLED":
+                        discrepancies_found = True
+                        break
+                elif (classes, section) in enrolled_courses:
+                    if status == "DROPPED":
+                        discrepancies_found = True
+                        break
+                elif any(classes == course and section != sec
+                         for course, sec in enrolled_courses):
+                    discrepancies_found = True
+                    break
+
+        if discrepancies_found:
+            if not self.disable_audio:
+                winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/update.wav"), winsound.SND_ASYNC)
+            msg = CTkMessagebox(title=translation["submit"], icon="question",
+                                message=translation["refresh_semester"].replace("{semester}", self.dialog_input),
+                                option_1=translation["option_1"], option_2=translation["option_2"],
+                                option_3=translation["option_3"], icon_size=(65, 65),
+                                button_color=("#c30101", "#145DA0", "#145DA0"),
+                                hover_color=("darkred", "use_default", "use_default"))
+            response = msg.get()
+            if response[0] == "Yes" or response[0] == "Sí":
+                self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
+                return True
+            else:
+                self.ask_semester_refresh = False
+                return False
+
+        return False
+
     def my_classes_event_handler(self):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
@@ -1797,6 +1861,17 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Control-S>", lambda event: self.download_enrolled_classes_as_pdf(
                 self.enrolled_classes_data, self.enrolled_classes_credits))
             self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_menu())
+
+            def delayed_refresh_semester():
+                refresh_semester = self.check_refresh_semester()
+                if refresh_semester:
+                    refresh_task_done = threading.Event()
+                    refresh_loading_screen = self.show_loading_screen()
+                    self.update_loading_screen(refresh_loading_screen, refresh_task_done)
+                    self.thread_pool.submit(self.my_classes_event, self.dialog_input, task_done=refresh_task_done)
+                    self.my_classes_event_completed = False
+
+            self.after(500, delayed_refresh_semester)
         else:
             main_window_x = self.winfo_x()
             main_window_y = self.winfo_y()
@@ -2249,15 +2324,19 @@ class TeraTermUI(customtkinter.CTk):
                                     choice = [
                                         (self.m_register_menu[i].get(), i,
                                          self.m_section_entry[i].get().upper().replace(" ", ""),
-                                         self.m_classes_entry[i].get().upper().replace(" ", ""))
+                                         self.m_classes_entry[i].get().upper().replace(" ", ""),
+                                         self.m_semester_entry[i].get().upper().replace(" ", ""))
                                         for i in range(self.a_counter + 1)
                                     ]
-                                    for c, cnt, sec, cls in choice:
+                                    for c, cnt, sec, cls, sem in choice:
                                         if sec:
                                             if c in ["Register", "Registra"]:
-                                                self.classes_status[sec] = (cls, "ENROLLED")
+                                                self.classes_status[sec] = {"classes": cls, "status": "ENROLLED",
+                                                                            "semester": sem}
                                             elif c in ["Drop", "Baja"]:
-                                                self.classes_status[sec] = (cls, "DROPPED")
+                                                self.classes_status[sec] = {"classes": cls, "status": "DROPPED",
+                                                                            "semester": sem}
+                                    self.submit_multiple.configure(state="disabled")
                                     self.submit_multiple.configure(state="disabled")
                                     self.unbind("<Return>")
                                     self.not_rebind = True
@@ -3325,6 +3404,9 @@ class TeraTermUI(customtkinter.CTk):
         skip = False
         lang = self.language_menu.get()
         translation = self.load_language(lang)
+        keywords = ["STUDENTS REQ/DROP", "HOLD FLAGS", "PROGRAMA DE CLASES", "ACADEMIC STATISTICS", "SNAPSHOT",
+                    "SOLICITUD DE PRORROGA", "LISTA DE SECCIONES", "AYUDA ECONOMICA", "EXPEDIENTE ACADEMICO", "AUDIT",
+                    "PERSONAL DATA", "COMPUTO DE MATRICULA"]
         while not self.tesseract_unzipped:
             time.sleep(0.5)
             timeout_counter += 1
@@ -3378,12 +3460,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.intro_box.stop_autoscroll(event=None)
                 self.slideshow_frame.pause_cycle()
                 self.move_window()
-            elif "STUDENTS REQ/DROP" in text_output or "HOLD FLAGS" in text_output or \
-                    "PROGRAMA DE CLASES" in text_output or "ACADEMIC STATISTICS" in text_output or \
-                    "SNAPSHOT" in text_output or "SOLICITUD DE PRORROGA" in text_output or \
-                    "LISTA DE SECCIONES" in text_output or "AYUDA ECONOMICA" in text_output or \
-                    "EXPEDIENTE ACADEMICO" in text_output or "AUDIT" in text_output or \
-                    "PERSONAL DATA" in text_output or "COMPUTO DE MATRICULA" in text_output:
+            elif any(keyword in text_output for keyword in keywords):
                 self.uprb.UprbayTeraTermVt.type_keys("{VK_RIGHT}")
                 self.uprb.UprbayTeraTermVt.type_keys("{VK_LEFT}")
                 self.connect_to_uprb()
@@ -6882,6 +6959,7 @@ class TeraTermUI(customtkinter.CTk):
             self.after(100, self.show_error_message, 320, 235, translation["semester_no_data"] + semester)
             return
         self.dialog_input = dialog_input
+        self.ask_semester_refresh = True
         table_values = [headers] + [[cls.get(header, "") for header in headers] for cls in data]
         enrolled_rows = len(data) + 1
         column_widths = {
@@ -6925,6 +7003,12 @@ class TeraTermUI(customtkinter.CTk):
                     pad_y = 30
                 self.change_section_entries[row_index].grid(row=row_index, column=0, padx=(50, 0), pady=(pad_y, 0))
                 self.mod_selection_list[row_index].grid(row=row_index, column=0, padx=(0, 100), pady=(pad_y, 0))
+                self.change_section_entries[row_index].configure(state="normal")
+                if self.change_section_entries[row_index].get():
+                    self.change_section_entries[row_index].delete(0, "end")
+                self.change_section_entries[row_index].configure(state="disabled")
+                self.mod_selection_list[row_index].configure(state="normal")
+                self.mod_selection_list[row_index].set(translation["choose"])
                 pad_y = 9
             if new_entries_count > current_entries_count:
                 for row_index in range(current_entries_count, new_entries_count):
@@ -7131,8 +7215,8 @@ class TeraTermUI(customtkinter.CTk):
                 co_requisite = False
                 if asyncio.run(self.test_connection(lang)) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
-                        not_all_choose = False
                         section_pattern = True
+                        not_all_choose = False
                         edge_cases_bool = False
                         edge_cases_classes = ["FISI3011", "FISI3013", "FISI3012", "FISI3014", "BIOL3011", "BIOL3013",
                                               "BIOL3012", "BIOL3014", "QUIM3001", "QUIM3003", "QUIM3002", "QUIM3004"]
@@ -7201,7 +7285,9 @@ class TeraTermUI(customtkinter.CTk):
                                         else:
                                             if old_section in self.classes_status:
                                                 self.classes_status.pop(old_section)
-                                            self.classes_status[old_section] = (course_code_no_section, "DROPPED")
+                                            self.classes_status[old_section] = {
+                                                "classes": course_code_no_section, "status": "DROPPED",
+                                                "semester": dialog_input}
                                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER 2}")
                                         self.reset_activity_timer()
                                         if mod == translation["section"]:
@@ -7219,7 +7305,9 @@ class TeraTermUI(customtkinter.CTk):
                                             text_output = self.capture_screenshot()
                                             self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                             self.reset_activity_timer()
-                                            if "INVALID COURSE ID" in text_output or "COURSE CLOSED" in text_output:
+                                            if "INVALID COURSE ID" in text_output or "COURSE CLOSED" in text_output or \
+                                                    "R/TC" in text_output or "Closed by Spec-Prog" in text_output or \
+                                                    "COURSE RESERVED" in text_output:
                                                 show_error = True
                                                 text_output = self.capture_screenshot()
                                                 enrolled_classes = "ENROLLED"
@@ -7238,17 +7326,21 @@ class TeraTermUI(customtkinter.CTk):
                                                     section_closed = True
                                                     if old_section in self.classes_status:
                                                         self.classes_status.pop(old_section)
-                                                    self.classes_status[old_section] = (
-                                                        course_code_no_section, "DROPPED")
+                                                    self.classes_status[old_section] = {
+                                                        "classes": course_code_no_section, "status": "DROPPED",
+                                                        "semester": dialog_input}
                                                 else:
                                                     if old_section in self.classes_status:
                                                         self.classes_status.pop(old_section)
-                                                    self.classes_status[old_section] = (
-                                                        course_code_no_section, "ENROLLED")
+                                                    self.classes_status[old_section] = {
+                                                        "classes": course_code_no_section, "status": "ENROLLED",
+                                                        "semester": dialog_input}
                                             else:
                                                 if old_section in self.classes_status:
                                                     self.classes_status.pop(old_section)
-                                                self.classes_status[old_section] = (course_code_no_section, "ENROLLED")
+                                                self.classes_status[old_section] = {
+                                                    "classes": course_code_no_section, "status": "ENROLLED",
+                                                    "semester": dialog_input}
                                 self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                 self.reset_activity_timer()
                                 text_output = self.wait_for_response(["CONFIRMED", "DROPPED"], timeout=1.5)
@@ -7278,7 +7370,8 @@ class TeraTermUI(customtkinter.CTk):
                                     TeraTermUI.disable_user_input("on")
                                     copy = pyperclip.paste()
                                     enrolled_classes, total_credits = self.extract_my_enrolled_classes(copy)
-                                    self.after(0, self.display_enrolled_data, enrolled_classes, total_credits)
+                                    self.after(0, self.display_enrolled_data, enrolled_classes,
+                                               total_credits, dialog_input)
                                     self.clipboard_clear()
                                     if clipboard_content is not None:
                                         self.clipboard_append(clipboard_content)
@@ -7307,7 +7400,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.unbind("<Return>")
                                     self.submit_my_classes.configure(state="disabled")
                                     self.not_rebind = True
-                                    self.after(2500, explanation)
+                                    self.after(3000, explanation)
                                 elif section_closed:
                                     self.after(100, self.show_error_message, 320, 240,
                                                translation["failed_change_section"])
@@ -7328,7 +7421,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.unbind("<Return>")
                                     self.submit_my_classes.configure(state="disabled")
                                     self.not_rebind = True
-                                    self.after(2500, explanation)
+                                    self.after(3000, explanation)
 
                                 elif co_requisite:
                                     self.after(100, self.show_error_message, 320, 240,
@@ -7350,7 +7443,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.unbind("<Return>")
                                     self.submit_my_classes.configure(state="disabled")
                                     self.not_rebind = True
-                                    self.after(2500, explanation)
+                                    self.after(3000, explanation)
 
                                 else:
                                     self.after(100, self.show_success_message, 350, 265,
@@ -7906,7 +7999,7 @@ class TeraTermUI(customtkinter.CTk):
                         last_item = list(self.classes_status.keys())[-1]
                         self.classes_status.pop(last_item)
 
-            self.after(2500, explanation)
+            self.after(3000, explanation)
         if not found_errors and text != "Error":
             for i in range(self.a_counter + 1):
                 self.m_classes_entry[i].delete(0, "end")
@@ -7931,7 +8024,7 @@ class TeraTermUI(customtkinter.CTk):
                 CTkMessagebox(title=translation["automation_error_title"], message=translation["enrollment_error"],
                               button_width=380)
 
-            self.after(2500, explanation)
+            self.after(3000, explanation)
 
     def show_modify_classes_information(self):
         self.destroy_windows()
@@ -8445,7 +8538,12 @@ class TeraTermUI(customtkinter.CTk):
                 threshold = 120
         pyautogui.FAILSAFE = False
         while not self.stop_check_process.is_set():
-            idle = self.cursor.execute("SELECT idle FROM user_data").fetchone()
+            try:
+                idle = self.cursor.execute("SELECT idle FROM user_data").fetchone()
+            except Exception as err:
+                idle = ["Disabled"]
+                print("An error occurred: ", err)
+                self.log_error()
             if self.loading_screen_status is None and idle[0] != "Disabled":
                 if threshold is not None:
                     idle_time = get_idle_duration()
@@ -9816,13 +9914,18 @@ class TeraTermUI(customtkinter.CTk):
                 error_entries.append(self.m_section_entry[i])
                 break
             if choices in ["Register", "Registra"]:
-                if sections in self.classes_status and self.classes_status[sections] == (classes, "ENROLLED"):
-                    error_msg_long = translation["multiple_already_enrolled"]
-                    break
+                if sections in self.classes_status:
+                    status_entry = self.classes_status[sections]
+                    if status_entry["status"] == "ENROLLED" and status_entry["classes"] == classes:
+                        error_msg_long = translation["multiple_already_enrolled"]
+                        break
             elif choices in ["Drop", "Baja"]:
-                if sections in self.classes_status and self.classes_status[sections] == (classes, "DROPPED"):
-                    error_msg_long = translation["multiple_already_dropped"]
-                    break
+                if sections in self.classes_status:
+                    status_entry = self.classes_status[sections]
+                    if status_entry["status"] == "DROPPED" and status_entry["classes"] == classes:
+                        error_msg_long = translation["multiple_already_dropped"]
+                        break
+
         if not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE) and semester != curr_sem:
             error_msg_short = translation["multiple_semester_format_error"]
             error_entries.append(self.m_semester_entry[0])
