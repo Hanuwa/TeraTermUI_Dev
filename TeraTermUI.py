@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 7/25/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 7/26/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1827,7 +1827,6 @@ class TeraTermUI(customtkinter.CTk):
                                 hover_color=("darkred", "use_default", "use_default"))
             response = msg.get()
             if response[0] == "Yes" or response[0] == "Sí":
-                self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
                 return True
             else:
                 self.ask_semester_refresh = False
@@ -7168,6 +7167,7 @@ class TeraTermUI(customtkinter.CTk):
             self.title_my_classes.bind("<Button-1>", lambda event: self.focus_set())
             self.modify_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.total_credits_label.bind("<Button-1>", lambda event: self.focus_set())
+        self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
         self.my_classes_frame.scroll_to_top()
 
     def modify_enrolled_classes(self, mod, row_index):
