@@ -25,17 +25,25 @@ if '%errorlevel%' NEQ '0' (
 :--------------------------------------
 
 :: Check if colorama is installed
-pip show colorama >nul 2>&1
+python -c "import colorama" >nul 2>&1
 if '%errorlevel%' NEQ '0' (
-    echo Installing colorama...
-    pip install colorama
-    if '%errorlevel%' NEQ '0' (
-        echo Failed to install colorama. Please install it manually.
-        pause
-        exit /B
-    )
+    goto InstallColorama
+) else (
+    goto RunScript
 )
 
+:InstallColorama
+:: Run command to install colorama
+echo Installing colorama...
+pip install colorama
+if '%errorlevel%' NEQ '0' (
+    echo Failed to install colorama. Please install it manually.
+    pause
+    exit /B
+)
+echo.
+
+:RunScript
 :: Run the Python script
 python ExeConverter.py
 if '%errorlevel%' NEQ '0' (
