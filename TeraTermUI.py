@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 7/26/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 7/30/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -109,6 +109,8 @@ customtkinter.set_appearance_mode("System")
 customtkinter.set_default_color_theme("blue")
 warnings.filterwarnings("ignore", message="32-bit application should be automated using 32-bit Python")
 gc.set_threshold(5000, 100, 100)
+if sys.platform.startswith("win"):
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
 def measure_time(threshold):
@@ -998,7 +1000,14 @@ class TeraTermUI(customtkinter.CTk):
 
     @staticmethod
     def get_absolute_path(relative_path):
-        return os.path.abspath(os.path.join(os.path.dirname(__file__), relative_path))
+        if os.path.isabs(relative_path):
+            raise ValueError("The provided path is already an absolute path")
+        try:
+            absolute_path = os.path.abspath(os.path.join(os.path.dirname(__file__), relative_path))
+            return absolute_path
+        except Exception as err:
+            print(f"Error converting path '{relative_path}' to absolute path: {err}")
+            raise
 
     @staticmethod
     def terminate_process():
@@ -1044,10 +1053,13 @@ class TeraTermUI(customtkinter.CTk):
                 appdata_path = os.environ.get("PROGRAMDATA")
                 tera_term_ui_path = os.path.join(appdata_path, "TeraTermUI")
                 if not os.path.isdir(tera_term_ui_path):
-                    raise Exception("Program Data directory not found.")
-            # Write the formatted error message and separator to the log file
-            with open(TeraTermUI.get_absolute_path("logs.txt"), "a") as file:
-                file.write(error_message + "\n" + separator)
+                    raise Exception("Program Data directory not found")
+                log_file_path = os.path.join(tera_term_ui_path, "logs.txt")
+                with open(log_file_path, "a") as file:
+                    file.write(error_message + "\n" + separator)
+            else:
+                with open(TeraTermUI.get_absolute_path("logs.txt"), "a") as file:
+                    file.write(error_message + "\n" + separator)
         except Exception as err:
             print(f"An unexpected error occurred: {str(err)}")
 
