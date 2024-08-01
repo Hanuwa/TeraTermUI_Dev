@@ -165,7 +165,7 @@ def validate_version(ver_str: str) -> bool:
 
 init()
 username = os.getlogin()
-project_directory = r"C:\Users\\" + username + r"\PycharmProjects\TeraTermUI"
+project_directory = os.path.dirname(os.path.abspath(__file__))
 inno_directory = r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 current_year = datetime.datetime.now().year
 app_folder = "TeraTermUI"
