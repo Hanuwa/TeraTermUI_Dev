@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 7/31/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 8/4/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 11000 lines of codes, it definitely makes things harder to work with
+# and with over 11100 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -1020,9 +1020,19 @@ class TeraTermUI(customtkinter.CTk):
 
     @staticmethod
     def check_tera_term_hidden():
-        hwnd_uprb = win32gui.FindWindow(None, "uprbay.uprb.edu - Tera Term VT")
-        if hwnd_uprb and not win32gui.IsWindowVisible(hwnd_uprb):
-            TeraTermUI.terminate_process()
+        def enum_window_callback(hwnd_win, window_list):
+            if "Tera Term" in win32gui.GetWindowText(hwnd_win):
+                window_list.append(hwnd_win)
+
+        windows = []
+        win32gui.EnumWindows(enum_window_callback, windows)
+
+        for hwnd in windows:
+            window_text = win32gui.GetWindowText(hwnd)
+            if re.search(r".* - Tera Term", window_text):
+                if not win32gui.IsWindowVisible(hwnd):
+                    TeraTermUI.terminate_process()
+                    break
 
     def log_error(self):
         import inspect
@@ -3424,7 +3434,9 @@ class TeraTermUI(customtkinter.CTk):
             if timeout_counter > 10:
                 skip = True
                 break
-        if TeraTermUI.window_exists("SSH Authentication") and not skip:
+        hwnd_uprb = win32gui.FindWindow(None, "uprbay.uprb.edu - Tera Term VT")
+        hwnd_tt = win32gui.FindWindow(None, "Tera Term")
+        if TeraTermUI.window_exists("SSH Authentication") and hwnd_uprb and not skip:
             self.connect_to_uprb()
             self.bind("<Return>", lambda event: self.auth_event_handler())
             self.after(0, self.initialization_auth)
@@ -3449,6 +3461,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.after(125, server_closed)
                 return
             elif "return to continue" in text_output or "INFORMACION ESTUDIANTIL" in text_output:
+                if hwnd_tt:
+                    win32gui.PostMessage(hwnd_tt, WM_CLOSE, 0, 0)
                 if "return to continue" in text_output and "Loading" in text_output:
                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER 3}")
                 elif count_to_continue == 2 or "ZZZ" in text_output:
@@ -3472,6 +3486,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.slideshow_frame.pause_cycle()
                 self.move_window()
             elif any(keyword in text_output for keyword in keywords):
+                if hwnd_tt:
+                    win32gui.PostMessage(hwnd_tt, WM_CLOSE, 0, 0)
                 self.uprb.UprbayTeraTermVt.type_keys("{VK_RIGHT}")
                 self.uprb.UprbayTeraTermVt.type_keys("{VK_LEFT}")
                 self.connect_to_uprb()
