@@ -11,7 +11,7 @@ cffi==1.16.0
 chardet==5.2.0
 charset-normalizer==3.3.2
 colorama==0.4.6
-comtypes==1.4.5
+comtypes==1.4.6
 CTkMessagebox==2.7
 customtkinter==5.2.2
 darkdetect==0.8.0
