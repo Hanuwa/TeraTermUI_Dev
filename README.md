@@ -1,7 +1,7 @@
 # Tera Term UI Dev
 Dev Environment for Tera Term UI (Virtualenv)
 
-**App Version:** "0.9.5" | **Python Version:** "3.12.4" | **Tesseract Version:** "5.4.0" | **C Compiler:** "MSVC"
+**App Version:** "0.9.5" | **Python Version:** "3.12.5" | **Tesseract Version:** "5.4.0" | **C Compiler:** "MSVC"
 
 **Important** modules of "**ctkmessagebox.py, ctk_input_dialog.py, ctk_scrollable_frame.py, ctk_tabview.py, ctk_toplevel.py,
 ctk_textbox.py, ctk_scrollbar.py, ctk_checkbox.py, ctk_radiobutton.py, ctk_switch.py, ctk_optionmenu.py, appearance_mode_tracker.py,
