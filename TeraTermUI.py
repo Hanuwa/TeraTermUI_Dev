@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 8/8/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 8/9/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1064,8 +1064,7 @@ class TeraTermUI(customtkinter.CTk):
                 tera_term_ui_path = os.path.join(appdata_path, "TeraTermUI")
                 if not os.path.isdir(tera_term_ui_path):
                     raise Exception("Program Data directory not found")
-                log_file_path = os.path.join(tera_term_ui_path, "logs.txt")
-                with open(log_file_path, "a") as file:
+                with open(self.logs, "a") as file:
                     file.write(error_message + "\n" + separator)
             else:
                 with open(TeraTermUI.get_absolute_path("logs.txt"), "a") as file:
