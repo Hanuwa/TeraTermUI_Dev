@@ -79,7 +79,7 @@
 	"m_remove_tooltip": "Remove classes",
 	"multiple_tooltip": "Enroll multiple classes\nat once",
 	"save_data_tooltip": "Next time you log-in, the classes\nyou saved will already be there!",
-	"auto_enroll_tooltip": "Will automatically enroll the classes\nyou selected at the exact time\nthe enrollment process becomes\navailable for you",
+	"auto_enroll_tooltip": "Will automatically enroll the classes\nyou selected, at the exact time the\nenrollment process becomes\navailable for you",
 	"search_next_page_tooltip": "There's more sections\navailable",
 	
 	"status": "Status",
