@@ -79,7 +79,7 @@
 	"m_remove_tooltip": "Eliminar clases",
 	"multiple_tooltip": "Matricula múltiples\nclases a la misma vez",
 	"save_data_tooltip": "¡La próxima vez que inicies sesión,\nlas clases que guardaste estarán ahí!",
-	"auto_enroll_tooltip": "Matriculará automáticamente las clases\nque seleccionó, en el momento exacto\nen el que el proceso de inscripción esté disponible",
+	"auto_enroll_tooltip": "Matriculará automáticamente las clases\nque seleccionó, en el momento exacto\nen el que el proceso de inscripción\nesté disponible",
 	"search_next_page_tooltip": "Hay mas secciones\ndisponibles",
 	
 	"status": "Estado",
