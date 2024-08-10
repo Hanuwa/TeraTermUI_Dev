@@ -100,7 +100,7 @@ class CTkToolTip(Toplevel):
                                             corner_radius=self.corner_radius,
                                             border_width=self.border_width, fg_color=self.bg_color,
                                             border_color=self.border_color)
-        self.frame.pack(padx=0, pady=0, fill="both", expand=True)
+        self.frame.pack(padx=17, pady=17, fill="both", expand=True)
 
         self.message_label = customtkinter.CTkLabel(self.frame, textvariable=self.messageVar, **message_kwargs)
         self.message_label.pack(fill="both", padx=self.padding[0] + self.border_width,
@@ -159,12 +159,8 @@ class CTkToolTip(Toplevel):
         if space_on_right < text_width + 20:  # Adjust the threshold as needed
             offset_x = -text_width - 20  # Negative offset when space is limited on the right side
 
-        # Offsets the ToolTip using the coordinates of an event as an origin
-        if event.x_root > 0 and event.y_root > 0:  # Ensure coordinates are valid
-            self.geometry(f"+{event.x_root + offset_x}+{event.y_root + self.y_offset}")
-            self.after(int(self.delay * 1000), self._show)
-        else:
-            self.withdraw()
+        self.geometry(f"+{event.x_root + offset_x - 17}+{event.y_root + self.y_offset - 17}")
+        self.after(int(self.delay * 1000), self._show)
 
     def on_leave(self, event=None) -> None:
         """
