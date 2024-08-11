@@ -120,6 +120,8 @@ class CTkToolTip(Toplevel):
         self.widget.bind("<Motion>", self.on_enter, add="+")
         self.widget.bind("<B1-Motion>", self.on_enter, add="+")
         self.widget.bind("<Destroy>", lambda _: self.hide(), add="+")
+        self.main_win = widget.winfo_toplevel()
+        self.main_win.bind("<FocusOut>", self.on_focus_out, add="+")
 
     def show(self) -> None:
         """
@@ -132,10 +134,12 @@ class CTkToolTip(Toplevel):
         """
         Processes motion within the widget including entering and moving.
         """
-
         if self.disable:
             return
         self.last_moved = time.time()
+        if hasattr(self.widget, "_on_enter"):
+            self.widget._on_enter(event)
+            self.widget.configure(cursor="hand2")
 
         # Set the status as inside for the very first time
         if self.status == "outside":
@@ -145,6 +149,12 @@ class CTkToolTip(Toplevel):
         if not self.follow:
             self.status = "inside"
             self.withdraw()
+
+        if not self._is_mouse_inside_widget() and hasattr(self.widget, "_on_leave"):
+            self.status = "outside"
+            self.withdraw()
+            self.widget._on_leave(event)
+            self.widget.configure(cursor="")
 
         # Calculate available space on the right side of the widget relative to the screen
         root_width = self.winfo_screenwidth()
@@ -166,7 +176,20 @@ class CTkToolTip(Toplevel):
         """
         Hides the ToolTip temporarily.
         """
+        main_win_status = self.widget.winfo_toplevel().attributes("-disabled") == 1
+        if self.disable or not self.winfo_ismapped():
+            return
+        if not self._is_mouse_inside_widget() or not self.widget.winfo_ismapped() or main_win_status:
+            self.status = "outside"
+            self.withdraw()
 
+        if self._is_mouse_near_widget():
+            self.after(100, self.on_leave)
+
+    def on_focus_out(self, event) -> None:
+        """
+        Hides the ToolTip when the main window loses focus.
+        """
         if self.disable:
             return
         self.status = "outside"
@@ -176,7 +199,6 @@ class CTkToolTip(Toplevel):
         """
         Displays the ToolTip.
         """
-
         if not self.widget.winfo_exists():
             self.hide()
             self.destroy()
@@ -199,6 +221,25 @@ class CTkToolTip(Toplevel):
                          self.widget.winfo_rooty() + self.widget.winfo_height())
 
         return widget_coords[0] < x < widget_coords[2] and widget_coords[1] < y < widget_coords[3]
+
+    def _is_mouse_near_widget(self, threshold: int = 7) -> bool:
+        """
+        Checks if the mouse is near the widget's area within a given threshold.
+        """
+        x, y = self.widget.winfo_pointerxy()
+        widget_coords = (
+            self.widget.winfo_rootx(),
+            self.widget.winfo_rooty(),
+            self.widget.winfo_rootx() + self.widget.winfo_width(),
+            self.widget.winfo_rooty() + self.widget.winfo_height()
+        )
+
+        near_left = widget_coords[0] - threshold <= x <= widget_coords[0] + threshold
+        near_right = widget_coords[2] - threshold <= x <= widget_coords[2] + threshold
+        near_top = widget_coords[1] - threshold <= y <= widget_coords[1] + threshold
+        near_bottom = widget_coords[3] - threshold <= y <= widget_coords[3] + threshold
+
+        return near_left or near_right or near_top or near_bottom
 
     def hide(self) -> None:
         """
