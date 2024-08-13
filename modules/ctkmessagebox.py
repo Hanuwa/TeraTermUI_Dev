@@ -540,7 +540,9 @@ class CustomButton(customtkinter.CTkButton):
             self.configure(image=self.image)
         else:
             self.bind("<Enter>", self.on_enter)
+            self.bind("<Motion>", self.on_enter)
             self.bind("<Leave>", self.on_leave)
+            self.bind("<B1-Motion>", self.on_motion)
         self.bind("<ButtonPress-1>", self.on_button_down)
         self.bind("<ButtonRelease-1>", self.on_button_up)
 
@@ -577,8 +579,18 @@ class CustomButton(customtkinter.CTkButton):
             self.configure(cursor="")
             return
         self.configure(cursor="")
-        if self.is_mouse_over_widget() and not event.widget == self._text_label \
-                and not event.widget == self._image_label and self.is_pressed:
+        if self.is_mouse_over_widget() and self.is_pressed:
+            self._on_enter()
+            self.configure(cursor="hand2")
+        else:
+            self._on_leave()
+            self.configure(cursor="")
+
+    def on_motion(self, event):
+        if self.cget("state") == "disabled":
+            self.configure(cursor="")
+            return
+        if self.is_mouse_over_widget() and self.is_pressed:
             self._on_enter()
             self.configure(cursor="hand2")
         else:
@@ -593,6 +605,8 @@ class CustomButton(customtkinter.CTkButton):
         self.unbind("<Leave>")
         self.unbind("<ButtonPress-1>")
         self.unbind("<ButtonRelease-1>")
+        self.unbind("<B1-Motion>")
+        self.unbind("<Motion>")
         super().destroy()
 
 
