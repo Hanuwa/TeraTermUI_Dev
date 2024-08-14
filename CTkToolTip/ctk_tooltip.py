@@ -136,6 +136,7 @@ class CTkToolTip(Toplevel):
         """
         if self.disable:
             return
+
         self.last_moved = time.time()
         if hasattr(self.widget, "_on_enter"):
             self.widget._on_enter(event)
@@ -155,6 +156,8 @@ class CTkToolTip(Toplevel):
             self.withdraw()
             self.widget._on_leave(event)
             self.widget.configure(cursor="")
+            if self._is_mouse_near_widget():
+                self.after(0, self.on_leave)
 
         # Calculate available space on the right side of the widget relative to the screen
         root_width = self.winfo_screenwidth()
@@ -179,6 +182,7 @@ class CTkToolTip(Toplevel):
         main_win_status = self.widget.winfo_toplevel().attributes("-disabled") == 1
         if self.disable or not self.winfo_ismapped():
             return
+
         if not self._is_mouse_inside_widget() or not self.widget.winfo_ismapped() or main_win_status:
             self.status = "outside"
             self.withdraw()
