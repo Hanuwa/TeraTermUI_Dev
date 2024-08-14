@@ -188,7 +188,7 @@ class CTkToolTip(Toplevel):
             self.withdraw()
 
         if self._is_mouse_near_widget():
-            self.after(100, self.on_leave)
+            self.after(50, self.on_leave)
 
     def on_focus_out(self, event) -> None:
         """
@@ -226,7 +226,7 @@ class CTkToolTip(Toplevel):
 
         return widget_coords[0] < x < widget_coords[2] and widget_coords[1] < y < widget_coords[3]
 
-    def _is_mouse_near_widget(self, threshold: int = 7) -> bool:
+    def _is_mouse_near_widget(self, threshold: int = 10) -> bool:
         """
         Checks if the mouse is near the widget's area within a given threshold.
         """
