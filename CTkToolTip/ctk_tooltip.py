@@ -188,7 +188,7 @@ class CTkToolTip(Toplevel):
             self.withdraw()
 
         if self._is_mouse_near_widget():
-            self.after(50, self.on_leave)
+            self.after(75, self.on_leave)
 
     def on_focus_out(self, event) -> None:
         """
