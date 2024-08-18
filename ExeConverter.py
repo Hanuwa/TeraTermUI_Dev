@@ -364,8 +364,6 @@ for version in versions:
                                 'with open(self.ath, "rb"):')
             data = data.replace('archive = AESZipFile(self.SERVICE_ACCOUNT_FILE)',
                                 'archive = AESZipFile(self.ath)')
-            data = data.replace('with open(TeraTermUI.get_absolute_path("logs.txt"), "a")',
-                                'with open(self.logs, "a")')
             print(Fore.GREEN + "Successfully started installer version\n" + Style.RESET_ALL)
         else:
             script = "portable"
@@ -381,8 +379,6 @@ for version in versions:
                                 'with open(self.SERVICE_ACCOUNT_FILE, "rb"):')
             data = data.replace('archive = AESZipFile(self.ath)',
                                 'archive = AESZipFile(self.SERVICE_ACCOUNT_FILE)')
-            data = data.replace('with open(self.logs, "a")',
-                                'with open(TeraTermUI.get_absolute_path("logs.txt"), "a")')
             print(Fore.GREEN + "Successfully started portable version\n" + Style.RESET_ALL)
         with open(project_directory + r"\TeraTermUI.py", "w", encoding="utf-8") as file:
             file.write(data)
