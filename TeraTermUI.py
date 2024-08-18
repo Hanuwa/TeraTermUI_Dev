@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 8/11/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 8/18/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -3293,17 +3293,23 @@ class TeraTermUI(customtkinter.CTk):
                                 return
                         try:
                             if self.teraterm5_first_boot:
-                                first_boot = Application(backend="uia").start(self.location, timeout=3).connect(
-                                    title="Tera Term - [disconnected] VT", timeout=3,
-                                    class_name="VTWin32", control_type="Window")
+                                first_boot = Application(backend="uia").start(self.location, timeout=3)
+                                timings.wait_until_passes(10, 1, lambda: first_boot.window(
+                                    title="Tera Term - [disconnected] VT", class_name="VTWin32",
+                                    control_type="Window").exists())
+                                first_boot.connect(title="Tera Term - [disconnected] VT", class_name="VTWin32",
+                                                   control_type="Window", timeout=3)
                                 first_boot.kill(soft=True)
                                 self.set_focus_to_tkinter()
                             if self.download or self.teraterm_not_found or self.teraterm5_first_boot:
                                 self.edit_teraterm_ini(self.teraterm_file)
                             if not new_connection:
-                                self.uprb = Application(backend="uia").start(self.location, timeout=3).connect(
-                                    title="Tera Term - [disconnected] VT", timeout=3,
-                                    class_name="VTWin32", control_type="Window")
+                                self.uprb = Application(backend="uia").start(self.location, timeout=3)
+                                timings.wait_until_passes(10, 1, lambda: self.uprb.window(
+                                    title="Tera Term - [disconnected] VT", class_name="VTWin32",
+                                    control_type="Window").exists())
+                                self.uprb.connect(title="Tera Term - [disconnected] VT", class_name="VTWin32",
+                                                  control_type="Window", timeout=3)
                             else:
                                 self.uprb = Application(backend="uia").connect(
                                     title="Tera Term - [disconnected] VT", timeout=3,
