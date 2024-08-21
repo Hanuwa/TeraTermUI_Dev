@@ -56,7 +56,7 @@ pyperclip==1.9.0
 pyppmd==1.1.0
 PyRect==0.2.0
 pyscreenshot==3.1
-PyScreeze==0.1.30
+PyScreeze==1.0.1
 pystray==0.19.5
 pytesseract==0.3.13
 pytweening==1.2.0
