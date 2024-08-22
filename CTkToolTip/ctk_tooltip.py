@@ -138,7 +138,7 @@ class CTkToolTip(Toplevel):
             return
 
         self.last_moved = time.time()
-        if hasattr(self.widget, "_on_enter"):
+        if hasattr(self.widget, "is_pressed") and self.widget.is_pressed:
             self.widget._on_enter(event)
             self.widget.configure(cursor="hand2")
 
@@ -151,13 +151,11 @@ class CTkToolTip(Toplevel):
             self.status = "inside"
             self.withdraw()
 
-        if not self._is_mouse_inside_widget() and hasattr(self.widget, "_on_leave"):
+        if not self._is_mouse_inside_widget() and hasattr(self.widget, "is_pressed") and self.widget.is_pressed:
             self.status = "outside"
             self.withdraw()
             self.widget._on_leave(event)
             self.widget.configure(cursor="")
-            if self._is_mouse_near_widget():
-                self.after(0, self.on_leave)
 
         # Calculate available space on the right side of the widget relative to the screen
         root_width = self.winfo_screenwidth()
@@ -180,12 +178,14 @@ class CTkToolTip(Toplevel):
         Hides the ToolTip temporarily.
         """
         main_win_status = self.widget.winfo_toplevel().attributes("-disabled") == 1
-        if self.disable or not self.winfo_ismapped():
+        if self.disable:
             return
 
         if not self._is_mouse_inside_widget() or not self.widget.winfo_ismapped() or main_win_status:
             self.status = "outside"
             self.withdraw()
+            if hasattr(self.widget, "_on_leave"):
+                self.widget._on_leave()
 
         if self._is_mouse_near_widget():
             self.after(75, self.on_leave)
