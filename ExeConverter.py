@@ -433,6 +433,9 @@ for version in versions:
                 os.remove(program_backup)
                 print(Fore.RED + f"Error renaming folder: {e}\n" + Style.RESET_ALL)
         try:
+            jaraco_folder = os.path.join(output_directory, "TeraTermUI_installer", "jaraco")
+            if os.path.exists(jaraco_folder) and os.path.isdir(jaraco_folder):
+                shutil.rmtree(jaraco_folder)
             os.remove(os.path.join(output_directory, "TeraTermUI_installer", "database.db"))
             os.remove(os.path.join(output_directory, "TeraTermUI_installer", "feedback.zip"))
             os.remove(os.path.join(output_directory, "TeraTermUI_installer", "updater.exe"))
@@ -479,6 +482,9 @@ for version in versions:
         for i in range(retries):
             try:
                 os.rename(output_directory + r"\TeraTermUI.dist", output_directory + r"\TeraTermUI")
+                jaraco_folder = os.path.join(output_directory, "TeraTermUI", "jaraco")
+                if os.path.exists(jaraco_folder) and os.path.isdir(jaraco_folder):
+                    shutil.rmtree(jaraco_folder)
                 zip_file_path = output_directory + fr"\{app_folder}-" + update + ""
                 shutil.make_archive(zip_file_path, "zip", output_directory, app_folder)
                 version_path = os.path.join(output_directory, app_folder, "VERSION.txt")
