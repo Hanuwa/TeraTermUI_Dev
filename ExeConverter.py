@@ -63,7 +63,7 @@ def check_and_restore_backup():
                 os.remove(program_backup)
 
 
-def attach_manifest(executable_path, manifest_path):
+def attach_manifest(executable_path, manifest_path, script):
     try:
         sha1_hash = hashlib.sha1()
         with open(executable_path, "rb") as f:
@@ -83,7 +83,7 @@ def attach_manifest(executable_path, manifest_path):
 
         subprocess.run(f"mt.exe -manifest {manifest_path} -outputresource:{executable_path};1", check=True)
         updater = os.path.join(project_directory, "updater.exe")
-        if executable_path == updater:
+        if executable_path == updater or script == "installer":
             success_message = "\nSuccessfully attached manifest\n"
         else:
             success_message = "\nSuccessfully attached manifest"
@@ -299,7 +299,7 @@ try:
             print(Fore.GREEN + "\nSuccessfully compiled updater.py\n" + Style.RESET_ALL)
             manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
             generate_checksum(None, updater_exe_path)
-            attach_manifest(updater_exe_path, manifest_path)
+            attach_manifest(updater_exe_path, manifest_path, script)
             shutil.copy2(updater_exe_path, updater_dist_path)
             shutil.copy2(updater_exe_path, output_directory)
             for folder in ["updater.build", "updater.onefile-build", "updater.dist"]:
