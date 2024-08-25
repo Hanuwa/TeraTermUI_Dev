@@ -51,7 +51,7 @@ pycparser==2.22
 pycryptodomex==3.20.0
 PyGetWindow==0.0.9
 PyMsgBox==1.0.9
-pyparsing==3.1.2
+pyparsing==3.1.4
 pyperclip==1.9.0
 pyppmd==1.1.0
 PyRect==0.2.0
