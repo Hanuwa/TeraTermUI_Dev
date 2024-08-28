@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 8/21/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 8/28/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 11100 lines of codes, it definitely makes things harder to work with
+# and with over 11200 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -11139,6 +11139,15 @@ def get_idle_duration():
     return millis / 1000.0
 
 
+def has_write_permission():
+    try:
+        testfile = tempfile.TemporaryFile(dir=os.getcwd())
+        testfile.close()
+        return True
+    except (OSError, IOError):
+        return False
+
+
 def bring_to_front():
     def restore_window(title_win):
         t_hwnd = win32gui.FindWindow(None, title_win)
@@ -11189,6 +11198,19 @@ def bring_to_front():
 
 
 def main():
+    mode = "Portable"
+    SPANISH = 0x0A
+    language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
+    if mode == "Portable" and not has_write_permission():
+        if language_id & 0xFF == SPANISH:
+            messagebox.showerror("Permiso denegado",
+                                 "No tienes permiso para escribir en el directorio actual. "
+                                 "Ejecuta la aplicación desde un directorio diferente.")
+        else:
+            messagebox.showerror("Permission Denied",
+                                 "You don't have permission to write to the current directory. "
+                                 "Please run the application from a different directory.")
+        sys.exit(1)
     tera_term_temp_dir = os.path.join(tempfile.gettempdir(), "TeraTermUI")
     if not os.path.exists(tera_term_temp_dir):
         os.makedirs(tera_term_temp_dir)
@@ -11204,8 +11226,6 @@ def main():
     except KeyboardInterrupt:
         sys.exit(1)
     except Exception as error:
-        SPANISH = 0x0A
-        language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
         print("A fatal error occurred: ", error)
         if language_id & 0xFF == SPANISH:
             messagebox.showerror("Error", "Ocurrió un error inesperado: " + str(error) +
