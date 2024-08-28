@@ -299,7 +299,7 @@ try:
             print(Fore.GREEN + "\nSuccessfully compiled updater.py\n" + Style.RESET_ALL)
             manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
             generate_checksum(None, updater_exe_path)
-            attach_manifest(updater_exe_path, manifest_path, script)
+            attach_manifest(updater_exe_path, manifest_path, script="Both")
             shutil.copy2(updater_exe_path, updater_dist_path)
             shutil.copy2(updater_exe_path, output_directory)
             for folder in ["updater.build", "updater.onefile-build", "updater.dist"]:
@@ -364,6 +364,8 @@ for version in versions:
                                 'with open(self.ath, "rb"):')
             data = data.replace('archive = AESZipFile(self.SERVICE_ACCOUNT_FILE)',
                                 'archive = AESZipFile(self.ath)')
+            data = data.replace('mode = "Portable"',
+                                'mode = "Installation"')
             print(Fore.GREEN + "Successfully started installer version\n" + Style.RESET_ALL)
         else:
             script = "portable"
@@ -379,6 +381,8 @@ for version in versions:
                                 'with open(self.SERVICE_ACCOUNT_FILE, "rb"):')
             data = data.replace('archive = AESZipFile(self.ath)',
                                 'archive = AESZipFile(self.SERVICE_ACCOUNT_FILE)')
+            data = data.replace('mode = "Installation"',
+                                'mode = "Portable"')
             print(Fore.GREEN + "Successfully started portable version\n" + Style.RESET_ALL)
         with open(project_directory + r"\TeraTermUI.py", "w", encoding="utf-8") as file:
             file.write(data)
