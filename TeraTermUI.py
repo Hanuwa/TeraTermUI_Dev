@@ -3727,12 +3727,12 @@ class TeraTermUI(customtkinter.CTk):
                     messagebox.showerror("Error",
                                          "A critical error occurred while loading the languages.\n"
                                          "Might need to reinstall the program.\n\n"
-                                         "The application will now exit.")
+                                         "The application will now exit")
                 elif lang == "Español":
                     messagebox.showerror("Error",
                                          "Ocurrió un error crítico al cargar los idiomas.\n"
                                          "Puede ser que sea necesario reinstalar el programa.\n\n"
-                                         "La aplicación se cerrará ahora.")
+                                         "La aplicación se cerrará ahora")
                 # Exit the application
                 self.forceful_end_app()
 
@@ -11205,11 +11205,11 @@ def main():
         if language_id & 0xFF == SPANISH:
             messagebox.showerror("Permiso denegado",
                                  "No tienes permiso para escribir en el directorio actual. "
-                                 "Ejecuta la aplicación desde un directorio diferente.")
+                                 "Ejecuta la aplicación desde un directorio diferente")
         else:
             messagebox.showerror("Permission Denied",
                                  "You don't have permission to write to the current directory. "
-                                 "Please run the application from a different directory.")
+                                 "Please run the application from a different directory")
         sys.exit(1)
     tera_term_temp_dir = os.path.join(tempfile.gettempdir(), "TeraTermUI")
     if not os.path.exists(tera_term_temp_dir):
