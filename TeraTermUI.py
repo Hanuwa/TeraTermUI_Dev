@@ -10587,7 +10587,7 @@ class CustomEntry(customtkinter.CTkEntry):
             return "break"
 
     def find_active_tooltips(self, widget):
-        if isinstance(widget, tk.Toplevel) and hasattr(widget, "is_ctktooltip") and widget.winfo_viewable():
+        if isinstance(widget, tk.Toplevel) and hasattr(widget, "is_ctktooltip"):
             widget.on_focus_out(event=None)
         for child in widget.winfo_children():
             self.find_active_tooltips(child)
