@@ -206,10 +206,6 @@ class TeraTermUI(customtkinter.CTk):
         self.check_process_thread = None
         self.idle_num_check = None
         self.idle_warning = None
-        self.feedback_text = None
-        self.feedback_send = None
-        self.search_box = None
-        self.class_list = None
         self.back_checkbox_state = None
         self.exit_checkbox_state = None
         self.get_class_for_pdf = None
@@ -8945,8 +8941,9 @@ class TeraTermUI(customtkinter.CTk):
         self.feedback_text = CustomTextBox(self.status_frame, self, enable_autoscroll=False, lang=lang,
                                            wrap="word", border_spacing=8, width=300, height=170,
                                            fg_color=("#ffffff", "#111111"))
-        self.feedback_send = CustomButton(self.status_frame, text=translation["feedback"],
-                                          text_color=("gray10", "#DCE4EE"), command=self.start_feedback_thread)
+        self.feedback_send = CustomButton(self.status_frame, text=translation["feedback"], anchor="w",
+                                          image=self.get_image("plane"), text_color=("gray10", "#DCE4EE"),
+                                          command=self.start_feedback_thread)
         self.check_update_text = customtkinter.CTkLabel(self.status_frame, text=translation["update_title"])
         self.check_update_btn = CustomButton(self.status_frame, image=self.get_image("update"),
                                              text=translation["update"], anchor="w", text_color=("gray10", "#DCE4EE"),
@@ -9899,6 +9896,10 @@ class TeraTermUI(customtkinter.CTk):
             elif image_name == "link":
                 self.image_cache["link"] = customtkinter.CTkImage(
                     light_image=Image.open(TeraTermUI.get_absolute_path("images/link.png")), size=(15, 15))
+            elif image_name == "plane":
+                self.image_cache["plane"] = customtkinter.CTkImage(
+                    light_image=Image.open(TeraTermUI.get_absolute_path("images/plane.png")), size=(18, 18))
+                
         return self.image_cache.get(image_name)
 
     def unload_image(self, image_name):
