@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 8/28/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 9/3/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -10586,11 +10586,19 @@ class CustomEntry(customtkinter.CTkEntry):
             self.select_clear()
             return "break"
 
+    def find_active_tooltips(self, widget):
+        if isinstance(widget, tk.Toplevel) and hasattr(widget, "is_ctktooltip") and widget.winfo_viewable():
+            widget.on_focus_out(event=None)
+        for child in widget.winfo_children():
+            self.find_active_tooltips(child)
+    
     def show_menu(self, event):
         if self.cget("state") == "disabled":
             return
 
         self.focus_set()
+        root = self.winfo_toplevel()
+        self.find_active_tooltips(root)
         self.icursor(tk.END)
         self.select = True
 
