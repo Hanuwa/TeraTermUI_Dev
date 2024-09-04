@@ -175,7 +175,7 @@ class CTkOptionMenu(CTkBaseClass):
         self._dropdown_menu.select_focused_item()
 
     def find_active_tooltips(self, widget):
-        if isinstance(widget, tkinter.Toplevel) and hasattr(widget, "is_ctktooltip") and widget.winfo_viewable():
+        if isinstance(widget, tkinter.Toplevel) and hasattr(widget, "is_ctktooltip"):
             widget.on_focus_out(event=None)
         for child in widget.winfo_children():
             self.find_active_tooltips(child)
