@@ -174,7 +174,15 @@ class CTkOptionMenu(CTkBaseClass):
     def _select_dropdown_value(self):
         self._dropdown_menu.select_focused_item()
 
+    def find_active_tooltips(self, widget):
+        if isinstance(widget, tkinter.Toplevel) and hasattr(widget, "is_ctktooltip") and widget.winfo_viewable():
+            widget.on_focus_out(event=None)
+        for child in widget.winfo_children():
+            self.find_active_tooltips(child)
+
     def _open_dropdown_menu(self):
+        root = self.winfo_toplevel()
+        self.find_active_tooltips(root)
         self._dropdown_menu.open(self.winfo_rootx(),
                                  self.winfo_rooty() + self._apply_widget_scaling(self._current_height + 0))
         self._dropdown_menu.focus_set()
