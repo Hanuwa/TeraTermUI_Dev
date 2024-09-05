@@ -7,7 +7,7 @@ attrs==24.2.0
 Brotli==1.1.0
 cachetools==5.5.0
 certifi==2024.8.30
-cffi==1.17.0
+cffi==1.17.1
 chardet==5.2.0
 charset-normalizer==3.3.2
 colorama==0.4.6
@@ -74,5 +74,5 @@ six==1.16.0
 texttable==1.7.0
 uritemplate==4.1.1
 urllib3==2.2.2
-yarl==1.9.8
+yarl==1.9.11
 zstandard==0.23.0
