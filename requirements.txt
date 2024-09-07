@@ -74,5 +74,5 @@ six==1.16.0
 texttable==1.7.0
 uritemplate==4.1.1
 urllib3==2.2.2
-yarl==1.9.11
+yarl==1.10.0
 zstandard==0.23.0
