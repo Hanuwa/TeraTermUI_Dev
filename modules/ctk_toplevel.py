@@ -288,16 +288,18 @@ class CTkToplevel(tkinter.Toplevel, CTkAppearanceModeBaseClass, CTkScalingBaseCl
             if self._withdraw_called_after_windows_set_titlebar_color:
                 pass  # leave it withdrawed
             elif self._iconify_called_after_windows_set_titlebar_color:
-                super().iconify()
+                if self.winfo_exists():
+                    super().iconify()
             else:
-                if self._state_before_windows_set_titlebar_color == "normal":
-                    self.deiconify()
-                elif self._state_before_windows_set_titlebar_color == "iconic":
-                    self.iconify()
-                elif self._state_before_windows_set_titlebar_color == "zoomed":
-                    self.state("zoomed")
-                else:
-                    self.state(self._state_before_windows_set_titlebar_color)  # other states
+                if self.winfo_exists():
+                    if self._state_before_windows_set_titlebar_color == "normal":
+                        self.deiconify()
+                    elif self._state_before_windows_set_titlebar_color == "iconic":
+                        self.iconify()
+                    elif self._state_before_windows_set_titlebar_color == "zoomed":
+                        self.state("zoomed")
+                    else:
+                        self.state(self._state_before_windows_set_titlebar_color)  # other states
 
             self._windows_set_titlebar_color_called = False
             self._withdraw_called_after_windows_set_titlebar_color = False
