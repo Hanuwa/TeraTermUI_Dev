@@ -441,15 +441,19 @@ class CTkMessagebox(customtkinter.CTkToplevel):
     def return_key_handler(self, event):
         if not hasattr(self, "option_text_3") and not hasattr(self, "option_text_2") \
                 and hasattr(self, "option_text_1") and self.option_text_1:
-            self.button_event(self.option_text_1)
+            if self.winfo_exists():
+                self.button_event(self.option_text_1)
         elif hasattr(self, "option_text_3") and self.option_text_3:
-            self.button_event(self.option_text_3)
+            if self.winfo_exists():
+                self.button_event(self.option_text_3)
 
     def escape_key_handler(self, event):
         if hasattr(self, "option_text_1") and self.option_text_1:
-            self.button_event(self.option_text_1)
+            if self.winfo_exists():
+                self.button_event(self.option_text_1)
         elif hasattr(self, "option_text_2") and self.option_text_2:
-            self.button_event(self.option_text_2)
+            if self.winfo_exists():
+                self.button_event(self.option_text_2)
 
     def close_messagebox(self):
         self.button_event(event=None)
@@ -507,9 +511,12 @@ class CTkMessagebox(customtkinter.CTkToplevel):
 
     def button_event(self, event=None):
         try:
-            self.button1.configure(state="disabled")
-            self.button_2.configure(state="disabled")
-            self.button_3.configure(state="disabled")
+            if hasattr(self, "button1") and self.button1.winfo_exists():
+                self.button1.configure(state="disabled")
+            if hasattr(self, "button_2") and self.button_2.winfo_exists():
+                self.button_2.configure(state="disabled")
+            if hasattr(self, "button_3") and self.button_3.winfo_exists():
+                self.button_3.configure(state="disabled")
         except AttributeError:
             pass
 
@@ -518,13 +525,17 @@ class CTkMessagebox(customtkinter.CTkToplevel):
             self.fade_out()
         self.grab_release()
         self.destroy()
-        if self.master_window:
+        if self.winfo_exists():
+            self.destroy()
+        if self.master_window and self.master_window.winfo_exists():
             self.master_window.focus_force()
 
     def destroy(self):
-        self.unbind("<Return>")
-        self.unbind("<Escape>")
-        super().destroy()
+        if self.winfo_exists():
+            self.unbind("<Return>")
+            self.unbind("<Escape>")
+            self.unbind_all("<space>")
+            super().destroy()
 
 
 class CustomButton(customtkinter.CTkButton):
