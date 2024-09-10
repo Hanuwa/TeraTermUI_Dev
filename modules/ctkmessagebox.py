@@ -524,9 +524,8 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         if self.fade:
             self.fade_out()
         self.grab_release()
-        self.destroy()
         if self.winfo_exists():
-            self.destroy()
+            self.after(100, self.destroy)
         if self.master_window and self.master_window.winfo_exists():
             self.master_window.focus_force()
 
