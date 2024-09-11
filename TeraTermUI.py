@@ -909,7 +909,7 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language(lang)
         msg = CTkMessagebox(title=translation["exit"], message=translation["exit_message"], icon="question",
                             option_1=translation["close_tera_term"], option_2=translation["option_2"],
-                            option_3=translation["option_3"], icon_size=(65, 65),
+                            option_3=translation["option_3"], icon_size=(65, 65), delay_destroy=True,
                             button_color=("#c30101", "#c30101", "#145DA0", "use_default"),
                             option_1_type="checkbox", hover_color=("darkred", "darkred", "use_default"))
         on_exit = self.cursor.execute("SELECT exit FROM user_data").fetchone()
