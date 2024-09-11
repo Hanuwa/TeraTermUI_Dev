@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 9/10/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 9/12/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -7695,22 +7695,44 @@ class TeraTermUI(customtkinter.CTk):
                     self.after(0, self.forceful_end_app)
 
     @staticmethod
+    def get_teraterm_version(executable_path):
+        import win32api
+
+        try:
+            info = win32api.GetFileVersionInfo(executable_path, "\\")
+            ms = info["FileVersionMS"]
+            ls = info["FileVersionLS"]
+            version = f"{win32api.HIWORD(ms)}.{win32api.LOWORD(ms)}.{win32api.HIWORD(ls)}.{win32api.LOWORD(ls)}"
+            return version
+        except Exception as err:
+            return f"Unable to retrieve version: {err}"
+
+    @staticmethod
     def find_appdata_teraterm_ini():
-        appdata_path = os.path.join(os.environ.get("APPDATA", ""), "teraterm5")
-        teraterm_ini_path = os.path.join(appdata_path, "TERATERM.ini")
-        if os.path.isfile(teraterm_ini_path):
-            return teraterm_ini_path
+        import fnmatch
+
+        appdata_path = os.environ.get("APPDATA", "")
+        if os.path.isdir(appdata_path):
+            for folder in os.listdir(appdata_path):
+                if fnmatch.fnmatch(folder.lower(), "teraterm*"):
+                    teraterm_ini_path = os.path.join(appdata_path, folder, "TERATERM.ini")
+                    if os.path.isfile(teraterm_ini_path):
+                        return teraterm_ini_path
         return None
 
     def backup_and_config_ini(self, file_path):
-        if "teraterm5" in file_path:
+        minimum_required_version = "5.0.0.0"
+        version = TeraTermUI.get_teraterm_version(self.location)
+        version_parts = list(map(int, version.split(".")))
+        compare_version_parts = list(map(int, minimum_required_version.split(".")))
+        if version and version_parts >= compare_version_parts:
             appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
             if appdata_ini_path:
                 file_path = appdata_ini_path
             else:
                 self.teraterm5_first_boot = True
                 return
-
+            
         # backup for config file of tera term
         if TeraTermUI.is_file_in_directory("ttermpro.exe", self.teraterm_directory):
             backup_path = self.app_temp_dir / "TERATERM.ini.bak"
@@ -9310,13 +9332,29 @@ class TeraTermUI(customtkinter.CTk):
         import glob
 
         main_drive = os.path.abspath(os.sep)
-        base_path = os.path.join(main_drive, "Program Files (x86)")
-        possible_dirs = glob.glob(os.path.join(base_path, "teraterm*"))
-        original_teraterm = os.path.join(base_path, "teraterm")
+        possible_dirs = []
+
+        base_paths = [
+            os.path.join(main_drive, "Program Files (x86)"),
+            os.path.join(main_drive, "Program Files"),
+            main_drive
+        ]
+
+        for base_path in base_paths:
+            possible_dirs += glob.glob(os.path.join(base_path, "teraterm*"))
+
+        original_teraterm = os.path.join(base_paths[0], "teraterm")
         if original_teraterm in possible_dirs:
             return original_teraterm
         elif possible_dirs:
             return possible_dirs[0]
+
+        full_search_path = os.path.join(main_drive, "teraterm*")
+        full_possible_dirs = glob.glob(full_search_path, recursive=True)
+
+        if full_possible_dirs:
+            return full_possible_dirs[0]
+
         return None
 
     # Function that lets user select where their Tera Term application is located
@@ -9703,7 +9741,11 @@ class TeraTermUI(customtkinter.CTk):
         if not self.can_edit:
             return
 
-        if "teraterm5" in file_path:
+        minimum_required_version = "5.0.0.0"
+        version = TeraTermUI.get_teraterm_version(self.location)
+        version_parts = list(map(int, version.split(".")))
+        compare_version_parts = list(map(int, minimum_required_version.split(".")))
+        if version and version_parts >= compare_version_parts:
             appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
             if appdata_ini_path:
                 file_path = appdata_ini_path
@@ -9743,7 +9785,11 @@ class TeraTermUI(customtkinter.CTk):
 
     # Edits the font that tera term uses to "Terminal" to mitigate the chance of the OCR mistaking words
     def edit_teraterm_ini(self, file_path):
-        if "teraterm5" in file_path:
+        minimum_required_version = "5.0.0.0"
+        version = TeraTermUI.get_teraterm_version(self.location)
+        version_parts = list(map(int, version.split(".")))
+        compare_version_parts = list(map(int, minimum_required_version.split(".")))
+        if version and version_parts >= compare_version_parts:
             appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
             if appdata_ini_path:
                 file_path = appdata_ini_path
@@ -9804,7 +9850,11 @@ class TeraTermUI(customtkinter.CTk):
         if not self.can_edit:
             return
 
-        if "teraterm5" in file_path:
+        minimum_required_version = "5.0.0.0"
+        version = TeraTermUI.get_teraterm_version(self.location)
+        version_parts = list(map(int, version.split(".")))
+        compare_version_parts = list(map(int, minimum_required_version.split(".")))
+        if version and version_parts >= compare_version_parts:
             appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
             if appdata_ini_path:
                 file_path = appdata_ini_path
@@ -9899,7 +9949,7 @@ class TeraTermUI(customtkinter.CTk):
             elif image_name == "plane":
                 self.image_cache["plane"] = customtkinter.CTkImage(
                     light_image=Image.open(TeraTermUI.get_absolute_path("images/plane.png")), size=(18, 18))
-                
+
         return self.image_cache.get(image_name)
 
     def unload_image(self, image_name):
@@ -10592,7 +10642,7 @@ class CustomEntry(customtkinter.CTkEntry):
             widget.on_focus_out(event=None)
         for child in widget.winfo_children():
             self.find_active_tooltips(child)
-    
+
     def show_menu(self, event):
         if self.cget("state") == "disabled":
             return
@@ -11071,7 +11121,7 @@ class ImageSlideshow(customtkinter.CTkFrame):
         random.seed(time.time())
         random.shuffle(image_files)
         self.image_files = image_files
-        
+
     def show_image(self):
         # Delete the previous image from memory
         if hasattr(self, "current_image"):
