@@ -54,6 +54,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                  fade_in_duration: int = 0,
                  sound: bool = False,
                  wraplength: int = 0,
+                 delay_destroy: bool = False,
                  option_focus: Literal[1, 2, 3] = None):
         super().__init__()
 
@@ -114,6 +115,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         self.round_corners = corner_radius if corner_radius<=30 else 30
         self.button_width = button_width if button_width else self.width/4
         self.button_height = button_height if button_height else 28
+        self.delay_destroy = delay_destroy
         self.is_ctkmessagebox = True
 
         if self.fade: self.attributes("-alpha", 0)
@@ -450,10 +452,10 @@ class CTkMessagebox(customtkinter.CTkToplevel):
     def escape_key_handler(self, event):
         if hasattr(self, "option_text_1") and self.option_text_1:
             if self.winfo_exists():
-                self.button_event(self.option_text_1)
+                self.button_event(self.option_text_1, delay_destroy=True)
         elif hasattr(self, "option_text_2") and self.option_text_2:
             if self.winfo_exists():
-                self.button_event(self.option_text_2)
+                self.button_event(self.option_text_2, delay_destroy=True)
 
     def close_messagebox(self):
         self.button_event(event=None)
@@ -509,7 +511,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         self.x = event.x_root - self.oldx
         self.geometry(f'+{self.x}+{self.y}')
 
-    def button_event(self, event=None):
+    def button_event(self, event=None, delay_destroy=False):
         try:
             if hasattr(self, "button1") and self.button1.winfo_exists():
                 self.button1.configure(state="disabled")
@@ -524,8 +526,12 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         if self.fade:
             self.fade_out()
         self.grab_release()
-        if self.winfo_exists():
-            self.after(100, self.destroy)
+        if self.delay_destroy and delay_destroy:
+            if self.winfo_exists():
+                self.after(100, self.destroy)
+        else:
+            if self.winfo_exists():
+                self.destroy()
         if self.master_window and self.master_window.winfo_exists():
             self.master_window.focus_force()
 
