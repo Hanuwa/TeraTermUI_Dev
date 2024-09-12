@@ -39,7 +39,7 @@ ordered-set==4.1.0
 packaging==24.1
 pillow==10.4.0
 proto-plus==1.24.0
-protobuf==5.28.0
+protobuf==5.28.1
 psutil==6.0.0
 py7zr==0.22.0
 pyasn1==0.6.1
@@ -60,7 +60,7 @@ PyScreeze==1.0.1
 pystray==0.19.5
 pytesseract==0.3.13
 pytweening==1.2.0
-pytz==2024.1
+pytz==2024.2
 pywin32==306
 pywinauto==0.6.8
 pyzipper==0.3.6
