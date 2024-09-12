@@ -3250,7 +3250,7 @@ class TeraTermUI(customtkinter.CTk):
         if not self.skip_auth:
             self.tooltip.after(15000, self.destroy_tooltip)
         else:
-            self.tooltip.after(20000, self.destroy_tooltip)
+            self.tooltip.after(30000, self.destroy_tooltip)
         self.tooltip.bind("<Button-1>", lambda event: self.destroy_tooltip())
         self.tooltip.bind("<Button-2>", lambda event: self.destroy_tooltip())
         self.tooltip.bind("<Button-3>", lambda event: self.destroy_tooltip())
