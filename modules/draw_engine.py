@@ -35,32 +35,10 @@ class DrawEngine:
         self._round_height_to_even_numbers: bool = True
         self._last_rounded_rect_settings = None
         self._last_background_corners = None
-        self._last_checkmark_settings = None
         self._last_dropdown_arrow =  None
         self._last_progress_bar_settings = None
         self._last_slider_settings = None
         self._last_scrollbar_settings = None
-
-    @staticmethod
-    def calculate_hash(*args) -> str:
-        """Create a hash of given arguments to track changes in values."""
-        types_to_hash = (int, float, str, bool, type(None), tuple)
-
-        def convert_to_hashable(arg):
-            if isinstance(arg, types_to_hash):
-                return arg
-            elif isinstance(arg, list):
-                return tuple(convert_to_hashable(item) for item in arg)
-            elif isinstance(arg, dict):
-                return tuple((key, convert_to_hashable(value)) for key, value in sorted(arg.items()))
-            else:
-                return str(arg)
-
-        try:
-            hashable_args = tuple(convert_to_hashable(arg) for arg in args)
-            return hash(hashable_args)
-        except TypeError:
-            return hash(tuple(str(arg) for arg in args))
 
     def set_round_to_even_numbers(self, round_width_to_even_numbers: bool = True, round_height_to_even_numbers: bool = True):
         self._round_width_to_even_numbers: bool = round_width_to_even_numbers
@@ -68,31 +46,19 @@ class DrawEngine:
 
     @lru_cache(maxsize=4096)
     def __calc_optimal_corner_radius(self, user_corner_radius: Union[float, int]) -> Union[float, int]:
-        # optimize for drawing with polygon shapes
+        # Optimize corner_radius based on the preferred drawing method
         if self.preferred_drawing_method == "polygon_shapes":
-            if sys.platform == "darwin":
-                return user_corner_radius
-            else:
-                return round(user_corner_radius)
-
-        # optimize for drawing with antialiased font shapes
+            return user_corner_radius if sys.platform == "darwin" else round(user_corner_radius)
         elif self.preferred_drawing_method == "font_shapes":
             return round(user_corner_radius)
-
-        # optimize for drawing with circles and rects
         elif self.preferred_drawing_method == "circle_shapes":
-            user_corner_radius = 0.5 * round(user_corner_radius / 0.5)  # round to 0.5 steps
-
-            # make sure the value is always with .5 at the end for smoother corners
-            if user_corner_radius == 0:
-                return 0
-            elif user_corner_radius % 1 == 0:
-                return user_corner_radius + 0.5
-            else:
-                return user_corner_radius
+            user_corner_radius = 0.5 * round(user_corner_radius / 0.5)
+            return user_corner_radius + 0.5 if user_corner_radius % 1 == 0 else user_corner_radius
+        else:
+            return round(user_corner_radius)
 
     def draw_background_corners(self, width: Union[float, int], height: Union[float, int], ):
-        current_settings = self.calculate_hash(width, height)
+        current_settings = (width, height)
         if self._last_background_corners == current_settings:
             return False
 
@@ -136,8 +102,7 @@ class DrawEngine:
 
             returns bool if recoloring is necessary """
 
-        current_settings = self.calculate_hash(width, height, corner_radius, border_width,
-                                                overwrite_preferred_drawing_method)
+        current_settings = (width, height, corner_radius, border_width, overwrite_preferred_drawing_method)
         if self._last_rounded_rect_settings == current_settings:
             return False
 
@@ -741,8 +706,7 @@ class DrawEngine:
 
             returns bool if recoloring is necessary """
 
-        current_settings = self.calculate_hash(width, height, corner_radius, border_width,
-                                               progress_value_1, progress_value_2, orientation)
+        current_settings = (width, height, corner_radius, border_width, progress_value_1, progress_value_2, orientation)
         if self._last_progress_bar_settings == current_settings:
             return False
 
@@ -922,8 +886,8 @@ class DrawEngine:
                                                    border_width: Union[float, int], button_length: Union[float, int], button_corner_radius: Union[float, int],
                                                    slider_value: float, orientation: str) -> bool:
 
-        current_settings = self.calculate_hash(width, height, corner_radius, border_width, button_length,
-                                               button_corner_radius, slider_value, orientation)
+        current_settings = (width, height, corner_radius, border_width, button_length,
+                            button_corner_radius, slider_value, orientation)
         if self._last_slider_settings == current_settings:
             return False
 
@@ -1088,8 +1052,7 @@ class DrawEngine:
     def draw_rounded_scrollbar(self, width: Union[float, int], height: Union[float, int], corner_radius: Union[float, int],
                                border_spacing: Union[float, int], start_value: float, end_value: float, orientation: str) -> bool:
 
-        current_settings = self.calculate_hash(width, height, corner_radius, border_spacing,
-                                                start_value, end_value, orientation)
+        current_settings = (width, height, corner_radius, border_spacing, start_value, end_value, orientation)
         if self._last_scrollbar_settings == current_settings:
             return False
 
@@ -1270,7 +1233,7 @@ class DrawEngine:
 
             returns bool if recoloring is necessary """
 
-        current_settings = self.calculate_hash(x_position, y_position, size)
+        current_settings = (x_position, y_position, size)
         if self._last_dropdown_arrow == current_settings:
             return False
 
