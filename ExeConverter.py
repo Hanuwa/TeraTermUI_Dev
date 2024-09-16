@@ -1,3 +1,4 @@
+import argparse
 import datetime
 import hashlib
 import re
@@ -9,6 +10,13 @@ import sys
 import time
 from colorama import init, Fore, Style
 
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="TeraTermUI Exe Converter")
+    parser.add_argument("--report", action="store_true", help="Generate Nuitka compilation report")
+    parser.add_argument("--lto", choices=["auto", "yes", "no"], default="yes",
+                        help="Set LTO (Link-Time Optimization) value")
+    return parser.parse_args()
 
 def extract_second_date_from_file(filepath):
     with open(filepath, "r") as f:
@@ -170,6 +178,7 @@ inno_directory = r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 current_year = datetime.datetime.now().year
 app_folder = "TeraTermUI"
 while True:
+    args = parse_arguments()
     user_input = input(Fore.BLUE + "Please enter the update version number"
                        " (e.g., v1.0.0 or 1.0.0): " + Style.RESET_ALL).replace(" ", "").strip()
     if validate_version(user_input):
@@ -261,17 +270,21 @@ nuitka_command = (
     r'--include-data-file="' + project_directory + r'\Tesseract-OCR.7z=Tesseract-OCR.7z" '
     r'--include-data-file="' + project_directory + r'\feedback.zip=feedback.zip" '
     r'--include-data-file="' + project_directory + r'\VERSION.txt=VERSION.txt" '
-    r'--include-data-file="' + project_directory + r'\LICENSE.txt=LICENSE.txt" '   
-    r'--include-data-file="' + project_directory + r'\updater.exe=updater.exe" '                                                
-    r'--output-dir="' + output_directory + r'" --python-flag=no_asserts --lto="yes" '
+    r'--include-data-file="' + project_directory + r'\LICENSE.txt=LICENSE.txt" '
+    r'--include-data-file="' + project_directory + r'\updater.exe=updater.exe" '
+    r'--output-dir="' + output_directory + r'" --python-flag=no_asserts --lto="' + args.lto + r'" '
     r'--windows-icon-from-ico="' + project_directory + r'\images\tera-term.ico" '
     r'--nofollow-import-to=unittest --python-flag=no_docstrings --product-name="Tera Term UI" '
     r'--company-name="Armando Del Valle Tejada" --file-description="TeraTermUI" '  
     r'--file-version="' + update_without_v + r'" --product-version="' + update_without_v + r'" '
     r'--copyright="Copyright (c) ' + str(current_year) + ' Armando Del Valle Tejada" '
 )
+if args.report:
+    nuitka_command += f' --report="{output_directory}/compilation_report.html"'
 try:
+if args.report:
     updater_exe_path = os.path.join(project_directory, "updater.exe")
+    nuitka_command += f' --report="{output_directory}/compilation_report.html"'
     updater_dist_path = os.path.join(project_directory, "dist", "updater.exe")
     if not os.path.isfile(updater_exe_path) or not os.path.isfile(updater_dist_path):
         if os.path.isfile(updater_exe_path):
@@ -402,7 +415,7 @@ for version in versions:
         version_path = os.path.join(output_directory, "TeraTermUI.dist", "VERSION.txt")
         manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
         generate_checksum(version_path, executable_path)
-        attach_manifest(executable_path, manifest_path)
+        attach_manifest(executable_path, manifest_path, script="Both")
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
         os.remove(program_backup)
