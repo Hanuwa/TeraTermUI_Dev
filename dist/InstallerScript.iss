@@ -16,11 +16,12 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
-DefaultDirName={commonpf64}\TeraTermUI
+DefaultDirName={code:GetInstallDir}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 LicenseFile={#MyAppPath}\TeraTermUI_installer\LICENSE.txt
-PrivilegesRequired=admin
+PrivilegesRequired=lowest
+PrivilegesRequiredOverridesAllowed=dialog
 OutputBaseFilename=TeraTermUI_64-bit_Installer-
 Compression=lzma
 SolidCompression=yes
@@ -34,6 +35,10 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 [CustomMessages]
 english.teraterm=To utilize 'Tera Term UI', 'Tera Term' needs to be installed. Would you like to install 'Tera Term' now as part of this setup?
 spanish.teraterm=Para utilizar 'Tera Term UI', es necesario tener instalado 'Tera Term'. ¿Desea instalar 'Tera Term' ahora como parte de esta configuración?
+english.AdminPrivilegesRequired=Administrative privileges are required to install for all users. Please restart the installer with admin rights.
+spanish.AdminPrivilegesRequired=Se requieren privilegios administrativos para instalar para todos los usuarios. Por favor, reinicie el instalador con derechos de administrador.
+english.TeraTermInstallFailed=Tera Term installation failed.
+spanish.TeraTermInstallFailed=La instalación de Tera Term falló.
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
@@ -41,14 +46,14 @@ Name: "teraterm"; Description: "{cm:teraterm}"; GroupDescription: "Additional in
 
 [Files]
 Source: "{#MyAppPath}\TeraTermUI_installer\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyAppPath}\database.db"; DestDir: "{commonappdata}\TeraTermUI"; Flags: onlyifdoesntexist; Permissions: everyone-modify
-Source: "{#MyAppPath}\feedback.zip"; DestDir: "{commonappdata}\TeraTermUI"; Flags: onlyifdoesntexist; Permissions: everyone-modify
+Source: "{#MyAppPath}\database.db"; DestDir: "{code:GetDataDir}"; Flags: onlyifdoesntexist; Permissions: everyone-modify
+Source: "{#MyAppPath}\feedback.zip"; DestDir: "{code:GetDataDir}"; Flags: onlyifdoesntexist; Permissions: everyone-modify
 Source: "{#MyAppPath}\updater.exe"; DestDir: "{commonappdata}\TeraTermUI"; Flags: onlyifdoesntexist; Permissions: everyone-modify
 Source: "{#MyAppPath}\TeraTermUI_installer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#MyAppPath}\teraterm-4.108.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
 
 [UninstallDelete]
-Type: filesandordirs; Name: "{commonappdata}\TeraTermUI"
+Type: filesandordirs; Name: "{code:GetDataDir}"
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
@@ -69,7 +74,7 @@ begin
     begin
       if not Exec(ExpandConstant('{tmp}\teraterm-4.108.exe'), '/SILENT', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
       begin
-        MsgBox('Tera Term installation failed.', mbError, MB_OK);
+        MsgBox(ExpandConstant('{cm:TeraTermInstallFailed}'), mbError, MB_OK);
       end;
     end;
   end;
@@ -98,6 +103,23 @@ begin
     end;
   end;
 end;
+
+function GetInstallDir(Default: string): string;
+begin
+  if IsAdminInstallMode then
+    Result := ExpandConstant('{commonpf64}\TeraTermUI') 
+  else
+    Result := ExpandConstant('{localappdata}\Programs\TeraTermUI');
+end;
+
+function GetDataDir(Default: string): string;
+begin
+  if IsAdminInstallMode then
+    Result := ExpandConstant('{commonappdata}\TeraTermUI}') 
+  else
+    Result := ExpandConstant('{userappdata}\TeraTermUI');
+end;
+
 
 procedure DeleteTeraTermUIDirectories(const ParentDir: string);
 var
