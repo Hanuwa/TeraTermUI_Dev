@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 9/15/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 9/16/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 11200 lines of codes, it definitely makes things harder to work with
+# and with over 11300 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -6122,10 +6122,12 @@ class TeraTermUI(customtkinter.CTk):
         def get_time_minutes(t_row):
             if not time_key or not t_row.get(time_key) or t_row.get(time_key).strip().lower() == "tba":
                 return float("inf")
+
             times_str = t_row.get(time_key, "")
             times_key = tuple(times_str.strip().split("\n"))
             if times_key in memoized_times:
                 return memoized_times[times_key]
+
             total_minutes = 0
             for t in times_key:
                 if t in memoized_times:
@@ -6141,6 +6143,7 @@ class TeraTermUI(customtkinter.CTk):
                 if minutes == float("inf"):
                     return minutes
                 total_minutes += minutes
+
             memoized_times[times_key] = total_minutes
             return total_minutes
 
@@ -6156,6 +6159,7 @@ class TeraTermUI(customtkinter.CTk):
         entries_without_section = {}
         non_standard_positions = []
         last_section_key = None
+
         for i, row in enumerate(data):
             if section_key and row.get(section_key):
                 section = row.get(section_key).strip()
@@ -6184,6 +6188,7 @@ class TeraTermUI(customtkinter.CTk):
 
             return primary_value, secondary_value
 
+        reverse_sort = False
         if sort_by_option in [translation["time_asc"], translation["time_dec"]] and time_key:
             reverse_sort = (sort_by_option == translation["time_dec"])
             entries_with_section.sort(key=lambda x: sort_key(x, time_key, av_key), reverse=reverse_sort)
@@ -6198,7 +6203,7 @@ class TeraTermUI(customtkinter.CTk):
             sorted_data.append(row)
             if section in entries_without_section:
                 sorted_data.extend(entries_without_section[section])
-        for pos, row in non_standard_positions:
+        for _, row in non_standard_positions:
             sorted_data.append(row)
 
         return sorted_data
@@ -6206,8 +6211,9 @@ class TeraTermUI(customtkinter.CTk):
     def sort_tables(self, sort_by_option):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
+
         if self.last_sort_option == (sort_by_option, len(self.class_table_pairs)) or \
-                not self.last_sort_option and sort_by_option == translation["original_data"]:
+                (not self.last_sort_option and sort_by_option == translation["original_data"]):
             return
 
         if sort_by_option == translation["original_data"]:
@@ -6219,35 +6225,43 @@ class TeraTermUI(customtkinter.CTk):
             self.after(0, self.focus_set)
             return
 
+        headers = None
+        time_index = av_index = section_index = -1
+
         for _, table, _, _, _, _ in self.class_table_pairs:
             table_data = table.values
-            headers = table_data[0]
-            time_index = headers.index("TIMES") if "TIMES" in headers else -1
-            av_index = headers.index("AV") if "AV" in headers else -1
-            section_index = headers.index("SEC") if "SEC" in headers else -1
+            if not headers:
+                headers = table_data[0]
+                time_index = headers.index("TIMES") if "TIMES" in headers else -1
+                av_index = headers.index("AV") if "AV" in headers else -1
+                section_index = headers.index("SEC") if "SEC" in headers else -1
+
             memoized_times = {}
 
             def get_time_minutes(t_row):
                 if time_index == -1 or not t_row[time_index] or t_row[time_index].strip().lower() == "tba":
                     return float("inf")
+
                 times_key = tuple(t_row[time_index].strip().split("\n"))
                 if times_key in memoized_times:
                     return memoized_times[times_key]
+
                 total_minutes = 0
                 for t in times_key:
                     if t in memoized_times:
                         minutes = memoized_times[t]
                     else:
                         try:
-                            minutes = int(datetime.strptime(t, "%I:%M %p").strftime("%H")) * 60 + int(
-                                datetime.strptime(t, "%I:%M %p").strftime("%M"))
+                            minutes = int(datetime.strptime(t, "%I:%M %p").strftime("%H")) * 60 + \
+                                      int(datetime.strptime(t, "%I:%M %p").strftime("%M"))
                             memoized_times[t] = minutes
                         except ValueError:
                             minutes = float("inf")
                             memoized_times[t] = minutes
+                    total_minutes += minutes
                     if minutes == float("inf"):
                         return minutes
-                    total_minutes += minutes
+
                 memoized_times[times_key] = total_minutes
                 return total_minutes
 
@@ -6262,8 +6276,8 @@ class TeraTermUI(customtkinter.CTk):
             entries_with_section = []
             entries_without_section = {}
             non_standard_positions = []
-
             last_section_key = None
+
             for i, row in enumerate(table_data[1:]):
                 if section_index != -1 and row[section_index].strip():
                     section_key = row[section_index].strip()
@@ -6277,29 +6291,29 @@ class TeraTermUI(customtkinter.CTk):
                     non_standard_positions.append((i + 1, row))
 
             def sort_key(entry, primary_index, secondary_index):
-                if primary_index == time_index:
-                    primary_value = get_time_minutes(entry[1])
-                else:
-                    primary_value = parse_av_value(entry[1][primary_index])
+                primary_value = get_time_minutes(entry[1]) if primary_index == time_index else parse_av_value(
+                    entry[1][primary_index])
+                secondary_value = get_time_minutes(entry[1]) if secondary_index == time_index else parse_av_value(
+                    entry[1][secondary_index])
 
                 if primary_value == float("inf"):
                     primary_value = float("-inf") if reverse_sort else float("inf")
-
-                if secondary_index == time_index:
-                    secondary_value = get_time_minutes(entry[1])
-                else:
-                    secondary_value = parse_av_value(entry[1][secondary_index])
-
                 return primary_value, secondary_value
 
+            reverse_sort = False
             if sort_by_option in [translation["time_asc"], translation["time_dec"]] and time_index != -1:
                 reverse_sort = (sort_by_option == translation["time_dec"])
-                entries_with_section.sort(key=lambda x: sort_key(x, time_index, av_index), reverse=reverse_sort)
-                non_standard_positions.sort(key=lambda x: sort_key(x, time_index, av_index), reverse=reverse_sort)
+                sort_key_func = lambda x: sort_key(x, time_index, av_index)
             elif sort_by_option in [translation["av_asc"], translation["av_dec"]] and av_index != -1:
                 reverse_sort = (sort_by_option == translation["av_dec"])
-                entries_with_section.sort(key=lambda x: sort_key(x, av_index, time_index), reverse=reverse_sort)
-                non_standard_positions.sort(key=lambda x: sort_key(x, av_index, time_index), reverse=reverse_sort)
+                sort_key_func = lambda x: sort_key(x, av_index, time_index)
+
+            with ThreadPoolExecutor() as executor:
+                future1 = executor.submit(lambda: entries_with_section.sort(key=sort_key_func, reverse=reverse_sort))
+                future2 = executor.submit(lambda: non_standard_positions.sort(key=sort_key_func, reverse=reverse_sort))
+
+            future1.result()
+            future2.result()
 
             final_data = [headers]
             for section_key, row in entries_with_section:
@@ -6308,11 +6322,12 @@ class TeraTermUI(customtkinter.CTk):
                     final_data.extend(entries_without_section[section_key])
             for _, row in non_standard_positions:
                 final_data.append(row)
+
             table.update_values(final_data)
 
-            self.last_sort_option = (sort_by_option, len(self.class_table_pairs))
-            self.after(0, self.search_scrollbar.scroll_to_top)
-            self.after(0, self.focus_set)
+        self.last_sort_option = (sort_by_option, len(self.class_table_pairs))
+        self.after(0, self.search_scrollbar.scroll_to_top)
+        self.after(0, self.focus_set)
 
     def check_and_update_labels(self):
         class_info = {}
