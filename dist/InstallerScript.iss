@@ -75,6 +75,10 @@ begin
       if not Exec(ExpandConstant('{tmp}\teraterm-4.108.exe'), '/SILENT', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
       begin
         MsgBox(ExpandConstant('{cm:TeraTermInstallFailed}'), mbError, MB_OK);
+      end
+      else if ResultCode <> 0 then
+      begin
+        MsgBox(ExpandConstant('{cm:TeraTermInstallFailed}') + ' Error Code: ' + IntToStr(ResultCode), mbError, MB_OK);
       end;
     end;
   end;
