@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 9/12/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 9/15/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -180,11 +180,14 @@ class TeraTermUI(customtkinter.CTk):
         self.down_arrow_key_enabled = True
 
         # Installer Directories
+        self.scope = TeraTermUI.get_installation_scope()
+        self.scope, self.install_path = TeraTermUI.get_installation_scope()
         if self.mode == "Installation":
-            appdata_path = os.environ.get("PROGRAMDATA")
-            self.db_path = os.path.join(appdata_path, "TeraTermUI/database.db")
-            self.ath = os.path.join(appdata_path, "TeraTermUI/feedback.zip")
-            self.logs = os.path.join(appdata_path, "TeraTermUI/logs.txt")
+            if self.scope in ["all_users", "current_user"]:
+                appdata_path = os.environ.get("PROGRAMDATA") if self.scope == "all_users" else os.environ.get("APPDATA")
+                self.db_path = os.path.join(appdata_path, "TeraTermUI", "database.db")
+                self.ath = os.path.join(appdata_path, "TeraTermUI", "feedback.zip")
+                self.logs = os.path.join(appdata_path, "TeraTermUI", "logs.txt")
 
         # Instance variables not yet needed but defined
         # to avoid the instance attribute defined outside __init__ warning
@@ -1030,6 +1033,21 @@ class TeraTermUI(customtkinter.CTk):
                     TeraTermUI.terminate_process()
                     break
 
+    @staticmethod
+    def get_installation_scope():
+        common_appdata_path = os.environ.get("PROGRAMDATA")
+        common_install_path = os.path.join(common_appdata_path, "TeraTermUI")
+
+        user_appdata_path = os.environ.get("APPDATA")
+        user_install_path = os.path.join(user_appdata_path, "TeraTermUI")
+
+        if os.path.exists(common_install_path):
+            return "all_users", common_install_path
+        elif os.path.exists(user_install_path):
+            return "current_user", user_install_path
+        else:
+            return "not_installed", None
+
     def log_error(self):
         import inspect
         import traceback
@@ -1056,15 +1074,20 @@ class TeraTermUI(customtkinter.CTk):
             # Create a separator based on the length of the error message
             separator = "-" * error_length + "\n"
             if self.mode == "Installation":
-                appdata_path = os.environ.get("PROGRAMDATA")
-                tera_term_ui_path = os.path.join(appdata_path, "TeraTermUI")
+                scope, install_path = self.scope
+                if scope in ["all_users", "current_user"]:
+                    tera_term_ui_path = install_path
+                else:
+                    raise Exception("TeraTermUI is not installed")
                 if not os.path.isdir(tera_term_ui_path):
-                    raise Exception("Program Data directory not found")
-                with open(self.logs, "a") as file:
-                    file.write(error_message + "\n" + separator)
+                    raise Exception(f"Program Data directory not found at {tera_term_ui_path}")
+                logs_path = os.path.join(tera_term_ui_path, "logs.txt")
+                with open(logs_path, "a") as file:
+                    file.write(f"{error_message}\n{separator}")
             else:
-                with open(TeraTermUI.get_absolute_path("logs.txt"), "a") as file:
-                    file.write(error_message + "\n" + separator)
+                logs_path = TeraTermUI.get_absolute_path("logs.txt")
+                with open(logs_path, "a") as file:
+                    file.write(f"{error_message}\n{separator}")
         except Exception as err:
             print(f"An unexpected error occurred: {str(err)}")
 
@@ -7732,7 +7755,7 @@ class TeraTermUI(customtkinter.CTk):
             else:
                 self.teraterm5_first_boot = True
                 return
-            
+
         # backup for config file of tera term
         if TeraTermUI.is_file_in_directory("ttermpro.exe", self.teraterm_directory):
             backup_path = self.app_temp_dir / "TERATERM.ini.bak"
@@ -7868,7 +7891,7 @@ class TeraTermUI(customtkinter.CTk):
                 print(f"Failed to launch the updater script: {err}")
                 self.log_error()
                 webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
-
+                
     # Deletes Tesseract OCR and tera term config file from the temp folder
     def cleanup_temp(self):
         tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
