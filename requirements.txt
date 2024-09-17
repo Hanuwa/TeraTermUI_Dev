@@ -17,10 +17,10 @@ customtkinter==5.2.2
 darkdetect==0.8.0
 EasyProcess==1.1
 entrypoint2==1.1
-filelock==3.16.0
+filelock==3.16.1
 frozenlist==1.4.1
 google-api-core==2.19.2
-google-api-python-client==2.145.0
+google-api-python-client==2.146.0
 google-auth==2.34.0
 google-auth-httplib2==0.2.0
 google-auth-oauthlib==1.2.1
