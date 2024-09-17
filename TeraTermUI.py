@@ -9381,14 +9381,21 @@ class TeraTermUI(customtkinter.CTk):
         for base_path in base_paths:
             possible_dirs += glob.glob(os.path.join(base_path, "teraterm*"))
 
+        teraterm5 = os.path.join(base_paths[0], "teraterm5")
         original_teraterm = os.path.join(base_paths[0], "teraterm")
-        if original_teraterm in possible_dirs:
+        if teraterm5 in possible_dirs:
+            return teraterm5
+        elif original_teraterm in possible_dirs:
             return original_teraterm
         elif possible_dirs:
             return possible_dirs[0]
 
         full_search_path = os.path.join(main_drive, "teraterm*")
         full_possible_dirs = glob.glob(full_search_path, recursive=True)
+
+        for directory in full_possible_dirs:
+            if "teraterm5" in directory:
+                return directory
 
         if full_possible_dirs:
             return full_possible_dirs[0]
