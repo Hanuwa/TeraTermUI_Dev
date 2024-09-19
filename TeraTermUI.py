@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 9/18/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 9/19/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -6048,6 +6048,9 @@ class TeraTermUI(customtkinter.CTk):
                                               bg_color="#1E90FF")
         self.class_table_pairs.append((display_class, new_table, self.get_semester_for_pdf,
                                        self.show_all_sections, available_values, self.search_next_page_status))
+        if self.sort_by is not None and self.sort_by.get() != translation["sort_by"] and \
+                self.sort_by.get() != translation["original_data"]:
+            self.last_sort_option = (self.sort_by.get(), len(self.class_table_pairs))
         self.check_and_update_labels()
         self.current_table_index = len(self.class_table_pairs) - 1
         if len(self.class_table_pairs) > 20:
