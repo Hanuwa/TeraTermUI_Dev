@@ -135,16 +135,16 @@ def generate_checksum(version_filename, executable_filename):
 
                 if not checksum_updated:
                     file.write("\n" + checksum_line)
-        print(Fore.GREEN + "Successfully generated SHA-256 Checksum\n" + Style.RESET_ALL)
+        print(Fore.GREEN + "Successfully generated SHA-256 checksum\n" + Style.RESET_ALL)
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
         os.remove(program_backup)
-        print(Fore.RED + f"Failed to generate SHA-256 Checksum: {e}\n" + Style.RESET_ALL)
+        print(Fore.RED + f"Failed to generate SHA-256 checksum: {e}\n" + Style.RESET_ALL)
         sys.exit(1)
     except Exception as e:
         shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
         os.remove(program_backup)
-        print(Fore.RED + f"Failed to generate SHA-256 Checksum {e}\n" + Style.RESET_ALL)
+        print(Fore.RED + f"Failed to generate SHA-256 checksum {e}\n" + Style.RESET_ALL)
 
 
 def freeze_requirements(project_directory):
