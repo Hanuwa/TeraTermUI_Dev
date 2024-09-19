@@ -194,7 +194,7 @@ class CTkToolTip(Toplevel):
         """
         Hides the ToolTip when the main window loses focus.
         """
-        if self.disable:
+        if self.disable or not self.winfo_exists():
             return
         self.status = "outside"
         self.withdraw()
