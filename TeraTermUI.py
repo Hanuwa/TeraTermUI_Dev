@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 9/16/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 9/18/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -648,11 +648,11 @@ class TeraTermUI(customtkinter.CTk):
         try:
             db_path = TeraTermUI.get_absolute_path("database.db")
             if not os.path.isfile(db_path) or not os.access(db_path, os.R_OK):
-                raise Exception("Database file not found.")
+                raise Exception("Database file not found")
             en_path = "translations/english.json"
             es_path = "translations/spanish.json"
             if not os.path.isfile(en_path) or not os.path.isfile(es_path):
-                raise Exception("Language file not found.")
+                raise Exception("Language file not found")
             self.connection = sqlite3.connect(db_path, check_same_thread=False)
             self.cursor = self.connection.cursor()
             self.protocol("WM_DELETE_WINDOW", self.on_closing)
@@ -757,7 +757,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.bind("<F1>", lambda event: self.help_button_event())
 
                         if latest_version is None:
-                            print("No latest release found. Starting app with the current version.")
+                            print("No latest release found. Starting app with the current version")
                             latest_version = self.USER_APP_VERSION
                         if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION):
                             self.after(1000, self.update_app, latest_version)
@@ -773,7 +773,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.connection.commit()
                     except requests.exceptions.RequestException as err:
                         print(f"Error occurred while fetching latest release information: {err}")
-                        print("Please check your internet connection and try again.")
+                        print("Please check your internet connection and try again")
                     del latest_version, row_exists
                 del current_date, date_record
         except Exception as err:
@@ -1015,7 +1015,7 @@ class TeraTermUI(customtkinter.CTk):
                              creationflags=subprocess.CREATE_NO_WINDOW,
                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except subprocess.CalledProcessError:
-            print("Could not terminate ttermpro.exe.")
+            print("Could not terminate ttermpro.exe")
 
     @staticmethod
     def check_tera_term_hidden():
@@ -4769,7 +4769,7 @@ class TeraTermUI(customtkinter.CTk):
         try:
             window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
         except IndexError:
-            print("Window not found.")
+            print("Window not found")
             return
         # Get Tkinter window's current position
         tk_x = self.winfo_x()
@@ -5573,7 +5573,7 @@ class TeraTermUI(customtkinter.CTk):
             if windows:
                 return True
             time.sleep(delay)
-        raise Exception(f"The window with title '{window_title}' was not found after {retries} retries.")
+        raise Exception(f"The window with title '{window_title}' was not found after {retries} retries")
 
     # function that checks if UPRB server is currently running
     def check_server(self):
@@ -6620,7 +6620,7 @@ class TeraTermUI(customtkinter.CTk):
                 if attempt < max_retries - 1:
                     pass
                 else:
-                    print("Max retries reached, raising exception.")
+                    print("Max retries reached, raising exception")
                     raise
             finally:
                 timings.Timings.window_find_timeout = original_timeout
@@ -7664,10 +7664,14 @@ class TeraTermUI(customtkinter.CTk):
     # checks whether the user has the requested file
     @staticmethod
     def is_file_in_directory(file_name, directory):
-        # Join the directory path and file name
-        full_path = os.path.join(directory, file_name)
-        # Check if the file exists
-        return os.path.isfile(full_path)
+        try:
+            # Normalize the path using Path from pathlib
+            full_path = Path(directory).resolve() / file_name
+            # Check if the file exists
+            return full_path.is_file()
+        except Exception as err:
+            print(f"Error accessing the directory or file: {err}")
+            return False
 
     # Necessary things to do while the application is booting, gets done on a separate thread
     def boot_up(self, file_path):
@@ -7906,7 +7910,7 @@ class TeraTermUI(customtkinter.CTk):
                 print(f"Failed to launch the updater script: {err}")
                 self.log_error()
                 webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
-                
+
     # Deletes Tesseract OCR and tera term config file from the temp folder
     def cleanup_temp(self):
         tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
@@ -8410,7 +8414,7 @@ class TeraTermUI(customtkinter.CTk):
                 task_done.set()
 
                 def error():
-                    print("No latest release found. Starting app with the current version.")
+                    print("No latest release found. Starting app with the current version")
                     if not self.disable_audio:
                         winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/error.wav"), winsound.SND_ASYNC)
                     CTkMessagebox(title=translation["error"], icon="cancel",
@@ -9938,14 +9942,14 @@ class TeraTermUI(customtkinter.CTk):
             with open(file_path, "w", encoding=detected_encoding) as file:
                 file.writelines(lines)
         except FileNotFoundError:
-            print(f"File or backup not found.")
+            print(f"File or backup not found")
         except IOError as err:
             print(f"Error occurred: {err}")
             print("Restoring from backup...")
             try:
                 shutil.copyfile(backup_path, file_path)
             except FileNotFoundError:
-                print(f"The backup file at {backup_path} was not found.")
+                print(f"The backup file at {backup_path} was not found")
 
     # When the user performs an action to do something in tera term it destroys windows that might get in the way
     def destroy_windows(self):
@@ -10455,7 +10459,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self._redo_stack.clear()
             self.see(tk.INSERT)
         except tk.TclError:
-            print("No text selected to cut.")
+            print("No text selected to cut")
 
     def copy(self):
         self.stop_autoscroll(event=None)
@@ -10466,7 +10470,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.clipboard_clear()
             self.clipboard_append(selected_text)
         except tk.TclError:
-            print("No text selected to copy.")
+            print("No text selected to copy")
 
     def custom_paste(self, event=None):
         self.paste()
@@ -10483,7 +10487,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
             max_paste_length = 10000  # Set a limit for the max paste length
             if len(clipboard_text) > max_paste_length:
                 clipboard_text = clipboard_text[:max_paste_length]  # Truncate to max length
-                print("Pasted content truncated to maximum length.")
+                print("Pasted content truncated to maximum length")
 
             # Save the current state to undo stack only if there is a change
             current_text = self.get("1.0", "end-1c")
@@ -10747,7 +10751,7 @@ class CustomEntry(customtkinter.CTkEntry):
             if self.is_listbox_entry:
                 self.update_listbox()
         except tk.TclError:
-            print("No text selected to cut.")
+            print("No text selected to cut")
 
     def copy(self):
         self.focus_set()
@@ -10758,7 +10762,7 @@ class CustomEntry(customtkinter.CTkEntry):
             self.clipboard_clear()
             self.clipboard_append(selected_text)
         except tk.TclError:
-            print("No text selected to copy.")
+            print("No text selected to copy")
 
     def custom_paste(self, event=None):
         self.paste()
@@ -10771,7 +10775,7 @@ class CustomEntry(customtkinter.CTkEntry):
             max_paste_length = 250  # Set a limit for the max paste length
             if len(clipboard_text) > max_paste_length:
                 clipboard_text = clipboard_text[:max_paste_length]  # Truncate to max length
-                print("Pasted content truncated to maximum length.")
+                print("Pasted content truncated to maximum length")
 
             current_text = self.get()
             # Save the current state to undo stack
@@ -10980,7 +10984,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
             # Clear the redo stack
             self._redo_stack.clear()
         except tk.TclError:
-            print("No text selected to cut.")
+            print("No text selected to cut")
 
     def copy(self):
         self.focus_set()
@@ -10991,7 +10995,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
             self.clipboard_clear()
             self.clipboard_append(selected_text)
         except tk.TclError:
-            print("No text selected to copy.")
+            print("No text selected to copy")
 
     def select_all(self, event=None):
         if self.cget("state") == "disabled":
@@ -11023,7 +11027,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
             max_paste_length = 250  # Set a limit for the max paste length
             if len(clipboard_text) > max_paste_length:
                 clipboard_text = clipboard_text[:max_paste_length]  # Truncate to max length
-                print("Pasted content truncated to maximum length.")
+                print("Pasted content truncated to maximum length")
 
             current_text = self.get()
             # Save the current state to undo stack
