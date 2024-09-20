@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 9/19/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 9/20/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -619,6 +619,7 @@ class TeraTermUI(customtkinter.CTk):
         self.not_rebind = False
         self.notification_sent = False
         self.first_time_adding = True
+        self.last_save_pdf_dir = None
         self.a_counter = 0
         self.m_counter = 0
         self.e_counter = 0
@@ -660,7 +661,8 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Escape>", lambda event: self.on_closing())
             self.bind("<Alt-F4>", lambda event: self.direct_close())
             user_data_fields = ["location", "config", "directory", "host", "language", "appearance", "scaling",
-                                "welcome", "default_semester", "audio", "skip_auth", "win_pos_x", "win_pos_y"]
+                                "welcome", "default_semester", "audio", "skip_auth", "win_pos_x", "win_pos_y",
+                                "pdf_dir"]
             results = {}
             for field in user_data_fields:
                 query_user = f"SELECT {field} FROM user_data"
@@ -700,6 +702,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.geometry(f"{width}x{height}+{results['win_pos_x']}+{results['win_pos_y']}")
             if results["audio"] == "Disabled":
                 self.disable_audio = True
+            if results["pdf_dir"] and os.path.isdir(results["pdf_dir"]):
+                self.last_save_pdf_dir = results["pdf_dir"]
             if results["skip_auth"] == "Yes":
                 self.skip_auth = True
             elif not results["skip_auth"]:
@@ -5245,6 +5249,7 @@ class TeraTermUI(customtkinter.CTk):
             "language": self.language_menu.get(),
             "appearance": self.appearance_mode_optionemenu.get(),
             "scaling": self.scaling_slider.get(),
+            "pdf_dir": self.last_save_pdf_dir,
             "win_pos_x": self.winfo_x() if not self.state() == "zoomed" else None,
             "win_pos_y": self.winfo_y() if not self.state() == "zoomed" else None,
             "exit": self.exit_checkbox_state,
@@ -5761,17 +5766,20 @@ class TeraTermUI(customtkinter.CTk):
             initial_file_name = f"{translation['multiple_semesters']}_{translation['classes_data']}.pdf"
 
         # Define where the PDF will be saved
-        home = os.path.expanduser("~")
-        downloads = os.path.join(home, "Downloads")
+        if self.last_save_pdf_dir is not None:
+            initial_dir = self.last_save_pdf_dir
+        else:
+            home = os.path.expanduser("~")
+            initial_dir = os.path.join(home, "Downloads")
         filepath = filedialog.asksaveasfilename(
-            title=translation["save_pdf"], defaultextension=".pdf", initialdir=downloads,
-            filetypes=[("PDF Files", "*.pdf")], initialfile=initial_file_name
-        )
+            title=translation["save_pdf"], defaultextension=".pdf", initialdir=initial_dir,
+            filetypes=[("PDF Files", "*.pdf")], initialfile=initial_file_name)
 
         # Check if user cancelled the file dialog
         if not filepath:
             return
 
+        self.last_save_pdf_dir = os.path.dirname(filepath)
         classes_list, data, semester_list = TeraTermUI.merge_tables(classes_list, data, semester_list)
         self.create_search_pdf(data, classes_list, filepath, semester_list)
         self.show_success_message(350, 265, translation["pdf_save_success"])
@@ -7005,10 +7013,13 @@ class TeraTermUI(customtkinter.CTk):
         semester = self.dialog_input.upper().replace(" ", "")
 
         # Define where the PDF will be saved
-        home = os.path.expanduser("~")
-        downloads = os.path.join(home, "Downloads")
+        if self.last_save_pdf_dir is not None:
+            initial_dir = self.last_save_pdf_dir
+        else:
+            home = os.path.expanduser("~")
+            initial_dir = os.path.join(home, "Downloads")
         filepath = filedialog.asksaveasfilename(
-            title=translation["save_pdf"], defaultextension=".pdf", initialdir=downloads,
+            title=translation["save_pdf"], defaultextension=".pdf", initialdir=initial_dir,
             filetypes=[("PDF Files", "*.pdf")], initialfile=f"{semester}_{translation['enrolled_classes']}"
         )
 
@@ -7016,6 +7027,7 @@ class TeraTermUI(customtkinter.CTk):
         if not filepath:
             return
 
+        self.last_save_pdf_dir = os.path.dirname(filepath)
         self.create_enrolled_classes_pdf(data, creds, semester, filepath)
         self.show_success_message(350, 265, translation["pdf_save_success"])
 
@@ -8466,7 +8478,7 @@ class TeraTermUI(customtkinter.CTk):
                             print(f"Failed to launch the updater script: {err}")
                             self.log_error()
                             webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
-
+                            
                 self.after(50, update)
             else:
                 task_done.set()
