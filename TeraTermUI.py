@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 9/20/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 9/22/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -656,6 +656,7 @@ class TeraTermUI(customtkinter.CTk):
                 raise Exception("Language file not found")
             self.connection = sqlite3.connect(db_path, check_same_thread=False)
             self.cursor = self.connection.cursor()
+            self.check_database_lock()
             self.protocol("WM_DELETE_WINDOW", self.on_closing)
             self.bind("<Control-space>", lambda event: self.focus_set())
             self.bind("<Escape>", lambda event: self.on_closing())
@@ -702,8 +703,11 @@ class TeraTermUI(customtkinter.CTk):
                 self.geometry(f"{width}x{height}+{results['win_pos_x']}+{results['win_pos_y']}")
             if results["audio"] == "Disabled":
                 self.disable_audio = True
-            if results["pdf_dir"] and os.path.isdir(results["pdf_dir"]):
-                self.last_save_pdf_dir = results["pdf_dir"]
+            if results["pdf_dir"]:
+                if os.path.isdir(results["pdf_dir"]):
+                    self.last_save_pdf_dir = results["pdf_dir"]
+                else:
+                    self.cursor.execute("UPDATE user_data SET pdf_dir=NULL")
             if results["skip_auth"] == "Yes":
                 self.skip_auth = True
             elif not results["skip_auth"]:
@@ -786,7 +790,7 @@ class TeraTermUI(customtkinter.CTk):
             es_path = TeraTermUI.get_absolute_path("translations/spanish.json")
             print(f"An unexpected error occurred: {err}")
             self.log_error()
-            if not os.path.isfile(db_path) or not os.access(db_path, os.R_OK):
+            if not os.path.isfile(db_path) or not os.access(db_path, os.R_OK) or "database is locked" in str(err):
                 if language_id & 0xFF == SPANISH:
                     messagebox.showerror("Error", "¡Error Fatal! Problema en inicializar la base de"
                                                   " datos.\nEs posible que necesite reinstalar la aplicación")
@@ -1052,6 +1056,15 @@ class TeraTermUI(customtkinter.CTk):
         else:
             return "not_installed", None
 
+    def check_database_lock(self):
+        try:
+            self.cursor.execute("SELECT 1")
+        except sqlite3.OperationalError as err:
+            if "database is locked" in str(err):
+                raise Exception("Database is locked")
+            else:
+                raise err
+    
     def log_error(self):
         import inspect
         import traceback
