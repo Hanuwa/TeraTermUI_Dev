@@ -528,7 +528,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         self.grab_release()
         if self.delay_destroy and delay_destroy:
             if self.winfo_exists():
-                self.after(100, self.destroy)
+                self.after(125, self.destroy)
         else:
             if self.winfo_exists():
                 self.destroy()
