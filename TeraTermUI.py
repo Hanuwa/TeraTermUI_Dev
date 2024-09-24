@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 9/23/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 9/24/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -5929,7 +5929,8 @@ class TeraTermUI(customtkinter.CTk):
             "MARICHAL LUGO CARLOS J.": "https://notaso.com/professors/carlos-j-marichal-lugo/",
             "COSTA COLON MARIA DEL RO": "https://notaso.com/professors/maria-del-rocio-costa/",
             "OLAVARRIA FULLERTON JENI": "https://notaso.com/professors/jenifier-olavarria/",
-            "COUTIN RODICIO RICARDO": "https://notaso.com/professors/ricardo-coutin-rodicio-2/"
+            "COUTIN RODICIO RICARDO": "https://notaso.com/professors/ricardo-coutin-rodicio-2/",
+            "GONZALEZ GONZALEZ JOSE": "https://notaso.com/professors/jose-m-gonzalez-gonzalez/"
         }
         hardcoded_name = " ".join(instructor_text.split())
         if hardcoded_name in url_mapping:
