@@ -7923,17 +7923,21 @@ class TeraTermUI(customtkinter.CTk):
         if response[0] == "Yes" or response[0] == "Sí":
             try:
                 updater_exe_dest = None
+                appdata_path = None
                 sys_path = Path(sys.path[0]).resolve()
                 if self.mode == "Portable":
                     updater_exe_src = Path(sys.path[0]) / "updater.exe"
                     updater_exe_dest = Path(self.app_temp_dir) / "updater.exe"
                     shutil.copy2(str(updater_exe_src), str(updater_exe_dest))
                 elif self.mode == "Installation":
-                    appdata_path = os.environ.get("PROGRAMDATA")
+                    if self.scope == "all_users":
+                        appdata_path = os.environ.get("PROGRAMDATA")
+                    elif self.scope == "current_user":
+                        appdata_path = os.environ.get("APPDATA")
                     updater_exe_dest = os.path.join(appdata_path, "TeraTermUI", "updater.exe")
                 updater_args = [str(updater_exe_dest), self.mode, latest_version,
                                 str(self.update_db), sys_path]
-                subprocess.run(updater_args)
+                subprocess.Popen(updater_args)
                 self.direct_close()
             except Exception as err:
                 print(f"Failed to launch the updater script: {err}")
@@ -8476,17 +8480,21 @@ class TeraTermUI(customtkinter.CTk):
                     if response[0] == "Yes" or response[0] == "Sí":
                         try:
                             updater_exe_dest = None
+                            appdata_path = None
                             sys_path = Path(sys.path[0]).resolve()
                             if self.mode == "Portable":
                                 updater_exe_src = Path(sys.path[0]) / "updater.exe"
                                 updater_exe_dest = Path(self.app_temp_dir) / "updater.exe"
                                 shutil.copy2(str(updater_exe_src), str(updater_exe_dest))
                             elif self.mode == "Installation":
-                                appdata_path = os.environ.get("PROGRAMDATA")
+                                if self.scope == "all_users":
+                                    appdata_path = os.environ.get("PROGRAMDATA")
+                                elif self.scope == "current_user":
+                                    appdata_path = os.environ.get("APPDATA")
                                 updater_exe_dest = os.path.join(appdata_path, "TeraTermUI", "updater.exe")
                             updater_args = [str(updater_exe_dest), self.mode, latest_version,
                                             str(self.update_db), sys_path]
-                            subprocess.run(updater_args)
+                            subprocess.Popen(updater_args)
                             self.direct_close()
                         except Exception as err:
                             print(f"Failed to launch the updater script: {err}")
