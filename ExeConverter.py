@@ -136,6 +136,7 @@ def generate_checksum(version_filename, executable_filename):
                 if not checksum_updated:
                     file.write("\n" + checksum_line)
         print(Fore.GREEN + "Successfully generated SHA-256 checksum\n" + Style.RESET_ALL)
+        return sha256_checksum
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
         os.remove(program_backup)
@@ -280,11 +281,9 @@ nuitka_command = (
     r'--copyright="Copyright (c) ' + str(current_year) + ' Armando Del Valle Tejada" '
 )
 if args.report:
-    nuitka_command += f' --report="{output_directory}/compilation_report.html"'
+    nuitka_command += f' --report="{output_directory}\\compilation_report.html"'
 try:
-if args.report:
     updater_exe_path = os.path.join(project_directory, "updater.exe")
-    nuitka_command += f' --report="{output_directory}/compilation_report.html"'
     updater_dist_path = os.path.join(project_directory, "dist", "updater.exe")
     if not os.path.isfile(updater_exe_path) or not os.path.isfile(updater_dist_path):
         if os.path.isfile(updater_exe_path):
@@ -358,6 +357,8 @@ except Exception as e:
     os.remove(program_backup)
     print(Fore.RED + f"Failed to decide what version to make (Installer or Portable): {e}\n" + Style.RESET_ALL)
 
+installer_checksum = None
+portable_checksum = None
 for version in versions:
     script = None
     try:
@@ -481,7 +482,7 @@ for version in versions:
             installer_executable_path = output_directory + r"\TeraTermUI_64-bit_Installer-" + update + ".exe"
             shutil.move(output_directory + r"\output\TeraTermUI_64-bit_Installer-" + update + ".exe", output_directory)
             shutil.rmtree(output_directory + r"\output")
-            generate_checksum(None, installer_executable_path)
+            installer_checksum = generate_checksum(None, installer_executable_path)
             print(Fore.GREEN + "Successfully completed installer version\n" + Style.RESET_ALL)
         except KeyboardInterrupt as e:
             shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
@@ -507,6 +508,7 @@ for version in versions:
                 version_path = os.path.join(output_directory, app_folder, "VERSION.txt")
                 destination_path = os.path.join(project_directory, "VERSION.txt")
                 shutil.copy(version_path, destination_path)
+                portable_checksum = generate_checksum(version_path, zip_file_path + ".zip")
                 print(Fore.GREEN + "\nSuccessfully completed portable version\n" + Style.RESET_ALL)
                 break
             except OSError as e:
@@ -526,7 +528,11 @@ for version in versions:
                 os.remove(program_backup)
                 print(Fore.RED + f"Unexpected error: {e}\n" + Style.RESET_ALL)
                 sys.exit(1)
-
+print(Fore.BLUE + "Checksum results:\n" + Style.RESET_ALL)
+if installer_checksum:
+    print(Fore.BLUE+ f"Installer (EXE) Checksum: {installer_checksum}\n" + Style.RESET_ALL)
+if portable_checksum:
+    print(Fore.BLUE + f"Portable (ZIP) Checksum: {portable_checksum}\n" + Style.RESET_ALL)
 print(Fore.GREEN + "Both versions (installer and portable) have been created successfully.\n" + Style.RESET_ALL)
 os.remove(program_backup)
 sys.exit(0)
