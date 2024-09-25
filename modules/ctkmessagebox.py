@@ -117,6 +117,8 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         self.button_height = button_height if button_height else 28
         self.delay_destroy = delay_destroy
         self.is_ctkmessagebox = True
+        self.is_closing = False
+        self.event = None
 
         if self.fade: self.attributes("-alpha", 0)
 
@@ -451,10 +453,10 @@ class CTkMessagebox(customtkinter.CTkToplevel):
 
     def escape_key_handler(self, event):
         if hasattr(self, "option_text_1") and self.option_text_1:
-            if self.winfo_exists():
+            if self.winfo_exists() and not self.is_closing:
                 self.button_event(self.option_text_1, delay_destroy=True)
         elif hasattr(self, "option_text_2") and self.option_text_2:
-            if self.winfo_exists():
+            if self.winfo_exists() and not self.is_closing:
                 self.button_event(self.option_text_2, delay_destroy=True)
 
     def close_messagebox(self):
@@ -479,11 +481,10 @@ class CTkMessagebox(customtkinter.CTkToplevel):
     def get(self):
         if self.winfo_exists():
             self.master.wait_window(self)
+        checkbox_state = None
         if hasattr(self, "button1_var"):
             checkbox_state = self.button1_var.get()
-            return self.event, checkbox_state
-        else:
-            return self.event, None
+        return self.event, checkbox_state
 
     def toggle_checkbox(self, event):
         if hasattr(self, "button1_var"):
@@ -512,6 +513,11 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         self.geometry(f'+{self.x}+{self.y}')
 
     def button_event(self, event=None, delay_destroy=False):
+        if self.is_closing:
+            return
+
+        self.is_closing = True
+        self.event = event
         try:
             if hasattr(self, "button1") and self.button1.winfo_exists():
                 self.button1.configure(state="disabled")
@@ -522,18 +528,18 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         except AttributeError:
             pass
 
-        self.event = event
         if self.fade:
             self.fade_out()
         self.grab_release()
         if self.delay_destroy and delay_destroy:
             if self.winfo_exists():
-                self.after(125, self.destroy)
+                self.after(100, self.destroy)
         else:
             if self.winfo_exists():
                 self.destroy()
         if self.master_window and self.master_window.winfo_exists():
             self.master_window.focus_force()
+        self.is_closing = False
 
     def destroy(self):
         if self.winfo_exists():
