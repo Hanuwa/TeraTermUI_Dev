@@ -1,4 +1,7 @@
+import json
+import hashlib
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -56,10 +59,19 @@ class UpdateGUI:
 
 
 def download_update(gui, mode, version):
+    portable_checksum, installer_checksum = fetch_and_extract_checksums()
+    if mode == "Portable" and not portable_checksum:
+        gui.update_progress(0, "No checksum found for Portable version")
+        return None
+    if mode == "Installation" and not installer_checksum:
+        gui.update_progress(0, "No checksum found for Installation version")
+        return None
+
+    expected_checksum = portable_checksum if mode == "Portable" else installer_checksum
     base_url = "https://github.com/Hanuwa/TeraTermUI/releases/latest"
     file_name = f"TeraTermUI-v{version}.zip" if mode == "Portable" else f"TeraTermUI_64-bit_Installer-v{version}.exe"
     download_url = f"{base_url}/download/{file_name}"
-    temp_folder = os.path.join(tempfile.gettempdir(), "TeraTermUI")
+    temp_folder = os.path.join(tempfile.gettempdir(), "TeraTermUI_Updater")
     os.makedirs(temp_folder, exist_ok=True)
     file_path = os.path.join(temp_folder, file_name)
     try:
@@ -84,15 +96,58 @@ def download_update(gui, mode, version):
                             gui.update_progress(scaled_percentage, f"Downloading Update: {int(scaled_percentage * 4)}%")
                             last_updated_percentage = scaled_percentage
 
+        if not verify_checksum(file_path, expected_checksum):
+            raise ValueError("Checksum mismatch! The downloaded\nfile is corrupted or tampered with")
+
         gui.update_progress(25, "Download Completed!")
         time.sleep(1)
-        return file_path
 
+        return file_path
     except Exception as e:
         gui.update_progress(0, f"Download failed: {str(e)}")
+        gui.cancel_button.config(text="Copy Error", command=lambda: copy_to_clipboard(gui, e))
+        gui.cancel_button.pack(pady=(10, 0))
         if os.path.exists(file_path):
             os.remove(file_path)
         return None
+
+def verify_checksum(file_path, expected_checksum):
+    sha256_hash = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        for byte_block in iter(lambda: f.read(4096), b""):
+            sha256_hash.update(byte_block)
+    calculated_checksum = sha256_hash.hexdigest()
+    return calculated_checksum == expected_checksum
+
+
+def fetch_and_extract_checksums():
+    repo_api_url = "https://api.github.com/repos/Hanuwa/TeraTermUI/releases/latest"
+    try:
+        with urllib.request.urlopen(repo_api_url) as response:
+            release_info = json.loads(response.read().decode())
+            description = release_info.get("body", "")
+
+            portable_checksum = None
+            installer_checksum = None
+            portable_pattern = r"1\.\s*Portable Version \(Zip File\)\s*-\s*\*\*Checksum\*\*\s*:\s*```([a-fA-F0-9]{64})```"
+            installer_pattern = r"2\.\s*Installation File \(64-Bit\)\s*-\s*\*\*Checksum\*\*\s*:\s*```([a-fA-F0-9]{64})```"
+
+            portable_match = re.search(portable_pattern, description)
+            installer_match = re.search(installer_pattern, description)
+            if portable_match:
+                portable_checksum = portable_match.group(1)
+            else:
+                print("Portable checksum not found")
+
+            if installer_match:
+                installer_checksum = installer_match.group(1)
+            else:
+                print("Installer checksum not found")
+
+            return portable_checksum, installer_checksum
+    except Exception as e:
+        print(f"Error fetching or extracting checksums: {str(e)}")
+        return None, None
 
 
 def has_write_permission(directory):
@@ -159,10 +214,12 @@ def install_extract_update(gui, mode, update_db, version, downloaded_file, app_d
 
         if mode == "Installation":
             gui.update_progress(75, "Starting installer...")
-            process = subprocess.Popen([downloaded_file, "/VERYSILENT"])
-            time.sleep(1)
-            gui.root.after(1000, lambda: check_installation_status(
-                gui, process, version, downloaded_file, app_directory))
+            try:
+                process = subprocess.Popen([downloaded_file])
+                gui.root.after(1000, lambda: check_installation_status(
+                    gui, process, version, downloaded_file, app_directory, mode))
+            except Exception as e:
+                gui.update_progress(0, f"Failed to start the installer: {str(e)}")
 
     except Exception as e:
         error_message = f"Update failed: {str(e)}"
@@ -185,13 +242,15 @@ def install_extract_update(gui, mode, update_db, version, downloaded_file, app_d
     return True
 
 
-def check_installation_status(gui, process, version, downloaded_file, app_directory):
+def check_installation_status(gui, process, version, downloaded_file, app_directory, mode):
     if process.poll() is None:
-        gui.update_progress(75, "Installer is running...")
+        gui.update_progress(80, "Installer is running...")
+        time.sleep(1)
+        gui.root.withdraw()
         gui.root.after(1000, lambda: check_installation_status(
-            gui, process, version, downloaded_file, app_directory))
+            gui, process, version, downloaded_file, app_directory, mode))
     else:
-        finalize_update(gui, version, downloaded_file, app_directory)
+        finalize_update(gui, version, downloaded_file, app_directory, mode)
 
 
 def check_update_success(app_directory, version):
@@ -203,9 +262,13 @@ def check_update_success(app_directory, version):
                 return current_version == version
 
 
-def finalize_update(gui, version, downloaded_file, app_directory):
+def finalize_update(gui, version, downloaded_file, app_directory, mode):
     download_dir = os.path.dirname(downloaded_file)
     update_success = check_update_success(app_directory, version)
+    if gui.root.state() == "withdrawn":
+        gui.root.deiconify()
+        gui.root.focus_set()
+        time.sleep(1)
     if update_success:
         gui.update_progress(90, "Finalizing update...")
         time.sleep(1)
@@ -217,7 +280,7 @@ def finalize_update(gui, version, downloaded_file, app_directory):
             shutil.rmtree(download_dir)
         gui.update_progress(0, "Update failed or canceled by the user")
         gui.enable_close()
-    gui.root.after(1500, lambda: (gui.root.destroy(), restart_application(app_directory)))
+    gui.root.after(1500, lambda: (gui.root.destroy(), restart_application(app_directory, mode)))
 
 
 def copy_to_clipboard(gui, text):
@@ -225,7 +288,9 @@ def copy_to_clipboard(gui, text):
     gui.clipboard_append(text)
 
 
-def restart_application(app_directory):
+def restart_application(app_directory, mode):
+    if mode == "Installation":
+        sys.exit(0)
     executable_path = os.path.join(app_directory, "TeraTermUI.exe")
     if os.path.exists(executable_path):
         subprocess.run(executable_path)
