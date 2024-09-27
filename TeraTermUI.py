@@ -8860,7 +8860,7 @@ class TeraTermUI(customtkinter.CTk):
         from aiohttp import ClientConnectionError
 
         try:
-            async with session.get(url, timeout=5.0) as response:
+            async with session.head(url, timeout=5.0) as response:
                 if response.status != 200:
                     print(f"Non-200 response code: {response.status}")
                     return False
@@ -8881,7 +8881,7 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language(lang)
         urls = ["https://www.google.com/", "https://www.bing.com/", "https://www.yahoo.com/"]
         async with ClientSession(connector=TCPConnector(limit=3)) as session:
-            tasks = [self.fetch(session, url) for url in urls]
+            tasks = [TeraTermUI.fetch(session, url) for url in urls]
             results = await asyncio.gather(*tasks, return_exceptions=True)
         connected = any(result for result in results if result is True)
         if not connected:
