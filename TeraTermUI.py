@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 9/26/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 9/27/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -8860,7 +8860,7 @@ class TeraTermUI(customtkinter.CTk):
         from aiohttp import ClientConnectionError
 
         try:
-            async with session.head(url, timeout=5.0) as response:
+            async with session.get(url, timeout=5.0) as response:
                 if response.status != 200:
                     print(f"Non-200 response code: {response.status}")
                     return False
