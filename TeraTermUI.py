@@ -8880,7 +8880,7 @@ class TeraTermUI(customtkinter.CTk):
 
         translation = self.load_language(lang)
         urls = ["https://www.google.com/", "https://www.bing.com/", "https://www.yahoo.com/"]
-        async with ClientSession(connector=TCPConnector(limit=3)) as session:
+        async with ClientSession(connector=TCPConnector(limit=5)) as session:
             tasks = [TeraTermUI.fetch(session, url) for url in urls]
             results = await asyncio.gather(*tasks, return_exceptions=True)
         connected = any(result for result in results if result is True)
