@@ -97,12 +97,12 @@ def attach_manifest(executable_path, manifest_path, script):
             success_message = "\nSuccessfully attached manifest"
         print(Fore.GREEN + success_message + Style.RESET_ALL)
     except KeyboardInterrupt as e:
-        shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+        shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
         os.remove(program_backup)
         print(Fore.RED + f"Failed to attach manifest: {e}\n" + Style.RESET_ALL)
         sys.exit(1)
     except Exception as e:
-        shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+        shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
         os.remove(program_backup)
         print(Fore.RED + f"Failed to attach manifest: {e}\n" + Style.RESET_ALL)
 
@@ -138,12 +138,12 @@ def generate_checksum(version_filename, executable_filename):
         print(Fore.GREEN + "Successfully generated SHA-256 checksum\n" + Style.RESET_ALL)
         return sha256_checksum
     except KeyboardInterrupt as e:
-        shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+        shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
         os.remove(program_backup)
         print(Fore.RED + f"Failed to generate SHA-256 checksum: {e}\n" + Style.RESET_ALL)
         sys.exit(1)
     except Exception as e:
-        shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+        shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
         os.remove(program_backup)
         print(Fore.RED + f"Failed to generate SHA-256 checksum {e}\n" + Style.RESET_ALL)
 
@@ -174,8 +174,8 @@ def validate_version(ver_str: str) -> bool:
 
 init()
 username = os.getlogin()
-project_directory = os.path.dirname(os.path.abspath(__file__))
-inno_directory = r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+project_directory = str(os.path.dirname(os.path.abspath(__file__)).replace("\\", "/"))
+inno_directory = "C:/Program Files (x86)/Inno Setup 6/ISCC.exe"
 current_year = datetime.datetime.now().year
 app_folder = "TeraTermUI"
 while True:
@@ -204,10 +204,10 @@ else:
     update_without_v = user_input
     update = "v" + update_without_v
 versions = ["installer", "portable"]
-output_directory = os.path.join(r"C:\Users\\" + username + r"\OneDrive\Documentos", "TeraTermUI_" + update)
-program_backup = project_directory + r"\TeraTermUI.BAK.py"
+output_directory = os.path.join("C:/Users/" + username + "/OneDrive/Documentos", "TeraTermUI_" + update)
+program_backup = project_directory + "/TeraTermUI.BAK.py"
 check_and_restore_backup()
-shutil.copy2(project_directory + r"\TeraTermUI.py", program_backup)
+shutil.copy2(project_directory + "/TeraTermUI.py", program_backup)
 current_date = datetime.datetime.now().strftime("%m/%d/%Y")
 version_file_path = os.path.join(project_directory, "VERSION.txt")
 with open(version_file_path, "r") as file:
@@ -248,42 +248,43 @@ except PermissionError as e:
     print(Fore.RED + f"Error: cannot access because it is being used by another process: {e}\n" + Style.RESET_ALL)
     sys.exit(1)
 except KeyboardInterrupt as e:
-    shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+    shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
     os.remove(program_backup)
     print(Fore.RED + f"Error modifying creating distribution directory: {e}\n" + Style.RESET_ALL)
     sys.exit(1)
 except Exception as e:
-    shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+    shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
     os.remove(program_backup)
     print(Fore.RED + f"Error modifying creating distribution directory: {e}\n" + Style.RESET_ALL)
 
 nuitka_command = (
-    r'cd /d "' + project_directory + r'\.venv\Scripts" & python -m nuitka --standalone '
-    r'--deployment "' + project_directory + r'\TeraTermUI.py" --windows-console-mode=disable '
-    r'--enable-plugin=tk-inter --include-data-dir="' + project_directory + r'\.venv\Lib\site-packages'
-    r'\customtkinter=customtkinter" --include-data-dir="' + project_directory + r'\.venv\Lib\site-packages'
-    r'\CTkMessageBox=CTkMessageBox" --include-package=CTkToolTip --include-package=CTkTable '
-    r'--include-data-dir="' + project_directory + r'\images=images" '
-    r'--include-data-dir="' + project_directory + r'\slideshow=slideshow" '                                           
-    r'--include-data-dir="' + project_directory + r'\sounds=sounds" '
-    r'--include-data-dir="' + project_directory + r'\translations=translations" '
-    r'--include-data-file="' + project_directory + r'\database.db=database.db" '
-    r'--include-data-file="' + project_directory + r'\Tesseract-OCR.7z=Tesseract-OCR.7z" '
-    r'--include-data-file="' + project_directory + r'\feedback.zip=feedback.zip" '
-    r'--include-data-file="' + project_directory + r'\VERSION.txt=VERSION.txt" '
-    r'--include-data-file="' + project_directory + r'\LICENSE.txt=LICENSE.txt" '
-    r'--include-data-file="' + project_directory + r'\updater.exe=updater.exe" '
-    r'--output-dir="' + output_directory + r'" --python-flag=no_asserts --lto="' + args.lto + r'" '
-    r'--windows-icon-from-ico="' + project_directory + r'\images\tera-term.ico" '
-    r'--nofollow-import-to=unittest --python-flag=no_docstrings --product-name="Tera Term UI" '
-    r'--company-name="Armando Del Valle Tejada" --file-description="TeraTermUI" '  
-    r'--file-version="' + update_without_v + r'" --product-version="' + update_without_v + r'" '
-    r'--copyright="Copyright (c) ' + str(current_year) + ' Armando Del Valle Tejada" '
+    'cd /d "' + project_directory + '/.venv/Scripts" & python -m nuitka --standalone '
+    '--deployment "' + project_directory + '/TeraTermUI.py" --windows-console-mode=disable '
+    '--enable-plugin=tk-inter --include-data-dir="' + project_directory + '/.venv/Lib/site-packages'
+    '/customtkinter=customtkinter" --include-data-dir="' + project_directory + '/.venv/Lib/site-packages'
+    '/CTkMessageBox=CTkMessageBox" --include-package=CTkToolTip --include-package=CTkTable '
+    '--include-data-dir="' + project_directory + '/images=images" '
+    '--include-data-dir="' + project_directory + '/slideshow=slideshow" '                                           
+    '--include-data-dir="' + project_directory + '/sounds=sounds" '
+    '--include-data-dir="' + project_directory + '/translations=translations" '
+    '--include-data-file="' + project_directory + '/database.db=database.db" '
+    '--include-data-file="' + project_directory + '/Tesseract-OCR.7z=Tesseract-OCR.7z" '
+    '--include-data-file="' + project_directory + '/feedback.zip=feedback.zip" '
+    '--include-data-file="' + project_directory + '/VERSION.txt=VERSION.txt" '
+    '--include-data-file="' + project_directory + '/LICENSE.txt=LICENSE.txt" '
+    '--include-data-file="' + project_directory + r'\updater.exe=updater.exe" '
+    '--output-dir="' + output_directory + '" --python-flag=no_asserts --lto="' + args.lto + '" '
+    '--windows-icon-from-ico="' + project_directory + '/images/tera-term.ico" '
+    '--nofollow-import-to=unittest --python-flag=no_docstrings --product-name="Tera Term UI" '
+    '--company-name="Armando Del Valle Tejada" --file-description="TeraTermUI" '  
+    '--file-version="' + update_without_v + '" --product-version="' + update_without_v + '" '
+    '--copyright="Copyright (c) ' + str(current_year) + ' Armando Del Valle Tejada" '
 )
 if args.report:
-    nuitka_command += f' --report="{output_directory}\\compilation_report.html"'
+    nuitka_command += f' --report="{output_directory}/compilation_report.html"'
 try:
     updater_exe_path = os.path.join(project_directory, "updater.exe")
+    connection = sqlite3.connect(f"C:/Users/{username}/PycharmProjects/TeraTermUI/database.db")
     updater_dist_path = os.path.join(project_directory, "dist", "updater.exe")
     if not os.path.isfile(updater_exe_path) or not os.path.isfile(updater_dist_path):
         if os.path.isfile(updater_exe_path):
@@ -299,7 +300,7 @@ try:
                 print(Fore.RED + "updater.py does not exist. Exiting the script" + Style.RESET_ALL)
                 sys.exit(1)
             nuitka_updater_command = (
-                    r'cd /d "' + project_directory + r'\.venv\Scripts" & python -m nuitka "' + updater_py_path +
+                    r'cd /d "' + project_directory + r'/.venv/Scripts" & python -m nuitka "' + updater_py_path +
                     r'" --onefile --deployment --enable-plugin=tk-inter --python-flag=no_asserts ' +
                     r'--nofollow-import-to=unittest --python-flag=no_docstrings --python-flag=no_site ' +
                     r'--output-dir="' + project_directory + r'" ' + '--product-name="Tera Term UI Updater" ' +
@@ -322,38 +323,37 @@ except Exception as e:
     print(Fore.RED + f"An error occurred: {e}\n" + Style.RESET_ALL)
     sys.exit(1)
 try:
-    connection = sqlite3.connect(r"C:\Users" + "\\" + username + r"\PycharmProjects\TeraTermUI\database.db")
     cursor = connection.cursor()
     cursor.execute("DELETE FROM user_data")
     cursor.execute("DELETE FROM saved_classes")
     connection.commit()
 except KeyboardInterrupt as e:
-    shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+    shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
     os.remove(program_backup)
     print(Fore.RED + f"Failed to reset database: {e}\n" + Style.RESET_ALL)
     sys.exit(1)
 except Exception as e:
-    shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+    shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
     os.remove(program_backup)
     print(Fore.RED + f"Failed to reset database: {e}\n" + Style.RESET_ALL)
 try:
-    with open(project_directory + r"\TeraTermUI.py", "r", encoding="utf-8") as file:
+    with open(project_directory + "/TeraTermUI.py", "r", encoding="utf-8") as file:
         data = file.read()
     if 'self.mode = "Portable"' in data:
         versions = ["installer", "portable"]
     else:
         versions = ["portable", "installer"]
     data = re.sub(r'self.USER_APP_VERSION = ".*?"', f'self.USER_APP_VERSION = "{update_without_v}"', data)
-    with open(project_directory + r"\TeraTermUI.py", "w", encoding="utf-8") as file:
+    with open(project_directory + "/TeraTermUI.py", "w", encoding="utf-8") as file:
         file.write(data)
-    shutil.copy2(project_directory + r"\TeraTermUI.py", program_backup)
+    shutil.copy2(project_directory + "/TeraTermUI.py", program_backup)
 except KeyboardInterrupt as e:
-    shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+    shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
     os.remove(program_backup)
     print(Fore.RED + f"Failed to decide what version to make (Installer or Portable): {e}\n" + Style.RESET_ALL)
     sys.exit(1)
 except Exception as e:
-    shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+    shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
     os.remove(program_backup)
     print(Fore.RED + f"Failed to decide what version to make (Installer or Portable): {e}\n" + Style.RESET_ALL)
 
@@ -362,7 +362,7 @@ portable_checksum = None
 for version in versions:
     script = None
     try:
-        with open(project_directory + r"\TeraTermUI.py", "r", encoding="utf-8") as file:
+        with open(project_directory + "/TeraTermUI.py", "r", encoding="utf-8") as file:
             data = file.read()
         if version == "installer":
             script = "installer"
@@ -398,15 +398,15 @@ for version in versions:
             data = data.replace('mode = "Installation"',
                                 'mode = "Portable"')
             print(Fore.GREEN + "Successfully started portable version\n" + Style.RESET_ALL)
-        with open(project_directory + r"\TeraTermUI.py", "w", encoding="utf-8") as file:
+        with open(project_directory + "/TeraTermUI.py", "w", encoding="utf-8") as file:
             file.write(data)
     except KeyboardInterrupt as e:
-        shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+        shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
         os.remove(program_backup)
         print(Fore.RED + f"Error modifying script: {e}\n" + Style.RESET_ALL)
         sys.exit(1)
     except Exception as e:
-        shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+        shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
         os.remove(program_backup)
         print(Fore.RED + f"Error modifying script: {e}\n" + Style.RESET_ALL)
     try:
@@ -418,12 +418,12 @@ for version in versions:
         generate_checksum(version_path, executable_path)
         attach_manifest(executable_path, manifest_path, script="Both")
     except KeyboardInterrupt as e:
-        shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+        shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
         os.remove(program_backup)
         print(Fore.RED + f"Failed to create executable with Nuitka: {e}\n" + Style.RESET_ALL)
         sys.exit(1)
     except Exception as e:
-        shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+        shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
         os.remove(program_backup)
         print(Fore.RED + f"Failed to create executable with Nuitka: {e}\n" + Style.RESET_ALL)
 
@@ -432,22 +432,22 @@ for version in versions:
         delay = 1
         for i in range(retries):
             try:
-                os.rename(output_directory + r"\TeraTermUI.dist", output_directory + r"\TeraTermUI_installer")
+                os.rename(output_directory + "/TeraTermUI.dist", output_directory + "/TeraTermUI_installer")
                 break
             except OSError as e:
                 if i < retries - 1:
                     time.sleep(delay)
                 else:
-                    shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+                    shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
                     os.remove(program_backup)
                     print(Fore.RED + f"Error renaming folder: {e}\n" + Style.RESET_ALL)
             except KeyboardInterrupt as e:
-                shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+                shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
                 os.remove(program_backup)
                 print(Fore.RED + f"Error renaming folder: {e}\n" + Style.RESET_ALL)
                 sys.exit(1)
             except Exception as e:
-                shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+                shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
                 os.remove(program_backup)
                 print(Fore.RED + f"Error renaming folder: {e}\n" + Style.RESET_ALL)
         try:
@@ -458,39 +458,39 @@ for version in versions:
             os.remove(os.path.join(output_directory, "TeraTermUI_installer", "feedback.zip"))
             os.remove(os.path.join(output_directory, "TeraTermUI_installer", "updater.exe"))
         except KeyboardInterrupt as e:
-            shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+            shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
             os.remove(program_backup)
             print(Fore.RED + f"Error removing files: {e}\n" + Style.RESET_ALL)
             sys.exit(1)
         except Exception as e:
-            shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+            shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
             os.remove(program_backup)
             print(Fore.RED + f"Error removing files: {e}\n" + Style.RESET_ALL)
         try:
-            subprocess.run([inno_directory, output_directory + r"\InstallerScript.iss"], check=True)
+            subprocess.run([inno_directory, output_directory + "/InstallerScript.iss"], check=True)
             print(Fore.GREEN + "\nSuccessfully compiled installer script\n" + Style.RESET_ALL)
         except KeyboardInterrupt as e:
-            shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+            shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
             os.remove(program_backup)
             print(Fore.RED + f"Error compiling Inno Setup script: {e}\n" + Style.RESET_ALL)
             sys.exit(1)
         except Exception as e:
-            shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+            shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
             os.remove(program_backup)
             print(Fore.RED + f"Error compiling Inno Setup script: {e}\n" + Style.RESET_ALL)
         try:
-            installer_executable_path = output_directory + r"\TeraTermUI_64-bit_Installer-" + update + ".exe"
-            shutil.move(output_directory + r"\output\TeraTermUI_64-bit_Installer-" + update + ".exe", output_directory)
-            shutil.rmtree(output_directory + r"\output")
+            installer_executable_path = output_directory + "/TeraTermUI_64-bit_Installer-" + update + ".exe"
+            shutil.move(output_directory + "/output/TeraTermUI_64-bit_Installer-" + update + ".exe", output_directory)
+            shutil.rmtree(output_directory + "/output")
             installer_checksum = generate_checksum(None, installer_executable_path)
             print(Fore.GREEN + "Successfully completed installer version\n" + Style.RESET_ALL)
         except KeyboardInterrupt as e:
-            shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+            shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
             os.remove(program_backup)
             print(Fore.RED + f"Error moving or removing folder: {e}\n" + Style.RESET_ALL)
             sys.exit(1)
         except Exception as e:
-            shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+            shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
             os.remove(program_backup)
             print(Fore.RED + f"Error moving or removing folder: {e}\n" + Style.RESET_ALL)
 
@@ -499,11 +499,11 @@ for version in versions:
         delay = 1
         for i in range(retries):
             try:
-                os.rename(output_directory + r"\TeraTermUI.dist", output_directory + r"\TeraTermUI")
+                os.rename(output_directory + "/TeraTermUI.dist", output_directory + "/TeraTermUI")
                 jaraco_folder = os.path.join(output_directory, "TeraTermUI", "jaraco")
                 if os.path.exists(jaraco_folder) and os.path.isdir(jaraco_folder):
                     shutil.rmtree(jaraco_folder)
-                zip_file_path = output_directory + fr"\{app_folder}-" + update + ""
+                zip_file_path = output_directory + f"/{app_folder}-" + update + ""
                 shutil.make_archive(zip_file_path, "zip", output_directory, app_folder)
                 version_path = os.path.join(output_directory, app_folder, "VERSION.txt")
                 destination_path = os.path.join(project_directory, "VERSION.txt")
@@ -515,16 +515,16 @@ for version in versions:
                 if i < retries - 1:
                     time.sleep(delay)
                 else:
-                    shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+                    shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
                     os.remove(program_backup)
                     print(Fore.RED + f"Error during operation: {e}\n" + Style.RESET_ALL)
             except KeyboardInterrupt as e:
-                shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+                shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
                 os.remove(program_backup)
                 print(Fore.RED + f"Operation interrupted: {e}\n" + Style.RESET_ALL)
                 sys.exit(1)
             except Exception as e:
-                shutil.copy2(program_backup, project_directory + r"\TeraTermUI.py")
+                shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
                 os.remove(program_backup)
                 print(Fore.RED + f"Unexpected error: {e}\n" + Style.RESET_ALL)
                 sys.exit(1)
