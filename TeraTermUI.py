@@ -1010,7 +1010,7 @@ class TeraTermUI(customtkinter.CTk):
         if os.path.isabs(relative_path):
             raise ValueError("The provided path is already an absolute path")
         try:
-            absolute_path = os.path.abspath(os.path.join(os.path.dirname(__file__), relative_path))
+            absolute_path = os.path.abspath(os.path.join(os.path.dirname(__file__), relative_path)).replace("\\", "/")
             return absolute_path
         except Exception as err:
             print(f"Error converting path '{relative_path}' to absolute path: {err}")
