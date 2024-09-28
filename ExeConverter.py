@@ -167,9 +167,9 @@ def freeze_requirements(project_directory):
         os.chdir(original_dir)
 
 
-def validate_version(ver_str: str) -> bool:
+def validate_version(ver):
     pattern = r"^[vV]?([0-9]{1,3}\.[0-9]{1,3}(\.[0-9]{1,3})?|[0-9]{1,3})$"
-    return bool(re.match(pattern, ver_str, re.IGNORECASE))
+    return bool(re.match(pattern, ver, re.IGNORECASE))
 
 
 init()
