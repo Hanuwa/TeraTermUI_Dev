@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 9/27/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 9/28/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -8861,18 +8861,30 @@ class TeraTermUI(customtkinter.CTk):
 
         try:
             async with session.head(url, timeout=5.0) as response:
-                if response.status != 200:
-                    print(f"Non-200 response code: {response.status}")
-                    return False
-                return True
+                if response.status == 200:
+                    return True
+                print(f"Non-200 response code with HEAD: {response.status}")
         except ClientConnectionError:
-            print(f"Failed to connect to {url}")
+            print(f"Failed to connect to {url} with HEAD request")
+        except asyncio.TimeoutError:
+            print(f"HEAD request to {url} timed out")
+        except Exception as err:
+            print(f"An unexpected error occurred during HEAD request: {err}")
+
+        try:
+            async with session.get(url, timeout=5.0) as response:
+                if response.status == 200:
+                    return True
+                print(f"Non-200 response code with GET: {response.status}")
+                return False
+        except ClientConnectionError:
+            print(f"Failed to connect to {url} with GET request")
             return False
         except asyncio.TimeoutError:
-            print(f"Request to {url} timed out")
+            print(f"GET request to {url} timed out")
             return False
         except Exception as err:
-            print(f"An unexpected error occurred: {err}")
+            print(f"An unexpected error occurred during GET request: {err}")
             return False
 
     async def test_connection(self, lang):
@@ -8881,14 +8893,16 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language(lang)
         urls = ["https://www.google.com/", "https://www.bing.com/", "https://www.yahoo.com/"]
         async with ClientSession(connector=TCPConnector(limit=5)) as session:
-            tasks = [TeraTermUI.fetch(session, url) for url in urls]
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-        connected = any(result for result in results if result is True)
-        if not connected:
-            if not self.check_update:
-                self.after(100, self.show_error_message, 300, 215, translation["no_internet"])
-            if self.check_update:
-                self.check_update = False
+            tasks = [asyncio.create_task(TeraTermUI.fetch(session, url)) for url in urls]
+            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+            connected = any(task.result() for task in done if isinstance(task.result(), bool) and task.result() is True)
+            for task in pending:
+                task.cancel()
+            if not connected:
+                if not self.check_update:
+                    self.after(100, self.show_error_message, 300, 215, translation["no_internet"])
+                if self.check_update:
+                    self.check_update = False
         return connected
 
     # Set focus on the UI application window
