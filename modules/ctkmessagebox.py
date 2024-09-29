@@ -20,6 +20,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         "warning": None
     }
     ICON_BITMAP = {}
+    _closing_instance = False
     def __init__(self,
                  master: any = None,
                  width: int = 400,
@@ -452,11 +453,14 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                 self.button_event(self.option_text_3)
 
     def escape_key_handler(self, event):
+        if CTkMessagebox._closing_instance:
+            return
+
         if hasattr(self, "option_text_1") and self.option_text_1:
-            if self.winfo_exists() and not self.is_closing:
+            if self.winfo_exists():
                 self.button_event(self.option_text_1, delay_destroy=True)
         elif hasattr(self, "option_text_2") and self.option_text_2:
-            if self.winfo_exists() and not self.is_closing:
+            if self.winfo_exists():
                 self.button_event(self.option_text_2, delay_destroy=True)
 
     def close_messagebox(self):
@@ -513,10 +517,10 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         self.geometry(f'+{self.x}+{self.y}')
 
     def button_event(self, event=None, delay_destroy=False):
-        if self.is_closing:
+        if CTkMessagebox._closing_instance:
             return
 
-        self.is_closing = True
+        CTkMessagebox._closing_instance = True
         self.event = event
         try:
             if hasattr(self, "button1") and self.button1.winfo_exists():
@@ -539,7 +543,6 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                 self.destroy()
         if self.master_window and self.master_window.winfo_exists():
             self.master_window.focus_force()
-        self.is_closing = False
 
     def destroy(self):
         if self.winfo_exists():
@@ -547,6 +550,8 @@ class CTkMessagebox(customtkinter.CTkToplevel):
             self.unbind("<Escape>")
             self.unbind_all("<space>")
             super().destroy()
+        def msg_close_enable(): CTkMessagebox._closing_instance = False
+        self.after(100, msg_close_enable)
 
 
 class CustomButton(customtkinter.CTkButton):
