@@ -19,7 +19,7 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={code:GetInstallDir}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
-LicenseFile={#MyAppPath}\TeraTermUI_installer\LICENSE.txt
+LicenseFile={#MyAppPath}/TeraTermUI_installer/LICENSE.txt
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 OutputBaseFilename=TeraTermUI_64-bit_Installer-
@@ -30,7 +30,7 @@ SetupIconFile=tera-term.ico
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
-Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
+Name: "spanish"; MessagesFile: "compiler:Languages/Spanish.isl"
 
 [CustomMessages]
 english.teraterm=To utilize 'Tera Term UI', 'Tera Term' needs to be installed. Would you like to install 'Tera Term' now as part of this setup?
@@ -45,23 +45,23 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "teraterm"; Description: "{cm:teraterm}"; GroupDescription: "Additional installations"; Flags: unchecked
 
 [Files]
-Source: "{#MyAppPath}\TeraTermUI_installer\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyAppPath}\database.db"; DestDir: "{code:GetDataDir}"; Flags: onlyifdoesntexist; Permissions: everyone-modify
-Source: "{#MyAppPath}\feedback.zip"; DestDir: "{code:GetDataDir}"; Flags: onlyifdoesntexist; Permissions: everyone-modify
-Source: "{#MyAppPath}\updater.exe"; DestDir: "{code:GetDataDir}"; Flags: onlyifdoesntexist; Permissions: everyone-modify
-Source: "{#MyAppPath}\TeraTermUI_installer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#MyAppPath}\teraterm-4.108.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
+Source: "{#MyAppPath}/TeraTermUI_installer/{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#MyAppPath}/database.db"; DestDir: "{code:GetDataDir}"; Flags: onlyifdoesntexist; Permissions: everyone-modify
+Source: "{#MyAppPath}/feedback.zip"; DestDir: "{code:GetDataDir}"; Flags: onlyifdoesntexist; Permissions: everyone-modify
+Source: "{#MyAppPath}/updater.exe"; DestDir: "{code:GetDataDir}"; Flags: onlyifdoesntexist; Permissions: everyone-modify
+Source: "{#MyAppPath}/TeraTermUI_installer/*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyAppPath}/teraterm-4.108.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{code:GetDataDir}"
 
 [Icons]
-Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{group}\{#MyAppName}"; Filename: "{app}/{#MyAppExeName}"
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}/{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}/{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
 [Code]
 procedure CurStepChanged(CurStep: TSetupStep);
@@ -72,7 +72,7 @@ begin
   begin
     if WizardIsTaskSelected('teraterm') then
     begin
-      if not Exec(ExpandConstant('{tmp}\teraterm-4.108.exe'), '/SILENT', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
+      if not Exec(ExpandConstant('{tmp}/teraterm-4.108.exe'), '/SILENT', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
       begin
         MsgBox(ExpandConstant('{cm:TeraTermInstallFailed}'), mbError, MB_OK);
       end
@@ -111,19 +111,18 @@ end;
 function GetInstallDir(Default: string): string;
 begin
   if IsAdminInstallMode then
-    Result := ExpandConstant('{commonpf64}\TeraTermUI') 
+    Result := ExpandConstant('{commonpf64}/TeraTermUI') 
   else
-    Result := ExpandConstant('{localappdata}\Programs\TeraTermUI');
+    Result := ExpandConstant('{localappdata}/Programs/TeraTermUI');
 end;
 
 function GetDataDir(Default: string): string;
 begin
   if IsAdminInstallMode then
-    Result := ExpandConstant('{commonappdata}\TeraTermUI}') 
+    Result := ExpandConstant('{commonappdata}/TeraTermUI') 
   else
-    Result := ExpandConstant('{userappdata}\TeraTermUI');
+    Result := ExpandConstant('{userappdata}/TeraTermUI');
 end;
-
 
 procedure DeleteTeraTermUIDirectories(const ParentDir: string);
 var
