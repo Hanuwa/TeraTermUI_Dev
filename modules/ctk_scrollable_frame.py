@@ -288,9 +288,9 @@ class CTkScrollableFrame(tkinter.Frame, CTkAppearanceModeBaseClass, CTkScalingBa
         if relative_position_top >= 0 and relative_position_bottom <= 0:
             return
         if relative_position_top < 0:
-            self._parent_canvas.yview_scroll(int(relative_position_top), "units")
+            self.after(0, self._parent_canvas.yview_scroll(int(relative_position_top), "units"))
         elif relative_position_bottom > 0:
-            self._parent_canvas.yview_scroll(int(relative_position_bottom), "units")
+            self.after(0, self._parent_canvas.yview_scroll(int(relative_position_bottom), "units"))
 
     def _keyboard_shift_press_all(self, event):
         self._shift_pressed = True
