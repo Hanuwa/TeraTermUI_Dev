@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 9/28/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 9/30/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -8364,26 +8364,17 @@ class TeraTermUI(customtkinter.CTk):
     @staticmethod
     def curriculums(choice):
         links = {
-            "Departments": "https://www.uprb.edu/sample-page/decanato-de-asuntos-academicos"
-                           "/departamentos-academicos-2/",
-            "Departamentos": "https://www.uprb.edu/sample-page/decanato-de-asuntos-academicos/departamentos"
+            "Departments": "https://www.uprb.edu/sobre-uprb/decanato-de-asuntos-academicos/departamentos-academicos-2/",
+            "Departamentos": "https://www.uprb.edu/sobre-uprb/decanato-de-asuntos-academicos/departamentos"
                              "-academicos-2/",
-            "Accounting": "https://drive.google.com/file/d/0BzdErxfu_JSCSDA0NHMyYVNhdXA3V1ZqX2c1aUlIT21Oc1RF/view"
-                          "?resourcekey=0-S2WGur2snYQ0UVIHABbdKg",
-            "Contabilidad": "https://drive.google.com/file/d/0BzdErxfu_JSCSDA0NHMyYVNhdXA3V1ZqX2c1aUlIT21Oc1RF/view"
-                            "?resourcekey=0-S2WGur2snYQ0UVIHABbdKg",
-            "Finance": "https://drive.google.com/file/d/0BzdErxfu_JSCR2gyNzJOeHA2c2EwTklRYmZYZ0Zfck9UT3E0/view"
-                       "?resourcekey=0-jizC_JvFrbYxmb9ZScl8RA",
-            "Finanzas": "https://drive.google.com/file/d/0BzdErxfu_JSCR2gyNzJOeHA2c2EwTklRYmZYZ0Zfck9UT3E0/view"
-                        "?resourcekey=0-jizC_JvFrbYxmb9ZScl8RA",
-            "Management": "https://drive.google.com/file/d/0BzdErxfu_JSCVllhTWJGMzRYd3JoemtObDkzX3I5MHNqU3V3/view"
-                          "?resourcekey=0-368G697L5iz5EjZ_DCngHQ",
-            "Gerencia": "https://drive.google.com/file/d/0BzdErxfu_JSCVllhTWJGMzRYd3JoemtObDkzX3I5MHNqU3V3/view"
-                        "?resourcekey=0-368G697L5iz5EjZ_DCngHQ",
-            "Marketing": "https://drive.google.com/file/d/0BzdErxfu_JSCa3BIWnZyQmlHa0hGcEVtSlV2d2gxN0dENVcw/view"
-                         "?resourcekey=0-hve5FwLHcBdt0K6Je5hMSg",
-            "Mercadeo": "https://drive.google.com/file/d/0BzdErxfu_JSCa3BIWnZyQmlHa0hGcEVtSlV2d2gxN0dENVcw/view"
-                        "?resourcekey=0-hve5FwLHcBdt0K6Je5hMSg",
+            "Accounting": "https://drive.google.com/file/d/0BzdErxfu_JSCSDA0NHMyYVNhdXA3V1ZqX2c1aUlIT21Oc1RF/view",
+            "Contabilidad": "https://drive.google.com/file/d/0BzdErxfu_JSCSDA0NHMyYVNhdXA3V1ZqX2c1aUlIT21Oc1RF/view",
+            "Finance": "https://drive.google.com/file/d/0BzdErxfu_JSCR2gyNzJOeHA2c2EwTklRYmZYZ0Zfck9UT3E0/view",
+            "Finanzas": "https://drive.google.com/file/d/0BzdErxfu_JSCR2gyNzJOeHA2c2EwTklRYmZYZ0Zfck9UT3E0/view",
+            "Management": "https://drive.google.com/file/d/0BzdErxfu_JSCVllhTWJGMzRYd3JoemtObDkzX3I5MHNqU3V3/view",
+            "Gerencia": "https://drive.google.com/file/d/0BzdErxfu_JSCVllhTWJGMzRYd3JoemtObDkzX3I5MHNqU3V3/view",
+            "Marketing": "https://drive.google.com/file/d/0BzdErxfu_JSCa3BIWnZyQmlHa0hGcEVtSlV2d2gxN0dENVcw/view",
+            "Mercadeo": "https://drive.google.com/file/d/0BzdErxfu_JSCa3BIWnZyQmlHa0hGcEVtSlV2d2gxN0dENVcw/view",
             "General Biology": "https://drive.google.com/file/d/11yfoYqXYPybDZmeEmgW8osgSCCmxzjQl/view",
             "Biología General": "https://drive.google.com/file/d/11yfoYqXYPybDZmeEmgW8osgSCCmxzjQl/view",
             "Biology-Human Focus": "https://drive.google.com/file/d/1z-aphTwLLwAY5-G3O7_SXG3ZvvRSN6p9/view",
@@ -8394,10 +8385,10 @@ class TeraTermUI(customtkinter.CTk):
             "Sistemas de Información": "https://docs.uprb.edu/deptsici/SISTEMAS-INFORMACION-2016.pdf",
             "Social Sciences": "https://drive.google.com/file/d/1cZnD6EhBsu7u6U8IVZoeK0VHgQmYt3sf/view",
             "Ciencias Sociales": "https://drive.google.com/file/d/1cZnD6EhBsu7u6U8IVZoeK0VHgQmYt3sf/view",
-            "Physical Education": "https://drive.google.com/file/d/0BzdErxfu_JSCQWFEWlpCSnRFMVFGQnZoTXRyZHJiMzBkc2dZ"
-                                  "/view?resourcekey=0-zLsz0IP1Ajy853kM9I2PQg",
-            "Educación Física": "https://drive.google.com/file/d/0BzdErxfu_JSCQWFEWlpCSnRFMVFGQnZoTXRyZHJiMzBkc2dZ/view"
-                                "?resourcekey=0-zLsz0IP1Ajy853kM9I2PQg",
+            "Physical Education": "https://drive.google.com/file/d/0BzdErxfu"
+                                  "_JSCQWFEWlpCSnRFMVFGQnZoTXRyZHJiMzBkc2dZ/view",
+            "Educación Física": "https://drive.google.com/file/d/0BzdErxfu"
+                                "_JSCQWFEWlpCSnRFMVFGQnZoTXRyZHJiMzBkc2dZ/view",
             "Electronics": "https://drive.google.com/file/d/1tfzaHKilu5iQccD2sBzD8O_6UlXtSREF/view",
             "Electrónica": "https://drive.google.com/file/d/1tfzaHKilu5iQccD2sBzD8O_6UlXtSREF/view",
             "Equipment Management": "https://drive.google.com/file/d/13ohtab5ns6qO2QIHouScKtrFHrM7X3zl/view",
@@ -8406,14 +8397,10 @@ class TeraTermUI(customtkinter.CTk):
                         "-en-mayo-de-2013.pdf",
             "Pedagogía": "https://www.upr.edu/bayamon/wp-content/uploads/sites/9/2015/06/Secuencia-curricular"
                          "-aprobada-en-mayo-de-2013.pdf",
-            "Chemistry": "https://drive.google.com/file/d/0BzdErxfu_JSCNHJENWNaY1JmZjNSSU5mR2U5SnVOc1gxUTVJ/view"
-                         "?resourcekey=0-CWkQQfEczPuV0Rx4KQnkBA",
-            "Química": "https://drive.google.com/file/d/0BzdErxfu_JSCNHJENWNaY1JmZjNSSU5mR2U5SnVOc1gxUTVJ/view"
-                       "?resourcekey=0-CWkQQfEczPuV0Rx4KQnkBA",
-            "Nursing": "https://drive.google.com/file/d/0BzdErxfu_JSCaF9tMFc3Y0hnRGpsZ1dMTXFPRjRMUlVEQ1ZZ/view"
-                       "?resourcekey=0-JQUivKyxJQlXP-2K008d_Q",
-            "Enfermería": "https://drive.google.com/file/d/0BzdErxfu_JSCaF9tMFc3Y0hnRGpsZ1dMTXFPRjRMUlVEQ1ZZ/view"
-                          "?resourcekey=0-JQUivKyxJQlXP-2K008d_Q",
+            "Chemistry": "https://drive.google.com/file/d/0BzdErxfu_JSCNHJENWNaY1JmZjNSSU5mR2U5SnVOc1gxUTVJ/view",
+            "Química": "https://drive.google.com/file/d/0BzdErxfu_JSCNHJENWNaY1JmZjNSSU5mR2U5SnVOc1gxUTVJ/view",
+            "Nursing": "https://drive.google.com/file/d/0BzdErxfu_JSCaF9tMFc3Y0hnRGpsZ1dMTXFPRjRMUlVEQ1ZZ/view",
+            "Enfermería": "https://drive.google.com/file/d/0BzdErxfu_JSCaF9tMFc3Y0hnRGpsZ1dMTXFPRjRMUlVEQ1ZZ/view",
             "Office Systems": "https://docs.uprb.edu/deptsofi/curriculo-BA-SOFI-agosto-2016.pdf",
             "Sistemas de Oficina": "https://docs.uprb.edu/deptsofi/curriculo-BA-SOFI-agosto-2016.pdf",
             "Information Engineering": "https://drive.google.com/file/d/1mYCHmCy3Mb2fDyp9EiFEtR0j4-rsDdlN/view",
