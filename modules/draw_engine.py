@@ -506,7 +506,8 @@ class DrawEngine:
                                                                                    border_width, inner_corner_radius,
                                                                                    left_section_width, ())
 
-    def __draw_rounded_rect_with_border_vertical_split_polygon_shapes(self, width: int, height: int, corner_radius: int, border_width: int, inner_corner_radius: int,
+    def __draw_rounded_rect_with_border_vertical_split_polygon_shapes(self, width: int, height: int, corner_radius: int,
+                                                                      border_width: int, inner_corner_radius: int,
                                                                       left_section_width: int) -> bool:
         requires_recoloring = False
 
@@ -535,7 +536,7 @@ class DrawEngine:
             # Right border parts
             if "border_line_right_1" not in self._items:
                 self._items["border_line_right_1"] = self._canvas.create_polygon(
-                    (0, 0, 0, 0), tags=("border_parts_right", "border_parts"), width=corner_radius * 2,
+                    (0, 0, 0, 0), tags=("border_parts_right", "border_parts", "right_parts"), width=corner_radius * 2,
                     joinstyle=tkinter.ROUND)
                 requires_recoloring = True
             else:
@@ -582,7 +583,7 @@ class DrawEngine:
         # Right inner parts
         if "inner_line_right_1" not in self._items:
             self._items["inner_line_right_1"] = self._canvas.create_polygon(
-                (0, 0, 0, 0), tags=("inner_parts_right", "inner_parts"), width=inner_corner_radius * 2,
+                (0, 0, 0, 0), tags=("inner_parts_right", "inner_parts", "right_parts"), width=inner_corner_radius * 2,
                 joinstyle=tkinter.ROUND)
             requires_recoloring = True
         else:
@@ -607,14 +608,17 @@ class DrawEngine:
 
         return requires_recoloring
 
-    def __draw_rounded_rect_with_border_vertical_split_font_shapes(self, width: int, height: int, corner_radius: int, border_width: int, inner_corner_radius: int,
-                                                                   left_section_width: int, exclude_parts: tuple) -> bool:
+    def __draw_rounded_rect_with_border_vertical_split_font_shapes(self, width: int, height: int, corner_radius: int,
+                                                                   border_width: int, inner_corner_radius: int,
+                                                                   left_section_width: int,
+                                                                   exclude_parts: tuple) -> bool:
         requires_recoloring = False
 
         # Border parts
         if border_width > 0:
             if corner_radius > 0:
                 # Border corner parts
+                # Left side
                 for i in [1, 4]:
                     key_a = f"border_oval_{i}_a_left"
                     key_b = f"border_oval_{i}_b_left"
@@ -630,15 +634,18 @@ class DrawEngine:
                         self._canvas.itemconfig(self._items[key_a], state='normal')
                         self._canvas.itemconfig(self._items[key_b], state='normal')
 
+                # Right side
                 for i in [2, 3]:
                     key_a = f"border_oval_{i}_a_right"
                     key_b = f"border_oval_{i}_b_right"
                     if key_a not in self._items:
                         self._items[key_a] = self._canvas.create_aa_circle(
-                            0, 0, 0, tags=("border_corner_part", "border_parts_right", "border_parts"),
+                            0, 0, 0,
+                            tags=("border_corner_part", "border_parts_right", "border_parts", "right_parts"),
                             anchor=tkinter.CENTER)
                         self._items[key_b] = self._canvas.create_aa_circle(
-                            0, 0, 0, tags=("border_corner_part", "border_parts_right", "border_parts"),
+                            0, 0, 0,
+                            tags=("border_corner_part", "border_parts_right", "border_parts", "right_parts"),
                             anchor=tkinter.CENTER, angle=180)
                         requires_recoloring = True
                     else:
@@ -679,16 +686,20 @@ class DrawEngine:
             for side in ["left", "right"]:
                 key1 = f"border_rectangle_1_{side}"
                 key2 = f"border_rectangle_2_{side}"
+                tags = (f"border_rectangle_part", f"border_parts_{side}", "border_parts")
+                if side == "right":
+                    tags += ("right_parts",)
+
                 if key1 not in self._items:
                     self._items[key1] = self._canvas.create_rectangle(
-                        0, 0, 0, 0, tags=(f"border_rectangle_part", f"border_parts_{side}", "border_parts"), width=0)
+                        0, 0, 0, 0, tags=tags, width=0)
                     requires_recoloring = True
                 else:
                     self._canvas.itemconfig(self._items[key1], state='normal')
 
                 if key2 not in self._items:
                     self._items[key2] = self._canvas.create_rectangle(
-                        0, 0, 0, 0, tags=(f"border_rectangle_part", f"border_parts_{side}", "border_parts"), width=0)
+                        0, 0, 0, 0, tags=tags, width=0)
                     requires_recoloring = True
                 else:
                     self._canvas.itemconfig(self._items[key2], state='normal')
@@ -723,6 +734,7 @@ class DrawEngine:
         # Inner parts
         if inner_corner_radius > 0:
             # Inner corner parts
+            # Left side
             for i in [1, 4]:
                 key_a = f"inner_oval_{i}_a_left"
                 key_b = f"inner_oval_{i}_b_left"
@@ -730,22 +742,26 @@ class DrawEngine:
                     self._items[key_a] = self._canvas.create_aa_circle(
                         0, 0, 0, tags=("inner_corner_part", "inner_parts_left", "inner_parts"), anchor=tkinter.CENTER)
                     self._items[key_b] = self._canvas.create_aa_circle(
-                        0, 0, 0, tags=("inner_corner_part", "inner_parts_left", "inner_parts"), anchor=tkinter.CENTER,
-                        angle=180)
+                        0, 0, 0, tags=("inner_corner_part", "inner_parts_left", "inner_parts"),
+                        anchor=tkinter.CENTER, angle=180)
                     requires_recoloring = True
                 else:
                     self._canvas.itemconfig(self._items[key_a], state='normal')
                     self._canvas.itemconfig(self._items[key_b], state='normal')
 
+            # Right side
             for i in [2, 3]:
                 key_a = f"inner_oval_{i}_a_right"
                 key_b = f"inner_oval_{i}_b_right"
                 if key_a not in self._items:
                     self._items[key_a] = self._canvas.create_aa_circle(
-                        0, 0, 0, tags=("inner_corner_part", "inner_parts_right", "inner_parts"), anchor=tkinter.CENTER)
+                        0, 0, 0,
+                        tags=("inner_corner_part", "inner_parts_right", "inner_parts", "right_parts"),
+                        anchor=tkinter.CENTER)
                     self._items[key_b] = self._canvas.create_aa_circle(
-                        0, 0, 0, tags=("inner_corner_part", "inner_parts_right", "inner_parts"), anchor=tkinter.CENTER,
-                        angle=180)
+                        0, 0, 0,
+                        tags=("inner_corner_part", "inner_parts_right", "inner_parts", "right_parts"),
+                        anchor=tkinter.CENTER, angle=180)
                     requires_recoloring = True
                 else:
                     self._canvas.itemconfig(self._items[key_a], state='normal')
@@ -795,10 +811,13 @@ class DrawEngine:
         for side in ["left", "right"]:
             key1 = f"inner_rectangle_1_{side}"
             key2 = f"inner_rectangle_2_{side}"
+            tags = (f"inner_rectangle_part", f"inner_parts_{side}", "inner_parts")
+            if side == "right":
+                tags += ("right_parts",)
 
             if key1 not in self._items:
                 self._items[key1] = self._canvas.create_rectangle(
-                    0, 0, 0, 0, tags=(f"inner_rectangle_part", f"inner_parts_{side}", "inner_parts"), width=0)
+                    0, 0, 0, 0, tags=tags, width=0)
                 requires_recoloring = True
             else:
                 self._canvas.itemconfig(self._items[key1], state='normal')
@@ -807,7 +826,7 @@ class DrawEngine:
             if needs_inner_rectangle_2:
                 if key2 not in self._items:
                     self._items[key2] = self._canvas.create_rectangle(
-                        0, 0, 0, 0, tags=(f"inner_rectangle_part", f"inner_parts_{side}", "inner_parts"), width=0)
+                        0, 0, 0, 0, tags=tags, width=0)
                     requires_recoloring = True
                 else:
                     self._canvas.itemconfig(self._items[key2], state='normal')
