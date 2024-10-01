@@ -69,6 +69,7 @@ from py7zr import SevenZipFile
 from tkinter import filedialog
 from tkinter import messagebox
 from win32con import SW_HIDE, SW_SHOW, SW_RESTORE, WM_CLOSE
+
 MAX_RESTARTS = 5
 restart_count = 0
 try:
@@ -239,7 +240,7 @@ class TeraTermUI(customtkinter.CTk):
         self.image_cache = {}
 
         # path for tesseract application
-        self.zip_path = os.path.join(os.path.dirname(__file__),  TeraTermUI.get_absolute_path("Tesseract-OCR.7z"))
+        self.zip_path = os.path.join(os.path.dirname(__file__), TeraTermUI.get_absolute_path("Tesseract-OCR.7z"))
         self.app_temp_dir = Path(tempfile.gettempdir()) / "TeraTermUI"
         self.app_temp_dir.mkdir(parents=True, exist_ok=True)
 
@@ -812,7 +813,6 @@ class TeraTermUI(customtkinter.CTk):
             p.nice(psutil.HIGH_PRIORITY_CLASS)
         atexit.register(self.cleanup_temp)
         atexit.register(self.restore_original_font, self.teraterm_file)
-        self.after(0, self.unload_image("uprb"))
         self.after(0, self.unload_image("status"))
         self.after(0, self.unload_image("help"))
         self.after(0, self.set_focus_to_tkinter)
@@ -1064,7 +1064,7 @@ class TeraTermUI(customtkinter.CTk):
                 raise Exception("Database is locked")
             else:
                 raise err
-    
+
     def log_error(self):
         import inspect
         import traceback
@@ -2285,8 +2285,8 @@ class TeraTermUI(customtkinter.CTk):
     def submit_multiple_event_handler(self):
         if self.started_auto_enroll and (not self.search_event_completed or not self.option_menu_event_completed or not
                                          self.go_next_event_completed or not self.search_go_next_event_completed or not
-                                         self.my_classes_event_completed or not self.fix_execution_event_completed
-                                         or not self.submit_feedback_event_completed):
+                                         self.my_classes_event_completed or not self.fix_execution_event_completed or
+                                         not self.submit_feedback_event_completed):
             self.after(500, self.submit_multiple_event_handler)
         elif self.started_auto_enroll:
             self.end_countdown()
@@ -4117,8 +4117,8 @@ class TeraTermUI(customtkinter.CTk):
                 for i in range(0, len(self.enrolled_tooltips), 2):
                     if i < len(self.enrolled_tooltips):
                         self.enrolled_tooltips[i].configure(translation["mod_selection"])
-                    if i+1 < len(self.enrolled_tooltips):
-                        self.enrolled_tooltips[i+1].configure(translation["change_section_entry"])
+                    if i + 1 < len(self.enrolled_tooltips):
+                        self.enrolled_tooltips[i + 1].configure(translation["change_section_entry"])
 
     def rename_tabs(self):
         lang = self.language_menu.get()
@@ -4557,6 +4557,7 @@ class TeraTermUI(customtkinter.CTk):
                     def close_file_dialog():
                         file_dialog_hwnd = win32gui.FindWindow("#32770", translation["save_pdf"])
                         win32gui.PostMessage(file_dialog_hwnd, WM_CLOSE, 0, 0)
+
                     self.after(2500, close_file_dialog)
                 titles_to_close = [
                     translation["exit"],
@@ -4861,6 +4862,7 @@ class TeraTermUI(customtkinter.CTk):
 
             def destroy():
                 self.title_login.destroy()
+                self.unload_image("uprb")
                 self.title_login = None
                 self.uprb_image = None
                 self.uprb_image_grid.image = None
@@ -4890,7 +4892,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.a_buttons_frame = None
 
             self.after(100, destroy)
-            
+
     def initialization_student(self):
         # Student Information
         if not self.init_student:
@@ -4960,6 +4962,7 @@ class TeraTermUI(customtkinter.CTk):
 
             def destroy():
                 self.title_student.destroy()
+                self.unload_image("lock")
                 self.title_student = None
                 self.lock = None
                 self.lock_grid.image = None
@@ -5080,7 +5083,7 @@ class TeraTermUI(customtkinter.CTk):
             self.s_classes.bind("<Button-1>", lambda event: self.focus_set())
             self.s_semester.bind("<Button-1>", lambda event: self.focus_set())
             self.s_classes_entry.bind("<FocusIn>", lambda event:
-                                      self.search_scrollbar.scroll_to_widget(self.s_classes_entry))
+            self.search_scrollbar.scroll_to_widget(self.s_classes_entry))
             self.show_all.bind("<space>", lambda event: self.spacebar_event())
 
             # Third Tab
@@ -6026,13 +6029,13 @@ class TeraTermUI(customtkinter.CTk):
         for row in range(1, num_rows):
             section_cell = new_table.get_cell(row, 0)
             new_table.bind_cell(row, 0, "<Button-3>", lambda event, t_cell=section_cell:
-                                self.transfer_class_data_to_enroll_tab(event, t_cell))
+            self.transfer_class_data_to_enroll_tab(event, t_cell))
             instructor_cell = new_table.get_cell(row, instructor_col_index)
             new_table.bind_cell(row, instructor_col_index, "<Button-3>", lambda event, t_cell=instructor_cell:
-                                TeraTermUI.open_professor_profile(event, t_cell))
+            TeraTermUI.open_professor_profile(event, t_cell))
             av_cell = new_table.get_cell(row, av_col_index)
             new_table.bind_cell(row, av_col_index, "<Button-3>", lambda event, t_cell=av_cell:
-                                TeraTermUI.open_student_help(event, t_cell))
+            TeraTermUI.open_student_help(event, t_cell))
         for col_index in range(len(headers)):
             new_table.bind_cell(0, col_index, "<Button-3>",
                                 lambda event: self.move_tables_overlay_event())
@@ -6888,8 +6891,8 @@ class TeraTermUI(customtkinter.CTk):
                     instructor_cleaned = re.sub(r"\bRSTR\b", "", instructor_cleaned)
                     instructor_cleaned = instructor_cleaned.strip()
                     av_value = "RSVD" if "RSVD" in instructor else "RSTR" if "RSTR" in instructor else \
-                               "999" if "999" in instructor else "998" if "998" in instructor else \
-                               match.group(7).strip() if match.group(7) else "0"
+                        "999" if "999" in instructor else "998" if "998" in instructor else \
+                            match.group(7).strip() if match.group(7) else "0"
                     current_section = {
                         "SEC": match.group(1),
                         "M": match.group(2),
@@ -7916,7 +7919,7 @@ class TeraTermUI(customtkinter.CTk):
             winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/update.wav"), winsound.SND_ASYNC)
         msg = CTkMessagebox(title=translation["update_popup_title"],
                             message=translation["update_popup_message"] + "\n\n" + current + ": v" +
-                            self.USER_APP_VERSION + " ---> " + latest + ": v" + latest_version,
+                                    self.USER_APP_VERSION + " ---> " + latest + ": v" + latest_version,
                             option_1=translation["option_1"], option_2=translation["option_2"],
                             option_3=translation["option_3"], icon_size=(65, 65),
                             button_color=("#c30101", "#145DA0", "#145DA0"), icon="question",
@@ -8460,14 +8463,14 @@ class TeraTermUI(customtkinter.CTk):
                         winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/update.wav"), winsound.SND_ASYNC)
                     msg = CTkMessagebox(title=translation["update_popup_title"],
                                         message=translation["update_popup_message"] + "\n\n" + current + ": v" +
-                                        self.USER_APP_VERSION + " ---> " + latest + ": v" + latest_version,
+                                                self.USER_APP_VERSION + " ---> " + latest + ": v" + latest_version,
                                         option_1=translation["option_1"], option_2=translation["option_2"],
                                         option_3=translation["option_3"], icon_size=(65, 65),
                                         button_color=("#c30101", "#145DA0", "#145DA0"), icon="question",
                                         hover_color=("darkred", "use_default", "use_default"))
                     response = msg.get()
                     if response[0] == "Yes" or response[0] == "Sí":
-                        try:
+                         try:
                             updater_exe_dest = None
                             appdata_path = None
                             sys_path = Path(sys.path[0]).resolve()
@@ -8489,7 +8492,7 @@ class TeraTermUI(customtkinter.CTk):
                             print(f"Failed to launch the updater script: {err}")
                             self.log_error()
                             webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
-                            
+
                 self.after(50, update)
             else:
                 task_done.set()
@@ -9128,6 +9131,7 @@ class TeraTermUI(customtkinter.CTk):
     def on_status_window_close(self):
         self.unload_image("update")
         self.unload_image("link")
+        self.unload_image("plane")
         self.status_frame.unbind("<Button-1>")
         self.status_frame.unbind("<Button-2>")
         self.status_frame.unbind("<Button-3>")
@@ -9295,7 +9299,7 @@ class TeraTermUI(customtkinter.CTk):
                             if not self.disable_audio:
                                 winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/error.wav"),
                                                    winsound.SND_ASYNC)
-                            CTkMessagebox(title=translation["error"],  message=translation["feedback_error"],
+                            CTkMessagebox(title=translation["error"], message=translation["feedback_error"],
                                           icon="cancel", button_width=380)
 
                         self.after(50, show_error)
@@ -11387,3 +11391,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
