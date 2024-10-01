@@ -4863,6 +4863,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.title_login.destroy()
                 self.title_login = None
                 self.uprb_image = None
+                self.uprb_image_grid.image = None
                 self.uprb_image_grid.configure(command=None)
                 self.uprb_image_grid.destroy()
                 self.uprb_image_grid = None
@@ -4889,7 +4890,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.a_buttons_frame = None
 
             self.after(100, destroy)
-
+            
     def initialization_student(self):
         # Student Information
         if not self.init_student:
@@ -4961,6 +4962,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.title_student.destroy()
                 self.title_student = None
                 self.lock = None
+                self.lock_grid.image = None
                 self.lock_grid.configure(command=None)
                 self.lock_grid.destroy()
                 self.lock_grid = None
