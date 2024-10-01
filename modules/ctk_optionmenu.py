@@ -143,6 +143,12 @@ class CTkOptionMenu(CTkBaseClass):
         if sequence is None or sequence == "<Button-1>":
             self._canvas.bind("<Button-1>", self._clicked)
             self._text_label.bind("<Button-1>", self._clicked)
+        if sequence is None or sequence == "<ButtonRelease-1>":
+            self._canvas.bind("<ButtonRelease-1>", self._on_button_release)
+            self._text_label.bind("<ButtonRelease-1>", self._on_button_release)
+        if sequence is None or sequence == "<B1-Motion>":
+            self._canvas.bind("<B1-Motion>", self._on_motion)
+            self._text_label.bind("<B1-Motion>", self._on_motion)
         if sequence is None or sequence == "<FocusIn>":
             self._canvas.bind("<FocusIn>", self._on_enter)
             self._text_label.bind("<FocusIn>", self._on_enter)
@@ -398,6 +404,26 @@ class CTkOptionMenu(CTkBaseClass):
         else:
             return super().cget(attribute_name)
 
+    def _on_motion(self, event):
+        # Check if the cursor is outside the widget
+        x_root, y_root = event.x_root, event.y_root
+        widget_left = self.winfo_rootx()
+        widget_top = self.winfo_rooty()
+        widget_right = widget_left + self.winfo_width()
+        widget_bottom = widget_top + self.winfo_height()
+
+        if not (widget_left <= x_root <= widget_right and widget_top <= y_root <= widget_bottom):
+            # Cursor is outside the widget, reset the cursor
+            if self._hover_state:
+                self._on_leave(event)
+                self._hover_state = False
+
+    def _on_button_release(self, event):
+        # Reset the cursor when the mouse button is released
+        if self._hover_state:
+            self._on_leave(event)
+            self._hover_state = False
+
     def _on_enter(self, event=0):
         if self.cget("button_color") == "#c30101":
             if self.button_color_default is None:
@@ -406,6 +432,11 @@ class CTkOptionMenu(CTkBaseClass):
 
         if self._hover and self._state == tkinter.NORMAL:
             self._hover_state = True
+            if self._cursor_manipulation_enabled:
+                if sys.platform == "darwin":
+                    self.configure(cursor="pointinghand")
+                elif sys.platform.startswith("win"):
+                    self.configure(cursor="hand2")
             self._canvas.itemconfig("inner_parts_right",
                                     outline=self._apply_appearance_mode(self._button_hover_color),
                                     fill=self._apply_appearance_mode(self._button_hover_color))
@@ -413,6 +444,8 @@ class CTkOptionMenu(CTkBaseClass):
     def _on_leave(self, event=0):
         if not self.focus_get() == self._canvas:
             self._hover_state = False
+            if self._cursor_manipulation_enabled:
+                self.configure(cursor="")
             self._canvas.itemconfig("inner_parts_right",
                                     outline=self._apply_appearance_mode(self._button_color),
                                     fill=self._apply_appearance_mode(self._button_color))
