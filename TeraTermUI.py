@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 9/30/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 10/1/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -5805,10 +5805,11 @@ class TeraTermUI(customtkinter.CTk):
     def copy_cell_data_to_clipboard(self, cell_data):
         lang = self.language_menu.get()
         translation = self.load_language(lang)
-        cell_value = re.sub(r"\n\s*", " ", cell_data["value"])
-        if not cell_value.strip():
+        cell_value = cell_data.cget("text").strip()
+        if not cell_value:
             return
 
+        cell_value = re.sub(r"\n\s*", " ", cell_value)
         if re.match(r"\d{1,2}:\d{2} [APM]{2} \d{1,2}:\d{2} [APM]{2}", cell_value):
             cell_value = re.sub(r"([APM]{2}) (\d{1,2}:\d{2})", r"\1 - \2", cell_value)
 
@@ -5935,7 +5936,8 @@ class TeraTermUI(customtkinter.CTk):
             "COSTA COLON MARIA DEL RO": "https://notaso.com/professors/maria-del-rocio-costa/",
             "OLAVARRIA FULLERTON JENI": "https://notaso.com/professors/jenifier-olavarria/",
             "COUTIN RODICIO RICARDO": "https://notaso.com/professors/ricardo-coutin-rodicio-2/",
-            "GONZALEZ GONZALEZ JOSE": "https://notaso.com/professors/jose-m-gonzalez-gonzalez/"
+            "GONZALEZ GONZALEZ JOSE": "https://notaso.com/professors/jose-m-gonzalez-gonzalez/",
+            "SIERRA PADILLA": "https://notaso.com/professors/javier-sierra-padilla-2/"
         }
         hardcoded_name = " ".join(instructor_text.split())
         if hardcoded_name in url_mapping:
@@ -6000,7 +6002,7 @@ class TeraTermUI(customtkinter.CTk):
             values=table_values,
             header_color="#145DA0",
             hover_color="#339CFF",
-            command=self.copy_cell_data_to_clipboard,
+            command=lambda row, col: self.copy_cell_data_to_clipboard(new_table.get_cell(row, col))
         )
         tooltip_messages = {
             translation["sec"]: translation["tooltip_sec"],
@@ -6796,8 +6798,15 @@ class TeraTermUI(customtkinter.CTk):
 
             # Split instructor name for the first entry
             if "INSTRUCTOR" in item:
-                parts = item["INSTRUCTOR"].split(",")
-                item["INSTRUCTOR"] = "\n".join(parts)
+                instructor_name = item["INSTRUCTOR"].strip()
+                # Check if there is a comma indicating multiple names
+                if "," in instructor_name:
+                    # Split on comma and format properly
+                    parts = instructor_name.split(",")
+                    item["INSTRUCTOR"] = "\n".join([part.strip() for part in parts if part.strip()])
+                else:
+                    # If there's no comma, just ensure the name is clean with no extra newlines
+                    item["INSTRUCTOR"] = instructor_name
 
             for day, time_slot in zip(days, times):
                 if first:
@@ -6884,15 +6893,11 @@ class TeraTermUI(customtkinter.CTk):
             if any(x in line for x in session_types):
                 match = pattern.search(line)
                 if match:
-                    instructor = match.group(8)
-                    instructor_cleaned = re.sub(r"\bN\b(?!\.)", "", instructor)
-                    instructor_cleaned = re.sub(r"\bFULL\b", "", instructor_cleaned)
-                    instructor_cleaned = re.sub(r"\bRSVD\b", "", instructor_cleaned)
-                    instructor_cleaned = re.sub(r"\bRSTR\b", "", instructor_cleaned)
-                    instructor_cleaned = instructor_cleaned.strip()
-                    av_value = "RSVD" if "RSVD" in instructor else "RSTR" if "RSTR" in instructor else \
-                        "999" if "999" in instructor else "998" if "998" in instructor else \
-                            match.group(7).strip() if match.group(7) else "0"
+                    instructor = match.group(8).strip()
+                    instructor_cleaned = re.sub(r"\b(N|FULL|RSVD|RSTR|CANC)\b", "", instructor).strip()
+                    av_value = next(
+                        (val for val in ["RSVD", "RSTR", "CANC", "999", "998"] if val in instructor),
+                        match.group(7).strip() if match.group(7) else "0")
                     current_section = {
                         "SEC": match.group(1),
                         "M": match.group(2),
@@ -7195,7 +7200,8 @@ class TeraTermUI(customtkinter.CTk):
                 values=table_values,
                 header_color="#145DA0",
                 hover_color="#339CFF",
-                command=self.copy_cell_data_to_clipboard,
+                command=lambda row, col: self.copy_cell_data_to_clipboard(
+                    self.enrolled_classes_table.get_cell(row, col))
             )
             for i, header in enumerate(headers):
                 self.enrolled_classes_table.edit_column(i, width=column_widths[header])
