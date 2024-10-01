@@ -8470,7 +8470,7 @@ class TeraTermUI(customtkinter.CTk):
                                         hover_color=("darkred", "use_default", "use_default"))
                     response = msg.get()
                     if response[0] == "Yes" or response[0] == "Sí":
-                         try:
+                        try:
                             updater_exe_dest = None
                             appdata_path = None
                             sys_path = Path(sys.path[0]).resolve()
