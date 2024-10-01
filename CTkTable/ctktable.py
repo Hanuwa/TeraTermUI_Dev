@@ -260,8 +260,8 @@ class CTkTable(customtkinter.CTkFrame):
                                                                corner_radius=corner_radius,
                                                                text=value,
                                                                border_width=0,
-                                                               command=(lambda e=self.data[i, j]: self.command(
-                                                                   e)) if self.command else None, **args)
+                                                               command=(lambda row=i, col=j: self.command(
+                                                                   row, col)) if self.command else None, **args)
                     self.frame[i, j].grid(column=j, row=i, padx=padx, pady=pady, sticky="nsew")
                     if self.frame[i, j]._text_label is not None:
                         self.frame[i, j]._text_label.config(wraplength=self.wraplength)
