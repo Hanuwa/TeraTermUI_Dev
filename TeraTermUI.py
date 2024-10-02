@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 10/1/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 10/2/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 11300 lines of codes, it definitely makes things harder to work with
+# and with over 11200 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -726,7 +726,7 @@ class TeraTermUI(customtkinter.CTk):
 
                 # Pop up message that appears only the first time the user uses the application
                 def show_message_box():
-                    translation = self.load_language(self.language_menu.get())
+                    translation = self.load_language()
                     if not self.disable_audio:
                         winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/welcome.wav"), winsound.SND_ASYNC)
                     CTkMessagebox(title=translation["welcome_title"], message=translation["welcome_message"],
@@ -820,8 +820,7 @@ class TeraTermUI(customtkinter.CTk):
             height, x, y, db_path, en_path, es_path
 
     def create_tray_menu(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         return pystray.Menu(
             pystray.MenuItem(translation["hide_tray"], self.hide_all_windows),
             pystray.MenuItem(translation["show_tray"], self.show_all_windows, default=True),
@@ -835,8 +834,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.timer_window.withdraw()
             return
 
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         self.withdraw()
         self.destroy_windows()
         if TeraTermUI.window_exists(translation["dialog_title"]):
@@ -880,8 +878,7 @@ class TeraTermUI(customtkinter.CTk):
             self.set_focus_to_tkinter()
             return
 
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         self.iconify()
         if self.status is not None and self.status.winfo_exists():
             self.status.iconify()
@@ -916,8 +913,7 @@ class TeraTermUI(customtkinter.CTk):
             return
 
         self.is_exit_dialog_open = True
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         msg = CTkMessagebox(title=translation["exit"], message=translation["exit_message"], icon="question",
                             option_1=translation["close_tera_term"], option_2=translation["option_2"],
                             option_3=translation["option_3"], icon_size=(65, 65), delay_destroy=True,
@@ -1164,11 +1160,10 @@ class TeraTermUI(customtkinter.CTk):
         with self.lock_thread:
             try:
                 self.automation_preparations()
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 aes_key = secrets.token_bytes(32)  # 256-bit key
                 mac_key = secrets.token_bytes(32)  # separate 256-bit key for HMAC
-                if asyncio.run(self.test_connection(lang)) and self.check_server():
+                if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
                         code = self.code_entry.get().replace(" ", "")
@@ -1248,8 +1243,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.log_error()
             finally:
                 task_done.set()
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 self.reset_activity_timer()
                 self.after(100, self.set_focus_to_tkinter)
                 if self.error_occurred and not self.timeout_occurred:
@@ -1389,7 +1383,7 @@ class TeraTermUI(customtkinter.CTk):
 
         msg = None
         lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         choice = self.radio_var.get()
         self.focus_set()
         if lang == "English":
@@ -1443,14 +1437,13 @@ class TeraTermUI(customtkinter.CTk):
         with self.lock_thread:
             try:
                 self.automation_preparations()
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 choice = self.radio_var.get()
                 classes = self.e_classes_entry.get().upper().replace(" ", "").replace("-", "")
                 curr_sem = translation["current"].upper()
                 section = self.e_section_entry.get().upper().replace(" ", "")
                 semester = self.e_semester_entry.get().upper().replace(" ", "")
-                if asyncio.run(self.test_connection(lang)) and self.check_server():
+                if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if (choice == "register" and (
                                 section not in self.classes_status or
@@ -1613,8 +1606,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.log_error()
             finally:
                 task_done.set()
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 self.after(100, self.set_focus_to_tkinter)
                 if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
@@ -1644,12 +1636,12 @@ class TeraTermUI(customtkinter.CTk):
             try:
                 self.automation_preparations()
                 lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 classes = self.s_classes_entry.get().upper().replace(" ", "").replace("-", "")
                 semester = self.s_semester_entry.get().upper().replace(" ", "")
                 curr_sem = translation["current"].upper()
                 show_all = self.show_all.get()
-                if asyncio.run(self.test_connection(lang)) and self.check_server():
+                if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE)
                                 and (re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE)
@@ -1811,8 +1803,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.log_error()
             finally:
                 task_done.set()
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 self.after(100, self.set_focus_to_tkinter)
                 if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
@@ -1839,8 +1830,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.enrolled_classes_table is None or not self.ask_semester_refresh:
             return False
 
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         headers = [translation["course"], translation["grade"], translation["days"],
                    translation["times"], translation["room"]]
         enrolled_courses = set()
@@ -1893,7 +1883,7 @@ class TeraTermUI(customtkinter.CTk):
 
     def my_classes_event_handler(self):
         lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         if self.enrolled_classes_table is not None and not self.my_classes_frame.grid_info():
             self.tabview.grid_forget()
             self.back_classes.grid_forget()
@@ -1961,11 +1951,10 @@ class TeraTermUI(customtkinter.CTk):
         with self.lock_thread:
             try:
                 self.automation_preparations()
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 dialog_input = dialog_input.upper().replace(" ", "")
                 curr_sem = translation["current"].upper()
-                if asyncio.run(self.test_connection(lang)) and self.check_server():
+                if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if re.fullmatch("^[A-Z][0-9]{2}$", dialog_input, flags=re.IGNORECASE) or \
                                 dialog_input == curr_sem:
@@ -2026,8 +2015,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.log_error()
             finally:
                 task_done.set()
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 self.after(100, self.set_focus_to_tkinter)
                 if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
@@ -2047,8 +2035,7 @@ class TeraTermUI(customtkinter.CTk):
     # function that adds new entries
     def add_event(self):
         self.focus_set()
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         semester = self.m_semester_entry[0].get().upper().replace(" ", "")
         curr_sem = translation["current"].upper()
         if re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE) or semester == curr_sem:
@@ -2153,8 +2140,7 @@ class TeraTermUI(customtkinter.CTk):
         self.tabview.grid_forget()
         self.t_buttons_frame.grid_forget()
         if self.enrolled_classes_table is not None:
-            lang = self.language_menu.get()
-            translation = self.load_language(lang)
+            translation = self.load_language()
             self.my_classes_frame.grid_forget()
             self.modify_classes_frame.grid_forget()
             self.back_my_classes.grid_forget()
@@ -2293,8 +2279,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.countdown_running:
             return
 
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         self.focus_set()
         if not self.started_auto_enroll:
             msg = CTkMessagebox(title=translation["submit"], message=translation["enroll_multiple"],
@@ -2317,8 +2302,7 @@ class TeraTermUI(customtkinter.CTk):
         with self.lock_thread:
             try:
                 self.automation_preparations()
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 classes = []
                 sections = []
                 choices = []
@@ -2329,7 +2313,7 @@ class TeraTermUI(customtkinter.CTk):
                     sections.append(self.m_section_entry[i].get().upper().replace(" ", ""))
                     choices.append(self.m_register_menu[i].get())
                 can_enroll_classes = self.e_counter + self.m_counter + self.a_counter + 1 <= 15
-                if asyncio.run(self.test_connection(lang)) and self.check_server() and self.check_format():
+                if asyncio.run(self.test_connection()) and self.check_server() and self.check_format():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if can_enroll_classes:
                             self.wait_for_window()
@@ -2469,8 +2453,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.log_error()
             finally:
                 task_done.set()
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 self.after(100, self.set_focus_to_tkinter)
                 if not self.error_auto_enroll:
                     self.started_auto_enroll = False
@@ -2503,7 +2486,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.automation_preparations()
                 menu = self.menu_entry.get()
                 lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 semester = self.menu_semester_entry.get().upper().replace(" ", "")
                 curr_sem = translation["current"].upper()
                 menu_dict = {
@@ -2533,7 +2516,7 @@ class TeraTermUI(customtkinter.CTk):
                 }
                 menu = menu_dict.get(menu, menu).replace(" ", "").upper()
                 valid_menu_options = set(menu_dict.values())
-                if asyncio.run(self.test_connection(lang)) and self.check_server():
+                if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if menu and menu in valid_menu_options and (
                                 re.fullmatch("^[A-Z][0-9]{2}$", semester,
@@ -2862,8 +2845,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.log_error()
             finally:
                 task_done.set()
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 if self.focus_or_not or self.error_occurred:
                     self.after(100, self.set_focus_to_tkinter)
                 else:
@@ -2885,8 +2867,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.option_menu_event_completed = True
 
     def sign_out(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         msg = CTkMessagebox(title=translation["so_title"], message=translation["so_message"],
                             option_1=translation["option_1"], option_2=translation["option_2"],
                             option_3=translation["option_3"], icon_size=(65, 65),
@@ -2917,9 +2898,8 @@ class TeraTermUI(customtkinter.CTk):
         with self.lock_thread:
             try:
                 self.automation_preparations()
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
-                if asyncio.run(self.test_connection(lang)) and self.check_server():
+                translation = self.load_language()
+                if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         self.wait_for_window()
                         if self._1VE_screen:
@@ -2954,8 +2934,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.log_error()
             finally:
                 task_done.set()
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 self.reset_activity_timer()
                 if self.focus_or_not:
                     self.after(100, self.set_focus_to_tkinter)
@@ -2987,10 +2966,9 @@ class TeraTermUI(customtkinter.CTk):
     def search_go_next(self, task_done):
         with self.lock_thread:
             try:
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 self.automation_preparations()
-                if asyncio.run(self.test_connection(lang)) and self.check_server():
+                if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         self.wait_for_window()
                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
@@ -3038,8 +3016,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.log_error()
             finally:
                 task_done.set()
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 self.after(100, self.set_focus_to_tkinter)
                 if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
@@ -3092,9 +3069,8 @@ class TeraTermUI(customtkinter.CTk):
                     username = self.username_entry.get().replace(" ", "").lower()
                 else:
                     username = "students"
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
-                if asyncio.run(self.test_connection(lang)) and self.check_server():
+                translation = self.load_language()
+                if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         allowed_roles = {"students", "student", "estudiantes", "estudiante"}
                         if username in allowed_roles:
@@ -3207,8 +3183,7 @@ class TeraTermUI(customtkinter.CTk):
             self.after(750, self.skip_auth_prompt)
 
     def skip_auth_prompt(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         if not self.disable_audio:
             winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/update.wav"), winsound.SND_ASYNC)
         msg = CTkMessagebox(title=translation["skip_auth_title"], message=translation["skip_auth"],
@@ -3265,8 +3240,7 @@ class TeraTermUI(customtkinter.CTk):
     def notice_user(self, running_launchers):
         if self.error is not None and self.error.winfo_exists():
             return
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         main_window_x = self.winfo_x()
         main_window_y = self.winfo_y()
         self.tooltip = tk.Toplevel(self)
@@ -3309,10 +3283,9 @@ class TeraTermUI(customtkinter.CTk):
                 new_connection = False
                 dont_close = False
                 self.automation_preparations()
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 host = self.host_entry.get().replace(" ", "").lower()
-                if asyncio.run(self.test_connection(lang)) and self.check_server():
+                if asyncio.run(self.test_connection()) and self.check_server():
                     if host in ["uprbay.uprb.edu", "uprbayuprbedu", "uprb"]:
                         TeraTermUI.check_tera_term_hidden()
                         if TeraTermUI.checkIfProcessRunning("ttermpro"):
@@ -3395,8 +3368,7 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     self.after(350, self.bind, "<Return>", lambda event: self.login_event_handler())
             except Exception as err:
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 error_message = str(err)
                 if "catching classes that do not inherit from BaseException is not allowed" in error_message:
                     print("Caught the specific error message: ", error_message)
@@ -3417,8 +3389,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.log_error()
             finally:
                 task_done.set()
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 self.after(100, self.set_focus_to_tkinter)
                 if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
@@ -3467,8 +3438,7 @@ class TeraTermUI(customtkinter.CTk):
     def login_to_existent_connection(self):
         timeout_counter = 0
         skip = False
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         keywords = ["STUDENTS REQ/DROP", "HOLD FLAGS", "PROGRAMA DE CLASES", "ACADEMIC STATISTICS", "SNAPSHOT",
                     "SOLICITUD DE PRORROGA", "LISTA DE SECCIONES", "AYUDA ECONOMICA", "EXPEDIENTE ACADEMICO", "AUDIT",
                     "PERSONAL DATA", "COMPUTO DE MATRICULA"]
@@ -3607,8 +3577,7 @@ class TeraTermUI(customtkinter.CTk):
             return
         response = None
         checkbox = None
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         if not self.error_occurred:
             msg = CTkMessagebox(title=translation["go_back_title"], message=translation["go_back"], icon="question",
                                 option_1=translation["close_tera_term"], option_2=translation["option_2"],
@@ -3725,8 +3694,7 @@ class TeraTermUI(customtkinter.CTk):
             self.save_frame.grid_forget()
             self.auto_frame.grid_forget()
         if not self.in_multiple_screen:
-            lang = self.language_menu.get()
-            translation = self.load_language(lang)
+            translation = self.load_language()
             self.my_classes_frame.grid_forget()
             self.modify_classes_frame.grid_forget()
             self.back_my_classes.grid_forget()
@@ -3737,7 +3705,8 @@ class TeraTermUI(customtkinter.CTk):
         self.in_multiple_screen = False
         self.switch_tab()
 
-    def load_language(self, lang):
+    def load_language(self):
+        lang = self.language_menu.get()
         # Check if the translations for the requested language are in the cache
         if lang in self.translations_cache:
             # If they are, return the cached translations without loading the file again
@@ -3776,8 +3745,7 @@ class TeraTermUI(customtkinter.CTk):
         return {}
 
     def update_table_headers_tooltips(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         tooltip_messages = {
             translation["sec"]: translation["tooltip_sec"],
             translation["m"]: translation["tooltip_m"],
@@ -3800,8 +3768,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.table_tooltips[header_cell].configure(message=tooltip_message)
 
     def update_enrolled_classes_headers_tooltips(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         tooltip_messages = {
             translation["course"]: translation["tooltip_course"],
             translation["grade"]: translation["tooltip_grd"],
@@ -3823,7 +3790,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.curr_lang == lang:
             return
 
-        translation = self.load_language(lang)
+        translation = self.load_language()
         appearance = self.appearance_mode_optionemenu.get()
         self.curr_lang = lang
         self.focus_set()
@@ -4121,8 +4088,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.enrolled_tooltips[i + 1].configure(translation["change_section_entry"])
 
     def rename_tabs(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         self.renamed_tabs = self.tabview.get()
         self.tabview.rename(self.enroll_tab, translation["enroll_tab"])
         self.enroll_tab = translation["enroll_tab"]
@@ -4160,8 +4126,7 @@ class TeraTermUI(customtkinter.CTk):
         if event_type != "focus_out":
             self.focus_set()
 
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         semester = self.m_semester_entry[0].get().upper().replace(" ", "")
         curr_sem = translation["current"].upper()
         dummy_event = type("Dummy", (object,), {"widget": self.m_semester_entry[0]})()
@@ -4270,8 +4235,7 @@ class TeraTermUI(customtkinter.CTk):
             self.e_section_tooltip.configure(message="", visibility=False)
 
     def check_class_conflicts(self, event=None):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         schedule_map = self.schedule_map
         sections = [entry.get().upper().replace(" ", "") for entry in self.m_section_entry if entry.get().strip()]
         schedule = []
@@ -4344,8 +4308,7 @@ class TeraTermUI(customtkinter.CTk):
             self.auto_enroll_event_handler()
 
     def auto_enroll_event_handler(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         self.focus_set()
         idle = self.cursor.execute("SELECT idle FROM user_data").fetchone()
         if idle[0] != "Disabled":
@@ -4385,12 +4348,11 @@ class TeraTermUI(customtkinter.CTk):
 
         with self.lock_thread:
             try:
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 semester = self.m_semester_entry[0].get().upper().replace(" ", "")
                 self.automation_preparations()
                 self.auto_enroll_bool = True
-                if asyncio.run(self.test_connection(lang)) and self.check_server() and self.check_format():
+                if asyncio.run(self.test_connection()) and self.check_server() and self.check_format():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         self.wait_for_window()
                         self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -4497,8 +4459,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.log_error()
             finally:
                 task_done.set()
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 self.after(100, self.set_focus_to_tkinter)
                 if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
@@ -4520,7 +4481,7 @@ class TeraTermUI(customtkinter.CTk):
         from pytz import timezone
 
         lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         puerto_rico_tz = timezone("America/Puerto_Rico")
         current_date = datetime.now(puerto_rico_tz)
         time_difference = pr_date - current_date
@@ -4670,8 +4631,7 @@ class TeraTermUI(customtkinter.CTk):
                             else self.forceful_end_countdown())
 
     def end_countdown(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         self.pr_date = None
         self.auto_enroll_bool = False
         self.countdown_running = False
@@ -4687,8 +4647,7 @@ class TeraTermUI(customtkinter.CTk):
         self.auto_enroll.deselect()
 
     def forceful_end_countdown(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         self.end_countdown()
         if not self.disable_audio:
             winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/notification.wav"), winsound.SND_ASYNC)
@@ -4696,8 +4655,7 @@ class TeraTermUI(customtkinter.CTk):
                       button_width=380)
 
     def create_timer_window(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         main_window_x = self.winfo_x()
         main_window_y = self.winfo_y()
         main_window_width = self.winfo_width()
@@ -4736,8 +4694,7 @@ class TeraTermUI(customtkinter.CTk):
         self.timer_window.protocol("WM_DELETE_WINDOW", self.end_countdown)
 
     def bring_back_timer_window(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         if self.timer_window is not None and self.timer_window.winfo_exists():
             if self.timer_window.state() == "withdrawn":
                 self.timer_window.iconify()
@@ -4819,7 +4776,7 @@ class TeraTermUI(customtkinter.CTk):
         # (Auth Screen)
         if not self.init_auth:
             lang = self.language_menu.get()
-            translation = self.load_language(lang)
+            translation = self.load_language()
             self.init_auth = True
             self.authentication_frame = customtkinter.CTkFrame(self, corner_radius=10)
             self.a_buttons_frame = customtkinter.CTkFrame(self, corner_radius=10)
@@ -4898,7 +4855,7 @@ class TeraTermUI(customtkinter.CTk):
         if not self.init_student:
             self.init_student = True
             lang = self.language_menu.get()
-            translation = self.load_language(lang)
+            translation = self.load_language()
             self.student_frame = customtkinter.CTkFrame(self, corner_radius=10)
             self.s_buttons_frame = customtkinter.CTkFrame(self, corner_radius=10)
             self.title_student = customtkinter.CTkLabel(master=self.student_frame,
@@ -5005,7 +4962,7 @@ class TeraTermUI(customtkinter.CTk):
         # Classes
         if not self.init_class:
             lang = self.language_menu.get()
-            translation = self.load_language(lang)
+            translation = self.load_language()
             self.tabview = customtkinter.CTkTabview(self, corner_radius=10, command=self.switch_tab)
             self.t_buttons_frame = customtkinter.CTkFrame(self, corner_radius=10)
             self.init_class = True
@@ -5182,7 +5139,7 @@ class TeraTermUI(customtkinter.CTk):
         # Multiple Classes Enrollment
         if not self.init_multiple:
             lang = self.language_menu.get()
-            translation = self.load_language(lang)
+            translation = self.load_language()
             self.init_multiple = True
             self.multiple_frame = customtkinter.CTkFrame(self, corner_radius=10)
             self.m_button_frame = customtkinter.CTkFrame(self, corner_radius=10)
@@ -5304,8 +5261,7 @@ class TeraTermUI(customtkinter.CTk):
     # saves class information for another session
     def save_classes(self):
         save = self.save_data.get()
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         if save == "on":
             self.cursor.execute("DELETE FROM saved_classes")
             self.connection.commit()
@@ -5368,8 +5324,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # shows the important information window
     def show_loading_screen(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         if self.loading_screen is None or not self.loading_screen.winfo_exists():
             self.loading_screen = SmoothFadeToplevel(fade_duration=10, final_alpha=0.90)
             self.loading_screen_geometry()
@@ -5403,8 +5358,7 @@ class TeraTermUI(customtkinter.CTk):
         return self.loading_screen
 
     def loading_screen_geometry(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         self.loading_screen.title(translation["loading"])
         width = 275
         height = 150
@@ -5434,8 +5388,7 @@ class TeraTermUI(customtkinter.CTk):
             self.loading_screen_status = None
             if current_time - self.loading_screen_start_time > 60:
                 task_done.set()
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 self.timeout_occurred = True
                 if not self.disable_audio:
                     winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/error.wav"), winsound.SND_ASYNC)
@@ -5485,8 +5438,7 @@ class TeraTermUI(customtkinter.CTk):
 
         self.enable_widgets(self)
         if self.enrolled_classes_table is not None:
-            lang = self.language_menu.get()
-            translation = self.load_language(lang)
+            translation = self.load_language()
             for row_index in range(min(len(self.mod_selection_list), len(self.enrolled_classes_data))):
                 mod_selection = self.mod_selection_list[row_index]
                 change_section_entry = self.change_section_entries[row_index]
@@ -5600,8 +5552,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # function that checks if UPRB server is currently running
     def check_server(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         HOST = "uprbay.uprb.edu"
         PORT = 22
         timeout = 3
@@ -5618,8 +5569,7 @@ class TeraTermUI(customtkinter.CTk):
     # captures a screenshot of tera term and performs OCR
     def capture_screenshot(self):
         time.sleep(1)
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         tesseract_dir_path = self.app_temp_dir / "Tesseract-OCR"
         default_tesseract_path = Path("C:/Program Files/Tesseract-OCR/tesseract.exe")
         if self.tesseract_unzipped and (tesseract_dir_path.is_dir() or default_tesseract_path.is_file()):
@@ -5759,8 +5709,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
             return
 
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
 
         classes_list = []
         data = []
@@ -5803,8 +5752,7 @@ class TeraTermUI(customtkinter.CTk):
         self.show_success_message(350, 265, translation["pdf_save_success"])
 
     def copy_cell_data_to_clipboard(self, cell_data):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         cell_value = cell_data.cget("text").strip()
         if not cell_value:
             return
@@ -5860,8 +5808,7 @@ class TeraTermUI(customtkinter.CTk):
         self.e_semester_entry.set(semester_text)
         self.register.select()
         self.check_class_time()
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         self.focus_set()
 
         # Close existing tooltip if any
@@ -5951,8 +5898,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # displays the extracted data of searched classes into a table
     def display_searched_class_data(self, data):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         spec_data = TeraTermUI.specific_class_data(data)
         original_headers = ["SEC", "M", "CRED", "DAYS", "TIMES", "AV", "INSTRUCTOR"]
         headers = [translation["sec"], translation["m"], translation["cred"],
@@ -6143,8 +6089,7 @@ class TeraTermUI(customtkinter.CTk):
         return None
 
     def sort_data(self, data, sort_by_option):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         headers = list(data[0].keys()) if data else []
         time_key = "TIMES" if "TIMES" in headers else None
         av_key = "AV" if "AV" in headers else None
@@ -6241,8 +6186,7 @@ class TeraTermUI(customtkinter.CTk):
         return sorted_data
 
     def sort_tables(self, sort_by_option):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
 
         if self.last_sort_option == (sort_by_option, len(self.class_table_pairs)) or \
                 (not self.last_sort_option and sort_by_option == translation["original_data"]):
@@ -6437,8 +6381,7 @@ class TeraTermUI(customtkinter.CTk):
         if len(self.class_table_pairs) == 1:
             return
 
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         if self.move_tables_overlay is None:
             self.move_tables_overlay = SmoothFadeToplevel(fade_duration=10, final_alpha=0.90)
             self.move_tables_overlay.wm_overrideredirect(True)
@@ -6457,8 +6400,7 @@ class TeraTermUI(customtkinter.CTk):
         self.move_tables_overlay.bind("<Escape>", self.on_move_window_close)
 
     def move_tables_geometry(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         self.move_tables_overlay.title(translation["move_classes"])
         self.move_title_label.configure(text=translation["move_classes"])
         num_tables = len(self.class_table_pairs)
@@ -6549,8 +6491,7 @@ class TeraTermUI(customtkinter.CTk):
         self.last_remove_time = current_time
 
     def remove_current_table(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         display_class_to_remove, table_to_remove, _, _, _, more_sections \
             = self.class_table_pairs[self.current_table_index]
         display_class_to_remove.grid_forget()
@@ -6703,8 +6644,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.reset_activity_timer()
                 return "error"
             elif latest_term == "No active semester":
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 if "INVALID ACTION" in copy:
                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                     self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
@@ -6921,8 +6861,7 @@ class TeraTermUI(customtkinter.CTk):
         return data, course_found, invalid_action, y_n_found, y_n_value, term_value
 
     def extract_my_enrolled_classes(self, text):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
 
         class_pattern = re.compile(
             r"(\b[A-Z])\s+([A-Z]{4}\d{4}[A-Z]{2}\d)\s+([A-Z])?\s+(.*?)\s+([A-Z]{2})\s*([A-FI-NPW]*)\s+"
@@ -6981,8 +6920,7 @@ class TeraTermUI(customtkinter.CTk):
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
 
         # Prepare the PDF document
         pdf = SimpleDocTemplate(filepath, pagesize=letter)
@@ -7032,8 +6970,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
             return
 
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         semester = self.dialog_input.upper().replace(" ", "")
 
         # Define where the PDF will be saved
@@ -7060,7 +6997,7 @@ class TeraTermUI(customtkinter.CTk):
         self.unbind("<Control-w>")
         self.unbind("<Control-W>")
         lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         semester = dialog_input.upper().replace(" ", "")
         headers = [translation["course"], translation["grade"], translation["days"],
                    translation["times"], translation["room"]]
@@ -7282,8 +7219,7 @@ class TeraTermUI(customtkinter.CTk):
         self.my_classes_frame.scroll_to_top()
 
     def modify_enrolled_classes(self, mod, row_index):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         entry = self.change_section_entries[row_index]
         self.after(0, self.focus_set)
         if entry is not None:
@@ -7298,8 +7234,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.countdown_running:
             return
 
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         self.focus_set()
         msg = CTkMessagebox(title=translation["submit"], message=translation["submit_modify"],
                             icon=TeraTermUI.get_absolute_path("images/submit.png"), option_1=translation["option_1"],
@@ -7317,14 +7252,13 @@ class TeraTermUI(customtkinter.CTk):
         with self.lock_thread:
             try:
                 self.automation_preparations()
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 dialog_input = self.dialog_input.upper().replace(" ", "")
                 show_error = False
                 first_loop = True
                 section_closed = False
                 co_requisite = False
-                if asyncio.run(self.test_connection(lang)) and self.check_server():
+                if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         section_pattern = True
                         not_all_choose = False
@@ -7618,8 +7552,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.log_error()
             finally:
                 task_done.set()
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 self.after(100, self.set_focus_to_tkinter)
                 if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
@@ -7912,7 +7845,7 @@ class TeraTermUI(customtkinter.CTk):
 
     def update_app(self, latest_version):
         lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         current = None
         latest = None
         if lang == "English":
@@ -8008,8 +7941,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # success window pop up message
     def show_success_message(self, width, height, success_msg_text):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         if self.success is not None and self.success.winfo_exists():
             self.success.lift()
             return
@@ -8051,8 +7983,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # Pop window that shows the user more context on why they couldn't enroll their classes
     def show_enrollment_error_information(self, text="Error"):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         error_messages = {
             "INVALID COURSE ID": "INVALID COURSE ID",
             "COURSE RESERVED": "COURSE RESERVED",
@@ -8100,8 +8031,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # Pop window that shows the user more context on why they couldn't enroll their classes
     def show_enrollment_error_information_multiple(self, text="Error"):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         error_messages = {
             "INVALID COURSE ID": "INVALID COURSE ID",
             "COURSE RESERVED": "COURSE RESERVED",
@@ -8169,8 +8099,7 @@ class TeraTermUI(customtkinter.CTk):
 
     def show_modify_classes_information(self):
         self.destroy_windows()
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         if self.modify_error_check:
             if self.enrolled_classes_table is not None:
                 self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
@@ -8183,8 +8112,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # important information window pop up message
     def show_information_message(self, width, height, success_msg_text):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         if self.information is not None and self.information.winfo_exists():
             self.information.lift()
             return
@@ -8358,8 +8286,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # link to download tera term
     def download_teraterm(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         if not self.disable_audio:
             winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/notification.wav"), winsound.SND_ASYNC)
         msg = CTkMessagebox(title=translation["download_title"], message=translation["download_tera_term"],
@@ -8431,8 +8358,8 @@ class TeraTermUI(customtkinter.CTk):
     # will tell the user that there's a new update available for the application
     def check_update_app(self, task_done):
         lang = self.language_menu.get()
-        translation = self.load_language(lang)
-        if asyncio.run(self.test_connection(lang)):
+        translation = self.load_language()
+        if asyncio.run(self.test_connection()):
             latest_version = self.get_latest_release()
             current_date = datetime.today().strftime("%Y-%m-%d")
             row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
@@ -8516,8 +8443,7 @@ class TeraTermUI(customtkinter.CTk):
             task_done.set()
 
     def fix_execution_event_handler(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         if TeraTermUI.checkIfProcessRunning("ttermpro"):
             msg = CTkMessagebox(title=translation["fix_messagebox_title"],
                                 message=translation["fix_messagebox"], icon="warning",
@@ -8537,8 +8463,7 @@ class TeraTermUI(customtkinter.CTk):
     def fix_execution(self, task_done):
         with self.lock_thread:
             try:
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 self.automation_preparations()
                 self.wait_for_window()
                 if self.search_function_counter == 0:
@@ -8576,10 +8501,9 @@ class TeraTermUI(customtkinter.CTk):
                 self.log_error()
             finally:
                 task_done.set()
-                lang = self.language_menu.get()
                 self.after(100, self.set_focus_to_tkinter)
                 self.after(0, self.switch_tab)
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 if error_occurred:
                     def error_automation():
                         self.destroy_windows()
@@ -8693,8 +8617,7 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     not_running_count += 1
                     if not_running_count == 1:
-                        lang = self.language_menu.get()
-                        translation = self.load_language(lang)
+                        translation = self.load_language()
 
                         def not_running():
                             if not self.disable_audio:
@@ -8725,8 +8648,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # Checks if the user is idle for 5 minutes and does some action so that Tera Term doesn't close by itself
     def check_idle(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         self.idle_num_check = 0
         self.last_activity = time.time()
         try:
@@ -8734,8 +8656,7 @@ class TeraTermUI(customtkinter.CTk):
                 if time.time() - self.last_activity >= 210:
                     with self.lock_thread:
                         if TeraTermUI.checkIfProcessRunning("ttermpro"):
-                            lang = self.language_menu.get()
-                            translation = self.load_language(lang)
+                            translation = self.load_language()
                             if TeraTermUI.window_exists(translation["idle_warning_title"]):
                                 self.idle_warning.close_messagebox()
                             self.keep_teraterm_open()
@@ -8885,10 +8806,10 @@ class TeraTermUI(customtkinter.CTk):
             print(f"An unexpected error occurred during GET request: {err}")
             return False
 
-    async def test_connection(self, lang):
+    async def test_connection(self):
         from aiohttp import ClientSession, TCPConnector
 
-        translation = self.load_language(lang)
+        translation = self.load_language()
         urls = ["https://www.google.com/", "https://www.bing.com/", "https://www.yahoo.com/"]
         async with ClientSession(connector=TCPConnector(limit=5)) as session:
             tasks = [asyncio.create_task(TeraTermUI.fetch(session, url)) for url in urls]
@@ -9023,8 +8944,7 @@ class TeraTermUI(customtkinter.CTk):
         self.after(0, self.focus_set)
 
     def load_table(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         if hasattr(self, "table") and self.table is not None:
             self.current_class.grid(row=2, column=1, padx=(0, 0), pady=(8, 0), sticky="n")
             self.table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
@@ -9044,7 +8964,7 @@ class TeraTermUI(customtkinter.CTk):
 
     def status_widgets(self):
         lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         self.status_frame = CustomScrollableFrame(self.status, width=475, height=280,
                                                   fg_color=("#e6e6e6", "#222222"))
         self.status_title = customtkinter.CTkLabel(self.status_frame, text=translation["status_title"],
@@ -9085,7 +9005,7 @@ class TeraTermUI(customtkinter.CTk):
             self.status.focus_set()
             return
         lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         self.status = SmoothFadeToplevel()
         self.status_widgets()
         main_window_x = self.winfo_x()
@@ -9181,8 +9101,7 @@ class TeraTermUI(customtkinter.CTk):
         from googleapiclient.errors import HttpError
         from googleapiclient.discovery import build
 
-        lang = self.language_menu.get()
-        if asyncio.run(self.test_connection(lang)):
+        if asyncio.run(self.test_connection()):
             self.connection_error = False
             try:
                 service = build("sheets", "v4", credentials=self.credentials)
@@ -9209,8 +9128,7 @@ class TeraTermUI(customtkinter.CTk):
             self.connection_error = True
 
     def start_feedback_thread(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         msg = CTkMessagebox(title=translation["submit"], message=translation["submit_feedback"],
                             icon="question", option_1=translation["option_1"], option_2=translation["option_2"],
                             option_3=translation["option_3"], icon_size=(65, 65),
@@ -9277,8 +9195,7 @@ class TeraTermUI(customtkinter.CTk):
     def submit_feedback(self, task_done):
         with self.lock_thread:
             try:
-                lang = self.language_menu.get()
-                translation = self.load_language(lang)
+                translation = self.load_language()
                 current_date = datetime.today().strftime("%Y-%m-%d")
                 feedback = self.feedback_text.get("1.0", customtkinter.END).strip()
                 result = self.call_sheets_api([[feedback]])
@@ -9383,7 +9300,7 @@ class TeraTermUI(customtkinter.CTk):
     # Automatically tries to find where the Tera Term application is located
     def change_location_event(self, task_done):
         lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         tera_term_path = TeraTermUI.find_ttermpro()
         if tera_term_path:
             self.location = tera_term_path.replace("\\", "/")
@@ -9458,8 +9375,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # Function that lets user select where their Tera Term application is located
     def manually_change_location(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         filename = filedialog.askopenfilename(
             initialdir=os.path.abspath(os.sep), title=translation["select_tera_term"],
             filetypes=(("Tera Term", "*ttermpro.exe"),))
@@ -9508,8 +9424,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # list of classes available for all departments in the university
     def search_classes(self, event):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         self.class_list.delete(0, tk.END)  # always clear the list box first
         search_term = self.search_box.get().strip().lower()
         if search_term == "" or len(search_term) == 0:  # if the search term is empty, do not return any records
@@ -9535,8 +9450,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # query for searching for either class code or name
     def show_class_code(self, event):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         selection = self.class_list.curselection()
         if len(selection) == 0:
             return
@@ -9554,7 +9468,7 @@ class TeraTermUI(customtkinter.CTk):
 
     def help_widgets(self):
         lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         self.help_frame = customtkinter.CTkScrollableFrame(self.help, width=475, height=280,
                                                            fg_color=("#e6e6e6", "#222222"))
         self.help_title = customtkinter.CTkLabel(self.help_frame, text=translation["help"],
@@ -9646,7 +9560,7 @@ class TeraTermUI(customtkinter.CTk):
             self.help.focus_set()
             return
         lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         self.help = SmoothFadeToplevel()
         self.help_widgets()
         main_window_x = self.winfo_x()
@@ -9796,8 +9710,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # Gets the latest release of the application on GitHub
     def get_latest_release(self):
-        lang = self.language_menu.get()
-        if asyncio.run(self.test_connection(lang)):
+        if asyncio.run(self.test_connection()):
             url = f"{self.GITHUB_REPO}/releases/latest"
             headers = {"User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                                       "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")}
@@ -10057,8 +9970,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # checks if there is no problems with the information in the entries
     def check_format(self):
-        lang = self.language_menu.get()
-        translation = self.load_language(lang)
+        translation = self.load_language()
         entries = []
         error_msg_short = ""
         error_msg_medium = ""
