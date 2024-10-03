@@ -3270,7 +3270,7 @@ class TeraTermUI(customtkinter.CTk):
         self.tooltip.bind("<Button-3>", lambda event: self.destroy_tooltip())
 
     @staticmethod
-    def check_host(host, threshold=0.75):
+    def check_host(host, threshold=0.8):
         from difflib import SequenceMatcher
 
         allowed_hosts = ["uprbay.uprb.edu", "uprb"]
@@ -5252,7 +5252,7 @@ class TeraTermUI(customtkinter.CTk):
             # Save 'host' no matter the result as 'uprbay.uprb.edu'
             if field == "host":
                 host_entry_value = self.host_entry.get().replace(" ", "").lower()
-                if host_entry_value not in ["uprbay.uprb.edu", "uprbayuprbedu", "uprb"]:
+                if not TeraTermUI.check_host(host_entry_value):
                     continue
             result = self.cursor.execute(f"SELECT {field} FROM user_data").fetchone()
             if result is None:
