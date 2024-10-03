@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 10/2/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 10/3/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 11200 lines of codes, it definitely makes things harder to work with
+# and with over 11300 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -3269,6 +3269,20 @@ class TeraTermUI(customtkinter.CTk):
         self.tooltip.bind("<Button-2>", lambda event: self.destroy_tooltip())
         self.tooltip.bind("<Button-3>", lambda event: self.destroy_tooltip())
 
+    @staticmethod
+    def check_host(host, threshold=0.75):
+        from difflib import SequenceMatcher
+
+        allowed_hosts = ["uprbay.uprb.edu", "uprb"]
+        host_normalized = host.lower().replace(",", "").replace(" ", '')
+
+        for allowed_host in allowed_hosts:
+            allowed_host_normalized = allowed_host.lower().replace(",", "").replace(" ", "")
+            similarity_ratio = SequenceMatcher(None, host_normalized, allowed_host_normalized).ratio()
+            if similarity_ratio >= threshold:
+                return True
+        return False
+
     def login_event_handler(self):
         task_done = threading.Event()
         loading_screen = self.show_loading_screen()
@@ -3286,7 +3300,7 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language()
                 host = self.host_entry.get().replace(" ", "").lower()
                 if asyncio.run(self.test_connection()) and self.check_server():
-                    if host in ["uprbay.uprb.edu", "uprbayuprbedu", "uprb"]:
+                    if TeraTermUI.check_host(host):
                         TeraTermUI.check_tera_term_hidden()
                         if TeraTermUI.checkIfProcessRunning("ttermpro"):
                             count, is_multiple = TeraTermUI.countRunningProcesses("ttermpro")
@@ -5884,6 +5898,9 @@ class TeraTermUI(customtkinter.CTk):
             "OLAVARRIA FULLERTON JENI": "https://notaso.com/professors/jenifier-olavarria/",
             "COUTIN RODICIO RICARDO": "https://notaso.com/professors/ricardo-coutin-rodicio-2/",
             "GONZALEZ GONZALEZ JOSE": "https://notaso.com/professors/jose-m-gonzalez-gonzalez/",
+            "ROBLES GARCIA, F": "https://notaso.com/professors/francheska-robles/",
+            "SEXTO SANTIAGO MARIELIS": "https://notaso.com/professors/marie-sexto/",
+            "ALEMAN JIMENEZ": "https://notaso.com/professors/keila-aleman/",
             "SIERRA PADILLA": "https://notaso.com/professors/javier-sierra-padilla-2/"
         }
         hardcoded_name = " ".join(instructor_text.split())
@@ -6742,8 +6759,13 @@ class TeraTermUI(customtkinter.CTk):
                 # Check if there is a comma indicating multiple names
                 if "," in instructor_name:
                     # Split on comma and format properly
-                    parts = instructor_name.split(",")
-                    item["INSTRUCTOR"] = "\n".join([part.strip() for part in parts if part.strip()])
+                    parts = [part.strip() for part in instructor_name.split(",") if part.strip()]
+                    # Check if the last part is a single letter
+                    if len(parts[-1]) == 1 and len(parts) > 1:
+                        # Combine the last two parts
+                        parts[-2] = f"{parts[-2]}, {parts[-1]}"
+                        parts.pop()
+                    item["INSTRUCTOR"] = "\n".join(parts)
                 else:
                     # If there's no comma, just ensure the name is clean with no extra newlines
                     item["INSTRUCTOR"] = instructor_name
