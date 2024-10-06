@@ -308,7 +308,7 @@ try:
             print(Fore.GREEN + "\nSuccessfully compiled updater.py\n" + Style.RESET_ALL)
             manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
             generate_checksum(None, updater_exe_path)
-            attach_manifest(updater_exe_path, manifest_path, script="Both")
+            attach_manifest(updater_exe_path, manifest_path)
             shutil.copy2(updater_exe_path, updater_dist_path)
             shutil.copy2(updater_exe_path, output_directory)
             for folder in ["updater.build", "updater.onefile-build", "updater.dist"]:
