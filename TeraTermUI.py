@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 10/3/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 10/5/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -123,7 +123,8 @@ def measure_time(threshold):
             end_time = time.time()
             elapsed_time = end_time - start_time
             print(f"Elapsed time: {elapsed_time:.2f} seconds")
-            game_launchers = ["EpicGamesLauncher", "SteamWebHelper", "RockstarService"]
+            game_launchers = ["EpicGamesLauncher.exe", "SteamWebHelper.exe",
+                              "RiotClientServices.exe", "RockstarService.exe"]
             running_launchers = TeraTermUI.checkMultipleProcessesRunning(*game_launchers)
             if elapsed_time > threshold or running_launchers:
                 self.after(350, self.notice_user, running_launchers)
@@ -3249,9 +3250,10 @@ class TeraTermUI(customtkinter.CTk):
         self.tooltip.config(bg="#FFD700")
         self.tooltip.wm_geometry(f"+{main_window_x + 20}+{main_window_y + 20}")
         launcher_names = {
-            "EpicGamesLauncher": "Epic",
-            "SteamWebHelper": "Steam",
-            "RockstarService": "Rockstar"
+            "epicgameslauncher.exe": "Epic",
+            "steamwebhelper.exe": "Steam",
+            "riotclientservices.exe": "Riot",
+            "rockstarservice.exe": "Rockstar"
         }
         if running_launchers:
             launchers_list = ", ".join([launcher_names[launcher] for launcher in running_launchers])
@@ -5496,31 +5498,30 @@ class TeraTermUI(customtkinter.CTk):
     @staticmethod
     def checkIfProcessRunning(processName):
         process = processName.lower()
-        try:
-            for proc in psutil.process_iter(attrs=["name"]):
+        for proc in psutil.process_iter(attrs=["name"]):
+            try:
                 proc_info = proc.as_dict(attrs=["name"])
                 proc_name = proc_info.get("name", "").lower()
                 if process in proc_name:
                     return True
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as err:
-            print(f"Exception occurred: {err}")
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as err:
+                print(f"Exception while processing {proc}: {err}")
+                continue
         return False
 
     # function to check if multiple of the specified processes are running or not
     @staticmethod
     def checkMultipleProcessesRunning(*processNames):
-        running_processes = []
-        for processName in processNames:
-            process = processName.lower()
+        processNames = [p.lower() for p in processNames]
+        running_process_names = set()
+        for proc in psutil.process_iter(attrs=["name"]):
             try:
-                for proc in psutil.process_iter(attrs=["name"]):
-                    proc_info = proc.as_dict(attrs=["name"])
-                    proc_name = proc_info.get("name", "").lower()
-                    if process in proc_name:
-                        running_processes.append(processName)
-                        break
+                proc_name = proc.info["name"].lower()
+                running_process_names.add(proc_name)
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as err:
-                print(f"Exception occurred: {err}")
+                print(f"Exception while processing {proc}: {err}")
+                continue
+        running_processes = [name for name in processNames if name in running_process_names]
         return running_processes
 
     # function that checks if there's more than 1 instance of Tera Term running
@@ -5528,14 +5529,15 @@ class TeraTermUI(customtkinter.CTk):
     def countRunningProcesses(processName):
         count = 0
         process = processName.lower()
-        try:
-            for proc in psutil.process_iter(attrs=["name"]):
+        for proc in psutil.process_iter(attrs=["name"]):
+            try:
                 proc_info = proc.as_dict(attrs=["name"])
                 proc_name = proc_info.get("name", "").lower()
                 if process in proc_name:
                     count += 1
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as err:
-            print(f"Exception occurred: {err}")
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as err:
+                print(f"Exception while processing {proc}: {err}")
+                continue
         return count, (count > 1)
 
     # checks if the specified window exists
