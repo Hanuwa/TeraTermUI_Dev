@@ -71,7 +71,7 @@ def check_and_restore_backup():
                 os.remove(program_backup)
 
 
-def attach_manifest(executable_path, manifest_path, script):
+def attach_manifest(executable_path, manifest_path):
     try:
         sha1_hash = hashlib.sha1()
         with open(executable_path, "rb") as f:
@@ -91,11 +91,7 @@ def attach_manifest(executable_path, manifest_path, script):
 
         subprocess.run(f"mt.exe -manifest {manifest_path} -outputresource:{executable_path};1", check=True)
         updater = os.path.join(project_directory, "updater.exe")
-        if executable_path == updater or script == "installer":
-            success_message = "\nSuccessfully attached manifest\n"
-        else:
-            success_message = "\nSuccessfully attached manifest"
-        print(Fore.GREEN + success_message + Style.RESET_ALL)
+        print(Fore.GREEN + "\nSuccessfully attached manifest\n" + Style.RESET_ALL)
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
         os.remove(program_backup)
@@ -285,7 +281,6 @@ if args.report:
     nuitka_command += f' --report="{output_directory}/compilation_report.html"'
 try:
     updater_exe_path = os.path.join(project_directory, "updater.exe")
-    connection = sqlite3.connect(f"C:/Users/{username}/PycharmProjects/TeraTermUI/database.db")
     updater_dist_path = os.path.join(project_directory, "dist", "updater.exe")
     if not os.path.isfile(updater_exe_path) or not os.path.isfile(updater_dist_path):
         if os.path.isfile(updater_exe_path):
@@ -324,6 +319,7 @@ except Exception as e:
     print(Fore.RED + f"An error occurred: {e}\n" + Style.RESET_ALL)
     sys.exit(1)
 try:
+    connection = sqlite3.connect(f"C:/Users/{username}/PycharmProjects/TeraTermUI/database.db")
     cursor = connection.cursor()
     cursor.execute("DELETE FROM user_data")
     cursor.execute("DELETE FROM saved_classes")
@@ -417,7 +413,7 @@ for version in versions:
         version_path = os.path.join(output_directory, "TeraTermUI.dist", "VERSION.txt")
         manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
         generate_checksum(version_path, executable_path)
-        attach_manifest(executable_path, manifest_path, script="Both")
+        attach_manifest(executable_path, manifest_path)
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
         os.remove(program_backup)
@@ -510,7 +506,7 @@ for version in versions:
                 destination_path = os.path.join(project_directory, "VERSION.txt")
                 shutil.copy(version_path, destination_path)
                 portable_checksum = generate_checksum(version_path, zip_file_path + ".zip")
-                print(Fore.GREEN + "\nSuccessfully completed portable version\n" + Style.RESET_ALL)
+                print(Fore.GREEN + "Successfully completed portable version\n" + Style.RESET_ALL)
                 break
             except OSError as e:
                 if i < retries - 1:
