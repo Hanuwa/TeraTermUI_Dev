@@ -79,7 +79,7 @@ class CTkBaseClass(tkinter.Frame, CTkAppearanceModeBaseClass, CTkScalingBaseClas
 
         # overwrite configure methods of master when master is tkinter widget, so that bg changes get applied on child CTk widget as well
         if isinstance(self.master, (tkinter.Tk, tkinter.Toplevel, tkinter.Frame, tkinter.LabelFrame, ttk.Frame, ttk.LabelFrame, ttk.Notebook)) and not isinstance(self.master, (CTkBaseClass, CTkAppearanceModeBaseClass)):
-            master_old_configure = self.master.config
+            self._master_old_configure = self.master.config
 
             def new_configure(*args, **kwargs):
                 if "bg" in kwargs:
@@ -93,7 +93,7 @@ class CTkBaseClass(tkinter.Frame, CTkAppearanceModeBaseClass, CTkScalingBaseClas
                         self.configure(bg_color=args[0]["bg"])
                     elif "background" in args[0]:
                         self.configure(bg_color=args[0]["background"])
-                master_old_configure(*args, **kwargs)
+                self._master_old_configure(*args, **kwargs)
 
             self.master.config = new_configure
             self.master.configure = new_configure
