@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 10/5/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 10/9/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -3593,6 +3593,7 @@ class TeraTermUI(customtkinter.CTk):
             return
         response = None
         checkbox = None
+        auth_err = False
         translation = self.load_language()
         if not self.error_occurred:
             msg = CTkMessagebox(title=translation["go_back_title"], message=translation["go_back"], icon="question",
@@ -3616,6 +3617,16 @@ class TeraTermUI(customtkinter.CTk):
                     TeraTermUI.terminate_process()
             elif TeraTermUI.window_exists("Tera Term - [disconnected] VT") or \
                     TeraTermUI.window_exists("Tera Term - [connecting...] VT"):
+                if not TeraTermUI.window_exists("SSH Authentication"):
+                    def error():
+                        if not self.disable_audio:
+                            winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/error.wav"), winsound.SND_ASYNC)
+                        CTkMessagebox(title=translation["automation_error_title"],
+                                      message=translation["auth_error"],
+                                      icon="warning", button_width=380)
+
+                    auth_err = True
+                    self.after(50, error)
                 TeraTermUI.terminate_process()
         if self.error_occurred or (response and (response == "Yes" or response == "Sí")):
             self.stop_check_idle_thread()
@@ -3674,7 +3685,7 @@ class TeraTermUI(customtkinter.CTk):
             if self.error_occurred:
                 self.destroy_windows()
                 if self.server_status != "Maintenance message found" and self.server_status != "Timeout" \
-                        and self.tesseract_unzipped:
+                        and self.tesseract_unzipped and not auth_err:
                     def error():
                         if not self.disable_audio:
                             winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/error.wav"), winsound.SND_ASYNC)
