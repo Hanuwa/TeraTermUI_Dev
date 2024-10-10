@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 10/9/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 10/10/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -8934,7 +8934,7 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<Control-w>")
             self.unbind("<Control-W>")
             if not self.not_rebind:
-                self.after(350, self.bind, "<Return>", lambda event: self.submit_event_handler())
+                self.after(150, self.bind, "<Return>", lambda event: self.submit_event_handler())
             else:
                 self.unbind("<Return>")
         elif self.tabview.get() == self.search_tab:
@@ -8956,7 +8956,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.bind("<Control-W>", lambda event: self.keybind_remove_current_table())
             self.in_enroll_frame = False
             self.in_search_frame = True
-            self.after(350, self.bind, "<Return>", lambda event: self.search_event_handler())
+            self.after(150, self.bind, "<Return>", lambda event: self.search_event_handler())
             self.search_scrollbar.bind("<Button-1>", lambda event: self.search_scrollbar.focus_set())
             self.bind("<Up>", lambda event: self.move_up_scrollbar())
             self.bind("<Down>", lambda event: self.move_down_scrollbar())
@@ -8974,7 +8974,7 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<Control-S>")
             self.unbind("<Control-w>")
             self.unbind("<Control-W>")
-            self.after(350, self.bind, "<Return>", lambda event: self.option_menu_event_handler())
+            self.after(150, self.bind, "<Return>", lambda event: self.option_menu_event_handler())
         self.add_key_bindings(event=None)
         self.after(0, self.focus_set)
 
