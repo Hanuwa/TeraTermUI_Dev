@@ -5233,7 +5233,6 @@ class TeraTermUI(customtkinter.CTk):
 
     # saves the information to the database when the app closes
     def save_user_data(self, include_exit=True):
-        # Define the values for each field
         field_values = {
             "host": "uprbay.uprb.edu",
             "language": self.language_menu.get(),
@@ -5244,25 +5243,29 @@ class TeraTermUI(customtkinter.CTk):
             "win_pos_y": self.winfo_y() if not self.state() == "zoomed" else None,
             "exit": self.exit_checkbox_state,
         }
-        for field, value in field_values.items():
-            # Skip 'exit' field if include_exit is False
-            if field == "exit" and not include_exit:
-                continue
-            if value is None:
-                continue
-            # Save 'host' no matter the result as 'uprbay.uprb.edu'
-            if field == "host":
-                host_entry_value = self.host_entry.get().replace(" ", "").lower()
-                if not TeraTermUI.check_host(host_entry_value):
+        try:
+            for field, value in field_values.items():
+                # Skip 'exit' field if include_exit is False
+                if field == "exit" and not include_exit:
                     continue
-            result = self.cursor.execute(f"SELECT {field} FROM user_data").fetchone()
-            if result is None:
-                self.cursor.execute(f"INSERT INTO user_data ({field}) VALUES (?)", (value,))
-            elif result[0] != value:
-                self.cursor.execute(f"UPDATE user_data SET {field} = ? ", (value,))
-        with closing(sqlite3.connect(TeraTermUI.get_absolute_path("database.db"))) as connection:
-            with closing(connection.cursor()) as self.cursor:
-                self.connection.commit()
+                if value is None:
+                    continue
+                # Save 'host' no matter the result as 'uprbay.uprb.edu'
+                if field == "host":
+                    host_entry_value = self.host_entry.get().replace(" ", "").lower()
+                    if not TeraTermUI.check_host(host_entry_value):
+                        continue
+                result = self.cursor.execute(f"SELECT {field} FROM user_data").fetchone()
+                if result is None:
+                    self.cursor.execute(f"INSERT INTO user_data ({field}) VALUES (?)", (value,))
+                elif result[0] != value:
+                    self.cursor.execute(f"UPDATE user_data SET {field} = ? ", (value,))
+            self.connection.commit()
+        except sqlite3.Error as err:
+            print(f"Database error occurred: {err}")
+            self.log_error()
+        finally:
+            self.connection.close()
 
     def keybind_save_classes(self, event=None):
         if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
