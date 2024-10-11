@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 11300 lines of codes, it definitely makes things harder to work with
+# and with over 11200 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -1106,13 +1106,12 @@ class TeraTermUI(customtkinter.CTk):
             print(f"An unexpected error occurred: {str(err)}")
 
     def student_event_handler(self):
-        task_done = threading.Event()
         loading_screen = self.show_loading_screen()
-        self.update_loading_screen(loading_screen, task_done)
-        self.thread_pool.submit(self.student_event, task_done=task_done)
+        future = self.thread_pool.submit(self.student_event)
+        self.update_loading_screen(loading_screen, future)
 
     # Enrolling/Searching classes Frame
-    def student_event(self, task_done):
+    def student_event(self):
         # Deletes these encrypted variables from memory
         def secure_delete(variable):
             if isinstance(variable, bytes):
@@ -1243,7 +1242,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
                 self.log_error()
             finally:
-                task_done.set()
                 translation = self.load_language()
                 self.reset_activity_timer()
                 self.after(100, self.set_focus_to_tkinter)
@@ -1257,6 +1255,7 @@ class TeraTermUI(customtkinter.CTk):
                                       message=translation["automation_error"], icon="warning", button_width=380)
                         self.after(350, self.bind, "<Return>", lambda event: self.student_event_handler())
                         self.error_occurred = False
+                        self.timeout_occurred = False
 
                     self.after(50, error_automation)
                 TeraTermUI.disable_user_input()
@@ -1428,13 +1427,12 @@ class TeraTermUI(customtkinter.CTk):
                                     hover_color=("darkred", "use_default", "use_default"))
         response = msg.get()
         if response[0] == "Yes" or response[0] == "Sí":
-            task_done = threading.Event()
             loading_screen = self.show_loading_screen()
-            self.update_loading_screen(loading_screen, task_done)
-            self.thread_pool.submit(self.submit_event, task_done=task_done)
+            future = self.thread_pool.submit(self.submit_event)
+            self.update_loading_screen(loading_screen, future)
 
     # function for registering/dropping classes
-    def submit_event(self, task_done):
+    def submit_event(self):
         with self.lock_thread:
             try:
                 self.automation_preparations()
@@ -1606,7 +1604,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
                 self.log_error()
             finally:
-                task_done.set()
                 translation = self.load_language()
                 self.after(100, self.set_focus_to_tkinter)
                 if self.error_occurred and not self.timeout_occurred:
@@ -1618,6 +1615,7 @@ class TeraTermUI(customtkinter.CTk):
                         CTkMessagebox(title=translation["automation_error_title"],
                                       message=translation["automation_error"], icon="warning", button_width=380)
                         self.error_occurred = False
+                        self.timeout_occurred = False
 
                     self.after(50, error_automation)
                 if not self.not_rebind:
@@ -1625,14 +1623,13 @@ class TeraTermUI(customtkinter.CTk):
                 TeraTermUI.disable_user_input()
 
     def search_event_handler(self):
-        task_done = threading.Event()
         loading_screen = self.show_loading_screen()
-        self.update_loading_screen(loading_screen, task_done)
-        self.thread_pool.submit(self.search_event, task_done=task_done)
+        future = self.thread_pool.submit(self.search_event)
+        self.update_loading_screen(loading_screen, future)
         self.search_event_completed = False
 
     # function for searching for classes
-    def search_event(self, task_done):
+    def search_event(self):
         with self.lock_thread:
             try:
                 self.automation_preparations()
@@ -1803,7 +1800,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
                 self.log_error()
             finally:
-                task_done.set()
                 translation = self.load_language()
                 self.after(100, self.set_focus_to_tkinter)
                 if self.error_occurred and not self.timeout_occurred:
@@ -1815,6 +1811,7 @@ class TeraTermUI(customtkinter.CTk):
                         CTkMessagebox(title=translation["automation_error_title"],
                                       message=translation["automation_error"], icon="warning", button_width=380)
                         self.error_occurred = False
+                        self.timeout_occurred = False
 
                     self.after(50, error_automation)
                 self.after(350, self.bind, "<Return>", lambda event: self.search_event_handler())
@@ -1915,10 +1912,9 @@ class TeraTermUI(customtkinter.CTk):
             def delayed_refresh_semester():
                 refresh_semester = self.check_refresh_semester()
                 if refresh_semester:
-                    refresh_task_done = threading.Event()
                     refresh_loading_screen = self.show_loading_screen()
-                    self.update_loading_screen(refresh_loading_screen, refresh_task_done)
-                    self.thread_pool.submit(self.my_classes_event, self.dialog_input, task_done=refresh_task_done)
+                    refresh_future = self.thread_pool.submit(self.my_classes_event, self.dialog_input)
+                    self.update_loading_screen(refresh_loading_screen, refresh_future)
                     self.my_classes_event_completed = False
 
             self.after(500, delayed_refresh_semester)
@@ -1939,16 +1935,15 @@ class TeraTermUI(customtkinter.CTk):
             self.dialog.bind("<Escape>", lambda event: self.dialog.destroy())
             dialog_input = self.dialog.get_input()
             if dialog_input is not None:
-                task_done = threading.Event()
                 loading_screen = self.show_loading_screen()
-                self.update_loading_screen(loading_screen, task_done)
-                self.thread_pool.submit(self.my_classes_event, dialog_input, task_done=task_done)
+                future = self.thread_pool.submit(self.my_classes_event, self.dialog_input)
+                self.update_loading_screen(loading_screen, future)
                 self.my_classes_event_completed = False
             else:
                 self.dialog.destroy()
 
     # function for seeing the classes you are currently enrolled for
-    def my_classes_event(self, dialog_input, task_done):
+    def my_classes_event(self, dialog_input):
         with self.lock_thread:
             try:
                 self.automation_preparations()
@@ -2015,7 +2010,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
                 self.log_error()
             finally:
-                task_done.set()
                 translation = self.load_language()
                 self.after(100, self.set_focus_to_tkinter)
                 if self.error_occurred and not self.timeout_occurred:
@@ -2028,6 +2022,7 @@ class TeraTermUI(customtkinter.CTk):
                                       message=translation["automation_error"], icon="warning", button_width=380)
                         self.switch_tab()
                         self.error_occurred = False
+                        self.timeout_occurred = False
 
                     self.after(50, error_automation)
                 TeraTermUI.disable_user_input()
@@ -2293,13 +2288,12 @@ class TeraTermUI(customtkinter.CTk):
             if response[0] != "Yes" and response[0] != "Sí":
                 return
         self.error_auto_enroll = False
-        task_done = threading.Event()
         loading_screen = self.show_loading_screen()
-        self.update_loading_screen(loading_screen, task_done)
-        self.thread_pool.submit(self.submit_multiple_event, task_done=task_done)
+        future = self.thread_pool.submit(self.submit_multiple_event)
+        self.update_loading_screen(loading_screen, future)
 
     # function that enrolls multiple classes with one click
-    def submit_multiple_event(self, task_done):
+    def submit_multiple_event(self):
         with self.lock_thread:
             try:
                 self.automation_preparations()
@@ -2453,7 +2447,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
                 self.log_error()
             finally:
-                task_done.set()
                 translation = self.load_language()
                 self.after(100, self.set_focus_to_tkinter)
                 if not self.error_auto_enroll:
@@ -2467,6 +2460,7 @@ class TeraTermUI(customtkinter.CTk):
                         CTkMessagebox(title=translation["automation_error_title"],
                                       message=translation["automation_error"], icon="question", button_width=380)
                         self.error_occurred = False
+                        self.timeout_occurred = False
 
                     self.after(50, error_automation)
                 if not self.not_rebind:
@@ -2474,14 +2468,13 @@ class TeraTermUI(customtkinter.CTk):
                 TeraTermUI.disable_user_input()
 
     def option_menu_event_handler(self):
-        task_done = threading.Event()
         loading_screen = self.show_loading_screen()
-        self.update_loading_screen(loading_screen, task_done)
-        self.thread_pool.submit(self.option_menu_event, task_done=task_done)
+        future = self.thread_pool.submit(self.option_menu_event)
+        self.update_loading_screen(loading_screen, future)
         self.option_menu_event_completed = False
 
     # changes to the respective screen the user chooses
-    def option_menu_event(self, task_done):
+    def option_menu_event(self):
         with self.lock_thread:
             try:
                 self.automation_preparations()
@@ -2845,7 +2838,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
                 self.log_error()
             finally:
-                task_done.set()
                 translation = self.load_language()
                 if self.focus_or_not or self.error_occurred:
                     self.after(100, self.set_focus_to_tkinter)
@@ -2861,6 +2853,7 @@ class TeraTermUI(customtkinter.CTk):
                         CTkMessagebox(title=translation["automation_error_title"],
                                       message=translation["automation_error"], icon="warning", button_width=380)
                         self.error_occurred = False
+                        self.timeout_occurred = False
 
                     self.after(50, error_automation)
                 self.after(350, self.bind, "<Return>", lambda event: self.option_menu_event_handler())
@@ -2888,14 +2881,13 @@ class TeraTermUI(customtkinter.CTk):
                        translation["tera_term_not_running"])
 
     def go_next_page_handler(self):
-        task_done = threading.Event()
         loading_screen = self.show_loading_screen()
-        self.update_loading_screen(loading_screen, task_done)
-        self.thread_pool.submit(self.go_next_page_event, task_done=task_done)
+        future = self.thread_pool.submit(self.go_next_page_event)
+        self.update_loading_screen(loading_screen, future)
         self.go_next_event_completed = False
 
     # go through each page of the different screens
-    def go_next_page_event(self, task_done):
+    def go_next_page_event(self):
         with self.lock_thread:
             try:
                 self.automation_preparations()
@@ -2934,7 +2926,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
                 self.log_error()
             finally:
-                task_done.set()
                 translation = self.load_language()
                 self.reset_activity_timer()
                 if self.focus_or_not:
@@ -2950,6 +2941,7 @@ class TeraTermUI(customtkinter.CTk):
                         CTkMessagebox(title=translation["automation_error_title"],
                                       message=translation["automation_error"], icon="warning", button_width=380)
                         self.error_occurred = False
+                        self.timeout_occurred = False
 
                     self.after(50, error_automation)
                 self.after(350, self.bind, "<Return>", lambda event: self.option_menu_event_handler())
@@ -2957,14 +2949,13 @@ class TeraTermUI(customtkinter.CTk):
                 self.go_next_event_completed = True
 
     def go_next_search_handler(self):
-        task_done = threading.Event()
         loading_screen = self.show_loading_screen()
-        self.update_loading_screen(loading_screen, task_done)
-        self.thread_pool.submit(self.search_go_next, task_done=task_done)
+        future = self.thread_pool.submit(self.search_go_next)
+        self.update_loading_screen(loading_screen, future)
         self.search_go_next_event_completed = False
 
     # Goes through more sections available for the searched class
-    def search_go_next(self, task_done):
+    def search_go_next(self):
         with self.lock_thread:
             try:
                 translation = self.load_language()
@@ -3016,7 +3007,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
                 self.log_error()
             finally:
-                task_done.set()
                 translation = self.load_language()
                 self.after(100, self.set_focus_to_tkinter)
                 if self.error_occurred and not self.timeout_occurred:
@@ -3028,6 +3018,7 @@ class TeraTermUI(customtkinter.CTk):
                         CTkMessagebox(title=translation["automation_error_title"],
                                       message=translation["automation_error"], icon="warning", button_width=380)
                         self.error_occurred = False
+                        self.timeout_occurred = False
 
                     self.after(50, error_automation)
                 self.after(350, self.bind, "<Return>", lambda event: self.search_event_handler())
@@ -3056,13 +3047,12 @@ class TeraTermUI(customtkinter.CTk):
         self.reset_activity_timer()
 
     def auth_event_handler(self):
-        task_done = threading.Event()
         loading_screen = self.show_loading_screen()
-        self.update_loading_screen(loading_screen, task_done)
-        self.thread_pool.submit(self.auth_event, task_done=task_done)
+        future = self.thread_pool.submit(self.auth_event)
+        self.update_loading_screen(loading_screen, future)
 
     # Authentication required frame, where user is asked to input his username
-    def auth_event(self, task_done):
+    def auth_event(self):
         with self.lock_thread:
             try:
                 self.automation_preparations()
@@ -3144,7 +3134,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
                 self.log_error()
             finally:
-                task_done.set()
                 self.reset_activity_timer()
                 self.after(100, self.set_focus_to_tkinter)
                 if self.server_status == "Maintenance message found" or self.server_status == "Timeout":
@@ -3286,14 +3275,13 @@ class TeraTermUI(customtkinter.CTk):
         return False
 
     def login_event_handler(self):
-        task_done = threading.Event()
         loading_screen = self.show_loading_screen()
-        self.update_loading_screen(loading_screen, task_done)
-        self.thread_pool.submit(self.login_event, task_done=task_done)
+        future = self.thread_pool.submit(self.login_event)
+        self.update_loading_screen(loading_screen, future)
 
     # logs in the user to the respective university, opens up Tera Term
     @measure_time(threshold=12)
-    def login_event(self, task_done):
+    def login_event(self):
         with self.lock_thread:
             try:
                 new_connection = False
@@ -3404,7 +3392,6 @@ class TeraTermUI(customtkinter.CTk):
                     self.error_occurred = True
                     self.log_error()
             finally:
-                task_done.set()
                 translation = self.load_language()
                 self.after(100, self.set_focus_to_tkinter)
                 if self.error_occurred and not self.timeout_occurred:
@@ -3419,6 +3406,7 @@ class TeraTermUI(customtkinter.CTk):
                                       button_width=380)
                         self.after(350, self.bind, "<Return>", lambda event: self.login_event_handler())
                         self.error_occurred = False
+                        self.timeout_occurred = False
 
                     self.after(50, error_automation)
                 TeraTermUI.disable_user_input()
@@ -4348,10 +4336,9 @@ class TeraTermUI(customtkinter.CTk):
                                     hover_color=("darkred", "use_default", "use_default"))
                 response = msg.get()
                 if response[0] == "Yes" or response[0] == "Sí":
-                    task_done = threading.Event()
                     loading_screen = self.show_loading_screen()
-                    self.update_loading_screen(loading_screen, task_done)
-                    self.thread_pool.submit(self.auto_enroll_event, task_done=task_done)
+                    future = self.thread_pool.submit(self.auto_enroll_event)
+                    self.update_loading_screen(loading_screen, future)
                 else:
                     self.auto_enroll.deselect()
             elif self.auto_enroll.get() == "off":
@@ -4370,7 +4357,7 @@ class TeraTermUI(customtkinter.CTk):
             self.auto_enroll.configure(state="disabled")
 
     # Auto-Enroll classes
-    def auto_enroll_event(self, task_done):
+    def auto_enroll_event(self):
         from pytz import timezone
 
         with self.lock_thread:
@@ -4485,7 +4472,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
                 self.log_error()
             finally:
-                task_done.set()
                 translation = self.load_language()
                 self.after(100, self.set_focus_to_tkinter)
                 if self.error_occurred and not self.timeout_occurred:
@@ -4498,6 +4484,7 @@ class TeraTermUI(customtkinter.CTk):
                                       message=translation["automation_error"], icon="warning", button_width=380)
                         self.auto_enroll.deselect()
                         self.error_occurred = False
+                        self.timeout_occurred = False
 
                     self.after(50, error_automation)
                 self.after(350, self.bind, "<Return>", lambda event: self.submit_multiple_event_handler())
@@ -5404,26 +5391,24 @@ class TeraTermUI(customtkinter.CTk):
         return "break"
 
     # tells the loading screen when it should stop and close
-    def update_loading_screen(self, loading_screen, task_done):
+    def update_loading_screen(self, loading_screen, future):
         current_time = time.time()
-        if task_done.is_set() or current_time - self.loading_screen_start_time > 90:
+        if future.done() or current_time - self.loading_screen_start_time > 90:
             self.attributes("-disabled", False)
             self.update_widgets()
             if self.loading_screen is not None and self.loading_screen.winfo_exists():
                 self.loading_screen.withdraw()
             self.progress_bar.reset()
             self.loading_screen_status = None
-            if current_time - self.loading_screen_start_time > 60:
-                task_done.set()
+            if current_time - self.loading_screen_start_time > 90:
                 translation = self.load_language()
                 self.timeout_occurred = True
                 if not self.disable_audio:
                     winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/error.wav"), winsound.SND_ASYNC)
                 CTkMessagebox(title=translation["automation_error_title"], message=translation["timeout_error"],
                               icon="warning", button_width=380)
-                self.timeout_occurred = False
         else:
-            self.after(100, self.update_loading_screen, loading_screen, task_done)
+            self.after(100, self.update_loading_screen, loading_screen, future)
 
     def disable_widgets(self, container):
         stack = [container]
@@ -7278,12 +7263,11 @@ class TeraTermUI(customtkinter.CTk):
                             hover_color=("darkred", "use_default", "use_default"))
         response = msg.get()
         if response[0] == "Yes" or response[0] == "Sí":
-            task_done = threading.Event()
             loading_screen = self.show_loading_screen()
-            self.update_loading_screen(loading_screen, task_done)
-            self.thread_pool.submit(self.submit_modify_classes, task_done=task_done)
+            future = self.thread_pool.submit(self.submit_modify_classes)
+            self.update_loading_screen(loading_screen, future)
 
-    def submit_modify_classes(self, task_done):
+    def submit_modify_classes(self):
         with self.lock_thread:
             try:
                 self.automation_preparations()
@@ -7586,7 +7570,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
                 self.log_error()
             finally:
-                task_done.set()
                 translation = self.load_language()
                 self.after(100, self.set_focus_to_tkinter)
                 if self.error_occurred and not self.timeout_occurred:
@@ -7598,6 +7581,7 @@ class TeraTermUI(customtkinter.CTk):
                         CTkMessagebox(title=translation["automation_error_title"],
                                       message=translation["automation_error"], icon="warning", button_width=380)
                         self.error_occurred = False
+                        self.timeout_occurred = False
 
                     self.after(50, error_automation)
                 if not self.not_rebind:
@@ -7922,7 +7906,6 @@ class TeraTermUI(customtkinter.CTk):
                 print(f"Failed to launch the updater script: {err}")
                 self.log_error()
                 webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
-
     # Deletes Tesseract OCR and tera term config file from the temp folder
     def cleanup_temp(self):
         tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
@@ -8215,6 +8198,7 @@ class TeraTermUI(customtkinter.CTk):
         TeraTermUI.check_and_update_border_color(self)
         self.destroy_tooltip()
         TeraTermUI.disable_user_input("on")
+        self.timeout_occurred = False
 
     # function that changes the theme of the application
     def change_appearance_mode_event(self, new_appearance_mode: str):
@@ -8385,13 +8369,12 @@ class TeraTermUI(customtkinter.CTk):
 
     def check_update_app_handler(self):
         self.updating_app = True
-        task_done = threading.Event()
         loading_screen = self.show_loading_screen()
-        self.update_loading_screen(loading_screen, task_done)
-        self.thread_pool.submit(self.check_update_app, task_done=task_done)
+        future = self.thread_pool.submit(self.check_update_app)
+        self.update_loading_screen(loading_screen, future)
 
     # will tell the user that there's a new update available for the application
-    def check_update_app(self, task_done):
+    def check_update_app(self):
         lang = self.language_menu.get()
         translation = self.load_language()
         if asyncio.run(self.test_connection()):
@@ -8404,7 +8387,6 @@ class TeraTermUI(customtkinter.CTk):
             else:
                 self.cursor.execute("UPDATE user_data SET update_date=?", (current_date,))
             if latest_version is None:
-                task_done.set()
 
                 def error():
                     print("No latest release found. Starting app with the current version")
@@ -8416,7 +8398,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.after(50, error)
                 return
             if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION):
-                task_done.set()
 
                 def update():
                     current = None
@@ -8463,7 +8444,6 @@ class TeraTermUI(customtkinter.CTk):
 
                 self.after(50, update)
             else:
-                task_done.set()
 
                 def up_to_date():
                     if not self.disable_audio:
@@ -8475,7 +8455,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.after(50, up_to_date)
         else:
             self.updating_app = False
-            task_done.set()
 
     def fix_execution_event_handler(self):
         translation = self.load_language()
@@ -8488,14 +8467,13 @@ class TeraTermUI(customtkinter.CTk):
                                 hover_color=("darkred", "use_default", "use_default"))
             response = msg.get()
             if response[0] == "Yes" or response[0] == "Sí":
-                task_done = threading.Event()
                 loading_screen = self.show_loading_screen()
-                self.update_loading_screen(loading_screen, task_done)
-                self.thread_pool.submit(self.fix_execution, task_done=task_done)
+                future = self.thread_pool.submit(self.fix_execution)
+                self.update_loading_screen(loading_screen, future)
                 self.fix_execution_event_completed = False
 
     # If user messes up the execution of the program this can solve it and make program work as expected
-    def fix_execution(self, task_done):
+    def fix_execution(self):
         with self.lock_thread:
             try:
                 translation = self.load_language()
@@ -8532,14 +8510,13 @@ class TeraTermUI(customtkinter.CTk):
                                translation["fix_after"])
             except Exception as err:
                 print("An error occurred: ", err)
-                error_occurred = True
+                self.error_occurred = True
                 self.log_error()
             finally:
-                task_done.set()
                 self.after(100, self.set_focus_to_tkinter)
                 self.after(0, self.switch_tab)
                 translation = self.load_language()
-                if error_occurred:
+                if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
                         self.destroy_windows()
                         if not self.disable_audio:
@@ -8547,6 +8524,8 @@ class TeraTermUI(customtkinter.CTk):
                                                winsound.SND_ASYNC)
                         CTkMessagebox(title=translation["automation_error_title"],
                                       message=translation["automation_error"], icon="warning", button_width=380)
+                        self.error_occurred = False
+                        self.timeout_occurred = False
 
                     self.after(50, error_automation)
                 TeraTermUI.disable_user_input()
@@ -9181,10 +9160,9 @@ class TeraTermUI(customtkinter.CTk):
                         feedback = self.feedback_text.get("1.0", customtkinter.END).strip()
                         if feedback:
                             self.sending_feedback = True
-                            task_done = threading.Event()
                             loading_screen = self.show_loading_screen()
-                            self.update_loading_screen(loading_screen, task_done)
-                            self.thread_pool.submit(self.submit_feedback, task_done=task_done)
+                            future = self.thread_pool.submit(self.submit_feedback)
+                            self.update_loading_screen(loading_screen, future)
                             self.submit_feedback_event_completed = False
                         else:
                             if not self.connection_error:
@@ -9227,7 +9205,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.after(50, show_error)
 
     # Submits feedback from the user to a Google sheet
-    def submit_feedback(self, task_done):
+    def submit_feedback(self):
         with self.lock_thread:
             try:
                 translation = self.load_language()
@@ -9266,7 +9244,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
                 self.log_error()
             finally:
-                task_done.set()
                 self.submit_feedback_event_completed = True
 
     @staticmethod
@@ -9320,10 +9297,9 @@ class TeraTermUI(customtkinter.CTk):
         response = messagebox.askyesnocancel("Tera Term", message)
         if response is True:
             self.auto_search = True
-            task_done = threading.Event()
             loading_screen = self.show_loading_screen()
-            self.update_loading_screen(loading_screen, task_done)
-            self.thread_pool.submit(self.change_location_event, task_done=task_done)
+            future = self.thread_pool.submit(self.change_location_event)
+            self.update_loading_screen(loading_screen, future)
         elif response is False:
             self.manually_change_location()
         else:
@@ -9333,7 +9309,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.files.configure(state="normal")
 
     # Automatically tries to find where the Tera Term application is located
-    def change_location_event(self, task_done):
+    def change_location_event(self):
         lang = self.language_menu.get()
         translation = self.load_language()
         tera_term_path = TeraTermUI.find_ttermpro()
@@ -9353,7 +9329,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.cursor.execute("UPDATE user_data SET config=?", (self.teraterm_file,))
                 self.cursor.execute("UPDATE user_data SET directory=?", (self.teraterm_directory,))
             self.connection.commit()
-            task_done.set()
             self.changed_location = True
             self.after(100, self.show_success_message, 350, 265, translation["tera_term_success"])
             self.edit_teraterm_ini(self.teraterm_file)
@@ -9362,7 +9337,6 @@ class TeraTermUI(customtkinter.CTk):
             if self.help is not None and self.help.winfo_exists():
                 self.files.configure(state="normal")
         else:
-            task_done.set()
             message_english = ("Tera Term executable was not found on the main drive.\n\n"
                                "the application is probably not installed\nor it's located on another drive")
             message_spanish = ("No se encontró el ejecutable de Tera Term en la unidad principal.\n\n"
