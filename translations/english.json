@@ -165,7 +165,7 @@
 	"fix": "        Fix it",
 	"fix_messagebox_title": "Fix", 
 	"fix_messagebox": "This button should only be used to fix the issue mentioned, are you sure you want to do it?\n\nMight be better restarting application",
-	"fix_after": "The problem is usually caused because\nof user interacting directly\nwith Tera Term",
+	"fix_after": "The problem is usually caused\nbecause of user interacting\ndirectly with Tera Term",
 	
 	"error": "Error",
 	"welcome_title": "Welcome",
