@@ -194,7 +194,7 @@
 	"warning_title": "Warning Information",
 	"1PL_pdata": "To view any personal data, please visit the UPR Portal. Currently, this app does not support modifying the information provided here\n\n(This will probably not change in the future)",
 	"4SP_ext": "To ask for a extension you should visit the miuprb's website, this app does not support the submission for extensions\n\n(This will probably not change in the future)",
-	"timeout_error": "Error while performing and automating tasks! The task took too long to complete so it was forced to end",
+	"timeout_error": "Error while performing and automating tasks! The operation took too long to complete so it was forced to end\n\nRestart of the application is recommended",
 	"success_enrolled": "Enrolled class successfully",
 	"success_dropped": "Dropped class successfully",
 	"success_modify": "Modified the enrolled\nclasses succesfully",
