@@ -194,7 +194,7 @@
 	"warning_title": "Información de la Advertencia",
 	"1PL_pdata": "Para ver cualquier dato personal, por favor visite el Portal UPR. Actualmente, esta aplicación no permite modificar la información proporcionada aquí\n\n(Es poco probable que esto cambie en el futuro)",
 	"4SP_ext": "Para solicitar una prórroga, por favor visite el sitio web de MIUPRB. Esta aplicación no permite la presentación de solicitudes de prórroga\n\n(Es poco probable que esto cambie en el futuro)",
-	"timeout_error": "¡Error mientras se realizaban y automatizaban tareas! La tarea tardó demasiado en completarse, por lo que se forzó su finalización",
+	"timeout_error": "¡Error mientras se realizaban y automatizaban tareas! La operación tardó demasiado en completarse, por lo que se forzó su finalización\n\nSe recomienda reiniciar la aplicación",
 	"success_enrolled": "Clase registrada exitósamente",
 	"success_dropped": "Clase abandonada exitósamente",
 	"success_modify": "Modificó las clases\nmatriculadas con éxito",
