@@ -573,6 +573,7 @@ class TeraTermUI(customtkinter.CTk):
         self.found_latest_semester = False
         self.error_occurred = False
         self.timeout_occurred = False
+        self.show_fix_exe = False
         self.can_edit = False
         self.original_font = None
         self.original_color = None
@@ -8505,9 +8506,10 @@ class TeraTermUI(customtkinter.CTk):
                 self.classes_status.clear()
                 self.cursor.execute("UPDATE user_data SET default_semester=NULL")
                 self.connection.commit()
-                if not self.error_occurred:
-                    self.after(100, self.show_information_message, 370, 250,
+                if not self.error_occurred and not self.show_fix_exe:
+                    self.after(100, self.show_information_message, 355, 235,
                                translation["fix_after"])
+                    self.show_fix_exe = True
             except Exception as err:
                 print("An error occurred: ", err)
                 self.error_occurred = True
