@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 10/10/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 10/11/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1936,7 +1936,7 @@ class TeraTermUI(customtkinter.CTk):
             dialog_input = self.dialog.get_input()
             if dialog_input is not None:
                 loading_screen = self.show_loading_screen()
-                future = self.thread_pool.submit(self.my_classes_event, self.dialog_input)
+                future = self.thread_pool.submit(self.my_classes_event, dialog_input)
                 self.update_loading_screen(loading_screen, future)
                 self.my_classes_event_completed = False
             else:
