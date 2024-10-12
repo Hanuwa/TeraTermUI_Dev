@@ -41,7 +41,7 @@ english.TeraTermInstallFailed=Tera Term installation failed.
 spanish.TeraTermInstallFailed=La instalación de Tera Term falló.
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 Name: "teraterm"; Description: "{cm:teraterm}"; GroupDescription: "Additional installations"; Flags: unchecked
 
 [Files]
