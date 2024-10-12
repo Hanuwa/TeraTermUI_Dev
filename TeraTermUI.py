@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 10/11/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 10/12/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -5780,6 +5780,7 @@ class TeraTermUI(customtkinter.CTk):
         self.focus_set()
         self.clipboard_clear()
         self.clipboard_append(cell_value)
+        self.update_idletasks()
 
         # Close existing tooltip if any
         self.destroy_tooltip()
@@ -6144,10 +6145,11 @@ class TeraTermUI(customtkinter.CTk):
             return total_minutes
 
         def parse_av_value(av_value):
-            if av_value in ["998", "999"]:
-                return float("inf")
             try:
-                return int(av_value)
+                av_int = int(av_value)
+                if 100 <= av_int <= 999:
+                    return float("inf")
+                return av_int
             except ValueError:
                 return float("inf")
 
@@ -6169,18 +6171,15 @@ class TeraTermUI(customtkinter.CTk):
                 non_standard_positions.append((i, row))
 
         def sort_key(entry, primary_key, secondary_key):
-            if primary_key == time_key:
-                primary_value = get_time_minutes(entry[1])
-            else:
-                primary_value = parse_av_value(entry[1].get(primary_key, ""))
+            primary_value = get_time_minutes(entry[1]) if primary_key == time_key else parse_av_value(
+                entry[1].get(primary_key, ""))
+            secondary_value = get_time_minutes(entry[1]) if secondary_key == time_key else parse_av_value(
+                entry[1].get(secondary_key, ""))
 
             if primary_value == float("inf"):
                 primary_value = float("-inf") if reverse_sort else float("inf")
-
-            if secondary_key == time_key:
-                secondary_value = get_time_minutes(entry[1])
-            else:
-                secondary_value = parse_av_value(entry[1].get(secondary_key, ""))
+            if secondary_value == float("inf"):
+                secondary_value = float("-inf") if reverse_sort else float("inf")
 
             return primary_value, secondary_value
 
@@ -6261,10 +6260,11 @@ class TeraTermUI(customtkinter.CTk):
                 return total_minutes
 
             def parse_av_value(av_value):
-                if av_value in ["998", "999"]:
-                    return float("inf")
                 try:
-                    return int(av_value)
+                    av_int = int(av_value)
+                    if 100 <= av_int <= 999:
+                        return float("inf")
+                    return av_int
                 except ValueError:
                     return float("inf")
 
@@ -6293,6 +6293,9 @@ class TeraTermUI(customtkinter.CTk):
 
                 if primary_value == float("inf"):
                     primary_value = float("-inf") if reverse_sort else float("inf")
+                if secondary_value == float("inf"):
+                    secondary_value = float("-inf") if reverse_sort else float("inf")
+
                 return primary_value, secondary_value
 
             reverse_sort = False
@@ -7888,28 +7891,8 @@ class TeraTermUI(customtkinter.CTk):
                             hover_color=("darkred", "use_default", "use_default"))
         response = msg.get()
         if response[0] == "Yes" or response[0] == "Sí":
-            try:
-                updater_exe_dest = None
-                appdata_path = None
-                sys_path = Path(sys.path[0]).resolve()
-                if self.mode == "Portable":
-                    updater_exe_src = Path(sys.path[0]) / "updater.exe"
-                    updater_exe_dest = Path(self.app_temp_dir) / "updater.exe"
-                    shutil.copy2(str(updater_exe_src), str(updater_exe_dest))
-                elif self.mode == "Installation":
-                    if self.scope == "all_users":
-                        appdata_path = os.environ.get("PROGRAMDATA")
-                    elif self.scope == "current_user":
-                        appdata_path = os.environ.get("APPDATA")
-                    updater_exe_dest = os.path.join(appdata_path, "TeraTermUI", "updater.exe")
-                updater_args = [str(updater_exe_dest), self.mode, latest_version,
-                                str(self.update_db), sys_path]
-                subprocess.Popen(updater_args)
-                self.direct_close()
-            except Exception as err:
-                print(f"Failed to launch the updater script: {err}")
-                self.log_error()
-                webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
+            self.run_updater(latest_version)
+
     # Deletes Tesseract OCR and tera term config file from the temp folder
     def cleanup_temp(self):
         tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
@@ -8423,28 +8406,7 @@ class TeraTermUI(customtkinter.CTk):
                                         hover_color=("darkred", "use_default", "use_default"))
                     response = msg.get()
                     if response[0] == "Yes" or response[0] == "Sí":
-                        try:
-                            updater_exe_dest = None
-                            appdata_path = None
-                            sys_path = Path(sys.path[0]).resolve()
-                            if self.mode == "Portable":
-                                updater_exe_src = Path(sys.path[0]) / "updater.exe"
-                                updater_exe_dest = Path(self.app_temp_dir) / "updater.exe"
-                                shutil.copy2(str(updater_exe_src), str(updater_exe_dest))
-                            elif self.mode == "Installation":
-                                if self.scope == "all_users":
-                                    appdata_path = os.environ.get("PROGRAMDATA")
-                                elif self.scope == "current_user":
-                                    appdata_path = os.environ.get("APPDATA")
-                                updater_exe_dest = os.path.join(appdata_path, "TeraTermUI", "updater.exe")
-                            updater_args = [str(updater_exe_dest), self.mode, latest_version,
-                                            str(self.update_db), sys_path]
-                            subprocess.Popen(updater_args)
-                            self.direct_close()
-                        except Exception as err:
-                            print(f"Failed to launch the updater script: {err}")
-                            self.log_error()
-                            webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
+                        self.run_updater(latest_version)
 
                 self.after(50, update)
             else:
@@ -8460,6 +8422,30 @@ class TeraTermUI(customtkinter.CTk):
         else:
             self.updating_app = False
 
+    def run_updater(self, latest_version):
+         try:
+            updater_exe_dest = None
+            appdata_path = None
+            sys_path = Path(sys.path[0]).resolve()
+            if self.mode == "Portable":
+                updater_exe_src = Path(sys.path[0]) / "updater.exe"
+                updater_exe_dest = Path(self.app_temp_dir) / "updater.exe"
+                shutil.copy2(str(updater_exe_src), str(updater_exe_dest))
+            elif self.mode == "Installation":
+                if self.scope == "all_users":
+                    appdata_path = os.environ.get("PROGRAMDATA")
+                elif self.scope == "current_user":
+                    appdata_path = os.environ.get("APPDATA")
+                updater_exe_dest = os.path.join(appdata_path, "TeraTermUI", "updater.exe")
+            updater_args = [str(updater_exe_dest), self.mode, latest_version,
+                            str(self.update_db), sys_path]
+            subprocess.Popen(updater_args)
+            self.direct_close()
+        except Exception as err:
+            print(f"Failed to launch the updater script: {err}")
+            self.log_error()
+            webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
+    
     def fix_execution_event_handler(self):
         translation = self.load_language()
         if TeraTermUI.checkIfProcessRunning("ttermpro"):
@@ -10445,6 +10431,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
             selected_text = self.selection_get()
             self.clipboard_clear()
             self.clipboard_append(selected_text)
+            self.update_idletasks()
         except tk.TclError:
             print("No text selected to copy")
 
@@ -10737,6 +10724,7 @@ class CustomEntry(customtkinter.CTkEntry):
             selected_text = self.selection_get()
             self.clipboard_clear()
             self.clipboard_append(selected_text)
+            self.update_idletasks()
         except tk.TclError:
             print("No text selected to copy")
 
@@ -10970,6 +10958,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
             selected_text = self.selection_get()
             self.clipboard_clear()
             self.clipboard_append(selected_text)
+            self.update_idletasks()
         except tk.TclError:
             print("No text selected to copy")
 
