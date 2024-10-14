@@ -661,7 +661,6 @@ class TeraTermUI(customtkinter.CTk):
             self.cursor = self.connection.cursor()
             self.check_database_lock()
             self.protocol("WM_DELETE_WINDOW", self.on_closing)
-            self.bind("<Visibility>", self.on_visibility)
             self.bind("<Control-space>", lambda event: self.focus_set())
             self.bind("<Escape>", lambda event: self.on_closing())
             self.bind("<Alt-F4>", lambda event: self.direct_close())
@@ -842,6 +841,7 @@ class TeraTermUI(customtkinter.CTk):
         self.destroy_windows()
         self.slideshow_frame.pause_cycle()
         self.intro_box.stop_autoscroll(event=None)
+        self.bind("<Visibility>", self.on_visibility)
         if TeraTermUI.window_exists(translation["dialog_title"]):
             my_classes_hwnd = win32gui.FindWindow(None, translation["dialog_title"])
             win32gui.PostMessage(my_classes_hwnd, WM_CLOSE, 0, 0)
@@ -884,6 +884,7 @@ class TeraTermUI(customtkinter.CTk):
             return
 
         translation = self.load_language()
+        self.unbind("<Visibility>")
         self.iconify()
         if self.main_menu:
             self.slideshow_frame.resume_cycle()
