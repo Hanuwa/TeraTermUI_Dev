@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 10/12/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 10/14/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -661,6 +661,7 @@ class TeraTermUI(customtkinter.CTk):
             self.cursor = self.connection.cursor()
             self.check_database_lock()
             self.protocol("WM_DELETE_WINDOW", self.on_closing)
+            self.bind("<Visibility>", self.on_visibility)
             self.bind("<Control-space>", lambda event: self.focus_set())
             self.bind("<Escape>", lambda event: self.on_closing())
             self.bind("<Alt-F4>", lambda event: self.direct_close())
@@ -839,6 +840,8 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language()
         self.withdraw()
         self.destroy_windows()
+        self.slideshow_frame.pause_cycle()
+        self.intro_box.stop_autoscroll(event=None)
         if TeraTermUI.window_exists(translation["dialog_title"]):
             my_classes_hwnd = win32gui.FindWindow(None, translation["dialog_title"])
             win32gui.PostMessage(my_classes_hwnd, WM_CLOSE, 0, 0)
@@ -882,6 +885,8 @@ class TeraTermUI(customtkinter.CTk):
 
         translation = self.load_language()
         self.iconify()
+        if self.main_menu:
+            self.slideshow_frame.resume_cycle()
         if self.status is not None and self.status.winfo_exists():
             self.status.iconify()
         if self.help is not None and self.help.winfo_exists():
@@ -898,6 +903,10 @@ class TeraTermUI(customtkinter.CTk):
         if hwnd and not win32gui.IsWindowVisible(hwnd):
             win32gui.ShowWindow(hwnd, SW_SHOW)
             win32gui.ShowWindow(hwnd, SW_RESTORE)
+
+    def on_visibility(self, event):
+        if self.main_menu:
+            self.slideshow_frame.resume_cycle()
 
     def direct_close_on_tray(self):
         if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
@@ -8423,7 +8432,7 @@ class TeraTermUI(customtkinter.CTk):
             self.updating_app = False
 
     def run_updater(self, latest_version):
-         try:
+        try:
             updater_exe_dest = None
             appdata_path = None
             sys_path = Path(sys.path[0]).resolve()
@@ -8445,7 +8454,7 @@ class TeraTermUI(customtkinter.CTk):
             print(f"Failed to launch the updater script: {err}")
             self.log_error()
             webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
-    
+
     def fix_execution_event_handler(self):
         translation = self.load_language()
         if TeraTermUI.checkIfProcessRunning("ttermpro"):
@@ -10207,7 +10216,6 @@ class CustomTextBox(customtkinter.CTkTextbox):
         if self.auto_scroll:
             self.update_text()
 
-        # Event binding
         self.bind("<Button-1>", self.stop_autoscroll)
         self.bind("<MouseWheel>", self.stop_autoscroll)
         self.bind("<FocusIn>", self.disable_slider_keys)
@@ -10224,16 +10232,14 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self._undo_stack = deque([initial_state], maxlen=100)
         self._redo_stack = deque(maxlen=100)
 
-        # Bind Control-Z to undo and Control-Y to redo
         self.bind("<Control-z>", self.undo)
         self.bind("<Control-Z>", self.undo)
         self.bind("<Control-y>", self.redo)
         self.bind("<Control-Y>", self.redo)
 
-        # Bind Ctrl+V to custom paste method
         self.bind("<Control-v>", self.custom_paste)
         self.bind("<Control-V>", self.custom_paste)
-        # Bind Ctrl+X to custom cut method
+
         self.bind("<Control-x>", self.custom_cut)
         self.bind("<Control-X>", self.custom_cut)
 
@@ -10293,10 +10299,10 @@ class CustomTextBox(customtkinter.CTkTextbox):
         if self.auto_scroll:
             _, yview_fraction = self.yview()
             if yview_fraction >= 1.0:
-                self.yview_moveto(0)  # Reset to the top
+                self.yview_moveto(0)  
             else:
                 self.yview_scroll(1, "units")  # Scroll down 1 pixel
-            self.after_id = self.after(8000, self.update_text)  # Store the ID
+            self.after_id = self.after(8000, self.update_text)
 
     def stop_autoscroll(self, event=None):
         self.focus_set()
@@ -10361,7 +10367,6 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.mark_set(tk.INSERT, "end")
         self.select = True
 
-        # Update the menu labels based on the current language
         if self.lang == "English" and not self.read_only:
             self.context_menu.entryconfigure(0, label="Cut")
             self.context_menu.entryconfigure(1, label="Copy")
@@ -10381,7 +10386,6 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.context_menu.entryconfigure(0, label="Copiar")
             self.context_menu.entryconfigure(1, label="Seleccionar Todo")
 
-        # Update the label of the context menu based on the selection state
         if self.tag_ranges(tk.SEL):
             if self.lang == "English":
                 self.context_menu.entryconfigure(3, label="Unselect All")
@@ -10417,7 +10421,6 @@ class CustomTextBox(customtkinter.CTkTextbox):
             new_text = self.get("1.0", "end-1c")
             # Update the undo stack after the cut operation
             self._undo_stack.append(new_text)
-            # Clear the redo stack
             self._redo_stack.clear()
             self.see(tk.INSERT)
         except tk.TclError:
@@ -10465,7 +10468,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
                 pass  # Nothing selected, which is fine
 
             self.insert(tk.INSERT, clipboard_text)
-            self._redo_stack.clear()  # Clear redo stack after a new operation
+            self._redo_stack.clear() 
 
             # Update undo stack here, after paste operation
             new_text = self.get("1.0", "end-1c")
@@ -10561,16 +10564,14 @@ class CustomEntry(customtkinter.CTkEntry):
         self.bind("<FocusIn>", self.disable_slider_keys)
         self.bind("<FocusOut>", self.enable_slider_keys)
 
-        # Bind Control-Z to undo and Control-Y to redo
         self.bind("<Control-z>", self.undo)
         self.bind("<Control-Z>", self.undo)
         self.bind("<Control-y>", self.redo)
         self.bind("<Control-Y>", self.redo)
 
-        # Bind Ctrl+V to custom paste method
         self.bind("<Control-v>", self.custom_paste)
         self.bind("<Control-V>", self.custom_paste)
-        # Bind Ctrl+X to custom cut method
+
         self.bind("<Control-x>", self.custom_cut)
         self.bind("<Control-X>", self.custom_cut)
 
@@ -10665,7 +10666,6 @@ class CustomEntry(customtkinter.CTkEntry):
         self.icursor(tk.END)
         self.select = True
 
-        # Update the menu labels based on the current language
         if self.lang == "English":
             self.context_menu.entryconfigure(0, label="Cut")
             self.context_menu.entryconfigure(1, label="Copy")
@@ -10677,7 +10677,6 @@ class CustomEntry(customtkinter.CTkEntry):
             self.context_menu.entryconfigure(2, label="Pegar")
             self.context_menu.entryconfigure(3, label="Seleccionar Todo")
 
-        # Update the label of the context menu based on the selection state
         if self.select_present():
             if self.lang == "English":
                 self.context_menu.entryconfigure(3, label="Unselect All")
@@ -10708,7 +10707,6 @@ class CustomEntry(customtkinter.CTkEntry):
             new_text = self.get()
             # Update the undo stack after cut operation
             self._undo_stack.append(new_text)
-            # Clear the redo stack
             self._redo_stack.clear()
 
             if self.is_listbox_entry:
@@ -10846,16 +10844,14 @@ class CustomComboBox(customtkinter.CTkComboBox):
         self.bind("<FocusIn>", self.disable_slider_keys)
         self.bind("<FocusOut>", self.enable_slider_keys)
 
-        # Bind Control-Z to undo and Control-Y to redo
         self.bind("<Control-z>", self.undo)
         self.bind("<Control-Z>", self.undo)
         self.bind("<Control-y>", self.redo)
         self.bind("<Control-Y>", self.redo)
 
-        # Bind Ctrl+V to custom paste method
         self.bind("<Control-v>", self.custom_paste)
         self.bind("<Control-V>", self.custom_paste)
-        # Bind Ctrl+X to custom cut method
+
         self.bind("<Control-x>", self.custom_cut)
         self.bind("<Control-X>", self.custom_cut)
 
@@ -10863,6 +10859,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
         self.bind("<Control-A>", self.select_all)
 
         self.bind("<Button-2>", self.custom_middle_mouse)
+        
         # Update the undo stack every time the Entry content changes
         self.bind("<KeyRelease>", self.update_undo_stack)
 
@@ -10945,7 +10942,6 @@ class CustomComboBox(customtkinter.CTkComboBox):
             new_text = self.get()
             # Update the undo stack after cut operation
             self._undo_stack.append(new_text)
-            # Clear the redo stack
             self._redo_stack.clear()
         except tk.TclError:
             print("No text selected to cut")
@@ -11111,7 +11107,7 @@ class ImageSlideshow(customtkinter.CTkFrame):
         self.current_image = None
 
         self.load_images()
-        self.index = 0  # Added index to keep track of the current position in the list
+        self.index = 0
 
         self.label = customtkinter.CTkLabel(self, text="")
         self.label.bind("<Button-1>", lambda event: self.focus_set())
@@ -11137,11 +11133,9 @@ class ImageSlideshow(customtkinter.CTkFrame):
         self.image_files = image_files
 
     def show_image(self):
-        # Delete the previous image from memory
         if hasattr(self, "current_image"):
             del self.current_image
 
-        # Load and show the current image
         filepath = os.path.join(self.image_folder, self.image_files[self.index])
         self.current_image = customtkinter.CTkImage(
             light_image=Image.open(filepath).resize((self.width * 2, self.height * 2)),
@@ -11149,38 +11143,37 @@ class ImageSlideshow(customtkinter.CTkFrame):
         )
         self.label.configure(image=self.current_image)
 
-        self.after_cancel(self.after_id)  # Cancel the existing timer
-        self.reset_timer()  # Reset the timer after showing the image
+        self.after_cancel(self.after_id)
+        self.reset_timer()
 
     def cycle_images(self):
-        self.index = (self.index + 1) % len(self.image_files)  # Advance to the next image in the list
-        self.show_image()  # Show the new image and reset the timer
+        self.index = (self.index + 1) % len(self.image_files)
+        self.show_image()
 
     def prev_image(self):
-        self.index = (self.index - 1) % len(self.image_files)  # Decrease index and wrap around if needed
-        self.show_image()  # Show the new image and reset the timer
+        self.index = (self.index - 1) % len(self.image_files)
+        self.show_image()
 
     def next_image(self):
-        self.index = (self.index + 1) % len(self.image_files)  # Increase index and wrap around if needed
-        self.show_image()  # Show the new image and reset the timer
+        self.index = (self.index + 1) % len(self.image_files)
+        self.show_image()
 
     def go_to_first_image(self):
-        self.index = 0  # Reset index to the first image
-        self.show_image()  # Show the first image
+        self.index = 0
+        self.show_image()
 
     def pause_cycle(self):
-        self.after_cancel(self.after_id)  # Cancel the existing timer
-        self.is_running = False  # Set the flag to indicate that the slideshow is not running
+        self.after_cancel(self.after_id)
+        self.is_running = False  #
 
     def resume_cycle(self):
-        if not self.is_running:  # Only resume if it is not already running
-            self.is_running = True  # Set the flag to indicate that the slideshow is running
-            self.reset_timer()  # Reset the timer to resume cycling of images
+        if not self.is_running:
+            self.is_running = True
+            self.reset_timer()
 
     def reset_timer(self):
-        if self.is_running:  # Only reset the timer if the slideshow is running
-            self.after_cancel(self.after_id)  # Cancel the existing timer if any
-            # Set a new timer to cycle images
+        if self.is_running:
+            self.after_cancel(self.after_id)
             self.after_id = self.after(self.interval * 1000, self.cycle_images)
 
 
