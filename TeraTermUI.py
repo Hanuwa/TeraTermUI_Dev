@@ -49,7 +49,6 @@ import winsound
 from chardet import detect as chardet_detect
 from collections import deque, defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from contextlib import closing
 from Cryptodome.Hash import HMAC, SHA256
 from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import pad, unpad
