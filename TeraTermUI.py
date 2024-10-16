@@ -10559,6 +10559,7 @@ class CustomEntry(customtkinter.CTkEntry):
         super().__init__(master, *args, **kwargs)
 
         initial_state = self.get()
+        self.root = self.winfo_toplevel()
         self._undo_stack = deque([initial_state], maxlen=50)
         self._redo_stack = deque(maxlen=50)
         self.lang = lang
@@ -10567,6 +10568,7 @@ class CustomEntry(customtkinter.CTkEntry):
         self.border_color = None
 
         self.teraterm_ui = teraterm_ui_instance
+        self.focus_out_bind_id = self.root.bind("<FocusOut>", self._on_window_focus_out, add="+")
         self.bind("<FocusIn>", self.disable_slider_keys)
         self.bind("<FocusOut>", self.enable_slider_keys)
 
@@ -10595,6 +10597,10 @@ class CustomEntry(customtkinter.CTkEntry):
         self.context_menu.add_command(label="Select All", command=self.select_all)
         self.bind("<Button-2>", self.custom_middle_mouse)
         self.bind("<Button-3>", self.show_menu)
+
+    def _on_window_focus_out(self, event=None):
+        if self.get() == "" or self.get().isspace():
+            self._activate_placeholder()
 
     def disable_slider_keys(self, event=None):
         if self.cget("border_color") == "#c30101" or self.cget("border_color") == "#228B22":
@@ -10794,7 +10800,7 @@ class CustomEntry(customtkinter.CTkEntry):
     def _activate_placeholder(self):
         entry_text = self._entry.get()
         if (entry_text == "" or entry_text.isspace()) and self._placeholder_text is not None and (
-                self._textvariable is None or self._textvariable == ""):
+                self._textvariable is None or self._textvariable.get() == ""):
             self._placeholder_text_active = True
             self._pre_placeholder_arguments = {"show": self._entry.cget("show")}
             self._entry.config(fg=self._apply_appearance_mode(self._placeholder_text_color),
@@ -10822,6 +10828,8 @@ class CustomEntry(customtkinter.CTkEntry):
         self.unbind("<Button-2>")
         self.unbind("<Button-3>")
         self.unbind("<KeyRelease>")
+        self.root.unbind("<FocusOut>", self.focus_out_bind_id)
+        self.focus_out_bind_id = None
         self.lang = None
         self.is_listbox_entry = None
         self.select = None
