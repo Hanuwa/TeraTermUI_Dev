@@ -217,6 +217,7 @@ class CustomEntry(CTkEntry):
         super().__init__(master, *args, **kwargs)
 
         initial_state = self.get()
+        self.root = self.winfo_toplevel()
         self._undo_stack = deque([initial_state], maxlen=50)
         self._redo_stack = deque(maxlen=50)
         self.lang = lang
@@ -225,19 +226,18 @@ class CustomEntry(CTkEntry):
         self.border_color = None
 
         self.teraterm_ui = teraterm_ui_instance
+        self.focus_out_bind_id = self.root.bind("<FocusOut>", self._on_window_focus_out, add="+")
         self.bind("<FocusIn>", self.disable_slider_keys)
         self.bind("<FocusOut>", self.enable_slider_keys)
 
-        # Bind Control-Z to undo and Control-Y to redo
         self.bind("<Control-z>", self.undo)
         self.bind("<Control-Z>", self.undo)
         self.bind("<Control-y>", self.redo)
         self.bind("<Control-Y>", self.redo)
 
-        # Bind Ctrl+V to custom paste method
         self.bind("<Control-v>", self.custom_paste)
         self.bind("<Control-V>", self.custom_paste)
-        # Bind Ctrl+X to custom cut method
+
         self.bind("<Control-x>", self.custom_cut)
         self.bind("<Control-X>", self.custom_cut)
 
@@ -256,8 +256,12 @@ class CustomEntry(CTkEntry):
         self.bind("<Button-2>", self.custom_middle_mouse)
         self.bind("<Button-3>", self.show_menu)
 
+    def _on_window_focus_out(self, event=None):
+        if self.get() == "" or self.get().isspace():
+            self._activate_placeholder()
+
     def disable_slider_keys(self, event=None):
-        if self.cget("border_color") == "#c30101":
+        if self.cget("border_color") == "#c30101" or self.cget("border_color") == "#228B22":
             if self.border_color is None:
                 self.border_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
             self.configure(border_color=self.border_color)
@@ -316,15 +320,22 @@ class CustomEntry(CTkEntry):
             self.select_clear()
             return "break"
 
+    def find_active_tooltips(self, widget):
+        if isinstance(widget, tk.Toplevel) and hasattr(widget, "is_ctktooltip"):
+            widget.on_focus_out(event=None)
+        for child in widget.winfo_children():
+            self.find_active_tooltips(child)
+
     def show_menu(self, event):
         if self.cget("state") == "disabled":
             return
 
         self.focus_set()
+        root = self.winfo_toplevel()
+        self.find_active_tooltips(root)
         self.icursor(tk.END)
         self.select = True
 
-        # Update the menu labels based on the current language
         if self.lang == "English":
             self.context_menu.entryconfigure(0, label="Cut")
             self.context_menu.entryconfigure(1, label="Copy")
@@ -336,7 +347,6 @@ class CustomEntry(CTkEntry):
             self.context_menu.entryconfigure(2, label="Pegar")
             self.context_menu.entryconfigure(3, label="Seleccionar Todo")
 
-        # Update the label of the context menu based on the selection state
         if self.select_present():
             if self.lang == "English":
                 self.context_menu.entryconfigure(3, label="Unselect All")
@@ -367,13 +377,12 @@ class CustomEntry(CTkEntry):
             new_text = self.get()
             # Update the undo stack after cut operation
             self._undo_stack.append(new_text)
-            # Clear the redo stack
             self._redo_stack.clear()
 
             if self.is_listbox_entry:
                 self.update_listbox()
         except tk.TclError:
-            print("No text selected to cut.")
+            print("No text selected to cut")
 
     def copy(self):
         self.focus_set()
@@ -383,8 +392,9 @@ class CustomEntry(CTkEntry):
             selected_text = self.selection_get()
             self.clipboard_clear()
             self.clipboard_append(selected_text)
+            self.update_idletasks()
         except tk.TclError:
-            print("No text selected to copy.")
+            print("No text selected to copy")
 
     def custom_paste(self, event=None):
         self.paste()
@@ -397,7 +407,7 @@ class CustomEntry(CTkEntry):
             max_paste_length = 250  # Set a limit for the max paste length
             if len(clipboard_text) > max_paste_length:
                 clipboard_text = clipboard_text[:max_paste_length]  # Truncate to max length
-                print("Pasted content truncated to maximum length.")
+                print("Pasted content truncated to maximum length")
 
             current_text = self.get()
             # Save the current state to undo stack
@@ -448,7 +458,7 @@ class CustomEntry(CTkEntry):
     def _activate_placeholder(self):
         entry_text = self._entry.get()
         if (entry_text == "" or entry_text.isspace()) and self._placeholder_text is not None and (
-                self._textvariable is None or self._textvariable == ""):
+                self._textvariable is None or self._textvariable.get() == ""):
             self._placeholder_text_active = True
             self._pre_placeholder_arguments = {"show": self._entry.cget("show")}
             self._entry.config(fg=self._apply_appearance_mode(self._placeholder_text_color),
@@ -476,6 +486,8 @@ class CustomEntry(CTkEntry):
         self.unbind("<Button-2>")
         self.unbind("<Button-3>")
         self.unbind("<KeyRelease>")
+        self.root.unbind("<FocusOut>", self.focus_out_bind_id)
+        self.focus_out_bind_id = None
         self.lang = None
         self.is_listbox_entry = None
         self.select = None
