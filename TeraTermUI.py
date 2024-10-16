@@ -5263,7 +5263,10 @@ class TeraTermUI(customtkinter.CTk):
                     continue
                 # Save 'host' no matter the result as 'uprbay.uprb.edu'
                 if field == "host":
-                    host_entry_value = self.saved_host
+                    if self.saved_host is not None:
+                        host_entry_value = self.saved_host
+                    else:
+                        host_entry_value = self.host_entry.get().replace(" ", "").lower()
                     if not TeraTermUI.check_host(host_entry_value):
                         continue
                 result = self.cursor.execute(f"SELECT {field} FROM user_data").fetchone()
