@@ -19,8 +19,8 @@ def parse_arguments():
     return parser.parse_args()
 
 def extract_second_date_from_file(filepath):
-    with open(filepath, "r") as f:
-        for line in f:
+    with open(filepath, "r") as file:
+        for line in file:
             dates = re.findall(r"\d{1,2}/\d{1,2}/\d{2,4}", line)
             if len(dates) >= 2:
                 return dates[1]
@@ -28,8 +28,8 @@ def extract_second_date_from_file(filepath):
 
 
 def extract_version_main_file(filepath):
-    with open(filepath, "r") as f:
-        for line in f:
+    with open(filepath, "r") as file:
+        for line in file:
             if "v" in line:
                 positions = [pos for pos, char in enumerate(line) if char == "v"]
                 for pos in positions:
@@ -74,8 +74,8 @@ def check_and_restore_backup():
 def attach_manifest(executable_path, manifest_path):
     try:
         sha1_hash = hashlib.sha1()
-        with open(executable_path, "rb") as f:
-            for byte_block in iter(lambda: f.read(4096), b""):
+        with open(executable_path, "rb") as file:
+            for byte_block in iter(lambda: file.read(4096), b""):
                 sha1_hash.update(byte_block)
         sha1_checksum = sha1_hash.hexdigest()
 
@@ -90,7 +90,6 @@ def attach_manifest(executable_path, manifest_path):
             file.write(updated_manifest_content)
 
         subprocess.run(f"mt.exe -manifest {manifest_path} -outputresource:{executable_path};1", check=True)
-        updater = os.path.join(project_directory, "updater.exe")
         print(Fore.GREEN + "\nSuccessfully attached manifest\n" + Style.RESET_ALL)
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
@@ -106,8 +105,8 @@ def attach_manifest(executable_path, manifest_path):
 def generate_checksum(version_filename, executable_filename):
     try:
         sha256_hash = hashlib.sha256()
-        with open(executable_filename, "rb") as f:
-            for byte_block in iter(lambda: f.read(4096), b""):
+        with open(executable_filename, "rb") as file:
+            for byte_block in iter(lambda: file.read(4096), b""):
                 sha256_hash.update(byte_block)
         sha256_checksum = sha256_hash.hexdigest()
 
