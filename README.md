@@ -3,7 +3,7 @@ Dev Environment for Tera Term UI (Virtualenv)
 
 **App Version:** "0.9.5" | **Python Version:** "3.12.7" | **Tesseract Version:** "5.4.0" | **C Compiler:** "MSVC"
 
-**Important** modules of "**ctkmessagebox.py, ctk_input_dialog.py, ctk_scrollable_frame.py, ctk_tabview.py, ctk_toplevel.py,
+**Important** modules of "**ctkmessagebox.py, ctk_input_dialog.py, ctk_scrollable_frame.py, ctk_tabview.py, ctk_toplevel.py, ctk_entry.py,
 ctk_textbox.py, ctk_scrollbar.py, ctk_checkbox.py, ctk_radiobutton.py, ctk_switch.py, ctk_optionmenu.py, appearance_mode_tracker.py,
 dropdown_menu.py, scaling_tracker.py, scaling_base_class.py, ctk_base_class.py, ctk_canvas.py, ctk_image.py and draw_engine.py**" are included here because they have some modifications.
 
