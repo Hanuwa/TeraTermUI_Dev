@@ -622,6 +622,7 @@ class TeraTermUI(customtkinter.CTk):
         self.notification_sent = False
         self.first_time_adding = True
         self.last_save_pdf_dir = None
+        self.saved_host = None
         self.a_counter = 0
         self.m_counter = 0
         self.e_counter = 0
@@ -3301,6 +3302,7 @@ class TeraTermUI(customtkinter.CTk):
                 host = self.host_entry.get().replace(" ", "").lower()
                 if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.check_host(host):
+                        self.saved_host = host
                         TeraTermUI.check_tera_term_hidden()
                         if TeraTermUI.checkIfProcessRunning("ttermpro"):
                             count, is_multiple = TeraTermUI.countRunningProcesses("ttermpro")
@@ -5261,7 +5263,7 @@ class TeraTermUI(customtkinter.CTk):
                     continue
                 # Save 'host' no matter the result as 'uprbay.uprb.edu'
                 if field == "host":
-                    host_entry_value = self.host_entry.get().replace(" ", "").lower()
+                    host_entry_value = self.saved_host
                     if not TeraTermUI.check_host(host_entry_value):
                         continue
                 result = self.cursor.execute(f"SELECT {field} FROM user_data").fetchone()
