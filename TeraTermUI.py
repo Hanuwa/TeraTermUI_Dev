@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 10/14/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 10/15/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -8833,6 +8833,7 @@ class TeraTermUI(customtkinter.CTk):
                 task.cancel()
             if not connected:
                 if not self.check_update:
+                    await asyncio.sleep(1)
                     self.after(100, self.show_error_message, 300, 215, translation["no_internet"])
                 if self.check_update:
                     self.check_update = False
