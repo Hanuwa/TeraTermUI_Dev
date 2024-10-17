@@ -151,6 +151,7 @@ class TeraTermUI(customtkinter.CTk):
         self.iconbitmap(self.icon_path)
         self.mode = "Portable"
         self.update_db = False
+        self.bind("<Button-1>", self.set_focus)
         self.bind("<Button-2>", lambda event: self.focus_set())
         self.bind("<Button-3>", lambda event: self.focus_set())
 
@@ -904,7 +905,7 @@ class TeraTermUI(customtkinter.CTk):
         if hwnd and not win32gui.IsWindowVisible(hwnd):
             win32gui.ShowWindow(hwnd, SW_SHOW)
             win32gui.ShowWindow(hwnd, SW_RESTORE)
-
+            
     def on_visibility(self, event):
         if self.main_menu:
             self.slideshow_frame.resume_cycle()
@@ -1024,6 +1025,11 @@ class TeraTermUI(customtkinter.CTk):
             print(f"Error converting path '{relative_path}' to absolute path: {err}")
             raise
 
+    @staticmethod
+    def set_focus(event):
+        if str(event.widget) == ".!ctktabview.!ctkframe2.!ctkframe.!canvas":
+            event.widget.focus_set()
+    
     @staticmethod
     def terminate_process():
         try:
