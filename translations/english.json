@@ -311,6 +311,7 @@
 	"download_tera_term": "Tera Term must be installed in your computer in order to use this application\n\nDo you wish to download it?",
 	"no_internet": "Error! Not Connected to the Internet",
 	"uprb_down": "Error! UPRB server is currently down",
+	"port_22": "Error! Your network or firewall is\n\nblocking port 22 connections",
 	"unexpected_error": "Unexpected and rare error, failed to start tera term, please try to log-in again\n\n(Reporting the issue is really appreciated)",
 	"countdown_win": "Auto-Enroll Window",
 	"end_countdown": "The Auto-Enroll event was force to end because Tera Term is not running anymore\n\nIf it closed by itself, then there was probably a server maintenance done by the university",
