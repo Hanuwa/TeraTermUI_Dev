@@ -5597,9 +5597,13 @@ class TeraTermUI(customtkinter.CTk):
             with socket.create_connection((HOST, PORT), timeout=timeout):
                 # the connection attempt succeeded
                 return True
-        except (socket.timeout, ConnectionRefusedError, OSError):
+        except (socket.timeout, ConnectionRefusedError):
             # the connection attempt failed
             self.after(100, self.show_error_message, 300, 215, translation["uprb_down"])
+            return False
+        except OSError:
+            # Another potential user-side issue or network error
+            self.after(100, self.show_error_message, 335, 235, translation["port_22"])
             return False
 
     # captures a screenshot of tera term and performs OCR
