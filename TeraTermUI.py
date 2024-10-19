@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 10/18/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 10/19/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 11200 lines of codes, it definitely makes things harder to work with
+# and with over 11300 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -905,7 +905,7 @@ class TeraTermUI(customtkinter.CTk):
         if hwnd and not win32gui.IsWindowVisible(hwnd):
             win32gui.ShowWindow(hwnd, SW_SHOW)
             win32gui.ShowWindow(hwnd, SW_RESTORE)
-            
+
     def on_visibility(self, event):
         if self.main_menu:
             self.slideshow_frame.resume_cycle()
@@ -1029,7 +1029,7 @@ class TeraTermUI(customtkinter.CTk):
     def set_focus(event):
         if str(event.widget) == ".!ctktabview.!ctkframe2.!ctkframe.!canvas":
             event.widget.focus_set()
-    
+
     @staticmethod
     def terminate_process():
         try:
@@ -1274,7 +1274,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.error_occurred = False
                         self.timeout_occurred = False
 
-                    self.after(50, error_automation)
+                    self.after(100, error_automation)
                 TeraTermUI.disable_user_input()
 
     def student_info_frame(self):
@@ -1634,7 +1634,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.error_occurred = False
                         self.timeout_occurred = False
 
-                    self.after(50, error_automation)
+                    self.after(100, error_automation)
                 if not self.not_rebind:
                     self.after(350, self.bind, "<Return>", lambda event: self.submit_event_handler())
                 TeraTermUI.disable_user_input()
@@ -1830,7 +1830,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.error_occurred = False
                         self.timeout_occurred = False
 
-                    self.after(50, error_automation)
+                    self.after(100, error_automation)
                 self.after(350, self.bind, "<Return>", lambda event: self.search_event_handler())
                 TeraTermUI.disable_user_input()
                 self.search_event_completed = True
@@ -2041,7 +2041,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.error_occurred = False
                         self.timeout_occurred = False
 
-                    self.after(50, error_automation)
+                    self.after(100, error_automation)
                 TeraTermUI.disable_user_input()
                 self.my_classes_event_completed = True
 
@@ -2479,7 +2479,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.error_occurred = False
                         self.timeout_occurred = False
 
-                    self.after(50, error_automation)
+                    self.after(100, error_automation)
                 if not self.not_rebind:
                     self.after(350, self.bind, "<Return>", lambda event: self.submit_multiple_event_handler())
                 TeraTermUI.disable_user_input()
@@ -2726,7 +2726,8 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(0, self.disable_go_next_buttons)
                                     text_output = self.capture_screenshot()
                                     if "TERM OUTDATED" in text_output or "NO PUEDE REALIZAR CAMBIOS" in text_output or \
-                                            "INVALID TERM SELECTION" in text_output:
+                                           "NO PUEDE HACER CAMBIOS" in text_output or "INVALID TERM SELECTION" \
+                                            in text_output:
                                         self.focus_or_not = True
                                         if "TERM OUTDATED" in text_output or "INVALID TERM SELECTION" in text_output:
                                             self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
@@ -2762,8 +2763,8 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                     self.after(0, self.disable_go_next_buttons)
                                     text_output = self.capture_screenshot()
-                                    if "TERM OUTDATED" not in text_output and \
-                                            "NO PUEDE REALIZAR CAMBIOS" not in text_output and \
+                                    if "TERM OUTDATED" not in text_output and "NO PUEDE REALIZAR CAMBIOS" not in \
+                                            text_output and "NO PUEDE HACER CAMBIOS" not in text_output and \
                                             "INVALID TERM SELECTION" not in text_output:
                                         def go_next_grid():
                                             self._1VE_screen = False
@@ -2778,7 +2779,8 @@ class TeraTermUI(customtkinter.CTk):
                                                                   sticky="n")
 
                                         self.after(0, go_next_grid)
-                                    if "TERM OUTDATED" in text_output or "NO PUEDE REALIZAR CAMBIOS" in text_output:
+                                    if "TERM OUTDATED" in text_output or "NO PUEDE REALIZAR CAMBIOS" in text_output or \
+                                            "NO PUEDE HACER CAMBIOS" in text_output:
                                         self.focus_or_not = True
                                         if "TERM OUTDATED" in text_output:
                                             self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
@@ -2800,7 +2802,8 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                     self.after(0, self.disable_go_next_buttons)
                                     text_output = self.capture_screenshot()
-                                    if "TERM OUTDATED" in text_output or "NO PUEDE REALIZAR CAMBIOS" in text_output:
+                                    if "TERM OUTDATED" in text_output or "NO PUEDE REALIZAR CAMBIOS" in text_output or \
+                                            "NO PUEDE HACER CAMBIOS" in text_output:
                                         self.focus_or_not = True
                                         if "TERM OUTDATED" in text_output:
                                             self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
@@ -2872,7 +2875,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.error_occurred = False
                         self.timeout_occurred = False
 
-                    self.after(50, error_automation)
+                    self.after(100, error_automation)
                 self.after(350, self.bind, "<Return>", lambda event: self.option_menu_event_handler())
                 TeraTermUI.disable_user_input()
                 self.option_menu_event_completed = True
@@ -2960,7 +2963,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.error_occurred = False
                         self.timeout_occurred = False
 
-                    self.after(50, error_automation)
+                    self.after(100, error_automation)
                 self.after(350, self.bind, "<Return>", lambda event: self.option_menu_event_handler())
                 TeraTermUI.disable_user_input()
                 self.go_next_event_completed = True
@@ -3037,7 +3040,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.error_occurred = False
                         self.timeout_occurred = False
 
-                    self.after(50, error_automation)
+                    self.after(100, error_automation)
                 self.after(350, self.bind, "<Return>", lambda event: self.search_event_handler())
                 TeraTermUI.disable_user_input()
                 self.search_go_next_event_completed = True
@@ -3404,7 +3407,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.after(350, self.bind, "<Return>", lambda event: self.login_event_handler())
 
                     self.error_occurred = False
-                    self.after(50, rare_error)
+                    self.after(100, rare_error)
                 else:
                     print("An error occurred:", error_message)
                     self.error_occurred = True
@@ -3426,7 +3429,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.error_occurred = False
                         self.timeout_occurred = False
 
-                    self.after(50, error_automation)
+                    self.after(100, error_automation)
                 TeraTermUI.disable_user_input()
 
     def login_frame(self):
@@ -3632,7 +3635,7 @@ class TeraTermUI(customtkinter.CTk):
                                       icon="warning", button_width=380)
 
                     auth_err = True
-                    self.after(50, error)
+                    self.after(100, error)
                 TeraTermUI.terminate_process()
         if self.error_occurred or (response and (response == "Yes" or response == "Sí")):
             self.stop_check_idle_thread()
@@ -3699,7 +3702,7 @@ class TeraTermUI(customtkinter.CTk):
                                       message=translation["tera_term_forced_to_close"],
                                       icon="warning", button_width=380)
 
-                    self.after(50, error)
+                    self.after(100, error)
             self.error_occurred = False
 
     def keybind_go_back_menu(self):
@@ -4504,7 +4507,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.error_occurred = False
                         self.timeout_occurred = False
 
-                    self.after(50, error_automation)
+                    self.after(100, error_automation)
                 self.after(350, self.bind, "<Return>", lambda event: self.submit_multiple_event_handler())
                 TeraTermUI.disable_user_input()
 
@@ -5597,13 +5600,9 @@ class TeraTermUI(customtkinter.CTk):
             with socket.create_connection((HOST, PORT), timeout=timeout):
                 # the connection attempt succeeded
                 return True
-        except (socket.timeout, ConnectionRefusedError):
+        except (socket.timeout, ConnectionRefusedError, OSError):
             # the connection attempt failed
-            self.after(100, self.show_error_message, 300, 215, translation["uprb_down"])
-            return False
-        except OSError:
-            # Another potential user-side issue or network error
-            self.after(100, self.show_error_message, 335, 235, translation["port_22"])
+            self.after(100, self.show_error_message, 385, 245, translation["uprb_down"])
             return False
 
     # captures a screenshot of tera term and performs OCR
@@ -5630,7 +5629,7 @@ class TeraTermUI(customtkinter.CTk):
                     "height": height
                 }
                 screenshot = sct.grab(monitor)
-                img = Image.frombytes('RGB', (screenshot.width, screenshot.height), screenshot.rgb)
+                img = Image.frombytes("RGB", (screenshot.width, screenshot.height), screenshot.rgb)
                 if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
                     self.loading_screen.deiconify()
                 img = img.crop((crop_margin[0], crop_margin[1], img.width - crop_margin[2],
@@ -7614,7 +7613,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.error_occurred = False
                         self.timeout_occurred = False
 
-                    self.after(50, error_automation)
+                    self.after(100, error_automation)
                 if not self.not_rebind:
                     self.after(350, self.bind, "<Return>", lambda event: self.submit_modify_classes_handler())
                 TeraTermUI.disable_user_input()
@@ -7908,7 +7907,7 @@ class TeraTermUI(customtkinter.CTk):
             winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/update.wav"), winsound.SND_ASYNC)
         msg = CTkMessagebox(title=translation["update_popup_title"],
                             message=translation["update_popup_message"] + "\n\n" + current + ": v" +
-                                    self.USER_APP_VERSION + " ---> " + latest + ": v" + latest_version,
+                            self.USER_APP_VERSION + " ---> " + latest + ": v" + latest_version,
                             option_1=translation["option_1"], option_2=translation["option_2"],
                             option_3=translation["option_3"], icon_size=(65, 65),
                             button_color=("#c30101", "#145DA0", "#145DA0"), icon="question",
@@ -8423,7 +8422,7 @@ class TeraTermUI(customtkinter.CTk):
                         winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/update.wav"), winsound.SND_ASYNC)
                     msg = CTkMessagebox(title=translation["update_popup_title"],
                                         message=translation["update_popup_message"] + "\n\n" + current + ": v" +
-                                                self.USER_APP_VERSION + " ---> " + latest + ": v" + latest_version,
+                                        self.USER_APP_VERSION + " ---> " + latest + ": v" + latest_version,
                                         option_1=translation["option_1"], option_2=translation["option_2"],
                                         option_3=translation["option_3"], icon_size=(65, 65),
                                         button_color=("#c30101", "#145DA0", "#145DA0"), icon="question",
@@ -8542,7 +8541,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.error_occurred = False
                         self.timeout_occurred = False
 
-                    self.after(50, error_automation)
+                    self.after(100, error_automation)
                 TeraTermUI.disable_user_input()
                 self.fix_execution_event_completed = True
 
@@ -8858,8 +8857,9 @@ class TeraTermUI(customtkinter.CTk):
     def set_focus_to_tkinter(self):
         self.lift()
         self.focus_force()
-        self.attributes("-topmost", 1)
-        self.after_idle(self.attributes, "-topmost", 0)
+        if not self.error_occurred and not self.timeout_occurred:
+            self.attributes("-topmost", 1)
+            self.after_idle(self.attributes, "-topmost", 0)
         if self.error is not None and self.error.winfo_exists():
             self.error.lift()
             self.error.focus_force()
@@ -10315,7 +10315,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
         if self.auto_scroll:
             _, yview_fraction = self.yview()
             if yview_fraction >= 1.0:
-                self.yview_moveto(0)  
+                self.yview_moveto(0)
             else:
                 self.yview_scroll(1, "units")  # Scroll down 1 pixel
             self.after_id = self.after(8000, self.update_text)
@@ -10484,7 +10484,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
                 pass  # Nothing selected, which is fine
 
             self.insert(tk.INSERT, clipboard_text)
-            self._redo_stack.clear() 
+            self._redo_stack.clear()
 
             # Update undo stack here, after paste operation
             new_text = self.get("1.0", "end-1c")
@@ -10883,7 +10883,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
         self.bind("<Control-A>", self.select_all)
 
         self.bind("<Button-2>", self.custom_middle_mouse)
-        
+
         # Update the undo stack every time the Entry content changes
         self.bind("<KeyRelease>", self.update_undo_stack)
 
