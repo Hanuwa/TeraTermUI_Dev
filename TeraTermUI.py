@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 10/19/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 10/20/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -42,6 +42,7 @@ import tempfile
 import threading
 import tkinter as tk
 import time
+import traceback
 import warnings
 import webbrowser
 import win32gui
@@ -675,13 +676,22 @@ class TeraTermUI(customtkinter.CTk):
                 results[field] = result[0] if result else None
             if results["location"]:
                 if results["location"] != self.location:
-                    self.location = results["location"]
+                    if os.path.exists(results["location"]):
+                        self.location = results["location"]
+                    else:
+                        self.cursor.execute("UPDATE user_data SET location=NULL")
             if results["directory"] and results["config"]:
-                if results["directory"] != self.teraterm_directory and results["config"] != self.teraterm_file:
-                    self.teraterm_file = results["config"]
-                    self.teraterm_directory = results["directory"]
-                    self.edit_teraterm_ini(self.teraterm_file)
-                    self.can_edit = True
+                if results["directory"] != self.teraterm_directory or results["config"] != self.teraterm_file:
+                    if os.path.exists(results["directory"]) and os.path.exists(results["config"]):
+                        self.teraterm_file = results["config"]
+                        self.teraterm_directory = results["directory"]
+                        self.edit_teraterm_ini(self.teraterm_file)
+                        self.can_edit = True
+                    else:
+                        if not os.path.exists(results["directory"]):
+                            self.cursor.execute("UPDATE user_data SET directory=NULL")
+                        if not os.path.exists(results["config"]):
+                            self.cursor.execute("UPDATE user_data SET config=NULL")
 
             # performs some operations on separate threads when application starts up
             self.boot_up(self.teraterm_file)
@@ -1081,7 +1091,6 @@ class TeraTermUI(customtkinter.CTk):
 
     def log_error(self):
         import inspect
-        import traceback
 
         try:
             # Get the current timestamp
@@ -3369,7 +3378,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprbay_window.wait("visible", timeout=3)
                             self.tera_term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if self.uprbay_window.child_window(title="Continue", control_type="Button").exists(
-                                    timeout=1):
+                                    timeout=3):
                                 self.uprbay_window.child_window(title="Continue", control_type="Button").invoke()
                             if not self.skip_auth:
                                 self.bind("<Return>", lambda event: self.auth_event_handler())
@@ -7784,21 +7793,34 @@ class TeraTermUI(customtkinter.CTk):
                         return teraterm_ini_path
         return None
 
-    def backup_and_config_ini(self, file_path):
-        minimum_required_version = "5.0.0.0"
-        version = TeraTermUI.get_teraterm_version(self.location)
-        version_parts = list(map(int, version.split(".")))
-        compare_version_parts = list(map(int, minimum_required_version.split(".")))
-        if version and version_parts >= compare_version_parts:
-            appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
-            if appdata_ini_path:
-                file_path = appdata_ini_path
-            else:
-                self.teraterm5_first_boot = True
-                return
+    def has_write_permission(self):
+        try:
+            test_file = os.path.join(os.path.dirname(self.teraterm_directory), "temp_test_file.txt")
+            with open(test_file, "w") as temp_file:
+                temp_file.write("test")
+            os.remove(test_file)
+            return True
+        except PermissionError:
+            return False
 
+    def backup_and_config_ini(self, file_path):
         # backup for config file of tera term
         if TeraTermUI.is_file_in_directory("ttermpro.exe", self.teraterm_directory):
+            minimum_required_version = "5.0.0.0"
+            version = TeraTermUI.get_teraterm_version(self.location)
+            version_parts = list(map(int, version.split(".")))
+            compare_version_parts = list(map(int, minimum_required_version.split(".")))
+            if version and version_parts >= compare_version_parts:
+                appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
+                if appdata_ini_path:
+                    file_path = appdata_ini_path
+                elif os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
+                        and self.has_write_permission():
+                    file_path = os.path.join(self.teraterm_directory, "TERATERM.ini")
+                else:
+                    self.teraterm5_first_boot = True
+                    return
+
             backup_path = self.app_temp_dir / "TERATERM.ini.bak"
             if not os.path.exists(backup_path):
                 backup_path = os.path.join(self.app_temp_dir, os.path.basename(file_path) + ".bak")
@@ -7846,7 +7868,6 @@ class TeraTermUI(customtkinter.CTk):
                     print("Restoring from backup...")
                     shutil.copyfile(backup_path, file_path)
                 del backup_path
-
         else:
             self.teraterm_not_found = True
 
@@ -8468,7 +8489,7 @@ class TeraTermUI(customtkinter.CTk):
             print(f"Failed to launch the updater script: {err}")
             self.log_error()
             webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
-
+    
     def fix_execution_event_handler(self):
         translation = self.load_language()
         if TeraTermUI.checkIfProcessRunning("ttermpro"):
@@ -9333,7 +9354,14 @@ class TeraTermUI(customtkinter.CTk):
             self.location = tera_term_path.replace("\\", "/")
             directory, filename = os.path.split(self.location)
             self.teraterm_directory = directory
-            self.teraterm_file = self.teraterm_directory + "/TERATERM.ini"
+            ini_location = TeraTermUI.find_appdata_teraterm_ini()
+            if ini_location:
+                self.teraterm_file = ini_location
+            elif os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
+                     and self.has_write_permission():
+                self.teraterm_file = os.path.join(self.teraterm_directory, "TERATERM.ini")
+            else:
+                self.teraterm5_first_boot = True
             row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
             if not row_exists:
                 self.cursor.execute(
@@ -9408,7 +9436,14 @@ class TeraTermUI(customtkinter.CTk):
             self.location = filename.replace("\\", "/")
             directory, filename = os.path.split(self.location)
             self.teraterm_directory = directory
-            self.teraterm_file = self.teraterm_directory + "/TERATERM.ini"
+            ini_location = TeraTermUI.find_appdata_teraterm_ini()
+            if ini_location:
+                self.teraterm_file = ini_location
+            elif os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
+                     and self.has_write_permission():
+                self.teraterm_file = os.path.join(self.teraterm_directory, "TERATERM.ini")
+            else:
+                self.teraterm5_first_boot = True
             row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
             if not row_exists:
                 self.cursor.execute(
@@ -9778,18 +9813,22 @@ class TeraTermUI(customtkinter.CTk):
         if not self.can_edit:
             return
 
-        minimum_required_version = "5.0.0.0"
-        version = TeraTermUI.get_teraterm_version(self.location)
-        version_parts = list(map(int, version.split(".")))
-        compare_version_parts = list(map(int, minimum_required_version.split(".")))
-        if version and version_parts >= compare_version_parts:
-            appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
-            if appdata_ini_path:
-                file_path = appdata_ini_path
-            else:
-                return
-
         if TeraTermUI.is_file_in_directory("ttermpro.exe", self.teraterm_directory):
+            minimum_required_version = "5.0.0.0"
+            version = TeraTermUI.get_teraterm_version(self.location)
+            version_parts = list(map(int, version.split(".")))
+            compare_version_parts = list(map(int, minimum_required_version.split(".")))
+            if version and version_parts >= compare_version_parts:
+                appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
+                if appdata_ini_path:
+                    file_path = appdata_ini_path
+                elif os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
+                        and self.has_write_permission():
+                    file_path = os.path.join(self.teraterm_directory, "TERATERM.ini")
+                else:
+                    self.teraterm5_first_boot = True
+                    return
+
             backup_path = os.path.join(self.app_temp_dir, "TERATERM.ini.bak")
             if not os.path.exists(backup_path):
                 backup_path = os.path.join(self.app_temp_dir, os.path.basename(file_path) + ".bak")
@@ -9822,20 +9861,22 @@ class TeraTermUI(customtkinter.CTk):
 
     # Edits the font that tera term uses to "Terminal" to mitigate the chance of the OCR mistaking words
     def edit_teraterm_ini(self, file_path):
-        minimum_required_version = "5.0.0.0"
-        version = TeraTermUI.get_teraterm_version(self.location)
-        version_parts = list(map(int, version.split(".")))
-        compare_version_parts = list(map(int, minimum_required_version.split(".")))
-        if version and version_parts >= compare_version_parts:
-            appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
-            if appdata_ini_path:
-                file_path = appdata_ini_path
-                self.teraterm5_first_boot = False
-            else:
-                self.teraterm5_first_boot = True
-                return
-
         if TeraTermUI.is_file_in_directory("ttermpro.exe", self.teraterm_directory):
+            minimum_required_version = "5.0.0.0"
+            version = TeraTermUI.get_teraterm_version(self.location)
+            version_parts = list(map(int, version.split(".")))
+            compare_version_parts = list(map(int, minimum_required_version.split(".")))
+            if version and version_parts >= compare_version_parts:
+                appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
+                if appdata_ini_path:
+                    file_path = appdata_ini_path
+                elif os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
+                        and self.has_write_permission():
+                    file_path = os.path.join(self.teraterm_directory, "TERATERM.ini")
+                else:
+                    self.teraterm5_first_boot = True
+                    return
+
             backup_path = os.path.join(self.app_temp_dir, "TERATERM.ini.bak")
             if not os.path.exists(backup_path):
                 backup_path = os.path.join(self.app_temp_dir, os.path.basename(file_path) + ".bak")
@@ -9887,57 +9928,78 @@ class TeraTermUI(customtkinter.CTk):
         if not self.can_edit:
             return
 
-        minimum_required_version = "5.0.0.0"
-        version = TeraTermUI.get_teraterm_version(self.location)
-        version_parts = list(map(int, version.split(".")))
-        compare_version_parts = list(map(int, minimum_required_version.split(".")))
-        if version and version_parts >= compare_version_parts:
-            appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
-            if appdata_ini_path:
-                file_path = appdata_ini_path
-            else:
-                return
+        if TeraTermUI.is_file_in_directory("ttermpro.exe", self.teraterm_directory):
+            minimum_required_version = "5.0.0.0"
+            version = TeraTermUI.get_teraterm_version(self.location)
+            version_parts = list(map(int, version.split(".")))
+            compare_version_parts = list(map(int, minimum_required_version.split(".")))
+            if version and version_parts >= compare_version_parts:
+                appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
+                if appdata_ini_path:
+                    file_path = appdata_ini_path
+                elif os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
+                        and self.has_write_permission():
+                    file_path = os.path.join(self.teraterm_directory, "TERATERM.ini")
+                else:
+                    self.teraterm5_first_boot = True
+                    return
 
-        backup_path = os.path.join(self.app_temp_dir, "TERATERM.ini.bak")
-        try:
-            with open(file_path, "rb") as file:
-                raw_data = file.read()
-                encoding_info = chardet_detect(raw_data)
-                detected_encoding = encoding_info["encoding"]
-            with open(file_path, "r", encoding=detected_encoding) as file:
-                lines = file.readlines()
-            with open(backup_path, "r", encoding=detected_encoding) as backup_file:
-                backup_lines = backup_file.readlines()
-            backup_font = None
-            backup_color = None
-            for line in backup_lines:
-                if line.startswith("VTFont="):
-                    backup_font = line.strip().split("=")[1]
-                if line.startswith("VTColor=") and not line.startswith(";"):
-                    backup_color = line.strip().split("=")[1]
-            if backup_font is None or backup_color is None:
-                return
-
-            for index, line in enumerate(lines):
-                if line.startswith("VTFont="):
-                    lines[index] = f"VTFont={backup_font}\n"
-                if line.startswith("VTColor=") and not line.startswith(";"):
-                    lines[index] = f"VTColor={backup_color}\n"
-            if self.disable_audio_val is not None and self.disable_audio_val.get() == "on":
-                for index, line in enumerate(lines):
-                    if line.startswith("Beep=") and line.strip() != "Beep=off":
-                        lines[index] = "Beep=off\n"
-            with open(file_path, "w", encoding=detected_encoding) as file:
-                file.writelines(lines)
-        except FileNotFoundError:
-            print(f"File or backup not found")
-        except IOError as err:
-            print(f"Error occurred: {err}")
-            print("Restoring from backup...")
+            backup_path = os.path.join(self.app_temp_dir, "TERATERM.ini.bak")
             try:
-                shutil.copyfile(backup_path, file_path)
+                # Detect encoding of the current .ini file
+                with open(file_path, "rb") as file:
+                    raw_data = file.read()
+                    ini_encoding_info = chardet_detect(raw_data)
+                    ini_detected_encoding = ini_encoding_info["encoding"]
+                # Detect encoding of the backup file
+                if os.path.exists(backup_path):
+                    with open(backup_path, "rb") as backup_file:
+                        backup_raw_data = backup_file.read()
+                        backup_encoding_info = chardet_detect(backup_raw_data)
+                        backup_detected_encoding = backup_encoding_info["encoding"]
+                else:
+                    print(f"Backup file not found at {backup_path}")
+                    return
+
+                # Read the lines from both the .ini file and the backup using their respective encodings
+                with open(file_path, "r", encoding=ini_detected_encoding) as file:
+                    lines = file.readlines()
+                with open(backup_path, "r", encoding=backup_detected_encoding) as backup_file:
+                    backup_lines = backup_file.readlines()
+                # Extract font and color settings from the backup
+                backup_font = None
+                backup_color = None
+                for line in backup_lines:
+                    if line.startswith("VTFont="):
+                        backup_font = line.strip().split("=")[1]
+                    if line.startswith("VTColor=") and not line.startswith(";"):
+                        backup_color = line.strip().split("=")[1]
+                if backup_font is None or backup_color is None:
+                    print("Backup font or color setting not found in the backup file.")
+                    return
+
+                # Update the .ini file with the settings from the backup
+                for index, line in enumerate(lines):
+                    if line.startswith("VTFont="):
+                        lines[index] = f"VTFont={backup_font}\n"
+                    if line.startswith("VTColor=") and not line.startswith(";"):
+                        lines[index] = f"VTColor={backup_color}\n"
+                if self.disable_audio_val is not None and self.disable_audio_val.get() == "on":
+                    for index, line in enumerate(lines):
+                        if line.startswith("Beep=") and line.strip() != "Beep=off":
+                            lines[index] = "Beep=off\n"
+                # Write the modified .ini file back using its original encoding
+                with open(file_path, "w", encoding=ini_detected_encoding) as file:
+                    file.writelines(lines)
             except FileNotFoundError:
-                print(f"The backup file at {backup_path} was not found")
+                print(f"File or backup not found: {file_path} or {backup_path}")
+            except IOError as err:
+                print(f"Error occurred: {err}")
+                print("Restoring from backup...")
+                try:
+                    shutil.copyfile(backup_path, file_path)
+                except FileNotFoundError:
+                    print(f"The backup file at {backup_path} was not found")
 
     # When the user performs an action to do something in tera term it destroys windows that might get in the way
     def destroy_windows(self):
@@ -11318,6 +11380,7 @@ def main():
         sys.exit(1)
     except Exception as error:
         print("A fatal error occurred: ", error)
+        traceback.print_exc()
         if language_id & 0xFF == SPANISH:
             messagebox.showerror("Error", "Ocurrió un error inesperado: " + str(error) +
                                  "\n\nPuede que necesite reinstalar la aplicación")
@@ -11329,4 +11392,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
