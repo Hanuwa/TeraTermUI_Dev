@@ -666,9 +666,8 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Control-space>", lambda event: self.focus_set())
             self.bind("<Escape>", lambda event: self.on_closing())
             self.bind("<Alt-F4>", lambda event: self.direct_close())
-            user_data_fields = ["location", "config", "directory", "host", "language", "appearance", "scaling",
-                                "welcome", "default_semester", "audio", "skip_auth", "win_pos_x", "win_pos_y",
-                                "pdf_dir"]
+            user_data_fields = ["directory", "location", "config", "pdf_dir", "host", "language", "appearance",
+                                "scaling", "welcome", "default_semester", "audio", "skip_auth", "win_pos_x", "win_pos_y"]
             results = {}
             for field in user_data_fields:
                 query_user = f"SELECT {field} FROM user_data"
