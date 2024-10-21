@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 10/20/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 10/21/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -3388,12 +3388,15 @@ class TeraTermUI(customtkinter.CTk):
                             self.after(50, self.login_frame)
                         except AppStartError as err:
                             print("An error occurred: ", err)
-                            self.after(350, self.bind, "<Return>", lambda event: self.login_event_handler())
                             self.after(100, self.show_error_message, 425, 330,
                                        translation["tera_term_failed_to_start"])
                             if not self.download:
                                 self.after(3500, self.download_teraterm)
+                                self.log_in.configure(state="disabled")
+                                self.unbind("<Return>")
                                 self.download = True
+                            else:
+                                self.after(350, self.bind, "<Return>", lambda event: self.login_event_handler())
                     else:
                         self.after(350, self.bind, "<Return>", lambda event: self.login_event_handler())
                         self.after(100, self.show_error_message, 300, 215, translation["invalid_host"])
@@ -8346,6 +8349,8 @@ class TeraTermUI(customtkinter.CTk):
         response = msg.get()
         if response[0] == "Yes" or response[0] == "Sí":
             webbrowser.open("https://osdn.net/projects/ttssh2/releases")
+        self.log_in.configure(state="nornal")
+        self.bind("<Return>", lambda event: self.login_event_handler())
 
     # links to each correspondant curriculum that the user chooses
     @staticmethod
