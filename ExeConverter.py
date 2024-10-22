@@ -525,10 +525,10 @@ for version in versions:
                 print(Fore.RED + f"Unexpected error: {e}\n" + Style.RESET_ALL)
                 sys.exit(1)
 print(Fore.BLUE + "Checksum results:\n" + Style.RESET_ALL)
-if installer_checksum:
-    print(Fore.BLUE+ f"Installer (EXE) Checksum: {installer_checksum}\n" + Style.RESET_ALL)
 if portable_checksum:
     print(Fore.BLUE + f"Portable (ZIP) Checksum: {portable_checksum}\n" + Style.RESET_ALL)
+if installer_checksum:
+    print(Fore.BLUE+ f"Installer (EXE) Checksum: {installer_checksum}\n" + Style.RESET_ALL)
 print(Fore.GREEN + "Both versions (installer and portable) have been created successfully.\n" + Style.RESET_ALL)
 os.remove(program_backup)
 sys.exit(0)
