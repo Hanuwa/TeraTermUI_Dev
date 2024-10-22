@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 10/21/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 10/22/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -614,6 +614,7 @@ class TeraTermUI(customtkinter.CTk):
         self.error_auto_enroll = False
         self.connection_error = False
         self.check_update = False
+        self.delete_tesseract_dir = False
         self.disable_audio = False
         self.focus_or_not = False
         self.changed_location = False
@@ -770,6 +771,7 @@ class TeraTermUI(customtkinter.CTk):
                         - datetime.strptime(date_record[0], "%Y-%m-%d")).days >= 14:
                     try:
                         self.check_update = True
+                        self.delete_tesseract_dir = True
                         latest_version = self.get_latest_release()
 
                         def enable():
@@ -791,7 +793,6 @@ class TeraTermUI(customtkinter.CTk):
                                                 (current_date,))
                         else:
                             self.cursor.execute("UPDATE user_data SET update_date=?", (current_date,))
-                        self.connection.commit()
                     except requests.exceptions.RequestException as err:
                         print(f"Error occurred while fetching latest release information: {err}")
                         print("Please check your internet connection and try again")
@@ -7943,13 +7944,22 @@ class TeraTermUI(customtkinter.CTk):
     def cleanup_temp(self):
         tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
         backup_file_path = Path(self.app_temp_dir) / "TERATERM.ini.bak"
-        if tesseract_dir.exists():
-            for _ in range(10):  # Retry up to 10 times
-                try:
-                    shutil.rmtree(tesseract_dir)
-                    break  # If the directory was deleted successfully, exit the loop
-                except PermissionError:
-                    time.sleep(0.5)  # Wait for half a second before the next attempt
+        if self.mode == "Portable":
+            if tesseract_dir.exists():
+                for _ in range(10): # Retry up to 10 times
+                    try:
+                        shutil.rmtree(tesseract_dir)
+                        break
+                    except PermissionError:
+                        time.sleep(0.5)
+        elif self.mode == "Installation":
+            if tesseract_dir.exists() and self.delete_tesseract_dir:
+                for _ in range(10):  # Retry up to 10 times
+                    try:
+                        shutil.rmtree(tesseract_dir)
+                        break
+                    except PermissionError:
+                        time.sleep(0.5)
         # Delete the 'TERATERM.ini.bak' file
         if backup_file_path.exists() and not TeraTermUI.checkIfProcessRunning("ttermpro"):
             os.remove(backup_file_path)
