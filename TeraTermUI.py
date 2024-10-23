@@ -7963,7 +7963,8 @@ class TeraTermUI(customtkinter.CTk):
         # Delete the 'TERATERM.ini.bak' file
         if backup_file_path.exists() and not TeraTermUI.checkIfProcessRunning("ttermpro"):
             os.remove(backup_file_path)
-            shutil.rmtree(self.app_temp_dir)
+            if self.mode == "Portable" or (self.mode == "Installation" and not self.delete_tesseract_dir):
+                shutil.rmtree(self.app_temp_dir)
 
     # error window pop up message
     def show_error_message(self, width, height, error_msg_text):
