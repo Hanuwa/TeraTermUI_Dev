@@ -153,7 +153,7 @@ end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
-  TempDir, ComtypesCacheDir: string;
+  TempDir, ComtypesCacheDir, TeraTermUITempDir: string;
 begin
   if CurUninstallStep = usPostUninstall then
   begin
@@ -162,6 +162,11 @@ begin
     if DirExists(ComtypesCacheDir) then
     begin
       DeleteTeraTermUIDirectories(AddBackslash(ComtypesCacheDir));
+    end;
+    TeraTermUITempDir := AddBackslash(TempDir) + 'TeraTermUI';
+    if DirExists(TeraTermUITempDir) then
+    begin
+      DelTree(TeraTermUITempDir, True, True, True);
     end;
   end;
 end;
