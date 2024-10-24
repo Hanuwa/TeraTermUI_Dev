@@ -153,20 +153,28 @@ end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
-  TempDir, ComtypesCacheDir, TeraTermUITempDir: string;
+  TempDir, TeraTermUITempDir, TesseractOCRDir, INIFilePath: string;
 begin
   if CurUninstallStep = usPostUninstall then
   begin
     TempDir := GetTempDir;
-    ComtypesCacheDir := AddBackslash(TempDir) + ComtypesCacheDirName;
-    if DirExists(ComtypesCacheDir) then
-    begin
-      DeleteTeraTermUIDirectories(AddBackslash(ComtypesCacheDir));
-    end;
     TeraTermUITempDir := AddBackslash(TempDir) + 'TeraTermUI';
+    TesseractOCRDir := AddBackslash(TeraTermUITempDir) + 'Tesseract-OCR';
+    INIFilePath := TeraTermUITempDir + 'TERATERM.ini.bak';
+
     if DirExists(TeraTermUITempDir) then
     begin
-      DelTree(TeraTermUITempDir, True, True, True);
+      if FileExists(INIFilePath) then
+      begin
+        if DirExists(TesseractOCRDir) then
+        begin
+          DelTree(TesseractOCRDir, True, True, True);
+        end;
+      end
+      else
+      begin
+        DelTree(TeraTermUITempDir, True, True, True);
+      end;
     end;
   end;
-end;
+end;no.
