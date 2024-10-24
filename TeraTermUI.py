@@ -771,7 +771,6 @@ class TeraTermUI(customtkinter.CTk):
                         - datetime.strptime(date_record[0], "%Y-%m-%d")).days >= 14:
                     try:
                         self.check_update = True
-                        self.delete_tesseract_dir = True
                         latest_version = self.get_latest_release()
 
                         def enable():
@@ -792,6 +791,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.cursor.execute("INSERT INTO user_data (update_date) VALUES (?)",
                                                 (current_date,))
                         else:
+                            self.delete_tesseract_dir = True
                             self.cursor.execute("UPDATE user_data SET update_date=?", (current_date,))
                     except requests.exceptions.RequestException as err:
                         print(f"Error occurred while fetching latest release information: {err}")
