@@ -788,10 +788,10 @@ class TeraTermUI(customtkinter.CTk):
                             enable()
                         row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
                         if not row_exists:
+                            self.delete_tesseract_dir = True
                             self.cursor.execute("INSERT INTO user_data (update_date) VALUES (?)",
                                                 (current_date,))
                         else:
-                            self.delete_tesseract_dir = True
                             self.cursor.execute("UPDATE user_data SET update_date=?", (current_date,))
                     except requests.exceptions.RequestException as err:
                         print(f"Error occurred while fetching latest release information: {err}")
