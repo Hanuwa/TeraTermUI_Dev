@@ -8,9 +8,11 @@ import copy
 
 class CTkTable(customtkinter.CTkFrame):
     """ CTkTable Widget """
-    __slots__ = ("master", "row", "column", "padx", "pady", "width", "height", "values", "colors", "orientation",
-                 "color_phase", "border_width", "text_color", "border_color", "font", "header_color", "corner_radius",
-                 "write", "command", "anchor", "hover_color", "hover", "justify", "wraplength")
+
+    __slots__ = ("master", "rows", "columns", "padx", "pady", "width", "height", "values", "colors", "orientation",
+                "color_phase", "border_width", "text_color", "border_color", "font", "header_color", "corner_radius",
+                "write", "command", "anchor", "hover_color", "hover", "justify", "wraplength", "data", "frame", 
+                "corner_buttons", "cell_bindings", "phase", "corner", "orient", "fg_color", "fg_color2", "inside_frame")
 
     def __init__(
             self,
@@ -88,7 +90,7 @@ class CTkTable(customtkinter.CTkFrame):
         self.fg_color = customtkinter.ThemeManager.theme["CTkFrame"]["fg_color"] if not self.colors[0] else self.colors[
             0]
         self.fg_color2 = customtkinter.ThemeManager.theme["CTkFrame"]["top_fg_color"] if not self.colors[1] else \
-        self.colors[1]
+            self.colors[1]
 
         if self.colors[0] is None and self.colors[1] is None:
             if self.fg_color == self.master.cget("fg_color"):
@@ -176,59 +178,30 @@ class CTkTable(customtkinter.CTkFrame):
                 if value == "":
                     value = " "
 
-                if (i, j) in self.data.keys():
-                    if self.data[i, j]["args"]:
-                        args = self.data[i, j]["args"]
-                    else:
-                        args = copy.deepcopy(kwargs)
-                else:
-                    args = copy.deepcopy(kwargs)
+                args = copy.deepcopy(kwargs)
+                args.setdefault("text_color", self.text_color)
+                args.setdefault("height", self.height)
+                args.setdefault("width", self.width)
+                args["fg_color"] = fg  # Ensure fg_color is set correctly
 
-                self.data[i, j] = {"row": i, "column": j, "value": value, "args": args}
-
-                args = self.data[i, j]["args"]
-
-                if "text_color" not in args:
-                    args["text_color"] = self.text_color
-                if "height" not in args:
-                    args["height"] = self.height
-                if "width" not in args:
-                    args["width"] = self.width
-                if "fg_color" not in args:
-                    args["fg_color"] = fg
-                if args["fg_color"] != fg:
-                    args["fg_color"] = fg
-                if "corner_radius" in args:
-                    del args["corner_radius"]
-                if "border_color" in args:
-                    del args["border_color"]
-                if "border_width" in args:
-                    del args["border_width"]
-                if "color_phase" in args:
-                    del args["color_phase"]
-                if "orientation" in args:
-                    del args["orientation"]
-                if "write" in args:
-                    del args["write"]
+                for key in ["corner_radius", "border_color", "border_width", "color_phase", "orientation", "write"]:
+                    args.pop(key, None)
 
                 if self.write:
-                    if "anchor" in args:
-                        del args["anchor"]
-                    if "hover_color" in args:
-                        del args["hover_color"]
-                    if "hover" in args:
-                        del args["hover"]
-                    if "justify" not in args:
-                        args["justify"] = self.justify
+                    for key in ["anchor", "hover_color", "hover"]:
+                        args.pop(key, None)
+                    args.setdefault("justify", self.justify)
 
-                    self.frame[i, j] = customtkinter.CTkEntry(self.inside_frame,
-                                                              font=self.font,
-                                                              corner_radius=0,
-                                                              **args)
+                    self.frame[i, j] = customtkinter.CTkEntry(
+                        self.inside_frame,
+                        font=self.font,
+                        corner_radius=0,
+                        **args
+                    )
                     if value is None:
                         value = " "
                     self.frame[i, j].insert(0, str(value))
-                    self.frame[i, j].bind("<Key>", lambda e, row=i, column=j, data=self.data:
+                    self.frame[i, j].bind("<Key>", lambda e, row=i, column=j:
                                           self.after(100, lambda: self.manipulate_data(row, column)))
                     self.frame[i, j].grid(column=j, row=i, padx=padx, pady=pady, sticky="nsew")
 
@@ -237,12 +210,9 @@ class CTkTable(customtkinter.CTkFrame):
                             self.frame[i, j].configure(state="readonly")
 
                 else:
-                    if "anchor" not in args:
-                        args["anchor"] = self.anchor
-                    if "hover_color" not in args:
-                        args["hover_color"] = self.hover_color
-                    if "hover" not in args:
-                        args["hover"] = self.hover
+                    args.setdefault("anchor", self.anchor)
+                    args.setdefault("hover_color", self.hover_color)
+                    args.setdefault("hover", self.hover)
                     if "justify" in args:
                         anchor = args["justify"]
                         if anchor == "center":
@@ -255,13 +225,17 @@ class CTkTable(customtkinter.CTkFrame):
                         del args["justify"]
                     if value is None:
                         value = " "
-                    self.frame[i, j] = customtkinter.CTkButton(self.inside_frame, background_corner_colors=corners,
-                                                               font=self.font,
-                                                               corner_radius=corner_radius,
-                                                               text=value,
-                                                               border_width=0,
-                                                               command=(lambda row=i, col=j: self.command(
-                                                                   row, col)) if self.command else None, **args)
+                    self.frame[i, j] = customtkinter.CTkButton(
+                        self.inside_frame,
+                        background_corner_colors=corners,
+                        font=self.font,
+                        corner_radius=corner_radius,
+                        text=value,
+                        border_width=0,
+                        command=(lambda row=i, col=j: self.command(
+                            row, col)) if self.command else None,
+                        **args
+                    )
                     self.frame[i, j].grid(column=j, row=i, padx=padx, pady=pady, sticky="nsew")
                     if self.frame[i, j]._text_label is not None:
                         self.frame[i, j]._text_label.config(wraplength=self.wraplength)
@@ -283,8 +257,8 @@ class CTkTable(customtkinter.CTkFrame):
             return
 
         self.corner_buttons[i, j] = frame
-        fg = self.data[i, j]["args"]["fg_color"]
-        hv = self.data[i, j]["args"]["hover_color"]
+        fg = frame.cget("fg_color")
+        hv = frame.cget("hover_color")
         if (self.border_width >= 5) and (self.corner >= 5):
             tr = self.border_color
         else:
@@ -313,29 +287,21 @@ class CTkTable(customtkinter.CTkFrame):
     def manipulate_data(self, row, column):
         """ entry callback """
         self.update_data()
-        data = self.data[row, column]
-        if self.command: self.command(data)
+        if self.command:
+            self.command(self.get(row, column))
 
     def update_data(self):
-        """ update the data when values are changes """
-        for i in self.frame:
+        """ update the data when values are changed """
+        for (i, j), widget in self.frame.items():
             if self.write:
-                self.data[i]["value"] = self.frame[i].get()
+                self.values[i][j] = widget.get()
             else:
-                self.data[i]["value"] = self.frame[i].cget("text")
-
-        self.values = []
-        for i in range(self.rows):
-            row_data = []
-            for j in range(self.columns):
-                row_data.append(self.data[i, j]["value"])
-            self.values.append(row_data)
+                self.values[i][j] = widget.cget("text")
 
     def edit_row(self, row, value=None, **kwargs):
         """ edit all parameters of a single row """
         for i in range(self.columns):
             self.frame[row, i].configure(require_redraw=True, **kwargs)
-            self.data[row, i]["args"].update(kwargs)
             if value is not None:
                 self.insert(row, i, value)
             if (row, i) in self.corner_buttons.keys():
@@ -346,7 +312,6 @@ class CTkTable(customtkinter.CTkFrame):
         """ edit all parameters of a single column """
         for i in range(self.rows):
             self.frame[i, column].configure(require_redraw=True, **kwargs)
-            self.data[i, column]["args"].update(kwargs)
             if value is not None:
                 self.insert(i, column, value)
             if (i, column) in self.corner_buttons.keys():
@@ -382,50 +347,25 @@ class CTkTable(customtkinter.CTkFrame):
         new_columns = len(new_values[0]) if new_values else 0
 
         if new_rows != self.rows or new_columns != self.columns:
-            if new_rows > self.rows:
-                for i in range(self.rows, new_rows):
-                    self.add_row([None] * self.columns)
-            elif new_rows < self.rows:
-                for i in range(new_rows, self.rows):
-                    self.delete_row()
-
-            if new_columns > self.columns:
-                for j in range(self.columns, new_columns):
-                    self.add_column([None] * self.rows)
-            elif new_columns < self.columns:
-                for j in range(new_columns, self.columns):
-                    self.delete_column()
+            for i in self.frame.values():
+                i.destroy()
+            self.frame = {}
             self.rows = new_rows
             self.columns = new_columns
-
-        for row_index in range(new_rows):
-            for col_index in range(new_columns):
-                new_value = str(new_values[row_index][col_index])
-                cell = self.get_cell(row_index, col_index)
-                if cell:
-                    current_value = cell.get() if self.write else cell.cget('text')
-                    if current_value != new_value:
-                        if self.write:
-                            cell.delete(0, customtkinter.END)
-                            cell.insert(0, new_value)
-                        else:
-                            cell.configure(text=new_value)
-        self.values = new_values
-        self.update_idletasks()
+            self.values = new_values
+            self.draw_table()
+        else:
+            self.update_values(new_values)
 
     def add_row(self, values, index=None, **kwargs):
         """ add a new row """
+        if index is None:
+            index = len(self.values)
+        self.values.insert(index, values)
+        self.rows += 1
         for i in self.frame.values():
             i.destroy()
         self.frame = {}
-        if index is None:
-            index = len(self.values)
-        try:
-            self.values.insert(index, values)
-            self.rows += 1
-        except IndexError:
-            pass
-
         self.draw_table(**kwargs)
         self.update_data()
 
@@ -455,24 +395,23 @@ class CTkTable(customtkinter.CTkFrame):
         if 0 <= row < self.rows and 0 <= column < self.columns:
             # Check if the cell exists within the table boundaries
             cell = self.frame[row, column]
-            cell.configure(text=new_text)
+            if self.write:
+                cell.delete(0, customtkinter.END)
+                cell.insert(0, new_text)
+            else:
+                cell.configure(text=new_text)
             self.update_data()
 
     def add_column(self, values, index=None, **kwargs):
         """ add a new column """
+        if index is None:
+            index = len(self.values[0])
+        for i, row in enumerate(self.values):
+            row.insert(index, values[i])
+        self.columns += 1
         for i in self.frame.values():
             i.destroy()
         self.frame = {}
-        if index is None:
-            index = len(self.values[0])
-        x = 0
-        for i in self.values:
-            try:
-                i.insert(index, values[x])
-                x += 1
-            except IndexError:
-                pass
-        self.columns += 1
         self.draw_table(**kwargs)
         self.update_data()
 
@@ -496,9 +435,9 @@ class CTkTable(customtkinter.CTkFrame):
         if index is None or index >= len(self.values):
             index = len(self.values) - 1
         self.values.pop(index)
+        self.rows -= 1
         for i in self.frame.values():
             i.destroy()
-        self.rows -= 1
         self.frame = {}
         self.draw_table()
         self.update_data()
@@ -508,50 +447,38 @@ class CTkTable(customtkinter.CTkFrame):
         if len(self.values[0]) == 1:
             return
         if index is None or index >= len(self.values[0]):
-            try:
-                index = len(self.values) - 1
-            except IndexError:
-                return
-        for i in self.values:
-            i.pop(index)
+            index = len(self.values[0]) - 1
+        for row in self.values:
+            row.pop(index)
+        self.columns -= 1
         for i in self.frame.values():
             i.destroy()
-        self.columns -= 1
         self.frame = {}
         self.draw_table()
         self.update_data()
 
     def delete_rows(self, indices=[]):
-        """ delete a particular row """
-        if len(indices) == 0:
+        """ delete multiple rows """
+        if not indices:
             return
         self.values = [v for i, v in enumerate(self.values) if i not in indices]
-        for i in indices:
-            for j in range(self.columns):
-                self.data[i, j]["args"] = ""
+        self.rows -= len(set(indices))
         for i in self.frame.values():
             i.destroy()
-        self.rows -= len(set(indices))
         self.frame = {}
         self.draw_table()
         self.update_data()
 
     def delete_columns(self, indices=[]):
-        """ delete a particular column """
-        if len(indices) == 0:
+        """ delete multiple columns """
+        if not indices:
             return
-        x = 0
-
-        for k in self.values:
-            self.values[x] = [v for i, v in enumerate(k) if i not in indices]
-            x += 1
-        for i in indices:
-            for j in range(self.rows):
-                self.data[j, i]["args"] = ""
-
+        for row in self.values:
+            for index in sorted(indices, reverse=True):
+                row.pop(index)
+        self.columns -= len(set(indices))
         for i in self.frame.values():
             i.destroy()
-        self.columns -= len(set(indices))
         self.frame = {}
         self.draw_table()
         self.update_data()
@@ -562,10 +489,7 @@ class CTkTable(customtkinter.CTkFrame):
 
     def get_column(self, column):
         """ get values of one column """
-        column_list = []
-        for i in self.values:
-            column_list.append(i[column])
-        return column_list
+        return [row[column] for row in self.values]
 
     def select_row(self, row):
         """ select an entire row """
@@ -602,7 +526,8 @@ class CTkTable(customtkinter.CTkFrame):
     def deselect_column(self, column):
         """ deselect an entire column """
         for i in range(self.rows):
-            self.frame[i, column].configure(fg_color=self.fg_color if i % 2 == 0 else self.fg_color2)
+            fg_color = self.fg_color if i % 2 == 0 else self.fg_color2
+            self.frame[i, column].configure(fg_color=fg_color)
         if self.orient != "horizontal":
             if self.header_color:
                 self.edit_column(0, fg_color=self.header_color)
@@ -626,11 +551,11 @@ class CTkTable(customtkinter.CTkFrame):
 
     def deselect(self, row, column):
         """ deselect any cell """
-        self.frame[row, column].configure(fg_color=self.fg_color if row % 2 == 0 else self.fg_color2)
+        fg_color = self.fg_color if row % 2 == 0 else self.fg_color2
+        self.frame[row, column].configure(fg_color=fg_color)
 
     def insert(self, row, column, value, **kwargs):
         """ insert value in a specific block [row, column] """
-        if kwargs: self.data[row, column]["args"].update(kwargs)
         if self.write:
             self.frame[row, column].delete(0, customtkinter.END)
             self.frame[row, column].insert(0, value)
@@ -639,20 +564,17 @@ class CTkTable(customtkinter.CTkFrame):
             self.frame[row, column].configure(require_redraw=True, text=value, **kwargs)
             if (row, column) in self.corner_buttons.keys():
                 self.dynamic_hover(self.corner_buttons[row, column], row, column)
-
+        self.values[row][column] = value
         self.update_data()
 
     def edit(self, row, column, **kwargs):
         """ change parameters of a cell without changing value """
-        if kwargs: self.data[row, column]["args"].update(kwargs)
         if self.write:
             self.frame[row, column].configure(**kwargs)
         else:
             self.frame[row, column].configure(require_redraw=True, **kwargs)
             if (row, column) in self.corner_buttons.keys():
                 self.dynamic_hover(self.corner_buttons[row, column], row, column)
-
-        self.update_data()
 
     def delete(self, row, column, **kwargs):
         """ delete a value from a specific block [row, column] """
@@ -661,13 +583,13 @@ class CTkTable(customtkinter.CTkFrame):
             self.frame[row, column].configure(**kwargs)
         else:
             self.frame[row, column].configure(require_redraw=True, text="", **kwargs)
-        if kwargs: self.data[row, column]["args"].update(kwargs)
+        self.values[row][column] = ""
         self.update_data()
 
     def get(self, row=None, column=None):
         """ get the required cell """
         if row is not None and column is not None:
-            return self.data[row, column]["value"]
+            return self.values[row][column]
         else:
             return self.values
 
@@ -682,7 +604,7 @@ class CTkTable(customtkinter.CTkFrame):
         return {"row_index": selected_row_index, "values": selected_row_data}
 
     def get_selected_column(self):
-        """ Return the index and data of the selected row """
+        """ Return the index and data of the selected column """
         selected_column_index = None
         for i in range(self.columns):
             if self.frame[0, i].cget("fg_color") == self.hover_color:
@@ -719,10 +641,6 @@ class CTkTable(customtkinter.CTkFrame):
             self.pady = kwargs.pop("pady")
         if "wraplength" in kwargs:
             self.wraplength = kwargs.pop("wraplength")
-
-        for i in range(self.rows):
-            for j in range(self.columns):
-                self.data[i, j]["args"].update(kwargs)
 
         if "hover_color" in kwargs:
             self.hover_color = kwargs.pop("hover_color")
@@ -826,8 +744,8 @@ class CTkTable(customtkinter.CTkFrame):
         if cell and (row, column) in self.cell_bindings:
             if sequence:
                 cell.unbind(sequence)
-                self.cell_bindings[(row, column)] = [(seq, func) for seq, func in self.cell_bindings[(row, column)] if
-                                                     seq != sequence]
+                self.cell_bindings[(row, column)] = [
+                    (seq, func) for seq, func in self.cell_bindings[(row, column)] if seq != sequence]
             else:
                 for seq, _ in self.cell_bindings[(row, column)]:
                     cell.unbind(seq)
@@ -838,7 +756,8 @@ class CTkTable(customtkinter.CTkFrame):
             if (row, column) in self.cell_bindings:
                 for sequence, _ in self.cell_bindings[(row, column)]:
                     self.unbind_cell(row, column, sequence)
-            cell.configure(command=None)
+            if hasattr(cell, 'configure'):
+                cell.configure(command=None)
             cell.destroy()
         self.frame.clear()
         self.cell_bindings.clear()
@@ -848,4 +767,3 @@ class CTkTable(customtkinter.CTkFrame):
         self.data.clear()
         self.values = None
         super().destroy()
-        
