@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 10/24/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 10/20/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -5761,6 +5761,7 @@ class TeraTermUI(customtkinter.CTk):
             return
 
         translation = self.load_language()
+        self.focus_set()
 
         classes_list = []
         data = []
@@ -7034,6 +7035,7 @@ class TeraTermUI(customtkinter.CTk):
 
         translation = self.load_language()
         semester = self.dialog_input.upper().replace(" ", "")
+        self.focus_set()
 
         # Define where the PDF will be saved
         if self.last_save_pdf_dir is not None:
@@ -8256,9 +8258,9 @@ class TeraTermUI(customtkinter.CTk):
         if new_appearance_mode == self.curr_appearance:
             return
 
-        self.focus_set()
         customtkinter.set_appearance_mode(new_appearance_mode)
         self.curr_appearance = new_appearance_mode
+        self.focus_set()
 
     def add_key_bindings(self, event):
         if self.in_search_frame:
@@ -8321,12 +8323,12 @@ class TeraTermUI(customtkinter.CTk):
         if new_scaling_float == self.curr_scaling:
             return
 
-        self.focus_set()
         self.scaling_tooltip.hide()
         customtkinter.set_widget_scaling(new_scaling_float)
         self.scaling_tooltip.configure(message=f"{new_scaling}%")
         self.curr_scaling = new_scaling_float
         self.scaling_tooltip.show()
+        self.focus_set()
 
     # opens GitHub page
     def github_event(self):
