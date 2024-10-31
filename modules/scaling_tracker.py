@@ -22,9 +22,7 @@ class ScalingTracker:
 
     update_loop_running = False
     update_loop_interval = 500  # ms
-    loop_pause_after_new_scaling = 1000  # ms
-
-    _lock = threading.Lock()  # For thread safety
+    loop_pause_after_new_scaling = 1500  # ms
 
     @classmethod
     def get_widget_scaling(cls, widget) -> float:
@@ -65,89 +63,84 @@ class ScalingTracker:
 
     @classmethod
     def update_scaling_callbacks_all(cls):
-        with cls._lock:
-            for window, callback_list in list(cls.window_widgets_dict.items()):
-                new_callback_list = []
-                for callback in callback_list:
-                    if callback is not None:
-                        widget = getattr(callback, '__self__', None)
-                        if widget and widget.winfo_exists() and widget.master is not None:
-                            try:
-                                if not cls.deactivate_automatic_dpi_awareness:
-                                    scaling_factor = cls.window_dpi_scaling_dict.get(window, 1.0)
-                                    callback(scaling_factor * cls.widget_scaling,
-                                             scaling_factor * cls.window_scaling)
-                                else:
-                                    callback(cls.widget_scaling, cls.window_scaling)
-                                new_callback_list.append(callback)
-                            except tkinter.TclError:
-                                pass  # Widget might have been destroyed
-                cls.window_widgets_dict[window] = new_callback_list
+        for window, callback_list in list(cls.window_widgets_dict.items()):
+            new_callback_list = []
+            for callback in callback_list:
+                if callback is not None:
+                    widget = getattr(callback, '__self__', None)
+                    if widget and widget.winfo_exists() and widget.master is not None:
+                        try:
+                            if not cls.deactivate_automatic_dpi_awareness:
+                                scaling_factor = cls.window_dpi_scaling_dict.get(window, 1.0)
+                                callback(scaling_factor * cls.widget_scaling,
+                                         scaling_factor * cls.window_scaling)
+                            else:
+                                callback(cls.widget_scaling, cls.window_scaling)
+                            new_callback_list.append(callback)
+                        except tkinter.TclError:
+                            pass  # Widget might have been destroyed
+            cls.window_widgets_dict[window] = new_callback_list
 
     @classmethod
     def update_scaling_callbacks_for_window(cls, window):
-        with cls._lock:
-            for callback in cls.window_widgets_dict.get(window, []):
-                if callback is not None:
-                    try:
-                        if not cls.deactivate_automatic_dpi_awareness:
-                            scaling_factor = cls.window_dpi_scaling_dict.get(window, 1.0)
-                            callback(scaling_factor * cls.widget_scaling,
-                                     scaling_factor * cls.window_scaling)
-                        else:
-                            callback(cls.widget_scaling, cls.window_scaling)
-                    except tkinter.TclError:
-                        pass  # Widget might have been destroyed
+        for callback in cls.window_widgets_dict.get(window, []):
+            if callback is not None:
+                try:
+                    if not cls.deactivate_automatic_dpi_awareness:
+                        scaling_factor = cls.window_dpi_scaling_dict.get(window, 1.0)
+                        callback(scaling_factor * cls.widget_scaling,
+                                 scaling_factor * cls.window_scaling)
+                    else:
+                        callback(cls.widget_scaling, cls.window_scaling)
+                except tkinter.TclError:
+                    pass  # Widget might have been destroyed
 
     @classmethod
     def add_widget(cls, widget_callback: Callable, widget):
         window_root = cls.get_window_root_of_widget(widget)
-        with cls._lock:
-            if window_root not in cls.window_widgets_dict:
-                cls.window_widgets_dict[window_root] = [widget_callback]
-            else:
-                cls.window_widgets_dict[window_root].append(widget_callback)
+        if window_root not in cls.window_widgets_dict:
+            cls.window_widgets_dict[window_root] = [widget_callback]
+        else:
+            cls.window_widgets_dict[window_root].append(widget_callback)
 
-            if window_root not in cls.window_dpi_scaling_dict:
-                cls.window_dpi_scaling_dict[window_root] = cls.get_window_dpi_scaling(window_root)
+        if window_root not in cls.window_dpi_scaling_dict:
+            cls.window_dpi_scaling_dict[window_root] = cls.get_window_dpi_scaling(window_root)
 
-            if not cls.update_loop_running:
-                window_root.after(100, cls.check_dpi_scaling)
-                cls.update_loop_running = True
+        if not cls.update_loop_running:
+            window_root.after(100, cls.check_dpi_scaling)
+            cls.update_loop_running = True
 
     @classmethod
     def remove_widget(cls, widget_callback: Callable, widget):
         window_root = cls.get_window_root_of_widget(widget)
-        with cls._lock:
-            try:
-                cls.window_widgets_dict[window_root].remove(widget_callback)
-                if not cls.window_widgets_dict[window_root]:
-                    del cls.window_widgets_dict[window_root]
-                    del cls.window_dpi_scaling_dict[window_root]
-            except (ValueError, KeyError):
-                pass
+        try:
+            cls.window_widgets_dict[window_root].remove(widget_callback)
+            if not cls.window_widgets_dict[window_root]:
+                del cls.window_widgets_dict[window_root]
+                del cls.window_dpi_scaling_dict[window_root]
+        except (ValueError, KeyError):
+            pass
 
     @classmethod
     def remove_window(cls, window_callback: Callable, window):
-        with cls._lock:
-            try:
-                cls.window_widgets_dict[window].remove(window_callback)
-                if not cls.window_widgets_dict[window]:
-                    del cls.window_widgets_dict[window]
-                    del cls.window_dpi_scaling_dict[window]
-            except (ValueError, KeyError):
-                pass
+        try:
+            cls.window_widgets_dict[window].remove(window_callback)
+            if not cls.window_widgets_dict[window]:
+                del cls.window_widgets_dict[window]
+                del cls.window_dpi_scaling_dict[window]
+        except (ValueError, KeyError):
+            pass
 
     @classmethod
     def add_window(cls, window_callback: Callable, window):
-        with cls._lock:
-            if window not in cls.window_widgets_dict:
-                cls.window_widgets_dict[window] = [window_callback]
-            else:
-                cls.window_widgets_dict[window].append(window_callback)
+        if window not in cls.window_widgets_dict:
+            cls.window_widgets_dict[window] = [window_callback]
+        else:
+            cls.window_widgets_dict[window].append(window_callback)
 
-            if window not in cls.window_dpi_scaling_dict:
-                cls.window_dpi_scaling_dict[window] = cls.get_window_dpi_scaling(window)
+        if window not in cls.window_dpi_scaling_dict:
+            cls.window_dpi_scaling_dict[window] = cls.get_window_dpi_scaling(window)
+
 
     @classmethod
     def activate_high_dpi_awareness(cls):
@@ -198,41 +191,40 @@ class ScalingTracker:
     def check_dpi_scaling(cls):
         new_scaling_detected = False
 
-        with cls._lock:
-            # Check for every window if scaling value changed
-            for window in list(cls.window_widgets_dict):
-                if window.winfo_exists() and window.state() != "iconic":
-                    current_dpi_scaling_value = cls.get_window_dpi_scaling(window)
-                    if current_dpi_scaling_value != cls.window_dpi_scaling_dict.get(window, 1.0):
-                        cls.window_dpi_scaling_dict[window] = current_dpi_scaling_value
+        # Check for every window if scaling value changed
+        for window in list(cls.window_widgets_dict):
+            if window.winfo_exists() and window.state() != "iconic":
+                current_dpi_scaling_value = cls.get_window_dpi_scaling(window)
+                if current_dpi_scaling_value != cls.window_dpi_scaling_dict.get(window, 1.0):
+                    cls.window_dpi_scaling_dict[window] = current_dpi_scaling_value
 
-                        if sys.platform.startswith("win"):
-                            window.attributes("-alpha", 0.15)
+                    if sys.platform.startswith("win"):
+                        window.attributes("-alpha", 0.15)
 
-                        if hasattr(window, 'block_update_dimensions_event'):
-                            window.block_update_dimensions_event()
-                        cls.update_scaling_callbacks_for_window(window)
-                        if hasattr(window, 'unblock_update_dimensions_event'):
-                            window.unblock_update_dimensions_event()
+                    if hasattr(window, 'block_update_dimensions_event'):
+                        window.block_update_dimensions_event()
+                    cls.update_scaling_callbacks_for_window(window)
+                    if hasattr(window, 'unblock_update_dimensions_event'):
+                        window.unblock_update_dimensions_event()
 
-                        if sys.platform.startswith("win"):
-                            window.attributes("-alpha", 1.0)
+                    if sys.platform.startswith("win"):
+                        window.attributes("-alpha", 1.0)
 
-                        new_scaling_detected = True
+                    new_scaling_detected = True
 
-            # Clear scaling cache if new scaling was detected
-            if new_scaling_detected:
-                cls.scaling_cache.clear()
+        # Clear scaling cache if new scaling was detected
+        if new_scaling_detected:
+            cls.scaling_cache.clear()
 
-            # Schedule the next check
-            for app in cls.window_widgets_dict.keys():
-                try:
-                    if new_scaling_detected:
-                        app.after(cls.loop_pause_after_new_scaling, cls.check_dpi_scaling)
-                    else:
-                        app.after(cls.update_loop_interval, cls.check_dpi_scaling)
-                    return
-                except Exception:
-                    continue
+        # Schedule the next check
+        for app in cls.window_widgets_dict.keys():
+            try:
+                if new_scaling_detected:
+                    app.after(cls.loop_pause_after_new_scaling, cls.check_dpi_scaling)
+                else:
+                    app.after(cls.update_loop_interval, cls.check_dpi_scaling)
+                return
+            except Exception:
+                continue
 
-            cls.update_loop_running = False
+        cls.update_loop_running = False
