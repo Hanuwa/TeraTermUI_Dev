@@ -242,11 +242,22 @@ class CTkBaseClass(tkinter.Frame, CTkAppearanceModeBaseClass, CTkScalingBaseClas
                           height=self._apply_widget_scaling(self._desired_height))
         if self._last_geometry_manager_call is not None:
             geometry_manager_function_ref = self._last_geometry_manager_call["function"]
-            geometry_manager_function = geometry_manager_function_ref()
+            if isinstance(geometry_manager_function_ref, WeakMethod):
+                geometry_manager_function = geometry_manager_function_ref()
+            else:
+                geometry_manager_function = geometry_manager_function_ref  # For unbound functions
+
             if geometry_manager_function is not None:
                 kwargs = self._last_geometry_manager_call["kwargs"]
                 scaled_kwargs = self._apply_argument_scaling(kwargs)
+                # Dereference any widget references in kwargs
+                scaled_kwargs = {key: value() if isinstance(value, ref) else value for key, value in
+                                 scaled_kwargs.items()}
                 geometry_manager_function(**scaled_kwargs)
+            else:
+                # Handle the case where the geometry manager function is no longer available
+                # This might involve logging a warning or taking alternative action
+                pass
 
     def _set_dimensions(self, width=None, height=None):
         if width is not None:
@@ -270,9 +281,9 @@ class CTkBaseClass(tkinter.Frame, CTkAppearanceModeBaseClass, CTkScalingBaseClas
         raise AttributeError("'bind_all' is not allowed, could result in undefined behavior")
 
     def _store_geometry_call(self, function, **kwargs):
-        """ Store the last geometry manager call with weak references. """
+        """ Store the last geometry manager call with strong references. """
         self._last_geometry_manager_call = GeometryCallDict(
-            function=WeakMethod(function) if hasattr(function, '__self__') else function,
+            function=function,
             kwargs={key: ref(value) if isinstance(value, tkinter.Widget) else value for key, value in kwargs.items()}
         )
 
