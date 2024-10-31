@@ -1,4 +1,4 @@
-from typing import Union, Tuple
+from typing import Union, Tuple, Optional
 import copy
 import re
 try:
@@ -58,9 +58,9 @@ class CTkScalingBaseClass:
     def _get_window_scaling(self) -> float:
         return self.__window_scaling
 
-    def _apply_widget_scaling(self, value: Union[int, float]) -> Union[float]:
+    def _apply_widget_scaling(self, value: Union[int, float]) -> int:
         assert self.__scaling_type == "widget"
-        return value * self.__widget_scaling
+        return int(round(value * self.__widget_scaling))
 
     def _reverse_widget_scaling(self, value: Union[int, float]) -> Union[float]:
         assert self.__scaling_type == "widget"
@@ -68,7 +68,7 @@ class CTkScalingBaseClass:
 
     def _apply_window_scaling(self, value: Union[int, float]) -> int:
         assert self.__scaling_type == "window"
-        return int(value * self.__window_scaling)
+        return int(round(value * self.__window_scaling))
 
     def _reverse_window_scaling(self, scaled_value: Union[int, float]) -> int:
         assert self.__scaling_type == "window"
@@ -108,11 +108,19 @@ class CTkScalingBaseClass:
         return scaled_kwargs
 
     @staticmethod
-    def _parse_geometry_string(geometry_string: str) -> tuple:
-        dimensions, *position = geometry_string.split('+')
-        width, height = map(int, dimensions.split('x')) if 'x' in dimensions else (None, None)
-        x, y = map(int, position) if position else (None, None)
-        return width, height, x, y
+    def _parse_geometry_string(geometry_string: str) -> Tuple[
+        Optional[int], Optional[int], Optional[int], Optional[int]]:
+        pattern = r"^(?:(\d+)x(\d+))?(?:([+-]\d+)([+-]\d+))?$"
+        match = re.match(pattern, geometry_string)
+        if not match:
+            raise ValueError(f"Invalid geometry string: '{geometry_string}'")
+        width, height, x, y = match.groups()
+        return (
+            int(width) if width else None,
+            int(height) if height else None,
+            int(x) if x else None,
+            int(y) if y else None,
+        )
 
     def _scale_geometry(self, geometry_string: str, scale: bool) -> str:
         width, height, x, y = self._parse_geometry_string(geometry_string)
@@ -120,12 +128,14 @@ class CTkScalingBaseClass:
 
         scaled_width = round(width * scaling_factor) if width is not None else None
         scaled_height = round(height * scaling_factor) if height is not None else None
+        scaled_x = round(x * scaling_factor) if x is not None else None
+        scaled_y = round(y * scaling_factor) if y is not None else None
 
         geometry_parts = []
         if scaled_width is not None and scaled_height is not None:
             geometry_parts.append(f"{scaled_width}x{scaled_height}")
-        if x is not None and y is not None:
-            geometry_parts.append(f"+{x}+{y}")
+        if scaled_x is not None and scaled_y is not None:
+            geometry_parts.append(f"{'+' if scaled_x >= 0 else ''}{scaled_x}{'+' if scaled_y >= 0 else ''}{scaled_y}")
 
         return "".join(geometry_parts)
 
