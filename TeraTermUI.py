@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 10/30/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 10/31/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1241,7 +1241,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys("{TAB 3}")
                                     self.after(0, self.student_id_entry.configure(border_color="#c30101"))
                                     self.after(0, self.code_entry.configure(border_color="#c30101"))
-                                    self.after(100, self.show_error_message, 300, 215,
+                                    self.after(100, self.show_error_message, 305, 225,
                                                translation["error_student_id_code"])
                                 else:
                                     self.after(100, self.show_error_message, 315, 230, translation["error_sign-in"])
@@ -1251,7 +1251,7 @@ class TeraTermUI(customtkinter.CTk):
                                     (not code.isdigit() or len(code) != 4):
                                 self.after(0, self.student_id_entry.configure(border_color="#c30101"))
                                 self.after(0, self.code_entry.configure(border_color="#c30101"))
-                                self.after(100, self.show_error_message, 300, 215, translation["error_student_id_code"])
+                                self.after(100, self.show_error_message, 305, 225, translation["error_student_id_code"])
                             elif not student_id or not student_id.isdigit() or len(student_id) != 9:
                                 self.after(0, self.student_id_entry.configure(border_color="#c30101"))
                                 self.after(100, self.show_error_message, 315, 230, translation["error_student_id"])
@@ -1773,10 +1773,10 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(0, hide_next_button)
                             if "COURSE NOT IN" in text_output:
                                 if lang == "English":
-                                    self.after(100, self.show_error_message, 300, 215,
+                                    self.after(100, self.show_error_message, 300, 220,
                                                "Error! Course: " + classes + " not found")
                                 elif lang == "Español":
-                                    self.after(100, self.show_error_message, 310, 215,
+                                    self.after(100, self.show_error_message, 310, 220,
                                                "Error! Clase: " + classes + " \nno se encontro")
                                 self.search_function_counter += 1
                                 self.after(0, self.s_classes_entry.configure(border_color="#c30101"))
@@ -4425,7 +4425,7 @@ class TeraTermUI(customtkinter.CTk):
                                 date_time_string = match.group()
                                 date_time_string += " AM"
                             else:
-                                self.after(100, self.show_error_message, 300, 215,
+                                self.after(100, self.show_error_message, 305, 220,
                                            translation["failed_to_find_date"])
                                 self.after(100, self.auto_enroll.deselect)
                                 self.auto_enroll_bool = False
@@ -4450,7 +4450,7 @@ class TeraTermUI(customtkinter.CTk):
                             is_current_time_24_hours_ahead = time_difference >= timedelta(hours=-24)
                             if active_semesters["percent"] and active_semesters["asterisk"] \
                                     and semester == active_semesters["percent"]:
-                                self.after(100, self.show_error_message, 300, 215, translation["date_past"])
+                                self.after(100, self.show_error_message, 305, 220, translation["date_past"])
                                 self.auto_enroll_bool = False
                                 self.after(100, self.auto_enroll.deselect)
                                 return
@@ -4473,7 +4473,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.started_auto_enroll = True
                                     self.after(150, self.submit_multiple_event_handler)
                                 else:
-                                    self.after(100, self.show_error_message, 300, 215,
+                                    self.after(100, self.show_error_message, 305, 220,
                                                translation["date_past"])
                                     self.auto_enroll_bool = False
                                     self.after(100, self.auto_enroll.deselect)
@@ -4492,12 +4492,12 @@ class TeraTermUI(customtkinter.CTk):
                                 self.reset_activity_timer()
                                 self.after(0, self.bring_back_timer_window)
                         else:
-                            self.after(100, self.show_error_message, 300, 215,
+                            self.after(100, self.show_error_message, 305, 220,
                                        translation["failed_to_find_date"])
                             self.after(100, self.auto_enroll.deselect)
                             self.auto_enroll_bool = False
                     else:
-                        self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+                        self.after(100, self.show_error_message, 305, 215, translation["tera_term_not_running"])
                         self.auto_enroll_bool = False
                         self.after(100, self.auto_enroll.deselect)
             except Exception as err:
