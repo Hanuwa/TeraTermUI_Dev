@@ -128,14 +128,12 @@ class CTkScalingBaseClass:
 
         scaled_width = round(width * scaling_factor) if width is not None else None
         scaled_height = round(height * scaling_factor) if height is not None else None
-        scaled_x = round(x * scaling_factor) if x is not None else None
-        scaled_y = round(y * scaling_factor) if y is not None else None
 
         geometry_parts = []
         if scaled_width is not None and scaled_height is not None:
             geometry_parts.append(f"{scaled_width}x{scaled_height}")
-        if scaled_x is not None and scaled_y is not None:
-            geometry_parts.append(f"{'+' if scaled_x >= 0 else ''}{scaled_x}{'+' if scaled_y >= 0 else ''}{scaled_y}")
+        if x is not None and y is not None:
+            geometry_parts.append(f"{'+' if x >= 0 else ''}{x}{'+' if y >= 0 else ''}{y}")
 
         return "".join(geometry_parts)
 
