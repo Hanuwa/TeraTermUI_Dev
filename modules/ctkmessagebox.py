@@ -422,26 +422,26 @@ class CTkMessagebox(customtkinter.CTkToplevel):
 
     def load_icon(self, icon, icon_size):
         default_icon = "question"
-        image_path = ""
         if icon in ["check", "cancel", "info", "question", "warning"]:
             image_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'icons', icon + '.png')
         else:
             image_path = icon
-        if not os.path.exists(image_path):
-            image_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'icons', default_icon + '.png')
 
-        if icon_size:
-            size_height = icon_size[1] if icon_size[1] <= self.height - 100 else self.height - 100
-            size = (icon_size[0], size_height)
-        else:
-            size = (self.height / 4, self.height / 4)
-        if icon not in self.ICONS or self.ICONS[icon] is None:
-            self.ICONS[icon] = customtkinter.CTkImage(Image.open(image_path), size=size)
-            self.ICON_BITMAP[icon] = ImageTk.PhotoImage(file=image_path)
+        if image_path not in self.ICONS:
+            if not os.path.exists(image_path):
+                image_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'icons', default_icon + '.png')
 
-        if not sys.platform.startswith("darwin"):
-            self.after(200, lambda: self.iconphoto(False, self.ICON_BITMAP[icon]))
-        return self.ICONS[icon]
+            size = (icon_size[0], min(icon_size[1], self.height - 100)) if icon_size else (
+            self.height // 4, self.height // 4)
+            with Image.open(image_path) as img:
+                img = img.resize(size, Image.LANCZOS)
+                self.ICONS[image_path] = customtkinter.CTkImage(img, size=size)
+                self.ICON_BITMAP[image_path] = ImageTk.PhotoImage(img)
+
+                if not sys.platform.startswith("darwin"):
+                    self.after(200, lambda: self.iconphoto(False, self.ICON_BITMAP[image_path]))
+
+        return self.ICONS[image_path]
 
     def return_key_handler(self, event):
         if not hasattr(self, "option_text_3") and not hasattr(self, "option_text_2") \
