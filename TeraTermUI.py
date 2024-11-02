@@ -10348,6 +10348,8 @@ class CustomTextBox(customtkinter.CTkTextbox):
         if self.read_only:
             self.bind("<Up>", self.scroll_more_up)
             self.bind("<Down>", self.scroll_more_down)
+            self.bind("<Left>", self.teraterm_ui.move_slider_left)
+            self.bind("<Right>", self.teraterm_ui.move_slider_right)
 
         # Context Menu
         self.context_menu = tk.Menu(self, tearoff=0, bg="#f0f0f0", fg="#333333", font=("Arial", 10))
@@ -10373,8 +10375,9 @@ class CustomTextBox(customtkinter.CTkTextbox):
             elif self.lang == "Español" and self.read_only:
                 self.context_menu.entryconfigure(1, label="Seleccionar Todo")
 
-        self.teraterm_ui.move_slider_left_enabled = False
-        self.teraterm_ui.move_slider_right_enabled = False
+        if not self.read_only:
+            self.teraterm_ui.move_slider_left_enabled = False
+            self.teraterm_ui.move_slider_right_enabled = False
         self.teraterm_ui.up_arrow_key_enabled = False
         self.teraterm_ui.down_arrow_key_enabled = False
 
