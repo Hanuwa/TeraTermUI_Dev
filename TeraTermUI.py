@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 11/01/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 11/02/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -11237,9 +11237,6 @@ class ImageSlideshow(customtkinter.CTkFrame):
         self.image_files = image_files
 
     def show_image(self):
-        if hasattr(self, "current_image"):
-            del self.current_image
-
         filepath = os.path.join(self.image_folder, self.image_files[self.index])
         self.current_image = customtkinter.CTkImage(
             light_image=Image.open(filepath).resize((self.width * 2, self.height * 2)),
@@ -11251,6 +11248,9 @@ class ImageSlideshow(customtkinter.CTkFrame):
         self.reset_timer()
 
     def cycle_images(self):
+        if self.current_image:
+            del self.current_image
+
         self.index = (self.index + 1) % len(self.image_files)
         self.show_image()
 
@@ -11268,7 +11268,7 @@ class ImageSlideshow(customtkinter.CTkFrame):
 
     def pause_cycle(self):
         self.after_cancel(self.after_id)
-        self.is_running = False  #
+        self.is_running = False
 
     def resume_cycle(self):
         if not self.is_running:
