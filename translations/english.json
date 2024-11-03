@@ -314,7 +314,7 @@
 	"unexpected_error": "Unexpected and rare error, failed to start tera term, please try to log-in again\n\n(Reporting the issue is really appreciated)",
 	"countdown_win": "Auto-Enroll Window",
 	"end_countdown": "The Auto-Enroll event was force to end because Tera Term is not running anymore\n\nIf it closed by itself, then there was probably a server maintenance done by the university",
-	
+
 	"feedback_unavailable": "Error! Feedback submission not currently available",
 	"submit_feedback": "Are you ready to submit your feedback?\n\n(SUBMISSION IS COMPLETELY ANONYMOUS)",
 	"feedback_success": "Feedback submitted successfully!",
@@ -325,15 +325,17 @@
 	"select_tera_term": "Select the location of the Tera Term executable (.exe)",
 	"tera_term_success": "Tera Term has been located successfully",
 	"no_results": "NO RESULTS FOUND",
-	
+
 	"enroll_tab": "Enroll",
 	"search_tab": "Search",
 	"other_tab": "Other",
-	"table_count": "Table Count: ",
+	"table_count": "Count: ",
+	"table_position": "Position: ",
 	"previous": "Previous",
 	"next": "Next",
 	"remove": "Remove",
 	"table_count_tooltip": "Can only hold up to 20 tables of\nclasses at once. This will keep track\nof how many classes you got already",
+	"table_position_tooltip": "Indicates which table out of the\ntotal you are currently viewing",
 	"previous_tooltip": "Go back to the previous table",
 	"next_tooltip": "Go to the next table",
 	"remove_tooltip": "Removes the table\nyou are currently seeing",
