@@ -314,7 +314,7 @@
 	"unexpected_error": "Error inesperado y raro, no se pudo iniciar Tera Term, por favor intente iniciar sesión nuevamente\n\n(Se agradecería mucho informar sobre el problema)",
 	"countdown_win": "Ventana de Auto-Matrícula",
 	"end_countdown": "El evento Auto-Matrícula se forzó a terminar porque Tera Term no está corriendo\n\nSi se cerró por sí mismo, probablemente la universidad inicio un mantenimiento para el servidor",
-	
+
 	"feedback_unavailable": "¡Error! Mandar comentarios no esta disponible ahora mismo",
 	"submit_feedback": "¿Estás preparado para mandar to comentario?\n\n(EL ENVÍO ES COMPLETAMENTE ANÓNIMO)",
 	"feedback_success": "¡Comentario sometido éxitosamente!",
@@ -325,15 +325,17 @@
 	"select_tera_term": "Elige la ubicación del ejecutable de Tera Term (.exe)",
 	"tera_term_success": "Tera Term localizado exitósamente",
 	"no_results": "NO SE ENCONTRARON RESULTADOS",
-	
+
 	"enroll_tab": "Matricular",
 	"search_tab": "Buscar",
 	"other_tab": "Otros",
-	"table_count": "Conteo de Tablas: ",
+	"table_count": "Conteo: ",
+	"table_position": " Posición: ",
 	"previous": "Anterior",
 	"next": "Siguiente",
 	"remove": "Eliminar",
 	"table_count_tooltip": "Solo se pueden aguantar hasta\n20 tablas de clases a la vez.\nEsto mantendrá un registro\nde cuántas clases ya tienes",
+	"table_position_tooltip": "Indica cuál tabla del total\nestás viendo actualmente",
 	"previous_tooltip": "Volver a la tabla anterior",
 	"next_tooltip": "Ir a la siguiente tabla",
 	"remove_tooltip": "Elimina la tabla\nque estás viendo actualmente",
