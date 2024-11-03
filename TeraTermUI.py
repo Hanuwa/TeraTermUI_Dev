@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 11/02/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 11/03/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 11300 lines of codes, it definitely makes things harder to work with
+# and with over 11400 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -224,6 +224,7 @@ class TeraTermUI(customtkinter.CTk):
         self.last_sort_option = ()
         self.download_enrolled_pdf_tooltip = None
         self.table_count_tooltip = None
+        self.table_position_tooltip = None
         self.previous_button_tooltip = None
         self.next_button_tooltip = None
         self.remove_button_tooltip = None
@@ -584,6 +585,7 @@ class TeraTermUI(customtkinter.CTk):
         self.original_table_data = {}
         self.current_table_index = -1
         self.table_count = None
+        self.table_position = None
         self.table = None
         self.current_class = None
         self.previous_button = None
@@ -4095,9 +4097,16 @@ class TeraTermUI(customtkinter.CTk):
                 self.next_button.configure(text=translation["next"])
                 self.remove_button.configure(text=translation["remove"])
                 self.download_search_pdf.configure(text=translation["pdf_save_as"])
-                table_count = self.table_count.cget("text").split(":")[1].strip()
-                self.table_count.configure(text=translation["table_count"] + table_count)
+                table_count = None
+                if lang == "English":
+                    table_count = f"{translation['table_count']}{len(self.class_table_pairs)}/20    |"
+                elif lang == "Español":
+                    table_count = f"{translation['table_count']}{len(self.class_table_pairs)}/20   |"
+                table_position = self.table_position.cget("text").split(":")[1].strip()
+                self.table_count.configure(text=table_count)
+                self.table_position.configure(text=translation["table_position"] + table_position)
                 self.table_count_tooltip.configure(message=translation["table_count_tooltip"])
+                self.table_position_tooltip.configure(message=translation["table_position_tooltip"])
                 self.previous_button_tooltip.configure(message=translation["previous_tooltip"])
                 self.next_button_tooltip.configure(message=translation["next_tooltip"])
                 self.remove_button_tooltip.configure(message=translation["remove_tooltip"])
@@ -5954,6 +5963,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # displays the extracted data of searched classes into a table
     def display_searched_class_data(self, data):
+        lang = self.language_menu.get()
         translation = self.load_language()
         spec_data = TeraTermUI.specific_class_data(data)
         original_headers = ["SEC", "M", "CRED", "DAYS", "TIMES", "AV", "INSTRUCTOR"]
@@ -6048,8 +6058,15 @@ class TeraTermUI(customtkinter.CTk):
                                                font=customtkinter.CTkFont(size=15, weight="bold", underline=True))
         display_class.bind("<Button-1>", lambda event: self.focus_set())
         if self.table_count is None:
-            table_count_label = f" {len(self.class_table_pairs)}/20"
+            table_count_label = None
+            if lang == "English":
+                table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/20    |"
+            elif lang == "Español":
+                table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/20   |"
+            table_position_label = (f" {translation['table_position']}{self.current_table_index + 1}"
+                                    f"/{len(self.class_table_pairs)}")
             self.table_count = customtkinter.CTkLabel(self.search_scrollbar, text=table_count_label)
+            self.table_position = customtkinter.CTkLabel(self.search_scrollbar, text=table_position_label)
             self.previous_button = CustomButton(self.search_scrollbar, text=translation["previous"],
                                                 command=self.show_previous_table)
             self.next_button = CustomButton(self.search_scrollbar, text=translation["next"],
@@ -6060,6 +6077,8 @@ class TeraTermUI(customtkinter.CTk):
                                                     hover_color="#173518", fg_color="#2e6930",
                                                     command=self.download_search_classes_as_pdf)
             self.table_count_tooltip = CTkToolTip(self.table_count, message=translation["table_count_tooltip"],
+                                                  bg_color="#989898", alpha=0.90)
+            self.table_position_tooltip = CTkToolTip(self.table_position, message=translation["table_position_tooltip"],
                                                   bg_color="#989898", alpha=0.90)
             self.previous_button_tooltip = CTkToolTip(self.previous_button, message=translation["previous_tooltip"],
                                                       bg_color="#1E90FF")
@@ -6084,6 +6103,7 @@ class TeraTermUI(customtkinter.CTk):
             self.last_sort_option = (self.sort_by.get(), len(self.class_table_pairs))
         self.check_and_update_labels()
         self.current_table_index = len(self.class_table_pairs) - 1
+        self.table_position.configure(text=f"{self.current_table_index + 1}")
         if len(self.class_table_pairs) > 20:
             display_class_to_remove, table_to_remove, _, _, _, more_sections = self.class_table_pairs[0]
             display_class_to_remove.grid_forget()
@@ -6109,7 +6129,8 @@ class TeraTermUI(customtkinter.CTk):
         self.display_current_table()
 
         new_table.grid(row=2, column=1, padx=(0, 15), pady=(40, 0), sticky="n")
-        self.table_count.grid(row=4, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+        self.table_count.grid(row=4, column=1, padx=(0, 85), pady=(10, 0), sticky="n")
+        self.table_position.grid(row=4, column=1, padx=(85, 0), pady=(10, 0), sticky="n")
         if len(self.class_table_pairs) > 1:
             self.previous_button.grid(row=5, column=1, padx=(0, 300), pady=(10, 0), sticky="n")
             self.next_button.grid(row=5, column=1, padx=(300, 0), pady=(10, 0), sticky="n")
@@ -6124,8 +6145,15 @@ class TeraTermUI(customtkinter.CTk):
         self.sort_by.grid(row=6, column=1, padx=(0, 157), pady=(10, 0), sticky="n")
         self.update_buttons()
         self.search_scrollbar.scroll_to_top()
-        table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/20"
+        table_count_label = None
+        if lang == "English":
+            table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/20    |"
+        elif lang == "Español":
+            table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/20   |"
+        table_position_label = (f" {translation['table_position']}{self.current_table_index + 1}"
+                                f"/{len(self.class_table_pairs)}")
         self.table_count.configure(text=table_count_label)
+        self.table_position.configure(text=table_position_label)
         if len(self.class_table_pairs) == 20:
             self.table_count.configure(text_color="red")
         self.table_count.bind("<Button-1>", lambda event: self.focus_set())
@@ -6416,6 +6444,10 @@ class TeraTermUI(customtkinter.CTk):
     def show_previous_table(self):
         if self.current_table_index > 0:
             self.current_table_index -= 1
+            translation = self.load_language()
+            table_position_label = (f" {translation['table_position']}{self.current_table_index + 1}"
+                                    f"/{len(self.class_table_pairs)}")
+            self.table_position.configure(text=table_position_label)
             self.search_scrollbar.scroll_to_top()
             self.update_buttons()
             self.after(100, self.display_current_table)
@@ -6423,6 +6455,10 @@ class TeraTermUI(customtkinter.CTk):
     def show_next_table(self):
         if self.current_table_index < len(self.class_table_pairs) - 1:
             self.current_table_index += 1
+            translation = self.load_language()
+            table_position_label = (f" {translation['table_position']}{self.current_table_index + 1}"
+                                    f"/{len(self.class_table_pairs)}")
+            self.table_position.configure(text=table_position_label)
             self.search_scrollbar.scroll_to_top()
             self.update_buttons()
             self.after(100, self.display_current_table)
@@ -6525,6 +6561,7 @@ class TeraTermUI(customtkinter.CTk):
         self.move_tables_overlay.withdraw()
 
     def rearrange_tables(self, source_index, target_index):
+        translation = self.load_language()
         self.class_table_pairs[source_index], self.class_table_pairs[target_index] = \
             self.class_table_pairs[target_index], self.class_table_pairs[source_index]
 
@@ -6537,6 +6574,8 @@ class TeraTermUI(customtkinter.CTk):
             self.current_table_index = source_index
 
         self.display_current_table()
+        table_position = f"{self.current_table_index + 1}/{len(self.class_table_pairs)}"
+        self.table_position.configure(text=f"{translation['table_position']} {table_position}")
         self.update_buttons()
 
     def keybind_remove_current_table(self):
@@ -6549,6 +6588,7 @@ class TeraTermUI(customtkinter.CTk):
         self.last_remove_time = current_time
 
     def remove_current_table(self):
+        lang = self.language_menu.get()
         translation = self.load_language()
         display_class_to_remove, table_to_remove, _, _, _, more_sections \
             = self.class_table_pairs[self.current_table_index]
@@ -6583,8 +6623,15 @@ class TeraTermUI(customtkinter.CTk):
 
         del self.class_table_pairs[self.current_table_index]
 
-        table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/20"
+        table_count_label = None
+        if lang == "English":
+            table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/20    |"
+        elif lang == "Español":
+            table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/20   |"
+        table_position_label = (f" {translation['table_position']}{self.current_table_index + 1}"
+                                f"/{len(self.class_table_pairs)}")
         self.table_count.configure(text=table_count_label)
+        self.table_position.configure(text=table_position_label)
 
         if len(self.class_table_pairs) == 1:
             self.previous_button.grid_forget()
@@ -6619,7 +6666,8 @@ class TeraTermUI(customtkinter.CTk):
         self.update_buttons()
 
         def reshow_widgets():
-            self.table_count.grid(row=4, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+            self.table_count.grid(row=4, column=1, padx=(0, 85), pady=(10, 0), sticky="n")
+            self.table_position.grid(row=4, column=1, padx=(85, 0), pady=(10, 0), sticky="n")
             if len(self.class_table_pairs) > 1:
                 self.previous_button.grid(row=5, column=1, padx=(0, 300), pady=(10, 0), sticky="n")
                 self.next_button.grid(row=5, column=1, padx=(300, 0), pady=(10, 0), sticky="n")
@@ -9013,11 +9061,13 @@ class TeraTermUI(customtkinter.CTk):
         self.after(0, self.focus_set)
 
     def load_table(self):
+        lang = self.language_menu.get()
         translation = self.load_language()
         if hasattr(self, "table") and self.table is not None:
             self.current_class.grid(row=2, column=1, padx=(0, 0), pady=(8, 0), sticky="n")
             self.table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
-            self.table_count.grid(row=4, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+            self.table_count.grid(row=4, column=1, padx=(0, 85), pady=(10, 0), sticky="n")
+            self.table_position.grid(row=4, column=1, padx=(85, 0), pady=(10, 0), sticky="n")
             if len(self.class_table_pairs) > 1:
                 self.previous_button.grid(row=5, column=1, padx=(0, 300), pady=(10, 0), sticky="n")
                 self.next_button.grid(row=5, column=1, padx=(300, 0), pady=(10, 0), sticky="n")
@@ -9028,8 +9078,15 @@ class TeraTermUI(customtkinter.CTk):
             self.remove_button.grid(row=5, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
             self.download_search_pdf.grid(row=6, column=1, padx=(157, 0), pady=(10, 0), sticky="n")
             self.sort_by.grid(row=6, column=1, padx=(0, 157), pady=(10, 0), sticky="n")
-            table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/20"
+            table_count_label = None
+            if lang == "English":
+                table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/20    |"
+            elif lang == "Español":
+                table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/20   |"
+            table_position_label = (f" {translation['table_position']}{self.current_table_index + 1}"
+                                    f"/{len(self.class_table_pairs)}")
             self.table_count.configure(text=table_count_label)
+            self.table_count.configure(text=table_position_label)
 
     def status_widgets(self):
         lang = self.language_menu.get()
