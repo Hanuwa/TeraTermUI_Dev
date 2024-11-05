@@ -4022,11 +4022,43 @@ class TeraTermUI(customtkinter.CTk):
                 self.menu.grid(row=2, column=1, padx=(0, 184), pady=(10, 0))
             elif lang == "Español":
                 self.menu.grid(row=2, column=1, padx=(0, 194), pady=(10, 0))
-            self.menu_entry.configure(values=[translation["SRM"], translation["004"], translation["1GP"],
-                                              translation["118"], translation["1VE"], translation["3DD"],
-                                              translation["409"], translation["683"], translation["1PL"],
-                                              translation["4CM"], translation["4SP"], translation["SO"]])
-            self.menu_entry.set(translation["SRM"])
+            original_menu_mapping = {
+                "SRM (Main Menu)": "SRM",
+                "004 (Hold Flags)": "004",
+                "1GP (Class Schedule)": "1GP",
+                "118 (Academic Statistics)": "118",
+                "1VE (Academic Record)": "1VE",
+                "3DD (Scholarship Payment Record)": "3DD",
+                "409 (Account Balance)": "409",
+                "683 (Academic Evaluation)": "683",
+                "1PL (Basic Personal Data)": "1PL",
+                "4CM (Tuition Calculation)": "4CM",
+                "4SP (Apply for Extension)": "4SP",
+                "SO (Sign out)": "SO",
+                "SRM (Menú Principal)": "SRM",
+                "004 (Flags de Retención)": "004",
+                "1GP (Programa de Clases)": "1GP",
+                "118 (Estadísticas Académicas)": "118",
+                "1VE (Expediente Académico)": "1VE",
+                "3DD (Historial de Pagos de Beca)": "3DD",
+                "409 (Balance de Cuenta)": "409",
+                "683 (Evaluación Académica)": "683",
+                "1PL (Datos Básicos)": "1PL",
+                "4CM (Cómputo de Matrícula)": "4CM",
+                "4SP (Solicitud de Prórroga)": "4SP",
+                "SO (Cerrar Sesión)": "SO"
+            }
+            current_menu_selection = self.menu_entry.get()
+            translated_menu_values = [translation["SRM"], translation["004"], translation["1GP"], translation["118"],
+                                      translation["1VE"], translation["3DD"], translation["409"], translation["683"],
+                                      translation["1PL"], translation["4CM"], translation["4SP"], translation["SO"]]
+            self.menu_entry.configure(values=translated_menu_values)
+            selection_key = original_menu_mapping.get(current_menu_selection)
+            if selection_key and selection_key in translation:
+                translated_selection = translation[selection_key]
+                self.menu_entry.set(translated_selection)
+            else:
+                self.menu_entry.set(translation["SRM"])
             self.menu_semester.configure(text=translation["semester"])
             self.menu_semester_entry.configure(values=self.semester_values + [translation["current"]])
             if self.e_semester_entry.get().upper().replace(" ", "") == "CURRENT" or \
@@ -4108,9 +4140,28 @@ class TeraTermUI(customtkinter.CTk):
                 self.next_button_tooltip.configure(message=translation["next_tooltip"])
                 self.remove_button_tooltip.configure(message=translation["remove_tooltip"])
                 self.download_search_pdf_tooltip.configure(message=translation["download_pdf_search_tooltip"])
-                self.sort_by.configure(values=[translation["time_asc"], translation["time_dec"], translation["av_asc"],
-                                               translation["av_dec"], translation["original_data"]])
-                self.sort_by.set(translation["sort_by"])
+                original_mapping = {
+                    "Time Ascending ↑": "time_asc",
+                    "Time Descending ↓": "time_dec",
+                    "Availability Ascending ↑": "av_asc",
+                    "Availability Descending ↓": "av_dec",
+                    "Original Data": "original_data",
+                    "Horas Ascendente ↑": "time_asc",
+                    "Horas Descendente ↓": "time_dec",
+                    "Disp. Ascendente ↑": "av_asc",
+                    "Disp. Descendente ↓": "av_dec",
+                    "Tabla Original": "original_data"
+                }
+                current_selection = self.sort_by.get()
+                translated_values = [translation["time_asc"], translation["time_dec"], translation["av_asc"],
+                                     translation["av_dec"], translation["original_data"]]
+                self.sort_by.configure(values=translated_values)
+                selection_key = original_mapping.get(current_selection)
+                if selection_key and selection_key in translation:
+                    translated_selection = translation[selection_key]
+                    self.sort_by.set(translated_selection)
+                else:
+                    self.sort_by.set(translation["sort_by"])
                 self.sort_by_tooltip.configure(translation["sort_by_tooltip"])
             if self.enrolled_classes_table is not None:
                 self.update_enrolled_classes_headers_tooltips()
@@ -6165,9 +6216,9 @@ class TeraTermUI(customtkinter.CTk):
     def sort_data(self, data, sort_by_option):
         translation = self.load_language()
         headers = list(data[0].keys()) if data else []
-        time_key = "TIMES" if "TIMES" in headers else None
-        av_key = "AV" if "AV" in headers else None
-        section_key = "SEC" if "SEC" in headers else None
+        time_key = translation["times"] if translation["times"] in headers else None
+        av_key = translation["av"] if translation["av"] in headers else None
+        section_key = translation["sec"] if translation["sec"] in headers else None
         memoized_times = {}
 
         def get_time_minutes(t_row):
@@ -6280,9 +6331,9 @@ class TeraTermUI(customtkinter.CTk):
             table_data = table.values
             if not headers:
                 headers = table_data[0]
-                time_index = headers.index("TIMES") if "TIMES" in headers else -1
-                av_index = headers.index("AV") if "AV" in headers else -1
-                section_index = headers.index("SEC") if "SEC" in headers else -1
+                time_index = headers.index(translation["times"]) if translation["times"] in headers else -1
+                av_index = headers.index(translation["av"]) if translation["av"] in headers else -1
+                section_index = headers.index(translation["sec"]) if translation["sec"] in headers else -1
 
             memoized_times = {}
 
