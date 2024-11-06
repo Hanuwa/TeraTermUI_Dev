@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 11/04/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 11/05/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -3795,7 +3795,7 @@ class TeraTermUI(customtkinter.CTk):
         # If the language is not supported, return an empty dictionary or raise an exception
         return {}
 
-    def update_table_headers_tooltips(self):
+    def update_searched_classes_headers_tooltips(self):
         translation = self.load_language()
         tooltip_messages = {
             translation["sec"]: translation["tooltip_sec"],
@@ -3812,6 +3812,8 @@ class TeraTermUI(customtkinter.CTk):
 
         for _, table, _, _, _, _ in self.class_table_pairs:
             table.update_headers(new_headers)
+            if table.values:
+                table.values[0] = new_headers
             for i, new_header in enumerate(new_headers):
                 tooltip_message = tooltip_messages[new_header]
                 header_cell = table.get_cell(0, i)
@@ -3830,6 +3832,8 @@ class TeraTermUI(customtkinter.CTk):
         new_headers = [translation["course"], translation["grade"], translation["days"],
                        translation["times"], translation["room"]]
         self.enrolled_classes_table.update_headers(new_headers)
+        if self.enrolled_classes_table.values:
+            self.enrolled_classes_table.values[0] = new_headers
         for i, new_header in enumerate(new_headers):
             tooltip_message = tooltip_messages[new_header]
             header_cell = self.enrolled_classes_table.get_cell(0, i)
@@ -3993,7 +3997,6 @@ class TeraTermUI(customtkinter.CTk):
             self.system.configure(text=translation["system"])
         if self.init_multiple:
             self.rename_tabs()
-            self.update_table_headers_tooltips()
             self.title_enroll.configure(text=translation["title_enroll"])
             self.e_classes.configure(text=translation["class"])
             self.e_section.configure(text=translation["section"])
@@ -4022,7 +4025,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.menu.grid(row=2, column=1, padx=(0, 184), pady=(10, 0))
             elif lang == "Español":
                 self.menu.grid(row=2, column=1, padx=(0, 194), pady=(10, 0))
-            original_menu_mapping = {
+            menu_mapping = {
                 "SRM (Main Menu)": "SRM",
                 "004 (Hold Flags)": "004",
                 "1GP (Class Schedule)": "1GP",
@@ -4053,7 +4056,7 @@ class TeraTermUI(customtkinter.CTk):
                                       translation["1VE"], translation["3DD"], translation["409"], translation["683"],
                                       translation["1PL"], translation["4CM"], translation["4SP"], translation["SO"]]
             self.menu_entry.configure(values=translated_menu_values)
-            selection_key = original_menu_mapping.get(current_menu_selection)
+            selection_key = menu_mapping.get(current_menu_selection)
             if selection_key and selection_key in translation:
                 translated_selection = translation[selection_key]
                 self.menu_entry.set(translated_selection)
@@ -4126,6 +4129,7 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     entry.lang = lang
             if self.table is not None:
+                self.update_searched_classes_headers_tooltips()
                 self.previous_button.configure(text=translation["previous"])
                 self.next_button.configure(text=translation["next"])
                 self.remove_button.configure(text=translation["remove"])
@@ -4140,12 +4144,12 @@ class TeraTermUI(customtkinter.CTk):
                 self.next_button_tooltip.configure(message=translation["next_tooltip"])
                 self.remove_button_tooltip.configure(message=translation["remove_tooltip"])
                 self.download_search_pdf_tooltip.configure(message=translation["download_pdf_search_tooltip"])
-                original_mapping = {
+                sort_mapping = {
                     "Time Ascending ↑": "time_asc",
                     "Time Descending ↓": "time_dec",
-                    "Availability Ascending ↑": "av_asc",
-                    "Availability Descending ↓": "av_dec",
-                    "Original Data": "original_data",
+                    "Av. Ascending ↑": "av_asc",
+                    "Av. Descending ↓": "av_dec",
+                    "Original Table": "original_data",
                     "Horas Ascendente ↑": "time_asc",
                     "Horas Descendente ↓": "time_dec",
                     "Disp. Ascendente ↑": "av_asc",
@@ -4156,7 +4160,7 @@ class TeraTermUI(customtkinter.CTk):
                 translated_values = [translation["time_asc"], translation["time_dec"], translation["av_asc"],
                                      translation["av_dec"], translation["original_data"]]
                 self.sort_by.configure(values=translated_values)
-                selection_key = original_mapping.get(current_selection)
+                selection_key = sort_mapping.get(current_selection)
                 if selection_key and selection_key in translation:
                     translated_selection = translation[selection_key]
                     self.sort_by.set(translated_selection)
