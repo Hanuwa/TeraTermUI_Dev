@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 11400 lines of codes, it definitely makes things harder to work with
+# and with over 11500 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -4166,6 +4166,11 @@ class TeraTermUI(customtkinter.CTk):
                     self.sort_by.set(translated_selection)
                 else:
                     self.sort_by.set(translation["sort_by"])
+                if self.last_sort_option:
+                    sort_by, _ = self.last_sort_option
+                    last_sort_key = sort_mapping.get(sort_by)
+                    if last_sort_key and last_sort_key in translation:
+                        self.last_sort_option = (translation[last_sort_key], len(self.class_table_pairs))
                 self.sort_by_tooltip.configure(translation["sort_by_tooltip"])
             if self.enrolled_classes_table is not None:
                 self.update_enrolled_classes_headers_tooltips()
@@ -5680,53 +5685,63 @@ class TeraTermUI(customtkinter.CTk):
 
     # captures a screenshot of tera term and performs OCR
     def capture_screenshot(self):
-        time.sleep(1)
-        translation = self.load_language()
-        tesseract_dir_path = self.app_temp_dir / "Tesseract-OCR"
-        default_tesseract_path = Path("C:/Program Files/Tesseract-OCR/tesseract.exe")
-        if self.tesseract_unzipped and (tesseract_dir_path.is_dir() or default_tesseract_path.is_file()):
-            window_title = "uprbay.uprb.edu - Tera Term VT"
-            hwnd = win32gui.FindWindow(None, window_title)
-            self.focus_tera_term()
-            x, y, right, bottom = get_window_rect(hwnd)
-            width = right - x
-            height = bottom - y
-            crop_margin = (2, 10, 10, 2)
-            if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
-                self.loading_screen.withdraw()
-            with mss() as sct:
-                monitor = {
-                    "top": y,
-                    "left": x,
-                    "width": width,
-                    "height": height
-                }
-                screenshot = sct.grab(monitor)
-                img = Image.frombytes("RGB", (screenshot.width, screenshot.height), screenshot.rgb)
+        max_retries = 3
+        retries = 0
+        expected_menu_keywords = ["File", "Edit", "Setup", "Control", "Window", "Help"]
+        while retries < max_retries:
+            time.sleep(1)
+            translation = self.load_language()
+            tesseract_dir_path = self.app_temp_dir / "Tesseract-OCR"
+            default_tesseract_path = Path("C:/Program Files/Tesseract-OCR/tesseract.exe")
+            if self.tesseract_unzipped and (tesseract_dir_path.is_dir() or default_tesseract_path.is_file()):
+                window_title = "uprbay.uprb.edu - Tera Term VT"
+                hwnd = win32gui.FindWindow(None, window_title)
+                self.focus_tera_term()
+                x, y, right, bottom = get_window_rect(hwnd)
+                width = right - x
+                height = bottom - y
+                crop_margin = (2, 10, 10, 2)
                 if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
-                    self.loading_screen.deiconify()
-                img = img.crop((crop_margin[0], crop_margin[1], img.width - crop_margin[2],
-                                img.height - crop_margin[3])).convert("L")
-                img = img.resize((img.width * 2, img.height * 2), resample=Image.Resampling.LANCZOS)
-                # img.save("screenshot.png")
-                custom_config = r"--oem 3 --psm 6"
-                text = pytesseract.image_to_string(img, config=custom_config)
-                return text
-        else:
-            try:
-                with SevenZipFile(self.zip_path, mode="r") as z:
-                    z.extractall(self.app_temp_dir)
-                tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
-                pytesseract.pytesseract.tesseract_cmd = str(tesseract_dir / "tesseract.exe")
-                self.tesseract_unzipped = True
-                del z, tesseract_dir, tesseract_dir_path
-                gc.collect()
-                return self.capture_screenshot()
-            except Exception as err:
-                print(f"Error occurred during unzipping: {str(err)}")
-                self.tesseract_unzipped = False
-                self.after(100, self.show_error_message, 320, 225, translation["tesseract_error"])
-                return
+                    self.loading_screen.withdraw()
+                with mss() as sct:
+                    monitor = {
+                        "top": y,
+                        "left": x,
+                        "width": width,
+                        "height": height
+                    }
+                    screenshot = sct.grab(monitor)
+                    img = Image.frombytes("RGB", (screenshot.width, screenshot.height), screenshot.rgb)
+
+                    if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
+                        self.loading_screen.deiconify()
+                    img = img.crop((crop_margin[0], crop_margin[1], img.width - crop_margin[2],
+                                    img.height - crop_margin[3])).convert("L")
+                    img = img.resize((img.width * 2, img.height * 2), resample=Image.Resampling.LANCZOS)
+                    # img.save("screenshot.png")
+                    custom_config = r"--oem 3 --psm 6"
+                    text = pytesseract.image_to_string(img, config=custom_config)
+                    matches = sum(1 for keyword in expected_menu_keywords if keyword in text)
+                    if matches >= 3:
+                        return text
+                    retries += 1
+            else:
+                try:
+                    with SevenZipFile(self.zip_path, mode="r") as z:
+                        z.extractall(self.app_temp_dir)
+                    tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
+                    pytesseract.pytesseract.tesseract_cmd = str(tesseract_dir / "tesseract.exe")
+                    self.tesseract_unzipped = True
+                    del z, tesseract_dir, tesseract_dir_path
+                    gc.collect()
+                    return self.capture_screenshot()
+                except Exception as err:
+                    print(f"Error occurred during unzipping: {str(err)}")
+                    self.tesseract_unzipped = False
+                    self.after(100, self.show_error_message, 320, 225, translation["tesseract_error"])
+                    return
+
+        return text
 
     # creates pdf of the table containing for the searched class
     def create_search_pdf(self, data_list, classes_list, filepath, semesters_list):
