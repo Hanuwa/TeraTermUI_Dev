@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 11/06/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 11/07/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -3178,6 +3178,8 @@ class TeraTermUI(customtkinter.CTk):
 
     def auth_info_frame(self):
         lang = self.language_menu.get()
+        self.home_frame.grid_forget()
+        self.intro_box.grid_forget()
         self.student_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
         self.student_frame.grid_columnconfigure(2, weight=1)
         self.s_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 40))
@@ -3451,6 +3453,7 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         if not self.skip_auth:
             self.home_frame.grid_forget()
+            self.intro_box.grid_forget()
             self.authentication_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
             self.authentication_frame.grid_columnconfigure(2, weight=1)
             self.a_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 40))
@@ -3529,6 +3532,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_home())
                 self.bind("<Return>", lambda event: self.student_event_handler())
                 self.home_frame.grid_forget()
+                self.intro_box.grid_forget()
                 self.after(0, self.initialization_student)
                 self.after(50, self.auth_info_frame)
                 self.in_student_frame = True
@@ -3546,6 +3550,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.uprb.UprbayTeraTermVt.type_keys("{VK_LEFT}")
                 self.connect_to_uprb()
                 self.home_frame.grid_forget()
+                self.intro_box.grid_forget()
                 self.after(0, self.initialization_class)
                 self.after(50, self.student_info_frame)
                 self.after(100, self.initialization_multiple)
@@ -3693,6 +3698,7 @@ class TeraTermUI(customtkinter.CTk):
             if not self.home_frame.grid_info():
                 self.host_entry.configure(state="normal")
                 self.home_frame.grid(row=0, column=1, rowspan=5, columnspan=5, padx=(0, 0), pady=(10, 0))
+                self.intro_box.grid(row=1, column=1, padx=(20, 0), pady=(0, 150))
             if self.help is not None and self.help.winfo_exists():
                 self.fix.configure(state="disabled")
                 self.files.configure(state="normal")
