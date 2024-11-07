@@ -269,7 +269,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                                                          text=self.option_text_1,
                                                          variable=self.button1_var, canvas_takefocus=False)
                 self.button1.grid(row=2, column=3, sticky="news", padx=(0, 10), pady=10)
-                self.bind_all("<space>", self.toggle_checkbox)
+                self.bind("<space>", self.toggle_checkbox)
 
         self.option_text_2 = option_2
         if option_2:
@@ -354,8 +354,8 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         if self.fade:
             self.fade_in()
 
-        self.bind_all("<Return>", self.return_key_handler)
-        self.bind_all("<Escape>", self.escape_key_handler)
+        self.bind("<Return>", self.return_key_handler)
+        self.bind("<Escape>", self.escape_key_handler)
 
         self.focus_set()
 
@@ -548,7 +548,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         if self.winfo_exists():
             self.unbind("<Return>")
             self.unbind("<Escape>")
-            self.unbind_all("<space>")
+            self.unbind("<space>")
             super().destroy()
         def msg_close_enable(): CTkMessagebox._closing_instance = False
         self.after(100, msg_close_enable)
