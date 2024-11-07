@@ -22,7 +22,7 @@ class CTkTextbox(CTkBaseClass):
     (most of them are implemented here too)
     """
 
-    _scrollbar_update_time = 200  # interval in ms, to check if scrollbars are needed
+    _scrollbar_update_time = 350  # interval in ms, to check if scrollbars are needed
 
     # attributes that are passed to and managed by the tkinter textbox only:
     _valid_tk_text_attributes = {"autoseparators", "cursor", "exportselection",
