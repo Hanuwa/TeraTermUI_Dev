@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 11/08/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 11/09/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -151,7 +151,6 @@ class TeraTermUI(customtkinter.CTk):
         self.icon_path = TeraTermUI.get_absolute_path("images/tera-term.ico")
         self.iconbitmap(self.icon_path)
         self.mode = "Portable"
-        self.update_db = False
         self.bind("<Button-1>", self.set_focus)
         self.bind("<Button-2>", lambda event: self.focus_set())
         self.bind("<Button-3>", lambda event: self.focus_set())
@@ -3917,13 +3916,40 @@ class TeraTermUI(customtkinter.CTk):
             self.searchbox_text.configure(text=translation["searchbox_title"])
             self.search_box.configure(placeholder_text=translation["searchbox"])
             self.curriculum_text.configure(text=translation["curriculums_title"])
-            self.curriculum.set(translation["dep"])
-            self.curriculum.configure(values=[translation["dep"], translation["acc"], translation["finance"],
-                                              translation["management"], translation["mark"], translation["g_biology"],
-                                              translation["h_biology"], translation["c_science"], translation["it"],
-                                              translation["s_science"], translation["physical"], translation["elec"],
-                                              translation["equip"], translation["peda"], translation["che"],
-                                              translation["nur"], translation["office"], translation["engi"]])
+            curriculum_mapping = {
+                "Departments": "dep", "Accounting": "acc",
+                "Finance": "finance", "Management": "management",
+                "Marketing": "mark", "General Biology": "g_biology",
+                "Biology-Human Focus": "h_biology", "Computer Science": "c_science",
+                "Information Systems": "it", "Social Sciences": "s_science",
+                "Physical Education": "physical", "Electronics": "elec",
+                "Equipment Management": "equip", "Pedagogy": "peda",
+                "Chemistry": "che", "Nursing": "nur",
+                "Office Systems": "office", "Information Engineering": "engi",
+                "Departamentos": "dep", "Contabilidad": "acc",
+                "Finanzas": "finance", "Gerencia": "management",
+                "Mercadeo": "mark", "Biología General": "g_biology",
+                "Biología-Enfoque Humano": "h_biology", "Ciencias de Computadoras": "c_science",
+                "Sistemas de Información": "it", "Ciencias Sociales": "s_science",
+                "Educación Física": "physical", "Electrónica": "elec",
+                "Gerencia de Materiales": "equip", "Pedagogía": "peda",
+                "Química": "che", "Enfermería": "nur",
+                "Sistemas de Oficina": "office", "Ingeniería de la Información": "engi"
+            }
+            current_selection = self.curriculum.get()
+            translated_values = [translation["dep"], translation["acc"], translation["finance"],
+                                 translation["management"], translation["mark"], translation["g_biology"],
+                                 translation["h_biology"], translation["c_science"], translation["it"],
+                                 translation["s_science"], translation["physical"], translation["elec"],
+                                 translation["equip"], translation["peda"], translation["che"], translation["nur"],
+                                 translation["office"], translation["engi"]]
+            self.curriculum.configure(values=translated_values)
+            selection_key = curriculum_mapping.get(current_selection)
+            if selection_key and selection_key in translation:
+                translated_selection = translation[selection_key]
+                self.curriculum.set(translated_selection)
+            else:
+                self.curriculum.set(translation["dep"])
             if lang == "English":
                 self.curriculum.pack(pady=(5, 0))
             elif lang == "Español":
@@ -4032,30 +4058,18 @@ class TeraTermUI(customtkinter.CTk):
             elif lang == "Español":
                 self.menu.grid(row=2, column=1, padx=(0, 194), pady=(10, 0))
             menu_mapping = {
-                "SRM (Main Menu)": "SRM",
-                "004 (Hold Flags)": "004",
-                "1GP (Class Schedule)": "1GP",
-                "118 (Academic Statistics)": "118",
-                "1VE (Academic Record)": "1VE",
-                "3DD (Scholarship Payment Record)": "3DD",
-                "409 (Account Balance)": "409",
-                "683 (Academic Evaluation)": "683",
-                "1PL (Basic Personal Data)": "1PL",
-                "4CM (Tuition Calculation)": "4CM",
-                "4SP (Apply for Extension)": "4SP",
-                "SO (Sign out)": "SO",
-                "SRM (Menú Principal)": "SRM",
-                "004 (Flags de Retención)": "004",
-                "1GP (Programa de Clases)": "1GP",
-                "118 (Estadísticas Académicas)": "118",
-                "1VE (Expediente Académico)": "1VE",
-                "3DD (Historial de Pagos de Beca)": "3DD",
-                "409 (Balance de Cuenta)": "409",
-                "683 (Evaluación Académica)": "683",
-                "1PL (Datos Básicos)": "1PL",
-                "4CM (Cómputo de Matrícula)": "4CM",
-                "4SP (Solicitud de Prórroga)": "4SP",
-                "SO (Cerrar Sesión)": "SO"
+                "SRM (Main Menu)": "SRM", "004 (Hold Flags)": "004",
+                "1GP (Class Schedule)": "1GP", "118 (Academic Statistics)": "118",
+                "1VE (Academic Record)": "1VE", "3DD (Scholarship Payment Record)": "3DD",
+                "409 (Account Balance)": "409", "683 (Academic Evaluation)": "683",
+                "1PL (Basic Personal Data)": "1PL", "4CM (Tuition Calculation)": "4CM",
+                "4SP (Apply for Extension)": "4SP", "SO (Sign out)": "SO",
+                "SRM (Menú Principal)": "SRM", "004 (Flags de Retención)": "004",
+                "1GP (Programa de Clases)": "1GP", "118 (Estadísticas Académicas)": "118",
+                "1VE (Expediente Académico)": "1VE", "3DD (Historial de Pagos de Beca)": "3DD",
+                "409 (Balance de Cuenta)": "409", "683 (Evaluación Académica)": "683",
+                "1PL (Datos Básicos)": "1PL", "4CM (Cómputo de Matrícula)": "4CM",
+                "4SP (Solicitud de Prórroga)": "4SP", "SO (Cerrar Sesión)": "SO"
             }
             current_menu_selection = self.menu_entry.get()
             translated_menu_values = [translation["SRM"], translation["004"], translation["1GP"], translation["118"],
@@ -8485,51 +8499,27 @@ class TeraTermUI(customtkinter.CTk):
         self.bind("<Return>", lambda event: self.login_event_handler())
 
     # links to each correspondant curriculum that the user chooses
-    @staticmethod
-    def curriculums(choice):
+    def curriculums_link(self, choice):
+        translation = self.load_language()
         links = {
-            "Departments": "https://www.uprb.edu/sobre-uprb/decanato-de-asuntos-academicos/departamentos-academicos-2/",
-            "Departamentos": "https://www.uprb.edu/sobre-uprb/decanato-de-asuntos-academicos/departamentos"
-                             "-academicos-2/",
-            "Accounting": "https://drive.google.com/file/d/0BzdErxfu_JSCSDA0NHMyYVNhdXA3V1ZqX2c1aUlIT21Oc1RF/view",
-            "Contabilidad": "https://drive.google.com/file/d/0BzdErxfu_JSCSDA0NHMyYVNhdXA3V1ZqX2c1aUlIT21Oc1RF/view",
-            "Finance": "https://drive.google.com/file/d/0BzdErxfu_JSCR2gyNzJOeHA2c2EwTklRYmZYZ0Zfck9UT3E0/view",
-            "Finanzas": "https://drive.google.com/file/d/0BzdErxfu_JSCR2gyNzJOeHA2c2EwTklRYmZYZ0Zfck9UT3E0/view",
-            "Management": "https://drive.google.com/file/d/0BzdErxfu_JSCVllhTWJGMzRYd3JoemtObDkzX3I5MHNqU3V3/view",
-            "Gerencia": "https://drive.google.com/file/d/0BzdErxfu_JSCVllhTWJGMzRYd3JoemtObDkzX3I5MHNqU3V3/view",
-            "Marketing": "https://drive.google.com/file/d/0BzdErxfu_JSCa3BIWnZyQmlHa0hGcEVtSlV2d2gxN0dENVcw/view",
-            "Mercadeo": "https://drive.google.com/file/d/0BzdErxfu_JSCa3BIWnZyQmlHa0hGcEVtSlV2d2gxN0dENVcw/view",
-            "General Biology": "https://drive.google.com/file/d/11yfoYqXYPybDZmeEmgW8osgSCCmxzjQl/view",
-            "Biología General": "https://drive.google.com/file/d/11yfoYqXYPybDZmeEmgW8osgSCCmxzjQl/view",
-            "Biology-Human Focus": "https://drive.google.com/file/d/1z-aphTwLLwAY5-G3O7_SXG3ZvvRSN6p9/view",
-            "Biología-Enfoque Humano": "https://drive.google.com/file/d/1z-aphTwLLwAY5-G3O7_SXG3ZvvRSN6p9/view",
-            "Computer Science": "https://docs.uprb.edu/deptsici/CIENCIAS-DE-COMPUTADORAS-2016.pdf",
-            "Ciencias de Computadoras": "https://docs.uprb.edu/deptsici/CIENCIAS-DE-COMPUTADORAS-2016.pdf",
-            "Information Systems": "https://docs.uprb.edu/deptsici/SISTEMAS-INFORMACION-2016.pdf",
-            "Sistemas de Información": "https://docs.uprb.edu/deptsici/SISTEMAS-INFORMACION-2016.pdf",
-            "Social Sciences": "https://drive.google.com/file/d/1cZnD6EhBsu7u6U8IVZoeK0VHgQmYt3sf/view",
-            "Ciencias Sociales": "https://drive.google.com/file/d/1cZnD6EhBsu7u6U8IVZoeK0VHgQmYt3sf/view",
-            "Physical Education": "https://drive.google.com/file/d/0BzdErxfu"
-                                  "_JSCQWFEWlpCSnRFMVFGQnZoTXRyZHJiMzBkc2dZ/view",
-            "Educación Física": "https://drive.google.com/file/d/0BzdErxfu"
-                                "_JSCQWFEWlpCSnRFMVFGQnZoTXRyZHJiMzBkc2dZ/view",
-            "Electronics": "https://drive.google.com/file/d/1tfzaHKilu5iQccD2sBzD8O_6UlXtSREF/view",
-            "Electrónica": "https://drive.google.com/file/d/1tfzaHKilu5iQccD2sBzD8O_6UlXtSREF/view",
-            "Equipment Management": "https://drive.google.com/file/d/13ohtab5ns6qO2QIHouScKtrFHrM7X3zl/view",
-            "Gerencia de Materiales": "https://drive.google.com/file/d/13ohtab5ns6qO2QIHouScKtrFHrM7X3zl/view",
-            "Pedagogy": "https://www.upr.edu/bayamon/wp-content/uploads/sites/9/2015/06/Secuencia-curricular-aprobada"
-                        "-en-mayo-de-2013.pdf",
-            "Pedagogía": "https://www.upr.edu/bayamon/wp-content/uploads/sites/9/2015/06/Secuencia-curricular"
-                         "-aprobada-en-mayo-de-2013.pdf",
-            "Chemistry": "https://drive.google.com/file/d/0BzdErxfu_JSCNHJENWNaY1JmZjNSSU5mR2U5SnVOc1gxUTVJ/view",
-            "Química": "https://drive.google.com/file/d/0BzdErxfu_JSCNHJENWNaY1JmZjNSSU5mR2U5SnVOc1gxUTVJ/view",
-            "Nursing": "https://drive.google.com/file/d/0BzdErxfu_JSCaF9tMFc3Y0hnRGpsZ1dMTXFPRjRMUlVEQ1ZZ/view",
-            "Enfermería": "https://drive.google.com/file/d/0BzdErxfu_JSCaF9tMFc3Y0hnRGpsZ1dMTXFPRjRMUlVEQ1ZZ/view",
-            "Office Systems": "https://docs.uprb.edu/deptsofi/curriculo-BA-SOFI-agosto-2016.pdf",
-            "Sistemas de Oficina": "https://docs.uprb.edu/deptsofi/curriculo-BA-SOFI-agosto-2016.pdf",
-            "Information Engineering": "https://drive.google.com/file/d/1mYCHmCy3Mb2fDyp9EiFEtR0j4-rsDdlN/view",
-            "Ingeniería de la Información": "https://drive.google.com/file/d/1mYCHmCy3Mb2fDyp9EiFEtR0j4-rsDdlN/view"}
-
+            translation["dep"]: "https://www.uprb.edu/sobre-uprb/decanato-de-asuntos-academicos/departamentos-academicos-2/",
+            translation["acc"]: "https://drive.google.com/file/d/0BzdErxfu_JSCSDA0NHMyYVNhdXA3V1ZqX2c1aUlIT21Oc1RF/view",
+            translation["finance"]: "https://drive.google.com/file/d/0BzdErxfu_JSCR2gyNzJOeHA2c2EwTklRYmZYZ0Zfck9UT3E0/view",
+            translation["management"]: "https://drive.google.com/file/d/0BzdErxfu_JSCVllhTWJGMzRYd3JoemtObDkzX3I5MHNqU3V3/view",
+            translation["mark"]: "https://drive.google.com/file/d/0BzdErxfu_JSCa3BIWnZyQmlHa0hGcEVtSlV2d2gxN0dENVcw/view",
+            translation["g_biology"]: "https://drive.google.com/file/d/11yfoYqXYPybDZmeEmgW8osgSCCmxzjQl/view",
+            translation["h_biology"]: "https://drive.google.com/file/d/1z-aphTwLLwAY5-G3O7_SXG3ZvvRSN6p9/view",
+            translation["c_science"]: "https://docs.uprb.edu/deptsici/CIENCIAS-DE-COMPUTADORAS-2016.pdf",
+            translation["it"]: "https://docs.uprb.edu/deptsici/SISTEMAS-INFORMACION-2016.pdf",
+            translation["s_science"]: "https://drive.google.com/file/d/1cZnD6EhBsu7u6U8IVZoeK0VHgQmYt3sf/view",
+            translation["physical"]: "https://drive.google.com/file/d/0BzdErxfu_JSCQWFEWlpCSnRFMVFGQnZoTXRyZHJiMzBkc2dZ/view",
+            translation["elec"]: "https://drive.google.com/file/d/1tfzaHKilu5iQccD2sBzD8O_6UlXtSREF/view",
+            translation["equip"]: "https://drive.google.com/file/d/13ohtab5ns6qO2QIHouScKtrFHrM7X3zl/view",
+            translation["peda"]: "https://www.upr.edu/bayamon/wp-content/uploads/sites/9/2015/06/Secuencia-curricular-aprobada-en-mayo-de-2013.pdf",
+            translation["che"]: "https://drive.google.com/file/d/0BzdErxfu_JSCNHJENWNaY1JmZjNSSU5mR2U5SnVOc1gxUTVJ/view",
+            translation["nur"]: "https://drive.google.com/file/d/0BzdErxfu_JSCaF9tMFc3Y0hnRGpsZ1dMTXFPRjRMUlVEQ1ZZ/view",
+            translation["office"]: "https://docs.uprb.edu/deptsofi/curriculo-BA-SOFI-agosto-2016.pdf",
+            translation["engi"]: "https://drive.google.com/file/d/1mYCHmCy3Mb2fDyp9EiFEtR0j4-rsDdlN/view"}
         url = links.get(choice, None)
         if url:
             webbrowser.open(url)
@@ -9693,7 +9683,7 @@ class TeraTermUI(customtkinter.CTk):
                                                               translation["equip"], translation["peda"],
                                                               translation["che"], translation["nur"],
                                                               translation["office"], translation["engi"]],
-                                                      command=TeraTermUI.curriculums,
+                                                      command=self.curriculums_link,
                                                       height=30, width=150)
         self.keybinds_text = customtkinter.CTkLabel(self.help_frame, text=translation["keybinds_title"],
                                                     font=customtkinter.CTkFont(weight="bold", size=15))
