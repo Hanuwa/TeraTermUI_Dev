@@ -5357,8 +5357,8 @@ class TeraTermUI(customtkinter.CTk):
             "appearance": self.appearance_mode_optionemenu.get(),
             "scaling": self.scaling_slider.get(),
             "pdf_dir": self.last_save_pdf_dir,
-            "win_pos_x": self.winfo_x() if not self.state() == "zoomed" else None,
-            "win_pos_y": self.winfo_y() if not self.state() == "zoomed" else None,
+            "win_pos_x": self.winfo_x() if not self.state() == "zoomed" and self.winfo_x() >= 0 else None,
+            "win_pos_y": self.winfo_y() if not self.state() == "zoomed" and self.winfo_y() >= 0 else None,
             "exit": self.exit_checkbox_state,
         }
         try:
