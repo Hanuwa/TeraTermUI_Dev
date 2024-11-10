@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 11/09/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 11/10/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -151,6 +151,7 @@ class TeraTermUI(customtkinter.CTk):
         self.icon_path = TeraTermUI.get_absolute_path("images/tera-term.ico")
         self.iconbitmap(self.icon_path)
         self.mode = "Portable"
+        self.update_db = False
         self.bind("<Button-1>", self.set_focus)
         self.bind("<Button-2>", lambda event: self.focus_set())
         self.bind("<Button-3>", lambda event: self.focus_set())
@@ -1953,12 +1954,16 @@ class TeraTermUI(customtkinter.CTk):
             main_window_height = self.winfo_height()
             dialog_width = 300
             dialog_height = 300
-            dialog_x = main_window_x + (main_window_width - dialog_width) / 2
-            dialog_y = main_window_y + (main_window_height - dialog_height) / 2
+            dialog_x = main_window_x + (main_window_width // 2) - (dialog_width // 2)
+            dialog_y = main_window_y + (main_window_height // 2) - (dialog_height // 2)
+            screen_width = self.winfo_screenwidth()
+            screen_height = self.winfo_screenheight()
+            dialog_x = max(0, min(dialog_x + 75, screen_width - dialog_width))
+            dialog_y = max(0, min(dialog_y + 60, screen_height - dialog_height))
             self.dialog = SmoothFadeInputDialog(text=translation["dialog_message"], title=translation["dialog_title"],
                                                 ok_text=translation["submit"], cancel_text=translation["option_1"],
                                                 lang=lang)
-            self.dialog.geometry("+%d+%d" % (dialog_x + 75, dialog_y + 60))
+            self.dialog.geometry("+%d+%d" % (dialog_x, dialog_y))
             self.dialog.iconbitmap(self.icon_path)
             self.dialog.bind("<Escape>", lambda event: self.dialog.destroy())
             dialog_input = self.dialog.get_input()
@@ -1969,7 +1974,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.my_classes_event_completed = False
             else:
                 self.dialog.destroy()
-
+                
     # function for seeing the classes you are currently enrolled for
     def my_classes_event(self, dialog_input):
         with self.lock_thread:
@@ -4797,8 +4802,13 @@ class TeraTermUI(customtkinter.CTk):
         timer_window_height = 160
         center_x = main_window_x + (main_window_width // 2) - (timer_window_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (timer_window_height // 2)
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        center_x = max(0, min(center_x + 70, screen_width - timer_window_width))
+        center_y = max(0, min(center_y - 15, screen_height - timer_window_height))
+        window_geometry = f"{timer_window_width}x{timer_window_height}+{center_x}+{center_y}"
         self.timer_window = SmoothFadeToplevel(fade_duration=15)
-        self.timer_window.geometry(f"{timer_window_width}x{timer_window_height}+{center_x + 70}+{center_y - 15}")
+        self.timer_window.geometry(window_geometry)
         self.timer_window.title(translation["auto_enroll"])
         self.timer_window.attributes("-alpha", 0.90)
         self.timer_window.resizable(False, False)
@@ -5509,7 +5519,12 @@ class TeraTermUI(customtkinter.CTk):
         loading_screen_height = height
         center_x = main_window_x + (main_window_width // 2) - (loading_screen_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (loading_screen_height // 2)
-        self.loading_screen.geometry(f"{width}x{height}+{center_x + 105}+{center_y}")
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        center_x = max(0, min(center_x + 105, screen_width - loading_screen_width))
+        center_y = max(0, min(center_y, screen_height - loading_screen_height))
+        window_geometry = f"{loading_screen_width}x{loading_screen_height}+{center_x}+{center_y}"
+        self.loading_screen.geometry(window_geometry)
 
     @staticmethod
     def disable_loading_screen_close():
@@ -6597,7 +6612,12 @@ class TeraTermUI(customtkinter.CTk):
         main_window_height = self.winfo_height()
         center_x = main_window_x + (main_window_width // 2) - (total_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (total_height // 2)
-        self.move_tables_overlay.geometry(f"{total_width}x{total_height}+{center_x + 103}+{center_y + 13}")
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        center_x = max(0, min(center_x + 105, screen_width - total_width))
+        center_y = max(0, min(center_y + 13, screen_height - total_height))
+        window_geometry = f"{total_width}x{total_height}+{center_x}+{center_y}"
+        self.move_tables_overlay.geometry(window_geometry)
 
     def update_table_checkboxes(self):
         for widget in self.tables_container.winfo_children():
@@ -8114,7 +8134,11 @@ class TeraTermUI(customtkinter.CTk):
         top_level_height = height
         center_x = main_window_x + (main_window_width // 2) - (top_level_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (top_level_height // 2)
-        window_geometry = f"{width}x{height}+{center_x + 100}+{center_y - 20}"
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        center_x = max(0, min(center_x + 100, screen_width - top_level_width))
+        center_y = max(0, min(center_y - 20, screen_height - top_level_height))
+        window_geometry = f"{width}x{height}+{center_x}+{center_y}"
         if not self.disable_audio:
             winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/error.wav"), winsound.SND_ASYNC)
         self.error = SmoothFadeToplevel(fade_duration=10)
@@ -8150,7 +8174,11 @@ class TeraTermUI(customtkinter.CTk):
         top_level_height = height
         center_x = main_window_x + (main_window_width // 2) - (top_level_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (top_level_height // 2)
-        window_geometry = f"{width}x{height}+{center_x + 100}+{center_y - 20}"
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        center_x = max(0, min(center_x + 100, screen_width - top_level_width))
+        center_y = max(0, min(center_y - 20, screen_height - top_level_height))
+        window_geometry = f"{width}x{height}+{center_x}+{center_y}"
         if not self.disable_audio:
             winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/success.wav"), winsound.SND_ASYNC)
         self.success = SmoothFadeToplevel(fade_duration=10)
@@ -8321,7 +8349,11 @@ class TeraTermUI(customtkinter.CTk):
         top_level_height = height
         center_x = main_window_x + (main_window_width // 2) - (top_level_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (top_level_height // 2)
-        window_geometry = f"{width}x{height}+{center_x + 100}+{center_y - 20}"
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        center_x = max(0, min(center_x + 100, screen_width - top_level_width))
+        center_y = max(0, min(center_y - 20, screen_height - top_level_height))
+        window_geometry = f"{width}x{height}+{center_x}+{center_y}"
         if not self.disable_audio:
             winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/notification.wav"), winsound.SND_ASYNC)
         self.information = SmoothFadeToplevel(fade_duration=10)
@@ -9196,11 +9228,15 @@ class TeraTermUI(customtkinter.CTk):
         main_window_y = self.winfo_y()
         main_window_width = self.winfo_width()
         main_window_height = self.winfo_height()
-        help_window_width = 475
-        help_window_height = 280
-        center_x = main_window_x + (main_window_width // 2) - (help_window_width // 2)
-        center_y = main_window_y + (main_window_height // 2) - (help_window_height // 2)
-        self.status.geometry(f"{help_window_width}x{help_window_height}+{center_x + 70}+{center_y - 15}")
+        status_window_width = 475
+        status_window_height = 280
+        center_x = main_window_x + (main_window_width // 2) - (status_window_width // 2)
+        center_y = main_window_y + (main_window_height // 2) - (status_window_height // 2)
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        center_x = max(0, min(center_x + 70, screen_width - status_window_width))
+        center_y = max(0, min(center_y - 15, screen_height - status_window_height))
+        self.status.geometry(f"{status_window_width}x{status_window_height}+{center_x}+{center_y}")
         self.status.title(translation["status"])
         self.status.iconbitmap(self.icon_path)
         self.status.resizable(False, False)
@@ -9764,7 +9800,11 @@ class TeraTermUI(customtkinter.CTk):
         help_window_height = 280
         center_x = main_window_x + (main_window_width // 2) - (help_window_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (help_window_height // 2)
-        self.help.geometry(f"{help_window_width}x{help_window_height}+{center_x + 70}+{center_y - 15}")
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        center_x = max(0, min(center_x + 70, screen_width - help_window_width))
+        center_y = max(0, min(center_y - 15, screen_height - help_window_height))
+        self.help.geometry(f"{help_window_width}x{help_window_height}+{center_x}+{center_y}")
         self.help.title(translation["help"])
         self.help.iconbitmap(self.icon_path)
         self.help.resizable(False, False)
@@ -11289,7 +11329,7 @@ class SmoothFadeToplevel(customtkinter.CTkToplevel):
 class SmoothFadeInputDialog(customtkinter.CTkInputDialog):
     __slots__ = "fade_duration", "final_alpha", "alpha", "fade_direction"
 
-    def __init__(self, fade_duration=15, final_alpha=1.0, *args, **kwargs):
+    def __init__(self, fade_duration=25, final_alpha=1.0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fade_duration = fade_duration
         self.final_alpha = final_alpha
