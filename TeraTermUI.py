@@ -1974,7 +1974,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.my_classes_event_completed = False
             else:
                 self.dialog.destroy()
-                
+
     # function for seeing the classes you are currently enrolled for
     def my_classes_event(self, dialog_input):
         with self.lock_thread:
@@ -9660,12 +9660,12 @@ class TeraTermUI(customtkinter.CTk):
             return
         if search_term in ["all", "todo", "todos"]:
             query = "SELECT name, code FROM courses ORDER BY name"
+            results = self.cursor.execute(query).fetchall()
         else:
-            query_conditions = [f"LOWER(name) LIKE '%{search_term}%'", f"LOWER(code) LIKE '%{search_term}%'"]
-            query_conditions_str = " OR ".join(query_conditions)
-            query = f"SELECT name, code FROM courses WHERE {query_conditions_str}"
+            query = "SELECT name, code FROM courses WHERE LOWER(name) LIKE ? OR LOWER(code) LIKE ?"
+            search_term_param = f"%{search_term}%"
+            results = self.cursor.execute(query, (search_term_param, search_term_param)).fetchall()
 
-        results = self.cursor.execute(query).fetchall()
         if not results:  # if there are no results, display a message
             self.class_list.delete(0, tk.END)
             self.class_list.insert(tk.END, translation["no_results"])
@@ -10801,15 +10801,16 @@ class CustomTextBox(customtkinter.CTkTextbox):
 
 
 class CustomEntry(customtkinter.CTkEntry):
-    __slots__ = ("master", "teraterm_ui_instance", "lang")
+    __slots__ = ("master", "teraterm_ui_instance", "lang", "max_length")
 
-    def __init__(self, master, teraterm_ui_instance, lang=None, *args, **kwargs):
+    def __init__(self, master, teraterm_ui_instance, lang=None, max_length=250, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
 
         initial_state = self.get()
         self.root = self.winfo_toplevel()
         self._undo_stack = deque([initial_state], maxlen=50)
         self._redo_stack = deque(maxlen=50)
+        self.max_length = max_length
         self.lang = lang
         self.is_listbox_entry = False
         self.select = False
@@ -10887,10 +10888,13 @@ class CustomEntry(customtkinter.CTkEntry):
 
     def undo(self, event=None):
         if len(self._undo_stack) > 1:
-            self._redo_stack.append(self._undo_stack.pop())
+            last_text = self._undo_stack.pop()
+            self._redo_stack.append(last_text)
             previous_state = self._undo_stack[-1]
             self.delete(0, "end")
-            self.insert(0, previous_state)
+            self.insert(0, previous_state, enforce_length_check=False)
+            self.icursor(tk.END)
+            self.xview_moveto(1.0)
             if self.is_listbox_entry:
                 self.update_listbox()
 
@@ -10899,7 +10903,9 @@ class CustomEntry(customtkinter.CTkEntry):
             state_to_redo = self._redo_stack.pop()
             self._undo_stack.append(state_to_redo)
             self.delete(0, "end")
-            self.insert(0, state_to_redo)
+            self.insert(0, state_to_redo, enforce_length_check=False)
+            self.icursor(tk.END)
+            self.xview_moveto(1.0)
             if self.is_listbox_entry:
                 self.update_listbox()
 
@@ -11012,6 +11018,8 @@ class CustomEntry(customtkinter.CTkEntry):
                 pass  # Nothing selected, which is fine
 
             self.insert(tk.INSERT, clipboard_text)
+            self.icursor(tk.END)
+            self.xview_moveto(1.0)
 
             # Update undo stack here, after paste operation
             self.update_undo_stack()
@@ -11041,9 +11049,22 @@ class CustomEntry(customtkinter.CTkEntry):
             self.icursor("end")
         return "break"
 
-    def insert(self, index, string):
-        super().insert(index, string)
-        self.update_undo_stack()
+    def insert(self, index, string, enforce_length_check=True):
+        if enforce_length_check:
+            current_length = len(self.get())
+            if current_length + len(string) <= self.max_length:
+                super().insert(index, string)
+                self.update_undo_stack()
+            else:
+                # Truncate the string if it exceeds the maximum length
+                allowed_length = self.max_length - current_length
+                if allowed_length > 0:
+                    super().insert(index, string[:allowed_length])
+                    self.update_undo_stack()
+                print("Input limited to the maximum allowed length")
+        else:
+            super().insert(index, string)
+            self.update_undo_stack()
 
     def _activate_placeholder(self):
         entry_text = self._entry.get()
@@ -11092,14 +11113,15 @@ class CustomEntry(customtkinter.CTkEntry):
 
 
 class CustomComboBox(customtkinter.CTkComboBox):
-    __slots__ = ("master", "teraterm_ui_instance")
+    __slots__ = ("master", "teraterm_ui_instance", "max_length")
 
-    def __init__(self, master, teraterm_ui_instance, *args, **kwargs):
+    def __init__(self, master, teraterm_ui_instance, max_length=250, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
 
         initial_state = self.get()
         self._undo_stack = deque([initial_state], maxlen=25)
         self._redo_stack = deque(maxlen=25)
+        self.max_length = max_length
         self.border_color = None
 
         self.teraterm_ui = teraterm_ui_instance
@@ -11142,11 +11164,23 @@ class CustomComboBox(customtkinter.CTkComboBox):
         self.teraterm_ui.up_arrow_key_enabled = True
         self.teraterm_ui.down_arrow_key_enabled = True
 
-    def set(self, value):
-        # Call the original set method
-        super().set(value)
-        # Explicitly update the undo stack after setting a new value
-        self.update_undo_stack()
+    def set(self, value, enforce_length_check=True):
+        if enforce_length_check:
+            current_length = len(self.get())
+            if current_length + len(value) <= self.max_length:
+                super().set(value)
+                self.update_undo_stack()
+            else:
+                # Truncate the string if it exceeds the maximum length
+                allowed_length = self.max_length - current_length
+                if allowed_length > 0:
+                    value = value[:allowed_length]
+                    super().set(value)
+                    self.update_undo_stack()
+                print("Input limited to the maximum allowed length")
+        else:
+            super().set(value)
+            self.update_undo_stack()
 
     def update_undo_stack(self, event=None):
         current_text = self.get()
@@ -11172,13 +11206,17 @@ class CustomComboBox(customtkinter.CTkComboBox):
         if len(self._undo_stack) > 1:
             last_text = self._undo_stack.pop()
             self._redo_stack.append(last_text)
-            self.set(self._undo_stack[-1])
+            self.set(self._undo_stack[-1], enforce_length_check=False)
+            self._entry.icursor(tk.END)
+            self._entry.xview_moveto(1.0)
 
     def redo(self, event=None):
         if self._redo_stack:
             redo_text = self._redo_stack.pop()
             self._undo_stack.append(redo_text)
-            self.set(redo_text)
+            self.set(redo_text, enforce_length_check=False)
+            self._entry.icursor(tk.END)
+            self._entry.xview_moveto(1.0)
 
     def custom_middle_mouse(self, event=None):
         if self._entry.select_present():
@@ -11265,6 +11303,8 @@ class CustomComboBox(customtkinter.CTkComboBox):
                 pass  # Nothing selected, which is fine
 
             self._entry.insert(tk.INSERT, clipboard_text)
+            self._entry.icursor(tk.END)
+            self._entry.xview_moveto(1.0)
 
             # Update undo stack here, after paste operation
             self.update_undo_stack()
