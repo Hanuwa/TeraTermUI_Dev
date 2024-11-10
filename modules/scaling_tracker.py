@@ -199,7 +199,7 @@ class ScalingTracker:
                     cls.window_dpi_scaling_dict[window] = current_dpi_scaling_value
 
                     if sys.platform.startswith("win"):
-                        window.attributes("-alpha", 0.15)
+                        window.after(100, lambda: window.attributes("-alpha", 0.15))
 
                     if hasattr(window, 'block_update_dimensions_event'):
                         window.block_update_dimensions_event()
@@ -208,7 +208,7 @@ class ScalingTracker:
                         window.unblock_update_dimensions_event()
 
                     if sys.platform.startswith("win"):
-                        window.attributes("-alpha", 1.0)
+                        window.after(100, lambda: window.attributes("-alpha", 1.0))
 
                     new_scaling_detected = True
 
