@@ -10627,8 +10627,8 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self._undo_stack.append(state_to_redo)
 
             # Find position where texts start to differ
-            cur_line = diff_line = 1
-            cur_char = diff_char = 0
+            cur_line = 1
+            cur_char = 0
             common_prefix_len = 0
 
             for c1, c2 in zip(current_text, state_to_redo):
@@ -11126,11 +11126,11 @@ class CustomEntry(customtkinter.CTkEntry):
             if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1]):
                 self._undo_stack.append(current_text)
 
-            insert_index = self._entry.index(tk.INSERT)
+            insert_index = self.index(tk.INSERT)
             try:
-                start_index = self._entry.index(tk.SEL_FIRST)
-                end_index = self._entry.index(tk.SEL_LAST)
-                self._entry.delete(start_index, end_index)
+                start_index = self.index(tk.SEL_FIRST)
+                end_index = self.index(tk.SEL_LAST)
+                self.delete(start_index, end_index)
                 insert_index = start_index
             except tk.TclError:
                 pass  # Nothing selected, which is fine
@@ -11139,15 +11139,18 @@ class CustomEntry(customtkinter.CTkEntry):
             if len(clipboard_text) > space_left:
                 clipboard_text = clipboard_text[:space_left]
 
-            self._entry.insert(insert_index, clipboard_text)
+            self.insert(insert_index, clipboard_text)
 
             # Move the cursor to the end of the pasted content
-            final_cursor_position = insert_index + len(clipboard_text)
-            self._entry.icursor(final_cursor_position)
-            self._entry.xview_moveto(final_cursor_position / len(self._entry.get()))
+            new_cursor_position = insert_index + len(clipboard_text)
+            self.icursor(new_cursor_position)
+            self.xview_moveto(new_cursor_position / len(self.get()) if len(self.get()) > 0 else 0)
 
             # Update undo stack here, after paste operation
             self.update_undo_stack()
+
+            if self.is_listbox_entry:
+                self.update_listbox()
         except tk.TclError:
             pass  # Clipboard empty or other issue
         return "break"
@@ -11489,7 +11492,6 @@ class CustomComboBox(customtkinter.CTkComboBox):
 
             # Update undo stack here, after paste operation
             self.update_undo_stack()
-
         except tk.TclError:
             pass  # Clipboard empty or other issue
         return "break"
