@@ -211,15 +211,16 @@ class CustomButton(CTkButton):
 
 
 class CustomEntry(CTkEntry):
-    __slots__ = ("master", "teraterm_ui_instance", "lang")
+    __slots__ = ("master", "teraterm_ui_instance", "lang", "max_length")
 
-    def __init__(self, master, teraterm_ui_instance, lang=None, *args, **kwargs):
+    def __init__(self, master, teraterm_ui_instance, lang=None, max_length=250, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
 
         initial_state = self.get()
         self.root = self.winfo_toplevel()
-        self._undo_stack = deque([initial_state], maxlen=50)
-        self._redo_stack = deque(maxlen=50)
+        self._undo_stack = deque([initial_state], maxlen=100)
+        self._redo_stack = deque(maxlen=100)
+        self.max_length = max_length
         self.lang = lang
         self.is_listbox_entry = False
         self.select = False
@@ -297,19 +298,84 @@ class CustomEntry(CTkEntry):
 
     def undo(self, event=None):
         if len(self._undo_stack) > 1:
-            self._redo_stack.append(self._undo_stack.pop())
+            # Get states and find position of change
+            current_text = self._undo_stack[-1]
+            last_text = self._undo_stack.pop()
+            self._redo_stack.append(last_text)
             previous_state = self._undo_stack[-1]
+
+            change_position = 0
+            min_len = min(len(current_text), len(previous_state))
+            for i in range(min_len):
+                if current_text[i] != previous_state[i]:
+                    change_position = i
+                    break
+                change_position = i + 1
+
+            if change_position == min_len:
+                change_position = min_len
+
+            # Apply changes and update cursor
             self.delete(0, "end")
-            self.insert(0, previous_state)
+            self.insert(0, previous_state, enforce_length_check=False)
+            self.icursor(change_position)
+
+            if self.cget("border_color") in ["#c30101", "#228B22"]:
+                default_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
+                self.configure(border_color=default_color)
+
+            # Update view position
+            if len(previous_state) > 0:
+                visible_ratio = change_position / len(previous_state)
+                self.xview_moveto(max(0.0, min(1.0, visible_ratio - 0.1)))
+
             if self.is_listbox_entry:
                 self.update_listbox()
 
     def redo(self, event=None):
         if self._redo_stack:
+            # Get states and find position of change
+            current_text = self.get()
             state_to_redo = self._redo_stack.pop()
             self._undo_stack.append(state_to_redo)
+
+            change_position = 0
+            min_len = min(len(current_text), len(state_to_redo))
+            for i in range(min_len):
+                if current_text[i] != state_to_redo[i]:
+                    change_position = i
+                    break
+                change_position = i + 1
+
+            if change_position == min_len:
+                change_position = min_len
+
+            # Apply changes and calculate cursor position
             self.delete(0, "end")
-            self.insert(0, state_to_redo)
+            self.insert(0, state_to_redo, enforce_length_check=False)
+
+            new_cursor_position = (change_position + (len(state_to_redo) - len(current_text))
+                                 if len(state_to_redo) > len(current_text)
+                                 else change_position)
+            self.icursor(new_cursor_position)
+
+            if self.cget("border_color") in ["#c30101", "#228B22"]:
+                default_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
+                self.configure(border_color=default_color)
+
+            # Calculate view position based on entry width
+            entry_width = self.winfo_width()
+            visible_chars = entry_width // 8  # Approximate character width of 8 pixels
+
+            if len(state_to_redo) > visible_chars:
+                chars_before_cursor = visible_chars // 2
+                start_pos = max(0, new_cursor_position - chars_before_cursor)
+                if start_pos + visible_chars > len(state_to_redo):
+                    start_pos = max(0, len(state_to_redo) - visible_chars)
+                self.xview_moveto(start_pos / len(state_to_redo))
+            else:
+                self.xview_moveto(0)
+
             if self.is_listbox_entry:
                 self.update_listbox()
 
@@ -414,14 +480,25 @@ class CustomEntry(CTkEntry):
             if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1]):
                 self._undo_stack.append(current_text)
 
+            insert_index = self.index(tk.INSERT)
             try:
                 start_index = self.index(tk.SEL_FIRST)
                 end_index = self.index(tk.SEL_LAST)
                 self.delete(start_index, end_index)
+                insert_index = start_index
             except tk.TclError:
                 pass  # Nothing selected, which is fine
 
-            self.insert(tk.INSERT, clipboard_text)
+            space_left = self.max_length - len(current_text)
+            if len(clipboard_text) > space_left:
+                clipboard_text = clipboard_text[:space_left]
+
+            self.insert(insert_index, clipboard_text)
+
+            # Move the cursor to the end of the pasted content
+            new_cursor_position = insert_index + len(clipboard_text)
+            self.icursor(new_cursor_position)
+            self.xview_moveto(new_cursor_position / len(self.get()) if len(self.get()) > 0 else 0)
 
             # Update undo stack here, after paste operation
             self.update_undo_stack()
@@ -451,9 +528,22 @@ class CustomEntry(CTkEntry):
             self.icursor("end")
         return "break"
 
-    def insert(self, index, string):
-        super().insert(index, string)
-        self.update_undo_stack()
+    def insert(self, index, string, enforce_length_check=True):
+        if enforce_length_check:
+            current_length = len(self.get())
+            if current_length + len(string) <= self.max_length:
+                super().insert(index, string)
+                self.update_undo_stack()
+            else:
+                # Truncate the string if it exceeds the maximum length
+                allowed_length = self.max_length - current_length
+                if allowed_length > 0:
+                    super().insert(index, string[:allowed_length])
+                    self.update_undo_stack()
+                print("Input limited to the maximum allowed length")
+        else:
+            super().insert(index, string)
+            self.update_undo_stack()
 
     def _activate_placeholder(self):
         entry_text = self._entry.get()
@@ -488,6 +578,7 @@ class CustomEntry(CTkEntry):
         self.unbind("<KeyRelease>")
         self.root.unbind("<FocusOut>", self.focus_out_bind_id)
         self.focus_out_bind_id = None
+        self.max_length = None
         self.lang = None
         self.is_listbox_entry = None
         self.select = None
