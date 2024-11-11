@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 11500 lines of codes, it definitely makes things harder to work with
+# and with over 11700 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -9654,28 +9654,34 @@ class TeraTermUI(customtkinter.CTk):
     # list of classes available for all departments in the university
     def search_classes(self, event):
         translation = self.load_language()
-        self.class_list.delete(0, tk.END)  # always clear the list box first
+        self.class_list.delete(0, tk.END)  # Clear the list box first
         search_term = self.search_box.get().strip().lower()
-        if search_term == "" or len(search_term) == 0:  # if the search term is empty, do not return any records
+        if not search_term:  # Return if search term is empty
             return
-        if search_term in ["all", "todo", "todos"]:
-            query = "SELECT name, code FROM courses ORDER BY name"
-            results = self.cursor.execute(query).fetchall()
-        else:
-            query = "SELECT name, code FROM courses WHERE LOWER(name) LIKE ? OR LOWER(code) LIKE ?"
-            search_term_param = f"%{search_term}%"
-            results = self.cursor.execute(query, (search_term_param, search_term_param)).fetchall()
-
-        if not results:  # if there are no results, display a message
-            self.class_list.delete(0, tk.END)
-            self.class_list.insert(tk.END, translation["no_results"])
-            self.search_box.configure(border_color="#c30101")
-        else:
-            for row in results:
+        try:
+            if search_term in ["all", "todo", "todos"]:
+                query = "SELECT name, code FROM courses ORDER BY name"
+                results = self.cursor.execute(query).fetchall()
+            else:
+                # Use parameterized query with wildcards
+                query = """SELECT name, code FROM courses WHERE LOWER(name) LIKE ? OR LOWER(code) LIKE ?"""
+                search_pattern = f"%{search_term}%"
+                results = self.cursor.execute(query, (search_pattern, search_pattern)).fetchall()
+            if not results:
+                self.class_list.delete(0, tk.END)
+                self.class_list.insert(tk.END, translation["no_results"])
+                self.search_box.configure(border_color="#c30101")
+            else:
                 default_border_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
                 if self.search_box.border_color != default_border_color:
                     self.search_box.configure(border_color=default_border_color)
-                self.class_list.insert(tk.END, row[0])
+                for row in results:
+                    self.class_list.insert(tk.END, row[0])
+        except sqlite3.Error as err:
+            print(f"Database error: {err}")
+            self.class_list.delete(0, tk.END)
+            self.class_list.insert(tk.END, translation["no_results"])
+            self.search_box.configure(border_color="#c30101")
 
     # query for searching for either class code or name
     def show_class_code(self, event):
@@ -10480,8 +10486,8 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self._x_scrollbar.bind("<B1-Motion>", self.stop_autoscroll)
 
         initial_state = self.get("1.0", "end-1c")
-        self._undo_stack = deque([initial_state], maxlen=100)
-        self._redo_stack = deque(maxlen=100)
+        self._undo_stack = deque([initial_state], maxlen=500)
+        self._redo_stack = deque(maxlen=500)
 
         self.bind("<Control-z>", self.undo)
         self.bind("<Control-Z>", self.undo)
@@ -10589,21 +10595,71 @@ class CustomTextBox(customtkinter.CTkTextbox):
 
     def undo(self, event=None):
         if len(self._undo_stack) > 1:
-            cursor_position = self.index(tk.INSERT)
-            self._redo_stack.append((self._undo_stack.pop(), cursor_position))
-            self.delete("1.0", "end")
-            self.insert("1.0", self._undo_stack[-1])
-            self.mark_set(tk.INSERT, cursor_position)
-            self.see(cursor_position)
+            # Get current and previous states
+            current_text = self._undo_stack[-1]
+            last_text = self._undo_stack.pop()
+            self._redo_stack.append(last_text)
+            previous_state = self._undo_stack[-1]
+
+            # Find position where texts start to differ
+            cur_line = 1
+            cur_char = 0
+            for c1, c2 in zip(current_text, previous_state):
+                if c1 != c2:
+                    break
+                if c1 == "\n":
+                    cur_line += 1
+                    cur_char = 0
+                else:
+                    cur_char += 1
+
+            self.delete("1.0", tk.END)
+            self.insert("1.0", previous_state)
+            cursor_pos = f"{cur_line}.{cur_char}"
+            self.mark_set(tk.INSERT, cursor_pos)
+            self.see(cursor_pos)
 
     def redo(self, event=None):
         if self._redo_stack:
-            redo_text, new_cursor_position = self._redo_stack.pop()
-            self._undo_stack.append(redo_text)
-            self.delete("1.0", "end")
-            self.insert("1.0", redo_text)
-            self.mark_set(tk.INSERT, new_cursor_position)
-            self.see(new_cursor_position)
+            # Get current and redo states
+            current_text = self.get("1.0", "end-1c")
+            state_to_redo = self._redo_stack.pop()
+            self._undo_stack.append(state_to_redo)
+
+            # Find position where texts start to differ
+            cur_line = diff_line = 1
+            cur_char = diff_char = 0
+            common_prefix_len = 0
+
+            for c1, c2 in zip(current_text, state_to_redo):
+                if c1 != c2:
+                    break
+                if c1 == "\n":
+                    cur_line += 1
+                    cur_char = 0
+                else:
+                    cur_char += 1
+                common_prefix_len += 1
+
+            self.delete("1.0", tk.END)
+            self.insert("1.0", state_to_redo)
+
+            # Handle cursor position for additions vs deletions
+            if len(state_to_redo) > len(current_text):
+                text_added = state_to_redo[
+                             common_prefix_len:common_prefix_len+ (len(state_to_redo) - len(current_text))]
+                for c in text_added:
+                    if c == '\n':
+                        cur_line += 1
+                        cur_char = 0
+                    else:
+                        cur_char += 1
+                cursor_pos = f"{cur_line}.{cur_char}"
+            else:
+                cursor_pos = f"{cur_line}.{cur_char}"
+
+            self.mark_set(tk.INSERT, cursor_pos)
+            self.see(cursor_pos)
 
     def custom_middle_mouse(self, event=None):
         if self.tag_ranges(tk.SEL):
@@ -10808,8 +10864,8 @@ class CustomEntry(customtkinter.CTkEntry):
 
         initial_state = self.get()
         self.root = self.winfo_toplevel()
-        self._undo_stack = deque([initial_state], maxlen=50)
-        self._redo_stack = deque(maxlen=50)
+        self._undo_stack = deque([initial_state], maxlen=100)
+        self._redo_stack = deque(maxlen=100)
         self.max_length = max_length
         self.lang = lang
         self.is_listbox_entry = False
@@ -10888,24 +10944,84 @@ class CustomEntry(customtkinter.CTkEntry):
 
     def undo(self, event=None):
         if len(self._undo_stack) > 1:
+            # Get states and find position of change
+            current_text = self._undo_stack[-1]
             last_text = self._undo_stack.pop()
             self._redo_stack.append(last_text)
             previous_state = self._undo_stack[-1]
+
+            change_position = 0
+            min_len = min(len(current_text), len(previous_state))
+            for i in range(min_len):
+                if current_text[i] != previous_state[i]:
+                    change_position = i
+                    break
+                change_position = i + 1
+
+            if change_position == min_len:
+                change_position = min_len
+
+            # Apply changes and update cursor
             self.delete(0, "end")
             self.insert(0, previous_state, enforce_length_check=False)
-            self.icursor(tk.END)
-            self.xview_moveto(1.0)
+            self.icursor(change_position)
+
+            if self.cget("border_color") in ["#c30101", "#228B22"]:
+                default_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
+                self.configure(border_color=default_color)
+
+            # Update view position
+            if len(previous_state) > 0:
+                visible_ratio = change_position / len(previous_state)
+                self.xview_moveto(max(0.0, min(1.0, visible_ratio - 0.1)))
+
             if self.is_listbox_entry:
                 self.update_listbox()
 
     def redo(self, event=None):
         if self._redo_stack:
+            # Get states and find position of change
+            current_text = self.get()
             state_to_redo = self._redo_stack.pop()
             self._undo_stack.append(state_to_redo)
+
+            change_position = 0
+            min_len = min(len(current_text), len(state_to_redo))
+            for i in range(min_len):
+                if current_text[i] != state_to_redo[i]:
+                    change_position = i
+                    break
+                change_position = i + 1
+
+            if change_position == min_len:
+                change_position = min_len
+
+            # Apply changes and calculate cursor position
             self.delete(0, "end")
             self.insert(0, state_to_redo, enforce_length_check=False)
-            self.icursor(tk.END)
-            self.xview_moveto(1.0)
+
+            new_cursor_position = (change_position + (len(state_to_redo) - len(current_text))
+                                 if len(state_to_redo) > len(current_text)
+                                 else change_position)
+            self.icursor(new_cursor_position)
+
+            if self.cget("border_color") in ["#c30101", "#228B22"]:
+                default_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
+                self.configure(border_color=default_color)
+
+            # Calculate view position based on entry width
+            entry_width = self.winfo_width()
+            visible_chars = entry_width // 8  # Approximate character width of 8 pixels
+
+            if len(state_to_redo) > visible_chars:
+                chars_before_cursor = visible_chars // 2
+                start_pos = max(0, new_cursor_position - chars_before_cursor)
+                if start_pos + visible_chars > len(state_to_redo):
+                    start_pos = max(0, len(state_to_redo) - visible_chars)
+                self.xview_moveto(start_pos / len(state_to_redo))
+            else:
+                self.xview_moveto(0)
+
             if self.is_listbox_entry:
                 self.update_listbox()
 
@@ -11010,22 +11126,28 @@ class CustomEntry(customtkinter.CTkEntry):
             if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1]):
                 self._undo_stack.append(current_text)
 
+            insert_index = self._entry.index(tk.INSERT)
             try:
-                start_index = self.index(tk.SEL_FIRST)
-                end_index = self.index(tk.SEL_LAST)
-                self.delete(start_index, end_index)
+                start_index = self._entry.index(tk.SEL_FIRST)
+                end_index = self._entry.index(tk.SEL_LAST)
+                self._entry.delete(start_index, end_index)
+                insert_index = start_index
             except tk.TclError:
                 pass  # Nothing selected, which is fine
 
-            self.insert(tk.INSERT, clipboard_text)
-            self.icursor(tk.END)
-            self.xview_moveto(1.0)
+            space_left = self.max_length - len(current_text)
+            if len(clipboard_text) > space_left:
+                clipboard_text = clipboard_text[:space_left]
+
+            self._entry.insert(insert_index, clipboard_text)
+
+            # Move the cursor to the end of the pasted content
+            final_cursor_position = insert_index + len(clipboard_text)
+            self._entry.icursor(final_cursor_position)
+            self._entry.xview_moveto(final_cursor_position / len(self._entry.get()))
 
             # Update undo stack here, after paste operation
             self.update_undo_stack()
-
-            if self.is_listbox_entry:
-                self.update_listbox()
         except tk.TclError:
             pass  # Clipboard empty or other issue
         return "break"
@@ -11119,8 +11241,8 @@ class CustomComboBox(customtkinter.CTkComboBox):
         super().__init__(master, *args, **kwargs)
 
         initial_state = self.get()
-        self._undo_stack = deque([initial_state], maxlen=25)
-        self._redo_stack = deque(maxlen=25)
+        self._undo_stack = deque([initial_state], maxlen=100)
+        self._redo_stack = deque(maxlen=100)
         self.max_length = max_length
         self.border_color = None
 
@@ -11204,19 +11326,69 @@ class CustomComboBox(customtkinter.CTkComboBox):
 
     def undo(self, event=None):
         if len(self._undo_stack) > 1:
+            # Get states and find position of change
+            current_text = self._undo_stack[-1]
             last_text = self._undo_stack.pop()
             self._redo_stack.append(last_text)
-            self.set(self._undo_stack[-1], enforce_length_check=False)
-            self._entry.icursor(tk.END)
-            self._entry.xview_moveto(1.0)
+            previous_state = self._undo_stack[-1]
+
+            change_position = 0
+            min_len = min(len(current_text), len(previous_state))
+            for i in range(min_len):
+                if current_text[i] != previous_state[i]:
+                    change_position = i
+                    break
+                change_position = i + 1
+
+            if change_position == min_len:
+                change_position = min_len
+
+            # Apply changes and update cursor
+            self.set(previous_state, enforce_length_check=False)
+            self._entry.icursor(change_position)
+
+            # Update view position
+            if len(previous_state) > 0:
+                visible_ratio = change_position / len(previous_state)
+                self._entry.xview_moveto(max(0.0, min(1.0, visible_ratio - 0.1)))
 
     def redo(self, event=None):
         if self._redo_stack:
-            redo_text = self._redo_stack.pop()
-            self._undo_stack.append(redo_text)
-            self.set(redo_text, enforce_length_check=False)
-            self._entry.icursor(tk.END)
-            self._entry.xview_moveto(1.0)
+            # Get states and find position of change
+            current_text = self.get()
+            state_to_redo = self._redo_stack.pop()
+            self._undo_stack.append(state_to_redo)
+
+            change_position = 0
+            min_len = min(len(current_text), len(state_to_redo))
+            for i in range(min_len):
+                if current_text[i] != state_to_redo[i]:
+                    change_position = i
+                    break
+                change_position = i + 1
+
+            if change_position == min_len:
+                change_position = min_len
+
+            # Apply changes and calculate cursor position
+            self.set(state_to_redo, enforce_length_check=False)
+            new_cursor_position = (change_position + (len(state_to_redo) - len(current_text))
+                                   if len(state_to_redo) > len(current_text)
+                                   else change_position)
+            self._entry.icursor(new_cursor_position)
+
+            # Calculate view position based on entry width
+            entry_width = self._entry.winfo_width()
+            visible_chars = entry_width // 8
+
+            if len(state_to_redo) > visible_chars:
+                chars_before_cursor = visible_chars // 2
+                start_pos = max(0, new_cursor_position - chars_before_cursor)
+                if start_pos + visible_chars > len(state_to_redo):
+                    start_pos = max(0, len(state_to_redo) - visible_chars)
+                self._entry.xview_moveto(start_pos / len(state_to_redo))
+            else:
+                self._entry.xview_moveto(0)
 
     def custom_middle_mouse(self, event=None):
         if self._entry.select_present():
@@ -11295,16 +11467,25 @@ class CustomComboBox(customtkinter.CTkComboBox):
             if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1]):
                 self._undo_stack.append(current_text)
 
+            insert_index = self._entry.index(tk.INSERT)
             try:
                 start_index = self._entry.index(tk.SEL_FIRST)
                 end_index = self._entry.index(tk.SEL_LAST)
                 self._entry.delete(start_index, end_index)
+                insert_index = start_index
             except tk.TclError:
                 pass  # Nothing selected, which is fine
 
-            self._entry.insert(tk.INSERT, clipboard_text)
-            self._entry.icursor(tk.END)
-            self._entry.xview_moveto(1.0)
+            space_left = self.max_length - len(current_text)
+            if len(clipboard_text) > space_left:
+                clipboard_text = clipboard_text[:space_left]
+
+            self._entry.insert(insert_index, clipboard_text)
+
+            # Move the cursor to the end of the pasted content
+            final_cursor_position = insert_index + len(clipboard_text)
+            self._entry.icursor(final_cursor_position)
+            self._entry.xview_moveto(final_cursor_position / len(self._entry.get()))
 
             # Update undo stack here, after paste operation
             self.update_undo_stack()
