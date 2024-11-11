@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 11/10/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 11/11/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -11224,6 +11224,7 @@ class CustomEntry(customtkinter.CTkEntry):
         self.unbind("<KeyRelease>")
         self.root.unbind("<FocusOut>", self.focus_out_bind_id)
         self.focus_out_bind_id = None
+        self.max_length = None
         self.lang = None
         self.is_listbox_entry = None
         self.select = None
@@ -11512,6 +11513,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
         self.unbind("<Button-2>")
         self.unbind("<KeyRelease>")
         self.border_color = None
+        self.max_length = None
         self.teraterm_ui = None
         self._undo_stack.clear()
         self._redo_stack.clear()
