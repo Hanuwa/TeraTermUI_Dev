@@ -11753,6 +11753,7 @@ def main():
     mode = "Portable"
     SPANISH = 0x0A
     language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
+    os.chdir(os.path.dirname(sys.argv[0]))
     if mode == "Portable" and not has_write_permission():
         if language_id & 0xFF == SPANISH:
             messagebox.showerror("Permiso denegado",
