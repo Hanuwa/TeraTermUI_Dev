@@ -183,7 +183,7 @@ class TeraTermUI(customtkinter.CTk):
         self.down_arrow_key_enabled = True
 
         # Installer Directories
-        self.scope = TeraTermUI.get_installation_scope()
+        self.scope, _ = TeraTermUI.get_installation_scope()
         if self.mode == "Installation":
             if self.scope in ["all_users", "current_user"]:
                 appdata_path = os.environ.get("PROGRAMDATA") if self.scope == "all_users" else os.environ.get("APPDATA")
@@ -822,6 +822,7 @@ class TeraTermUI(customtkinter.CTk):
                     messagebox.showerror("Error", "Fatal Error! Failed to initialize language files.\n"
                                                   "Might need to reinstall the application")
             self.tray.stop()
+            self.destroy()
             sys.exit(1)
         if TeraTermUI.is_admin():
             p = psutil.Process(os.getpid())
