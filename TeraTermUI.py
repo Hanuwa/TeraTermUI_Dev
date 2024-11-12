@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 11/11/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 11/12/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -173,9 +173,9 @@ class TeraTermUI(customtkinter.CTk):
         os.environ["REAZIONE"] = TeraTermUI.purkaa_reazione(parts)
         self.REAZIONE = os.getenv("REAZIONE")
         self.RANGE_NAME = "Sheet1!A:A"
-        self.credentials = None
         self.GITHUB_REPO = "https://api.github.com/repos/Hanuwa/TeraTermUI"
         self.USER_APP_VERSION = "0.9.5"
+        self.credentials = None
         # disabled/enables keybind events
         self.move_slider_left_enabled = True
         self.move_slider_right_enabled = True
@@ -184,7 +184,6 @@ class TeraTermUI(customtkinter.CTk):
 
         # Installer Directories
         self.scope = TeraTermUI.get_installation_scope()
-        self.scope, self.install_path = TeraTermUI.get_installation_scope()
         if self.mode == "Installation":
             if self.scope in ["all_users", "current_user"]:
                 appdata_path = os.environ.get("PROGRAMDATA") if self.scope == "all_users" else os.environ.get("APPDATA")
