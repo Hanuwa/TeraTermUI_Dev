@@ -49,7 +49,7 @@ def check_and_restore_backup():
     if os.path.exists(program_backup):
         if main_file_empty:
             shutil.copy2(program_backup, main_file_path)
-            print(Fore.YELLOW + "\nMain file is empty. Restoration from backup completed." + Style.RESET_ALL)
+            print(Fore.YELLOW + "\nMain file is empty. Restoration from backup completed" + Style.RESET_ALL)
             os.remove(program_backup)
         else:
             program_backup_date = extract_second_date_from_file(program_backup)
@@ -66,7 +66,7 @@ def check_and_restore_backup():
             else:
                 shutil.copy2(program_backup, main_file_path)
                 print(
-                    Fore.YELLOW + "\nPrevious session was interrupted. Restoration from backup completed." +
+                    Fore.YELLOW + "\nPrevious session was interrupted. Restoration from backup completed" +
                     Style.RESET_ALL)
                 os.remove(program_backup)
 
