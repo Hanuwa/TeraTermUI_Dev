@@ -821,9 +821,7 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     messagebox.showerror("Error", "Fatal Error! Failed to initialize language files.\n"
                                                   "Might need to reinstall the application")
-            self.tray.stop()
-            self.destroy()
-            sys.exit(1)
+            self.forceful_end_app()
         if TeraTermUI.is_admin():
             p = psutil.Process(os.getpid())
             p.nice(psutil.HIGH_PRIORITY_CLASS)
