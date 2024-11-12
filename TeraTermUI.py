@@ -9176,7 +9176,7 @@ class TeraTermUI(customtkinter.CTk):
             table_position_label = (f" {translation['table_position']}{self.current_table_index + 1}"
                                     f"/{len(self.class_table_pairs)}")
             self.table_count.configure(text=table_count_label)
-            self.table_count.configure(text=table_position_label)
+            self.table_position.configure(text=table_position_label)
 
     def status_widgets(self):
         lang = self.language_menu.get()
