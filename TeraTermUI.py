@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 11/12/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 11/14/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -11692,9 +11692,11 @@ def get_idle_duration():
 
 
 def has_write_permission():
+    testfile_path = os.path.join(os.getcwd(), ".write_test")
     try:
-        testfile = tempfile.TemporaryFile(dir=os.getcwd())
-        testfile.close()
+        with open(testfile_path, "w") as testfile:
+            testfile.write("test")
+        os.remove(testfile_path)
         return True
     except (OSError, IOError):
         return False
