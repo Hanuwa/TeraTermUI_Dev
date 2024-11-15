@@ -300,7 +300,7 @@
 	"tooltip_times": "El marco de tiempo\nen el que tomarás clase",
 	"tooltip_av": "Espacios disponibles",
 	"tooltip_instructor": "El profésor que dara la clase. Puedes\nhacer clic derecho en el nombre del\nprofesor para ver su perfil en Notaso",
-	"tooltip_course": "El código de la clase\nen la que estás actualmente matriculado",
+	"tooltip_course": "El código de la clase en la que\nestás actualmente matriculado",
 	"tooltip_grd": "La nota final de la clase",
 	"tooltip_croom": "El salón de clases en el que tómaras la clase",
 	"success_title": "Éxito",
