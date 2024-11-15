@@ -22,7 +22,6 @@ import atexit
 import ctypes
 import customtkinter
 import gc
-import io
 import json
 import os
 import psutil
@@ -66,7 +65,7 @@ from functools import wraps
 from itertools import groupby
 from mss import mss
 from pathlib import Path
-from PIL import Image
+from PIL import Image, ImageGrab
 from py7zr import SevenZipFile
 from tkinter import filedialog
 from tkinter import messagebox
@@ -241,6 +240,7 @@ class TeraTermUI(customtkinter.CTk):
         self.tables_container = None
         self.tables_checkboxes = []
         self.clipboard_data = {}
+        self.cf_html_format = win32clipboard.RegisterClipboardFormat("HTML Format")
 
         self.image_cache = {}
 
@@ -1094,28 +1094,45 @@ class TeraTermUI(customtkinter.CTk):
                 raise err
 
     def save_clipboard_content(self):
+        import win32con
+
         win32clipboard.OpenClipboard()
         try:
             # Retrieve available formats
             available_formats = []
-            format = win32clipboard.EnumClipboardFormats(0)
-            while format:
-                available_formats.append(format)
-                format = win32clipboard.EnumClipboardFormats(format)
+            clipboard_format = win32clipboard.EnumClipboardFormats(0)
+            while clipboard_format:
+                available_formats.append(clipboard_format)
+                clipboard_format = win32clipboard.EnumClipboardFormats(clipboard_format)
 
             # Save each available format's data
             for fmt in available_formats:
                 try:
-                    data = win32clipboard.GetClipboardData(fmt)
-                    self.clipboard_data[fmt] = data
-                except TypeError:
-                    pass  # Skip unsupported formats
+                    if fmt == win32con.CF_HDROP:
+                        # File paths
+                        self.clipboard_data[fmt] = win32clipboard.GetClipboardData(fmt)
+                    elif fmt == self.cf_html_format:
+                        # HTML content
+                        self.clipboard_data[fmt] = win32clipboard.GetClipboardData(fmt)
+                    elif fmt == win32con.CF_TEXT or fmt == win32con.CF_UNICODETEXT:
+                        # Text formats
+                        self.clipboard_data[fmt] = win32clipboard.GetClipboardData(fmt)
+                    elif fmt == win32con.CF_BITMAP:
+                        # Bitmap images
+                        self.clipboard_data[fmt] = ImageGrab.grabclipboard()
+                    else:
+                        # Binary or custom formats
+                        self.clipboard_data[fmt] = win32clipboard.GetClipboardData(fmt)
+                except Exception as e:
+                    print(f"Error retrieving data for format {fmt}: {e}")
+                    continue  # Skip unsupported formats
 
         finally:
             win32clipboard.CloseClipboard()
 
     def restore_clipboard_content(self):
         import win32con
+        import io
 
         win32clipboard.OpenClipboard()
         win32clipboard.EmptyClipboard()
@@ -1128,8 +1145,22 @@ class TeraTermUI(customtkinter.CTk):
                     bmp_data = output.getvalue()[14:]  # Remove BMP header for DIB format
                     output.close()
                     win32clipboard.SetClipboardData(win32con.CF_DIB, bmp_data)
-                else:
+                elif fmt == win32con.CF_HDROP:
+                    # Restore file paths
                     win32clipboard.SetClipboardData(fmt, data)
+                elif fmt == self.cf_html_format:
+                    # Restore HTML
+                    win32clipboard.SetClipboardData(fmt, data)
+                elif fmt in [win32con.CF_TEXT, win32con.CF_UNICODETEXT]:
+                    # Restore text
+                    win32clipboard.SetClipboardData(fmt, data)
+                else:
+                    # Restore binary or custom formats
+                    try:
+                        win32clipboard.SetClipboardData(fmt, data)
+                    except Exception as e:
+                        print(f"Error restoring format {fmt}: {e}")
+                        continue
         finally:
             win32clipboard.CloseClipboard()
 
@@ -8651,7 +8682,7 @@ class TeraTermUI(customtkinter.CTk):
             print(f"Failed to launch the updater script: {err}")
             self.log_error()
             webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
-    
+
     def fix_execution_event_handler(self):
         translation = self.load_language()
         if TeraTermUI.checkIfProcessRunning("ttermpro"):
