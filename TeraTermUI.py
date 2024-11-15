@@ -22,6 +22,7 @@ import atexit
 import ctypes
 import customtkinter
 import gc
+import io
 import json
 import os
 import psutil
@@ -45,6 +46,7 @@ import time
 import traceback
 import warnings
 import webbrowser
+import win32clipboard
 import win32gui
 import winsound
 from chardet import detect as chardet_detect
@@ -238,6 +240,7 @@ class TeraTermUI(customtkinter.CTk):
         self.move_title_label = None
         self.tables_container = None
         self.tables_checkboxes = []
+        self.clipboard_data = {}
 
         self.image_cache = {}
 
@@ -1090,6 +1093,46 @@ class TeraTermUI(customtkinter.CTk):
             else:
                 raise err
 
+    def save_clipboard_content(self):
+        win32clipboard.OpenClipboard()
+        try:
+            # Retrieve available formats
+            available_formats = []
+            format = win32clipboard.EnumClipboardFormats(0)
+            while format:
+                available_formats.append(format)
+                format = win32clipboard.EnumClipboardFormats(format)
+
+            # Save each available format's data
+            for fmt in available_formats:
+                try:
+                    data = win32clipboard.GetClipboardData(fmt)
+                    self.clipboard_data[fmt] = data
+                except TypeError:
+                    pass  # Skip unsupported formats
+
+        finally:
+            win32clipboard.CloseClipboard()
+
+    def restore_clipboard_content(self):
+        import win32con
+
+        win32clipboard.OpenClipboard()
+        win32clipboard.EmptyClipboard()
+        try:
+            for fmt, data in self.clipboard_data.items():
+                if fmt == win32con.CF_BITMAP and isinstance(data, Image.Image):
+                    # For images, handle with Pillow
+                    output = io.BytesIO()
+                    data.save(output, format="BMP")
+                    bmp_data = output.getvalue()[14:]  # Remove BMP header for DIB format
+                    output.close()
+                    win32clipboard.SetClipboardData(win32con.CF_DIB, bmp_data)
+                else:
+                    win32clipboard.SetClipboardData(fmt, data)
+        finally:
+            win32clipboard.CloseClipboard()
+
     def log_error(self):
         import inspect
 
@@ -1696,15 +1739,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.reset_activity_timer()
                                     self.after(100, self.show_error_message, 320, 235, translation["invalid_semester"])
                                     return
-                            clipboard_content = None
-                            try:
-                                clipboard_content = self.clipboard_get()
-                            except tk.TclError:
-                                pass
-                                # print("Clipboard contains non-text data, possibly an image or other formats")
-                            except Exception as err:
-                                print("Error handling clipboard content:", err)
-                                self.log_error()
+                            self.save_clipboard_content()
                             if self.search_function_counter == 0 and "\"R-AOOO7" not in text_output and \
                                     "*R-A0007" not in text_output:
                                 TeraTermUI.disable_user_input()
@@ -1745,8 +1780,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.show_all_sections = show_all
                                     self.after(0, self.display_searched_class_data, data)
                                     self.clipboard_clear()
-                                    if clipboard_content is not None:
-                                        self.clipboard_append(clipboard_content)
+                                    self.restore_clipboard_content()
                                     return
                             if not (self.get_class_for_pdf == classes and self.get_semester_for_pdf != semester and
                                     show_all == self.show_all_sections):
@@ -1804,8 +1838,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.show_all_sections = show_all
                                 self.after(0, self.display_searched_class_data, data)
                                 self.clipboard_clear()
-                                if clipboard_content is not None:
-                                    self.clipboard_append(clipboard_content)
+                                self.restore_clipboard_content()
                         else:
                             if not classes or not semester:
                                 self.after(100, self.show_error_message, 350, 230, translation["missing_info_search"])
@@ -2003,15 +2036,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.after(0, self.disable_go_next_buttons)
                             text_output = self.capture_screenshot()
                             if "INVALID TERM SELECTION" not in text_output and "INVALID ACTION" not in text_output:
-                                clipboard_content = None
-                                try:
-                                    clipboard_content = self.clipboard_get()
-                                except tk.TclError:
-                                    pass
-                                    # print("Clipboard contains non-text data, possibly an image or other formats")
-                                except Exception as err:
-                                    print("Error handling clipboard content:", err)
-                                    self.log_error()
+                                self.save_clipboard_content()
                                 TeraTermUI.disable_user_input()
                                 self.automate_copy_class_data()
                                 TeraTermUI.disable_user_input("on")
@@ -2021,8 +2046,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(0, self.display_enrolled_data, enrolled_classes,
                                            total_credits, dialog_input)
                                 self.clipboard_clear()
-                                if clipboard_content is not None:
-                                    self.clipboard_append(clipboard_content)
+                                self.restore_clipboard_content()
                             else:
                                 self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -2999,15 +3023,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.wait_for_window()
                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                         time.sleep(0.5)
-                        clipboard_content = None
-                        try:
-                            clipboard_content = self.clipboard_get()
-                        except tk.TclError:
-                            pass
-                            # print("Clipboard contains non-text data, possibly an image or other formats")
-                        except Exception as err:
-                            print("Error handling clipboard content:", err)
-                            self.log_error()
+                        self.save_clipboard_content()
                         TeraTermUI.disable_user_input()
                         self.automate_copy_class_data()
                         TeraTermUI.disable_user_input("on")
@@ -3016,8 +3032,7 @@ class TeraTermUI(customtkinter.CTk):
                             y_n_found, y_n_value, term_value = TeraTermUI.extract_class_data(copy)
                         self.after(0, self.display_searched_class_data, data)
                         self.clipboard_clear()
-                        if clipboard_content is not None:
-                            self.clipboard_append(clipboard_content)
+                        self.restore_clipboard_content()
                         self.reset_activity_timer()
                         text_output = self.capture_screenshot()
                         if "MORE SECTIONS" not in text_output:
@@ -7613,15 +7628,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys(dialog_input)
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                     self.reset_activity_timer()
-                                    clipboard_content = None
-                                    try:
-                                        clipboard_content = self.clipboard_get()
-                                    except tk.TclError:
-                                        pass
-                                        # print("Clipboard contains non-text data, possibly an image or other formats")
-                                    except Exception as err:
-                                        print("Error handling clipboard content:", err)
-                                        self.log_error()
+                                    self.save_clipboard_content()
                                     time.sleep(1)
                                     TeraTermUI.disable_user_input()
                                     self.automate_copy_class_data()
@@ -7631,8 +7638,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(0, self.display_enrolled_data, enrolled_classes,
                                                total_credits, dialog_input)
                                     self.clipboard_clear()
-                                    if clipboard_content is not None:
-                                        self.clipboard_append(clipboard_content)
+                                    self.restore_clipboard_content()
                                     time.sleep(1)
                                 except Exception as err:
                                     print("An error occurred: ", err)
