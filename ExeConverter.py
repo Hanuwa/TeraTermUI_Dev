@@ -268,7 +268,7 @@ nuitka_command = (
     '--include-data-file="' + project_directory + '/feedback.zip=feedback.zip" '
     '--include-data-file="' + project_directory + '/VERSION.txt=VERSION.txt" '
     '--include-data-file="' + project_directory + '/LICENSE.txt=LICENSE.txt" '
-    '--include-data-file="' + project_directory + r'\updater.exe=updater.exe" '
+    '--include-data-file="' + project_directory + r'/updater.exe=updater.exe" '
     '--output-dir="' + output_directory + '" --python-flag=no_asserts --lto="' + args.lto + '" '
     '--windows-icon-from-ico="' + project_directory + '/images/tera-term.ico" '
     '--nofollow-import-to=unittest --python-flag=no_docstrings --product-name="Tera Term UI" '
