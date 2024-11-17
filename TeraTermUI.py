@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 11/15/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 11/16/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1916,7 +1916,7 @@ class TeraTermUI(customtkinter.CTk):
             self.tabview.grid_forget()
             self.back_classes.grid_forget()
             self.my_classes_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
-            self.modify_classes_frame.grid(row=2, column=2, sticky="nw", padx=(15, 0))
+            self.modify_classes_frame.grid(row=2, column=2, sticky="nw", padx=(12, 0))
             self.back_my_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
             if self.countdown_running:
                 self.submit_my_classes.configure(state="disabled")
@@ -7367,7 +7367,7 @@ class TeraTermUI(customtkinter.CTk):
             self.total_credits_label.grid(row=3, column=1, padx=(180, 0), pady=(0, 15))
             self.submit_my_classes.grid(row=4, column=1, padx=(180, 0))
             self.download_enrolled_pdf.grid(row=5, column=1, padx=(180, 0), pady=(10, 0))
-            self.modify_classes_frame.grid(row=2, column=2, sticky="nw", padx=(15, 0))
+            self.modify_classes_frame.grid(row=2, column=2, sticky="nw", padx=(12, 0))
             self.modify_classes_title.grid(row=0, column=0, padx=(0, 30), pady=(0, 30))
             self.back_my_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
 
