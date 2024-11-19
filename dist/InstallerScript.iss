@@ -46,9 +46,9 @@ Name: "teraterm"; Description: "{cm:teraterm}"; GroupDescription: "Additional in
 
 [Files]
 Source: "{#MyAppPath}/TeraTermUI_installer/{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyAppPath}/database.db"; DestDir: "{code:GetDataDir}"; Flags: onlyifdoesntexist; Permissions: everyone-modify
-Source: "{#MyAppPath}/feedback.zip"; DestDir: "{code:GetDataDir}"; Flags: onlyifdoesntexist; Permissions: everyone-modify
-Source: "{#MyAppPath}/updater.exe"; DestDir: "{code:GetDataDir}"; Flags: onlyifdoesntexist; Permissions: everyone-modify
+Source: "{#MyAppPath}/database.db"; DestDir: "{code:GetDataDir}"; Flags: external; Check: ShouldUpdateFile(ExpandConstant('{code:GetDataDir}/database.db'), ExpandConstant('{#MyAppPath}/database.db')); Permissions: everyone-modify
+Source: "{#MyAppPath}/feedback.zip"; DestDir: "{code:GetDataDir}"; Flags: external; Check: ShouldUpdateFile(ExpandConstant('{code:GetDataDir}/feedback.zip'), ExpandConstant('{#MyAppPath}/feedback.zip')); Permissions: everyone-modify
+Source: "{#MyAppPath}/updater.exe"; DestDir: "{code:GetDataDir}"; Flags: external; Check: ShouldUpdateFile(ExpandConstant('{code:GetDataDir}/updater.exe'), ExpandConstant('{#MyAppPath}/updater.exe')); Permissions: everyone-modify
 Source: "{#MyAppPath}/TeraTermUI_installer/*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#MyAppPath}/teraterm-4.108.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
 
@@ -122,6 +122,52 @@ begin
     Result := ExpandConstant('{commonappdata}/TeraTermUI') 
   else
     Result := ExpandConstant('{userappdata}/TeraTermUI');
+end;
+
+function FileGetSize(const FileName: string): Int64;
+var
+  FileStream: TFileStream;
+begin
+  Result := -1; 
+  if not FileExists(FileName) then
+    Exit; 
+
+  try
+    FileStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
+    try
+      Result := FileStream.Size; 
+    finally
+      FileStream.Free; 
+    end;
+  except
+    Result := -1; 
+  end;
+end;
+
+function CompareFilesBySize(ExistingFile, NewFile: string): Boolean;
+var
+  SizeOld, SizeNew: Int64;
+begin
+  Result := False;
+  if not FileExists(ExistingFile) or not FileExists(NewFile) then
+  begin
+    Result := True; 
+    Exit;
+  end;
+
+  SizeOld := FileGetSize(ExistingFile);
+  SizeNew := FileGetSize(NewFile);
+
+  Result := SizeOld <> SizeNew; 
+end;
+
+function ShouldUpdateFile(DestFile: string; SourceFile: string): Boolean;
+begin
+  Result := True; 
+  if FileExists(DestFile) then
+  begin
+    Result := CompareFilesBySize(DestFile, SourceFile);
+  end;
 end;
 
 procedure DeleteTeraTermUIDirectories(const ParentDir: string);
