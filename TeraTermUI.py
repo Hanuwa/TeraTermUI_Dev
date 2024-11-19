@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 11/16/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 11/19/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -155,6 +155,7 @@ class TeraTermUI(customtkinter.CTk):
         self.iconbitmap(self.icon_path)
         self.mode = "Portable"
         self.update_db = False
+        self.running_updater = False
         self.bind("<Button-1>", self.set_focus)
         self.bind("<Button-2>", lambda event: self.focus_set())
         self.bind("<Button-3>", lambda event: self.focus_set())
@@ -8111,7 +8112,8 @@ class TeraTermUI(customtkinter.CTk):
         if backup_file_path.exists() and not TeraTermUI.checkIfProcessRunning("ttermpro"):
             os.remove(backup_file_path)
             if self.mode == "Portable" or (self.mode == "Installation" and self.delete_tesseract_dir):
-                shutil.rmtree(self.app_temp_dir)
+                if not self.running_updater:
+                    shutil.rmtree(self.app_temp_dir)
 
     # error window pop up message
     def show_error_message(self, width, height, error_msg_text):
@@ -8549,6 +8551,12 @@ class TeraTermUI(customtkinter.CTk):
             webbrowser.open(url)
 
     def check_update_app_handler(self):
+        translation = self.load_language()
+        if self.loading_screen and self.loading_screen.state() != "withdrawn":
+            updating = self.loading_label.cget("text") == translation["searching_exe"]
+            if updating:
+                return
+
         self.updating_app = True
         loading_screen = self.show_loading_screen()
         future = self.thread_pool.submit(self.check_update_app)
@@ -8620,9 +8628,10 @@ class TeraTermUI(customtkinter.CTk):
         try:
             updater_exe_dest = None
             appdata_path = None
-            sys_path = Path(sys.path[0]).resolve()
+            current_exe = sys.executable
+            sys_path = Path(current_exe).parent.resolve()
             if self.mode == "Portable":
-                updater_exe_src = Path(sys.path[0]) / "updater.exe"
+                updater_exe_src = sys_path / "updater.exe"
                 updater_exe_dest = Path(self.app_temp_dir) / "updater.exe"
                 shutil.copy2(str(updater_exe_src), str(updater_exe_dest))
             elif self.mode == "Installation":
@@ -8634,6 +8643,7 @@ class TeraTermUI(customtkinter.CTk):
             updater_args = [str(updater_exe_dest), self.mode, latest_version,
                             str(self.update_db), sys_path]
             subprocess.Popen(updater_args)
+            self.running_updater = True
             self.direct_close()
         except Exception as err:
             logging.error(f"Failed to launch the updater script: {err}")
@@ -11902,7 +11912,7 @@ def main():
     if not os.path.exists(tera_term_temp_dir):
         os.makedirs(tera_term_temp_dir)
     lock_file_temp = os.path.join(tera_term_temp_dir, "app_lock.lock")
-    file_lock = FileLock(lock_file_temp, timeout=0)
+    file_lock = FileLock(lock_file_temp, timeout=1)
     try:
         with file_lock.acquire():
             app = TeraTermUI()
