@@ -51,6 +51,7 @@ Source: "{#MyAppPath}/feedback.zip"; DestDir: "{code:GetDataDir}"; Flags: extern
 Source: "{#MyAppPath}/updater.exe"; DestDir: "{code:GetDataDir}"; Flags: external; Check: ShouldUpdateFile(ExpandConstant('{code:GetDataDir}/updater.exe'), ExpandConstant('{#MyAppPath}/updater.exe')); Permissions: everyone-modify
 Source: "{#MyAppPath}/TeraTermUI_installer/*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#MyAppPath}/teraterm-4.108.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
+Source: "C:/Program Files/Git/usr/bin/md5sum.exe"; DestDir: "{tmp}"; Flags: ignoreversion
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{code:GetDataDir}"
@@ -124,49 +125,40 @@ begin
     Result := ExpandConstant('{userappdata}/TeraTermUI');
 end;
 
-function FileGetSize(const FileName: string): Int64;
+function GetMD5Hash(const FileName: string): string;
 var
-  FileStream: TFileStream;
+  ResultCode: Integer;
+  OutputFile: string;
+  OutputLines: TArrayOfString;
 begin
-  Result := -1; 
+  Result := ''; 
   if not FileExists(FileName) then
-    Exit; 
-
-  try
-    FileStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
-    try
-      Result := FileStream.Size; 
-    finally
-      FileStream.Free; 
-    end;
-  except
-    Result := -1; 
-  end;
-end;
-
-function CompareFilesBySize(ExistingFile, NewFile: string): Boolean;
-var
-  SizeOld, SizeNew: Int64;
-begin
-  Result := False;
-  if not FileExists(ExistingFile) or not FileExists(NewFile) then
-  begin
-    Result := True; 
     Exit;
+
+  OutputFile := ExpandConstant('{tmp}\md5output.txt');
+  if Exec(ExpandConstant('{tmp}\md5sum.exe'), '"' + FileName + '" > "' + OutputFile + '"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+  begin
+    if (ResultCode = 0) and FileExists(OutputFile) then
+    begin
+      LoadStringsFromFile(OutputFile, OutputLines);
+      if GetArrayLength(OutputLines) > 0 then
+        Result := Copy(OutputLines[0], 1, Pos(' ', OutputLines[0]) - 1); 
+    end;
   end;
-
-  SizeOld := FileGetSize(ExistingFile);
-  SizeNew := FileGetSize(NewFile);
-
-  Result := SizeOld <> SizeNew; 
+  if FileExists(OutputFile) then
+    DeleteFile(OutputFile); 
 end;
 
 function ShouldUpdateFile(DestFile: string; SourceFile: string): Boolean;
+var
+  DestHash, SourceHash: string;
 begin
   Result := True; 
   if FileExists(DestFile) then
   begin
-    Result := CompareFilesBySize(DestFile, SourceFile);
+    DestHash := GetMD5Hash(DestFile);
+    SourceHash := GetMD5Hash(SourceFile);
+    Result := DestHash <> SourceHash; 
   end;
 end;
 
@@ -224,4 +216,3 @@ begin
     end;
   end;
 end;
-
