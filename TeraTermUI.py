@@ -5498,7 +5498,11 @@ class TeraTermUI(customtkinter.CTk):
             self.loading_label.configure(text=translation["loading"])
         self.progress_bar.start()
         self.attributes("-disabled", True)
-        self.disable_widgets(self)
+        if self.help is not None and self.help.winfo_exists():
+            self.help.attributes("-disabled", True)
+        if self.status is not None and self.status.winfo_exists():
+            self.status.attributes("-disabled", True)
+        self.disable_widgets(self, self.help, self.status)
         self.loading_screen_start_time = time.time()
         return self.loading_screen
 
@@ -5531,6 +5535,10 @@ class TeraTermUI(customtkinter.CTk):
         current_time = time.time()
         if future.done() or current_time - self.loading_screen_start_time > 90:
             self.attributes("-disabled", False)
+            if self.help is not None and self.help.winfo_exists():
+                self.help.attributes("-disabled", False)
+            if self.status is not None and self.status.winfo_exists():
+                self.status.attributes("-disabled", False)
             self.update_widgets()
             if self.loading_screen is not None and self.loading_screen.winfo_exists():
                 self.loading_screen.withdraw()
@@ -5546,34 +5554,32 @@ class TeraTermUI(customtkinter.CTk):
         else:
             self.after(100, self.update_loading_screen, loading_screen, future)
 
-    def disable_widgets(self, container):
-        stack = [container]
+    def disable_widgets(self, *containers):
+        valid_containers = [container for container in containers if container is not None]
+        stack = list(valid_containers)
         while stack:
             current_container = stack.pop()
             for widget in current_container.winfo_children():
-                if not widget.winfo_viewable() or widget in [self.language_menu, self.appearance_mode_optionemenu,
-                                                             self.curriculum, self.search_box, self.skip_auth_switch,
-                                                             self.disable_audio_val, self.disable_idle]:
+                if not widget.winfo_viewable() or widget in [self.language_menu, self.appearance_mode_optionemenu]:
                     continue
 
-                widget_types = (tk.Entry, customtkinter.CTkCheckBox, customtkinter.CTkRadioButton,
+                widget_types = (tk.Entry, tk.Text, customtkinter.CTkCheckBox, customtkinter.CTkRadioButton,
                                 customtkinter.CTkSwitch, customtkinter.CTkOptionMenu)
                 if isinstance(widget, widget_types) and widget.cget("state") != "disabled":
                     widget.configure(state="disabled")
                 elif hasattr(widget, "winfo_children"):
                     stack.append(widget)
 
-    def enable_widgets(self, container):
-        stack = [container]
+    def enable_widgets(self, *containers):
+        valid_containers = [container for container in containers if container is not None]
+        stack = list(valid_containers)
         while stack:
             current_container = stack.pop()
             for widget in current_container.winfo_children():
-                if not widget.winfo_viewable() or widget in [self.language_menu, self.appearance_mode_optionemenu,
-                                                             self.curriculum, self.search_box, self.skip_auth_switch,
-                                                             self.disable_audio_val, self.disable_idle]:
+                if not widget.winfo_viewable() or widget in [self.language_menu, self.appearance_mode_optionemenu]:
                     continue
 
-                widget_types = (tk.Entry, customtkinter.CTkCheckBox, customtkinter.CTkRadioButton,
+                widget_types = (tk.Entry, tk.Text, customtkinter.CTkCheckBox, customtkinter.CTkRadioButton,
                                 customtkinter.CTkSwitch, customtkinter.CTkOptionMenu)
                 if isinstance(widget, widget_types) and widget.cget("state") != "normal":
                     widget.configure(state="normal")
@@ -5584,7 +5590,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.countdown_running and self.in_multiple_screen:
             return
 
-        self.enable_widgets(self)
+        self.enable_widgets(self, self.help, self.status)
         if self.enrolled_classes_table is not None:
             translation = self.load_language()
             for row_index in range(min(len(self.mod_selection_list), len(self.enrolled_classes_data))):
@@ -8551,12 +8557,6 @@ class TeraTermUI(customtkinter.CTk):
             webbrowser.open(url)
 
     def check_update_app_handler(self):
-        translation = self.load_language()
-        if self.loading_screen and self.loading_screen.state() != "withdrawn":
-            updating = self.loading_label.cget("text") == translation["searching_exe"]
-            if updating:
-                return
-
         self.updating_app = True
         loading_screen = self.show_loading_screen()
         future = self.thread_pool.submit(self.check_update_app)
