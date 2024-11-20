@@ -1,16 +1,16 @@
 Version Number: v0.9.5
 
-SHA-256 Checksum: a797f280e8dec91d226e5c5c34bbb6121eb02a7fd138c573d5c7e96ca2d89ae1
+SHA-256 Checksum: c53d4a0b9e4c83520bbf2909efb4b497076214a23bfe69d1006147b74a2b4cff
 
-Release Date: 11/16/2024
+Release Date: 11/20/2024
 
 Patch Notes:
  - Introducing the first public release!
- - Gain comprehensive control over Tera Term 
-   and your university's enrollment process with an intuitive and visually appealing interface
+ - Gain comprehensive control over Tera Term and your university's enrollment
+   process with an intuitive and visually appealing interface
  - Offers options for class enrollment, select between manual or automatic methods
- - Enables searching for all available sections of a particular class 
-   and allows saving this information as a PDF
+ - Enables searching for all available sections of any class, with options
+   to sort the information and save it as a PDF for convenient access.
  - Provides functionalities to view or alter your current class enrollments.
  - Tera Term remains active without closing due to inactivity (this feature is optional)
  - Easily find the codification for the class you wish to enroll in
@@ -19,8 +19,9 @@ Patch Notes:
    alter the theme and appearance, and adjust UI scaling for better visibility
  - Enhanced with numerous keyboard shortcuts for efficiency
  
-Updating: To update, simply run the installer or 
-replace the existing files in the "TeraTermUI" directory with the new ones.
+Updating: To update, the app includes an auto updater tool that will prompt you whenever there's a new version available 
+or you can just choose to simply download the files directly from the GitHub Repository and install it yourself:
+https://github.com/Hanuwa/TeraTermUI/releases/latest
 
 Reporting Issues/Bugs/Feedback: Feedback can be submitted directly through the app
 via the "Status" window, or on the GitHub repository.
