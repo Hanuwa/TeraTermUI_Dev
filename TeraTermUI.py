@@ -7870,6 +7870,7 @@ class TeraTermUI(customtkinter.CTk):
         unzip_tesseract = True
         tesseract_dir_path = self.app_temp_dir / "Tesseract-OCR"
         default_tesseract_path = Path("C:/Program Files/Tesseract-OCR/tesseract.exe")
+        alternate_tesseract_path = Path("C:/Users/arman/AppData/Local/Programs/Tesseract-OCR/tesseract.exe")
 
         def get_tesseract_version(location):
             try:
@@ -7886,14 +7887,19 @@ class TeraTermUI(customtkinter.CTk):
             except FileNotFoundError:
                 return None
 
-        # Check if Tesseract is installed in the default location
-        if default_tesseract_path.is_file():
-            installed_version = get_tesseract_version(str(default_tesseract_path))
-            if installed_version and tuple(map(int, installed_version.split("."))) >= (5, 0, 0):
-                pytesseract.pytesseract.tesseract_cmd = str(default_tesseract_path)
-                unzip_tesseract = False
-                self.tesseract_unzipped = True
-                self.delete_tesseract_dir = True
+        # Check if Tesseract is installed in the default or alternate location
+        tesseract_path = None
+        for path in [default_tesseract_path, alternate_tesseract_path]:
+            if path.is_file():
+                installed_version = get_tesseract_version(str(path))
+                if installed_version and tuple(map(int, installed_version.split("."))) >= (5, 0, 0):
+                    pytesseract.pytesseract.tesseract_cmd = str(path)
+                    tesseract_path = path
+                    unzip_tesseract = False
+                    break
+        if tesseract_path:
+            self.tesseract_unzipped = True
+            self.delete_tesseract_dir = True
         # If Tesseract-OCR already in the temp folder don't unzip
         elif tesseract_dir_path.is_dir():
             tesseract_dir = tesseract_dir_path
