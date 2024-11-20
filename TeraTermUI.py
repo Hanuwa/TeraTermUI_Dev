@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 11/19/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 11/20/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -826,7 +826,7 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     messagebox.showerror("Error", "Fatal Error! Failed to initialize language files.\n"
                                                   "Might need to reinstall the application")
-            self.forceful_end_app()
+            self.end_app(forced=True)
         if TeraTermUI.is_admin():
             p = psutil.Process(os.getpid())
             p.nice(psutil.HIGH_PRIORITY_CLASS)
@@ -996,31 +996,21 @@ class TeraTermUI(customtkinter.CTk):
         self.end_app()
         sys.exit(0)
 
-    def end_app(self):
+    def end_app(self, forced=False):
         try:
             for widget in self.winfo_children():
                 if isinstance(widget, tk.Toplevel) and hasattr(widget, "is_ctkmessagebox") \
                         and widget.is_ctkmessagebox:
                     widget.close_messagebox()
+            if forced:
+                self.tray.stop()
             self.destroy()
         except Exception as err:
-            logging.error("Force closing due to an error:", err)
-            self.log_error()
-            sys.exit(1)
-
-    def forceful_end_app(self):
-        try:
-            for widget in self.winfo_children():
-                if isinstance(widget, tk.Toplevel) and hasattr(widget, "is_ctkmessagebox") \
-                        and widget.is_ctkmessagebox:
-                    widget.close_messagebox()
-            self.tray.stop()
-            self.destroy()
-        except Exception as err:
-            logging.error("Force closing due to an error:", err)
+            logging.error("Force closing due to an error: %s", err)
             self.log_error()
         finally:
-            sys.exit(1)
+            if forced:
+                sys.exit(1)
 
     @staticmethod
     def is_admin():
@@ -3796,7 +3786,7 @@ class TeraTermUI(customtkinter.CTk):
                                          "Puede ser que sea necesario reinstalar el programa.\n\n"
                                          "La aplicación se cerrará ahora")
                 # Exit the application
-                self.forceful_end_app()
+                self.end_app(forced=True)
 
         # If the language is not supported, return an empty dictionary or raise an exception
         return {}
@@ -7928,7 +7918,7 @@ class TeraTermUI(customtkinter.CTk):
                         messagebox.showerror("Error", f"¡Error Fatal!\n\n{str(err)}")
                     else:
                         messagebox.showerror("Error", f"Fatal Error!\n\n{str(err)}")
-                    self.after(0, self.forceful_end_app)
+                    self.after(0, self.end_app(forced=True))
 
     @staticmethod
     def get_teraterm_version(executable_path):
