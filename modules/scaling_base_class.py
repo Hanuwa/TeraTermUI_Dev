@@ -117,7 +117,7 @@ class CTkScalingBaseClass:
     @staticmethod
     def _parse_geometry_string(geometry_string: str) -> Tuple[
         Optional[int], Optional[int], Optional[int], Optional[int]]:
-        pattern = r"^(?:(\d+)x(\d+))?([+-]\d+)?([+-]\d+)?$"
+        pattern = r"^(?:(\d+)x(\d+))?(?:([+-]\d+)([+-]\d+))?$" 
         match = re.match(pattern, geometry_string)
         if not match:
             raise ValueError(f"Invalid geometry string: '{geometry_string}'")
@@ -133,23 +133,20 @@ class CTkScalingBaseClass:
         width, height, x, y = self._parse_geometry_string(geometry_string)
         scaling_factor = self.__window_scaling if scale else 1 / self.__window_scaling
 
-        parts = []
-        if width is not None and height is not None:
-            scaled_width = int(width * scaling_factor + 0.5)
-            scaled_height = int(height * scaling_factor + 0.5)
-            parts.append(f"{scaled_width}x{scaled_height}")
+        scaled_width = round(width * scaling_factor) if width is not None else None
+        scaled_height = round(height * scaling_factor) if height is not None else None
 
+        geometry_parts = []
+        if scaled_width is not None and scaled_height is not None:
+            geometry_parts.append(f"{scaled_width}x{scaled_height}")
         if x is not None and y is not None:
-            scaled_x = int(x * scaling_factor + 0.5)
-            scaled_y = int(y * scaling_factor + 0.5)
-            sign_x = '+' if scaled_x >= 0 else ''
-            sign_y = '+' if scaled_y >= 0 else ''
-            parts.append(f"{sign_x}{scaled_x}{sign_y}{scaled_y}")
+            geometry_parts.append(f"{'+' if x >= 0 else ''}{x}{'+' if y >= 0 else ''}{y}")
 
-        return "".join(parts)
+        return "".join(geometry_parts)
 
     def _apply_geometry_scaling(self, geometry_string: str) -> str:
         return self._scale_geometry(geometry_string, True)
 
     def _reverse_geometry_scaling(self, scaled_geometry_string: str) -> str:
         return self._scale_geometry(scaled_geometry_string, False)
+        
