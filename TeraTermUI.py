@@ -8622,20 +8622,22 @@ class TeraTermUI(customtkinter.CTk):
 
     def run_updater(self, latest_version):
         try:
-            updater_exe_dest = None
-            appdata_path = None
             current_exe = sys.executable
             sys_path = Path(current_exe).parent.resolve()
+            app_temp_dir = Path(self.app_temp_dir)
+            updater_exe_dest = app_temp_dir / "updater.exe"
             if self.mode == "Portable":
                 updater_exe_src = sys_path / "updater.exe"
-                updater_exe_dest = Path(self.app_temp_dir) / "updater.exe"
                 shutil.copy2(str(updater_exe_src), str(updater_exe_dest))
             elif self.mode == "Installation":
+                appdata_path = None
                 if self.scope == "all_users":
                     appdata_path = os.environ.get("PROGRAMDATA")
                 elif self.scope == "current_user":
                     appdata_path = os.environ.get("APPDATA")
-                updater_exe_dest = os.path.join(appdata_path, "TeraTermUI", "updater.exe")
+                if appdata_path:
+                    updater_exe_src = Path(appdata_path) / "TeraTermUI" / "updater.exe"
+                    shutil.copy2(str(updater_exe_src), str(updater_exe_dest))
             updater_args = [str(updater_exe_dest), self.mode, latest_version,
                             str(self.update_db), sys_path]
             subprocess.Popen(updater_args)
