@@ -1,7 +1,7 @@
 # Tera Term UI Dev
 Dev Environment for Tera Term UI (Virtualenv)
 
-**App Version:** "0.9.5" | **Python Version:** "3.12.7" | **Tesseract Version:** "5.5.0" | **C Compiler:** "MSVC"
+**App Version:** "0.9.5" | **Python Version:** "3.12.7" | **Tesseract Version:** "5.5.0" | **C Compiler:** "MSVC (14.3)"
 
 **Important** modules of "**ctkmessagebox.py, ctk_input_dialog.py, ctk_scrollable_frame.py, ctk_tabview.py, ctk_toplevel.py,
 ctk_textbox.py, ctk_scrollbar.py, ctk_checkbox.py, ctk_radiobutton.py, ctk_switch.py, ctk_optionmenu.py, appearance_mode_tracker.py,
@@ -22,7 +22,7 @@ https://github.com/UB-Mannheim/tesseract/wiki
 
 # GUI Framework
 The whole GUI is made using customtkinter, read wiki to familiarize yourself with it, can work in conjunction with the normal tkinter too.
-It is versatile and really good looking but also very incomplete and its performance is lackluster, which is why I have customized and
+It is versatile and really good looking but also very incomplete and its performance is lackluster, which is why I have customized it and modified it quite a lot and
 https://github.com/TomSchimansky/CustomTkinter & https://customtkinter.tomschimansky.com
       
 # Convert from .py to .exe
