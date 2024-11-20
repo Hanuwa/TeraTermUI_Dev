@@ -11912,7 +11912,7 @@ def main():
     if not os.path.exists(tera_term_temp_dir):
         os.makedirs(tera_term_temp_dir)
     lock_file_temp = os.path.join(tera_term_temp_dir, "app_lock.lock")
-    file_lock = FileLock(lock_file_temp, timeout=1)
+    file_lock = FileLock(lock_file_temp, timeout=0)
     try:
         with file_lock.acquire():
             app = TeraTermUI()
