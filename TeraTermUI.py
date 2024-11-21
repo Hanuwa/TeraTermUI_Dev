@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 11/20/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 11/21/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -572,6 +572,7 @@ class TeraTermUI(customtkinter.CTk):
         self.my_classes_event_completed = True
         self.fix_execution_event_completed = True
         self.submit_feedback_event_completed = True
+        self.update_event_completed = True
         self.found_latest_semester = False
         self.error_occurred = False
         self.timeout_occurred = False
@@ -743,7 +744,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.help_button.configure(state="disabled")
                 self.status_button.configure(state="disabled")
                 self.intro_box.stop_autoscroll(event=None)
-
                 # Pop up message that appears only the first time the user uses the application
                 def show_message_box():
                     translation = self.load_language()
@@ -763,7 +763,6 @@ class TeraTermUI(customtkinter.CTk):
                         self.cursor.execute("INSERT INTO user_data (welcome) VALUES (?)", ("Done",))
                     else:
                         self.cursor.execute("UPDATE user_data SET welcome=?", ("Done",))
-                    del row_check, translation
 
                 self.after(3500, show_message_box)
             else:
@@ -778,33 +777,31 @@ class TeraTermUI(customtkinter.CTk):
                         - datetime.strptime(date_record[0], "%Y-%m-%d")).days >= 14:
                     try:
                         self.check_update = True
-                        latest_version = self.get_latest_release()
+                        if asyncio.run(self.test_connection()):
+                            latest_version = self.get_latest_release()
+                            def enable():
+                                self.log_in.configure(state="normal")
+                                self.bind("<Return>", lambda event: self.login_event_handler())
+                                self.bind("<F1>", lambda event: self.help_button_event())
 
-                        def enable():
-                            self.log_in.configure(state="normal")
-                            self.bind("<Return>", lambda event: self.login_event_handler())
-                            self.bind("<F1>", lambda event: self.help_button_event())
-
-                        if latest_version is None:
-                            logging.warning("No latest release found. Starting app with the current version")
-                            latest_version = self.USER_APP_VERSION
-                        if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION):
-                            self.after(1000, self.update_app, latest_version)
-                            self.after(1250, enable)
-                        else:
-                            enable()
-                        row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
-                        if not row_exists:
-                            self.delete_tesseract_dir = True
-                            self.cursor.execute("INSERT INTO user_data (update_date) VALUES (?)",
-                                                (current_date,))
-                        else:
-                            self.cursor.execute("UPDATE user_data SET update_date=?", (current_date,))
+                            if latest_version is None:
+                                logging.warning("No latest release found. Starting app with the current version")
+                                latest_version = self.USER_APP_VERSION
+                            if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION):
+                                self.after(1000, self.update_app, latest_version)
+                                self.after(1250, enable)
+                            else:
+                                enable()
+                            row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+                            if not row_exists:
+                                self.delete_tesseract_dir = True
+                                self.cursor.execute("INSERT INTO user_data (update_date) VALUES (?)",
+                                                    (current_date,))
+                            else:
+                                self.cursor.execute("UPDATE user_data SET update_date=?", (current_date,))
                     except requests.exceptions.RequestException as err:
                         logging.warning(f"Error occurred while fetching latest release information: {err}")
                         logging.warning("Please check your internet connection and try again")
-                    del latest_version, row_exists
-                del current_date, date_record
         except Exception as err:
             db_path = TeraTermUI.get_absolute_path("database.db")
             en_path = TeraTermUI.get_absolute_path("translations/english.json")
@@ -835,8 +832,6 @@ class TeraTermUI(customtkinter.CTk):
         self.after(0, self.unload_image("status"))
         self.after(0, self.unload_image("help"))
         self.after(0, self.set_focus_to_tkinter)
-        del user_data_fields, results, SPANISH, language_id, scaling_factor, screen_width, screen_height, width, \
-            height, x, y, db_path, en_path, es_path
 
     def create_tray_menu(self):
         translation = self.load_language()
@@ -1929,7 +1924,6 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Control-S>", lambda event: self.download_enrolled_classes_as_pdf(
                 self.enrolled_classes_data, self.enrolled_classes_credits))
             self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_menu())
-
             def delayed_refresh_semester():
                 refresh_semester = self.check_refresh_semester()
                 if refresh_semester:
@@ -2290,7 +2284,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.started_auto_enroll and (not self.search_event_completed or not self.option_menu_event_completed or not
                                          self.go_next_event_completed or not self.search_go_next_event_completed or not
                                          self.my_classes_event_completed or not self.fix_execution_event_completed or
-                                         not self.submit_feedback_event_completed):
+                                         not self.submit_feedback_event_completed or not self.update_event_completed):
             self.after(500, self.submit_multiple_event_handler)
         elif self.started_auto_enroll:
             self.end_countdown()
@@ -3400,13 +3394,12 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     self.after(350, self.bind, "<Return>", lambda event: self.login_event_handler())
             except Exception as err:
-                translation = self.load_language()
                 error_message = str(err)
                 if "catching classes that do not inherit from BaseException is not allowed" in error_message:
                     logging.warning("Caught the specific error message: ", error_message)
                     self.destroy_windows()
-
                     def rare_error():
+                        self.destroy_windows()
                         if not self.disable_audio:
                             winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/error.wav"), winsound.SND_ASYNC)
                         CTkMessagebox(title=translation["automation_error_title"],
@@ -3420,7 +3413,6 @@ class TeraTermUI(customtkinter.CTk):
                     self.error_occurred = True
                     self.log_error()
             finally:
-                translation = self.load_language()
                 self.after(100, self.set_focus_to_tkinter)
                 if self.error_occurred and not self.timeout_occurred:
                     def error_automation():
@@ -4945,7 +4937,6 @@ class TeraTermUI(customtkinter.CTk):
             self.title_login.unbind("<Button-1>")
             self.disclaimer.unbind("<Button-1>")
             self.username.unbind("<Button-1>")
-
             def destroy():
                 self.title_login.destroy()
                 self.unload_image("uprb")
@@ -5045,7 +5036,6 @@ class TeraTermUI(customtkinter.CTk):
             self.student_id.unbind("<Button-1>")
             self.code.unbind("<Button-1>")
             self.show.unbind("<space>")
-
             def destroy():
                 self.title_student.destroy()
                 self.unload_image("lock")
@@ -5759,7 +5749,6 @@ class TeraTermUI(customtkinter.CTk):
                     tesseract_dir = Path(self.app_temp_dir) / "Tesseract-OCR"
                     pytesseract.pytesseract.tesseract_cmd = str(tesseract_dir / "tesseract.exe")
                     self.tesseract_unzipped = True
-                    del z, tesseract_dir, tesseract_dir_path
                     gc.collect()
                     return self.capture_screenshot()
                 except Exception as err:
@@ -6759,7 +6748,6 @@ class TeraTermUI(customtkinter.CTk):
         self.search_scrollbar.scroll_to_top()
         self.check_and_update_labels()
         self.update_buttons()
-
         def reshow_widgets():
             self.table_count.grid(row=4, column=1, padx=(0, 95), pady=(10, 0), sticky="n")
             self.table_pipe.grid(row=4, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
@@ -7631,7 +7619,6 @@ class TeraTermUI(customtkinter.CTk):
                                 if show_error and not section_closed:
                                     self.after(100, self.show_error_message, 320, 240,
                                                translation["failed_change_section"])
-
                                     def explanation():
                                         self.destroy_windows()
                                         if self.enrolled_classes_table is not None:
@@ -7653,7 +7640,6 @@ class TeraTermUI(customtkinter.CTk):
                                 elif section_closed:
                                     self.after(100, self.show_error_message, 320, 240,
                                                translation["failed_change_section"])
-
                                     def explanation():
                                         self.destroy_windows()
                                         if self.enrolled_classes_table is not None:
@@ -7675,7 +7661,6 @@ class TeraTermUI(customtkinter.CTk):
                                 elif co_requisite:
                                     self.after(100, self.show_error_message, 320, 240,
                                                translation["failed_change_section"])
-
                                     def explanation():
                                         self.destroy_windows()
                                         if self.enrolled_classes_table is not None:
@@ -7905,7 +7890,6 @@ class TeraTermUI(customtkinter.CTk):
                 pytesseract.pytesseract.tesseract_cmd = str(tesseract_dir / "tesseract.exe")
                 # tessdata_dir_config = f"--tessdata-dir {tesseract_dir / 'tessdata'}"
                 self.tesseract_unzipped = True
-                del tesseract_dir_path, tesseract_dir
                 gc.collect()
             except Exception as err:
                 SPANISH = 0x0A
@@ -8013,14 +7997,12 @@ class TeraTermUI(customtkinter.CTk):
                         self.can_edit = True
                     with open(file_path, "w", encoding=detected_encoding) as file:
                         file.writelines(lines)
-                    del line, lines
                 except FileNotFoundError:
                     return
                 except IOError as err:
                     logging.error(f"Error occurred: {err}")
                     logging.info("Restoring from backup...")
                     shutil.copyfile(backup_path, file_path)
-                del backup_path
         else:
             self.teraterm_not_found = True
 
@@ -8055,7 +8037,6 @@ class TeraTermUI(customtkinter.CTk):
                     credentials_dict,
                     scopes=["https://www.googleapis.com/auth/spreadsheets"]
                 )
-                del credentials_dict
         except Exception as err:
             logging.warning(f"Failed to load credentials: {str(err)}")
             self.log_error()
@@ -8278,7 +8259,6 @@ class TeraTermUI(customtkinter.CTk):
                 found_errors.append(error_messages[code])
         # If errors were found, show them, otherwise show a default message
         if found_errors:
-
             def explanation():
                 self.destroy_windows()
                 error_message_str = ", ".join(found_errors)
@@ -8308,7 +8288,6 @@ class TeraTermUI(customtkinter.CTk):
         else:
             self.switch_tab()
         if self.enrollment_error_check:
-
             def explanation():
                 self.destroy_windows()
                 if not self.disable_audio:
@@ -8557,68 +8536,84 @@ class TeraTermUI(customtkinter.CTk):
         loading_screen = self.show_loading_screen()
         future = self.thread_pool.submit(self.check_update_app)
         self.update_loading_screen(loading_screen, future)
+        self.update_event_completed = False
 
     # will tell the user that there's a new update available for the application
     def check_update_app(self):
-        lang = self.language_menu.get()
-        translation = self.load_language()
-        if asyncio.run(self.test_connection()):
-            latest_version = self.get_latest_release()
-            current_date = datetime.today().strftime("%Y-%m-%d")
-            row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
-            if not row_exists:
-                self.cursor.execute("INSERT INTO user_data (update_date) VALUES (?)",
-                                    (current_date,))
-            else:
-                self.cursor.execute("UPDATE user_data SET update_date=?", (current_date,))
-            if latest_version is None:
+        with self.lock_thread:
+            try:
+                lang = self.language_menu.get()
+                translation = self.load_language()
+                if asyncio.run(self.test_connection()):
+                    latest_version = self.get_latest_release()
+                    current_date = datetime.today().strftime("%Y-%m-%d")
+                    row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+                    if not row_exists:
+                        self.cursor.execute("INSERT INTO user_data (update_date) VALUES (?)",
+                                            (current_date,))
+                    else:
+                        self.cursor.execute("UPDATE user_data SET update_date=?", (current_date,))
+                    if latest_version is None:
+                        def error():
+                            logging.warning("No latest release found. Continuing with the current version")
+                            if not self.disable_audio:
+                                winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/error.wav"), winsound.SND_ASYNC)
+                            CTkMessagebox(title=translation["error"], icon="cancel",
+                                          message=translation["failed_to_find_update"], button_width=380)
 
-                def error():
-                    logging.warning("No latest release found. Starting app with the current version")
-                    if not self.disable_audio:
-                        winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/error.wav"), winsound.SND_ASYNC)
-                    CTkMessagebox(title=translation["error"], icon="cancel",
-                                  message=translation["failed_to_find_update"], button_width=380)
+                        self.after(50, error)
+                        return
+                    if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION):
+                        def update():
+                            current = None
+                            latest = None
+                            if lang == "English":
+                                current = "Current"
+                                latest = "Latest"
+                            elif lang == "Español":
+                                current = "Actual"
+                                latest = "Nueva"
+                            if not self.disable_audio:
+                                winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/update.wav"), winsound.SND_ASYNC)
+                            msg = CTkMessagebox(title=translation["update_popup_title"],
+                                                message=translation["update_popup_message"] + "\n\n" + current + ": v" +
+                                                self.USER_APP_VERSION + " ---> " + latest + ": v" + latest_version,
+                                                option_1=translation["option_1"], option_2=translation["option_2"],
+                                                option_3=translation["option_3"], icon_size=(65, 65),
+                                                button_color=("#c30101", "#145DA0", "#145DA0"), icon="question",
+                                                hover_color=("darkred", "use_default", "use_default"))
+                            response = msg.get()
+                            if response[0] == "Yes" or response[0] == "Sí":
+                                self.run_updater(latest_version)
 
-                self.after(50, error)
-                return
-            if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION):
+                        self.after(50, update)
+                    else:
+                        def up_to_date():
+                            if not self.disable_audio:
+                                winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/notification.wav"),
+                                                   winsound.SND_ASYNC)
+                            CTkMessagebox(title=translation["update_popup_title"], message=translation["update_up_to_date"],
+                                          button_width=380)
 
-                def update():
-                    current = None
-                    latest = None
-                    if lang == "English":
-                        current = "Current"
-                        latest = "Latest"
-                    elif lang == "Español":
-                        current = "Actual"
-                        latest = "Nueva"
-                    if not self.disable_audio:
-                        winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/update.wav"), winsound.SND_ASYNC)
-                    msg = CTkMessagebox(title=translation["update_popup_title"],
-                                        message=translation["update_popup_message"] + "\n\n" + current + ": v" +
-                                        self.USER_APP_VERSION + " ---> " + latest + ": v" + latest_version,
-                                        option_1=translation["option_1"], option_2=translation["option_2"],
-                                        option_3=translation["option_3"], icon_size=(65, 65),
-                                        button_color=("#c30101", "#145DA0", "#145DA0"), icon="question",
-                                        hover_color=("darkred", "use_default", "use_default"))
-                    response = msg.get()
-                    if response[0] == "Yes" or response[0] == "Sí":
-                        self.run_updater(latest_version)
+                        self.after(50, up_to_date)
+                else:
+                    self.updating_app = False
+            except Exception as err:
+                logging.error("An error occurred: ", err)
+                self.error_occurred = True
+                self.log_error()
+            finally:
+                if self.error_occurred and not self.timeout_occurred:
+                    def error_update():
+                        if not self.disable_audio:
+                            winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/error.wav"), winsound.SND_ASYNC)
+                        CTkMessagebox(title=translation["error"], icon="cancel",
+                                      message=translation["failed_to_find_update"], button_width=380)
+                        self.error_occurred = False
+                        self.timeout_occurred = False
 
-                self.after(50, update)
-            else:
-
-                def up_to_date():
-                    if not self.disable_audio:
-                        winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/notification.wav"),
-                                           winsound.SND_ASYNC)
-                    CTkMessagebox(title=translation["update_popup_title"], message=translation["update_up_to_date"],
-                                  button_width=380)
-
-                self.after(50, up_to_date)
-        else:
-            self.updating_app = False
+                    self.after(50, error_update)
+                self.update_event_completed = True
 
     def run_updater(self, latest_version):
         try:
@@ -8824,9 +8819,8 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     not_running_count += 1
                     if not_running_count == 1:
-                        translation = self.load_language()
-
                         def not_running():
+                            translation = self.load_language()
                             if not self.disable_audio:
                                 winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/notification.wav"),
                                                    winsound.SND_ASYNC)
@@ -9299,6 +9293,7 @@ class TeraTermUI(customtkinter.CTk):
         self.up_arrow_key_enabled = True
         self.down_arrow_key_enabled = True
         self.status.destroy()
+        self.status = None
 
     def status_scroll_up(self):
         if self.up_arrow_key_enabled:
@@ -9450,6 +9445,17 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
                 self.log_error()
             finally:
+                if self.error_occurred and not self.timeout_occurred:
+                    def error_feedback():
+                        if not self.disable_audio:
+                            winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/error.wav"),
+                                               winsound.SND_ASYNC)
+                        CTkMessagebox(title=translation["error"], message=translation["feedback_error"],
+                                      icon="cancel", button_width=380)
+                        self.error_occurred = False
+                        self.timeout_occurred = False
+
+                    self.after(100, error_feedback)
                 self.submit_feedback_event_completed = True
 
     @staticmethod
@@ -9930,6 +9936,7 @@ class TeraTermUI(customtkinter.CTk):
         self.up_arrow_key_enabled = True
         self.down_arrow_key_enabled = True
         self.help.destroy()
+        self.help = None
 
     def help_scroll_up(self):
         if self.up_arrow_key_enabled:
@@ -9949,29 +9956,28 @@ class TeraTermUI(customtkinter.CTk):
 
     # Gets the latest release of the application on GitHub
     def get_latest_release(self):
-        if asyncio.run(self.test_connection()):
-            url = f"{self.GITHUB_REPO}/releases/latest"
-            headers = {"User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                                      "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")}
-            try:
-                with requests.get(url, headers=headers, timeout=3) as response:
-                    if response.status_code != 200:
-                        logging.error(f"Error fetching release information: {response.status_code}")
-                        return None
+        url = f"{self.GITHUB_REPO}/releases/latest"
+        headers = {"User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                                  "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")}
+        try:
+            with requests.get(url, headers=headers, timeout=3) as response:
+                if response.status_code != 200:
+                    logging.error(f"Error fetching release information: {response.status_code}")
+                    return None
 
-                    release_data = response.json()
-                    latest_version = release_data.get("tag_name")
-                    if latest_version and latest_version.startswith("v"):
-                        latest_version = latest_version[1:]
+                release_data = response.json()
+                latest_version = release_data.get("tag_name")
+                if latest_version and latest_version.startswith("v"):
+                    latest_version = latest_version[1:]
 
-                    return latest_version
+                return latest_version
 
-            except requests.exceptions.RequestException as err:
-                logging.error(f"Request failed: {err}")
-                return None
-            except Exception as err:
-                logging.error(f"An error occurred while fetching the latest release: {err}")
-                return None
+        except requests.exceptions.RequestException as err:
+            logging.error(f"Request failed: {err}")
+            return None
+        except Exception as err:
+            logging.error(f"An error occurred while fetching the latest release: {err}")
+            return None
 
     # Compares the current version that user is using with the latest available
     @staticmethod
@@ -10036,7 +10042,6 @@ class TeraTermUI(customtkinter.CTk):
                 logging.error(f"Error occurred: {err}")
                 logging.info("Restoring from backup...")
                 shutil.copyfile(backup_path, file_path)
-            del line, lines
 
     # Edits the font that tera term uses to "Terminal" to mitigate the chance of the OCR mistaking words
     def edit_teraterm_ini(self, file_path):
@@ -10098,7 +10103,6 @@ class TeraTermUI(customtkinter.CTk):
                 logging.error(f"Error occurred: {err}")
                 logging.info("Restoring from backup...")
                 shutil.copyfile(backup_path, file_path)
-            del line, lines
         else:
             self.teraterm_not_found = True
 
