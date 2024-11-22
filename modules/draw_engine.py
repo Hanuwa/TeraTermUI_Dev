@@ -113,41 +113,32 @@ class DrawEngine:
         if self._last_rounded_rect_settings == current_settings:
             return False
 
-        if self._round_width_to_even_numbers:
-            width = math.floor( width / 2) * 2  # round (floor) _current_width and _current_height and restrict them to even values only
-        if self._round_height_to_even_numbers:
-            height = math.floor(height / 2) * 2
-        corner_radius = round(corner_radius)
-
-        if corner_radius > width / 2 or corner_radius > height / 2:  # restrict corner_radius if it's too large
-            corner_radius = min(width / 2, height / 2)
-
+        # Round dimensions if required
+        width = math.floor(width / 2) * 2 if self._round_width_to_even_numbers else width
+        height = math.floor(height / 2) * 2 if self._round_height_to_even_numbers else height
+        corner_radius = min(round(corner_radius), width / 2, height / 2)
         border_width = round(border_width)
-        corner_radius = self.__calc_optimal_corner_radius(corner_radius)  # optimize corner_radius for different drawing methods (different rounding)
+        corner_radius = self.__calc_optimal_corner_radius(corner_radius)
 
-        if corner_radius >= border_width:
-            inner_corner_radius = corner_radius - border_width
+        inner_corner_radius = max(corner_radius - border_width, 0)
+
+        preferred_drawing_method = overwrite_preferred_drawing_method or self.preferred_drawing_method
+        drawing_methods = {
+            "polygon_shapes": self.__draw_rounded_rect_with_border_polygon_shapes,
+            "font_shapes": self.__draw_rounded_rect_with_border_font_shapes,
+            "circle_shapes": self.__draw_rounded_rect_with_border_circle_shapes,
+        }
+
+        draw_method = drawing_methods.get(preferred_drawing_method)
+        if draw_method:
+            result = draw_method(width, height, corner_radius, border_width, inner_corner_radius)
+            self._last_rounded_rect_settings = current_settings
+            return result
         else:
-            inner_corner_radius = 0
+            raise ValueError(f"Unsupported drawing method: {preferred_drawing_method}")
 
-        if overwrite_preferred_drawing_method is not None:
-            preferred_drawing_method = overwrite_preferred_drawing_method
-        else:
-            preferred_drawing_method = self.preferred_drawing_method
-
-        self._last_rounded_rect_settings = current_settings
-
-        if preferred_drawing_method == "polygon_shapes":
-            return self.__draw_rounded_rect_with_border_polygon_shapes(width, height, corner_radius, border_width,
-                                                                       inner_corner_radius)
-        elif preferred_drawing_method == "font_shapes":
-            return self.__draw_rounded_rect_with_border_font_shapes(width, height, corner_radius, border_width,
-                                                                    inner_corner_radius, ())
-        elif preferred_drawing_method == "circle_shapes":
-            return self.__draw_rounded_rect_with_border_circle_shapes(width, height, corner_radius, border_width,
-                                                                      inner_corner_radius)
-
-    def __draw_rounded_rect_with_border_polygon_shapes(self, width: int, height: int, corner_radius: int, border_width: int, inner_corner_radius: int) -> bool:
+    def __draw_rounded_rect_with_border_polygon_shapes(self, width: int, height: int, corner_radius: int, 
+                                                       border_width: int, inner_corner_radius: int) -> bool:
         requires_recoloring = False
 
         # Create or update border parts
@@ -206,27 +197,38 @@ class DrawEngine:
 
         return requires_recoloring
 
-    def __draw_rounded_rect_with_border_font_shapes(self, width: int, height: int, corner_radius: int, border_width: int, inner_corner_radius: int,
-                                                    exclude_parts: tuple) -> bool:
+    def __draw_rounded_rect_with_border_font_shapes(self, width: int, height: int, corner_radius: int,
+                                                    border_width: int, inner_corner_radius: int,
+                                                    exclude_parts: tuple = ()) -> bool:
         requires_recoloring = False
 
-        # Create or update border parts
+        def create_or_update_item(key, create_func, coords, tags, **kwargs):
+            if key not in self._items:
+                self._items[key] = create_func(*coords, tags=tags, **kwargs)
+                nonlocal requires_recoloring
+                requires_recoloring = True
+            else:
+                self._canvas.itemconfig(self._items[key], state='normal')
+                self._canvas.coords(self._items[key], *coords)
+
+        # Border Parts
         if border_width > 0:
             if corner_radius > 0:
                 # Border corner parts
                 for i in range(1, 5):
                     key_a = f"border_oval_{i}_a"
                     key_b = f"border_oval_{i}_b"
-                    if key_a not in self._items:
-                        self._items[key_a] = self._canvas.create_aa_circle(
-                            0, 0, 0, tags=("border_corner_part", "border_parts"), anchor=tkinter.CENTER)
-                        self._items[key_b] = self._canvas.create_aa_circle(
-                            0, 0, 0, tags=("border_corner_part", "border_parts"), anchor=tkinter.CENTER, angle=180)
-                        requires_recoloring = True
-                    else:
-                        self._canvas.itemconfig(self._items[key_a], state='normal')
-                        self._canvas.itemconfig(self._items[key_b], state='normal')
-
+                    if key_a in exclude_parts:
+                        continue
+                    tags = ("border_corner_part", "border_parts")
+                    create_or_update_item(
+                        key_a, self._canvas.create_aa_circle,
+                        (0, 0, 0), tags, anchor=tkinter.CENTER
+                    )
+                    create_or_update_item(
+                        key_b, self._canvas.create_aa_circle,
+                        (0, 0, 0), tags, anchor=tkinter.CENTER, angle=180
+                    )
                 # Set positions of border corner parts
                 self._canvas.coords(self._items["border_oval_1_a"], corner_radius, corner_radius, corner_radius)
                 self._canvas.coords(self._items["border_oval_1_b"], corner_radius, corner_radius, corner_radius)
@@ -240,109 +242,100 @@ class DrawEngine:
                                     corner_radius)
                 self._canvas.coords(self._items["border_oval_4_b"], corner_radius, height - corner_radius,
                                     corner_radius)
-
             else:
                 # Hide border corner parts
                 for i in range(1, 5):
-                    key_a = f"border_oval_{i}_a"
-                    key_b = f"border_oval_{i}_b"
-                    if key_a in self._items:
-                        self._canvas.itemconfig(self._items[key_a], state='hidden')
-                        self._canvas.itemconfig(self._items[key_b], state='hidden')
+                    for key in (f"border_oval_{i}_a", f"border_oval_{i}_b"):
+                        if key in self._items:
+                            self._canvas.itemconfig(self._items[key], state='hidden')
 
             # Border rectangle parts
             for i in range(1, 3):
                 key = f"border_rectangle_{i}"
-                if key not in self._items:
-                    self._items[key] = self._canvas.create_rectangle(
-                        0, 0, 0, 0, tags=("border_rectangle_part", "border_parts"), width=0)
-                    requires_recoloring = True
-                else:
-                    self._canvas.itemconfig(self._items[key], state='normal')
-
+                tags = ("border_rectangle_part", "border_parts")
+                create_or_update_item(
+                    key, self._canvas.create_rectangle,
+                    (0, 0, 0, 0), tags, width=0
+                )
             # Set positions of border rectangle parts
             self._canvas.coords(self._items["border_rectangle_1"], (0, corner_radius, width, height - corner_radius))
             self._canvas.coords(self._items["border_rectangle_2"], (corner_radius, 0, width - corner_radius, height))
-
         else:
             # Hide border parts
-            for key in ["border_rectangle_1", "border_rectangle_2"]:
+            for key in [f"border_rectangle_{i}" for i in range(1, 3)] + \
+                       [f"border_oval_{i}_{suffix}" for i in range(1, 5) for suffix in ('a', 'b')]:
                 if key in self._items:
                     self._canvas.itemconfig(self._items[key], state='hidden')
-            for i in range(1, 5):
-                key_a = f"border_oval_{i}_a"
-                key_b = f"border_oval_{i}_b"
-                if key_a in self._items:
-                    self._canvas.itemconfig(self._items[key_a], state='hidden')
-                    self._canvas.itemconfig(self._items[key_b], state='hidden')
 
-        # Create or update inner parts
+        # Inner Parts
         if inner_corner_radius > 0:
             # Inner corner parts
             for i in range(1, 5):
                 key_a = f"inner_oval_{i}_a"
                 key_b = f"inner_oval_{i}_b"
-                if key_a not in self._items:
-                    self._items[key_a] = self._canvas.create_aa_circle(
-                        0, 0, 0, tags=("inner_corner_part", "inner_parts"), anchor=tkinter.CENTER)
-                    self._items[key_b] = self._canvas.create_aa_circle(
-                        0, 0, 0, tags=("inner_corner_part", "inner_parts"), anchor=tkinter.CENTER, angle=180)
-                    requires_recoloring = True
-                else:
-                    self._canvas.itemconfig(self._items[key_a], state='normal')
-                    self._canvas.itemconfig(self._items[key_b], state='normal')
-
+                if key_a in exclude_parts:
+                    continue
+                tags = ("inner_corner_part", "inner_parts")
+                create_or_update_item(
+                    key_a, self._canvas.create_aa_circle,
+                    (0, 0, 0), tags, anchor=tkinter.CENTER
+                )
+                create_or_update_item(
+                    key_b, self._canvas.create_aa_circle,
+                    (0, 0, 0), tags, anchor=tkinter.CENTER, angle=180
+                )
             # Set positions of inner corner parts
-            self._canvas.coords(self._items["inner_oval_1_a"], border_width + inner_corner_radius,
-                                border_width + inner_corner_radius, inner_corner_radius)
-            self._canvas.coords(self._items["inner_oval_1_b"], border_width + inner_corner_radius,
-                                border_width + inner_corner_radius, inner_corner_radius)
-            self._canvas.coords(self._items["inner_oval_2_a"], width - border_width - inner_corner_radius,
-                                border_width + inner_corner_radius, inner_corner_radius)
-            self._canvas.coords(self._items["inner_oval_2_b"], width - border_width - inner_corner_radius,
-                                border_width + inner_corner_radius, inner_corner_radius)
-            self._canvas.coords(self._items["inner_oval_3_a"], width - border_width - inner_corner_radius,
-                                height - border_width - inner_corner_radius, inner_corner_radius)
-            self._canvas.coords(self._items["inner_oval_3_b"], width - border_width - inner_corner_radius,
-                                height - border_width - inner_corner_radius, inner_corner_radius)
-            self._canvas.coords(self._items["inner_oval_4_a"], border_width + inner_corner_radius,
-                                height - border_width - inner_corner_radius, inner_corner_radius)
-            self._canvas.coords(self._items["inner_oval_4_b"], border_width + inner_corner_radius,
-                                height - border_width - inner_corner_radius, inner_corner_radius)
+            self._canvas.coords(self._items["inner_oval_1_a"],
+                                border_width + inner_corner_radius, border_width + inner_corner_radius,
+                                inner_corner_radius)
+            self._canvas.coords(self._items["inner_oval_1_b"],
+                                border_width + inner_corner_radius, border_width + inner_corner_radius,
+                                inner_corner_radius)
+            self._canvas.coords(self._items["inner_oval_2_a"],
+                                width - border_width - inner_corner_radius, border_width + inner_corner_radius,
+                                inner_corner_radius)
+            self._canvas.coords(self._items["inner_oval_2_b"],
+                                width - border_width - inner_corner_radius, border_width + inner_corner_radius,
+                                inner_corner_radius)
+            self._canvas.coords(self._items["inner_oval_3_a"],
+                                width - border_width - inner_corner_radius, height - border_width - inner_corner_radius,
+                                inner_corner_radius)
+            self._canvas.coords(self._items["inner_oval_3_b"],
+                                width - border_width - inner_corner_radius, height - border_width - inner_corner_radius,
+                                inner_corner_radius)
+            self._canvas.coords(self._items["inner_oval_4_a"],
+                                border_width + inner_corner_radius, height - border_width - inner_corner_radius,
+                                inner_corner_radius)
+            self._canvas.coords(self._items["inner_oval_4_b"],
+                                border_width + inner_corner_radius, height - border_width - inner_corner_radius,
+                                inner_corner_radius)
         else:
             # Hide inner corner parts
             for i in range(1, 5):
-                key_a = f"inner_oval_{i}_a"
-                key_b = f"inner_oval_{i}_b"
-                if key_a in self._items:
-                    self._canvas.itemconfig(self._items[key_a], state='hidden')
-                    self._canvas.itemconfig(self._items[key_b], state='hidden')
+                for key in (f"inner_oval_{i}_a", f"inner_oval_{i}_b"):
+                    if key in self._items:
+                        self._canvas.itemconfig(self._items[key], state='hidden')
 
         # Inner rectangle parts
-        if "inner_rectangle_1" not in self._items:
-            self._items["inner_rectangle_1"] = self._canvas.create_rectangle(
-                0, 0, 0, 0, tags=("inner_rectangle_part", "inner_parts"), width=0)
-            requires_recoloring = True
-        else:
-            self._canvas.itemconfig(self._items["inner_rectangle_1"], state='normal')
-
-        self._canvas.coords(self._items["inner_rectangle_1"], (border_width + inner_corner_radius,
-                                                               border_width,
-                                                               width - border_width - inner_corner_radius,
-                                                               height - border_width))
+        for i in range(1, 3):
+            key = f"inner_rectangle_{i}"
+            tags = ("inner_rectangle_part", "inner_parts")
+            create_or_update_item(
+                key, self._canvas.create_rectangle,
+                (0, 0, 0, 0), tags, width=0
+            )
+        # Set positions of inner rectangle parts
+        self._canvas.coords(self._items["inner_rectangle_1"], (
+            border_width + inner_corner_radius, border_width,
+            width - border_width - inner_corner_radius, height - border_width
+        ))
 
         needs_inner_rectangle_2 = inner_corner_radius * 2 < height - (border_width * 2)
         if needs_inner_rectangle_2:
-            if "inner_rectangle_2" not in self._items:
-                self._items["inner_rectangle_2"] = self._canvas.create_rectangle(
-                    0, 0, 0, 0, tags=("inner_rectangle_part", "inner_parts"), width=0)
-                requires_recoloring = True
-            else:
-                self._canvas.itemconfig(self._items["inner_rectangle_2"], state='normal')
-            self._canvas.coords(self._items["inner_rectangle_2"], (border_width,
-                                                                   border_width + inner_corner_radius,
-                                                                   width - border_width,
-                                                                   height - inner_corner_radius - border_width))
+            self._canvas.coords(self._items["inner_rectangle_2"], (
+                border_width, border_width + inner_corner_radius,
+                width - border_width, height - inner_corner_radius - border_width
+            ))
         else:
             if "inner_rectangle_2" in self._items:
                 self._canvas.itemconfig(self._items["inner_rectangle_2"], state='hidden')
@@ -355,7 +348,8 @@ class DrawEngine:
 
         return requires_recoloring
 
-    def __draw_rounded_rect_with_border_circle_shapes(self, width: int, height: int, corner_radius: int, border_width: int, inner_corner_radius: int) -> bool:
+    def __draw_rounded_rect_with_border_circle_shapes(self, width: int, height: int, corner_radius: int, 
+                                                      border_width: int, inner_corner_radius: int) -> bool:
         requires_recoloring = False
 
         # Border parts
@@ -1479,24 +1473,32 @@ class DrawEngine:
         size = round(size)
         requires_recoloring = False
 
-        if self.preferred_drawing_method == "polygon_shapes" or self.preferred_drawing_method == "circle_shapes":
-            x, y, radius = width / 2, height / 2, size / 2.8
-            if not self._canvas.find_withtag("checkmark"):
-                self._canvas.create_line(0, 0, 0, 0, tags=("checkmark", "create_line"), width=round(height / 8), joinstyle=tkinter.MITER, capstyle=tkinter.ROUND)
-                self._canvas.tag_raise("checkmark")
-                requires_recoloring = True
+        if "checkmark" not in self._items:
+            if self.preferred_drawing_method in ("polygon_shapes", "circle_shapes"):
+                self._items["checkmark"] = self._canvas.create_line(
+                    0, 0, 0, 0, tags=("checkmark"), width=round(height / 8), joinstyle=tkinter.MITER,
+                    capstyle=tkinter.ROUND
+                )
+            elif self.preferred_drawing_method == "font_shapes":
+                self._items["checkmark"] = self._canvas.create_text(
+                    0, 0, text="Z", font=("CustomTkinter_shapes_font", -size), tags=("checkmark"), anchor=tkinter.CENTER
+                )
+            self._canvas.tag_raise("checkmark")
+            requires_recoloring = True
 
-            self._canvas.coords("checkmark",
-                                x + radius, y - radius,
-                                x - radius / 4, y + radius * 0.8,
-                                x - radius, y + radius / 6)
-        elif self.preferred_drawing_method == "font_shapes":
-            if not self._canvas.find_withtag("checkmark"):
-                self._canvas.create_text(0, 0, text="Z", font=("CustomTkinter_shapes_font", -size), tags=("checkmark", "create_text"), anchor=tkinter.CENTER)
-                self._canvas.tag_raise("checkmark")
-                requires_recoloring = True
-
-            self._canvas.coords("checkmark", round(width / 2), round(height / 2))
+        x, y = width / 2, height / 2
+        if self.preferred_drawing_method in ("polygon_shapes", "circle_shapes"):
+            radius = size / 2.8
+            coords = [
+                x + radius, y - radius,
+                x - radius / 4, y + radius * 0.8,
+                x - radius, y + radius / 6
+            ]
+            self._canvas.coords(self._items["checkmark"], *coords)
+            self._canvas.itemconfig(self._items["checkmark"], width=round(height / 8))
+        else:
+            self._canvas.coords(self._items["checkmark"], x, y)
+            self._canvas.itemconfigure(self._items["checkmark"], font=("CustomTkinter_shapes_font", -size))
 
         return requires_recoloring
 
@@ -1505,40 +1507,39 @@ class DrawEngine:
 
             returns bool if recoloring is necessary """
 
-        current_settings = (x_position, y_position, size)
+        current_settings = (round(x_position), round(y_position), round(size))
         if self._last_dropdown_arrow == current_settings:
             return False
 
-        x_position, y_position, size = round(x_position), round(y_position), round(size)
+        x, y, size = current_settings
         requires_recoloring = False
 
         if "dropdown_arrow" not in self._items:
-            if self.preferred_drawing_method == "polygon_shapes" or self.preferred_drawing_method == "circle_shapes":
+            if self.preferred_drawing_method in ("polygon_shapes", "circle_shapes"):
                 self._items["dropdown_arrow"] = self._canvas.create_line(
                     0, 0, 0, 0, tags="dropdown_arrow", width=round(size / 3), joinstyle=tkinter.ROUND,
-                    capstyle=tkinter.ROUND)
+                    capstyle=tkinter.ROUND
+                )
             elif self.preferred_drawing_method == "font_shapes":
                 self._items["dropdown_arrow"] = self._canvas.create_text(
                     0, 0, text="Y", font=("CustomTkinter_shapes_font", -size), tags="dropdown_arrow",
-                    anchor=tkinter.CENTER)
+                    anchor=tkinter.CENTER
+                )
             self._canvas.tag_raise("dropdown_arrow")
             requires_recoloring = True
 
-        else:
-            self._canvas.itemconfig(self._items["dropdown_arrow"], state='normal')
-
-        if self.preferred_drawing_method == "polygon_shapes" or self.preferred_drawing_method == "circle_shapes":
-            self._canvas.coords(self._items["dropdown_arrow"],
-                                x_position - (size / 2),
-                                y_position - (size / 5),
-                                x_position,
-                                y_position + (size / 5),
-                                x_position + (size / 2),
-                                y_position - (size / 5))
+        if self.preferred_drawing_method in ("polygon_shapes", "circle_shapes"):
+            half_size = size / 2
+            coords = [
+                x - half_size, y - size / 5,
+                x, y + size / 5,
+                x + half_size, y - size / 5
+            ]
+            self._canvas.coords(self._items["dropdown_arrow"], *coords)
             self._canvas.itemconfig(self._items["dropdown_arrow"], width=round(size / 3))
-        elif self.preferred_drawing_method == "font_shapes":
+        else:
+            self._canvas.coords(self._items["dropdown_arrow"], x, y)
             self._canvas.itemconfigure(self._items["dropdown_arrow"], font=("CustomTkinter_shapes_font", -size))
-            self._canvas.coords(self._items["dropdown_arrow"], x_position, y_position)
 
         self._last_dropdown_arrow = current_settings
 
