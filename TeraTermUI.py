@@ -11900,6 +11900,11 @@ def main():
     SPANISH = 0x0A
     language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
     os.chdir(os.path.dirname(sys.argv[0]))
+    temporary_dir = os.path.join(tempfile.gettempdir(), "TeraTermUI")
+    lock_file = os.path.join( temporary_dir, "TeraTermUI_Updater.lock")
+    if os.path.exists(lock_file):
+        logging.error(f"The updater is currently running. Application cannot be launched")
+        sys.exit(1)
     if mode == "Portable" and not has_write_permission():
         if language_id & 0xFF == SPANISH:
             messagebox.showerror("Permiso denegado",
@@ -11913,7 +11918,7 @@ def main():
     tera_term_temp_dir = os.path.join(tempfile.gettempdir(), "TeraTermUI")
     if not os.path.exists(tera_term_temp_dir):
         os.makedirs(tera_term_temp_dir)
-    lock_file_temp = os.path.join(tera_term_temp_dir, "app_lock.lock")
+    lock_file_temp = os.path.join(tera_term_temp_dir, "TeraTermUI.lock")
     file_lock = FileLock(lock_file_temp, timeout=0)
     try:
         with file_lock.acquire():
