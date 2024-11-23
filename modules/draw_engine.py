@@ -137,7 +137,7 @@ class DrawEngine:
         else:
             raise ValueError(f"Unsupported drawing method: {preferred_drawing_method}")
 
-    def __draw_rounded_rect_with_border_polygon_shapes(self, width: int, height: int, corner_radius: int, 
+    def __draw_rounded_rect_with_border_polygon_shapes(self, width: int, height: int, corner_radius: int,
                                                        border_width: int, inner_corner_radius: int) -> bool:
         requires_recoloring = False
 
@@ -348,7 +348,7 @@ class DrawEngine:
 
         return requires_recoloring
 
-    def __draw_rounded_rect_with_border_circle_shapes(self, width: int, height: int, corner_radius: int, 
+    def __draw_rounded_rect_with_border_circle_shapes(self, width: int, height: int, corner_radius: int,
                                                       border_width: int, inner_corner_radius: int) -> bool:
         requires_recoloring = False
 
@@ -1472,33 +1472,32 @@ class DrawEngine:
 
         size = round(size)
         requires_recoloring = False
+        x, y, radius = width / 2, height / 2, size / 2.8
 
-        if "checkmark" not in self._items:
-            if self.preferred_drawing_method in ("polygon_shapes", "circle_shapes"):
-                self._items["checkmark"] = self._canvas.create_line(
-                    0, 0, 0, 0, tags=("checkmark"), width=round(height / 8), joinstyle=tkinter.MITER,
-                    capstyle=tkinter.ROUND
-                )
-            elif self.preferred_drawing_method == "font_shapes":
-                self._items["checkmark"] = self._canvas.create_text(
-                    0, 0, text="Z", font=("CustomTkinter_shapes_font", -size), tags=("checkmark"), anchor=tkinter.CENTER
-                )
-            self._canvas.tag_raise("checkmark")
-            requires_recoloring = True
-
-        x, y = width / 2, height / 2
         if self.preferred_drawing_method in ("polygon_shapes", "circle_shapes"):
-            radius = size / 2.8
-            coords = [
+            if not self._canvas.find_withtag("checkmark"):
+                self._canvas.create_line(0, 0, 0, 0,
+                    tags=("checkmark", "create_line"),
+                    width=round(height / 8),
+                    joinstyle=tkinter.MITER,
+                    capstyle=tkinter.ROUND)
+                requires_recoloring = True
+            self._canvas.coords(
+                "checkmark",
                 x + radius, y - radius,
                 x - radius / 4, y + radius * 0.8,
-                x - radius, y + radius / 6
-            ]
-            self._canvas.coords(self._items["checkmark"], *coords)
-            self._canvas.itemconfig(self._items["checkmark"], width=round(height / 8))
-        else:
-            self._canvas.coords(self._items["checkmark"], x, y)
-            self._canvas.itemconfigure(self._items["checkmark"], font=("CustomTkinter_shapes_font", -size))
+                x - radius, y + radius / 6)
+
+        elif self.preferred_drawing_method == "font_shapes":
+            if not self._canvas.find_withtag("checkmark"):
+                self._canvas.create_text(0, 0, text="Z",
+                    font=("CustomTkinter_shapes_font", -size),
+                    tags=("checkmark", "create_text"),
+                    anchor=tkinter.CENTER)
+                requires_recoloring = True
+            self._canvas.coords("checkmark", round(width / 2), round(height / 2))
+
+        self._canvas.tag_raise("checkmark")
 
         return requires_recoloring
 
