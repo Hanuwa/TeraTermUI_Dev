@@ -62,6 +62,10 @@ class CTkToplevel(tkinter.Toplevel, CTkAppearanceModeBaseClass, CTkScalingBaseCl
         # set title of tkinter.Toplevel
         super().title("CTkToplevel")
 
+        self._is_windows = sys.platform.startswith("win")
+        self._is_macos = sys.platform == "darwin"
+        self._resize_after_id = None
+
         # indicator variables
         self._iconbitmap_method_called = False
         self._state_before_windows_set_titlebar_color = None
@@ -74,11 +78,11 @@ class CTkToplevel(tkinter.Toplevel, CTkAppearanceModeBaseClass, CTkScalingBaseCl
         self.focused_widget_before_widthdraw = None
 
         # set CustomTkinter titlebar icon (Windows only)
-        if sys.platform.startswith("win"):
+        if self._is_windows:
             self.after(200, self._windows_set_titlebar_icon)
 
         # set titlebar color (Windows only)
-        if sys.platform.startswith("win"):
+        if self._is_windows:
             self._windows_set_titlebar_color(self._get_appearance_mode())
 
         self.bind('<Configure>', self._update_dimensions_event)
@@ -86,6 +90,13 @@ class CTkToplevel(tkinter.Toplevel, CTkAppearanceModeBaseClass, CTkScalingBaseCl
 
     def destroy(self):
         self._disable_macos_dark_title_bar()
+        
+        if self._resize_after_id is not None:
+            try:
+                self.after_cancel(self._resize_after_id)
+            except ValueError:
+                pass
+            self._resize_after_id = None
 
         # call destroy methods of super classes
         tkinter.Toplevel.destroy(self)
@@ -94,17 +105,25 @@ class CTkToplevel(tkinter.Toplevel, CTkAppearanceModeBaseClass, CTkScalingBaseCl
 
     def _focus_in_event(self, event):
         # sometimes window looses jumps back on macOS if window is selected from Mission Control, so has to be lifted again
-        if sys.platform == "darwin":
+        if self._is_macos:
             self.lift()
 
     def _update_dimensions_event(self, event=None):
         if not self._block_update_dimensions_event:
-            detected_width = self.winfo_width()  # detect current window size
-            detected_height = self.winfo_height()
+            if self._resize_after_id is not None:
+                self.after_cancel(self._resize_after_id)
+                self._resize_after_id = None
+            self._resize_after_id = self.after(100, self._perform_dimension_update)
 
-            if self._current_width != self._reverse_window_scaling(detected_width) or self._current_height != self._reverse_window_scaling(detected_height):
-                self._current_width = self._reverse_window_scaling(detected_width)  # adjust current size according to new size given by event
-                self._current_height = self._reverse_window_scaling(detected_height)  # _current_width and _current_height are independent of the scale
+    def _perform_dimension_update(self):
+        detected_width = self.winfo_width()
+        detected_height = self.winfo_height()
+        new_width = self._reverse_window_scaling(detected_width)
+        new_height = self._reverse_window_scaling(detected_height)
+        if (self._current_width != new_width or
+                self._current_height != new_height):
+            self._current_width = new_width
+            self._current_height = new_height
 
     def _set_scaling(self, new_widget_scaling, new_window_scaling):
         super()._set_scaling(new_widget_scaling, new_window_scaling)
@@ -156,7 +175,7 @@ class CTkToplevel(tkinter.Toplevel, CTkAppearanceModeBaseClass, CTkScalingBaseCl
         current_resizable_values = super().resizable(width, height)
         self._last_resizable_args = ([], {"width": width, "height": height})
 
-        if sys.platform.startswith("win"):
+        if self._is_windows:
             self.after(10, lambda: self._windows_set_titlebar_color(self._get_appearance_mode()))
 
         return current_resizable_values
@@ -183,12 +202,9 @@ class CTkToplevel(tkinter.Toplevel, CTkAppearanceModeBaseClass, CTkScalingBaseCl
         if "fg_color" in kwargs:
             self._fg_color = self._check_color_type(kwargs.pop("fg_color"))
             super().configure(bg=self._apply_appearance_mode(self._fg_color))
-
             for child in self.winfo_children():
-                try:
+                if isinstance(child, CTkBaseWidget):
                     child.configure(bg_color=self._fg_color)
-                except Exception:
-                    pass
 
         super().configure(**pop_from_dict_by_set(kwargs, self._valid_tk_toplevel_arguments))
         check_kwargs_empty(kwargs)
@@ -243,7 +259,7 @@ class CTkToplevel(tkinter.Toplevel, CTkAppearanceModeBaseClass, CTkScalingBaseCl
         https://docs.microsoft.com/en-us/windows/win32/api/dwmapi/ne-dwmapi-dwmwindowattribute
         """
 
-        if sys.platform.startswith("win") and not self._deactivate_windows_window_header_manipulation:
+        if self._is_windows and not self._deactivate_windows_window_header_manipulation:
 
             self._state_before_windows_set_titlebar_color = self.state()
             self.focused_widget_before_widthdraw = self.focus_get()
@@ -306,9 +322,9 @@ class CTkToplevel(tkinter.Toplevel, CTkAppearanceModeBaseClass, CTkScalingBaseCl
             self._iconify_called_after_windows_set_titlebar_color = False
 
     def _set_appearance_mode(self, mode_string):
-        super()._set_appearance_mode(mode_string)
-
-        if sys.platform.startswith("win"):
+        CTkAppearanceModeBaseClass._set_appearance_mode(self, mode_string)
+        if self._is_windows:
             self._windows_set_titlebar_color(mode_string)
-
-        super().configure(bg=self._apply_appearance_mode(self._fg_color))
+        elif self._is_macos:
+            self._enable_macos_dark_title_bar()
+        self.configure(bg=self._apply_appearance_mode(self._fg_color))
