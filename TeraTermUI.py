@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 11/21/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 11/24/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -11526,6 +11526,7 @@ class SmoothFadeToplevel(customtkinter.CTkToplevel):
         self.final_alpha = final_alpha
         self.alpha = 0.0
         self.fade_direction = 1  # 1 for fade-in, -1 for fade-out
+        self._fade_after_id = None  # Initialize the fade callback ID
         self.after_idle(self._start_fade_in)
 
     def _start_fade_in(self):
@@ -11537,14 +11538,22 @@ class SmoothFadeToplevel(customtkinter.CTkToplevel):
         self.alpha = max(0.0, min(self.alpha, self.final_alpha))
         self.attributes("-alpha", self.alpha)
         if 0.0 < self.alpha < self.final_alpha:
-            self.after(5, self._fade)
+            self._fade_after_id = self.after(5, self._fade)
         elif self.alpha <= 0.0:
             self.destroy()
 
     def button_event(self):
         self.fade_direction = -1
+        if self._fade_after_id is not None:
+            self.after_cancel(self._fade_after_id)
+            self._fade_after_id = None
         self._fade()
 
+    def destroy(self):
+        if self._fade_after_id is not None:
+            self.after_cancel(self._fade_after_id)
+            self._fade_after_id = None
+        super().destroy()
 
 class SmoothFadeInputDialog(customtkinter.CTkInputDialog):
     __slots__ = "fade_duration", "final_alpha", "alpha", "fade_direction"
@@ -11555,6 +11564,7 @@ class SmoothFadeInputDialog(customtkinter.CTkInputDialog):
         self.final_alpha = final_alpha
         self.alpha = 0.0
         self.fade_direction = 1  # 1 for fade-in, -1 for fade-out
+        self._fade_after_id = None  # Initialize the fade callback ID
         self.after_idle(self._start_fade_in)
 
     def _start_fade_in(self):
@@ -11572,8 +11582,16 @@ class SmoothFadeInputDialog(customtkinter.CTkInputDialog):
 
     def button_event(self):
         self.fade_direction = -1
+        if self._fade_after_id is not None:
+            self.after_cancel(self._fade_after_id)
+            self._fade_after_id = None
         self._fade()
 
+    def destroy(self):
+        if self._fade_after_id is not None:
+            self.after_cancel(self._fade_after_id)
+            self._fade_after_id = None
+        super().destroy()
 
 class ImageSlideshow(customtkinter.CTkFrame):
     __slots__ = ("parent", "image_folder", "interval", "width", "height")
