@@ -13,7 +13,7 @@ class AppearanceModeTracker:
     callback_list = []
     app_list = weakref.WeakSet()
     update_loop_running = False
-    update_loop_interval = 1000  # Increased from 50 milliseconds to 500 milliseconds
+    update_loop_interval = 1000  # Adjust as needed
 
     appearance_mode_set_by = "system"
     appearance_mode = 0  # Light (standard)
@@ -102,10 +102,25 @@ class AppearanceModeTracker:
         for ref in callbacks:
             callback = ref()
             if callback:
-                try:
-                    callback(mode_string)
-                except Exception as e:
-                    print(f"Error in callback {callback}: {e}")
+                widget = getattr(callback, '__self__', None)
+                # Check if the widget exists and is a Tkinter widget
+                if widget and hasattr(widget, 'winfo_exists'):
+                    if widget.winfo_exists():
+                        try:
+                            callback(mode_string)
+                        except Exception as e:
+                            print(f"Error in callback {callback}: {e}")
+                    else:
+                        # Widget destroyed, remove callback
+                        with cls._lock:
+                            if ref in cls.callback_list:
+                                cls.callback_list.remove(ref)
+                else:
+                    # Not a widget method, call directly
+                    try:
+                        callback(mode_string)
+                    except Exception as e:
+                        print(f"Error in callback {callback}: {e}")
             else:
                 # Remove dead references
                 with cls._lock:
