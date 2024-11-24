@@ -301,7 +301,7 @@ try:
                     r'--output-dir="' + project_directory + r'" ' + '--product-name="Tera Term UI Updater" ' +
                     r'--company-name="Armando Del Valle Tejada" ' + '--file-description="TeraTermUI Updater" ' +
                     r'--copyright="Copyright (c) 2024 Armando Del Valle Tejada" --file-version="1.0.0" '
-                    r'--product-version="1.0.0" --windows-console-mode=disable '
+                    r'--product-version="1.0.0" --windows-console-mode=disable --lto="yes" '
             )
             subprocess.run(nuitka_updater_command, shell=True, check=True)
             print(Fore.GREEN + "\nSuccessfully compiled updater.py\n" + Style.RESET_ALL)
