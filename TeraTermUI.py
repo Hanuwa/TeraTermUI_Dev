@@ -3367,7 +3367,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprbay_window.wait("visible", timeout=3)
                             self.tera_term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
                             if self.uprbay_window.child_window(title="Continue", control_type="Button").exists(
-                                    timeout=3):
+                                    timeout=2):
                                 self.uprbay_window.child_window(title="Continue", control_type="Button").invoke()
                             if not self.skip_auth:
                                 self.bind("<Return>", lambda event: self.auth_event_handler())
