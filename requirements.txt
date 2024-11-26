@@ -47,7 +47,7 @@ pyasn1==0.6.1
 pyasn1_modules==0.4.1
 PyAutoGUI==0.9.54
 pybcj==1.0.2
-pycares==4.4.0
+pycares==4.5.0
 pycparser==2.22
 pycryptodomex==3.21.0
 PyGetWindow==0.0.9
