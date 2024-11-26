@@ -1239,7 +1239,7 @@ def restart_application(app_directory):
 if __name__ == "__main__":
     try:
         args = parse_arguments()
-        app_directory = args.app_directory
+        app_directory = os.path.abspath(args.app_directory)
         logging.info(f"Updater started with arguments: {args}")
 
         root = tk.Tk()
