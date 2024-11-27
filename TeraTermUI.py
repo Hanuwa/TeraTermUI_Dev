@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 11/26/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 11/27/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -8053,15 +8053,12 @@ class TeraTermUI(customtkinter.CTk):
 
         # Reads from the feedback.json file to connect to Google's Sheets Api for user feedback
         try:
-            with open(self.SERVICE_ACCOUNT_FILE, "rb"):
-                archive = AESZipFile(self.SERVICE_ACCOUNT_FILE)
+            with AESZipFile(self.SERVICE_ACCOUNT_FILE) as archive:
                 archive.setpassword(self.REAZIONE.encode())
                 file_contents = archive.read("feedback.json")
                 credentials_dict = json.loads(file_contents.decode())
-                self.credentials = service_account.Credentials.from_service_account_info(
-                    credentials_dict,
-                    scopes=["https://www.googleapis.com/auth/spreadsheets"]
-                )
+            self.credentials = service_account.Credentials.from_service_account_info(
+                credentials_dict, scopes=["https://www.googleapis.com/auth/spreadsheets"])
         except Exception as err:
             logging.warning(f"Failed to load credentials: {str(err)}")
             self.log_error()
@@ -9344,21 +9341,18 @@ class TeraTermUI(customtkinter.CTk):
         if asyncio.run(self.test_connection()):
             self.connection_error = False
             try:
-                service = build("sheets", "v4", credentials=self.credentials)
+                service = build("sheets", "v4", credentials=self.credentials, cache_discovery=False)
             except:
                 DISCOVERY_SERVICE_URL = "https://sheets.googleapis.com/$discovery/rest?version=v4"
                 service = build("sheets", "v4", credentials=self.credentials,
-                                discoveryServiceUrl=DISCOVERY_SERVICE_URL)
+                                discoveryServiceUrl=DISCOVERY_SERVICE_URL, cache_discovery=False)
             now = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
-            body = {
-                "values": [[now, values[0][0]]]
-            }
+            body = {"values": [[now, values[0][0]]]}
 
             try:
                 result = service.spreadsheets().values().append(
                     spreadsheetId= "1ffJLgp8p-goOlxC10OFEu0JefBgQDsgEo_suis4k0Pw", range="Sheet1!A:A",
-                    valueInputOption="RAW", insertDataOption="INSERT_ROWS",
-                    body=body).execute()
+                    valueInputOption="RAW", insertDataOption="INSERT_ROWS", body=body).execute()
                 return result
             except HttpError as error:
                 logging.error(f"An error occurred: {error}")
