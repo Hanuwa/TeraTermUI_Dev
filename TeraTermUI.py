@@ -153,9 +153,6 @@ class TeraTermUI(customtkinter.CTk):
         self.geometry(f"{width}x{height}+{int(x) + 90}+{int(y + 50)}")
         self.icon_path = TeraTermUI.get_absolute_path("images/tera-term.ico")
         self.iconbitmap(self.icon_path)
-        self.mode = "Portable"
-        self.update_db = False
-        self.running_updater = False
         self.bind("<Button-1>", self.set_focus)
         self.bind("<Button-2>", lambda event: self.focus_set())
         self.bind("<Button-3>", lambda event: self.focus_set())
@@ -170,15 +167,15 @@ class TeraTermUI(customtkinter.CTk):
         self.future_feedback = None
         self.lock_thread = threading.Lock()
 
-        # GitHub's information for feedback
+        # GitHub's information for feedback and key data for updating app
         self.SERVICE_ACCOUNT_FILE = TeraTermUI.get_absolute_path("feedback.zip")
-        self.SPREADSHEET_ID = "1ffJLgp8p-goOlxC10OFEu0JefBgQDsgEo_suis4k0Pw"
         parts = ["$QojxnTKT8ecke49mf%bd", "U64m#8XaR$QNog$QdPL1Fp", "3%fHhv^ds7@CDDSag8PYt", "dM&R8fqu*&bUjmSZfgM^%"]
         os.environ["REAZIONE"] = TeraTermUI.purkaa_reazione(parts)
         self.REAZIONE = os.getenv("REAZIONE")
-        self.RANGE_NAME = "Sheet1!A:A"
-        self.GITHUB_REPO = "https://api.github.com/repos/Hanuwa/TeraTermUI"
         self.USER_APP_VERSION = "0.9.5"
+        self.mode = "Portable"
+        self.update_db = False
+        self.running_updater = False
         self.credentials = None
         # disabled/enables keybind events
         self.move_slider_left_enabled = True
@@ -9359,7 +9356,7 @@ class TeraTermUI(customtkinter.CTk):
 
             try:
                 result = service.spreadsheets().values().append(
-                    spreadsheetId=self.SPREADSHEET_ID, range=self.RANGE_NAME,
+                    spreadsheetId= "1ffJLgp8p-goOlxC10OFEu0JefBgQDsgEo_suis4k0Pw", range="Sheet1!A:A",
                     valueInputOption="RAW", insertDataOption="INSERT_ROWS",
                     body=body).execute()
                 return result
@@ -9984,7 +9981,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # Gets the latest release of the application on GitHub
     def get_latest_release(self):
-        url = f"{self.GITHUB_REPO}/releases/latest"
+        url = "https://api.github.com/repos/Hanuwa/TeraTermUI/releases/latest"
         headers = {"User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                                   "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")}
         try:
