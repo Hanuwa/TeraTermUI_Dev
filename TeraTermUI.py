@@ -5773,10 +5773,26 @@ class TeraTermUI(customtkinter.CTk):
         semester_header = None
         class_header = None
         lang = self.language_menu.get()
+        # Prepare the PDF document
         pdf = SimpleDocTemplate(
             filepath,
             pagesize=letter
         )
+        # Add metadata to the PDF
+        if len(classes_list) == 1:
+            title = f"Class Data for {classes_list[0]}"
+        else:
+            if len(set(semesters_list)) == 1:
+                title = f"Class Data for {semesters_list[0]} Semester"
+            else:
+                title = "Class Data for Multiple Semesters"
+        pdf.title = title
+        pdf.author = "Tera Term UI"
+        pdf.subject = f"Class information for semesters: {', '.join(set(semesters_list))}"
+        pdf.creator = "Tera Term UI PDF Generator"
+        pdf.producer = "ReportLab PDF Library"
+        pdf.keywords = ["class data", "academic", "schedule"] + classes_list + semesters_list
+        pdf.creation_date = datetime.now()
         elems = []
         for idx, data in enumerate(data_list):
             current_class_name = classes_list[idx]  # Get the current class name
@@ -7123,6 +7139,14 @@ class TeraTermUI(customtkinter.CTk):
 
         # Prepare the PDF document
         pdf = SimpleDocTemplate(filepath, pagesize=letter)
+        # Add metadata to the PDF
+        pdf.title = f"Enrolled Classes - {semester}"
+        pdf.author = "Tera Term UI Application"
+        pdf.subject = f"Enrolled classes information for {semester}"
+        pdf.creator = "Tera Term UI PDF Generator"
+        pdf.producer = "ReportLab PDF Library"
+        pdf.keywords = ["enrolled classes", "academic", "schedule", semester, str(creds) + " credits"]
+        pdf.creation_date = datetime.now()
         elems = []
 
         # Extract and prepare table data with translated headers
