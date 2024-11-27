@@ -965,7 +965,7 @@ class TeraTermUI(customtkinter.CTk):
                             if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
                                 TeraTermUI.terminate_process()
                         except Exception as err:
-                            logging.warning("An error occurred: ", err)
+                            logging.warning("An error occurred: %s", err)
                             TeraTermUI.terminate_process()
                     elif TeraTermUI.window_exists("Tera Term - [disconnected] VT") or \
                             TeraTermUI.window_exists("Tera Term - [connecting...] VT"):
@@ -1255,7 +1255,7 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     self.after(350, self.bind, "<Return>", lambda event: self.student_event_handler())
             except Exception as err:
-                logging.error("An error occurred: ", err)
+                logging.error("An error occurred: %s", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -1617,7 +1617,7 @@ class TeraTermUI(customtkinter.CTk):
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             except Exception as err:
-                logging.error("An error occurred: ", err)
+                logging.error("An error occurred: %s", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -1812,7 +1812,7 @@ class TeraTermUI(customtkinter.CTk):
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             except Exception as err:
-                logging.error("An error occurred: ", err)
+                logging.error("An error occurred: %s", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -2022,7 +2022,7 @@ class TeraTermUI(customtkinter.CTk):
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             except Exception as err:
-                logging.error("An error occurred: ", err)
+                logging.error("An error occurred: %s", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -2459,7 +2459,7 @@ class TeraTermUI(customtkinter.CTk):
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             except Exception as err:
-                logging.error("An error occurred: ", err)
+                logging.error("An error occurred: %s", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -2853,7 +2853,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.focus_or_not = True
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             except Exception as err:
-                logging.error("An error occurred: ", err)
+                logging.error("An error occurred: %s", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -2941,7 +2941,7 @@ class TeraTermUI(customtkinter.CTk):
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             except Exception as err:
-                logging.error("An error occurred: ", err)
+                logging.error("An error occurred: %s", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -3019,7 +3019,7 @@ class TeraTermUI(customtkinter.CTk):
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             except Exception as err:
-                logging.error("An error occurred: ", err)
+                logging.error("An error occurred: %s", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -3146,7 +3146,7 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     self.after(350, self.bind, "<Return>", lambda event: self.auth_event_handler())
             except Exception as err:
-                logging.error("An error occurred: ", err)
+                logging.error("An error occurred: %s", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -3377,7 +3377,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(0, self.log_in.configure(state="disabled"))
                             self.after(50, self.login_frame)
                         except AppStartError as err:
-                            logging.error("An error occurred: ", err)
+                            logging.error("An error occurred: %s", err)
                             self.after(100, self.show_error_message, 425, 330,
                                        translation["tera_term_failed_to_start"])
                             if not self.download:
@@ -3396,7 +3396,7 @@ class TeraTermUI(customtkinter.CTk):
             except Exception as err:
                 error_message = str(err)
                 if "catching classes that do not inherit from BaseException is not allowed" in error_message:
-                    logging.warning("Caught the specific error message: ", error_message)
+                    logging.warning("Caught the specific error message: %s", error_message)
                     self.destroy_windows()
                     def rare_error():
                         self.destroy_windows()
@@ -3409,7 +3409,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.error_occurred = False
                     self.after(100, rare_error)
                 else:
-                    logging.error("An error occurred:", error_message)
+                    logging.error("An error occurred: %s", error_message)
                     self.error_occurred = True
                     self.log_error()
             finally:
@@ -3624,7 +3624,7 @@ class TeraTermUI(customtkinter.CTk):
                     if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
                         TeraTermUI.terminate_process()
                 except Exception as err:
-                    logging.warning("An error occurred: ", err)
+                    logging.warning("An error occurred: %s", err)
                     TeraTermUI.terminate_process()
             elif TeraTermUI.window_exists("Tera Term - [disconnected] VT") or \
                     TeraTermUI.window_exists("Tera Term - [connecting...] VT"):
@@ -3766,7 +3766,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.translations_cache[lang] = translations
                 return translations
             except Exception as err:
-                logging.error("An error occurred: ", err)
+                logging.error("An error occurred: %s", err)
                 if lang == "English":
                     messagebox.showerror("Error",
                                          "A critical error occurred while loading the languages.\n"
@@ -4572,7 +4572,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.auto_enroll_bool = False
                         self.after(100, self.auto_enroll.deselect)
             except Exception as err:
-                logging.error("An error occurred: ", err)
+                logging.error("An error occurred: %s", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -7618,7 +7618,7 @@ class TeraTermUI(customtkinter.CTk):
                                         logging.error(f"An error occurred while restoring clipboard content: {err}")
                                     time.sleep(1)
                                 except Exception as err:
-                                    logging.error("An error occurred: ", err)
+                                    logging.error("An error occurred: %s", err)
                                     self.go_back_menu()
                                 if show_error and not section_closed:
                                     self.after(100, self.show_error_message, 320, 240,
@@ -7740,7 +7740,7 @@ class TeraTermUI(customtkinter.CTk):
                     else:
                         self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
             except Exception as err:
-                logging.error("An error occurred: ", err)
+                logging.error("An error occurred: %s", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -7804,7 +7804,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                 self.went_to_683_screen = False
         except Exception as err:
-            logging.error("An error occurred: ", err)
+            logging.error("An error occurred: %s", err)
             self.search_function_counter = 0
             self.e_counter = 0
             self.m_counter = 0
@@ -8603,7 +8603,7 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     self.updating_app = False
             except Exception as err:
-                logging.error("An error occurred: ", err)
+                logging.error("An error occurred: %s", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -8701,7 +8701,7 @@ class TeraTermUI(customtkinter.CTk):
                                translation["fix_after"])
                     self.show_fix_exe = True
             except Exception as err:
-                logging.error("An error occurred: ", err)
+                logging.error("An error occurred: %s", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -8804,7 +8804,7 @@ class TeraTermUI(customtkinter.CTk):
                 idle = self.cursor.execute("SELECT idle FROM user_data").fetchone()
             except Exception as err:
                 idle = ["Disabled"]
-                logging.error("An error occurred: ", err)
+                logging.error("An error occurred: %s", err)
                 self.log_error()
             if self.loading_screen_status is None and idle[0] != "Disabled":
                 if threshold is not None:
@@ -8889,7 +8889,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.stop_check_idle_thread()
                 time.sleep(30)
         except Exception as err:
-            logging.error("An error occurred: ", err)
+            logging.error("An error occurred: %s", err)
             self.log_error()
 
     def keep_teraterm_open(self):
@@ -8897,7 +8897,7 @@ class TeraTermUI(customtkinter.CTk):
             main_window = self.uprb_32.window(title="uprbay.uprb.edu - Tera Term VT")
             main_window.wait("exists", 3)
         except Exception as err:
-            logging.error("An error occurred: ", err)
+            logging.error("An error occurred: %s", err)
             self.search_function_counter = 0
             self.uprb = Application(backend="uia").connect(
                 title="uprbay.uprb.edu - Tera Term VT", timeout=3, class_name="VTWin32",
@@ -9445,7 +9445,7 @@ class TeraTermUI(customtkinter.CTk):
 
                         self.after(50, show_error)
             except Exception as err:
-                logging.error("An error occurred: ", err)
+                logging.error("An error occurred: %s", err)
                 self.error_occurred = True
                 self.log_error()
             finally:
@@ -11952,7 +11952,7 @@ def main():
     except KeyboardInterrupt:
         sys.exit(1)
     except Exception as error:
-        logging.error("A fatal error occurred: ", error)
+        logging.error("A fatal error occurred: %s", error)
         traceback.print_exc()
         if language_id & 0xFF == SPANISH:
             messagebox.showerror("Error", "Ocurrió un error inesperado: " + str(error) +
