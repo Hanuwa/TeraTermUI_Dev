@@ -370,10 +370,8 @@ for version in versions:
                                 'self.connection = sqlite3.connect(self.db_path, check_same_thread=False)')
             data = data.replace('closing(sqlite3.connect(TeraTermUI.get_absolute_path("database.db"))) as connection',
                                 'closing(sqlite3.connect(self.db_path)) as connection')
-            data = data.replace('with open(self.SERVICE_ACCOUNT_FILE, "rb"):',
-                                'with open(self.ath, "rb"):')
-            data = data.replace('archive = AESZipFile(self.SERVICE_ACCOUNT_FILE)',
-                                'archive = AESZipFile(self.ath)')
+            data = data.replace('with AESZipFile(self.SERVICE_ACCOUNT_FILE) as archive:',
+                                'with AESZipFile(self.ath, "rb") as archive:')
             data = data.replace('mode = "Portable"',
                                 'mode = "Installation"')
             print(Fore.GREEN + "Successfully started installer version\n" + Style.RESET_ALL)
@@ -387,10 +385,8 @@ for version in versions:
                                 'self.connection = sqlite3.connect(db_path, check_same_thread=False)')
             data = data.replace('closing(sqlite3.connect(self.db_path)) as connection',
                                 'closing(sqlite3.connect(TeraTermUI.get_absolute_path("database.db"))) as connection')
-            data = data.replace('with open(self.ath, "rb"):',
-                                'with open(self.SERVICE_ACCOUNT_FILE, "rb"):')
-            data = data.replace('archive = AESZipFile(self.ath)',
-                                'archive = AESZipFile(self.SERVICE_ACCOUNT_FILE)')
+            data = data.replace('with AESZipFile(self.ath, "rb") as archive:',
+                                'with AESZipFile(self.SERVICE_ACCOUNT_FILE) as archive:')
             data = data.replace('mode = "Installation"',
                                 'mode = "Portable"')
             print(Fore.GREEN + "Successfully started portable version\n" + Style.RESET_ALL)
