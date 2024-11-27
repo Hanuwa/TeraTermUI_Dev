@@ -40,7 +40,7 @@ packaging==24.2
 pillow==11.0.0
 propcache==0.2.0
 proto-plus==1.25.0
-protobuf==5.28.3
+protobuf==5.29.0
 psutil==6.1.0
 py7zr==0.22.0
 pyasn1==0.6.1
