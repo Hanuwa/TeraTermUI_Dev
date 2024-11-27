@@ -187,8 +187,8 @@ class CTkToolTip(Toplevel):
             if hasattr(self.widget, "_on_leave"):
                 self.widget._on_leave()
 
-        if self._is_mouse_near_widget() or self.state() != "withdrawn":
-            self.after(50, self.on_leave)
+        if self._is_mouse_near_widget() and self.state() != "withdrawn":
+            self.after(75, self.on_leave)
 
     def on_focus_out(self, event) -> None:
         """
