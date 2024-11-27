@@ -39,6 +39,7 @@ class DrawEngine:
         self._last_progress_bar_settings = None
         self._last_slider_settings = None
         self._last_scrollbar_settings = None
+        self._canvas.bind("<Destroy>", self._on_destroy)
 
     def set_round_to_even_numbers(self, round_width_to_even_numbers: bool = True, round_height_to_even_numbers: bool = True):
         self._round_width_to_even_numbers: bool = round_width_to_even_numbers
@@ -55,6 +56,19 @@ class DrawEngine:
             return user_corner_radius + 0.5 if user_corner_radius % 1 == 0 else user_corner_radius
         else:
             return round(user_corner_radius)
+
+    def _on_destroy(self, event):
+        """Cleanup when canvas is destroyed"""
+
+        if event.widget == self._canvas:
+            self._items.clear()
+            self._last_rounded_rect_settings = None
+            self._last_background_corners = None
+            self._last_dropdown_arrow = None
+            self._last_progress_bar_settings = None
+            self._last_slider_settings = None
+            self._last_scrollbar_settings = None
+            self._canvas = None
 
     def draw_background_corners(self, width: Union[float, int], height: Union[float, int], ):
         current_settings = (width, height)
