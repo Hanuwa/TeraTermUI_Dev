@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 11/27/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 11/28/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -2049,12 +2049,12 @@ class TeraTermUI(customtkinter.CTk):
         curr_sem = translation["current"].upper()
         if re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE) or semester == curr_sem:
             if self.a_counter + 1 < len(self.m_semester_entry):
-                if self.a_counter == 0 and self.m_register_menu[0].get() == translation["register"] \
-                        and self.first_time_adding:
-                    register_menu_values = [menu.get() for menu in self.m_register_menu]
-                    if all(value == translation["choose"] for value in register_menu_values[1:]):
+                if self.a_counter == 0 and self.m_register_menu[0].get() \
+                    in [translation["register"], translation["drop"]] and self.first_time_adding:
+                    if all(menu.get() == translation["choose"] for menu in self.m_register_menu[1:]):
+                        action = self.m_register_menu[0].get()
                         for menu in self.m_register_menu:
-                            menu.set(translation["register"])
+                            menu.set(action)
                 self.m_num_class[self.a_counter + 1].grid(row=self.a_counter + 2, column=0, padx=(0, 8), pady=(20, 0))
                 self.m_classes_entry[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(0, 500),
                                                               pady=(20, 0))
