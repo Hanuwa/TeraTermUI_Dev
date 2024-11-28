@@ -187,8 +187,6 @@ class CTkToolTip(Toplevel):
             if hasattr(self.widget, "_on_leave"):
                 self.widget._on_leave()
 
-        if self._is_mouse_near_widget() and self.state() != "withdrawn":
-            self.after(75, self.on_leave)
 
     def on_focus_out(self, event) -> None:
         """
@@ -198,6 +196,22 @@ class CTkToolTip(Toplevel):
             return
         self.status = "outside"
         self.withdraw()
+
+    def monitor_tooltip(self):
+        """
+        Continuously monitors the tooltip's state and mouse position to ensure proper behavior.
+        """
+        main_win_status = self.widget.winfo_toplevel().attributes("-disabled") == 1
+        if self.status == "outside" or self.disable:
+            return
+
+        if not self._is_mouse_inside_widget() or not self.widget.winfo_ismapped() or main_win_status:
+            self.status = "outside"
+            self.withdraw()
+            if hasattr(self.widget, "_on_leave"):
+                self.widget._on_leave()
+
+        self.after(25, self.monitor_tooltip)
 
     def _show(self) -> None:
         """
@@ -210,6 +224,7 @@ class CTkToolTip(Toplevel):
         if self.status == "inside" and time.time() - self.last_moved >= self.delay:
             # Check if the mouse is still within the widget's boundaries
             if self._is_mouse_inside_widget():
+                self.monitor_tooltip()
                 self.status = "visible"
                 self.deiconify()
             else:
@@ -226,24 +241,6 @@ class CTkToolTip(Toplevel):
 
         return widget_coords[0] < x < widget_coords[2] and widget_coords[1] < y < widget_coords[3]
 
-    def _is_mouse_near_widget(self, threshold: int = 10) -> bool:
-        """
-        Checks if the mouse is near the widget's area within a given threshold.
-        """
-        x, y = self.widget.winfo_pointerxy()
-        widget_coords = (
-            self.widget.winfo_rootx(),
-            self.widget.winfo_rooty(),
-            self.widget.winfo_rootx() + self.widget.winfo_width(),
-            self.widget.winfo_rooty() + self.widget.winfo_height()
-        )
-
-        near_left = widget_coords[0] - threshold <= x <= widget_coords[0] + threshold
-        near_right = widget_coords[2] - threshold <= x <= widget_coords[2] + threshold
-        near_top = widget_coords[1] - threshold <= y <= widget_coords[1] + threshold
-        near_bottom = widget_coords[3] - threshold <= y <= widget_coords[3] + threshold
-
-        return near_left or near_right or near_top or near_bottom
 
     def hide(self) -> None:
         """
