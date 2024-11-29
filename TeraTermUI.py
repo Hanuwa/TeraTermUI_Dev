@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 11/28/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 11/29/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 11900 lines of codes, it definitely makes things harder to work with
+# and with over 12000 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -4937,28 +4937,21 @@ class TeraTermUI(customtkinter.CTk):
             self.disclaimer.unbind("<Button-1>")
             self.username.unbind("<Button-1>")
             def destroy():
-                self.title_login.destroy()
                 self.unload_image("uprb")
                 self.title_login = None
                 self.uprb_image = None
                 self.uprb_image_grid.image = None
                 self.uprb_image_grid.configure(command=None)
-                self.uprb_image_grid.destroy()
                 self.uprb_image_grid = None
-                self.disclaimer.destroy()
                 self.disclaimer = None
-                self.username.destroy()
                 self.username = None
                 self.username_entry.lang = None
-                self.username_entry.destroy()
                 self.username_entry = None
                 self.username_tooltip.destroy()
                 self.username_tooltip = None
                 self.auth.configure(command=None)
-                self.auth.destroy()
                 self.auth = None
                 self.back.configure(command=None)
-                self.back.destroy()
                 self.back = None
                 self.back_tooltip.destroy()
                 self.back_tooltip = None
@@ -4966,6 +4959,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.authentication_frame = None
                 self.a_buttons_frame.destroy()
                 self.a_buttons_frame = None
+                gc.collect()
 
             self.after(100, destroy)
 
@@ -5036,36 +5030,27 @@ class TeraTermUI(customtkinter.CTk):
             self.code.unbind("<Button-1>")
             self.show.unbind("<space>")
             def destroy():
-                self.title_student.destroy()
                 self.unload_image("lock")
                 self.title_student = None
                 self.lock = None
                 self.lock_grid.image = None
                 self.lock_grid.configure(command=None)
-                self.lock_grid.destroy()
                 self.lock_grid = None
-                self.student_id.destroy()
                 self.student_id = None
                 for entry in [self.student_id_entry, self.code_entry]:
                     entry.lang = None
-                self.student_id_entry.destroy()
                 self.student_id_entry = None
                 self.student_id_tooltip.destroy()
                 self.student_id_tooltip = None
-                self.code.destroy()
                 self.code = None
-                self.code_entry.destroy()
                 self.code_entry = None
                 self.code_tooltip.destroy()
                 self.code_tooltip = None
                 self.show.configure(command=None)
-                self.show.destroy()
                 self.show = None
                 self.system.configure(command=None)
-                self.system.destroy()
                 self.system = None
                 self.back_student.configure(command=None)
-                self.back_student.destroy()
                 self.back_student = None
                 self.back_student_tooltip.destroy()
                 self.back_student_tooltip = None
@@ -5073,6 +5058,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.student_frame = None
                 self.s_buttons_frame.destroy()
                 self.s_buttons_frame = None
+                gc.collect()
 
             self.after(100, destroy)
 
@@ -5950,6 +5936,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.tooltip is not None and self.tooltip.winfo_exists():
             self.tooltip.destroy()
             self.tooltip = None
+            gc.collect()
 
     def lift_tooltip(self):
         if self.tooltip is not None and self.tooltip.winfo_exists():
@@ -6697,6 +6684,7 @@ class TeraTermUI(customtkinter.CTk):
         for cell in table_to_remove.get_all_cells():
             if cell in self.table_tooltips:
                 self.table_tooltips[cell].destroy()
+                self.table_tooltips[cell] = None
                 del self.table_tooltips[cell]
 
         if table_to_remove in self.original_table_data:
@@ -6715,6 +6703,8 @@ class TeraTermUI(customtkinter.CTk):
 
         self.after(0, display_class_to_remove.destroy)
         self.after(0, table_to_remove.destroy)
+        del table_to_remove
+        del display_class_to_remove
 
         if len(self.class_table_pairs) == 20:
             self.table_count.configure(text_color=("black", "white"))
@@ -8156,8 +8146,11 @@ class TeraTermUI(customtkinter.CTk):
         self.error.bind("<Escape>", lambda event: self.on_error_window_close())
 
     def on_error_window_close(self):
+        self.error.unbind("<Escape>")
         self.unload_image("error")
         self.error.destroy()
+        self.error = None
+        gc.collect()
 
     # success window pop up message
     def show_success_message(self, width, height, success_msg_text):
@@ -8197,13 +8190,16 @@ class TeraTermUI(customtkinter.CTk):
         self.success.bind("<Escape>", lambda event: self.on_success_window_close())
 
     def on_success_window_close(self):
+        self.success.unbind("<Escape>")
         self.unload_image("success")
         self.success.destroy()
+        self.success = None
         if self.help is not None and self.help.winfo_exists() and self.changed_location:
             self.after(250, self.help.lift)
             self.after(250, self.help.focus_set)
             self.after(250, self.files.configure(state="normal"))
             self.changed_location = False
+        gc.collect()
 
     # Pop window that shows the user more context on why they couldn't enroll their classes
     def show_enrollment_error_information(self, text="Error"):
@@ -8368,8 +8364,11 @@ class TeraTermUI(customtkinter.CTk):
         self.information.bind("<Escape>", lambda event: self.on_information_window_close())
 
     def on_information_window_close(self):
+        self.information.unbind("<Escape>")
         self.unload_image("information")
         self.information.destroy()
+        self.information = None
+        gc.collect()
 
     @staticmethod
     def check_and_update_border_color(container):
@@ -9314,8 +9313,22 @@ class TeraTermUI(customtkinter.CTk):
         self.move_slider_right_enabled = True
         self.up_arrow_key_enabled = True
         self.down_arrow_key_enabled = True
+        self.status_frame = None
+        self.status_title = None
+        self.version = None
+        self.feedback_text = None
+        self.feedback_send = None
+        self.check_update_text = None
+        self.check_update_btn = None
+        self.website = None
+        self.website_link = None
+        self.notaso = None
+        self.notaso_link = None
+        self.faq_text = None
+        self.faq = None
         self.status.destroy()
         self.status = None
+        gc.collect()
 
     def status_scroll_up(self):
         if self.up_arrow_key_enabled:
@@ -9954,8 +9967,22 @@ class TeraTermUI(customtkinter.CTk):
         self.move_slider_right_enabled = True
         self.up_arrow_key_enabled = True
         self.down_arrow_key_enabled = True
+        self.help_frame = None
+        self.help_title = None
+        self.notice = None
+        self.search_box = None
+        self.class_list = None
+        self.curriculum = None
+        self.keybinds_table = None
+        self.terms_table = None
+        self.files = None
+        self.disable_idle = None
+        self.disable_audio_val = None
+        self.fix = None
+        self.skip_auth_switch = None
         self.help.destroy()
         self.help = None
+        gc.collect()
 
     def help_scroll_up(self):
         if self.up_arrow_key_enabled:
@@ -10207,10 +10234,16 @@ class TeraTermUI(customtkinter.CTk):
     def destroy_windows(self):
         if self.error is not None and self.error.winfo_exists():
             self.error.destroy()
+            self.error = None
+            gc.collect()
         if self.success is not None and self.success.winfo_exists():
             self.success.destroy()
+            self.success = None
+            gc.collect()
         if self.information is not None and self.information.winfo_exists():
             self.information.destroy()
+            self.information = None
+            gc.collect()
 
     def get_image(self, image_name):
         if image_name not in self.image_cache:
