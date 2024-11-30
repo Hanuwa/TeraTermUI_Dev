@@ -1,4 +1,5 @@
 import argparse
+import concurrent.futures
 import hashlib
 import json
 import logging
@@ -631,106 +632,111 @@ def download_update(gui, mode, checksum_info):
     file_name = os.path.basename(download_url)
     file_path = os.path.join(temp_folder, file_name)
 
-    try:
-        headers = {"User-Agent": "TeraTermUI-Updater"}
-        request = urllib.request.Request(download_url, headers=headers)
+    retries = MAX_RETRIES
+    for attempt in range(1, retries + 1):
+        try:
+            headers = {"User-Agent": "TeraTermUI-Updater"}
+            request = urllib.request.Request(download_url, headers=headers)
 
-        with urllib.request.urlopen(request, timeout=30) as response:
-            total_length = response.getheader("content-length")
-            if total_length is None:
-                gui.update_progress(0, "Unable to determine file size")
-                logging.error("Content-Length header missing")
-                return None
+            with urllib.request.urlopen(request, timeout=30) as response:
+                total_length = response.getheader("content-length")
+                if total_length is None:
+                    gui.update_progress(0, "Unable to determine file size")
+                    logging.error("Content-Length header missing")
+                    return None
 
-            total_length = int(total_length)
-            required_space = total_length * 2
+                total_length = int(total_length)
+                required_space = total_length * 2
 
-            if not has_enough_disk_space(required_space, temp_folder):
-                gui.update_progress(0, "Insufficient disk space for download")
-                logging.error(f"Insufficient disk space. Required: {required_space / 1024 / 1024:.2f}MB")
-                return None
+                if not has_enough_disk_space(required_space, temp_folder):
+                    gui.update_progress(0, "Insufficient disk space for download")
+                    logging.error(f"Insufficient disk space. Required: {required_space / 1024 / 1024:.2f}MB")
+                    return None
 
-            with open(file_path, "wb") as file:
-                downloaded = 0
-                last_update_time = time.time()
-                downloaded_since_last_update = 0
-                last_progress_update = 0
+                with open(file_path, "wb") as file:
+                    downloaded = 0
+                    last_update_time = time.time()
+                    downloaded_since_last_update = 0
+                    last_progress_update = 0
 
-                while not gui.cancel_requested:
-                    if gui.pause_requested:
-                        time.sleep(0.1)
-                        last_update_time = time.time()
-                        continue
+                    while not gui.cancel_requested:
+                        if gui.pause_requested:
+                            time.sleep(0.1)
+                            last_update_time = time.time()
+                            continue
 
-                    chunk = response.read(CHUNK_SIZE)
-                    if not chunk:
-                        break
+                        chunk = response.read(CHUNK_SIZE)
+                        if not chunk:
+                            break
 
-                    file.write(chunk)
-                    downloaded += len(chunk)
-                    downloaded_since_last_update += len(chunk)
+                        file.write(chunk)
+                        downloaded += len(chunk)
+                        downloaded_since_last_update += len(chunk)
 
-                    current_time = time.time()
-                    time_delta = current_time - last_update_time
+                        current_time = time.time()
+                        time_delta = current_time - last_update_time
 
-                    if time_delta >= 0.1:
-                        current_percentage = (downloaded / total_length) * 100
+                        if time_delta >= 0.1:
+                            current_percentage = (downloaded / total_length) * 100
 
-                        if abs(current_percentage - last_progress_update) >= 1:
-                            speed = downloaded_since_last_update / time_delta
-                            speed_text = f"{speed / 1024 / 1024:.1f} MB/s"
-                            remaining_bytes = total_length - downloaded
+                            if abs(current_percentage - last_progress_update) >= 1:
+                                speed = downloaded_since_last_update / time_delta
+                                speed_text = f"{speed / 1024 / 1024:.1f} MB/s"
+                                remaining_bytes = total_length - downloaded
 
-                            if speed > 0:
-                                remaining_seconds = remaining_bytes / speed
-                                if remaining_seconds < 60:
-                                    time_text = f"{remaining_seconds:.0f}s remaining"
+                                if speed > 0:
+                                    remaining_seconds = remaining_bytes / speed
+                                    if remaining_seconds < 60:
+                                        time_text = f"{remaining_seconds:.0f}s remaining"
+                                    else:
+                                        time_text = f"{remaining_seconds / 60:.1f}m remaining"
                                 else:
-                                    time_text = f"{remaining_seconds / 60:.1f}m remaining"
-                            else:
-                                time_text = "calculating..."
+                                    time_text = "calculating..."
 
-                            progress_text = (f"Downloading Update: {int(current_percentage)}% "
-                                             f"({speed_text}, {time_text})")
-                            gui.update_progress(current_percentage * 0.5, progress_text)
+                                progress_text = (f"Downloading Update: {int(current_percentage)}% "
+                                                 f"({speed_text}, {time_text})")
+                                gui.update_progress(current_percentage * 0.5, progress_text)
 
-                            last_progress_update = current_percentage
-                            last_update_time = current_time
-                            downloaded_since_last_update = 0
+                                last_progress_update = current_percentage
+                                last_update_time = current_time
+                                downloaded_since_last_update = 0
 
-                            if int(current_percentage) % 10 == 0:
-                                logging.info(f"Download progress: {int(current_percentage)}% ({speed_text})")
+                                if int(current_percentage) % 10 == 0:
+                                    logging.info(f"Download progress: {int(current_percentage)}% ({speed_text})")
 
-        if gui.cancel_requested:
-            if os.path.exists(file_path):
-                os.remove(file_path)
-            logging.info("Download cancelled by user")
-            return None
+                if gui.cancel_requested:
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                    logging.info("Download cancelled by user")
+                    return None
 
-        if downloaded != total_length:
-            raise ValueError(f"Download incomplete. Expected {total_length} bytes, got {downloaded} bytes")
+                if downloaded != total_length:
+                    raise ValueError(f"Download incomplete. Expected {total_length} bytes, got {downloaded} bytes")
 
-        logging.info(f"Download completed: {file_path}")
+                logging.info(f"Download completed: {file_path}")
 
-        gui.update_progress(50, "Verifying download...")
-        if not verify_checksum(file_path, expected_checksum):
-            raise ValueError("Checksum verification failed")
+                gui.update_progress(50, "Verifying download...")
+                if not verify_checksum(file_path, expected_checksum):
+                    raise ValueError("Checksum verification failed")
 
-        gui.update_progress(50, "Download completed and verified!")
-        return file_path
+                gui.update_progress(50, "Download completed and verified!")
+                return file_path
 
-    except urllib.error.HTTPError as e:
-        error_msg = f"HTTP error occurred: {e.code} - {e.reason}"
-        logging.error(error_msg)
-        gui.update_progress(0, error_msg)
-    except urllib.error.URLError as e:
-        error_msg = f"Network error: {e.reason}"
-        logging.error(error_msg)
-        gui.update_progress(0, error_msg)
-    except Exception as e:
-        error_msg = f"Download failed: {str(e)}"
-        logging.error(error_msg)
-        gui.update_progress(0, error_msg)
+        except urllib.error.HTTPError as e:
+            logging.error(f"HTTP error on attempt {attempt}: {e.code} - {e.reason}")
+            gui.update_progress(0, f"HTTP error: {e.reason}")
+        except urllib.error.URLError as e:
+            logging.error(f"Network error on attempt {attempt}: {e.reason}")
+            gui.update_progress(0, f"Network error: {e.reason}")
+        except Exception as e:
+            logging.error(f"Download attempt {attempt} failed: {str(e)}")
+            gui.update_progress(0, f"Error: {str(e)}")
+
+        if attempt < retries:
+            logging.info(f"Retrying download (attempt {attempt + 1} of {retries})")
+            time.sleep(RETRY_DELAY * attempt)
+        else:
+            logging.error("All retry attempts failed")
 
     if os.path.exists(file_path):
         try:
@@ -845,62 +851,60 @@ def install_extract_update(gui, mode, update_db, version, downloaded_file, app_d
 
             try:
                 removed_files = 0
-                for root, _, files in os.walk(app_directory):
-                    for file in files:
-                        if gui.cancel_requested:
-                            logging.info("Update cancelled during file removal")
-                            return False
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    futures = []
+                    for root, _, files in os.walk(app_directory):
+                        for file in files:
+                            if gui.cancel_requested:
+                                logging.info("Update cancelled during file removal")
+                                return False
 
-                        while gui.pause_requested and not gui.cancel_requested:
-                            time.sleep(0.1)
-                            continue
+                            if file == "database.db" and not update_db:
+                                logging.info(f"Skipping database file: {file}")
+                                continue
 
-                        if file == "database.db" and not update_db:
-                            logging.info(f"Skipping database file: {file}")
-                            continue
+                            file_path = os.path.join(root, file)
+                            futures.append(executor.submit(os.remove, file_path))
 
-                        file_path = os.path.join(root, file)
+                    for future in concurrent.futures.as_completed(futures):
                         try:
-                            os.remove(file_path)
+                            future.result()
                             removed_files += 1
                         except Exception as e:
-                            logging.error(f"Failed to remove file {file_path}: {e}")
+                            logging.error(f"Failed to remove file: {e}")
                             return False
 
                 logging.info(f"Total files removed: {removed_files}")
 
                 total_files = sum(len(files) for _, _, files in os.walk(gui.temp_extract_folder))
                 processed_files = 0
-                updated_files = 0
 
-                for root, _, files in os.walk(gui.temp_extract_folder):
-                    for file in files:
-                        if gui.cancel_requested:
-                            logging.info("Update cancelled during file copying")
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    futures = []
+                    for root, _, files in os.walk(gui.temp_extract_folder):
+                        for file in files:
+                            if gui.cancel_requested:
+                                logging.info("Update cancelled during file copying")
+                                return False
+
+                            src_file = os.path.join(root, file)
+                            rel_path = os.path.relpath(src_file, gui.temp_extract_folder)
+                            dest_file = os.path.join(app_directory, rel_path)
+
+                            futures.append(executor.submit(shutil.copy2, src_file, dest_file))
+
+                    for future in concurrent.futures.as_completed(futures):
+                        try:
+                            future.result()
+                            processed_files += 1
+                            progress = (processed_files / total_files) * 100
+                            current_progress = 75 + (progress * 0.2)
+                            gui.update_progress(current_progress, f"Updating files: {int(progress)}%")
+                        except Exception as e:
+                            logging.error(f"Failed to copy file: {e}")
                             return False
 
-                        while gui.pause_requested and not gui.cancel_requested:
-                            time.sleep(0.1)
-                            continue
-
-                        if file == "database.db" and not update_db:
-                            logging.info(f"Skipping database file update: {file}")
-                            continue
-
-                        src_file = os.path.join(root, file)
-                        rel_path = os.path.relpath(src_file, gui.temp_extract_folder)
-                        dest_file = os.path.join(app_directory, rel_path)
-
-                        os.makedirs(os.path.dirname(dest_file), exist_ok=True)
-                        shutil.copy2(src_file, dest_file)
-                        updated_files += 1
-
-                        processed_files += 1
-                        progress = (processed_files / total_files) * 100
-                        current_progress = 75 + (progress * 0.2)
-                        gui.update_progress(current_progress, f"Updating files: {int(progress)}%")
-
-                logging.info(f"Total files updated: {updated_files}")
+                logging.info(f"Total files updated: {processed_files}")
 
             except Exception as update_error:
                 logging.error(f"Error during file replacement: {update_error}")
@@ -1243,17 +1247,6 @@ if __name__ == "__main__":
         logging.info(f"Updater started with arguments: {args}")
 
         root = tk.Tk()
-
-        try:
-            icon_path = os.path.join(app_directory, "images", "updater.ico")
-            if os.path.exists(icon_path):
-                root.iconbitmap(icon_path)
-                logging.info("Successfully set window icon")
-            else:
-                logging.warning(f"Icon file not found at: {icon_path}")
-        except Exception as icon_error:
-            logging.error(f"Failed to set window icon: {icon_error}")
-
         width, height = 600, 300
         screen_width = root.winfo_screenwidth()
         screen_height = root.winfo_screenheight()
@@ -1264,6 +1257,16 @@ if __name__ == "__main__":
         root.resizable(True, True)
         root.title("Tera Term UI Updater")
         gui = UpdateGUI(root, app_directory)
+
+        try:
+            icon_path = os.path.join(app_directory, "images", "updater.ico")
+            if os.path.exists(icon_path):
+                root.iconbitmap(icon_path)
+                logging.info("Successfully set window icon")
+            else:
+                logging.warning(f"Icon file not found at: {icon_path}")
+        except Exception as icon_error:
+            logging.error(f"Failed to set window icon: {icon_error}")
 
         root.after(500, start_update, gui, args)
         root.mainloop()
