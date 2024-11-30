@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 11/29/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 11/30/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -5753,25 +5753,34 @@ class TeraTermUI(customtkinter.CTk):
         from reportlab.lib.styles import getSampleStyleSheet
         from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
 
+        title = None
         semester_header = None
         class_header = None
         lang = self.language_menu.get()
         # Prepare the PDF document
-        pdf = SimpleDocTemplate(
-            filepath,
-            pagesize=letter
-        )
+        pdf = SimpleDocTemplate(filepath,pagesize=letter)
         # Add metadata to the PDF
         if len(classes_list) == 1:
-            title = f"Class Data for {classes_list[0]}"
+            if lang == "English":
+                title = f"Class Data for {classes_list[0]}"
+            elif lang == "Español":
+                title = f"Datos de la Clase para {classes_list[0]}"
         else:
             if len(set(semesters_list)) == 1:
-                title = f"Class Data for {semesters_list[0]} Semester"
+                if lang == "English":
+                    title = f"Data for Classes for {semesters_list[0]} Semester"
+                elif lang == "Español":
+                    title = f"Datos de las Clases para el Semestre {semesters_list[0]}"
             else:
-                title = "Class Data for Multiple Semesters"
+                if lang == "English":
+                    title = "Data for Classes Across Multiple Semesters"
+                elif lang == "Español":
+                    title = "Datos de las Clases para Varios Semestres"
         pdf.title = title
         pdf.author = "Tera Term UI"
-        pdf.subject = f"Class information for semesters: {', '.join(set(semesters_list))}"
+        pdf.subject = (f"Classes information for semesters: {', '.join(set(semesters_list))}"
+                       if lang == "English" else f"Información de las clases para los semestres: "
+                                                 f"{', '.join(set(semesters_list))}")
         pdf.creator = "Tera Term UI PDF Generator"
         pdf.producer = "ReportLab PDF Library"
         pdf.keywords = ["class data", "academic", "schedule"] + classes_list + semesters_list
@@ -7123,13 +7132,17 @@ class TeraTermUI(customtkinter.CTk):
         from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 
         translation = self.load_language()
-
+        lang = self.language_menu.get()
         # Prepare the PDF document
         pdf = SimpleDocTemplate(filepath, pagesize=letter)
         # Add metadata to the PDF
-        pdf.title = f"Enrolled Classes - {semester}"
-        pdf.author = "Tera Term UI Application"
-        pdf.subject = f"Enrolled classes information for {semester}"
+        if lang == "English":
+            pdf.title = f"Enrolled Classes - {semester}"
+            pdf.subject = f"Enrolled classes information for {semester}"
+        elif lang == "Español":
+            pdf.title = f"Clases Matriculadas - {semester}"
+            pdf.subject = f"Información de clases matriculadas para el semestre {semester}"
+        pdf.author = "Tera Term UI"
         pdf.creator = "Tera Term UI PDF Generator"
         pdf.producer = "ReportLab PDF Library"
         pdf.keywords = ["enrolled classes", "academic", "schedule", semester, str(creds) + " credits"]
