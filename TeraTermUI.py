@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 11/30/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 12/01/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -10825,7 +10825,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.mark_set(tk.INSERT, self.saved_cursor_position)
             self.saved_cursor_position = None
         try:
-            clipboard_text = self.clipboard_get()
+            clipboard_text = pyperclip.paste()
             max_paste_length = 10000  # Set a limit for the max paste length
             if len(clipboard_text) > max_paste_length:
                 clipboard_text = clipboard_text[:max_paste_length]  # Truncate to max length
@@ -11178,7 +11178,7 @@ class CustomEntry(customtkinter.CTkEntry):
     def paste(self, event=None):
         self.focus_set()
         try:
-            clipboard_text = self.clipboard_get()
+            clipboard_text = pyperclip.paste()
             max_paste_length = 250  # Set a limit for the max paste length
             if len(clipboard_text) > max_paste_length:
                 clipboard_text = clipboard_text[:max_paste_length]  # Truncate to max length
@@ -11520,7 +11520,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
     def paste(self, event=None):
         self.focus_set()
         try:
-            clipboard_text = self.clipboard_get()
+            clipboard_text = pyperclip.paste()
             max_paste_length = 250  # Set a limit for the max paste length
             if len(clipboard_text) > max_paste_length:
                 clipboard_text = clipboard_text[:max_paste_length]  # Truncate to max length
@@ -11771,7 +11771,7 @@ class ClipboardHandler:
                 return True
             except Exception as err:
                 if attempt == max_retries - 1:
-                    logging.warning(f"Failed to open clipboard after {max_retries} attempts: {e}")
+                    logging.warning(f"Failed to open clipboard after {max_retries} attempts: {err}")
                     return False
                 time.sleep(retry_delay)
         return False
@@ -11780,7 +11780,7 @@ class ClipboardHandler:
         import struct
 
         with self.clipboard_lock:
-            if not self.open_clipboard_with_retries():
+            if not ClipboardHandler.open_clipboard_with_retries():
                 return
 
             try:
@@ -11796,7 +11796,7 @@ class ClipboardHandler:
 
             for format_id in formats:
                 try:
-                    if not self.open_clipboard_with_retries():
+                    if not ClipboardHandler.open_clipboard_with_retries():
                         continue
 
                     try:
@@ -11868,7 +11868,7 @@ class ClipboardHandler:
             return
 
         with self.clipboard_lock:
-            if not self.open_clipboard_with_retries():
+            if not ClipboardHandler.open_clipboard_with_retries():
                 return
 
             try:
