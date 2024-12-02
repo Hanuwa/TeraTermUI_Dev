@@ -1,4 +1,6 @@
 import tkinter as tk
+import logging
+import pyperclip
 
 from typing import Union, Tuple, Optional
 
@@ -223,7 +225,7 @@ class CustomEntry(CTkEntry):
         self.max_length = max_length
         self.lang = lang
         self.is_listbox_entry = False
-        self.select = False
+        self.selected_text = False
         self.border_color = None
 
         self.teraterm_ui = teraterm_ui_instance
@@ -254,6 +256,7 @@ class CustomEntry(CTkEntry):
         self.context_menu.add_command(label="Copy", command=self.copy)
         self.context_menu.add_command(label="Paste", command=self.paste)
         self.context_menu.add_command(label="Select All", command=self.select_all)
+
         self.bind("<Button-2>", self.custom_middle_mouse)
         self.bind("<Button-3>", self.show_menu)
 
@@ -267,7 +270,7 @@ class CustomEntry(CTkEntry):
                 self.border_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
             self.configure(border_color=self.border_color)
 
-        if self.select_present() and self.select:
+        if self.select_present() and self.selected_text:
             self.select_clear()
 
             if self.lang == "English":
@@ -281,10 +284,10 @@ class CustomEntry(CTkEntry):
         self.teraterm_ui.down_arrow_key_enabled = False
 
     def enable_slider_keys(self, event=None):
-        if self.select_present() and not self.select:
+        if self.select_present() and not self.selected_text:
             self.select_clear()
 
-        self.select = False
+        self.selected_text = False
         self.teraterm_ui.move_slider_left_enabled = True
         self.teraterm_ui.move_slider_right_enabled = True
         self.teraterm_ui.up_arrow_key_enabled = True
@@ -400,7 +403,7 @@ class CustomEntry(CTkEntry):
         root = self.winfo_toplevel()
         self.find_active_tooltips(root)
         self.icursor(tk.END)
-        self.select = True
+        self.selected_text = True
 
         if self.lang == "English":
             self.context_menu.entryconfigure(0, label="Cut")
@@ -435,9 +438,6 @@ class CustomEntry(CTkEntry):
         if not self.select_present():
             self.select_range(0, "end")
         try:
-            selected_text = self.selection_get()
-            self.clipboard_clear()
-            self.clipboard_append(selected_text)
             self.delete(tk.SEL_FIRST, tk.SEL_LAST)
 
             new_text = self.get()
@@ -448,7 +448,7 @@ class CustomEntry(CTkEntry):
             if self.is_listbox_entry:
                 self.update_listbox()
         except tk.TclError:
-            print("No text selected to cut")
+            logging.info("No text selected to cut")
 
     def copy(self):
         self.focus_set()
@@ -460,7 +460,7 @@ class CustomEntry(CTkEntry):
             self.clipboard_append(selected_text)
             self.update_idletasks()
         except tk.TclError:
-            print("No text selected to copy")
+            logging.info("No text selected to copy")
 
     def custom_paste(self, event=None):
         self.paste()
@@ -469,11 +469,11 @@ class CustomEntry(CTkEntry):
     def paste(self, event=None):
         self.focus_set()
         try:
-            clipboard_text = self.clipboard_get()
+            clipboard_text = pyperclip.paste()
             max_paste_length = 250  # Set a limit for the max paste length
             if len(clipboard_text) > max_paste_length:
                 clipboard_text = clipboard_text[:max_paste_length]  # Truncate to max length
-                print("Pasted content truncated to maximum length")
+                logging.info("Pasted content truncated to maximum length")
 
             current_text = self.get()
             # Save the current state to undo stack
@@ -540,7 +540,7 @@ class CustomEntry(CTkEntry):
                 if allowed_length > 0:
                     super().insert(index, string[:allowed_length])
                     self.update_undo_stack()
-                print("Input limited to the maximum allowed length")
+                logging.info("Input limited to the maximum allowed length")
         else:
             super().insert(index, string)
             self.update_undo_stack()
@@ -581,9 +581,10 @@ class CustomEntry(CTkEntry):
         self.max_length = None
         self.lang = None
         self.is_listbox_entry = None
-        self.select = None
+        self.selected_text = None
         self.border_color = None
         self.teraterm_ui = None
+        self.context_menu.destroy()
         self.context_menu = None
         self._undo_stack.clear()
         self._redo_stack.clear()
