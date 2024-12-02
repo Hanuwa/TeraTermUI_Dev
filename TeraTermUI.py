@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 12000 lines of codes, it definitely makes things harder to work with
+# and with over 12100 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -5090,7 +5090,7 @@ class TeraTermUI(customtkinter.CTk):
             self.e_section_tooltip = CTkToolTip(self.e_section_entry, message="", bg_color="#1E90FF", visibility=False)
             self.e_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab),
                                                      text=translation["semester"])
-            self.e_semester_entry = CustomComboBox(self.tabview.tab(self.enroll_tab), self,
+            self.e_semester_entry = CustomComboBox(self.tabview.tab(self.enroll_tab), self, lang,
                                                    values=self.semester_values + [translation["current"]],
                                                    command=lambda value: self.focus_set())
             self.e_semester_entry.set(self.DEFAULT_SEMESTER)
@@ -5123,7 +5123,7 @@ class TeraTermUI(customtkinter.CTk):
             self.s_classes_entry = CustomEntry(self.search_scrollbar, self, lang, placeholder_text="MATE3032",
                                                width=80)
             self.s_semester = customtkinter.CTkLabel(self.search_scrollbar, text=translation["semester"])
-            self.s_semester_entry = CustomComboBox(self.search_scrollbar, self,
+            self.s_semester_entry = CustomComboBox(self.search_scrollbar, self, lang,
                                                    values=self.semester_values + [translation["current"]],
                                                    command=lambda value: self.focus_set(), width=80)
             self.s_semester_entry.set(self.DEFAULT_SEMESTER)
@@ -5154,7 +5154,7 @@ class TeraTermUI(customtkinter.CTk):
             self.explanation_menu = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab),
                                                            text=translation["explanation_menu"])
             self.menu = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab), text=translation["menu"])
-            self.menu_entry = CustomComboBox(self.tabview.tab(self.other_tab), self,
+            self.menu_entry = CustomComboBox(self.tabview.tab(self.other_tab), self, lang,
                                              values=[translation["SRM"], translation["004"], translation["1GP"],
                                                      translation["118"], translation["1VE"], translation["3DD"],
                                                      translation["409"], translation["683"], translation["1PL"],
@@ -5163,7 +5163,7 @@ class TeraTermUI(customtkinter.CTk):
             self.menu_entry.set(translation["SRM"])
             self.menu_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab),
                                                         text=translation["semester"])
-            self.menu_semester_entry = CustomComboBox(self.tabview.tab(self.other_tab), self,
+            self.menu_semester_entry = CustomComboBox(self.tabview.tab(self.other_tab), self, lang,
                                                       values=self.semester_values + [translation["current"]],
                                                       command=lambda value: self.focus_set(), width=141)
             self.menu_semester_entry.set(self.DEFAULT_SEMESTER)
@@ -5265,7 +5265,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.m_tooltips.append(CTkToolTip(self.m_section_entry[i], message="", bg_color="#1E90FF",
                                                   visibility=False))
                 self.m_section_entry[i].bind("<FocusOut>", self.section_bind_wrapper)
-                self.m_semester_entry.append(CustomComboBox(self.multiple_frame, self,
+                self.m_semester_entry.append(CustomComboBox(self.multiple_frame, self, lang,
                                                             values=self.semester_values + [translation["current"]],
                                                             command=self.change_semester, height=26))
                 self.m_semester_entry[i].set(self.DEFAULT_SEMESTER)
@@ -10534,7 +10534,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.read_only = read_only
         self.disabled_autoscroll = False
         self.after_id = None
-        self.select = False
+        self.selected_text = False
         self.saved_cursor_position = None
 
         self.teraterm_ui = teraterm_ui_instance
@@ -10593,7 +10593,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.bind("<Button-3>", self.show_menu)
 
     def disable_slider_keys(self, event=None):
-        if self.tag_ranges(tk.SEL) and self.select:
+        if self.tag_ranges(tk.SEL) and self.selected_text:
             self.tag_remove(tk.SEL, "1.0", tk.END)
             if self.lang == "English" and not self.read_only:
                 self.context_menu.entryconfigure(3, label="Select All")
@@ -10612,10 +10612,10 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.teraterm_ui.down_arrow_key_enabled = False
 
     def enable_slider_keys(self, event=None):
-        if self.tag_ranges(tk.SEL) and not self.select:
+        if self.tag_ranges(tk.SEL) and not self.selected_text:
             self.tag_remove(tk.SEL, "1.0", tk.END)
 
-        self.select = False
+        self.selected_text = False
         self.teraterm_ui.move_slider_left_enabled = True
         self.teraterm_ui.move_slider_right_enabled = True
         self.teraterm_ui.up_arrow_key_enabled = True
@@ -10744,7 +10744,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.saved_cursor_position = self.index(tk.INSERT)
         self.stop_autoscroll(event=None)
         self.mark_set(tk.INSERT, "end")
-        self.select = True
+        self.selected_text = True
 
         if self.lang == "English" and not self.read_only:
             self.context_menu.entryconfigure(0, label="Cut")
@@ -10911,8 +10911,9 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.read_only = None
         self.disabled_autoscroll = None
         self.after_id = None
-        self.select = None
+        self.selected_text = None
         self.teraterm_ui = None
+        self.context_menu.destroy()
         self.context_menu = None
         self.saved_cursor_position = None
         self._undo_stack.clear()
@@ -10935,7 +10936,7 @@ class CustomEntry(customtkinter.CTkEntry):
         self.max_length = max_length
         self.lang = lang
         self.is_listbox_entry = False
-        self.select = False
+        self.selected_text = False
         self.border_color = None
 
         self.teraterm_ui = teraterm_ui_instance
@@ -10966,6 +10967,7 @@ class CustomEntry(customtkinter.CTkEntry):
         self.context_menu.add_command(label="Copy", command=self.copy)
         self.context_menu.add_command(label="Paste", command=self.paste)
         self.context_menu.add_command(label="Select All", command=self.select_all)
+
         self.bind("<Button-2>", self.custom_middle_mouse)
         self.bind("<Button-3>", self.show_menu)
 
@@ -10979,7 +10981,7 @@ class CustomEntry(customtkinter.CTkEntry):
                 self.border_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
             self.configure(border_color=self.border_color)
 
-        if self.select_present() and self.select:
+        if self.select_present() and self.selected_text:
             self.select_clear()
 
             if self.lang == "English":
@@ -10993,10 +10995,10 @@ class CustomEntry(customtkinter.CTkEntry):
         self.teraterm_ui.down_arrow_key_enabled = False
 
     def enable_slider_keys(self, event=None):
-        if self.select_present() and not self.select:
+        if self.select_present() and not self.selected_text:
             self.select_clear()
 
-        self.select = False
+        self.selected_text = False
         self.teraterm_ui.move_slider_left_enabled = True
         self.teraterm_ui.move_slider_right_enabled = True
         self.teraterm_ui.up_arrow_key_enabled = True
@@ -11112,7 +11114,7 @@ class CustomEntry(customtkinter.CTkEntry):
         root = self.winfo_toplevel()
         self.find_active_tooltips(root)
         self.icursor(tk.END)
-        self.select = True
+        self.selected_text = True
 
         if self.lang == "English":
             self.context_menu.entryconfigure(0, label="Cut")
@@ -11290,9 +11292,10 @@ class CustomEntry(customtkinter.CTkEntry):
         self.max_length = None
         self.lang = None
         self.is_listbox_entry = None
-        self.select = None
+        self.selected_text = None
         self.border_color = None
         self.teraterm_ui = None
+        self.context_menu.destroy()
         self.context_menu = None
         self._undo_stack.clear()
         self._redo_stack.clear()
@@ -11302,16 +11305,18 @@ class CustomEntry(customtkinter.CTkEntry):
 
 
 class CustomComboBox(customtkinter.CTkComboBox):
-    __slots__ = ("master", "teraterm_ui_instance", "max_length")
+    __slots__ = ("master", "teraterm_ui_instance", "lang", "max_length")
 
-    def __init__(self, master, teraterm_ui_instance, max_length=250, *args, **kwargs):
+    def __init__(self, master, teraterm_ui_instance, lang=None, max_length=250, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
 
         initial_state = self.get()
         self._undo_stack = deque([initial_state], maxlen=100)
         self._redo_stack = deque(maxlen=100)
         self.max_length = max_length
+        self.lang = lang
         self.border_color = None
+        self.selected_text = False
 
         self.teraterm_ui = teraterm_ui_instance
         self.bind("<FocusIn>", self.disable_slider_keys)
@@ -11331,10 +11336,19 @@ class CustomComboBox(customtkinter.CTkComboBox):
         self.bind("<Control-a>", self.select_all)
         self.bind("<Control-A>", self.select_all)
 
-        self.bind("<Button-2>", self.custom_middle_mouse)
-
         # Update the undo stack every time the Entry content changes
         self.bind("<KeyRelease>", self.update_undo_stack)
+
+        # Context Menu
+        self.context_menu = tk.Menu(self, tearoff=0, bg="#f0f0f0", fg="#333333", font=("Arial", 10))
+        self.context_menu.add_command(label="Cut", command=self.cut)
+        self.context_menu.add_command(label="Copy", command=self.copy)
+        self.context_menu.add_command(label="Paste", command=self.paste)
+        self.context_menu.add_command(label="Select All", command=self.select_all)
+
+        self.bind("<Button-2>", self.custom_middle_mouse)
+        self.bind("<Button-3>", self.show_menu)
+
 
     def disable_slider_keys(self, event=None):
         if self.cget("border_color") == "#c30101":
@@ -11342,12 +11356,24 @@ class CustomComboBox(customtkinter.CTkComboBox):
                 self.border_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
             self.configure(border_color=self.border_color)
 
+        if self._entry.select_present() and self.selected_text:
+            self._entry.select_clear()
+
+            if self.lang == "English":
+                self.context_menu.entryconfigure(3, label="Select All")
+            elif self.lang == "Español":
+                self.context_menu.entryconfigure(3, label="Seleccionar Todo")
+
         self.teraterm_ui.move_slider_left_enabled = False
         self.teraterm_ui.move_slider_right_enabled = False
         self.teraterm_ui.up_arrow_key_enabled = False
         self.teraterm_ui.down_arrow_key_enabled = False
 
     def enable_slider_keys(self, event=None):
+        if self._entry.select_present() and not self.selected_text:
+            self._entry.select_clear()
+
+        self.selected_text = False
         self.teraterm_ui.move_slider_left_enabled = True
         self.teraterm_ui.move_slider_right_enabled = True
         self.teraterm_ui.up_arrow_key_enabled = True
@@ -11371,13 +11397,6 @@ class CustomComboBox(customtkinter.CTkComboBox):
             super().set(value)
             self.update_undo_stack()
 
-    def update_undo_stack(self, event=None):
-        current_text = self.get()
-        # Check for a change in text and avoid duplicating the last entry
-        if len(self._undo_stack) == 0 or (current_text != self._undo_stack[-1]):
-            self._undo_stack.append(current_text)
-            self._redo_stack.clear()  # Clear the redo stack on a new change
-
     def _dropdown_callback(self, value: str):
         # Save current value to undo stack before changing
         current_text = self.get()
@@ -11390,6 +11409,13 @@ class CustomComboBox(customtkinter.CTkComboBox):
         new_text = self.get()
         if new_text != self._undo_stack[-1]:
             self._undo_stack.append(new_text)
+
+    def update_undo_stack(self, event=None):
+        current_text = self.get()
+        # Check for a change in text and avoid duplicating the last entry
+        if len(self._undo_stack) == 0 or (current_text != self._undo_stack[-1]):
+            self._undo_stack.append(current_text)
+            self._redo_stack.clear()  # Clear the redo stack on a new change
 
     def undo(self, event=None):
         if len(self._undo_stack) > 1:
@@ -11463,6 +11489,46 @@ class CustomComboBox(customtkinter.CTkComboBox):
             self._entry.icursor(char_index)
             self._entry.select_clear()
             return "break"
+
+    def find_active_tooltips(self, widget):
+        if isinstance(widget, tk.Toplevel) and hasattr(widget, "is_ctktooltip"):
+            widget.on_focus_out(event=None)
+        for child in widget.winfo_children():
+            self.find_active_tooltips(child)
+
+    def show_menu(self, event):
+        if self.cget("state") == "disabled":
+            return
+
+        self.focus_set()
+        root = self.winfo_toplevel()
+        self.find_active_tooltips(root)
+        self._entry.icursor(tk.END)
+        self.selected_text = True
+
+        if self.lang == "English":
+            self.context_menu.entryconfigure(0, label="Cut")
+            self.context_menu.entryconfigure(1, label="Copy")
+            self.context_menu.entryconfigure(2, label="Paste")
+            self.context_menu.entryconfigure(3, label="Select All")
+        elif self.lang == "Español":
+            self.context_menu.entryconfigure(0, label="Cortar")
+            self.context_menu.entryconfigure(1, label="Copiar")
+            self.context_menu.entryconfigure(2, label="Pegar")
+            self.context_menu.entryconfigure(3, label="Seleccionar Todo")
+
+        if self._entry.select_present():
+            if self.lang == "English":
+                self.context_menu.entryconfigure(3, label="Unselect All")
+            elif self.lang == "Español":
+                self.context_menu.entryconfigure(3, label="Deseleccionar Todo")
+        else:
+            if self.lang == "English":
+                self.context_menu.entryconfigure(3, label="Select All")
+            elif self.lang == "Español":
+                self.context_menu.entryconfigure(3, label="Seleccionar Todo")
+
+        self.context_menu.post(event.x_root, event.y_root)
 
     def custom_cut(self, event=None):
         self.cut()
@@ -11571,10 +11637,15 @@ class CustomComboBox(customtkinter.CTkComboBox):
         self.unbind("<Control-a>")
         self.unbind("<Control-A>")
         self.unbind("<Button-2>")
+        self.unbind("<Button-3>")
         self.unbind("<KeyRelease>")
         self.border_color = None
         self.max_length = None
+        self.lang = None
         self.teraterm_ui = None
+        self.selected_text = None
+        self.context_menu.destroy()
+        self.context_menu = None
         self._undo_stack.clear()
         self._redo_stack.clear()
         self._undo_stack = None
@@ -11583,7 +11654,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
 
 
 class SmoothFadeToplevel(customtkinter.CTkToplevel):
-    __slots__ = "fade_duration", "final_alpha", "alpha", "fade_direction"
+    __slots__ = ("fade_duration", "final_alpha", "alpha", "fade_direction")
 
     def __init__(self, fade_duration=30, final_alpha=1.0, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -11621,7 +11692,7 @@ class SmoothFadeToplevel(customtkinter.CTkToplevel):
         super().destroy()
 
 class SmoothFadeInputDialog(customtkinter.CTkInputDialog):
-    __slots__ = "fade_duration", "final_alpha", "alpha", "fade_direction"
+    __slots__ = ("fade_duration", "final_alpha", "alpha", "fade_direction")
 
     def __init__(self, fade_duration=25, final_alpha=1.0, *args, **kwargs):
         super().__init__(*args, **kwargs)
