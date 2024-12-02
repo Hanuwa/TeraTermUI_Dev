@@ -1195,7 +1195,7 @@ class TeraTermUI(customtkinter.CTk):
                                 aes_decrypt_and_verify_mac(code_enc, aes_key, mac_key))
                             self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                             text_output = self.wait_for_response(["SIGN-IN", "ON FILE", "PIN NUMBER",
-                                                                  "ERRORS FOUND"], init_timeout=False, timeout=5)
+                                                                  "ERRORS FOUND"], init_timeout=False, timeout=7)
                             if "SIGN-IN" in text_output:
                                 self.reset_activity_timer()
                                 self.start_check_idle_thread()
