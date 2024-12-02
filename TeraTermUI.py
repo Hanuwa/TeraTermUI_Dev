@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 12/01/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 12/02/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 12100 lines of codes, it definitely makes things harder to work with
+# and with over 12000 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -10555,7 +10555,8 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self._x_scrollbar.bind("<B1-Motion>", self.stop_autoscroll)
 
         initial_state = self.get("1.0", "end-1c")
-        self._undo_stack = deque([initial_state], maxlen=500)
+        initial_cursor = self.index(tk.INSERT)
+        self._undo_stack = deque([(initial_state, initial_cursor)], maxlen=500)
         self._redo_stack = deque(maxlen=500)
 
         self.bind("<Control-z>", self.undo)
@@ -10572,7 +10573,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.bind("<Control-a>", self.select_all)
         self.bind("<Control-A>", self.select_all)
 
-        # Update the undo stack every time the Entry content changes
+        # Update the undo stack every time the Textbox content changes
         self.bind("<KeyRelease>", self.update_undo_stack)
 
         if self.read_only:
@@ -10630,7 +10631,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
             if yview_fraction >= 1.0:
                 self.yview_moveto(0)
             else:
-                self.yview_scroll(1, "units")  # Scroll down 1 pixel
+                self.yview_scroll(1, "units")  # Scroll down 1 unit
             self.after_id = self.after(8000, self.update_text)
 
     def stop_autoscroll(self, event=None):
@@ -10658,77 +10659,37 @@ class CustomTextBox(customtkinter.CTkTextbox):
 
     def update_undo_stack(self, event=None):
         current_text = self.get("1.0", "end-1c")
-        if current_text != self._undo_stack[-1]:
-            self._undo_stack.append(current_text)
+        cursor_position = self.index(tk.INSERT)
+        if current_text != self._undo_stack[-1][0]:
+            self._undo_stack.append((current_text, cursor_position))
             self._redo_stack.clear()
 
     def undo(self, event=None):
         if len(self._undo_stack) > 1:
-            # Get current and previous states
-            current_text = self._undo_stack[-1]
-            last_text = self._undo_stack.pop()
-            self._redo_stack.append(last_text)
-            previous_state = self._undo_stack[-1]
+            # Remove the current state from the undo stack and add it to the redo stack
+            current_text, current_cursor = self._undo_stack.pop()
+            self._redo_stack.append((current_text, current_cursor))
 
-            # Find position where texts start to differ
-            cur_line = 1
-            cur_char = 0
-            for c1, c2 in zip(current_text, previous_state):
-                if c1 != c2:
-                    break
-                if c1 == "\n":
-                    cur_line += 1
-                    cur_char = 0
-                else:
-                    cur_char += 1
+            # Get the previous state from the undo stack
+            previous_text, previous_cursor = self._undo_stack[-1]
 
+            # Apply the previous text state
             self.delete("1.0", tk.END)
-            self.insert("1.0", previous_state)
-            cursor_pos = f"{cur_line}.{cur_char}"
-            self.mark_set(tk.INSERT, cursor_pos)
-            self.see(cursor_pos)
+            self.insert("1.0", previous_text)
+            self.mark_set(tk.INSERT, previous_cursor)
+            self.see(previous_cursor)
 
     def redo(self, event=None):
         if self._redo_stack:
-            # Get current and redo states
-            current_text = self.get("1.0", "end-1c")
-            state_to_redo = self._redo_stack.pop()
-            self._undo_stack.append(state_to_redo)
+            # Get the next state from the redo stack and add it to the undo stack
+            next_text, next_cursor = self._redo_stack.pop()
+            self._undo_stack.append((next_text, next_cursor))
 
-            # Find position where texts start to differ
-            cur_line = 1
-            cur_char = 0
-            common_prefix_len = 0
-
-            for c1, c2 in zip(current_text, state_to_redo):
-                if c1 != c2:
-                    break
-                if c1 == "\n":
-                    cur_line += 1
-                    cur_char = 0
-                else:
-                    cur_char += 1
-                common_prefix_len += 1
-
+            # Apply the next text state
             self.delete("1.0", tk.END)
-            self.insert("1.0", state_to_redo)
-
-            # Handle cursor position for additions vs deletions
-            if len(state_to_redo) > len(current_text):
-                text_added = state_to_redo[
-                             common_prefix_len:common_prefix_len+ (len(state_to_redo) - len(current_text))]
-                for c in text_added:
-                    if c == '\n':
-                        cur_line += 1
-                        cur_char = 0
-                    else:
-                        cur_char += 1
-                cursor_pos = f"{cur_line}.{cur_char}"
-            else:
-                cursor_pos = f"{cur_line}.{cur_char}"
-
-            self.mark_set(tk.INSERT, cursor_pos)
-            self.see(cursor_pos)
+            self.insert("1.0", next_text)
+            self.mark_set(tk.INSERT, next_cursor)
+            self.see(next_cursor)
 
     def custom_middle_mouse(self, event=None):
         if self.tag_ranges(tk.SEL):
@@ -10760,7 +10721,6 @@ class CustomTextBox(customtkinter.CTkTextbox):
         if self.lang == "English" and self.read_only:
             self.context_menu.entryconfigure(0, label="Copy")
             self.context_menu.entryconfigure(1, label="Select All")
-
         elif self.lang == "Español" and self.read_only:
             self.context_menu.entryconfigure(0, label="Copiar")
             self.context_menu.entryconfigure(1, label="Seleccionar Todo")
@@ -10792,11 +10752,15 @@ class CustomTextBox(customtkinter.CTkTextbox):
             current_line = self.index(tk.INSERT).split(".")[0]
             self.tag_add(tk.SEL, f"{current_line}.0", f"{current_line}.end")
         try:
+            selected_text = self.selection_get()
+            self.clipboard_clear()
+            self.clipboard_append(selected_text)
             self.delete(tk.SEL_FIRST, tk.SEL_LAST)
 
             new_text = self.get("1.0", "end-1c")
+            new_cursor = self.index(tk.INSERT)
             # Update the undo stack after the cut operation
-            self._undo_stack.append(new_text)
+            self._undo_stack.append((new_text, new_cursor))
             self._redo_stack.clear()
             self.see(tk.INSERT)
         except tk.TclError:
@@ -10831,10 +10795,11 @@ class CustomTextBox(customtkinter.CTkTextbox):
                 clipboard_text = clipboard_text[:max_paste_length]  # Truncate to max length
                 logging.info("Pasted content truncated to maximum length")
 
-            # Save the current state to undo stack only if there is a change
+            # Save the current state to undo stack if needed
             current_text = self.get("1.0", "end-1c")
-            if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1]):
-                self._undo_stack.append(current_text)
+            current_cursor = self.index(tk.INSERT)
+            if current_text != self._undo_stack[-1][0]:
+                self._undo_stack.append((current_text, current_cursor))
 
             try:
                 start_index = self.index(tk.SEL_FIRST)
@@ -10844,12 +10809,9 @@ class CustomTextBox(customtkinter.CTkTextbox):
                 pass  # Nothing selected, which is fine
 
             self.insert(tk.INSERT, clipboard_text)
+            new_cursor = self.index(tk.INSERT)
+            self._undo_stack.append((self.get("1.0", "end-1c"), new_cursor))
             self._redo_stack.clear()
-
-            # Update undo stack here, after paste operation
-            new_text = self.get("1.0", "end-1c")
-            if new_text != self._undo_stack[-1]:
-                self._undo_stack.append(new_text)
             self.see(tk.INSERT)
         except tk.TclError:
             pass  # Clipboard empty or other issue
@@ -10930,8 +10892,9 @@ class CustomEntry(customtkinter.CTkEntry):
         super().__init__(master, *args, **kwargs)
 
         initial_state = self.get()
+        initial_cursor = self.index(tk.INSERT)
         self.root = self.winfo_toplevel()
-        self._undo_stack = deque([initial_state], maxlen=100)
+        self._undo_stack = deque([(initial_state, initial_cursor)], maxlen=100)
         self._redo_stack = deque(maxlen=100)
         self.max_length = max_length
         self.lang = lang
@@ -11006,89 +10969,54 @@ class CustomEntry(customtkinter.CTkEntry):
 
     def update_undo_stack(self, event=None):
         current_text = self.get()
-        if current_text != self._undo_stack[-1]:
-            self._undo_stack.append(current_text)
+        cursor_position = self.index(tk.INSERT)
+        if current_text != self._undo_stack[-1][0]:
+            self._undo_stack.append((current_text, cursor_position))
             self._redo_stack.clear()
 
     def undo(self, event=None):
         if len(self._undo_stack) > 1:
-            # Get states and find position of change
-            current_text = self._undo_stack[-1]
-            last_text = self._undo_stack.pop()
-            self._redo_stack.append(last_text)
-            previous_state = self._undo_stack[-1]
+            # Remove the current state from the undo stack and add it to the redo stack
+            current_text, current_cursor = self._undo_stack.pop()
+            self._redo_stack.append((current_text, current_cursor))
 
-            change_position = 0
-            min_len = min(len(current_text), len(previous_state))
-            for i in range(min_len):
-                if current_text[i] != previous_state[i]:
-                    change_position = i
-                    break
-                change_position = i + 1
+            # Get the previous state from the undo stack
+            previous_text, previous_cursor = self._undo_stack[-1]
 
-            if change_position == min_len:
-                change_position = min_len
-
-            # Apply changes and update cursor
+            # Apply the previous text state
             self.delete(0, "end")
-            self.insert(0, previous_state, enforce_length_check=False)
-            self.icursor(change_position)
+            self.insert(0, previous_text, enforce_length_check=False)
+            self.icursor(previous_cursor)
 
+            # Reset border color if needed
             if self.cget("border_color") in ["#c30101", "#228B22"]:
                 default_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
                 self.configure(border_color=default_color)
 
-            # Update view position
-            if len(previous_state) > 0:
-                visible_ratio = change_position / len(previous_state)
-                self.xview_moveto(max(0.0, min(1.0, visible_ratio - 0.1)))
+            # Adjust the view position
+            self.xview_moveto(previous_cursor / len(previous_text) if len(previous_text) > 0 else 0)
 
             if self.is_listbox_entry:
                 self.update_listbox()
 
     def redo(self, event=None):
         if self._redo_stack:
-            # Get states and find position of change
-            current_text = self.get()
-            state_to_redo = self._redo_stack.pop()
-            self._undo_stack.append(state_to_redo)
+            # Get the next state from the redo stack and add it to the undo stack
+            next_text, next_cursor = self._redo_stack.pop()
+            self._undo_stack.append((next_text, next_cursor))
 
-            change_position = 0
-            min_len = min(len(current_text), len(state_to_redo))
-            for i in range(min_len):
-                if current_text[i] != state_to_redo[i]:
-                    change_position = i
-                    break
-                change_position = i + 1
-
-            if change_position == min_len:
-                change_position = min_len
-
-            # Apply changes and calculate cursor position
+            # Apply the next text state
             self.delete(0, "end")
-            self.insert(0, state_to_redo, enforce_length_check=False)
+            self.insert(0, next_text, enforce_length_check=False)
+            self.icursor(next_cursor)
 
-            new_cursor_position = (change_position + (len(state_to_redo) - len(current_text))
-                                 if len(state_to_redo) > len(current_text)
-                                 else change_position)
-            self.icursor(new_cursor_position)
-
+            # Reset border color if needed
             if self.cget("border_color") in ["#c30101", "#228B22"]:
                 default_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
                 self.configure(border_color=default_color)
 
-            # Calculate view position based on entry width
-            entry_width = self.winfo_width()
-            visible_chars = entry_width // 8  # Approximate character width of 8 pixels
-
-            if len(state_to_redo) > visible_chars:
-                chars_before_cursor = visible_chars // 2
-                start_pos = max(0, new_cursor_position - chars_before_cursor)
-                if start_pos + visible_chars > len(state_to_redo):
-                    start_pos = max(0, len(state_to_redo) - visible_chars)
-                self.xview_moveto(start_pos / len(state_to_redo))
-            else:
-                self.xview_moveto(0)
+            # Adjust the view position
+            self.xview_moveto(next_cursor / len(next_text) if len(next_text) > 0 else 0)
 
             if self.is_listbox_entry:
                 self.update_listbox()
@@ -11149,11 +11077,15 @@ class CustomEntry(customtkinter.CTkEntry):
         if not self.select_present():
             self.select_range(0, "end")
         try:
+            selected_text = self.selection_get()
+            self.clipboard_clear()
+            self.clipboard_append(selected_text)
             self.delete(tk.SEL_FIRST, tk.SEL_LAST)
 
             new_text = self.get()
+            new_cursor = self.index(tk.INSERT)
             # Update the undo stack after cut operation
-            self._undo_stack.append(new_text)
+            self._undo_stack.append((new_text, new_cursor))
             self._redo_stack.clear()
 
             if self.is_listbox_entry:
@@ -11187,9 +11119,9 @@ class CustomEntry(customtkinter.CTkEntry):
                 logging.info("Pasted content truncated to maximum length")
 
             current_text = self.get()
-            # Save the current state to undo stack
-            if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1]):
-                self._undo_stack.append(current_text)
+            # Save the current state to undo stack if needed
+            if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1][0]):
+                self._undo_stack.append((current_text, self.index(tk.INSERT)))
 
             insert_index = self.index(tk.INSERT)
             try:
@@ -11311,7 +11243,8 @@ class CustomComboBox(customtkinter.CTkComboBox):
         super().__init__(master, *args, **kwargs)
 
         initial_state = self.get()
-        self._undo_stack = deque([initial_state], maxlen=100)
+        initial_cursor = self._entry.index(tk.INSERT)
+        self._undo_stack = deque([(initial_state, initial_cursor)], maxlen=100)
         self._redo_stack = deque(maxlen=100)
         self.max_length = max_length
         self.lang = lang
@@ -11349,7 +11282,6 @@ class CustomComboBox(customtkinter.CTkComboBox):
         self.bind("<Button-2>", self.custom_middle_mouse)
         self.bind("<Button-3>", self.show_menu)
 
-
     def disable_slider_keys(self, event=None):
         if self.cget("border_color") == "#c30101":
             if self.border_color is None:
@@ -11381,17 +11313,14 @@ class CustomComboBox(customtkinter.CTkComboBox):
 
     def set(self, value, enforce_length_check=True):
         if enforce_length_check:
-            current_length = len(self.get())
-            if current_length + len(value) <= self.max_length:
+            if len(value) <= self.max_length:
                 super().set(value)
                 self.update_undo_stack()
             else:
                 # Truncate the string if it exceeds the maximum length
-                allowed_length = self.max_length - current_length
-                if allowed_length > 0:
-                    value = value[:allowed_length]
-                    super().set(value)
-                    self.update_undo_stack()
+                value = value[:self.max_length]
+                super().set(value)
+                self.update_undo_stack()
                 logging.info("Input limited to the maximum allowed length")
         else:
             super().set(value)
@@ -11400,88 +11329,53 @@ class CustomComboBox(customtkinter.CTkComboBox):
     def _dropdown_callback(self, value: str):
         # Save current value to undo stack before changing
         current_text = self.get()
-        if current_text != self._undo_stack[-1]:
-            self._undo_stack.append(current_text)
+        current_cursor = self._entry.index(tk.INSERT)
+        if current_text != self._undo_stack[-1][0]:
+            self._undo_stack.append((current_text, current_cursor))
 
         super()._dropdown_callback(value)  # Call the original dropdown callback
 
         # Update undo stack with new value
         new_text = self.get()
-        if new_text != self._undo_stack[-1]:
-            self._undo_stack.append(new_text)
+        new_cursor = self._entry.index(tk.INSERT)
+        if new_text != self._undo_stack[-1][0]:
+            self._undo_stack.append((new_text, new_cursor))
 
     def update_undo_stack(self, event=None):
         current_text = self.get()
-        # Check for a change in text and avoid duplicating the last entry
-        if len(self._undo_stack) == 0 or (current_text != self._undo_stack[-1]):
-            self._undo_stack.append(current_text)
+        cursor_position = self._entry.index(tk.INSERT)
+        if current_text != self._undo_stack[-1][0]:
+            self._undo_stack.append((current_text, cursor_position))
             self._redo_stack.clear()  # Clear the redo stack on a new change
 
     def undo(self, event=None):
         if len(self._undo_stack) > 1:
-            # Get states and find position of change
-            current_text = self._undo_stack[-1]
-            last_text = self._undo_stack.pop()
-            self._redo_stack.append(last_text)
-            previous_state = self._undo_stack[-1]
+            # Remove the current state from the undo stack and add it to the redo stack
+            current_text, current_cursor = self._undo_stack.pop()
+            self._redo_stack.append((current_text, current_cursor))
 
-            change_position = 0
-            min_len = min(len(current_text), len(previous_state))
-            for i in range(min_len):
-                if current_text[i] != previous_state[i]:
-                    change_position = i
-                    break
-                change_position = i + 1
+            # Get the previous state from the undo stack
+            previous_text, previous_cursor = self._undo_stack[-1]
 
-            if change_position == min_len:
-                change_position = min_len
+            # Apply the previous text state
+            self.set(previous_text, enforce_length_check=False)
+            self._entry.icursor(previous_cursor)
 
-            # Apply changes and update cursor
-            self.set(previous_state, enforce_length_check=False)
-            self._entry.icursor(change_position)
-
-            # Update view position
-            if len(previous_state) > 0:
-                visible_ratio = change_position / len(previous_state)
-                self._entry.xview_moveto(max(0.0, min(1.0, visible_ratio - 0.1)))
+            # Adjust the view position
+            self._entry.xview_moveto(previous_cursor / len(previous_text) if len(previous_text) > 0 else 0)
 
     def redo(self, event=None):
         if self._redo_stack:
-            # Get states and find position of change
-            current_text = self.get()
-            state_to_redo = self._redo_stack.pop()
-            self._undo_stack.append(state_to_redo)
+            # Get the next state from the redo stack and add it to the undo stack
+            next_text, next_cursor = self._redo_stack.pop()
+            self._undo_stack.append((next_text, next_cursor))
 
-            change_position = 0
-            min_len = min(len(current_text), len(state_to_redo))
-            for i in range(min_len):
-                if current_text[i] != state_to_redo[i]:
-                    change_position = i
-                    break
-                change_position = i + 1
+            # Apply the next text state
+            self.set(next_text, enforce_length_check=False)
+            self._entry.icursor(next_cursor)
 
-            if change_position == min_len:
-                change_position = min_len
-
-            # Apply changes and calculate cursor position
-            self.set(state_to_redo, enforce_length_check=False)
-            new_cursor_position = (change_position + (len(state_to_redo) - len(current_text))
-                                   if len(state_to_redo) > len(current_text)
-                                   else change_position)
-            self._entry.icursor(new_cursor_position)
-
-            # Calculate view position based on entry width
-            entry_width = self._entry.winfo_width()
-            visible_chars = entry_width // 8
-
-            if len(state_to_redo) > visible_chars:
-                chars_before_cursor = visible_chars // 2
-                start_pos = max(0, new_cursor_position - chars_before_cursor)
-                if start_pos + visible_chars > len(state_to_redo):
-                    start_pos = max(0, len(state_to_redo) - visible_chars)
-                self._entry.xview_moveto(start_pos / len(state_to_redo))
-            else:
-                self._entry.xview_moveto(0)
+            # Adjust the view position
+            self._entry.xview_moveto(next_cursor / len(next_text) if len(next_text) > 0 else 0)
 
     def custom_middle_mouse(self, event=None):
         if self._entry.select_present():
@@ -11539,11 +11433,15 @@ class CustomComboBox(customtkinter.CTkComboBox):
         if not self._entry.select_present():
             self._entry.select_range(0, "end")
         try:
+            selected_text = self._entry.selection_get()
+            self.clipboard_clear()
+            self.clipboard_append(selected_text)
             self._entry.delete(tk.SEL_FIRST, tk.SEL_LAST)
 
             new_text = self.get()
+            new_cursor = self._entry.index(tk.INSERT)
             # Update the undo stack after cut operation
-            self._undo_stack.append(new_text)
+            self._undo_stack.append((new_text, new_cursor))
             self._redo_stack.clear()
         except tk.TclError:
             logging.info("No text selected to cut")
@@ -11553,7 +11451,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
         if not self._entry.select_present():
             self._entry.select_range(0, "end")
         try:
-            selected_text = self.selection_get()
+            selected_text = self._entry.selection_get()
             self.clipboard_clear()
             self.clipboard_append(selected_text)
             self.update_idletasks()
@@ -11593,9 +11491,10 @@ class CustomComboBox(customtkinter.CTkComboBox):
                 logging.info("Pasted content truncated to maximum length")
 
             current_text = self.get()
+            current_cursor = self._entry.index(tk.INSERT)
             # Save the current state to undo stack
-            if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1]):
-                self._undo_stack.append(current_text)
+            if current_text != self._undo_stack[-1][0]:
+                self._undo_stack.append((current_text, current_cursor))
 
             insert_index = self._entry.index(tk.INSERT)
             try:
@@ -11615,7 +11514,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
             # Move the cursor to the end of the pasted content
             final_cursor_position = insert_index + len(clipboard_text)
             self._entry.icursor(final_cursor_position)
-            self._entry.xview_moveto(final_cursor_position / len(self._entry.get()))
+            self._entry.xview_moveto(final_cursor_position / len(self._entry.get()) if len(self._entry.get()) > 0 else 0)
 
             # Update undo stack here, after paste operation
             self.update_undo_stack()
