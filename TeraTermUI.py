@@ -416,6 +416,16 @@ class TeraTermUI(customtkinter.CTk):
         self.drop = None
         self.drop_tooltip = None
         self.submit = None
+        self.enrollment_error_messages = {
+            "INVALID COURSE ID": "INVALID COURSE ID", "COURSE RESERVED": "COURSE RESERVED",
+            "COURSE CLOSED": "COURSE CLOSED", "CRS ALRDY TAKEN/PASSED": "CRS ALRDY TAKEN/PASSED",
+            "Closed by Spec-Prog": "Closed by Spec-Prog", "Pre-Req": "Pre-Req Rqd",
+            "Closed by College": "Closed by College", "Closed by Major": "Closed by Major",
+            "TERM MAX HRS EXCEEDED": "TERM MAX HRS EXCEEDED", "REQUIRED CO-REQUISITE": "REQUIRED CO-REQUISITE",
+            "CO-REQUISITE MISSING": "CO-REQUISITE MISSING", "ILLEGAL DROP-NOT ENR": "ILLEGAL DROP-NOT ENR",
+            "NEW COURSE,NO FUNCTION": "NEW COURSE,NO FUNCTION", "PRESENTLY ENROLLED": "PRESENTLY ENROLLED",
+            "COURSE IN PROGRESS": "COURSE IN PROGRESS", "R/TC": "R/TC"
+        }
 
         # Second Tab
         self.in_search_frame = False
@@ -491,6 +501,7 @@ class TeraTermUI(customtkinter.CTk):
         self.submit_multiple = None
         self.save_data = None
         self.save_data_tooltip = None
+        self.saved_classes = False
         self.auto_enroll = None
         self.auto_enroll_tooltip = None
         self.changed_classes = None
@@ -2387,6 +2398,10 @@ class TeraTermUI(customtkinter.CTk):
                                             elif c in ["Drop", "Baja"]:
                                                 self.classes_status[sec] = {"classes": cls, "status": "DROPPED",
                                                                             "semester": sem}
+                                    detected_errors = [msg for code, msg in self.enrollment_error_messages.items() if
+                                                       code in text_output]
+                                    if len(detected_errors) == 1 and "NEW COURSE,NO FUNCTION" in detected_errors:
+                                        return
                                     self.submit_multiple.configure(state="disabled")
                                     self.submit_multiple.configure(state="disabled")
                                     self.unbind("<Return>")
@@ -5353,6 +5368,8 @@ class TeraTermUI(customtkinter.CTk):
                 elif result[0] != value:
                     self.cursor.execute(f"UPDATE user_data SET {field} = ? ", (value,))
             self.connection.commit()
+            if not self.saved_classes:
+                self.delete_saved_classes()
         except sqlite3.Error as err:
             logging.error(f"Database error occurred: {err}")
             self.log_error()
@@ -5400,6 +5417,7 @@ class TeraTermUI(customtkinter.CTk):
                                         " VALUES (?, ?, ?, ?)",
                                         (class_value, section_value, semester_value, register_value))
                     self.connection.commit()
+                    self.saved_classes = True
 
             if is_empty:
                 self.show_error_message(330, 255, translation["failed_saved_lack_info"])
@@ -5427,10 +5445,70 @@ class TeraTermUI(customtkinter.CTk):
         if save == "off":
             self.cursor.execute("DELETE FROM saved_classes")
             self.connection.commit()
+            self.saved_classes = False
             for i in range(8):
                 self.m_register_menu[i].configure(command=lambda value: self.focus_set())
                 self.m_classes_entry[i].unbind("<FocusOut>")
                 self.m_section_entry[i].unbind("<FocusOut>")
+                
+    # Compares the saved classes in the database with the current entries in the application
+    def delete_saved_classes(self):
+        saved_data = self.cursor.execute(
+            "SELECT class, section, semester, action FROM saved_classes WHERE class IS NOT NULL").fetchall()
+
+        if not saved_data:
+            return
+
+        normalized_saved_data = []
+        for class_value, section_value, semester_value, action_value in saved_data:
+            normalized_class = class_value.upper().replace(" ", "").replace("-", "")
+            normalized_section = section_value.upper().replace(" ", "").replace("-", "")
+            normalized_semester = semester_value.upper().replace(" ", "")
+            normalized_action = action_value.upper().replace(" ", "")
+            normalized_saved_data.append((normalized_class, normalized_section, normalized_semester, normalized_action))
+
+        entry_data = []
+        num_saved_entries = len(normalized_saved_data)
+        for index in range(num_saved_entries):
+            class_value = self.m_classes_entry[index].get().upper().replace(" ", "").replace("-", "")
+            section_value = self.m_section_entry[index].get().upper().replace(" ", "").replace("-", "")
+            semester_value = self.m_semester_entry[index].get().upper().replace(" ", "")
+            action_value = self.m_register_menu[index].get().upper().replace(" ", "")
+            entry_data.append((class_value, section_value, semester_value, action_value))
+
+        num_field_differences = 0
+        total_fields_compared = 0
+        fields = ["class", "section", "semester", "action"]
+        num_fields = len(fields)
+
+        # Compare only the number of saved entries
+        for i in range(num_saved_entries):
+            saved_item = normalized_saved_data[i]
+            entry_item = entry_data[i]
+
+            # Compare individual fields
+            for j in range(num_fields):
+                saved_value = saved_item[j]
+                entry_value = entry_item[j]
+
+                # Skip comparison if both values are empty
+                if not saved_value and not entry_value:
+                    continue
+
+                # Increment total fields compared
+                total_fields_compared += 1
+                if saved_value != entry_value:
+                    num_field_differences += 1
+
+        if total_fields_compared == 0:
+            # No meaningful data to compare
+            return
+
+        difference_ratio = num_field_differences / total_fields_compared
+        if difference_ratio > 0.5:
+            # Data is mostly different; delete from database
+            self.cursor.execute("DELETE FROM saved_classes")
+            self.connection.commit()
 
     # shows the important information window
     def show_loading_screen(self):
@@ -7506,7 +7584,7 @@ class TeraTermUI(customtkinter.CTk):
                                 if mod != translation["choose"] and course_code_no_section in edge_cases_classes:
                                     edge_cases_bool = True
                                     edge_cases_classes_met.append(course_code_no_section)
-                                    self.after(0, change_section_entry.configure(border_color="#c30101"))
+                                    self.after(0, mod_selection.configure(button_color="#c30101"))
                         if not_all_choose and section_pattern and not edge_cases_bool:
                             self.wait_for_window()
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
@@ -8217,29 +8295,12 @@ class TeraTermUI(customtkinter.CTk):
     # Pop window that shows the user more context on why they couldn't enroll their classes
     def show_enrollment_error_information(self, text="Error"):
         translation = self.load_language()
-        error_messages = {
-            "INVALID COURSE ID": "INVALID COURSE ID",
-            "COURSE RESERVED": "COURSE RESERVED",
-            "COURSE CLOSED": "COURSE CLOSED",
-            "CRS ALRDY TAKEN/PASSED": "CRS ALRDY TAKEN/PASSED",
-            "Closed by Spec-Prog": "Closed by Spec-Prog",
-            "Pre-Req": "Pre-Req Rqd",
-            "Closed by College": "Closed by College",
-            "Closed by Major": "Closed by Major",
-            "TERM MAX HRS EXCEEDED": "TERM MAX HRS EXCEEDED",
-            "REQUIRED CO-REQUISITE": "REQUIRED CO-REQUISITE",
-            "ILLEGAL DROP-NOT ENR": "ILLEGAL DROP-NOT ENR",
-            "NEW COURSE,NO FUNCTION": "NEW COURSE,NO FUNCTION",
-            "PRESENTLY ENROLLED": "PRESENTLY ENROLLED",
-            "COURSE IN PROGRESS": "COURSE IN PROGRESS",
-            "R/TC": "R/TC"
-        }
         # List to hold all error messages found in the text
         found_errors = []
         # Check each error message
-        for code in error_messages:
+        for code in self.enrollment_error_messages:
             if code in text:
-                found_errors.append(error_messages[code])
+                found_errors.append(self.enrollment_error_messages[code])
         # If errors were found, show them, otherwise show a default message
         if found_errors:
             self.destroy_windows()
@@ -8265,29 +8326,12 @@ class TeraTermUI(customtkinter.CTk):
     # Pop window that shows the user more context on why they couldn't enroll their classes
     def show_enrollment_error_information_multiple(self, text="Error"):
         translation = self.load_language()
-        error_messages = {
-            "INVALID COURSE ID": "INVALID COURSE ID",
-            "COURSE RESERVED": "COURSE RESERVED",
-            "COURSE CLOSED": "COURSE CLOSED",
-            "CRS ALRDY TAKEN/PASSED": "CRS ALRDY TAKEN/PASSED",
-            "Closed by Spec-Prog": "Closed by Spec-Prog",
-            "Pre-Req": "Pre-Req Rqd",
-            "Closed by College": "Closed by College",
-            "Closed by Major": "Closed by Major",
-            "TERM MAX HRS EXCEEDED": "TERM MAX HRS EXCEEDED",
-            "REQUIRED CO-REQUISITE": "REQUIRED CO-REQUISITE",
-            "ILLEGAL DROP-NOT ENR": "ILLEGAL DROP-NOT ENR",
-            "NEW COURSE,NO FUNCTION": "NEW COURSE,NO FUNCTION",
-            "PRESENTLY ENROLLED": "PRESENTLY ENROLLED",
-            "COURSE IN PROGRESS": "COURSE IN PROGRESS",
-            "R/TC": "R/TC"
-        }
         # List to hold all error messages found in the text
         found_errors = []
         # Check each error message
-        for code in error_messages:
+        for code in self.enrollment_error_messages:
             if code in text:
-                found_errors.append(error_messages[code])
+                found_errors.append(self.enrollment_error_messages[code])
         # If errors were found, show them, otherwise show a default message
         if found_errors:
             def explanation():
