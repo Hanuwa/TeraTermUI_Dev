@@ -1477,10 +1477,9 @@ class TeraTermUI(customtkinter.CTk):
                                 section not in self.classes_status or
                                 self.classes_status[section]["status"] != "DROPPED" or
                                 self.classes_status[section]["semester"] != semester)):
-                            if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE)
-                                    and re.fullmatch("^[A-Z]{2}[A-Z0-9]$", section, flags=re.IGNORECASE)
-                                    and (re.fullmatch("^[A-Z][0-9]{2}$", semester,
-                                                      flags=re.IGNORECASE) or semester == curr_sem)):
+                            if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes)
+                                    and re.fullmatch("^[A-Z]{2}[A-Z0-9]$", section)
+                                    and (re.fullmatch("^[A-Z][0-9]{2}$", semester) or semester == curr_sem)):
                                 self.wait_for_window()
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                 self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
@@ -1604,16 +1603,15 @@ class TeraTermUI(customtkinter.CTk):
                                         self.after(0, self.e_section_entry.configure(border_color="#c30101"))
                                     if not semester:
                                         self.after(0, self.e_semester_entry.configure(border_color="#c30101"))
-                                elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE):
+                                elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes):
                                     self.after(100, self.show_error_message, 360, 230,
                                                translation["class_format_error"])
                                     self.after(0, self.e_classes.configure(border_color="#c30101"))
-                                elif not re.fullmatch("^[A-Z]{2}[A-Z0-9]$", section, flags=re.IGNORECASE):
+                                elif not re.fullmatch("^[A-Z]{2}[A-Z0-9]$", section):
                                     self.after(100, self.show_error_message, 360, 230,
                                                translation["section_format_error"])
                                     self.after(0, self.e_section_entry.configure(border_color="#c30101"))
-                                elif not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE) \
-                                        and semester != curr_sem:
+                                elif not re.fullmatch("^[A-Z][0-9]{2}$", semester) and semester != curr_sem:
                                     self.after(100, self.show_error_message, 360, 230,
                                                translation["semester_format_error"])
                                     self.after(0, self.e_semester_entry.configure(border_color="#c30101"))
@@ -1666,9 +1664,8 @@ class TeraTermUI(customtkinter.CTk):
                 show_all = self.show_all.get()
                 if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
-                        if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE)
-                                and (re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE)
-                                     or semester == curr_sem)):
+                        if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes) and (
+                                re.fullmatch("^[A-Z][0-9]{2}$", semester) or semester == curr_sem)):
                             self.wait_for_window()
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
@@ -1810,11 +1807,10 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(0, self.s_classes_entry.configure(border_color="#c30101"))
                                 if not semester:
                                     self.after(0, self.s_semester_entry.configure(border_color="#c30101"))
-                            elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE):
+                            elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes):
                                 self.after(100, self.show_error_message, 360, 230, translation["class_format_error"])
                                 self.after(0, self.s_classes_entry.configure(border_color="#c30101"))
-                            elif not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE) \
-                                    and semester != curr_sem:
+                            elif not re.fullmatch("^[A-Z][0-9]{2}$", semester) and semester != curr_sem:
                                 self.after(100, self.show_error_message, 360, 230, translation["semester_format_error"])
                                 self.after(0, self.s_semester_entry.configure(border_color="#c30101"))
                     else:
@@ -1979,8 +1975,7 @@ class TeraTermUI(customtkinter.CTk):
                 curr_sem = translation["current"].upper()
                 if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
-                        if re.fullmatch("^[A-Z][0-9]{2}$", dialog_input, flags=re.IGNORECASE) or \
-                                dialog_input == curr_sem:
+                        if re.fullmatch("^[A-Z][0-9]{2}$", dialog_input) or dialog_input == curr_sem:
                             self.wait_for_window()
                             self.uprb.UprbayTeraTermVt.type_keys("SRM")
                             self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
@@ -2058,7 +2053,7 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language()
         semester = self.m_semester_entry[0].get().upper().replace(" ", "")
         curr_sem = translation["current"].upper()
-        if re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE) or semester == curr_sem:
+        if re.fullmatch("^[A-Z][0-9]{2}$", semester) or semester == curr_sem:
             if self.a_counter + 1 < len(self.m_semester_entry):
                 if self.a_counter == 0 and self.m_register_menu[0].get() \
                     in [translation["register"], translation["drop"]] and self.first_time_adding:
@@ -2541,8 +2536,7 @@ class TeraTermUI(customtkinter.CTk):
                 if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if menu and menu in valid_menu_options and (
-                                re.fullmatch("^[A-Z][0-9]{2}$", semester,
-                                             flags=re.IGNORECASE) or semester == curr_sem):
+                                re.fullmatch("^[A-Z][0-9]{2}$", semester) or semester == curr_sem):
                             self.wait_for_window()
                             result = None
                             if semester == curr_sem:
@@ -2852,8 +2846,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(0, self.menu_semester_entry.configure(border_color="#c30101"))
                                 if not menu:
                                     self.after(0, self.menu_entry.configure(border_color="#c30101"))
-                            elif not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE) \
-                                    and semester != curr_sem:
+                            elif not re.fullmatch("^[A-Z][0-9]{2}$", semester) and semester != curr_sem:
                                 self.after(100, self.show_error_message, 360, 230,
                                            translation["semester_format_error"])
                                 self.after(0, self.menu_semester_entry.configure(border_color="#c30101"))
@@ -4260,7 +4253,7 @@ class TeraTermUI(customtkinter.CTk):
         curr_sem = translation["current"].upper()
         dummy_event = type("Dummy", (object,), {"widget": self.m_semester_entry[0]})()
         self.detect_change(dummy_event)
-        if re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE) or semester == curr_sem:
+        if re.fullmatch("^[A-Z][0-9]{2}$", semester) or semester == curr_sem:
             for i in range(1, self.a_counter + 1):
                 self.m_semester_entry[i].configure(state="normal")
                 if semester == curr_sem:
@@ -5403,14 +5396,14 @@ class TeraTermUI(customtkinter.CTk):
                     semester_value = translation["current"]
                 else:
                     semester_value = semester_value.upper()
-                    valid_semester_format = re.fullmatch("^[A-Z][0-9]{2}$", semester_value, flags=re.IGNORECASE)
+                    valid_semester_format = re.fullmatch("^[A-Z][0-9]{2}$", semester_value)
                     if not valid_semester_format:
                         semester_value = None
                 register_value = self.m_register_menu[index].get()
                 if not class_value or not section_value or not semester_value or register_value in ("Choose", "Escoge"):
                     is_empty = True
-                elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", class_value, flags=re.IGNORECASE) or not re.fullmatch(
-                        "^[A-Z]{2}[A-Z0-9]$", section_value, flags=re.IGNORECASE):
+                elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", class_value) or not re.fullmatch(
+                        "^[A-Z]{2}[A-Z0-9]$", section_value):
                     is_invalid_format = True
                 else:
                     self.cursor.execute("INSERT INTO saved_classes (class, section, semester, action)"
@@ -10373,11 +10366,11 @@ class TeraTermUI(customtkinter.CTk):
                 error_msg_medium = translation["drop_or_enroll"]
                 error_entries.append(self.m_register_menu[i])
                 break
-            elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes, flags=re.IGNORECASE):
+            elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes):
                 error_msg_short = translation["multiple_class_format_error"]
                 error_entries.append(self.m_classes_entry[i])
                 break
-            elif not re.fullmatch("^[A-Z]{2}[A-Z0-9]$", sections, flags=re.IGNORECASE):
+            elif not re.fullmatch("^[A-Z]{2}[A-Z0-9]$", sections):
                 error_msg_short = translation["multiple_section_format_error"]
                 error_entries.append(self.m_section_entry[i])
                 break
@@ -10396,7 +10389,7 @@ class TeraTermUI(customtkinter.CTk):
                         error_msg_long = translation["multiple_already_dropped"]
                         break
 
-        if not re.fullmatch("^[A-Z][0-9]{2}$", semester, flags=re.IGNORECASE) and semester != curr_sem:
+        if not re.fullmatch("^[A-Z][0-9]{2}$", semester) and semester != curr_sem:
             error_msg_short = translation["multiple_semester_format_error"]
             error_entries.append(self.m_semester_entry[0])
         for error_widget in error_entries:
