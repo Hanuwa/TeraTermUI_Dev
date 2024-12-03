@@ -7366,14 +7366,9 @@ class TeraTermUI(customtkinter.CTk):
                         pad_y = 9 if previous_row_had_widgets else 45
 
                     if data[row_index][translation["course"]] != "":
-                        if row_index < len(self.placeholder_texts_sections):
-                            placeholder_text = self.placeholder_texts_sections[row_index]
-                        else:
-                            extra_placeholder_text = ["KJ1", "LJ1", "KI1", "LI1", "VM1", "JM1"]
-                            index_in_extra = (row_index - len(self.placeholder_texts_sections)) % len(
-                                extra_placeholder_text)
-                            placeholder_text = extra_placeholder_text[index_in_extra]
-
+                        combined_placeholders = self.placeholder_texts_sections + (
+                            "KJ1", "LJ1", "KI1", "LI1", "VM1", "JM1")
+                        placeholder_text = combined_placeholders[row_index % len(combined_placeholders)]
                         mod_selection = customtkinter.CTkOptionMenu(self.modify_classes_frame,
                                                                     values=[translation["choose"], translation["drop"],
                                                                             translation["section"]], width=80,
@@ -7467,8 +7462,7 @@ class TeraTermUI(customtkinter.CTk):
                 if row_index == 0:
                     pad_y = 30
                 if self.enrolled_classes_data[row_index][translation["course"]] != "":
-                    combined_placeholders = self.placeholder_texts_sections + tuple(
-                        ["KJ1", "LJ1", "KI1", "LI1", "VM1", "JM1"])
+                    combined_placeholders = self.placeholder_texts_sections + ("KJ1", "LJ1", "KI1", "LI1", "VM1", "JM1")
                     placeholder_text = combined_placeholders[row_index % len(combined_placeholders)]
                     mod_selection = customtkinter.CTkOptionMenu(self.modify_classes_frame,
                                                                 values=[translation["choose"], translation["drop"],
