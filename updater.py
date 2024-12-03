@@ -1,5 +1,4 @@
 import argparse
-import concurrent.futures
 import hashlib
 import json
 import logging
@@ -123,7 +122,10 @@ class UpdateGUI:
             new_wrap_length = event.width - 80
             self.label.configure(wraplength=new_wrap_length)
 
-    def update_progress(self, value, text):
+    def update_progress(self, value, text, force_update=False):
+        if self.cancel_requested and not force_update:
+            return
+
         if not self.pause_requested or self.cancel_requested:
             self.last_status_message = text
 
@@ -143,7 +145,7 @@ class UpdateGUI:
         logging.info(f"Cancel requested during {self.current_stage} stage")
         self.cancel_requested = True
         self.pause_requested = False
-        self.update_progress(0, "Cancelling update, please wait...")
+        self.update_progress(0, "Cancelling update, please wait...", force_update=True)
         self.pause_button.configure(state="disabled")
         self.cancel_button.configure(state="disabled")
 
@@ -248,14 +250,14 @@ class UpdateGUI:
     def finish_cancellation(self, error_messages=None):
         try:
             if error_messages:
-                self.update_progress(0, "Cleanup completed with errors")
+                self.update_progress(0, "Cleanup completed with errors", force_update=True)
                 detailed_message = "The following errors occurred during cleanup:\n\n" + \
                                    "\n".join(f"- {msg}" for msg in error_messages) + \
                                    "\n\nCheck the logs for details"
                 messagebox.showerror("Cleanup Errors", detailed_message)
                 gui.set_failure_state()
             else:
-                self.update_progress(0, "Update cancelled successfully")
+                self.update_progress(0, "Update cancelled successfully", force_update=True)
                 messagebox.showinfo(
                     "Update Cancelled",
                     "Update has been cancelled and all changes have been reverted successfully")
@@ -695,7 +697,7 @@ def download_update(gui, mode, checksum_info):
 
                                 progress_text = (f"Downloading Update: {int(current_percentage)}% "
                                                  f"({speed_text}, {time_text})")
-                                gui.update_progress(current_percentage * 0.5, progress_text)
+                                gui.update_progress(10 + current_percentage * 0.4, progress_text)
 
                                 last_progress_update = current_percentage
                                 last_update_time = current_time
@@ -851,60 +853,62 @@ def install_extract_update(gui, mode, update_db, version, downloaded_file, app_d
 
             try:
                 removed_files = 0
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    futures = []
-                    for root, _, files in os.walk(app_directory):
-                        for file in files:
-                            if gui.cancel_requested:
-                                logging.info("Update cancelled during file removal")
-                                return False
+                for root, _, files in os.walk(app_directory):
+                    for file in files:
+                        if gui.cancel_requested:
+                            logging.info("Update cancelled during file removal")
+                            return False
 
-                            if file == "database.db" and not update_db:
-                                logging.info(f"Skipping database file: {file}")
-                                continue
+                        while gui.pause_requested and not gui.cancel_requested:
+                            time.sleep(0.1)
+                            continue
 
-                            file_path = os.path.join(root, file)
-                            futures.append(executor.submit(os.remove, file_path))
+                        if file == "database.db" and not update_db:
+                            logging.info(f"Skipping database file: {file}")
+                            continue
 
-                    for future in concurrent.futures.as_completed(futures):
+                        file_path = os.path.join(root, file)
                         try:
-                            future.result()
+                            os.remove(file_path)
                             removed_files += 1
                         except Exception as e:
-                            logging.error(f"Failed to remove file: {e}")
+                            logging.error(f"Failed to remove file {file_path}: {e}")
                             return False
 
                 logging.info(f"Total files removed: {removed_files}")
 
                 total_files = sum(len(files) for _, _, files in os.walk(gui.temp_extract_folder))
                 processed_files = 0
+                updated_files = 0
 
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    futures = []
-                    for root, _, files in os.walk(gui.temp_extract_folder):
-                        for file in files:
-                            if gui.cancel_requested:
-                                logging.info("Update cancelled during file copying")
-                                return False
-
-                            src_file = os.path.join(root, file)
-                            rel_path = os.path.relpath(src_file, gui.temp_extract_folder)
-                            dest_file = os.path.join(app_directory, rel_path)
-
-                            futures.append(executor.submit(shutil.copy2, src_file, dest_file))
-
-                    for future in concurrent.futures.as_completed(futures):
-                        try:
-                            future.result()
-                            processed_files += 1
-                            progress = (processed_files / total_files) * 100
-                            current_progress = 75 + (progress * 0.2)
-                            gui.update_progress(current_progress, f"Updating files: {int(progress)}%")
-                        except Exception as e:
-                            logging.error(f"Failed to copy file: {e}")
+                for root, _, files in os.walk(gui.temp_extract_folder):
+                    for file in files:
+                        if gui.cancel_requested:
+                            logging.info("Update cancelled during file copying")
                             return False
 
-                logging.info(f"Total files updated: {processed_files}")
+                        while gui.pause_requested and not gui.cancel_requested:
+                            time.sleep(0.1)
+                            continue
+
+                        if file == "database.db" and not update_db:
+                            logging.info(f"Skipping database file update: {file}")
+                            continue
+
+                        src_file = os.path.join(root, file)
+                        rel_path = os.path.relpath(src_file, gui.temp_extract_folder)
+                        dest_file = os.path.join(app_directory, rel_path)
+
+                        os.makedirs(os.path.dirname(dest_file), exist_ok=True)
+                        shutil.copy2(src_file, dest_file)
+                        updated_files += 1
+
+                        processed_files += 1
+                        progress = (processed_files / total_files) * 100
+                        current_progress = 75 + (progress * 0.2)
+                        gui.update_progress(current_progress, f"Updating files: {int(progress)}%")
+
+                logging.info(f"Total files updated: {updated_files}")
 
             except Exception as update_error:
                 logging.error(f"Error during file replacement: {update_error}")
