@@ -3285,13 +3285,20 @@ class TeraTermUI(customtkinter.CTk):
 
     @staticmethod
     def check_host(host, threshold=0.8):
+        import unicodedata
         from difflib import SequenceMatcher
 
-        allowed_hosts = ["uprbay.uprb.edu", "uprb"]
-        host_normalized = host.lower().replace(",", "").replace(" ", '')
+        def normalize_string(s):
+            return "".join(
+                c for c in unicodedata.normalize("NFD", s)
+                if unicodedata.category(c) != "Mn"
+            ).lower().replace(",", "").replace(" ", "")
+
+        allowed_hosts = ["uprbay.uprb.edu", "uprb", "bayamon"]
+        host_normalized = normalize_string(host)
 
         for allowed_host in allowed_hosts:
-            allowed_host_normalized = allowed_host.lower().replace(",", "").replace(" ", "")
+            allowed_host_normalized = normalize_string(allowed_host)
             similarity_ratio = SequenceMatcher(None, host_normalized, allowed_host_normalized).ratio()
             if similarity_ratio >= threshold:
                 return True
