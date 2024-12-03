@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 12/02/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 12/03/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -423,7 +423,7 @@ class TeraTermUI(customtkinter.CTk):
             "Closed by College": "Closed by College", "Closed by Major": "Closed by Major",
             "TERM MAX HRS EXCEEDED": "TERM MAX HRS EXCEEDED", "REQUIRED CO-REQUISITE": "REQUIRED CO-REQUISITE",
             "CO-REQUISITE MISSING": "CO-REQUISITE MISSING", "ILLEGAL DROP-NOT ENR": "ILLEGAL DROP-NOT ENR",
-            "NEW COURSE,NO FUNCTION": "NEW COURSE,NO FUNCTION", "PRESENTLY ENROLLED": "PRESENTLY ENROLLED",
+            "NEW COURSE,NO FUNCTION": "NEW COURSE, NO FUNCTION", "PRESENTLY ENROLLED": "PRESENTLY ENROLLED",
             "COURSE IN PROGRESS": "COURSE IN PROGRESS", "R/TC": "R/TC"
         }
 
@@ -5450,7 +5450,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.m_register_menu[i].configure(command=lambda value: self.focus_set())
                 self.m_classes_entry[i].unbind("<FocusOut>")
                 self.m_section_entry[i].unbind("<FocusOut>")
-                
+
     # Compares the saved classes in the database with the current entries in the application
     def delete_saved_classes(self):
         saved_data = self.cursor.execute(
@@ -7467,13 +7467,9 @@ class TeraTermUI(customtkinter.CTk):
                 if row_index == 0:
                     pad_y = 30
                 if self.enrolled_classes_data[row_index][translation["course"]] != "":
-                    if row_index < len(self.placeholder_texts_sections):
-                        placeholder_text = self.placeholder_texts_sections[row_index]
-                    else:
-                        extra_placeholder_text = ["KJ1", "LJ1", "KI1", "LI1", "VM1", "JM1"]
-                        index_in_extra = (row_index - len(self.placeholder_texts_sections)) % len(
-                            extra_placeholder_text)
-                        placeholder_text = extra_placeholder_text[index_in_extra]
+                    combined_placeholders = self.placeholder_texts_sections + tuple(
+                        ["KJ1", "LJ1", "KI1", "LI1", "VM1", "JM1"])
+                    placeholder_text = combined_placeholders[row_index % len(combined_placeholders)]
                     mod_selection = customtkinter.CTkOptionMenu(self.modify_classes_frame,
                                                                 values=[translation["choose"], translation["drop"],
                                                                         translation["section"]], width=80,
