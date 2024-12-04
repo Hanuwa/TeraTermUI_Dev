@@ -40,7 +40,7 @@ packaging==24.2
 pillow==11.0.0
 propcache==0.2.1
 proto-plus==1.25.0
-protobuf==5.29.0
+protobuf==5.29.1
 psutil==6.1.0
 py7zr==0.22.0
 pyasn1==0.6.1
@@ -71,7 +71,7 @@ requests==2.32.3
 requests-oauthlib==2.0.0
 rsa==4.9
 setuptools==75.6.0
-six==1.16.0
+six==1.17.0
 texttable==1.7.0
 uritemplate==4.1.1
 urllib3==2.2.3
