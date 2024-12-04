@@ -5577,6 +5577,9 @@ class TeraTermUI(customtkinter.CTk):
     # tells the loading screen when it should stop and close
     def update_loading_screen(self, loading_screen, future):
         current_time = time.time()
+        if current_time - self.loading_screen_start_time > 30:
+            if self.loading_screen.attributes("-topmost"):
+                self.loading_screen.attributes("-topmost", False)
         if future.done() or current_time - self.loading_screen_start_time > 90:
             self.attributes("-disabled", False)
             if self.help is not None and self.help.winfo_exists():
@@ -6581,6 +6584,7 @@ class TeraTermUI(customtkinter.CTk):
                     display_class.configure(text=new_text)
 
     def display_current_table(self):
+        translation = self.load_language()
         # Hide all tables and display_classes
         for display_class, curr_table, _, _, _, _ in self.class_table_pairs:
             display_class.grid_forget()
@@ -6588,6 +6592,10 @@ class TeraTermUI(customtkinter.CTk):
 
         # Show the current display_class and table
         display_class, curr_table, _, _, _, _ = self.class_table_pairs[self.current_table_index]
+        table_position_label = (f" {translation['table_position']}{self.current_table_index + 1}"
+                                f"/{len(self.class_table_pairs)}")
+        if self.table_position.cget("text") != table_position_label:
+            self.table_position.configure(text=table_position_label)
         display_class.grid(row=2, column=1, padx=(0, 0), pady=(8, 0), sticky="n")
         curr_table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
         self.table = curr_table
