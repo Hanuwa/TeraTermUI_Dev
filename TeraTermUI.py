@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 12/04/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 12/05/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -3496,8 +3496,6 @@ class TeraTermUI(customtkinter.CTk):
             self.in_auth_frame = True
         elif TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT") and not skip:
             self.connect_to_uprb()
-            if self.tera_term_window.isMinimized:
-                self.tera_term_window.restore()
             text_output = self.capture_screenshot()
             to_continue = "return to continue"
             count_to_continue = text_output.count(to_continue)
@@ -3579,11 +3577,12 @@ class TeraTermUI(customtkinter.CTk):
             title="uprbay.uprb.edu - Tera Term VT", timeout=3, class_name="VTWin32")
         self.uprbay_window = self.uprb.window(title="uprbay.uprb.edu - Tera Term VT",
                                               class_name="VTWin32", control_type="Window")
-        self.uprbay_window.wait("visible", timeout=3)
+        self.tera_term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
         edit_menu = self.uprb.UprbayTeraTermVt.child_window(title="Edit", control_type="MenuItem")
         self.select_screen_item = edit_menu.child_window(
             title="Select screen", control_type="MenuItem", auto_id="50280")
-        self.tera_term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
+        self.focus_tera_term()
+        self.uprbay_window.wait("visible", timeout=3)
 
     @staticmethod
     def new_connection(window):
@@ -7894,8 +7893,8 @@ class TeraTermUI(customtkinter.CTk):
 
     def wait_for_window(self):
         try:
-            self.uprbay_window.wait("visible", timeout=3)
             self.focus_tera_term()
+            self.uprbay_window.wait("visible", timeout=3)
             if self.went_to_1PL_screen and self.run_fix:
                 self.uprb.UprbayTeraTermVt.type_keys("X")
                 self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
