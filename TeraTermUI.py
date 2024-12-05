@@ -1214,7 +1214,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.start_check_process_thread()
                                 self.after(0, self.initialization_class)
                                 self.after(0, self.destroy_student)
-                                self.after(50, self.student_info_frame)
+                                self.after(100, self.student_info_frame)
                                 self.run_fix = True
                                 if self.help is not None and self.help.winfo_exists():
                                     self.fix.configure(state="normal")
@@ -3126,7 +3126,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(0, self.home_frame.grid_forget)
                                 self.after(0, self.initialization_student)
                                 self.after(0, self.destroy_auth)
-                                self.after(50, self.auth_info_frame)
+                                self.after(100, self.auth_info_frame)
                                 self.in_auth_frame = False
                                 self.in_student_frame = True
                             elif self.server_status == "Timeout":
@@ -7520,7 +7520,6 @@ class TeraTermUI(customtkinter.CTk):
     def modify_enrolled_classes(self, mod, row_index):
         translation = self.load_language()
         entry = self.change_section_entries[row_index]
-        self.after(0, self.focus_set)
         if entry is not None:
             if mod == translation["section"]:
                 entry.configure(state="normal")
