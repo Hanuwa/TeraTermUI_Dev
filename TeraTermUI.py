@@ -5285,8 +5285,7 @@ class TeraTermUI(customtkinter.CTk):
                                                             command=self.change_semester, height=26))
                 self.m_semester_entry[i].set(self.DEFAULT_SEMESTER)
                 self.m_register_menu.append(customtkinter.CTkOptionMenu(
-                    master=self.multiple_frame, values=[translation["register"], translation["drop"]],
-                    command=lambda value: self.after(0, self.focus_set), height=26))
+                    master=self.multiple_frame, values=[translation["register"], translation["drop"]], height=26))
                 self.m_register_menu[i].set(translation["choose"])
                 self.m_num_class[i].bind("<Button-1>", lambda event: self.focus_set())
             self.m_semester_entry[0].bind(
