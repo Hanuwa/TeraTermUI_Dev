@@ -10604,11 +10604,12 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.bind("<Control-y>", self.redo)
         self.bind("<Control-Y>", self.redo)
 
-        self.bind("<Control-v>", self.custom_paste)
-        self.bind("<Control-V>", self.custom_paste)
+        if not self.read_only:
+            self.bind("<Control-v>", self.custom_paste)
+            self.bind("<Control-V>", self.custom_paste)
 
-        self.bind("<Control-x>", self.custom_cut)
-        self.bind("<Control-X>", self.custom_cut)
+            self.bind("<Control-x>", self.custom_cut)
+            self.bind("<Control-X>", self.custom_cut)
 
         self.bind("<Control-a>", self.select_all)
         self.bind("<Control-A>", self.select_all)
