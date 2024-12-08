@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 12/05/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 12/07/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -9258,18 +9258,19 @@ class TeraTermUI(customtkinter.CTk):
         self.feedback_text = CustomTextBox(self.status_frame, self, enable_autoscroll=False, lang=lang,
                                            wrap="word", border_spacing=8, width=300, height=170,
                                            fg_color=("#ffffff", "#111111"))
-        self.feedback_send = CustomButton(self.status_frame, text=translation["feedback"], anchor="w",
+        self.feedback_send = CustomButton(self.status_frame, text=translation["feedback"], anchor="w", width=150,
                                           image=self.get_image("plane"), text_color=("gray10", "#DCE4EE"),
                                           command=self.start_feedback_thread)
         self.check_update_text = customtkinter.CTkLabel(self.status_frame, text=translation["update_title"])
-        self.check_update_btn = CustomButton(self.status_frame, image=self.get_image("update"),
+        self.check_update_btn = CustomButton(self.status_frame, image=self.get_image("update"), width=150,
                                              text=translation["update"], anchor="w", text_color=("gray10", "#DCE4EE"),
                                              command=self.check_update_app_handler)
         self.website = customtkinter.CTkLabel(self.status_frame, text=translation["website"])
         self.website_link = CustomButton(self.status_frame, image=self.get_image("link"), text=translation["link"],
-                                         anchor="w", text_color=("gray10", "#DCE4EE"), command=self.github_event)
+                                         anchor="w", text_color=("gray10", "#DCE4EE"), width=150,
+                                         command=self.github_event)
         self.notaso = customtkinter.CTkLabel(self.status_frame, text=translation["notaso_title"])
-        self.notaso_link = CustomButton(self.status_frame, image=self.get_image("link"),
+        self.notaso_link = CustomButton(self.status_frame, image=self.get_image("link"), width=150,
                                         text=translation["notaso_link"], anchor="w", text_color=("gray10", "#DCE4EE"),
                                         command=self.notaso_event)
         self.faq_text = customtkinter.CTkLabel(self.status_frame, text=translation["faq"],
