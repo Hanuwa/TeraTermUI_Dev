@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 12/07/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 12/09/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -5367,7 +5367,7 @@ class TeraTermUI(customtkinter.CTk):
                 elif result[0] != value:
                     self.cursor.execute(f"UPDATE user_data SET {field} = ? ", (value,))
             self.connection.commit()
-            if not self.saved_classes:
+            if not self.saved_classes and self.init_multiple:
                 self.delete_saved_classes()
         except sqlite3.Error as err:
             logging.error(f"Database error occurred: {err}")
@@ -7866,13 +7866,13 @@ class TeraTermUI(customtkinter.CTk):
         start_time = time.time()
         while True:
             text_output = self.capture_screenshot()
-            if maintenance_text in text_output:  # Prioritize the maintenance message
+            if maintenance_text in text_output:
                 return "Maintenance message found"
             elif prompt_text in text_output:
                 return "Prompt found"
             elif time.time() - start_time > timeout:
                 return "Timeout"
-            time.sleep(0.5)  # Adjust the delay between screenshots as needed
+            time.sleep(0.5)
 
     def wait_for_response(self, keywords, init_timeout=True, timeout=3.0):
         if init_timeout:
@@ -8330,19 +8330,16 @@ class TeraTermUI(customtkinter.CTk):
                 found_errors.append(self.enrollment_error_messages[code])
         # If errors were found, show them, otherwise show a default message
         if found_errors:
-            def explanation():
-                self.destroy_windows()
-                error_message_str = ", ".join(found_errors)
-                if not self.disable_audio:
-                    winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/notification.wav"), winsound.SND_ASYNC)
-                CTkMessagebox(title=translation["automation_error_title"], icon="cancel",
-                              message=translation["specific_enrollment_error"] + error_message_str, button_width=380)
-                for counter in range(self.a_counter + 1, 0, -1):
-                    if self.classes_status:
-                        last_item = list(self.classes_status.keys())[-1]
-                        self.classes_status.pop(last_item)
-
-            self.after(3000, explanation)
+            self.destroy_windows()
+            error_message_str = ", ".join(found_errors)
+            if not self.disable_audio:
+                winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/notification.wav"), winsound.SND_ASYNC)
+            CTkMessagebox(title=translation["automation_error_title"], icon="cancel", button_width=380,
+                          message=translation["specific_enrollment_error"] + error_message_str)
+            for counter in range(self.a_counter + 1, 0, -1):
+                if self.classes_status:
+                    last_item = list(self.classes_status.keys())[-1]
+                    self.classes_status.pop(last_item)
         if not found_errors and text != "Error":
             for i in range(self.a_counter + 1):
                 self.m_classes_entry[i].delete(0, "end")
@@ -8359,14 +8356,11 @@ class TeraTermUI(customtkinter.CTk):
         else:
             self.switch_tab()
         if self.enrollment_error_check:
-            def explanation():
-                self.destroy_windows()
-                if not self.disable_audio:
-                    winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/notification.wav"), winsound.SND_ASYNC)
-                CTkMessagebox(title=translation["automation_error_title"], message=translation["enrollment_error"],
-                              button_width=380)
-
-            self.after(3000, explanation)
+            self.destroy_windows()
+            if not self.disable_audio:
+                winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/notification.wav"), winsound.SND_ASYNC)
+            CTkMessagebox(title=translation["automation_error_title"], message=translation["enrollment_error"],
+                          button_width=380)
 
     def show_modify_classes_information(self):
         self.destroy_windows()
