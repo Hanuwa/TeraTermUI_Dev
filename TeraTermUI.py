@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 12/09/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 12/10/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -771,7 +771,6 @@ class TeraTermUI(customtkinter.CTk):
                         self.cursor.execute("INSERT INTO user_data (welcome) VALUES (?)", ("Done",))
                     else:
                         self.cursor.execute("UPDATE user_data SET welcome=?", ("Done",))
-                    self.intro_box.configure(state="disabled")
 
                 self.after(3500, show_message_box)
             else:
@@ -5636,6 +5635,7 @@ class TeraTermUI(customtkinter.CTk):
             return
 
         self.enable_widgets(self, self.help, self.status)
+        self.intro_box.configure(state="disabled")
         if self.enrolled_classes_table is not None:
             translation = self.load_language()
             for row_index in range(min(len(self.mod_selection_list), len(self.enrolled_classes_data))):
