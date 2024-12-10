@@ -5635,7 +5635,8 @@ class TeraTermUI(customtkinter.CTk):
             return
 
         self.enable_widgets(self, self.help, self.status)
-        self.intro_box.configure(state="disabled")
+        if self.intro_box._textbox.cget("state") == "normal":
+            self.intro_box.configure(state="disabled")
         if self.enrolled_classes_table is not None:
             translation = self.load_language()
             for row_index in range(min(len(self.mod_selection_list), len(self.enrolled_classes_data))):
