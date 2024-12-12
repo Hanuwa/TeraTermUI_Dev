@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 12/10/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 12/11/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -4789,8 +4789,8 @@ class TeraTermUI(customtkinter.CTk):
         main_window_y = self.winfo_y()
         main_window_width = self.winfo_width()
         main_window_height = self.winfo_height()
-        timer_window_width = 335
-        timer_window_height = 160
+        timer_window_width = 340
+        timer_window_height = 170
         center_x = main_window_x + (main_window_width // 2) - (timer_window_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (timer_window_height // 2)
         screen_width = self.winfo_screenwidth()
@@ -4804,18 +4804,14 @@ class TeraTermUI(customtkinter.CTk):
         self.timer_window.attributes("-alpha", 0.90)
         self.timer_window.resizable(False, False)
         self.timer_window.iconbitmap(self.icon_path)
-        self.message_label = customtkinter.CTkLabel(self.timer_window,
-                                                    font=customtkinter.CTkFont(
-                                                        size=20, weight="bold"),
-                                                    text=translation["auto_enroll_activated"])
+        self.message_label = customtkinter.CTkLabel(self.timer_window, font=customtkinter.CTkFont(
+            size=20, weight="bold"), text=translation["auto_enroll_activated"])
         self.message_label.pack()
-        self.timer_label = customtkinter.CTkLabel(self.timer_window, text="",
-                                                  font=customtkinter.CTkFont(size=15))
-        self.timer_label.pack()
-        self.cancel_button = CustomButton(self.timer_window, text=translation["option_1"], width=260, height=32,
-                                          hover_color="darkred", fg_color="red",
-                                          command=self.end_countdown)
-        self.cancel_button.pack(pady=25)
+        self.timer_label = customtkinter.CTkLabel(self.timer_window, text="", font=customtkinter.CTkFont(size=15))
+        self.timer_label.pack(pady=(12, 0))
+        self.cancel_button = CustomButton(self.timer_window, text=translation["option_1"], width=260, height=28,
+                                          hover_color="darkred", fg_color="red", command=self.end_countdown)
+        self.cancel_button.pack(pady=(20, 0))
         new_menu = pystray.Menu(
             pystray.MenuItem(translation["hide_tray"], self.hide_all_windows),
             pystray.MenuItem(translation["show_tray"], self.show_all_windows, default=True),
