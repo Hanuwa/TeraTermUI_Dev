@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 12/11/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 12/16/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -609,6 +609,7 @@ class TeraTermUI(customtkinter.CTk):
         self.disable_feedback = False
         self.sending_feedback = False
         self.auto_enroll_bool = False
+        self.auto_enroll_focus = False
         self.countdown_running = False
         self.enrollment_error_check = False
         self.modify_error_check = False
@@ -4429,11 +4430,13 @@ class TeraTermUI(customtkinter.CTk):
             self.auto_enroll.deselect()
             self.countdown_running = False
             self.auto_enroll_bool = False
+            self.auto_enroll_focus = False
             self.disable_enable_gui()
             if hasattr(self, "running_countdown") and self.running_countdown \
                     is not None and self.running_countdown.get():
                 self.end_countdown()
         elif self.auto_enroll.get() == "off":
+            self.auto_enroll_focus = True
             self.auto_enroll.select()
             self.auto_enroll_event_handler()
 
@@ -4456,6 +4459,8 @@ class TeraTermUI(customtkinter.CTk):
                     self.update_loading_screen(loading_screen, future)
                 else:
                     self.auto_enroll.deselect()
+                    if self.auto_enroll_focus:
+                        self.auto_enroll.focus_set()
             elif self.auto_enroll.get() == "off":
                 self.countdown_running = False
                 self.auto_enroll_bool = False
@@ -4470,6 +4475,7 @@ class TeraTermUI(customtkinter.CTk):
                           message=translation["auto_enroll_idle"])
             self.auto_enroll.deselect()
             self.auto_enroll.configure(state="disabled")
+        self.auto_enroll_focus = False
 
     # Auto-Enroll classes
     def auto_enroll_event(self):
