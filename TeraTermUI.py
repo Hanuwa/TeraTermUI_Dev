@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 12/16/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 12/20/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -297,6 +297,8 @@ class TeraTermUI(customtkinter.CTk):
         self.scaling_tooltip = CTkToolTip(self.scaling_slider, message=str(self.scaling_slider.get()) + "%",
                                           bg_color="#1E90FF")
         self.curr_scaling = self.scaling_slider.get() / 100
+        self.last_scaling_value = self.curr_scaling
+        self.last_scaling_update = 0
         self.scaling_slider.grid(row=8, column=0, padx=20, pady=(10, 20))
         self.bind("<Left>", self.move_slider_left)
         self.bind("<Right>", self.move_slider_right)
@@ -8534,10 +8536,23 @@ class TeraTermUI(customtkinter.CTk):
         if new_scaling_float == self.curr_scaling:
             return
 
+        current_time = time.time()
+        time_since_last_update = current_time - self.last_scaling_update
+        if time_since_last_update < 0.1:
+            return
+
+        scaling_change = abs(new_scaling_float - self.last_scaling_value)
+        if scaling_change > 0.25:
+            direction = 1 if new_scaling_float > self.last_scaling_value else -1
+            new_scaling_float = self.last_scaling_value + (direction * 0.25)
+            new_scaling = new_scaling_float * 100
+
         self.scaling_tooltip.hide()
         customtkinter.set_widget_scaling(new_scaling_float)
-        self.scaling_tooltip.configure(message=f"{new_scaling}%")
+        self.scaling_tooltip.configure(message=f"{new_scaling:.0f}%")
         self.curr_scaling = new_scaling_float
+        self.last_scaling_value = new_scaling_float
+        self.last_scaling_update = current_time
         self.scaling_tooltip.show()
         self.focus_set()
 
