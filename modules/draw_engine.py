@@ -23,10 +23,12 @@ class DrawEngine:
      - draw_rounded_scrollbar()
      - draw_checkmark()
      - draw_dropdown_arrow()
-
     """
 
     preferred_drawing_method: str = None  # 'polygon_shapes', 'font_shapes', 'circle_shapes'
+    __slots__ = ("_canvas", "_items", "_round_width_to_even_numbers", "_round_height_to_even_numbers",
+                 "_last_rounded_rect_settings", "_last_background_corners", "_last_dropdown_arrow",
+                 "_last_progress_bar_settings", "_last_slider_settings", "_last_scrollbar_settings")
 
     def __init__(self, canvas: CTkCanvas):
         self._canvas = canvas
