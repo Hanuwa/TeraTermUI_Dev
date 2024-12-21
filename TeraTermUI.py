@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 12/20/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 12/21/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -430,6 +430,14 @@ class TeraTermUI(customtkinter.CTk):
         }
 
         # Second Tab
+        self.class_table_pairs = []
+        self.hidden_tables = []
+        self.hidden_labels = []
+        self.tables_checkboxes = []
+        self.classes_status = {}
+        self.table_tooltips = {}
+        self.original_table_data = {}
+        self.current_table_index = -1
         self.in_search_frame = False
         self.search_scrollbar = None
         self.title_search = None
@@ -441,8 +449,19 @@ class TeraTermUI(customtkinter.CTk):
         self.show_all_tooltip = None
         self.search = None
         self.search_next_page = None
-        self.search_next_page_status = False
+        self.move_tables_overlay = None
+        self.move_title_label = None
+        self.tables_container = None
+        self.table_count = None
+        self.table_pipe = None
+        self.table_position = None
+        self.table = None
+        self.current_class = None
+        self.previous_button = None
+        self.next_button = None
+        self.remove_button = None
         self.search_next_page_tooltip = None
+        self.search_next_page_status = False
 
         # Third Tab
         self.title_menu = None
@@ -590,23 +609,6 @@ class TeraTermUI(customtkinter.CTk):
         self.can_edit = False
         self.original_font = None
         self.original_color = None
-        self.classes_status = {}
-        self.class_table_pairs = []
-        self.table_tooltips = {}
-        self.original_table_data = {}
-        self.current_table_index = -1
-        self.move_tables_overlay = None
-        self.move_title_label = None
-        self.tables_container = None
-        self.tables_checkboxes = []
-        self.table_count = None
-        self.table_pipe = None
-        self.table_position = None
-        self.table = None
-        self.current_class = None
-        self.previous_button = None
-        self.next_button = None
-        self.remove_button = None
         self.renamed_tabs = None
         self.disable_feedback = False
         self.sending_feedback = False
@@ -6157,6 +6159,7 @@ class TeraTermUI(customtkinter.CTk):
         if not modified_data:
             self.after(100, self.show_error_message, 320, 235, translation["failed_to_search"])
             return
+
         table_values = [headers] + [[item.get(header, "") for header in headers] for item in modified_data]
         original_table_values = table_values.copy()
         if self.sort_by is not None and self.sort_by.get() != translation["sort_by"] and \
@@ -6187,16 +6190,6 @@ class TeraTermUI(customtkinter.CTk):
             self.after(100, self.display_current_table)
             return
 
-        num_rows = len(modified_data) + 1
-        new_table = CTkTable(
-            self.search_scrollbar,
-            column=len(headers),
-            row=num_rows,
-            values=table_values,
-            header_color="#145DA0",
-            hover_color="#339CFF",
-            command=lambda row, col: self.copy_cell_data_to_clipboard(new_table.get_cell(row, col))
-        )
         tooltip_messages = {
             translation["sec"]: translation["tooltip_sec"],
             translation["m"]: translation["tooltip_m"],
@@ -6206,22 +6199,51 @@ class TeraTermUI(customtkinter.CTk):
             translation["av"]: translation["tooltip_av"],
             translation["instructor"]: translation["tooltip_instructor"],
         }
-        for i, header in enumerate(headers):
-            if i < 4 or i == 5:
-                new_table.edit_column(i, width=55)
-            cell = new_table.get_cell(0, i)
-            tooltip_message = tooltip_messages[header]
-            if cell in self.table_tooltips:
-                self.table_tooltips[cell].configure(message=tooltip_message)
-            else:
+
+        if self.hidden_tables and self.hidden_labels:
+            new_table = self.hidden_tables.pop()
+            display_class = self.hidden_labels.pop()
+            display_class.configure(text=self.get_class_for_pdf)
+            new_table.refresh_table(table_values)
+            for i, header in enumerate(headers):
+                cell = new_table.get_cell(0, i)
+                tooltip_message = tooltip_messages[header]
+                tooltip = self.table_tooltips.get(cell)
+                if tooltip:
+                    tooltip.configure(message=tooltip_message)
+                else:
+                    tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#989898", alpha=0.90)
+                    self.table_tooltips[cell] = tooltip
+            display_class.grid(row=1, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+            new_table.grid(row=2, column=1, padx=(0, 15), pady=(40, 0), sticky="n")
+        else:
+            new_table = CTkTable(
+                self.search_scrollbar,
+                column=len(headers),
+                row=len(table_values),
+                values=table_values,
+                header_color="#145DA0",
+                hover_color="#339CFF",
+                command=lambda row, col: self.copy_cell_data_to_clipboard(new_table.get_cell(row, col))
+            )
+            for i, header in enumerate(headers):
+                cell = new_table.get_cell(0, i)
+                tooltip_message = tooltip_messages[header]
                 tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#989898", alpha=0.90)
                 self.table_tooltips[cell] = tooltip
+            display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_pdf,
+                                                   font=customtkinter.CTkFont(size=15, weight="bold", underline=True))
+            display_class.bind("<Button-1>", lambda event: self.focus_set())
+
         self.table = new_table
         self.original_table_data[new_table] = original_table_values
 
+        for i, header in enumerate(headers):
+            if i < 4 or i == 5:
+                new_table.edit_column(i, width=55)
         instructor_col_index = headers.index(translation["instructor"])
         av_col_index = headers.index(translation["av"])
-        for row in range(1, num_rows):
+        for row in range(1, len(table_values)):
             section_cell = new_table.get_cell(row, 0)
             new_table.bind_cell(row, 0, "<Button-3>", lambda event, t_cell=section_cell:
             self.transfer_class_data_to_enroll_tab(event, t_cell))
@@ -6235,9 +6257,6 @@ class TeraTermUI(customtkinter.CTk):
             new_table.bind_cell(0, col_index, "<Button-3>",
                                 lambda event: self.move_tables_overlay_event())
 
-        display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_pdf,
-                                               font=customtkinter.CTkFont(size=15, weight="bold", underline=True))
-        display_class.bind("<Button-1>", lambda event: self.focus_set())
         if self.table_count is None:
             table_count_label = f"{translation['table_count']}{len(self.class_table_pairs)}/20"
             table_position_label = (f" {translation['table_position']}{self.current_table_index + 1}"
@@ -6257,7 +6276,7 @@ class TeraTermUI(customtkinter.CTk):
             self.table_count_tooltip = CTkToolTip(self.table_count, message=translation["table_count_tooltip"],
                                                   bg_color="#989898", alpha=0.90)
             self.table_position_tooltip = CTkToolTip(self.table_position, message=translation["table_position_tooltip"],
-                                                  bg_color="#989898", alpha=0.90)
+                                                     bg_color="#989898", alpha=0.90)
             self.previous_button_tooltip = CTkToolTip(self.previous_button, message=translation["previous_tooltip"],
                                                       bg_color="#1E90FF")
             self.next_button_tooltip = CTkToolTip(self.next_button, message=translation["next_tooltip"],
@@ -6274,6 +6293,7 @@ class TeraTermUI(customtkinter.CTk):
             self.sort_by.set(translation["sort_by"])
             self.sort_by_tooltip = CTkToolTip(self.sort_by, message=translation["sort_by_tooltip"],
                                               bg_color="#1E90FF")
+
         self.class_table_pairs.append((display_class, new_table, self.get_semester_for_pdf,
                                        self.show_all_sections, available_values, self.search_next_page_status))
         if self.sort_by is not None and self.sort_by.get() != translation["sort_by"] and \
@@ -6282,25 +6302,24 @@ class TeraTermUI(customtkinter.CTk):
         self.check_and_update_labels()
         self.current_table_index = len(self.class_table_pairs) - 1
         self.table_position.configure(text=f"{self.current_table_index + 1}")
+
         if len(self.class_table_pairs) > 20:
             display_class_to_remove, table_to_remove, _, _, _, more_sections = self.class_table_pairs[0]
-            display_class_to_remove.grid_forget()
-            display_class_to_remove.unbind("<Button-1>")
-            table_to_remove.grid_forget()
-            for cell in table_to_remove.get_all_cells():
-                if cell in self.table_tooltips:
-                    self.table_tooltips[cell].destroy()
-                    del self.table_tooltips[cell]
+            display_class_to_remove.grid_remove()
+            table_to_remove.grid_remove()
+            self.hidden_tables.append(table_to_remove)
+            self.hidden_labels.append(display_class_to_remove)
+
             if table_to_remove in self.original_table_data:
                 del self.original_table_data[table_to_remove]
+
             if more_sections:
                 self.search_next_page.grid_forget()
                 self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
                 self.search.configure(width=140)
                 self.search_next_page_status = False
+
             del self.class_table_pairs[0]
-            self.after(0, display_class_to_remove.destroy)
-            self.after(0, table_to_remove.destroy)
             self.current_table_index = max(0, self.current_table_index - 1)
             self.table_count.configure(text_color=("black", "white"))
 
@@ -6776,15 +6795,11 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language()
         display_class_to_remove, table_to_remove, _, _, _, more_sections \
             = self.class_table_pairs[self.current_table_index]
-        display_class_to_remove.grid_forget()
-        display_class_to_remove.unbind("<Button-1>")
-        table_to_remove.grid_forget()
 
-        for cell in table_to_remove.get_all_cells():
-            if cell in self.table_tooltips:
-                self.table_tooltips[cell].destroy()
-                self.table_tooltips[cell] = None
-                del self.table_tooltips[cell]
+        display_class_to_remove.grid_remove()
+        table_to_remove.grid_remove()
+        self.hidden_tables.append(table_to_remove)
+        self.hidden_labels.append(display_class_to_remove)
 
         if table_to_remove in self.original_table_data:
             del self.original_table_data[table_to_remove]
@@ -6799,11 +6814,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
                 self.search.configure(width=140)
                 self.search_next_page_status = False
-
-        self.after(0, display_class_to_remove.destroy)
-        self.after(0, table_to_remove.destroy)
-        del table_to_remove
-        del display_class_to_remove
 
         if len(self.class_table_pairs) == 20:
             self.table_count.configure(text_color=("black", "white"))
@@ -6854,6 +6864,7 @@ class TeraTermUI(customtkinter.CTk):
         self.search_scrollbar.scroll_to_top()
         self.check_and_update_labels()
         self.update_buttons()
+
         def reshow_widgets():
             self.table_count.grid(row=4, column=1, padx=(0, 95), pady=(10, 0), sticky="n")
             self.table_pipe.grid(row=4, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
