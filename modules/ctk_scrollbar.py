@@ -81,7 +81,7 @@ class CTkScrollbar(CTkBaseClass):
         self._canvas = CTkCanvas(master=self,
                                  highlightthickness=0,
                                  width=self._apply_widget_scaling(self._current_width),
-                                 height=self._apply_widget_scaling(self._current_height))
+                                 height=self._apply_widget_scaling(self._current_height), cursor="hand2")
         self._canvas.place(x=0, y=0, relwidth=1, relheight=1)
         self._draw_engine = DrawEngine(self._canvas)
 
