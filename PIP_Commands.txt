@@ -8,7 +8,7 @@ pip list
 pip check
 pip search
 .venv\Scripts activate
-certutil -hashfile [path_to_exe] SHA256
+certutil -hashfile [path_to_file] SHA256
 
 # Latest Releases Text
 Latest release of Tera Term UI,
