@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 12/21/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 12/22/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -6201,8 +6201,19 @@ class TeraTermUI(customtkinter.CTk):
         }
 
         if self.hidden_tables and self.hidden_labels:
-            new_table = self.hidden_tables.pop()
-            display_class = self.hidden_labels.pop()
+            target_rows = len(table_values)
+            best_index = len(self.hidden_tables) - 1
+            smallest_row_change = float("inf")
+            for i, table in enumerate(self.hidden_tables):
+                diff = abs(table.cget("row") - target_rows)
+                if diff < smallest_row_change:
+                    smallest_row_change = diff
+                    best_index = i
+                    if diff == 0: 
+                        break
+                        
+            new_table = self.hidden_tables.pop(best_index)
+            display_class = self.hidden_labels.pop(best_index)
             display_class.configure(text=self.get_class_for_pdf)
             new_table.refresh_table(table_values)
             for i, header in enumerate(headers):
@@ -6859,6 +6870,8 @@ class TeraTermUI(customtkinter.CTk):
         self.table_pipe.grid_forget()
         self.table_position.grid_forget()
         self.remove_button.grid_forget()
+        self.previous_button.grid_forget()
+        self.next_button.grid_forget()
         self.download_search_pdf.grid_forget()
         self.sort_by.grid_forget()
         self.search_scrollbar.scroll_to_top()
@@ -6869,10 +6882,10 @@ class TeraTermUI(customtkinter.CTk):
             self.table_count.grid(row=4, column=1, padx=(0, 95), pady=(10, 0), sticky="n")
             self.table_pipe.grid(row=4, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
             self.table_position.grid(row=4, column=1, padx=(95, 0), pady=(10, 0), sticky="n")
+            self.remove_button.grid(row=5, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
             if len(self.class_table_pairs) > 1:
                 self.previous_button.grid(row=5, column=1, padx=(0, 300), pady=(10, 0), sticky="n")
                 self.next_button.grid(row=5, column=1, padx=(300, 0), pady=(10, 0), sticky="n")
-            self.remove_button.grid(row=5, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
             self.download_search_pdf.grid(row=6, column=1, padx=(157, 0), pady=(10, 0), sticky="n")
             self.sort_by.grid(row=6, column=1, padx=(0, 157), pady=(10, 0), sticky="n")
 
