@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 12/22/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 12/23/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -294,7 +294,7 @@ class TeraTermUI(customtkinter.CTk):
         self.scaling_slider = customtkinter.CTkSlider(self.sidebar_frame, from_=97, to=103, number_of_steps=2,
                                                       width=150, height=20, command=self.change_scaling_event)
         self.scaling_slider.set(100)
-        self.scaling_tooltip = CTkToolTip(self.scaling_slider, message=str(self.scaling_slider.get()) + "%",
+        self.scaling_tooltip = CTkToolTip(self.scaling_slider, message=f"{self.scaling_slider.get():.0f}%",
                                           bg_color="#1E90FF")
         self.curr_scaling = self.scaling_slider.get() / 100
         self.last_scaling_value = self.curr_scaling
@@ -6209,9 +6209,9 @@ class TeraTermUI(customtkinter.CTk):
                 if diff < smallest_row_change:
                     smallest_row_change = diff
                     best_index = i
-                    if diff == 0: 
+                    if diff == 0:
                         break
-                        
+
             new_table = self.hidden_tables.pop(best_index)
             display_class = self.hidden_labels.pop(best_index)
             display_class.configure(text=self.get_class_for_pdf)
@@ -8516,7 +8516,7 @@ class TeraTermUI(customtkinter.CTk):
                 value -= 3
                 self.scaling_slider.set(value)
                 self.change_scaling_event(value)
-                self.scaling_tooltip.configure(message=str(self.scaling_slider.get()) + "%")
+                self.scaling_tooltip.configure(message=f"{self.scaling_slider.get():.0f}%")
 
     # Moves the scaling slider to the right
     def move_slider_right(self, event):
@@ -8526,7 +8526,7 @@ class TeraTermUI(customtkinter.CTk):
                 value += 3
                 self.scaling_slider.set(value)
                 self.change_scaling_event(value)
-                self.scaling_tooltip.configure(message=str(self.scaling_slider.get()) + "%")
+                self.scaling_tooltip.configure(message=f"{self.scaling_slider.get():.0f}%")
 
     # Keybindings for different widgets
     def spacebar_event(self):
