@@ -5987,6 +5987,7 @@ class TeraTermUI(customtkinter.CTk):
 
         # Check if user cancelled the file dialog
         if not filepath:
+            self.focus_set()
             return
 
         self.last_save_pdf_dir = os.path.dirname(filepath)
@@ -7324,6 +7325,7 @@ class TeraTermUI(customtkinter.CTk):
 
         # Check if user cancelled the file dialog
         if not filepath:
+            self.focus_set()
             return
 
         self.last_save_pdf_dir = os.path.dirname(filepath)
@@ -8611,7 +8613,7 @@ class TeraTermUI(customtkinter.CTk):
                             hover_color=("darkred", "use_default", "use_default"))
         response = msg.get()
         if response[0] == "Yes" or response[0] == "Sí":
-            webbrowser.open("https://osdn.net/projects/ttssh2/releases")
+            webbrowser.open("https://teratermproject.github.io/index-en.html")
         self.log_in.configure(state="nornal")
         self.bind("<Return>", lambda event: self.login_event_handler())
 
