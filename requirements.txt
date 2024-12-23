@@ -54,7 +54,7 @@ PyGetWindow==0.0.9
 PyMsgBox==1.0.9
 pyparsing==3.2.0
 pyperclip==1.9.0
-pyppmd==1.1.0
+pyppmd==1.1.1
 PyRect==0.2.0
 pyscreenshot==3.1
 PyScreeze==1.0.1
