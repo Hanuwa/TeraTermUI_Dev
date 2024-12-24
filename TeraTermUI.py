@@ -6074,23 +6074,47 @@ class TeraTermUI(customtkinter.CTk):
 
         translation = self.load_language()
         added_multiple = False
-        for i in range(8):
-            if not self.m_classes_entry[i].get().strip() and not self.m_section_entry[i].get().strip():
-                self.m_classes_entry[i].insert(0, class_text)
-                self.m_section_entry[i].insert(0, section_text)
-                self.m_semester_entry[i].set(semester_text)
-                self.m_register_menu[i].set(translation["register"])
-                added_multiple = True
-                if i > self.a_counter:
-                    self.add_event()
-                break
+        duplicate_exists = False
 
-        if added_multiple:
-            self.check_class_time(check_multiple=True)
+        first_entry_semester = self.m_semester_entry[0].get() if self.m_classes_entry[0].get().strip() else None
+        if first_entry_semester and first_entry_semester != semester_text:
+            msg = translation["pasted"]
+            delay = 3500
+
         else:
-            self.check_class_time(check_multiple=False)
-        self.focus_set()
+            for i in range(8):
+                existing_class = self.m_classes_entry[i].get().strip()
+                existing_section = self.m_section_entry[i].get().strip()
+                if existing_class == class_text and existing_section == section_text:
+                    duplicate_exists = True
+                    break
 
+            if not duplicate_exists:
+                for i in range(8):
+                    if not self.m_classes_entry[i].get().strip() and not self.m_section_entry[i].get().strip():
+                        self.m_classes_entry[i].insert(0, class_text)
+                        self.m_section_entry[i].insert(0, section_text)
+                        if i == 0:
+                            self.m_semester_entry[i].set(semester_text)
+                        self.m_register_menu[i].set(translation["register"])
+                        added_multiple = True
+                        if i > self.a_counter:
+                            self.add_event()
+                        break
+
+                if added_multiple:
+                    self.check_class_time(check_multiple=True)
+                    msg = translation["pasted_mult"]
+                    delay = 5000
+                else:
+                    self.check_class_time(check_multiple=False)
+                    msg = translation["pasted"]
+                    delay = 3500
+            else:
+                msg = translation["pasted"]
+                delay = 3500
+
+        self.focus_set()
         # Close existing tooltip if any
         self.destroy_tooltip()
 
@@ -6099,16 +6123,15 @@ class TeraTermUI(customtkinter.CTk):
         self.tooltip = tk.Toplevel(self)
         self.tooltip.wm_overrideredirect(True)
         self.tooltip.transient(self)
-        self.tooltip.config(bg='#145DA0')
+        self.tooltip.config(bg="#145DA0")
         self.tooltip.wm_geometry(f"+{x + 20}+{y + 20}")
 
-        label = tk.Label(self.tooltip, text=translation["pasted"],
-                         bg="#145DA0", fg="#fff", font=("Arial", 10, "bold"))
+        label = tk.Label(self.tooltip, text=msg, bg="#145DA0", fg="#fff", font=("Arial", 10, "bold"))
         label.pack(padx=5, pady=5)
         self.lift_tooltip()
 
-        # Auto-destroy after 3.5 seconds and reset the tooltip variable
-        self.tooltip.after(3500, self.destroy_tooltip)
+        # Auto-destroy after a couple seconds and reset the tooltip variable
+        self.tooltip.after(delay, self.destroy_tooltip)
 
     @staticmethod
     def open_student_help(event, cell):
