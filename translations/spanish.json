@@ -286,6 +286,7 @@
 	"pdf_save_success": "El PDF ha sido guardado éxitosamente",
 	"clipboard": "¡Copiado!",
 	"pasted": "¡Detalles de la clase copiados\na la pestaña de matricular!",
+	"pasted_mult": "¡Detalles de la clase copiados\na la pestaña de matricular\ny a la pantalla de múltiple!",
 	"sec": "SEC",
 	"m": "M",
 	"cred": "CRED",
