@@ -286,6 +286,7 @@
 	"pdf_save_success": "PDF has been saved successfully",
 	"clipboard": "Copied!",
 	"pasted": "Copied class details\nto enroll tab!",
+	"pasted_mult": "Copied class details\nto enroll tab and\nmultiple screen!",
 	"sec": "SEC",
 	"m": "M",
 	"cred": "CRED",
