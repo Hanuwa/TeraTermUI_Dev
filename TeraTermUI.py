@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 12/23/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 12/24/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 12000 lines of codes, it definitely makes things harder to work with
+# and with over 12100 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -4343,7 +4343,7 @@ class TeraTermUI(customtkinter.CTk):
         time_obj = datetime.strptime(time_str, "%H:%M")
         return time_obj.strftime("%I:%M %p").lstrip("0")
 
-    def check_class_time(self):
+    def check_class_time(self, check_multiple=False):
         lang = self.language_menu.get()
         day_translations = {
             "Monday": "Lunes",
@@ -4368,6 +4368,23 @@ class TeraTermUI(customtkinter.CTk):
                                              visibility=True)
         else:
             self.e_section_tooltip.configure(message="", visibility=False)
+
+        if check_multiple:
+            for i in range(8):
+                section = self.m_section_entry[i].get().upper().replace(" ", "")
+                if section[:2] in schedule_map:
+                    days, start_time, end_time = schedule_map[section[:2]]
+                    start_time_12hr = TeraTermUI.convert_to_12_hour_format(start_time)
+                    end_time_12hr = TeraTermUI.convert_to_12_hour_format(end_time)
+                    if lang == "Español":
+                        translated_days = ", ".join(day_translations.get(day, day) for day in days.split(", "))
+                    else:
+                        translated_days = days
+                    self.m_tooltips[i].configure(
+                        message=f"{translated_days}\n *EST. {start_time_12hr} - {end_time_12hr}",
+                        visibility=True)
+                else:
+                    self.m_tooltips[i].configure(message="", visibility=False)
 
     def check_class_conflicts(self, event=None):
         translation = self.load_language()
@@ -6049,12 +6066,29 @@ class TeraTermUI(customtkinter.CTk):
         self.e_classes_entry.delete(0, "end")
         self.e_section_entry.delete(0, "end")
         display_class, _, semester_text, _, _, _ = self.class_table_pairs[self.current_table_index]
-        self.e_classes_entry.insert(0, display_class.cget("text").split("-")[0].strip())
+        class_text = display_class.cget("text").split("-")[0].strip()
+        self.e_classes_entry.insert(0, class_text)
         self.e_section_entry.insert(0, section_text)
         self.e_semester_entry.set(semester_text)
         self.register.select()
-        self.check_class_time()
+
         translation = self.load_language()
+        added_multiple = False
+        for i in range(8):
+            if not self.m_classes_entry[i].get().strip() and not self.m_section_entry[i].get().strip():
+                self.m_classes_entry[i].insert(0, class_text)
+                self.m_section_entry[i].insert(0, section_text)
+                self.m_semester_entry[i].set(semester_text)
+                self.m_register_menu[i].set(translation["register"])
+                added_multiple = True
+                if i > self.a_counter:
+                    self.add_event()
+                break
+
+        if added_multiple:
+            self.check_class_time(check_multiple=True)
+        else:
+            self.check_class_time(check_multiple=False)
         self.focus_set()
 
         # Close existing tooltip if any
