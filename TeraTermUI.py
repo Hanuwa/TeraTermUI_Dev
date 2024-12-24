@@ -6075,38 +6075,56 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language()
         added_multiple = False
         duplicate_exists = False
+        replaced_section = False
+        msg = None
+        delay = None
 
         first_entry_semester = self.m_semester_entry[0].get() if self.m_classes_entry[0].get().strip() else None
         if first_entry_semester and first_entry_semester != semester_text:
             msg = translation["pasted"]
             delay = 3500
-
         else:
+            existing_index = -1
             for i in range(8):
                 existing_class = self.m_classes_entry[i].get().strip()
                 existing_section = self.m_section_entry[i].get().strip()
-                if existing_class == class_text and existing_section == section_text:
-                    duplicate_exists = True
-                    break
-
-            if not duplicate_exists:
-                for i in range(8):
-                    if not self.m_classes_entry[i].get().strip() and not self.m_section_entry[i].get().strip():
-                        self.m_classes_entry[i].insert(0, class_text)
-                        self.m_section_entry[i].insert(0, section_text)
-                        if i == 0:
-                            self.m_semester_entry[i].set(semester_text)
-                        self.m_register_menu[i].set(translation["register"])
-                        added_multiple = True
-                        if i > self.a_counter:
-                            self.add_event()
+                if existing_class == class_text:
+                    if existing_section == section_text:
+                        duplicate_exists = True
+                        break
+                    elif self.m_semester_entry[i].get() == semester_text:
+                        existing_index = i
                         break
 
+            if not duplicate_exists:
+                if existing_index >= 0:
+                    self.m_classes_entry[existing_index].delete(0, "end")
+                    self.m_section_entry[existing_index].delete(0, "end")
+                    self.m_classes_entry[existing_index].insert(0, class_text)
+                    self.m_section_entry[existing_index].insert(0, section_text)
+                    self.m_register_menu[existing_index].set(translation["register"])
+                    replaced_section = True
+                    msg = translation["pasted_mult"]
+                    delay = 3500
+                else:
+                    for i in range(8):
+                        if not self.m_classes_entry[i].get().strip() and not self.m_section_entry[i].get().strip():
+                            self.m_classes_entry[i].insert(0, class_text)
+                            self.m_section_entry[i].insert(0, section_text)
+                            if i == 0:
+                                self.m_semester_entry[i].set(semester_text)
+                            self.m_register_menu[i].set(translation["register"])
+                            added_multiple = True
+                            current_visible = sum(1 for j in range(8) if self.m_classes_entry[j].winfo_viewable())
+                            if i >= current_visible:
+                                while self.a_counter < i:
+                                    self.add_event()
+                            break
                 if added_multiple:
                     self.check_class_time(check_multiple=True)
                     msg = translation["pasted_mult"]
                     delay = 5000
-                else:
+                elif not replaced_section:
                     self.check_class_time(check_multiple=False)
                     msg = translation["pasted"]
                     delay = 3500
