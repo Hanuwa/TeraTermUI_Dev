@@ -81,49 +81,58 @@ class CTkCanvas(tkinter.Canvas):
     def create_aa_circle(self, x_pos: int, y_pos: int, radius: int, angle: int = 0, fill: str = "white",
                          tags: Union[str, Tuple[str, ...]] = "", anchor: str = tkinter.CENTER) -> int:
         # create a circle with a font element
-        circle_1 = self.create_text(x_pos, y_pos, text=self._get_char_from_radius(radius), anchor=anchor, fill=fill,
+        circle_id = self.create_text(x_pos, y_pos, text=self._get_char_from_radius(radius), anchor=anchor, fill=fill,
                                     font=("CustomTkinter_shapes_font", -radius * 2), tags=tags, angle=angle)
-        self.addtag_withtag("ctk_aa_circle_font_element", circle_1)
-        self._aa_circle_canvas_ids.add(circle_1)
+        self.addtag_withtag("ctk_aa_circle_font_element", circle_id)
+        self._aa_circle_canvas_ids.add(circle_id)
 
-        return circle_1
+        return circle_id
 
     def coords(self, tag_or_id, *args):
-
-        if type(tag_or_id) == str and "ctk_aa_circle_font_element" in self.gettags(tag_or_id):
-            coords_id = self.find_withtag(tag_or_id)[0]  # take the lowest id for the given tag
-            super().coords(coords_id, *args[:2])
-
-            if len(args) == 3:
-                super().itemconfigure(coords_id, font=("CustomTkinter_shapes_font", -int(args[2]) * 2), text=self._get_char_from_radius(args[2]))
-
-        elif type(tag_or_id) == int and tag_or_id in self._aa_circle_canvas_ids:
+        if isinstance(tag_or_id, int) and tag_or_id in self._aa_circle_canvas_ids:
             super().coords(tag_or_id, *args[:2])
-
             if len(args) == 3:
-                super().itemconfigure(tag_or_id, font=("CustomTkinter_shapes_font", -args[2] * 2), text=self._get_char_from_radius(args[2]))
+                super().itemconfigure(
+                    tag_or_id,
+                    font=("CustomTkinter_shapes_font", -(args[2] * 2)),
+                    text=self._get_char_from_radius(args[2])
+                )
 
+        elif isinstance(tag_or_id, str) and "ctk_aa_circle_font_element" in self.gettags(tag_or_id):
+            coords_id = self.find_withtag(tag_or_id)
+            if coords_id:
+                coords_id = coords_id[0]
+                super().coords(coords_id, *args[:2])
+                if len(args) == 3:
+                    super().itemconfigure(
+                        coords_id,
+                        font=("CustomTkinter_shapes_font", -(int(args[2]) * 2)),
+                        text=self._get_char_from_radius(args[2])
+                    )
         else:
             super().coords(tag_or_id, *args)
 
     def itemconfig(self, tag_or_id, *args, **kwargs):
-        kwargs_except_outline = kwargs.copy()
-        if "outline" in kwargs_except_outline:
-            del kwargs_except_outline["outline"]
-
-        if type(tag_or_id) == int:
-            if tag_or_id in self._aa_circle_canvas_ids:
-                super().itemconfigure(tag_or_id, *args, **kwargs_except_outline)
-            else:
-                super().itemconfigure(tag_or_id, *args, **kwargs)
+        if isinstance(tag_or_id, int) and tag_or_id in self._aa_circle_canvas_ids:
+            kwargs.pop("outline", None)
+            super().itemconfigure(tag_or_id, *args, **kwargs)
         else:
-            configure_ids = self.find_withtag(tag_or_id)
+            configure_ids = self.find_withtag(tag_or_id) if isinstance(tag_or_id, str) else [tag_or_id]
             for configure_id in configure_ids:
                 if configure_id in self._aa_circle_canvas_ids:
-                    super().itemconfigure(configure_id, *args, **kwargs_except_outline)
+                    temp_kwargs = kwargs.copy()
+                    temp_kwargs.pop("outline", None)
+                    super().itemconfigure(configure_id, *args, **temp_kwargs)
                 else:
                     super().itemconfigure(configure_id, *args, **kwargs)
 
-    def delete(self, *args):
-        super().delete(*args)
-        self._aa_circle_canvas_ids.difference_update(args)
+    def delete(self, *tag_or_ids):
+        all_ids_to_delete = set()
+        for entry in tag_or_ids:
+            if isinstance(entry, int):
+                all_ids_to_delete.add(entry)
+            else:
+                all_ids_to_delete.update(self.find_withtag(entry))
+
+        super().delete(*all_ids_to_delete)
+        self._aa_circle_canvas_ids.difference_update(all_ids_to_delete)
