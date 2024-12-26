@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 12/25/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 12/26/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -10738,7 +10738,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.bind("<Right>", self.teraterm_ui.move_slider_right)
 
         # Context Menu
-        self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10), relief="flat", background="gray35", fg="snow")
+        self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10), relief="flat", background="gray40", fg="snow")
         if not self.read_only:
             self.context_menu.add_command(label="Cut", command=self.cut)
         self.context_menu.add_command(label="Copy", command=self.copy)
@@ -10822,6 +10822,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self._redo_stack.clear()
 
     def undo(self, event=None):
+        self.focus_set()
         if len(self._undo_stack) > 1:
             # Remove the current state from the undo stack and add it to the redo stack
             current_text, current_cursor = self._undo_stack.pop()
@@ -10837,6 +10838,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.see(previous_cursor)
 
     def redo(self, event=None):
+        self.focus_set()
         if self._redo_stack:
             # Get the next state from the redo stack and add it to the undo stack
             next_text, next_cursor = self._redo_stack.pop()
@@ -11086,7 +11088,7 @@ class CustomEntry(customtkinter.CTkEntry):
         self.bind("<KeyRelease>", self.update_undo_stack)
 
         # Context Menu
-        self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10), relief="flat", background="gray35", fg="snow")
+        self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10), relief="flat", background="gray40", fg="snow")
         self.context_menu.add_command(label="Cut", command=self.cut)
         self.context_menu.add_command(label="Copy", command=self.copy)
         self.context_menu.add_command(label="Paste", command=self.paste)
@@ -11138,6 +11140,7 @@ class CustomEntry(customtkinter.CTkEntry):
             self._redo_stack.clear()
 
     def undo(self, event=None):
+        self.focus_set()
         if len(self._undo_stack) > 1:
             # Remove the current state from the undo stack and add it to the redo stack
             current_text, current_cursor = self._undo_stack.pop()
@@ -11163,6 +11166,7 @@ class CustomEntry(customtkinter.CTkEntry):
                 self.update_listbox()
 
     def redo(self, event=None):
+        self.focus_set()
         if self._redo_stack:
             # Get the next state from the redo stack and add it to the undo stack
             next_text, next_cursor = self._redo_stack.pop()
@@ -11440,7 +11444,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
         self.bind("<KeyRelease>", self.update_undo_stack)
 
         # Context Menu
-        self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10), relief="flat", background="gray35", fg="snow")
+        self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10), relief="flat", background="gray40", fg="snow")
         self.context_menu.add_command(label="Cut", command=self.cut)
         self.context_menu.add_command(label="Copy", command=self.copy)
         self.context_menu.add_command(label="Paste", command=self.paste)
@@ -11518,6 +11522,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
             self._redo_stack.clear()  # Clear the redo stack on a new change
 
     def undo(self, event=None):
+        self.focus_set()
         if len(self._undo_stack) > 1:
             # Remove the current state from the undo stack and add it to the redo stack
             current_text, current_cursor = self._undo_stack.pop()
@@ -11534,6 +11539,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
             self._entry.xview_moveto(previous_cursor / len(previous_text) if len(previous_text) > 0 else 0)
 
     def redo(self, event=None):
+        self.focus_set()
         if self._redo_stack:
             # Get the next state from the redo stack and add it to the undo stack
             next_text, next_cursor = self._redo_stack.pop()
