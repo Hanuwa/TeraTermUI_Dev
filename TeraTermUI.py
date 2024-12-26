@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 12/24/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 12/25/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -10738,12 +10738,14 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.bind("<Right>", self.teraterm_ui.move_slider_right)
 
         # Context Menu
-        self.context_menu = tk.Menu(self, tearoff=0, bg="#f0f0f0", fg="#333333", font=("Arial", 10))
+        self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10), relief="flat", background="gray35", fg="snow")
         if not self.read_only:
             self.context_menu.add_command(label="Cut", command=self.cut)
         self.context_menu.add_command(label="Copy", command=self.copy)
         if not self.read_only:
             self.context_menu.add_command(label="Paste", command=self.paste)
+            self.context_menu.add_command(label="Undo", command=self.undo)
+            self.context_menu.add_command(label="Redo", command=self.redo)
         self.context_menu.add_command(label="Select All", command=self.select_all)
         self.bind("<Button-2>", self.custom_middle_mouse)
         self.bind("<Button-3>", self.show_menu)
@@ -10867,11 +10869,15 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.context_menu.entryconfigure(1, label="Copy")
             self.context_menu.entryconfigure(2, label="Paste")
             self.context_menu.entryconfigure(3, label="Select All")
+            self.context_menu.entryconfigure(4, label="Undo")
+            self.context_menu.entryconfigure(5, label="Redo")
         elif self.lang == "Español" and not self.read_only:
             self.context_menu.entryconfigure(0, label="Cortar")
             self.context_menu.entryconfigure(1, label="Copiar")
             self.context_menu.entryconfigure(2, label="Pegar")
             self.context_menu.entryconfigure(3, label="Seleccionar Todo")
+            self.context_menu.entryconfigure(4, label="Deshacer")
+            self.context_menu.entryconfigure(5, label="Rehacer")
 
         if self.lang == "English" and self.read_only:
             self.context_menu.entryconfigure(0, label="Copy")
@@ -10882,7 +10888,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
 
         if self.tag_ranges(tk.SEL):
             if self.lang == "English":
-                self.context_menu.entryconfigure(3, label="Unselect All")
+                self.context_menu.entryconfigure(3, label="Deselect all")
             elif self.lang == "Español":
                 self.context_menu.entryconfigure(3, label="Deseleccionar Todo")
         else:
@@ -11080,11 +11086,13 @@ class CustomEntry(customtkinter.CTkEntry):
         self.bind("<KeyRelease>", self.update_undo_stack)
 
         # Context Menu
-        self.context_menu = tk.Menu(self, tearoff=0, bg="#f0f0f0", fg="#333333", font=("Arial", 10))
+        self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10), relief="flat", background="gray35", fg="snow")
         self.context_menu.add_command(label="Cut", command=self.cut)
         self.context_menu.add_command(label="Copy", command=self.copy)
         self.context_menu.add_command(label="Paste", command=self.paste)
         self.context_menu.add_command(label="Select All", command=self.select_all)
+        self.context_menu.add_command(label="Undo", command=self.undo)
+        self.context_menu.add_command(label="Redo", command=self.redo)
 
         self.bind("<Button-2>", self.custom_middle_mouse)
         self.bind("<Button-3>", self.show_menu)
@@ -11204,15 +11212,19 @@ class CustomEntry(customtkinter.CTkEntry):
             self.context_menu.entryconfigure(1, label="Copy")
             self.context_menu.entryconfigure(2, label="Paste")
             self.context_menu.entryconfigure(3, label="Select All")
+            self.context_menu.entryconfigure(4, label="Undo")
+            self.context_menu.entryconfigure(5, label="Redo")
         elif self.lang == "Español":
             self.context_menu.entryconfigure(0, label="Cortar")
             self.context_menu.entryconfigure(1, label="Copiar")
             self.context_menu.entryconfigure(2, label="Pegar")
             self.context_menu.entryconfigure(3, label="Seleccionar Todo")
+            self.context_menu.entryconfigure(4, label="Deshacer")
+            self.context_menu.entryconfigure(5, label="Rehacer")
 
         if self.select_present():
             if self.lang == "English":
-                self.context_menu.entryconfigure(3, label="Unselect All")
+                self.context_menu.entryconfigure(3, label="Deselect All")
             elif self.lang == "Español":
                 self.context_menu.entryconfigure(3, label="Deseleccionar Todo")
         else:
@@ -11428,11 +11440,13 @@ class CustomComboBox(customtkinter.CTkComboBox):
         self.bind("<KeyRelease>", self.update_undo_stack)
 
         # Context Menu
-        self.context_menu = tk.Menu(self, tearoff=0, bg="#f0f0f0", fg="#333333", font=("Arial", 10))
+        self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10), relief="flat", background="gray35", fg="snow")
         self.context_menu.add_command(label="Cut", command=self.cut)
         self.context_menu.add_command(label="Copy", command=self.copy)
         self.context_menu.add_command(label="Paste", command=self.paste)
         self.context_menu.add_command(label="Select All", command=self.select_all)
+        self.context_menu.add_command(label="Undo", command=self.undo)
+        self.context_menu.add_command(label="Redo", command=self.redo)
 
         self.bind("<Button-2>", self.custom_middle_mouse)
         self.bind("<Button-3>", self.show_menu)
@@ -11560,15 +11574,19 @@ class CustomComboBox(customtkinter.CTkComboBox):
             self.context_menu.entryconfigure(1, label="Copy")
             self.context_menu.entryconfigure(2, label="Paste")
             self.context_menu.entryconfigure(3, label="Select All")
+            self.context_menu.entryconfigure(4, label="Undo")
+            self.context_menu.entryconfigure(5, label="Redo")
         elif self.lang == "Español":
             self.context_menu.entryconfigure(0, label="Cortar")
             self.context_menu.entryconfigure(1, label="Copiar")
             self.context_menu.entryconfigure(2, label="Pegar")
             self.context_menu.entryconfigure(3, label="Seleccionar Todo")
+            self.context_menu.entryconfigure(4, label="Deshacer")
+            self.context_menu.entryconfigure(5, label="Rehacer")
 
         if self._entry.select_present():
             if self.lang == "English":
-                self.context_menu.entryconfigure(3, label="Unselect All")
+                self.context_menu.entryconfigure(3, label="Deselect All")
             elif self.lang == "Español":
                 self.context_menu.entryconfigure(3, label="Deseleccionar Todo")
         else:
