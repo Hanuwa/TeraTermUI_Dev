@@ -216,8 +216,9 @@ class CustomEntry(CTkEntry):
     __slots__ = ("master", "teraterm_ui_instance", "lang", "max_length")
 
     def __init__(self, master, teraterm_ui_instance, lang=None, max_length=250, *args, **kwargs):
-        super().__init__(master, *args, **kwargs)
-
+        if "cursor" not in customtkinter.CTkEntry._valid_tk_entry_attributes:
+            customtkinter.CTkEntry._valid_tk_entry_attributes.add("cursor")
+        super().__init__(master, cursor="xterm", *args, **kwargs)
         initial_state = self.get()
         initial_cursor = self.index(tk.INSERT)
         self.root = self.winfo_toplevel()
@@ -233,6 +234,9 @@ class CustomEntry(CTkEntry):
         self.focus_out_bind_id = self.root.bind("<FocusOut>", self._on_window_focus_out, add="+")
         self.bind("<FocusIn>", self.disable_slider_keys)
         self.bind("<FocusOut>", self.enable_slider_keys)
+        self.bind("<Enter>", self.on_enter)
+        self.bind("<Motion>", self.on_motion)
+        self.bind("<Leave>", self.on_leave)
 
         self.bind("<Control-z>", self.undo)
         self.bind("<Control-Z>", self.undo)
@@ -295,6 +299,21 @@ class CustomEntry(CTkEntry):
         self.teraterm_ui.move_slider_right_enabled = True
         self.teraterm_ui.up_arrow_key_enabled = True
         self.teraterm_ui.down_arrow_key_enabled = True
+
+    def on_enter(self, event):
+        context_menu = self.find_context_menu()
+        if context_menu:
+            self.configure(cursor="arrow")
+
+    def on_motion(self, event):
+        context_menu = self.find_context_menu()
+        if context_menu:
+            self.configure(cursor="arrow")
+
+    def on_leave(self, event):
+        context_menu = self.find_context_menu()
+        if context_menu:
+            self.configure(cursor="xterm")
 
     def update_undo_stack(self, event=None):
         current_text = self.get()
@@ -389,7 +408,6 @@ class CustomEntry(CTkEntry):
         self.focus_set()
         root = self.winfo_toplevel()
         self.find_active_tooltips(root)
-        self.icursor(tk.END)
         self.selected_text = True
 
         if self.lang == "English":
@@ -432,13 +450,14 @@ class CustomEntry(CTkEntry):
             selected_text = self.selection_get()
             self.clipboard_clear()
             self.clipboard_append(selected_text)
-            self.delete(tk.SEL_FIRST, tk.SEL_LAST)
 
-            new_text = self.get()
-            new_cursor = self.index(tk.INSERT)
-            # Update the undo stack after cut operation
-            self._undo_stack.append((new_text, new_cursor))
+            # Save current state to undo stack before deletion
+            current_text = self.get()
+            current_cursor = self.index(tk.INSERT)
+            self._undo_stack.append((current_text, current_cursor))
             self._redo_stack.clear()
+
+            self.delete(tk.SEL_FIRST, tk.SEL_LAST)
 
             if self.is_listbox_entry:
                 self.update_listbox()
@@ -465,15 +484,16 @@ class CustomEntry(CTkEntry):
         self.focus_set()
         try:
             clipboard_text = pyperclip.paste()
-            max_paste_length = 250  # Set a limit for the max paste length
+            max_paste_length = self.max_length  # Set a limit for the max paste length
             if len(clipboard_text) > max_paste_length:
                 clipboard_text = clipboard_text[:max_paste_length]  # Truncate to max length
                 logging.info("Pasted content truncated to maximum length")
 
-            current_text = self.get()
-            # Save the current state to undo stack if needed
-            if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1][0]):
-                self._undo_stack.append((current_text, self.index(tk.INSERT)))
+                # Save the current state to the undo stack before the paste operation
+                current_text = self.get()
+                current_cursor = self.index(tk.INSERT)
+                self._undo_stack.append((current_text, current_cursor))
+                self._redo_stack.clear()
 
             insert_index = self.index(tk.INSERT)
             try:
@@ -484,7 +504,7 @@ class CustomEntry(CTkEntry):
             except tk.TclError:
                 pass  # Nothing selected, which is fine
 
-            space_left = self.max_length - len(current_text)
+            space_left = self.max_length - len(self.get())
             if len(clipboard_text) > space_left:
                 clipboard_text = clipboard_text[:space_left]
 
