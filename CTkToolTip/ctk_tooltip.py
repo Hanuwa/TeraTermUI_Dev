@@ -149,8 +149,8 @@ class CTkToolTip(Toplevel):
         """
         Processes motion within the widget including entering and moving.
         """
-        context_menus = self.find_context_menu()
-        if self.disable or context_menus:
+        context_menu = self.find_context_menu()
+        if self.disable or context_menu:
             return
 
         self.last_moved = time.time()
