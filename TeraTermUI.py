@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 12300 lines of codes, it definitely makes things harder to work with
+# and with over 12200 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -805,13 +805,6 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(1250, enable)
                             else:
                                 enable()
-                            row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
-                            if not row_exists:
-                                self.delete_tesseract_dir = True
-                                self.cursor.execute("INSERT INTO user_data (update_date) VALUES (?)",
-                                                    (current_date,))
-                            else:
-                                self.cursor.execute("UPDATE user_data SET update_date=?", (current_date,))
                     except requests.exceptions.RequestException as err:
                         logging.warning(f"Error occurred while fetching latest release information: {err}")
                         logging.warning("Please check your internet connection and try again")
@@ -8738,13 +8731,6 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language()
                 if asyncio.run(self.test_connection()):
                     latest_version = self.get_latest_release()
-                    current_date = datetime.today().strftime("%Y-%m-%d")
-                    row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
-                    if not row_exists:
-                        self.cursor.execute("INSERT INTO user_data (update_date) VALUES (?)",
-                                            (current_date,))
-                    else:
-                        self.cursor.execute("UPDATE user_data SET update_date=?", (current_date,))
                     if latest_version is None:
                         def error():
                             logging.warning("No latest release found. Continuing with the current version")
@@ -10187,6 +10173,13 @@ class TeraTermUI(customtkinter.CTk):
                 latest_version = release_data.get("tag_name")
                 if latest_version and latest_version.startswith("v"):
                     latest_version = latest_version[1:]
+                current_date = datetime.today().strftime("%Y-%m-%d")
+                row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+                if not row_exists:
+                    self.cursor.execute("INSERT INTO user_data (update_date) VALUES (?)",
+                                        (current_date,))
+                else:
+                    self.cursor.execute("UPDATE user_data SET update_date=?", (current_date,))
 
                 return latest_version
 
