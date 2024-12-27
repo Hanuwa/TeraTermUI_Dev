@@ -252,11 +252,13 @@ class CustomEntry(CTkEntry):
         self.bind("<KeyRelease>", self.update_undo_stack)
 
         # Context Menu
-        self.context_menu = tk.Menu(self, tearoff=0, bg="#f0f0f0", fg="#333333", font=("Arial", 10))
+        self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10), relief="flat", background="gray40", fg="snow")
         self.context_menu.add_command(label="Cut", command=self.cut)
         self.context_menu.add_command(label="Copy", command=self.copy)
         self.context_menu.add_command(label="Paste", command=self.paste)
         self.context_menu.add_command(label="Select All", command=self.select_all)
+        self.context_menu.add_command(label="Undo", command=self.undo)
+        self.context_menu.add_command(label="Redo", command=self.redo)
 
         self.bind("<Button-2>", self.custom_middle_mouse)
         self.bind("<Button-3>", self.show_menu)
@@ -302,6 +304,7 @@ class CustomEntry(CTkEntry):
             self._redo_stack.clear()
 
     def undo(self, event=None):
+        self.focus_set()
         if len(self._undo_stack) > 1:
             # Remove the current state from the undo stack and add it to the redo stack
             current_text, current_cursor = self._undo_stack.pop()
@@ -327,6 +330,7 @@ class CustomEntry(CTkEntry):
                 self.update_listbox()
 
     def redo(self, event=None):
+        self.focus_set()
         if self._redo_stack:
             # Get the next state from the redo stack and add it to the undo stack
             next_text, next_cursor = self._redo_stack.pop()
@@ -376,15 +380,19 @@ class CustomEntry(CTkEntry):
             self.context_menu.entryconfigure(1, label="Copy")
             self.context_menu.entryconfigure(2, label="Paste")
             self.context_menu.entryconfigure(3, label="Select All")
+            self.context_menu.entryconfigure(4, label="Undo")
+            self.context_menu.entryconfigure(5, label="Redo")
         elif self.lang == "Español":
             self.context_menu.entryconfigure(0, label="Cortar")
             self.context_menu.entryconfigure(1, label="Copiar")
             self.context_menu.entryconfigure(2, label="Pegar")
             self.context_menu.entryconfigure(3, label="Seleccionar Todo")
+            self.context_menu.entryconfigure(4, label="Deshacer")
+            self.context_menu.entryconfigure(5, label="Rehacer")
 
         if self.select_present():
             if self.lang == "English":
-                self.context_menu.entryconfigure(3, label="Unselect All")
+                self.context_menu.entryconfigure(3, label="Deselect All")
             elif self.lang == "Español":
                 self.context_menu.entryconfigure(3, label="Deseleccionar Todo")
         else:
