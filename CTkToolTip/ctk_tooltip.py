@@ -2,9 +2,11 @@
 CTkToolTip Widget
 version: 0.8
 """
-
+import os
 import time
 import sys
+import win32gui
+import win32process
 import customtkinter
 from tkinter import Toplevel, Frame
 
@@ -130,11 +132,25 @@ class CTkToolTip(Toplevel):
         self.visibility = True
         self.disable = False
 
+    def find_context_menu(self):
+
+        def enum_window_proc(hwnd, results):
+            class_name = win32gui.GetClassName(hwnd)
+            if class_name == "#32768":
+                _, pid = win32process.GetWindowThreadProcessId(hwnd)
+                if pid == os.getpid():
+                    results.append(hwnd)
+
+        results = []
+        win32gui.EnumWindows(enum_window_proc, results)
+        return results
+
     def on_enter(self, event) -> None:
         """
         Processes motion within the widget including entering and moving.
         """
-        if self.disable:
+        context_menus = self.find_context_menu()
+        if self.disable or context_menus:
             return
 
         self.last_moved = time.time()
