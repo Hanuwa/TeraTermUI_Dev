@@ -4141,7 +4141,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.cancel_button.configure(text=translation["option_1"])
                 self.countdown(self.pr_date)
             for entry in [self.e_classes_entry, self.e_section_entry, self.s_classes_entry, self.m_classes_entry,
-                          self.m_section_entry]:
+                          self.m_section_entry, self.e_semester_entry, self.s_semester_entry, self.menu_entry,
+                          self.menu_semester_entry, self.m_semester_entry]:
                 if isinstance(entry, list):
                     for sub_entry in entry:
                         sub_entry.lang = lang
