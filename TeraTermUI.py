@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 12/26/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 12/27/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 12100 lines of codes, it definitely makes things harder to work with
+# and with over 12300 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -10684,13 +10684,17 @@ class CustomScrollableFrame(customtkinter.CTkScrollableFrame):
 
 
 class CustomTextBox(customtkinter.CTkTextbox):
-    __slots__ = ("master", "teraterm_ui_instance", "enable_autoscroll", "read_only", "lang")
+    __slots__ = ("master", "teraterm_ui_instance", "enable_autoscroll", "read_only", "lang", "max_length")
 
-    def __init__(self, master, teraterm_ui_instance, enable_autoscroll=True, read_only=False, lang=None, **kwargs):
-        super().__init__(master, **kwargs)
+    def __init__(self, master, teraterm_ui_instance, enable_autoscroll=True,
+                 read_only=False, lang=None, max_length=10000, **kwargs):
+        if "cursor" not in customtkinter.CTkTextbox._valid_tk_text_attributes:
+            customtkinter.CTkTextbox._valid_tk_text_attributes.add("cursor")
+        super().__init__(master, cursor="xterm", **kwargs)
         self.auto_scroll = enable_autoscroll
         self.lang = lang
         self.read_only = read_only
+        self.max_length = max_length
         self.disabled_autoscroll = False
         self.after_id = None
         self.selected_text = False
@@ -10705,6 +10709,9 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.bind("<MouseWheel>", self.stop_autoscroll)
         self.bind("<FocusIn>", self.disable_slider_keys)
         self.bind("<FocusOut>", self.enable_slider_keys)
+        self.bind("<Enter>", self.on_enter)
+        self.bind("<Motion>", self.on_motion)
+        self.bind("<Leave>", self.on_leave)
 
         if hasattr(self, "_y_scrollbar"):
             self._y_scrollbar.bind("<Button-1>", self.stop_autoscroll)
@@ -10749,9 +10756,10 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.context_menu.add_command(label="Copy", command=self.copy)
         if not self.read_only:
             self.context_menu.add_command(label="Paste", command=self.paste)
+        self.context_menu.add_command(label="Select All", command=self.select_all)
+        if not self.read_only:
             self.context_menu.add_command(label="Undo", command=self.undo)
             self.context_menu.add_command(label="Redo", command=self.redo)
-        self.context_menu.add_command(label="Select All", command=self.select_all)
         self.bind("<Button-2>", self.custom_middle_mouse)
         self.bind("<Button-3>", self.show_menu)
 
@@ -10783,6 +10791,21 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.teraterm_ui.move_slider_right_enabled = True
         self.teraterm_ui.up_arrow_key_enabled = True
         self.teraterm_ui.down_arrow_key_enabled = True
+
+    def on_enter(self, event):
+        context_menu = self.find_context_menu()
+        if context_menu:
+            self.configure(cursor="arrow")
+
+    def on_motion(self, event):
+        context_menu = self.find_context_menu()
+        if context_menu:
+            self.configure(cursor="arrow")
+
+    def on_leave(self, event):
+        context_menu = self.find_context_menu()
+        if context_menu:
+            self.configure(cursor="xterm")
 
     def update_text(self):
         if self.after_id:
@@ -10885,7 +10908,6 @@ class CustomTextBox(customtkinter.CTkTextbox):
     def show_menu(self, event):
         self.saved_cursor_position = self.index(tk.INSERT)
         self.stop_autoscroll(event=None)
-        self.mark_set(tk.INSERT, "end")
         self.selected_text = True
 
         if self.lang == "English" and not self.read_only:
@@ -10940,11 +10962,17 @@ class CustomTextBox(customtkinter.CTkTextbox):
             selected_text = self.selection_get()
             self.clipboard_clear()
             self.clipboard_append(selected_text)
+
+            # Save the current state to the undo stack before deletion
+            current_text = self.get("1.0", "end-1c")
+            current_cursor = self.index(tk.INSERT)
+            self._undo_stack.append((current_text, current_cursor))
+            self._redo_stack.clear()
+
             self.delete(tk.SEL_FIRST, tk.SEL_LAST)
 
             new_text = self.get("1.0", "end-1c")
             new_cursor = self.index(tk.INSERT)
-            # Update the undo stack after the cut operation
             self._undo_stack.append((new_text, new_cursor))
             self._redo_stack.clear()
             self.see(tk.INSERT)
@@ -10975,23 +11003,24 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.saved_cursor_position = None
         try:
             clipboard_text = pyperclip.paste()
-            max_paste_length = 10000  # Set a limit for the max paste length
+            max_paste_length = self.max_length  # Maximum length for pasted content
             if len(clipboard_text) > max_paste_length:
-                clipboard_text = clipboard_text[:max_paste_length]  # Truncate to max length
+                clipboard_text = clipboard_text[:max_paste_length]
                 logging.info("Pasted content truncated to maximum length")
 
-            # Save the current state to undo stack if needed
+            # Save the current state to the undo stack before pasting
             current_text = self.get("1.0", "end-1c")
             current_cursor = self.index(tk.INSERT)
-            if current_text != self._undo_stack[-1][0]:
-                self._undo_stack.append((current_text, current_cursor))
+            self._undo_stack.append((current_text, current_cursor))
+            self._redo_stack.clear()
 
+            # Handle any selected text replacement
             try:
                 start_index = self.index(tk.SEL_FIRST)
                 end_index = self.index(tk.SEL_LAST)
                 self.delete(start_index, end_index)
             except tk.TclError:
-                pass  # Nothing selected, which is fine
+                pass  # Nothing selected to delete
 
             self.insert(tk.INSERT, clipboard_text)
             new_cursor = self.index(tk.INSERT)
@@ -11074,8 +11103,9 @@ class CustomEntry(customtkinter.CTkEntry):
     __slots__ = ("master", "teraterm_ui_instance", "lang", "max_length")
 
     def __init__(self, master, teraterm_ui_instance, lang=None, max_length=250, *args, **kwargs):
-        super().__init__(master, *args, **kwargs)
-
+        if "cursor" not in customtkinter.CTkEntry._valid_tk_entry_attributes:
+            customtkinter.CTkEntry._valid_tk_entry_attributes.add("cursor")
+        super().__init__(master, cursor="xterm", *args, **kwargs)
         initial_state = self.get()
         initial_cursor = self.index(tk.INSERT)
         self.root = self.winfo_toplevel()
@@ -11091,6 +11121,9 @@ class CustomEntry(customtkinter.CTkEntry):
         self.focus_out_bind_id = self.root.bind("<FocusOut>", self._on_window_focus_out, add="+")
         self.bind("<FocusIn>", self.disable_slider_keys)
         self.bind("<FocusOut>", self.enable_slider_keys)
+        self.bind("<Enter>", self.on_enter)
+        self.bind("<Motion>", self.on_motion)
+        self.bind("<Leave>", self.on_leave)
 
         self.bind("<Control-z>", self.undo)
         self.bind("<Control-Z>", self.undo)
@@ -11153,6 +11186,21 @@ class CustomEntry(customtkinter.CTkEntry):
         self.teraterm_ui.move_slider_right_enabled = True
         self.teraterm_ui.up_arrow_key_enabled = True
         self.teraterm_ui.down_arrow_key_enabled = True
+
+    def on_enter(self, event):
+        context_menu = self.find_context_menu()
+        if context_menu:
+            self.configure(cursor="arrow")
+
+    def on_motion(self, event):
+        context_menu = self.find_context_menu()
+        if context_menu:
+            self.configure(cursor="arrow")
+
+    def on_leave(self, event):
+        context_menu = self.find_context_menu()
+        if context_menu:
+            self.configure(cursor="xterm")
 
     def update_undo_stack(self, event=None):
         current_text = self.get()
@@ -11247,7 +11295,6 @@ class CustomEntry(customtkinter.CTkEntry):
         self.focus_set()
         root = self.winfo_toplevel()
         self.find_active_tooltips(root)
-        self.icursor(tk.END)
         self.selected_text = True
 
         if self.lang == "English":
@@ -11290,13 +11337,14 @@ class CustomEntry(customtkinter.CTkEntry):
             selected_text = self.selection_get()
             self.clipboard_clear()
             self.clipboard_append(selected_text)
-            self.delete(tk.SEL_FIRST, tk.SEL_LAST)
 
-            new_text = self.get()
-            new_cursor = self.index(tk.INSERT)
-            # Update the undo stack after cut operation
-            self._undo_stack.append((new_text, new_cursor))
+            # Save current state to undo stack before deletion
+            current_text = self.get()
+            current_cursor = self.index(tk.INSERT)
+            self._undo_stack.append((current_text, current_cursor))
             self._redo_stack.clear()
+
+            self.delete(tk.SEL_FIRST, tk.SEL_LAST)
 
             if self.is_listbox_entry:
                 self.update_listbox()
@@ -11323,15 +11371,16 @@ class CustomEntry(customtkinter.CTkEntry):
         self.focus_set()
         try:
             clipboard_text = pyperclip.paste()
-            max_paste_length = 250  # Set a limit for the max paste length
+            max_paste_length = self.max_length  # Set a limit for the max paste length
             if len(clipboard_text) > max_paste_length:
                 clipboard_text = clipboard_text[:max_paste_length]  # Truncate to max length
                 logging.info("Pasted content truncated to maximum length")
 
-            current_text = self.get()
-            # Save the current state to undo stack if needed
-            if len(self._undo_stack) == 0 or (len(self._undo_stack) > 0 and current_text != self._undo_stack[-1][0]):
-                self._undo_stack.append((current_text, self.index(tk.INSERT)))
+                # Save the current state to the undo stack before the paste operation
+                current_text = self.get()
+                current_cursor = self.index(tk.INSERT)
+                self._undo_stack.append((current_text, current_cursor))
+                self._redo_stack.clear()
 
             insert_index = self.index(tk.INSERT)
             try:
@@ -11342,7 +11391,7 @@ class CustomEntry(customtkinter.CTkEntry):
             except tk.TclError:
                 pass  # Nothing selected, which is fine
 
-            space_left = self.max_length - len(current_text)
+            space_left = self.max_length - len(self.get())
             if len(clipboard_text) > space_left:
                 clipboard_text = clipboard_text[:space_left]
 
@@ -11450,8 +11499,9 @@ class CustomComboBox(customtkinter.CTkComboBox):
     __slots__ = ("master", "teraterm_ui_instance", "lang", "max_length")
 
     def __init__(self, master, teraterm_ui_instance, lang=None, max_length=250, *args, **kwargs):
-        super().__init__(master, *args, **kwargs)
-
+        if "cursor" not in customtkinter.CTkEntry._valid_tk_entry_attributes:
+            customtkinter.CTkEntry._valid_tk_entry_attributes.add("cursor")
+        super().__init__(master, cursor="xterm", *args, **kwargs)
         initial_state = self.get()
         initial_cursor = self._entry.index(tk.INSERT)
         self._undo_stack = deque([(initial_state, initial_cursor)], maxlen=100)
@@ -11464,6 +11514,9 @@ class CustomComboBox(customtkinter.CTkComboBox):
         self.teraterm_ui = teraterm_ui_instance
         self.bind("<FocusIn>", self.disable_slider_keys)
         self.bind("<FocusOut>", self.enable_slider_keys)
+        self.bind("<Enter>", self.on_enter)
+        self.bind("<Motion>", self.on_motion)
+        self.bind("<Leave>", self.on_leave)
 
         self.bind("<Control-z>", self.undo)
         self.bind("<Control-Z>", self.undo)
@@ -11523,6 +11576,21 @@ class CustomComboBox(customtkinter.CTkComboBox):
         self.teraterm_ui.up_arrow_key_enabled = True
         self.teraterm_ui.down_arrow_key_enabled = True
 
+    def on_enter(self, event):
+        context_menu = self.find_context_menu()
+        if context_menu:
+            self._entry.configure(cursor="arrow")
+
+    def on_motion(self, event):
+        context_menu = self.find_context_menu()
+        if context_menu:
+            self._entry.configure(cursor="arrow")
+
+    def on_leave(self, event):
+        context_menu = self.find_context_menu()
+        if context_menu:
+            self._entry.configure(cursor="xterm")
+
     def set(self, value, enforce_length_check=True):
         if enforce_length_check:
             if len(value) <= self.max_length:
@@ -11558,7 +11626,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
         cursor_position = self._entry.index(tk.INSERT)
         if current_text != self._undo_stack[-1][0]:
             self._undo_stack.append((current_text, cursor_position))
-            self._redo_stack.clear()  # Clear the redo stack on a new change
+            self._redo_stack.clear()
 
     def undo(self, event=None):
         self.focus_set()
@@ -11628,7 +11696,6 @@ class CustomComboBox(customtkinter.CTkComboBox):
         self.focus_set()
         root = self.winfo_toplevel()
         self.find_active_tooltips(root)
-        self._entry.icursor(tk.END)
         self.selected_text = True
 
         if self.lang == "English":
@@ -11671,13 +11738,14 @@ class CustomComboBox(customtkinter.CTkComboBox):
             selected_text = self._entry.selection_get()
             self.clipboard_clear()
             self.clipboard_append(selected_text)
-            self._entry.delete(tk.SEL_FIRST, tk.SEL_LAST)
 
-            new_text = self.get()
-            new_cursor = self._entry.index(tk.INSERT)
-            # Update the undo stack after cut operation
-            self._undo_stack.append((new_text, new_cursor))
+            # Save current state to undo stack before deletion
+            current_text = self.get()
+            current_cursor = self._entry.index(tk.INSERT)
+            self._undo_stack.append((current_text, current_cursor))
             self._redo_stack.clear()
+
+            self._entry.delete(tk.SEL_FIRST, tk.SEL_LAST)
         except tk.TclError:
             logging.info("No text selected to cut")
 
@@ -11720,16 +11788,18 @@ class CustomComboBox(customtkinter.CTkComboBox):
         self.focus_set()
         try:
             clipboard_text = pyperclip.paste()
-            max_paste_length = 250  # Set a limit for the max paste length
+            max_paste_length = self.max_length
+
+            # Truncate clipboard text if it exceeds max length
             if len(clipboard_text) > max_paste_length:
-                clipboard_text = clipboard_text[:max_paste_length]  # Truncate to max length
+                clipboard_text = clipboard_text[:max_paste_length]
                 logging.info("Pasted content truncated to maximum length")
 
+            # Save the current state to undo stack before the paste operation
             current_text = self.get()
             current_cursor = self._entry.index(tk.INSERT)
-            # Save the current state to undo stack
-            if current_text != self._undo_stack[-1][0]:
-                self._undo_stack.append((current_text, current_cursor))
+            self._undo_stack.append((current_text, current_cursor))
+            self._redo_stack.clear()
 
             insert_index = self._entry.index(tk.INSERT)
             try:
@@ -11738,9 +11808,9 @@ class CustomComboBox(customtkinter.CTkComboBox):
                 self._entry.delete(start_index, end_index)
                 insert_index = start_index
             except tk.TclError:
-                pass  # Nothing selected, which is fine
+                pass  # No selection to delete
 
-            space_left = self.max_length - len(current_text)
+            space_left = self.max_length - len(self.get())
             if len(clipboard_text) > space_left:
                 clipboard_text = clipboard_text[:space_left]
 
@@ -11749,10 +11819,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
             # Move the cursor to the end of the pasted content
             final_cursor_position = insert_index + len(clipboard_text)
             self._entry.icursor(final_cursor_position)
-            self._entry.xview_moveto(final_cursor_position / len(self._entry.get()) if len(self._entry.get()) > 0 else 0)
-
-            # Update undo stack here, after paste operation
-            self.update_undo_stack()
+            self._entry.xview_moveto(final_cursor_position / len(self.get()) if len(self.get()) > 0 else 0)
         except tk.TclError:
             pass  # Clipboard empty or other issue
         return "break"
