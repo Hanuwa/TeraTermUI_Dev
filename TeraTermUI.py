@@ -5257,7 +5257,8 @@ class TeraTermUI(customtkinter.CTk):
             self.multiple_tooltip = CTkToolTip(self.multiple, message=translation["multiple_tooltip"],
                                                bg_color="#0F52BA")
             self.t_buttons_frame.bind("<Button-1>", lambda event: self.focus_set())
-            for entry in [self.e_classes_entry, self.e_section_entry, self.s_classes_entry]:
+            for entry in [self.e_classes_entry, self.e_section_entry, self.s_classes_entry, self.e_semester_entry,
+                          self.s_semester_entry, self.menu_entry,  self.menu_semester_entry]:
                 entry.lang = lang
         else:
             self.go_next_1VE.grid_forget()
@@ -5352,9 +5353,12 @@ class TeraTermUI(customtkinter.CTk):
             self.m_section.bind("<Button-1>", lambda event: self.focus_set())
             self.m_semester.bind("<Button-1>", lambda event: self.focus_set())
             self.m_choice.bind("<Button-1>", lambda event: self.focus_set())
-            for entry in [self.m_classes_entry, self.m_section_entry]:
-                for sub_entry in entry:
-                    sub_entry.lang = lang
+            for entry in [self.m_classes_entry, self.m_section_entry, self.m_semester_entry]:
+                if isinstance(entry, list):
+                    for sub_entry in entry:
+                        sub_entry.lang = lang
+                else:
+                    entry.lang = lang
             self.load_saved_classes()
 
     # saves the information to the database when the app closes
