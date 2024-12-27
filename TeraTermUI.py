@@ -11580,6 +11580,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
         context_menu = self.find_context_menu()
         if context_menu:
             self._entry.configure(cursor="arrow")
+        self._canvas.configure(cursor="hand2")
 
     def on_motion(self, event):
         context_menu = self.find_context_menu()
@@ -11590,6 +11591,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
         context_menu = self.find_context_menu()
         if context_menu:
             self._entry.configure(cursor="xterm")
+        self._canvas.configure(cursor="arrow")
 
     def set(self, value, enforce_length_check=True):
         if enforce_length_check:
