@@ -10855,7 +10855,24 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.mark_set(tk.INSERT, next_cursor)
             self.see(next_cursor)
 
+    def find_context_menu(self):
+        import win32process
+
+        def enum_window_proc(hwnd, results):
+            class_name = win32gui.GetClassName(hwnd)
+            if class_name == "#32768":
+                _, pid = win32process.GetWindowThreadProcessId(hwnd)
+                if pid == os.getpid():
+                    results.append(hwnd)
+
+        results = []
+        win32gui.EnumWindows(enum_window_proc, results)
+        return results
+
     def custom_middle_mouse(self, event=None):
+        context_menu = self.find_context_menu()
+        if context_menu:
+            return "break"
         if self.tag_ranges(tk.SEL):
             self.mark_set(tk.INSERT, "@%d,%d" % (event.x, event.y))
             self.tag_remove(tk.SEL, "1.0", tk.END)
@@ -11193,7 +11210,24 @@ class CustomEntry(customtkinter.CTkEntry):
             if self.is_listbox_entry:
                 self.update_listbox()
 
+    def find_context_menu(self):
+        import win32process
+
+        def enum_window_proc(hwnd, results):
+            class_name = win32gui.GetClassName(hwnd)
+            if class_name == "#32768":
+                _, pid = win32process.GetWindowThreadProcessId(hwnd)
+                if pid == os.getpid():
+                    results.append(hwnd)
+
+        results = []
+        win32gui.EnumWindows(enum_window_proc, results)
+        return results
+
     def custom_middle_mouse(self, event=None):
+        context_menu = self.find_context_menu()
+        if context_menu:
+            return "break"
         if self.select_present():
             char_index = self.index("@%d" % event.x)
             self.icursor(char_index)
@@ -11557,7 +11591,24 @@ class CustomComboBox(customtkinter.CTkComboBox):
             # Adjust the view position
             self._entry.xview_moveto(next_cursor / len(next_text) if len(next_text) > 0 else 0)
 
+    def find_context_menu(self):
+        import win32process
+
+        def enum_window_proc(hwnd, results):
+            class_name = win32gui.GetClassName(hwnd)
+            if class_name == "#32768":
+                _, pid = win32process.GetWindowThreadProcessId(hwnd)
+                if pid == os.getpid():
+                    results.append(hwnd)
+
+        results = []
+        win32gui.EnumWindows(enum_window_proc, results)
+        return results
+
     def custom_middle_mouse(self, event=None):
+        context_menu = self.find_context_menu()
+        if context_menu:
+            return "break"
         if self._entry.select_present():
             char_index = self._entry.index("@%d" % event.x)
             self._entry.icursor(char_index)
