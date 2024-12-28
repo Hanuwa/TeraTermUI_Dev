@@ -5602,12 +5602,22 @@ class TeraTermUI(customtkinter.CTk):
     def disable_loading_screen_close():
         return "break"
 
+    def lift_loading_screen(self):
+        if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
+            if self.winfo_viewable():
+                self.loading_screen.lift()
+
+            self.after(100, lambda: self.lift_loading_screen())
+
     # tells the loading screen when it should stop and close
     def update_loading_screen(self, loading_screen, future):
         current_time = time.time()
         if current_time - self.loading_screen_start_time > 30:
             if self.loading_screen.attributes("-topmost"):
                 self.loading_screen.attributes("-topmost", False)
+                self.loading_screen.lower()
+                self.loading_screen.lift()
+                self.lift_loading_screen()
         if future.done() or current_time - self.loading_screen_start_time > 90:
             self.attributes("-disabled", False)
             if self.help is not None and self.help.winfo_exists():
@@ -5818,7 +5828,9 @@ class TeraTermUI(customtkinter.CTk):
                 height = bottom - y
                 crop_margin = (2, 10, 10, 2)
                 if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
-                    self.loading_screen.withdraw()
+                    self.loading_screen.attributes("-topmost", False)
+                    self.loading_screen.lower()
+                    self.loading_screen.lift()
                 with mss() as sct:
                     monitor = {
                         "top": y,
@@ -5828,9 +5840,8 @@ class TeraTermUI(customtkinter.CTk):
                     }
                     screenshot = sct.grab(monitor)
                     img = Image.frombytes("RGB", (screenshot.width, screenshot.height), screenshot.rgb)
-
                     if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
-                        self.loading_screen.deiconify()
+                        self.after(250, self.loading_screen.attributes, "-topmost", True)
                     img = img.crop((crop_margin[0], crop_margin[1], img.width - crop_margin[2],
                                     img.height - crop_margin[3])).convert("L")
                     img = img.resize((img.width * 2, img.height * 2), resample=Image.Resampling.LANCZOS)
@@ -6064,7 +6075,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.tooltip is not None and self.tooltip.winfo_exists():
             self.tooltip.lift()
 
-        self.after(100, self.lift_tooltip)
+            self.after(100, self.lift_tooltip)
 
     def transfer_class_data_to_enroll_tab(self, event, cell):
         section_text = cell.cget("text")
