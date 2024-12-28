@@ -1,6 +1,7 @@
 import tkinter as tk
 import logging
 import pyperclip
+import win32gui
 
 from typing import Union, Tuple, Optional
 
@@ -216,8 +217,8 @@ class CustomEntry(CTkEntry):
     __slots__ = ("master", "teraterm_ui_instance", "lang", "max_length")
 
     def __init__(self, master, teraterm_ui_instance, lang=None, max_length=250, *args, **kwargs):
-        if "cursor" not in customtkinter.CTkEntry._valid_tk_entry_attributes:
-            customtkinter.CTkEntry._valid_tk_entry_attributes.add("cursor")
+        if "cursor" not in CTkEntry._valid_tk_entry_attributes:
+            CTkEntry._valid_tk_entry_attributes.add("cursor")
         super().__init__(master, cursor="xterm", *args, **kwargs)
         initial_state = self.get()
         initial_cursor = self.index(tk.INSERT)
