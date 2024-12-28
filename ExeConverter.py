@@ -199,7 +199,7 @@ else:
     update_without_v = user_input
     update = "v" + update_without_v
 versions = ["installer", "portable"]
-output_directory = os.path.join("C:/Users/" + username + "/OneDrive/Documentos", "TeraTermUI_"
+output_directory = os.path.join("C:/Users/" + username + "/TeraTermUI_Builds", "TeraTermUI_"
                                 + update).replace("\\", "/")
 program_backup = project_directory + "/TeraTermUI.BAK.py"
 check_and_restore_backup()
