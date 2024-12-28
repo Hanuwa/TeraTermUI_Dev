@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 12200 lines of codes, it definitely makes things harder to work with
+# and with over 12300 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -6293,12 +6293,8 @@ class TeraTermUI(customtkinter.CTk):
             for i, header in enumerate(headers):
                 cell = new_table.get_cell(0, i)
                 tooltip_message = tooltip_messages[header]
-                tooltip = self.table_tooltips.get(cell)
-                if tooltip:
-                    tooltip.configure(message=tooltip_message)
-                else:
-                    tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#989898", alpha=0.90)
-                    self.table_tooltips[cell] = tooltip
+                tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#989898", alpha=0.90)
+                self.table_tooltips[cell] = tooltip
             display_class.grid(row=1, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
             new_table.grid(row=2, column=1, padx=(0, 15), pady=(40, 0), sticky="n")
         else:
@@ -6883,6 +6879,14 @@ class TeraTermUI(customtkinter.CTk):
 
         display_class_to_remove.grid_remove()
         table_to_remove.grid_remove()
+        for i in range(table_to_remove.rows):
+            for j in range(table_to_remove.columns):
+                cell = table_to_remove.get_cell(i, j)
+                if cell in self.table_tooltips:
+                    self.table_tooltips[cell].destroy()
+                    self.table_tooltips[cell].widget = None
+                    self.table_tooltips[cell].message = None
+                    del self.table_tooltips[cell]
         self.hidden_tables.append(table_to_remove)
         self.hidden_labels.append(display_class_to_remove)
 
@@ -7439,6 +7443,11 @@ class TeraTermUI(customtkinter.CTk):
         self.enrolled_classes_credits = creds
         if self.enrolled_classes_table is not None:
             self.enrolled_classes_table.refresh_table(table_values)
+            for tooltip in self.enrolled_header_tooltips.values():
+                tooltip.destroy()
+                tooltip.widget = None
+                tooltip.message = None
+            self.enrolled_header_tooltips.clear()
             self.total_credits_label.configure(text=translation["total_creds"] + creds)
             self.title_my_classes.configure(text=translation["my_classes"] + semester)
             self.submit_my_classes.configure(command=self.submit_modify_classes_handler)
@@ -7447,12 +7456,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.enrolled_classes_table.edit_column(i, width=column_widths[header])
                 cell = self.enrolled_classes_table.get_cell(0, i)
                 tooltip_message = tooltip_messages[header]
-                tooltip = self.enrolled_header_tooltips.get(cell)
-                if tooltip:
-                    tooltip.configure(message=tooltip_message)
-                else:
-                    tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#989898", alpha=0.90)
-                    self.enrolled_header_tooltips[cell] = tooltip
+                tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#989898", alpha=0.90)
+                self.enrolled_header_tooltips[cell] = tooltip
             current_entries_count = len(self.change_section_entries)
             new_entries_count = len(data)
             previous_row_had_widgets = True
