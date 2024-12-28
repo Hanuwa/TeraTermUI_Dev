@@ -23,13 +23,14 @@
   </trustInfo>
   <application xmlns="urn:schemas-microsoft-com:asm.v3">
     <windowsSettings>
-      <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/pm</dpiAware>
+      <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings" xmlns:asmv3="urn:schemas-microsoft-com:asm.v3">true</dpiAware>
+      <asmv3:dpiAware xmlns="urn:schemas-microsoft-com:asm.v3">per monitor</asmv3:dpiAware>
     </windowsSettings>
   </application>
   <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
     <application>
       <!-- Windows 11 -->
-      <supportedOS Id="{d5ab07d4-2026-4b08-8f59-a18dcbb5d8ff}"/>
+      <supportedOS Id="{d3e034d1-0b3a-4d1d-8c7b-97b3c6f7e0e3}"/>
       <!-- Windows 10 -->
       <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"/>
       <!-- Windows 8.1 -->
