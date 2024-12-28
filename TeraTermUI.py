@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 12300 lines of codes, it definitely makes things harder to work with
+# and with over 12400 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -53,6 +53,7 @@ import winsound
 from chardet import detect as chardet_detect
 from collections import deque, defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import contextmanager
 from Cryptodome.Hash import HMAC, SHA256
 from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import pad, unpad
@@ -593,7 +594,7 @@ class TeraTermUI(customtkinter.CTk):
         # Top level window management, flags and counters
         self.DEFAULT_SEMESTER = TeraTermUI.calculate_default_semester()
         self.semester_values = TeraTermUI.generate_semester_values(self.DEFAULT_SEMESTER)
-        self.clipboard_handler = ClipboardHandler(max_data_size=5 * 1024 * 1024)
+        self.clipboard_handler = ClipboardHandler()
         self.search_event_completed = True
         self.option_menu_event_completed = True
         self.go_next_event_completed = True
@@ -5841,7 +5842,7 @@ class TeraTermUI(customtkinter.CTk):
                     screenshot = sct.grab(monitor)
                     img = Image.frombytes("RGB", (screenshot.width, screenshot.height), screenshot.rgb)
                     if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
-                        self.after(250, self.loading_screen.attributes, "-topmost", True)
+                        self.after(125, self.loading_screen.attributes, "-topmost", True)
                     img = img.crop((crop_margin[0], crop_margin[1], img.width - crop_margin[2],
                                     img.height - crop_margin[3])).convert("L")
                     img = img.resize((img.width * 2, img.height * 2), resample=Image.Resampling.LANCZOS)
@@ -7019,7 +7020,9 @@ class TeraTermUI(customtkinter.CTk):
                 timings.Timings.window_find_retry = original_retry
         self.uprb.UprbayTeraTermVt.type_keys("%c")
         if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
-            self.loading_screen.withdraw()
+            self.loading_screen.attributes("-topmost", False)
+            self.loading_screen.lower()
+            self.loading_screen.lift()
         pyautogui.FAILSAFE = False
         original_position = pyautogui.position()
         quarter_width = self.tera_term_window.width // 4
@@ -7028,7 +7031,7 @@ class TeraTermUI(customtkinter.CTk):
         pyautogui.click(center_x, center_y)
         pyautogui.moveTo(original_position)
         if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
-            self.loading_screen.deiconify()
+            self.after(125, self.loading_screen.attributes, "-topmost", True)
 
     @staticmethod
     def get_latest_term(input_text):
@@ -9696,7 +9699,7 @@ class TeraTermUI(customtkinter.CTk):
                 if root[len(search_root):].count(os.sep) >= depth:
                     del dirs[:]
                 else:
-                    dirs[:] = [d for d in dirs if d not in excluded_dirs and not d.startswith('$')]
+                    dirs[:] = [d for d in dirs if d not in excluded_dirs and not d.startswith("$")]
 
                 for file in files:
                     if file.lower() == "ttermpro.exe":
@@ -12036,25 +12039,81 @@ class ImageSlideshow(customtkinter.CTkFrame):
 
 
 class ClipboardHandler:
-    def __init__(self, max_data_size=5 * 1024 * 1024):
-        self.clipboard_data = {}
-        self.clipboard_lock = threading.Lock()
+    def __init__(self, max_data_size=50 * 1024 * 1024, retention_time=timedelta(minutes=30)):
         self.MAX_DATA_SIZE = max_data_size
+        self.RETENTION_TIME = retention_time
+
+        # Thread synchronization
+        self.clipboard_lock = threading.Lock()
+        # Clipboard data storage with timestamps
+        self.clipboard_data = {}
 
         # Register special clipboard formats
         self.CF_HTML = win32clipboard.RegisterClipboardFormat("HTML Format")
         self.CF_RTF = win32clipboard.RegisterClipboardFormat("Rich Text Format")
+        self.CF_PNG = win32clipboard.RegisterClipboardFormat("PNG")
+        self.CF_TIFF = win32clipboard.RegisterClipboardFormat("TIFF")
+        self.CF_GIF = win32clipboard.RegisterClipboardFormat("GIF")
+        self.CF_JFIF = win32clipboard.RegisterClipboardFormat("JFIF")  # JPEG Format
+        self.CF_SHELLURL = win32clipboard.RegisterClipboardFormat("UniformResourceLocator")
+        self.CF_FILENAME = win32clipboard.RegisterClipboardFormat("FileName")
+        self.CF_ENHMETAFILE = win32con.CF_ENHMETAFILE
+        self.CF_METAFILEPICT = win32con.CF_METAFILEPICT
 
         # Define allowed clipboard formats
         self.allowed_formats = [
             win32con.CF_TEXT,
             win32con.CF_UNICODETEXT,
             win32con.CF_DIB,
-            win32con.CF_BITMAP,    # Handle bitmap images
-            win32con.CF_HDROP,     # Handle file paths (drag-and-drop)
-            self.CF_HTML,          # Handle HTML content
-            self.CF_RTF,           # Handle Rich Text Format
+            win32con.CF_BITMAP,
+            win32con.CF_HDROP,
+            win32con.CF_ENHMETAFILE,
+            win32con.CF_METAFILEPICT,
+            win32con.CF_LOCALE,
+            self.CF_HTML,
+            self.CF_RTF,
+            self.CF_PNG,
+            self.CF_TIFF,
+            self.CF_GIF,
+            self.CF_JFIF,
+            self.CF_SHELLURL,
+            self.CF_FILENAME,
         ]
+        self._format_names = {
+            win32con.CF_TEXT: "Text",
+            win32con.CF_UNICODETEXT: "Unicode Text",
+            win32con.CF_DIB: "DIB",
+            win32con.CF_BITMAP: "Bitmap",
+            win32con.CF_HDROP: "File Drop",
+            win32con.CF_ENHMETAFILE: "Enhanced Metafile",
+            win32con.CF_METAFILEPICT: "Metafile Picture",
+            self.CF_HTML: "HTML",
+            self.CF_RTF: "RTF",
+            self.CF_PNG: "PNG",
+            self.CF_TIFF: "TIFF",
+            self.CF_GIF: "GIF",
+            self.CF_JFIF: "JPEG",
+            self.CF_SHELLURL: "URL",
+            self.CF_FILENAME: "Filename",
+            win32con.CF_LOCALE: "Locale"
+        }
+
+    def __del__(self):
+        self.cleanup_all_resources()
+
+    @contextmanager
+    def clipboard_access(self):
+        if not self.clipboard_lock.acquire(timeout=1.0):
+            raise TimeoutError("Could not acquire clipboard lock")
+        try:
+            if not self.open_clipboard_with_retries():
+                raise RuntimeError("Failed to open clipboard")
+            yield
+        finally:
+            try:
+                win32clipboard.CloseClipboard()
+            finally:
+                self.clipboard_lock.release()
 
     @staticmethod
     def open_clipboard_with_retries(max_retries=3, retry_delay=0.1):
@@ -12062,21 +12121,64 @@ class ClipboardHandler:
             try:
                 win32clipboard.OpenClipboard()
                 return True
-            except Exception as err:
+            except Exception as error:
                 if attempt == max_retries - 1:
-                    logging.warning(f"Failed to open clipboard after {max_retries} attempts: {err}")
+                    logging.warning(f"Failed to open clipboard after {max_retries} attempts: {error}")
                     return False
                 time.sleep(retry_delay)
         return False
 
+    def check_data_size(self, data, format_name="Unknown"):
+        if hasattr(data, "__len__"):
+            size = len(data)
+            if size > self.MAX_DATA_SIZE:
+                logging.warning(
+                    f"Data for format {format_name} exceeds size limit "
+                    f"({size} > {self.MAX_DATA_SIZE} bytes)"
+                )
+                return False
+        return True
+
+    def cleanup_bitmap(self, handle):
+        try:
+            if handle and win32gui.IsWindow(handle):
+                win32gui.DeleteObject(handle)
+        except Exception as error:
+            logging.warning(f"Failed to cleanup bitmap handle: {error}")
+
+    def cleanup_all_resources(self):
+        for fmt, (data, _) in self.clipboard_data.items():
+            if fmt == win32con.CF_BITMAP:
+                self.cleanup_bitmap(data)
+        self.clipboard_data.clear()
+
+    def sanitize_file_paths(self, paths):
+        sanitized = []
+        for path in paths:
+            # Remove any null bytes and normalize path
+            clean_path = os.path.normpath(path.replace("\0", ""))
+            if os.path.exists(clean_path):
+                sanitized.append(clean_path)
+        return sanitized
+
+    def cleanup_expired_data(self):
+        current_time = datetime.now()
+        expired_formats = [
+            fmt for fmt, (_, timestamp) in self.clipboard_data.items()
+            if current_time - timestamp > self.RETENTION_TIME
+        ]
+
+        for fmt in expired_formats:
+            if fmt == win32con.CF_BITMAP:
+                self.cleanup_bitmap(self.clipboard_data[fmt][0])
+            del self.clipboard_data[fmt]
+
     def save_clipboard_content(self):
         import struct
 
-        with self.clipboard_lock:
-            if not ClipboardHandler.open_clipboard_with_retries():
-                return
-
-            try:
+        self.cleanup_expired_data()
+        try:
+            with self.clipboard_access():
                 # Enumerate available clipboard formats
                 formats = []
                 fmt = win32clipboard.EnumClipboardFormats(0)
@@ -12084,102 +12186,126 @@ class ClipboardHandler:
                     if fmt in self.allowed_formats:
                         formats.append(fmt)
                     fmt = win32clipboard.EnumClipboardFormats(fmt)
-            finally:
-                win32clipboard.CloseClipboard()
+        except (RuntimeError, TimeoutError) as error:
+            logging.error(f"Failed to access clipboard: {error}")
+            return
 
-            for format_id in formats:
-                try:
-                    if not ClipboardHandler.open_clipboard_with_retries():
+        for format_id in formats:
+            try:
+                with self.clipboard_access():
+                    data = win32clipboard.GetClipboardData(format_id)
+
+                    if not self.check_data_size(data, self._format_names.get(format_id, "Unknown")):
                         continue
 
-                    try:
-                        data = win32clipboard.GetClipboardData(format_id)
+                    # Handle text content (CF_TEXT, CF_UNICODETEXT)
+                    if format_id in (win32con.CF_UNICODETEXT, win32con.CF_TEXT):
+                        if isinstance(data, str):
+                            data = data.encode("utf-16le" if format_id == win32con.CF_UNICODETEXT else "mbcs")
 
-                        # Check data size if applicable
-                        if hasattr(data, "__len__"):
-                            data_size = len(data)
-                            if data_size > self.MAX_DATA_SIZE:
-                                logging.info(f"Data for format {format_id} exceeds size limit. Skipping")
+                    # Handle DIB images
+                    elif format_id == win32con.CF_DIB:
+                        try:
+                            # Validate DIB header
+                            bmih_size = struct.unpack("I", data[:4])[0]
+                            if bmih_size < 40:  # Minimum valid BITMAPINFOHEADER size
+                                logging.warning("Invalid DIB format - header too small")
+                                continue
+                        except struct.error:
+                            logging.warning("Failed to parse DIB header")
+                            continue
+
+                    # Handle HTML, RTF, and image format content
+                    elif format_id in (self.CF_HTML, self.CF_RTF, self.CF_PNG, self.CF_TIFF,
+                                       self.CF_GIF, self.CF_JFIF):
+                        if isinstance(data, str):
+                            data = data.encode("utf-8")
+
+                    # Handle file drops (CF_HDROP)
+                    elif format_id == win32con.CF_HDROP:
+                        if isinstance(data, tuple):
+                            sanitized_paths = self.sanitize_file_paths(data)
+                            if not sanitized_paths:
                                 continue
 
-                        # Handle text content
-                        if format_id in (win32con.CF_UNICODETEXT, win32con.CF_TEXT):
-                            if isinstance(data, str):
-                                # Encode string to bytes
-                                if format_id == win32con.CF_UNICODETEXT:
-                                    data = data.encode("utf-16le")
-                                else:
-                                    data = data.encode("mbcs")
-                            self.clipboard_data[format_id] = data
+                            # Create DROPFILES structure
+                            offset = 20  # Size of DROPFILES structure
+                            file_list = b""
+                            for path in sanitized_paths:
+                                file_list += path.encode("utf-16le") + b"\0\0"
+                            file_list += b"\0\0"  # End of file list marker
 
-                        # Handle DIB images
-                        elif format_id == win32con.CF_DIB:
-                            self.clipboard_data[format_id] = data
+                            dropfiles = struct.pack("Iiii", offset, 0, 0, 0x0001)  # fWide = 1 (Unicode)
+                            data = dropfiles + file_list
 
-                        # Handle Bitmap images
-                        elif format_id == win32con.CF_BITMAP:
-                            # CF_BITMAP returns an HBITMAP handle
-                            # Note: Restoring may require additional processing
-                            self.clipboard_data[format_id] = data
+                    # Handle URL content
+                    elif format_id == self.CF_SHELLURL:
+                        if isinstance(data, str):
+                            # Ensure URL is properly encoded
+                            data = data.encode("utf-8")
+                            if not data.endswith(b"\0"):
+                                data += b"\0"  # Null-terminate the URL
 
-                        # Handle HTML and RTF content
-                        elif format_id in (self.CF_HTML, self.CF_RTF):
-                            if isinstance(data, str):
-                                data = data.encode("utf-8")
-                            self.clipboard_data[format_id] = data
+                    # Handle filename content
+                    elif format_id == self.CF_FILENAME:
+                        if isinstance(data, str):
+                            data = data.encode("utf-8")
+                            if not data.endswith(b"\0"):
+                                data += b"\0"
 
-                        # Handle file drops (file paths)
-                        elif format_id == win32con.CF_HDROP:
-                            if isinstance(data, tuple):
-                                # Create DROPFILES structure for file paths
-                                offset = 20  # Size of DROPFILES structure
-                                file_list = b""
-                                for path in data:
-                                    file_list += path.encode("utf-16le") + b"\0\0"
-                                file_list += b"\0\0"  # End of file list marker
+                    # Handle locale information
+                    elif format_id == win32con.CF_LOCALE:
+                        try:
+                            # Convert input to integer LCID if needed
+                            if isinstance(data, bytes):
+                                lcid = int.from_bytes(data, byteorder="little")
+                            elif not isinstance(data, int):
+                                lcid = int(data)
+                            else:
+                                lcid = data
 
-                                # Build DROPFILES structure
-                                dropfiles = struct.pack("Iiii", offset, 0, 0, 0x0001)  # fWide = 1 (Unicode)
-                                drop_data = dropfiles + file_list
-                                data_size = len(drop_data)
-                                if data_size > self.MAX_DATA_SIZE:
-                                    logging.info(f"File drop data exceeds size limit. Skipping")
-                                    continue
-                                self.clipboard_data[format_id] = drop_data
+                            # Validate LCID range (valid LCIDs are typically below 0xFFFF)
+                            if not 0 <= lcid <= 0xFFFF:
+                                logging.warning(f"LCID {lcid} outside valid range")
+                                continue
 
-                    except Exception as err:
-                        logging.warning(f"Error handling format {format_id}: {err}")
-                        continue
-                    finally:
-                        win32clipboard.CloseClipboard()
-                except Exception as err:
-                    logging.warning(f"Error processing format {format_id}: {err}")
-                    continue
+                            # Create buffer and pack LCID into it
+                            buf = ctypes.create_string_buffer(struct.pack("i", lcid))
+                            data = bytes(buf)
 
-    def restore_clipboard_content(self):
+                        except (ValueError, TypeError) as error:
+                            logging.warning(f"Invalid locale identifier: {error}")
+                            continue
+
+                    self.clipboard_data[format_id] = (data, datetime.now())
+
+            except Exception as error:
+                logging.warning(f"Error processing format {self._format_names.get(format_id, format_id)}: {error}")
+                continue
+
+    def restore_clipboard_content(self) -> None:
         if not self.clipboard_data:
             return
 
-        with self.clipboard_lock:
-            if not ClipboardHandler.open_clipboard_with_retries():
-                return
+        self.cleanup_expired_data()
 
-            try:
+        try:
+            with self.clipboard_access():
                 win32clipboard.EmptyClipboard()
 
-                for fmt, data in self.clipboard_data.items():
+                for fmt, (data, _) in self.clipboard_data.items():
                     try:
                         win32clipboard.SetClipboardData(fmt, data)
-                    except Exception as err:
-                        logging.warning(f"Error restoring format {fmt}: {err}")
+                    except Exception as error:
+                        logging.warning(
+                            f"Error restoring format {self._format_names.get(fmt, fmt)}: {error}"
+                        )
                         continue
-            except Exception as err:
-                logging.warning(f"Error in restore_clipboard_content: {err}")
-            finally:
-                win32clipboard.CloseClipboard()
-
-        # Clear clipboard data after restoring
-        self.clipboard_data.clear()
+        except (RuntimeError, TimeoutError) as error:
+            logging.error(f"Failed to restore clipboard content: {error}")
+            return
+        finally:
+            self.cleanup_all_resources()
 
 
 def get_window_rect(hwnd):
