@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 12/27/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 12/28/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -4979,12 +4979,16 @@ class TeraTermUI(customtkinter.CTk):
                 self.username_entry.lang = None
                 self.username_entry = None
                 self.username_tooltip.destroy()
+                self.username_tooltip.widget = None
+                self.username_tooltip.message = None
                 self.username_tooltip = None
                 self.auth.configure(command=None)
                 self.auth = None
                 self.back.configure(command=None)
                 self.back = None
                 self.back_tooltip.destroy()
+                self.back_tooltip.widget = None
+                self.back_tooltip.message = None
                 self.back_tooltip = None
                 self.authentication_frame.destroy()
                 self.authentication_frame = None
@@ -5072,10 +5076,14 @@ class TeraTermUI(customtkinter.CTk):
                     entry.lang = None
                 self.student_id_entry = None
                 self.student_id_tooltip.destroy()
+                self.student_id_tooltip.widget = None
+                self.student_id_tooltip.message = None
                 self.student_id_tooltip = None
                 self.code = None
                 self.code_entry = None
                 self.code_tooltip.destroy()
+                self.code_tooltip.widget = None
+                self.code_tooltip.message = None
                 self.code_tooltip = None
                 self.show.configure(command=None)
                 self.show = None
@@ -5084,6 +5092,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.back_student.configure(command=None)
                 self.back_student = None
                 self.back_student_tooltip.destroy()
+                self.back_student_tooltip.widget = None
+                self.back_student_tooltip.message = None
                 self.back_student_tooltip = None
                 self.student_frame.destroy()
                 self.student_frame = None
