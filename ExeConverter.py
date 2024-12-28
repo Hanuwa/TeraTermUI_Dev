@@ -305,7 +305,7 @@ try:
             )
             subprocess.run(nuitka_updater_command, shell=True, check=True)
             print(Fore.GREEN + "\nSuccessfully compiled updater.py\n" + Style.RESET_ALL)
-            manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
+            manifest_path = os.path.join(project_directory, "updater.manifest")
             generate_checksum(None, updater_exe_path)
             attach_manifest(updater_exe_path, manifest_path)
             shutil.copy2(updater_exe_path, updater_dist_path)
