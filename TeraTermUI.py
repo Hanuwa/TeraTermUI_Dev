@@ -5842,7 +5842,7 @@ class TeraTermUI(customtkinter.CTk):
                     screenshot = sct.grab(monitor)
                     img = Image.frombytes("RGB", (screenshot.width, screenshot.height), screenshot.rgb)
                     if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
-                        self.after(125, self.loading_screen.attributes, "-topmost", True)
+                        self.after(100, self.loading_screen.attributes, "-topmost", True)
                     img = img.crop((crop_margin[0], crop_margin[1], img.width - crop_margin[2],
                                     img.height - crop_margin[3])).convert("L")
                     img = img.resize((img.width * 2, img.height * 2), resample=Image.Resampling.LANCZOS)
@@ -7031,7 +7031,7 @@ class TeraTermUI(customtkinter.CTk):
         pyautogui.click(center_x, center_y)
         pyautogui.moveTo(original_position)
         if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
-            self.after(125, self.loading_screen.attributes, "-topmost", True)
+            self.after(0, self.loading_screen.attributes, "-topmost", True)
 
     @staticmethod
     def get_latest_term(input_text):
