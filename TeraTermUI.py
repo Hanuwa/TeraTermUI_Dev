@@ -3861,7 +3861,7 @@ class TeraTermUI(customtkinter.CTk):
         self.intro_box.delete("1.0", "end")
         self.intro_box.insert("0.0", translation["intro_box"])
         self.intro_box.configure(state="disabled")
-        self.appearance_mode_optionemenu.configure(values=[translation["light"], translation["dark"],
+        self.appearance_mode_optionemenu.configure(values=[translation["dark"], translation["light"],
                                                            translation["default"]])
         if appearance == "Dark" or appearance == "Oscuro":
             self.appearance_mode_optionemenu.set(translation["dark"])
