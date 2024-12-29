@@ -1,4 +1,5 @@
 import tkinter as tk
+import os
 import logging
 import pyperclip
 import win32gui
