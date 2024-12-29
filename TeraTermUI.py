@@ -7079,8 +7079,11 @@ class TeraTermUI(customtkinter.CTk):
                     self.reset_activity_timer()
                 self.after(100, self.show_error_message, 320, 235, translation["no_active_semester"])
                 return "negative"
-            elif latest_term["percent"]:
-                self.DEFAULT_SEMESTER = latest_term["percent"]
+            elif latest_term["percent"] or latest_term["asterisk"]:
+                if latest_term["percent"]:
+                    self.DEFAULT_SEMESTER = latest_term["percent"]
+                elif latest_term["asterisk"]:
+                    self.DEFAULT_SEMESTER = latest_term["asterisk"]
                 row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
                 if not row_exists:
                     self.cursor.execute("INSERT INTO user_data (default_semester) VALUES (?)",
@@ -7089,7 +7092,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.cursor.execute("UPDATE user_data SET default_semester=?",
                                         (self.DEFAULT_SEMESTER,))
                 self.found_latest_semester = True
-                return latest_term["percent"]
+                return self.DEFAULT_SEMESTER
             else:
                 return self.DEFAULT_SEMESTER
         else:
