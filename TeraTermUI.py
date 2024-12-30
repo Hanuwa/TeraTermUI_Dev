@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 12/29/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 12/30/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1413,8 +1413,8 @@ class TeraTermUI(customtkinter.CTk):
         if lang == "English":
             if choice == "register":
                 msg = CTkMessagebox(title="Submit",
-                                    message="Are you sure you are ready " + translation["register"].lower() +
-                                            " this class?\n\nWARNING: Make sure the information is correct",
+                                    message="Are you sure you are ready to " + translation["register"].lower() +
+                                            " this class?\n\nREMINDER: Please make sure the information is correct",
                                     icon=TeraTermUI.get_absolute_path("images/submit.png"),
                                     option_1=translation["option_1"], option_2=translation["option_2"],
                                     option_3=translation["option_3"],
@@ -1422,8 +1422,8 @@ class TeraTermUI(customtkinter.CTk):
                                     hover_color=("darkred", "use_default", "use_default"))
             elif choice == "drop":
                 msg = CTkMessagebox(title="Submit",
-                                    message="Are you sure you are ready " + translation[
-                                        "drop"].lower() + " this class?\n\nWARNING: Make sure the information "
+                                    message="Are you sure you are ready to " + translation[
+                                        "drop"].lower() + " this class?\n\nREMINDER: Please make sure the information "
                                                           "is correct",
                                     icon=TeraTermUI.get_absolute_path("images/submit.png"),
                                     option_1=translation["option_1"], option_2=translation["option_2"],
@@ -1434,8 +1434,8 @@ class TeraTermUI(customtkinter.CTk):
             if choice == "register":
                 msg = CTkMessagebox(title="Someter",
                                     message="¿Estás preparado para " + translation["register"].lower() +
-                                            "r esta clase?\n\nWARNING: Asegúrese de que la información está correcta",
-                                    icon=TeraTermUI.get_absolute_path("images/submit.png"),
+                                            "r esta clase?\n\nRECORDATORIO: Favor de asegurarse de que la información "
+                                            "está correcta", icon=TeraTermUI.get_absolute_path("images/submit.png"),
                                     option_1=translation["option_1"], option_2=translation["option_2"],
                                     option_3=translation["option_3"],
                                     icon_size=(65, 65), button_color=("#c30101", "use_default", "use_default"),
@@ -1443,8 +1443,8 @@ class TeraTermUI(customtkinter.CTk):
             elif choice == "drop":
                 msg = CTkMessagebox(title="Someter",
                                     message="¿Estás preparado para darle de " + translation["drop"].lower() +
-                                            " a esta clase?\n\nWARNING: Asegúrese de que la información está correcta",
-                                    icon=TeraTermUI.get_absolute_path("images/submit.png"),
+                                            " a esta clase?\n\nRECORDATORIO: Favor de asegurarse de que la información "
+                                            "está correcta", icon=TeraTermUI.get_absolute_path("images/submit.png"),
                                     option_1=translation["option_1"], option_2=translation["option_2"],
                                     option_3=translation["option_3"],
                                     icon_size=(65, 65), button_color=("#c30101", "#145DA0", "#145DA0"),
