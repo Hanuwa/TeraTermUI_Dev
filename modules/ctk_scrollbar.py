@@ -243,10 +243,16 @@ class CTkScrollbar(CTkBaseClass):
         self.update_idletasks()
 
     def _clicked(self, event):
+        if self.master.focus_get():
+            self.master.focus_set()
+
         self._motion_center_offset = 0
         self._on_motion(event)
 
     def _clicked_scrollbar(self, event):
+        if self.master.focus_get():
+            self.master.focus_set()
+            
         if self._orientation == "vertical":
             value = self._reverse_widget_scaling(
                 ((event.y - self._border_spacing) / (self._current_height - 2 * self._border_spacing)))
