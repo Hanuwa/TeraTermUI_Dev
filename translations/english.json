@@ -317,7 +317,7 @@
 	"end_countdown": "The Auto-Enroll event was force to end because Tera Term is not running anymore\n\nIf it closed by itself, then there was probably a server maintenance done by the university",
 
 	"feedback_unavailable": "Error! Feedback submission not currently available",
-	"submit_feedback": "Are you ready to submit your feedback?\n\n(SUBMISSION IS COMPLETELY ANONYMOUS)",
+	"submit_feedback": "Are you ready to submit your feedback?\n\nNOTE: Submission is completely anonymous",
 	"feedback_success": "Feedback submitted successfully!",
 	"feedback_error": "Error! An error occurred while submitting feedback",
 	"feedback_empty": "Error! Feedback cannot be empty",
