@@ -154,7 +154,6 @@ class TeraTermUI(customtkinter.CTk):
         self.geometry(f"{width}x{height}+{int(x) + 90}+{int(y + 50)}")
         self.icon_path = TeraTermUI.get_absolute_path("images/tera-term.ico")
         self.iconbitmap(self.icon_path)
-        self.bind("<Button-1>", self.set_focus)
         self.bind("<Button-2>", lambda event: self.focus_set())
         self.bind("<Button-3>", lambda event: self.focus_set())
 
@@ -1034,8 +1033,9 @@ class TeraTermUI(customtkinter.CTk):
             raise
 
     @staticmethod
-    def set_focus(event):
-        if str(event.widget) == ".!ctktabview.!ctkframe2.!ctkframe.!canvas":
+    def set_focus_tabview(event):
+        if (str(event.widget) == ".!ctktabview.!ctkframe2.!ctkframe.!canvas" or
+                str(event.widget) == ".!ctktabview.!ctkcanvas"):
             event.widget.focus_set()
 
     @staticmethod
@@ -5180,6 +5180,7 @@ class TeraTermUI(customtkinter.CTk):
             self.search_next_page_tooltip = CTkToolTip(self.search_next_page,
                                                        message=translation["search_next_page_tooltip"],
                                                        bg_color="#989898", alpha=0.90)
+            self.bind("<Button-1>", TeraTermUI.set_focus_tabview)
             self.tabview.tab(self.search_tab).bind("<Button-1>", lambda event: self.focus_set())
             self.search_scrollbar.bind("<Button-1>", lambda event: self.focus_set())
             self.title_search.bind("<Button-1>", lambda event: self.focus_set())
