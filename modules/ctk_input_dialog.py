@@ -61,7 +61,7 @@ class CTkInputDialog(CTkToplevel):
         self.title(self._title)
         self.lift()  # lift window on top
         self.protocol("WM_DELETE_WINDOW", self._on_closing)
-        self.after(10, self._create_widgets)  # create widgets with slight delay, to avoid white flickering of background
+        self._create_widgets()
         self.resizable(False, False)
         self.transient(master)
         self.grab_set()  # make other windows not clickable
