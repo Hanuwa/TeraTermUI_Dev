@@ -75,6 +75,7 @@
 	"show_all_tooltip": "Muestre todas las secciones\no solamente las que están\n abiertas",
 	"show_classes_tooltip": "Muestra las clases que\ntienes matriculadas en un\nsemestre específico",
 	"conflict_tooltip": "Esta sección podría tener un conflicto\ncon el horario de otra sección\n*EST. ",
+	"conflict_table_tooltip": "Esta sección podría tener un conflicto\ncon el horario de otra sección en tus\nclases actualmente matriculadas\n*EST. ",
 	"add_tooltip": "Añade más clases",
 	"m_remove_tooltip": "Eliminar clases",
 	"multiple_tooltip": "Matricula múltiples\nclases a la misma vez",
