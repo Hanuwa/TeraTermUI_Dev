@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 12/30/24
+# DATE - Started 1/1/23, Current Build v0.9.5 - 12/31/24
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 12400 lines of codes, it definitely makes things harder to work with
+# and with over 12500 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -70,6 +70,7 @@ from mss import mss
 from pathlib import Path
 from PIL import Image
 from py7zr import SevenZipFile
+from pytz import timezone
 from tkinter import filedialog
 from tkinter import messagebox
 
@@ -532,6 +533,7 @@ class TeraTermUI(customtkinter.CTk):
 
         # My Classes
         self.enrolled_header_tooltips = {}
+        self.enrolled_entry_cache = {}
         self.enrolled_tooltips = []
         self.my_classes_frame = None
         self.enrolled_classes_table = None
@@ -1292,7 +1294,7 @@ class TeraTermUI(customtkinter.CTk):
             self.tabview.tab(self.search_tab).grid_columnconfigure(1, weight=2)
             self.search_scrollbar.grid_columnconfigure(1, weight=2)
             self.tabview.tab(self.other_tab).grid_columnconfigure(1, weight=2)
-            self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 20))
+            self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(5, 0), pady=(0, 20))
             self.t_buttons_frame.grid_columnconfigure(1, weight=2)
             self.title_enroll.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
             self.e_classes.grid(row=1, column=1, padx=(0, 188), pady=(0, 0))
@@ -1333,7 +1335,7 @@ class TeraTermUI(customtkinter.CTk):
             self.multiple.grid(row=4, column=2, padx=(10, 0), pady=(0, 0), sticky="e")
         else:
             self.tabview.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 85))
-            self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 20))
+            self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(5, 0), pady=(0, 20))
         self.bind("<Control-Tab>", lambda event: self.on_ctrl_tab_pressed())
         if self.renamed_tabs is not None:
             if self.renamed_tabs == self.enroll_tab:
@@ -1901,6 +1903,7 @@ class TeraTermUI(customtkinter.CTk):
     def my_classes_event_handler(self):
         lang = self.language_menu.get()
         translation = self.load_language()
+        self.destroy_tooltip()
         if self.enrolled_classes_table is not None and not self.my_classes_frame.grid_info():
             self.tabview.grid_forget()
             self.back_classes.grid_forget()
@@ -2336,7 +2339,7 @@ class TeraTermUI(customtkinter.CTk):
                             if semester == curr_sem:
                                 result = self.handle_current_semester()
                                 if result == "error":
-                                    self.after(100, self.show_error_message, 320, 235,
+                                    self.after(100, self.show_error_message, 330, 235,
                                                translation["failed_enroll_multiple"])
                                     return
                                 elif result == "negative":
@@ -2421,7 +2424,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.after(2500, self.show_information_message, 350, 265,
                                                    translation["enrollment_limit"])
                                 else:
-                                    self.after(100, self.show_error_message, 320, 235,
+                                    self.after(100, self.show_error_message, 330, 235,
                                                translation["failed_enroll_multiple"])
                                     self.submit_multiple.configure(state="disabled")
                                     self.unbind("<Return>")
@@ -2451,7 +2454,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.after(0, self.submit_multiple_event_handler)
                                         self.error_auto_enroll = True
                                     else:
-                                        self.after(100, self.show_error_message, 330, 210,
+                                        self.after(100, self.show_error_message, 330, 235,
                                                    translation["failed_enroll_multiple"])
                                         if not self.enrollment_error_check:
                                             self.submit_multiple.configure(state="disabled")
@@ -3749,7 +3752,7 @@ class TeraTermUI(customtkinter.CTk):
             self.back_my_classes.grid_forget()
             self.show_classes.configure(text=translation["show_my_classes"])
         self.tabview.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 85))
-        self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(0, 0), pady=(0, 20))
+        self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(5, 0), pady=(0, 20))
         self.back_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
         self.in_multiple_screen = False
         self.switch_tab()
@@ -4133,7 +4136,11 @@ class TeraTermUI(customtkinter.CTk):
                 self.timer_window.title(translation["auto_enroll"])
                 self.message_label.configure(text=translation["auto_enroll_activated"])
                 self.cancel_button.configure(text=translation["option_1"])
-                self.countdown(self.pr_date)
+                puerto_rico_tz = timezone("America/Puerto_Rico")
+                current_date = datetime.now(puerto_rico_tz)
+                time_difference = self.pr_date - current_date
+                total_seconds = time_difference.total_seconds()
+                self.timer_label.configure(text=self.get_countdown_message(total_seconds))
             for entry in [self.e_classes_entry, self.e_section_entry, self.s_classes_entry, self.m_classes_entry,
                           self.m_section_entry, self.e_semester_entry, self.s_semester_entry, self.menu_entry,
                           self.menu_semester_entry, self.m_semester_entry]:
@@ -4199,6 +4206,22 @@ class TeraTermUI(customtkinter.CTk):
                 self.back_my_classes.configure(text=translation["back"])
                 self.back_my_classes_tooltip.configure(message=translation["back_multiple"])
                 self.modify_classes_title.configure(text=translation["mod_classes_title"])
+                for idx, entry in enumerate(self.change_section_entries):
+                    current_message = self.enrolled_tooltips[idx * 2 + 1].cget("message")
+                    current_time = current_message.split("*EST. ")[-1].strip() if "*EST. " in current_message else ""
+                    pattern = r"^\*EST\. \d{1,2}:\d{2} (AM|PM) - \d{1,2}:\d{2} (AM|PM)$"
+                    if ("clases actualmente matriculadas" in current_message or
+                            "currently enrolled classes" in current_message):
+                        self.enrolled_tooltips[idx * 2 + 1].configure(
+                            message=f"{translation['conflict_table_tooltip']}{current_time}")
+                    elif re.match(pattern, current_message):
+                        self.enrolled_tooltips[idx * 2 + 1].configure(message=f"*EST. {current_time}")
+                    elif "Ingresa la nueva" in current_message or "Enter the new" in current_message:
+                        original_message = translation["change_section_entry"]
+                        self.enrolled_tooltips[idx * 2 + 1].configure(message=original_message)
+                    else:
+                        self.enrolled_tooltips[idx * 2 + 1].configure(
+                            message=f"{translation['conflict_tooltip']}{current_time}")
                 for option_menu in self.mod_selection_list:
                     if option_menu is not None:
                         option_menu.configure(values=[translation["choose"], translation["drop"],
@@ -4209,11 +4232,6 @@ class TeraTermUI(customtkinter.CTk):
                             option_menu.set(translation["drop"])
                         elif option_menu.get() == "Section" or option_menu.get() == "Sección":
                             option_menu.set(translation["section"])
-                for i in range(0, len(self.enrolled_tooltips), 2):
-                    if i < len(self.enrolled_tooltips):
-                        self.enrolled_tooltips[i].configure(translation["mod_selection"])
-                    if i + 1 < len(self.enrolled_tooltips):
-                        self.enrolled_tooltips[i + 1].configure(translation["change_section_entry"])
 
     def rename_tabs(self):
         translation = self.load_language()
@@ -4250,10 +4268,7 @@ class TeraTermUI(customtkinter.CTk):
             translated_days = ", ".join(reverse_day_translations.get(day, day) for day in days.split(", "))
         self.e_section_tooltip.configure(message=f"{translated_days}\n*EST. {time_info}", visibility=True)
 
-    def change_semester(self, event_type=None):
-        if event_type != "focus_out":
-            self.focus_set()
-
+    def change_semester(self, semester):
         translation = self.load_language()
         semester = self.m_semester_entry[0].get().upper().replace(" ", "")
         curr_sem = translation["current"].upper()
@@ -4338,7 +4353,7 @@ class TeraTermUI(customtkinter.CTk):
         time_obj = datetime.strptime(time_str, "%H:%M")
         return time_obj.strftime("%I:%M %p").lstrip("0")
 
-    def check_class_time(self, check_multiple=False):
+    def check_class_time(self):
         lang = self.language_menu.get()
         day_translations = {
             "Monday": "Lunes",
@@ -4364,82 +4379,116 @@ class TeraTermUI(customtkinter.CTk):
         else:
             self.e_section_tooltip.configure(message="", visibility=False)
 
-        if check_multiple:
-            for i in range(8):
-                section = self.m_section_entry[i].get().upper().replace(" ", "")
-                if section[:2] in schedule_map:
-                    days, start_time, end_time = schedule_map[section[:2]]
-                    start_time_12hr = TeraTermUI.convert_to_12_hour_format(start_time)
-                    end_time_12hr = TeraTermUI.convert_to_12_hour_format(end_time)
-                    if lang == "Español":
-                        translated_days = ", ".join(day_translations.get(day, day) for day in days.split(", "))
-                    else:
-                        translated_days = days
-                    self.m_tooltips[i].configure(
-                        message=f"{translated_days}\n *EST. {start_time_12hr} - {end_time_12hr}",
-                        visibility=True)
-                else:
-                    self.m_tooltips[i].configure(message="", visibility=False)
-
     def check_class_conflicts(self, event=None):
         translation = self.load_language()
         schedule_map = self.schedule_map
-        sections = [entry.get().upper().replace(" ", "") for entry in self.m_section_entry if entry.get().strip()]
-        schedule = []
-        conflict_entries = set()
+
+        table_sections = {row.get(translation["course"], "").split("-")[-1].strip()
+                          for row in (self.enrolled_classes_data or []) if row.get(translation["course"])}
+        all_entries = self.m_section_entry + (self.change_section_entries or [])
+        sections = {entry.get().upper().replace(" ", ""): entry for entry in all_entries
+                    if entry and entry.get().strip()}
         if not sections:
             return
 
-        for class_section in sections:
-            if class_section[:2] in schedule_map:
-                days, start_time, end_time = schedule_map[class_section[:2]]
+        schedule = {}
+        for table_section in table_sections:
+            if table_section in schedule_map:
+                days, start_time, end_time = schedule_map[table_section]
                 for day in days.split(", "):
-                    schedule.append((day, start_time, end_time, class_section))
+                    if day not in schedule:
+                        schedule[day] = []
+                    schedule[day].append((start_time, end_time, table_section))
+        for section_code in sections:
+            prefix = section_code[:2]
+            if prefix in schedule_map:
+                days, start_time, end_time = schedule_map[prefix]
+                for day in days.split(", "):
+                    if day not in schedule:
+                        schedule[day] = []
+                    schedule[day].append((start_time, end_time, section_code))
 
-        def time_overlaps(start1, end1, start2, end2):
-            return max(start1, start2) < min(end1, end2)
-
-        schedule.sort(key=lambda x: (x[0], x[1]))
-
-        for day, day_schedule in groupby(schedule, key=lambda x: x[0]):
-            day_schedule = list(day_schedule)
-            for i in range(len(day_schedule)):
-                current_start, current_end, current_code = day_schedule[i][1:]
-                for j in range(i + 1, len(day_schedule)):
-                    next_start, next_end, next_code = day_schedule[j][1:]
-                    if time_overlaps(current_start, current_end, next_start, next_end):
+        conflict_entries = set()
+        for day, times in schedule.items():
+            times.sort()
+            for i, (current_start, current_end, current_code) in enumerate(times):
+                for next_start, next_end, next_code in times[i + 1:]:
+                    if current_start < next_end and next_start < current_end:
                         conflict_entries.add((current_code, current_start, current_end))
                         conflict_entries.add((next_code, next_start, next_end))
 
+        theme_border_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
+
         for idx, entry in enumerate(self.m_section_entry):
             section = entry.get().upper().replace(" ", "")
-            conflict = next((conflict for conflict in conflict_entries if conflict[0] == section), None)
+            if not section:
+                entry.configure(border_color=theme_border_color)
+                self.m_tooltips[idx].configure(message="", visibility=False)
+                continue
+
+            conflict = next((c for c in conflict_entries if c[0] == section), None)
             if conflict:
                 conflict_time = (f"{TeraTermUI.convert_to_12_hour_format(conflict[1])} - "
                                  f"{TeraTermUI.convert_to_12_hour_format(conflict[2])}")
-                current_message = self.m_tooltips[idx].cget("message")
-                new_message = f"{translation['conflict_tooltip']}{conflict_time}"
-                if entry.cget("border_color") != "#CC5500":
-                    entry.configure(border_color="#CC5500")
-                if current_message != new_message:
-                    self.m_tooltips[idx].configure(message=new_message, visibility=True, bg_color="#CC5500")
-            elif section and section[:2] in schedule_map:
+                entry.configure(border_color="#CC5500")
+                self.m_tooltips[idx].configure(message=f"{translation['conflict_tooltip']}{conflict_time}",
+                                               visibility=True, bg_color="#CC5500")
+            elif section[:2] in schedule_map:
                 day, start_time, end_time = schedule_map[section[:2]]
                 time_info = (f"{TeraTermUI.convert_to_12_hour_format(start_time)} - "
                              f"{TeraTermUI.convert_to_12_hour_format(end_time)}")
-                current_message = self.m_tooltips[idx].cget("message")
-                new_message = f"*EST. {time_info}"
                 if entry.cget("border_color") == "#CC5500":
-                    entry.configure(border_color=customtkinter.ThemeManager.theme["CTkEntry"]["border_color"])
-                if current_message != new_message:
-                    self.m_tooltips[idx].configure(message=new_message, visibility=True, bg_color="#1E90FF")
+                    entry.configure(border_color=theme_border_color)
+                self.m_tooltips[idx].configure(message=f"*EST. {time_info}", visibility=True, bg_color="#1E90FF")
             else:
-                current_message = self.m_tooltips[idx].cget("message")
-                new_message = ""
-                if entry.cget("border_color") == "#CC5500":
-                    entry.configure(border_color=customtkinter.ThemeManager.theme["CTkEntry"]["border_color"])
-                if current_message != new_message:
-                    self.m_tooltips[idx].configure(message=new_message, visibility=False, bg_color="#1E90FF")
+                entry.configure(border_color=theme_border_color)
+                self.m_tooltips[idx].configure(message="", visibility=False)
+
+        if self.change_section_entries:
+            for idx, entry in enumerate(self.change_section_entries):
+                if entry is None:
+                    continue
+
+                section = entry.get().upper().replace(" ", "")
+                tooltip_idx = idx * 2 + 1
+                if not section:
+                    entry.configure(border_color=theme_border_color)
+                    self.enrolled_tooltips[tooltip_idx].configure(message=translation["change_section_entry"],
+                                                                  bg_color="#1E90FF")
+                    continue
+
+                conflict = next((c for c in conflict_entries if c[0] == section), None)
+                if conflict:
+                    conflict_time = (f"{TeraTermUI.convert_to_12_hour_format(conflict[1])} - "
+                                     f"{TeraTermUI.convert_to_12_hour_format(conflict[2])}")
+                    entry.configure(border_color="#CC5500")
+                    self.enrolled_tooltips[tooltip_idx].configure(
+                        message=f"{translation['conflict_tooltip']}{conflict_time}", bg_color="#CC5500")
+                elif section in table_sections:
+                    conflict_times = [(times[0], times[1]) for day_times in schedule.values()
+                                      for times in day_times if times[2] == section]
+                    if conflict_times:
+                        start_time, end_time = conflict_times[0]
+                        conflict_time = (f"{TeraTermUI.convert_to_12_hour_format(start_time)} - "
+                                         f"{TeraTermUI.convert_to_12_hour_format(end_time)}")
+                        entry.configure(border_color="#CC5500")
+                        self.enrolled_tooltips[tooltip_idx].configure(
+                            message=f"{translation['conflict_table_tooltip']}{conflict_time}", bg_color="#CC5500")
+                    else:
+                        entry.configure(border_color=theme_border_color)
+                        self.enrolled_tooltips[tooltip_idx].configure(message=translation["change_section_entry"],
+                                                                      bg_color="#1E90FF")
+                elif section[:2] in schedule_map:
+                    day, start_time, end_time = schedule_map[section[:2]]
+                    time_info = (f"{TeraTermUI.convert_to_12_hour_format(start_time)} - "
+                                 f"{TeraTermUI.convert_to_12_hour_format(end_time)}")
+                    if entry.cget("border_color") == "#CC5500":
+                        entry.configure(border_color=theme_border_color)
+                    self.enrolled_tooltips[tooltip_idx].configure(message=f"*EST. {time_info}", bg_color="#1E90FF")
+                else:
+                    entry.configure(border_color=theme_border_color)
+                    self.enrolled_tooltips[tooltip_idx].configure(message=translation["change_section_entry"],
+                                                                  bg_color="#1E90FF")
 
     def keybind_auto_enroll(self):
         if self.auto_enroll.get() == "on":
@@ -4565,7 +4614,6 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(0, self.disable_enable_gui)
                                 # Create timer window
                                 self.after(0, self.create_timer_window)
-                                # Create a BooleanVar to control the countdown loop
                                 self.running_countdown = customtkinter.BooleanVar()
                                 self.running_countdown.set(True)
                                 # Start the countdown
@@ -4627,11 +4675,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.after(350, self.bind, "<Return>", lambda event: self.submit_multiple_event_handler())
                 TeraTermUI.disable_user_input()
 
-    # Starts the countdown on when the auto-enroll process will occur
+    # Starts the enrollment countdown when the auto-enroll process is activated
     def countdown(self, pr_date):
-        from pytz import timezone
-
-        lang = self.language_menu.get()
         translation = self.load_language()
         puerto_rico_tz = timezone("America/Puerto_Rico")
         current_date = datetime.now(puerto_rico_tz)
@@ -4640,11 +4685,13 @@ class TeraTermUI(customtkinter.CTk):
         if self.running_countdown.get():
             if not TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
                 self.forceful_end_countdown()
+                return
+
             if total_seconds <= 0:
-                # Enrollment function
-                self.timer_label.configure(text=translation["performing_auto_enroll"], text_color="#32CD32",
+                # Enrollment process starts
+                self.timer_label.configure(text=self.get_countdown_message(total_seconds), text_color="#32CD32",
                                            font=customtkinter.CTkFont(size=17))
-                self.timer_label.pack(pady=30)
+                self.timer_label.pack(pady=35)
                 self.cancel_button.pack_forget()
                 if self.state() == "withdrawn":
                     if self.timer_window.state() == "withdrawn":
@@ -4671,115 +4718,97 @@ class TeraTermUI(customtkinter.CTk):
                         win32gui.PostMessage(file_dialog_hwnd, win32con.WM_CLOSE, 0, 0)
 
                     self.after(2500, close_file_dialog)
-                titles_to_close = [
-                    translation["exit"],
-                    translation["submit"],
-                    translation["success_title"],
-                    translation["error"],
-                    translation["fix_messagebox_title"],
-                    translation["update_popup_title"],
-                    translation["so_title"],
-                    translation["automation_error_title"]
-                ]
+                titles_to_close = [translation["exit"], translation["submit"], translation["success_title"],
+                                   translation["error"], translation["fix_messagebox_title"],
+                                   translation["update_popup_title"], translation["so_title"],
+                                   translation["automation_error_title"]]
                 self.after(2500, TeraTermUI.close_matching_windows, titles_to_close)
                 return
+
             else:
-                hours, remainder = divmod(total_seconds, 3600)
-                minutes, seconds = divmod(remainder, 60)
-                # If more than an hour remains
-                if hours > 0:
-                    if seconds > 0:
-                        minutes += 1
-                    if lang == "English":
-                        if minutes == 0:
-                            self.timer_label.configure(
-                                text=f"{int(hours)} hours remaining until enrollment")
-                        elif hours == 1 and minutes == 1:
-                            self.timer_label.configure(
-                                text=f"{int(hours)} hour and {int(minutes)} minute \nremaining until enrollment")
-                        elif hours == 1:
-                            self.timer_label.configure(
-                                text=f"{int(hours)} hour and {int(minutes)} minutes \nremaining until enrollment")
-                        elif minutes == 1:
-                            self.timer_label.configure(
-                                text=f"{int(hours)} hours and {int(minutes)} minute \nremaining until enrollment")
-                        else:
-                            self.timer_label.configure(
-                                text=f"{int(hours)} hours and {int(minutes)} minutes \nremaining until enrollment")
-                    elif lang == "Español":
-                        if minutes == 0:
-                            self.timer_label.configure(
-                                text=f"{int(hours)} horas restantes hasta la matrícula")
-                        elif hours == 1 and minutes == 1:
-                            self.timer_label.configure(text=f"{int(hours)} hora y {int(minutes)} "
-                                                            f"minuto \nrestante hasta la matrícula")
-                        elif hours == 1:
-                            self.timer_label.configure(text=f"{int(hours)} hora y {int(minutes)} "
-                                                            f"minutos \nrestantes hasta la matrícula")
-                        elif minutes == 1:
-                            self.timer_label.configure(text=f"{int(hours)} horas y {int(minutes)} "
-                                                            f"minuto \nrestante hasta la matrícula")
-                        else:
-                            self.timer_label.configure(text=f"{int(hours)} horas y {int(minutes)} "
-                                                            f"minutos \nrestantes hasta la matrícula")
-                    if total_seconds > 3600:
-                        seconds_until_next_minute = 60 - current_date.second
-                        self.timer_window.after(
-                            seconds_until_next_minute * 1000, lambda: self.countdown(pr_date)
-                            if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
-                            else self.forceful_end_countdown())
+                # Update countdown message
+                self.timer_label.configure(text=self.get_countdown_message(total_seconds))
+                # Schedule the next update based on remaining time
+                if total_seconds > 3600:
+                    # Update every minute if more than an hour remains
+                    seconds_until_next_minute = 60 - current_date.second
+                    self.timer_window.after(seconds_until_next_minute * 1000, lambda: self.countdown(pr_date)
+                        if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
+                        else self.forceful_end_countdown())
+                elif total_seconds > 60:
+                    # Update every minute if less than an hour but more than a minute remains
+                    seconds_until_next_minute = 60 - current_date.second
+                    self.timer_window.after(seconds_until_next_minute * 1000, lambda: self.countdown(pr_date)
+                        if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
+                        else self.forceful_end_countdown())
+                else:
+                    # Update every second if less than a minute remains
+                    if not self.notification_sent:
+                        self.tray.notify(translation["notif_countdown"].replace(
+                            "{semester}", self.m_semester_entry[0].get()), title="Tera Term UI")
+                        self.notification_sent = True
+                    self.timer_window.after(1000, lambda: self.countdown(pr_date)
+                        if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
+                        else self.forceful_end_countdown())
 
-                else:  # When there's less than an hour remaining
-                    # If there's a part of minute left, consider it as a whole minute
-                    if seconds > 0:
-                        minutes += 1
-                    if lang == "English":
-                        if minutes >= 60:
-                            self.timer_label.configure(text="1 hour remaining until enrollment")
-                        elif minutes > 1:  # if more than one minute left
-                            self.timer_label.configure(
-                                text=f"{int(minutes)} minutes remaining until enrollment")
-                        else:  # else case for less than or equal to one minute or 60 seconds
-                            if total_seconds > 31:  # still display as 1 minute if more than 30 seconds left
-                                self.timer_label.configure(text=f"1 minute remaining until enrollment")
-                            elif total_seconds >= 2:  # display as seconds if less than or equal to 30 seconds
-                                # left but more than or equal to 2 seconds
-                                self.timer_label.configure(
-                                    text=f"{int(total_seconds)} seconds remaining until enrollment")
-                            else:  # exactly 1 second left
-                                self.timer_label.configure(text="1 second remaining until enrollment")
-                    elif lang == "Español":
-                        if minutes >= 60:
-                            self.timer_label.configure(text="1 hora restante hasta la matrícula")
-                        elif minutes > 1:  # if more than one minute left
-                            self.timer_label.configure(
-                                text=f"{int(minutes)} minutos restantes hasta la matrícula")
-                        else:  # else case for less than or equal to one minute or 60 seconds
-                            if total_seconds > 31:  # still display as 1 minute if more than 30 seconds left
-                                self.timer_label.configure(text=f"1 minuto restante hasta la matrícula")
-                            elif total_seconds >= 2:  # display as seconds if less than or equal to 30 seconds
-                                # left but more than or equal to 2 seconds
-                                self.timer_label.configure(
-                                    text=f"{int(total_seconds)} segundos restantes hasta la matrícula")
-                            else:  # exactly 1 second left
-                                self.timer_label.configure(text="1 segundo restante hasta la matrícula")
+    def get_countdown_message(self, total_seconds):
+        lang = self.language_menu.get()
+        translation = self.load_language()
+        hours, remainder = divmod(total_seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        if total_seconds <= 0:
+            return translation["performing_auto_enroll"]
 
-                    # update every minute if there's more than 60 seconds left
-                    if total_seconds > 60:
-                        seconds_until_next_minute = 60 - current_date.second
-                        self.timer_window.after(
-                            seconds_until_next_minute * 1000, lambda: self.countdown(pr_date)
-                            if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
-                            else self.forceful_end_countdown())
-                    else:  # update every second if there's less than or equal to 60 seconds left
-                        if not self.notification_sent:
-                            self.tray.notify(translation["notif_countdown"].replace(
-                                "{semester}", self.m_semester_entry[0].get()), title="Tera Term UI")
-                            self.notification_sent = True
-                        self.timer_window.after(
-                            1000, lambda: self.countdown(pr_date)
-                            if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
-                            else self.forceful_end_countdown())
+        if hours > 0:
+            if seconds > 0:
+                minutes += 1
+            if lang == "English":
+                if minutes == 0:
+                    return f"{int(hours)} hours remaining\nuntil enrollment"
+                elif hours == 1 and minutes == 1:
+                    return f"{int(hours)} hour and {int(minutes)} minute remaining\nuntil enrollment"
+                elif hours == 1:
+                    return f"{int(hours)} hour and {int(minutes)} minutes remaining\nuntil enrollment"
+                elif minutes == 1:
+                    return f"{int(hours)} hours and {int(minutes)} minute remaining\nuntil enrollment"
+                else:
+                    return f"{int(hours)} hours and {int(minutes)} minutes remaining\nuntil enrollment"
+            elif lang == "Español":
+                if minutes == 0:
+                    return f"{int(hours)} horas restantes\nhasta la matrícula"
+                elif hours == 1 and minutes == 1:
+                    return f"{int(hours)} hora y {int(minutes)} minuto restante\nhasta la matrícula"
+                elif hours == 1:
+                    return f"{int(hours)} hora y {int(minutes)} minutos restantes\nhasta la matrícula"
+                elif minutes == 1:
+                    return f"{int(hours)} horas y {int(minutes)} minuto restante\nhasta la matrícula"
+                else:
+                    return f"{int(hours)} horas y {int(minutes)} minutos restantes\nhasta la matrícula"
+        else:
+            if seconds > 0:
+                minutes += 1
+            if lang == "English":
+                if minutes >= 60:
+                    return "1 hour remaining until enrollment"
+                elif minutes > 1:
+                    return f"{int(minutes)} minutes remaining until enrollment"
+                elif total_seconds > 31:
+                    return "1 minute remaining until enrollment"
+                elif total_seconds >= 2:
+                    return f"{int(total_seconds)} seconds remaining until enrollment"
+                else:
+                    return "1 second remaining until enrollment"
+            elif lang == "Español":
+                if minutes >= 60:
+                    return "1 hora restante hasta la matrícula"
+                elif minutes > 1:
+                    return f"{int(minutes)} minutos restantes hasta la matrícula"
+                elif total_seconds > 31:
+                    return "1 minuto restante hasta la matrícula"
+                elif total_seconds >= 2:
+                    return f"{int(total_seconds)} segundos restantes hasta la matrícula"
+                else:
+                    return "1 segundo restante hasta la matrícula"
 
     def end_countdown(self):
         translation = self.load_language()
@@ -4811,8 +4840,8 @@ class TeraTermUI(customtkinter.CTk):
         main_window_y = self.winfo_y()
         main_window_width = self.winfo_width()
         main_window_height = self.winfo_height()
-        timer_window_width = 340
-        timer_window_height = 170
+        timer_window_width = 345
+        timer_window_height = 175
         center_x = main_window_x + (main_window_width // 2) - (timer_window_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (timer_window_height // 2)
         screen_width = self.winfo_screenwidth()
@@ -4830,10 +4859,10 @@ class TeraTermUI(customtkinter.CTk):
             size=20, weight="bold"), text=translation["auto_enroll_activated"])
         self.message_label.pack()
         self.timer_label = customtkinter.CTkLabel(self.timer_window, text="", font=customtkinter.CTkFont(size=15))
-        self.timer_label.pack(pady=(12, 0))
+        self.timer_label.pack(pady=(16, 0))
         self.cancel_button = CustomButton(self.timer_window, text=translation["option_1"], width=260, height=28,
                                           hover_color="darkred", fg_color="red", command=self.end_countdown)
-        self.cancel_button.pack(pady=(20, 0))
+        self.cancel_button.pack(pady=(24, 0))
         new_menu = pystray.Menu(
             pystray.MenuItem(translation["hide_tray"], self.hide_all_windows),
             pystray.MenuItem(translation["show_tray"], self.show_all_windows, default=True),
@@ -5317,8 +5346,7 @@ class TeraTermUI(customtkinter.CTk):
                     master=self.multiple_frame, values=[translation["register"], translation["drop"]], height=26))
                 self.m_register_menu[i].set(translation["choose"])
                 self.m_num_class[i].bind("<Button-1>", lambda event: self.focus_set())
-            self.m_semester_entry[0].bind(
-                "<FocusOut>", lambda event: self.change_semester(event_type="focus_out"))
+            self.m_semester_entry[0].bind("<FocusOut>", self.change_semester)
             self.m_add = CustomButton(master=self.m_button_frame, border_width=2, text="+",
                                       text_color=("gray10", "#DCE4EE"), command=self.add_event, height=38, width=50,
                                       fg_color="#0F52BA")
@@ -6102,6 +6130,7 @@ class TeraTermUI(customtkinter.CTk):
 
         first_entry_semester = self.m_semester_entry[0].get() if self.m_classes_entry[0].get().strip() else None
         if first_entry_semester and first_entry_semester != semester_text:
+            self.check_class_time()
             msg = translation["pasted"]
             delay = 3500
         else:
@@ -6125,6 +6154,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.m_section_entry[existing_index].insert(0, section_text)
                     self.m_register_menu[existing_index].set(translation["register"])
                     replaced_section = True
+                    self.check_class_conflicts()
                     msg = translation["pasted_mult"]
                     delay = 3500
                 else:
@@ -6142,14 +6172,15 @@ class TeraTermUI(customtkinter.CTk):
                                     self.add_event()
                             break
                 if added_multiple:
-                    self.check_class_time(check_multiple=True)
+                    self.check_class_conflicts()
                     msg = translation["pasted_mult"]
                     delay = 5000
                 elif not replaced_section:
-                    self.check_class_time(check_multiple=False)
+                    self.check_class_time()
                     msg = translation["pasted"]
                     delay = 3500
             else:
+                self.check_class_time()
                 msg = translation["pasted"]
                 delay = 3500
 
@@ -7494,7 +7525,7 @@ class TeraTermUI(customtkinter.CTk):
                 if row_index == 0:
                     pad_y = 30
                 self.change_section_entries[row_index].grid(row=row_index, column=0, padx=(50, 0), pady=(pad_y, 0))
-                self.mod_selection_list[row_index].grid(row=row_index, column=0, padx=(0, 100), pady=(pad_y, 0))
+                self.mod_selection_list[row_index].grid(row=row_index, column=0, padx=(56, 0), pady=(pad_y, 0))
                 self.change_section_entries[row_index].configure(state="normal")
                 if self.change_section_entries[row_index].get():
                     self.change_section_entries[row_index].delete(0, "end")
@@ -7520,8 +7551,9 @@ class TeraTermUI(customtkinter.CTk):
                                                                     self.modify_enrolled_classes(value, index))
                         change_section_entry = CustomEntry(self.modify_classes_frame, self, lang,
                                                            placeholder_text=placeholder_text, width=50)
+                        change_section_entry.bind("<FocusOut>", self.check_class_conflicts)
                         mod_selection.grid(row=row_index, column=0, padx=(0, 100), pady=(pad_y, 0))
-                        change_section_entry.grid(row=row_index, column=0, padx=(50, 0), pady=(pad_y, 0))
+                        change_section_entry.grid(row=row_index, column=0, padx=(56, 0), pady=(pad_y, 0))
                         mod_selection_tooltip = CTkToolTip(mod_selection, bg_color="#1E90FF",
                                                            message=translation["mod_selection"])
                         change_section_entry_tooltip = CTkToolTip(change_section_entry, bg_color="#1E90FF",
@@ -7593,12 +7625,12 @@ class TeraTermUI(customtkinter.CTk):
             self.my_classes_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
             self.my_classes_frame.grid_columnconfigure(2, weight=1)
             self.title_my_classes.grid(row=1, column=1, padx=(180, 0), pady=(10, 10))
-            self.enrolled_classes_table.grid(row=2, column=1, pady=(0, 5), padx=(10, 0))
+            self.enrolled_classes_table.grid(row=2, column=1, pady=(0, 5), padx=(5, 0))
             self.total_credits_label.grid(row=3, column=1, padx=(180, 0), pady=(0, 15))
             self.submit_my_classes.grid(row=4, column=1, padx=(180, 0))
             self.download_enrolled_pdf.grid(row=5, column=1, padx=(180, 0), pady=(10, 0))
             self.modify_classes_frame.grid(row=2, column=2, sticky="nw", padx=(12, 0))
-            self.modify_classes_title.grid(row=0, column=0, padx=(0, 30), pady=(0, 30))
+            self.modify_classes_title.grid(row=0, column=0, padx=(0, 40), pady=(0, 30))
             self.back_my_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
 
             pad_y = 9
@@ -7610,13 +7642,14 @@ class TeraTermUI(customtkinter.CTk):
                     placeholder_text = combined_placeholders[row_index % len(combined_placeholders)]
                     mod_selection = customtkinter.CTkOptionMenu(self.modify_classes_frame,
                                                                 values=[translation["choose"], translation["drop"],
-                                                                        translation["section"]], width=80,
+                                                                        translation["section"]], width=85,
                                                                 command=lambda value, index=row_index:
                                                                 self.modify_enrolled_classes(value, index))
                     change_section_entry = CustomEntry(self.modify_classes_frame, self, lang,
                                                        placeholder_text=placeholder_text, width=50)
+                    change_section_entry.bind("<FocusOut>", self.check_class_conflicts)
                     mod_selection.grid(row=row_index, column=0, padx=(0, 100), pady=(pad_y, 0))
-                    change_section_entry.grid(row=row_index, column=0, padx=(50, 0), pady=(pad_y, 0))
+                    change_section_entry.grid(row=row_index, column=0, padx=(56, 0), pady=(pad_y, 0))
                     mod_selection_tooltip = CTkToolTip(mod_selection, bg_color="#1E90FF",
                                                        message=translation["mod_selection"])
                     change_section_entry_tooltip = CTkToolTip(change_section_entry, bg_color="#1E90FF",
@@ -7652,6 +7685,7 @@ class TeraTermUI(customtkinter.CTk):
             self.modify_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.total_credits_label.bind("<Button-1>", lambda event: self.focus_set())
         self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
+        self.enrolled_entry_cache.clear()
         self.my_classes_frame.scroll_to_top()
 
     def modify_enrolled_classes(self, mod, row_index):
@@ -7659,10 +7693,17 @@ class TeraTermUI(customtkinter.CTk):
         entry = self.change_section_entries[row_index]
         if entry is not None:
             if mod == translation["section"]:
-                entry.configure(state="normal")
+                if row_index in self.enrolled_entry_cache and self.enrolled_entry_cache[row_index].strip():
+                    entry.configure(state="normal")
+                    entry.delete(0, "end")
+                    entry.insert(0, self.enrolled_entry_cache[row_index])
+                else:
+                    entry.configure(state="normal")
             elif mod == translation["drop"] or mod == translation["choose"]:
-                if entry.get().strip() == "":
-                    entry._activate_placeholder()
+                if entry.get().strip():
+                    self.enrolled_entry_cache[row_index] = entry.get()
+                entry.delete(0, "end")
+                entry._activate_placeholder()
                 entry.configure(state="disabled")
 
     def submit_modify_classes_handler(self):
@@ -7732,9 +7773,10 @@ class TeraTermUI(customtkinter.CTk):
                             if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output and \
                                     "USO INTERNO" not in text_output and "TERMINO LA MATRICULA" \
                                     not in text_output and "ENTER REGISTRATION" in text_output:
-                                for row_index in range(len(self.enrolled_classes_data)):
+                                for row_index, enrolled_class in enumerate(self.enrolled_classes_data):
                                     mod_selection = self.mod_selection_list[row_index]
                                     change_section_entry = self.change_section_entries[row_index]
+                                    is_final = row_index == len(self.enrolled_classes_data) - 1
                                     if mod_selection is not None and change_section_entry is not None:
                                         mod = self.mod_selection_list[row_index].get()
                                         section = self.change_section_entries[row_index].get().upper().replace(" ", "")
@@ -7746,8 +7788,7 @@ class TeraTermUI(customtkinter.CTk):
                                                           translation["course"]].replace("-", "")[8:]
                                     if mod == translation["drop"] or mod == translation["section"]:
                                         if not first_loop:
-                                            time.sleep(2)
-                                            text_output = self.capture_screenshot()
+                                            text_output = self.wait_for_response(["ENROLLED"])
                                             enrolled_classes = "ENROLLED"
                                             count_enroll = text_output.count(enrolled_classes)
                                         first_loop = False
@@ -7767,8 +7808,9 @@ class TeraTermUI(customtkinter.CTk):
                                             self.classes_status[old_section] = {
                                                 "classes": course_code_no_section, "status": "DROPPED",
                                                 "semester": dialog_input}
-                                        self.uprb.UprbayTeraTermVt.type_keys("{ENTER 2}")
-                                        self.reset_activity_timer()
+                                        if not is_final or mod == translation["section"]:
+                                            self.uprb.UprbayTeraTermVt.type_keys("{ENTER 2}")
+                                            self.reset_activity_timer()
                                         if mod == translation["section"]:
                                             text_output = self.capture_screenshot()
                                             enrolled_classes = "ENROLLED"
@@ -7782,8 +7824,9 @@ class TeraTermUI(customtkinter.CTk):
                                             self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                             self.reset_activity_timer()
                                             text_output = self.capture_screenshot()
-                                            self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                                            self.reset_activity_timer()
+                                            if not is_final:
+                                                self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                                self.reset_activity_timer()
                                             if "INVALID COURSE ID" in text_output or "COURSE CLOSED" in text_output or \
                                                     "R/TC" in text_output or "Closed by Spec-Prog" in text_output or \
                                                     "COURSE RESERVED" in text_output:
@@ -7799,8 +7842,9 @@ class TeraTermUI(customtkinter.CTk):
                                                 self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                                 self.reset_activity_timer()
                                                 text_output = self.capture_screenshot()
-                                                self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                                                self.reset_activity_timer()
+                                                if not is_final:
+                                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                                    self.reset_activity_timer()
                                                 if "COURSE CLOSED" in text_output:
                                                     section_closed = True
                                                     if old_section in self.classes_status:
@@ -7820,9 +7864,7 @@ class TeraTermUI(customtkinter.CTk):
                                                 self.classes_status[old_section] = {
                                                     "classes": course_code_no_section, "status": "ENROLLED",
                                                     "semester": dialog_input}
-                                self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                                self.reset_activity_timer()
-                                text_output = self.wait_for_response(["CONFIRMED", "DROPPED"], timeout=1.5)
+                                text_output = self.wait_for_response(["CONFIRMED", "DROPPED"], init_timeout=False)
                                 if "CONFIRMED" in text_output:
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                 if "DROPPED" in text_output:
@@ -8011,7 +8053,7 @@ class TeraTermUI(customtkinter.CTk):
                 return "Timeout"
             time.sleep(0.5)
 
-    def wait_for_response(self, keywords, init_timeout=True, timeout=3.0):
+    def wait_for_response(self, keywords, init_timeout=True, timeout=3):
         if init_timeout:
             time.sleep(1)
         start_time = time.time()
@@ -11923,7 +11965,7 @@ class SmoothFadeToplevel(customtkinter.CTkToplevel):
 class SmoothFadeInputDialog(customtkinter.CTkInputDialog):
     __slots__ = ("fade_duration", "final_alpha", "alpha", "fade_direction")
 
-    def __init__(self, fade_duration=25, final_alpha=1.0, *args, **kwargs):
+    def __init__(self, fade_duration=30, final_alpha=1.0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fade_duration = fade_duration
         self.final_alpha = final_alpha
@@ -12205,7 +12247,15 @@ class ClipboardHandler:
                     # Handle text content (CF_TEXT, CF_UNICODETEXT)
                     if format_id in (win32con.CF_UNICODETEXT, win32con.CF_TEXT):
                         if isinstance(data, str):
-                            data = data.encode("utf-16le" if format_id == win32con.CF_UNICODETEXT else "mbcs")
+                            if format_id == win32con.CF_UNICODETEXT:
+                                # Keep as string for UNICODETEXT
+                                pass
+                            else:
+                                # Convert to bytes for CF_TEXT
+                                data = data.encode("mbcs")
+                        elif isinstance(data, bytes) and format_id == win32con.CF_UNICODETEXT:
+                            # Convert bytes to string for UNICODETEXT
+                            data = data.decode("utf-16le")
 
                     # Handle DIB images
                     elif format_id == win32con.CF_DIB:
@@ -12287,7 +12337,7 @@ class ClipboardHandler:
                 logging.warning(f"Error processing format {self._format_names.get(format_id, format_id)}: {error}")
                 continue
 
-    def restore_clipboard_content(self) -> None:
+    def restore_clipboard_content(self):
         if not self.clipboard_data:
             return
 
@@ -12299,6 +12349,14 @@ class ClipboardHandler:
 
                 for fmt, (data, _) in self.clipboard_data.items():
                     try:
+                        if fmt in (win32con.CF_TEXT, win32con.CF_UNICODETEXT):
+                            if fmt == win32con.CF_TEXT and not isinstance(data, bytes):
+                                logging.warning(f"Invalid data type for CF_TEXT: {type(data)}")
+                                continue
+                            if fmt == win32con.CF_UNICODETEXT and not isinstance(data, str):
+                                logging.warning(f"Invalid data type for CF_UNICODETEXT: {type(data)}")
+                                continue
+
                         win32clipboard.SetClipboardData(fmt, data)
                     except Exception as error:
                         logging.warning(
