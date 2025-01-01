@@ -421,6 +421,9 @@ class CTkComboBox(CTkBaseClass):
     def _clicked(self, event=None):
         if self._state is not tkinter.DISABLED and len(self._values) > 0:
             self._open_dropdown_menu()
+            if event is not None:
+                if event.type == tkinter.EventType.ButtonPress:
+                    self.master.focus_set()
 
     def bind(self, sequence=None, command=None, add=True):
         """ called on the tkinter.Entry """
