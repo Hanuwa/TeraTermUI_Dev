@@ -5297,8 +5297,7 @@ class TeraTermUI(customtkinter.CTk):
             self.e_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab),
                                                      text=translation["semester"])
             self.e_semester_entry = CustomComboBox(self.tabview.tab(self.enroll_tab), self, lang,
-                                                   values=self.semester_values + [translation["current"]],
-                                                   command=lambda value: self.focus_set())
+                                                   values=self.semester_values + [translation["current"]])
             self.e_semester_entry.set(self.DEFAULT_SEMESTER)
             self.radio_var = tk.StringVar()
             self.register = customtkinter.CTkRadioButton(master=self.tabview.tab(self.enroll_tab),
@@ -5329,9 +5328,8 @@ class TeraTermUI(customtkinter.CTk):
             self.s_classes_entry = CustomEntry(self.search_scrollbar, self, lang, placeholder_text="MATE3032",
                                                width=80)
             self.s_semester = customtkinter.CTkLabel(self.search_scrollbar, text=translation["semester"])
-            self.s_semester_entry = CustomComboBox(self.search_scrollbar, self, lang,
-                                                   values=self.semester_values + [translation["current"]],
-                                                   command=lambda value: self.focus_set(), width=80)
+            self.s_semester_entry = CustomComboBox(self.search_scrollbar, self, lang, width=80,
+                                                   values=self.semester_values + [translation["current"]])
             self.s_semester_entry.set(self.DEFAULT_SEMESTER)
             self.show_all = customtkinter.CTkCheckBox(self.search_scrollbar, text=translation["show_all"],
                                                       onvalue="on", offvalue="off", command=self.focus_set)
@@ -5361,18 +5359,16 @@ class TeraTermUI(customtkinter.CTk):
             self.explanation_menu = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab),
                                                            text=translation["explanation_menu"])
             self.menu = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab), text=translation["menu"])
-            self.menu_entry = CustomComboBox(self.tabview.tab(self.other_tab), self, lang,
+            self.menu_entry = CustomComboBox(self.tabview.tab(self.other_tab), self, lang, width=141,
                                              values=[translation["SRM"], translation["004"], translation["1GP"],
                                                      translation["118"], translation["1VE"], translation["3DD"],
                                                      translation["409"], translation["683"], translation["1PL"],
-                                                     translation["4CM"], translation["4SP"], translation["SO"]],
-                                             command=lambda value: self.focus_set(), width=141)
+                                                     translation["4CM"], translation["4SP"], translation["SO"]])
             self.menu_entry.set(translation["SRM"])
             self.menu_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab),
                                                         text=translation["semester"])
-            self.menu_semester_entry = CustomComboBox(self.tabview.tab(self.other_tab), self, lang,
-                                                      values=self.semester_values + [translation["current"]],
-                                                      command=lambda value: self.focus_set(), width=141)
+            self.menu_semester_entry = CustomComboBox(self.tabview.tab(self.other_tab), self, lang, width=141,
+                                                      values=self.semester_values + [translation["current"]])
             self.menu_semester_entry.set(self.DEFAULT_SEMESTER)
             self.menu_submit = CustomButton(master=self.tabview.tab(self.other_tab), border_width=2,
                                             text=translation["submit"], text_color=("gray10", "#DCE4EE"),
@@ -5473,9 +5469,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.m_tooltips.append(CTkToolTip(self.m_section_entry[i], message="", bg_color="#1E90FF",
                                                   visibility=False))
                 self.m_section_entry[i].bind("<FocusOut>", self.section_bind_wrapper)
-                self.m_semester_entry.append(CustomComboBox(self.multiple_frame, self, lang,
-                                                            values=self.semester_values + [translation["current"]],
-                                                            command=self.change_semester, height=26))
+                self.m_semester_entry.append(CustomComboBox(self.multiple_frame, self, lang, height=26,
+                                                            values=self.semester_values + [translation["current"]]))
                 self.m_semester_entry[i].set(self.DEFAULT_SEMESTER)
                 self.m_register_menu.append(customtkinter.CTkOptionMenu(
                     master=self.multiple_frame, values=[translation["register"], translation["drop"]], height=26))
@@ -12281,7 +12276,13 @@ class ClipboardHandler:
         }
 
     def __del__(self):
-        self.cleanup_all_resources()
+        try:
+            with self.clipboard_access():
+                win32clipboard.EmptyClipboard()
+        except:
+            pass
+        finally:
+            self.cleanup_all_resources()
 
     @contextmanager
     def clipboard_access(self):
@@ -12323,7 +12324,7 @@ class ClipboardHandler:
 
     def cleanup_bitmap(self, handle):
         try:
-            if handle and win32gui.IsWindow(handle):
+            if handle:
                 win32gui.DeleteObject(handle)
         except Exception as error:
             logging.warning(f"Failed to cleanup bitmap handle: {error}")
@@ -12472,6 +12473,8 @@ class ClipboardHandler:
             except Exception as error:
                 logging.warning(f"Error processing format {self._format_names.get(format_id, format_id)}: {error}")
                 continue
+            finally:
+                gc.collect()
 
     def restore_clipboard_content(self):
         if not self.clipboard_data:
@@ -12643,3 +12646,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
