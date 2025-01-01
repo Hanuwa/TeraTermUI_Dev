@@ -73,7 +73,6 @@ class CTkOptionMenu(CTkBaseClass):
         self._state = state
         self._hover = hover
         self._dynamic_resizing = dynamic_resizing
-        self.canvas_bool = canvas_takefocus
         self._hover_state = False
         self.button_color_default = None
 
@@ -169,7 +168,6 @@ class CTkOptionMenu(CTkBaseClass):
 
     def _toggle_dropdown(self):
         self._open_dropdown_menu()
-        self._dropdown_menu.focus_set()
 
     def _navigate_dropdown(self, direction):
         if direction == "Up":
@@ -191,7 +189,6 @@ class CTkOptionMenu(CTkBaseClass):
         self.find_active_tooltips(root)
         self._dropdown_menu.open(self.winfo_rootx(),
                                  self.winfo_rooty() + self._apply_widget_scaling(self._current_height + 0))
-        self._dropdown_menu.focus_set()
 
     def _create_grid(self):
         self._canvas.grid(row=0, column=0, sticky="nsew")
@@ -466,8 +463,6 @@ class CTkOptionMenu(CTkBaseClass):
 
         if self._command is not None:
             self._command(self._current_value)
-        if self.canvas_bool:
-            self.focus_set()
 
     def set(self, value: str):
         self._current_value = value
@@ -484,6 +479,9 @@ class CTkOptionMenu(CTkBaseClass):
     def _clicked(self, event=0):
         if self._state is not tkinter.DISABLED and len(self._values) > 0:
             self._open_dropdown_menu()
+            if event is not None:
+                if event.type == tkinter.EventType.ButtonPress:
+                    self.master.focus_set()
 
     def bind(self, sequence: str = None, command: Callable = None, add: Union[str, bool] = True):
         """ called on the tkinter.Canvas """
@@ -502,10 +500,10 @@ class CTkOptionMenu(CTkBaseClass):
         self._create_bindings(sequence=sequence)  # restore internal callbacks for sequence
 
     def focus(self):
-        return self._canvas.focus()
+        return self._text_label.focus()
 
     def focus_set(self):
-        return self._canvas.focus_set()
+        return self._text_label.focus_set()
 
     def focus_force(self):
-        return self._canvas.focus_force()
+        return self._text_label.focus_force()
