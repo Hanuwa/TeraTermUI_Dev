@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 1/1/25
+# DATE - Started 1/1/23, Current Build v0.9.5 - 1/2/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -65,7 +65,6 @@ from ctypes import wintypes
 from datetime import datetime, timedelta
 from filelock import FileLock, Timeout
 from functools import wraps
-from itertools import groupby
 from mss import mss
 from pathlib import Path
 from PIL import Image
@@ -4463,9 +4462,9 @@ class TeraTermUI(customtkinter.CTk):
             self.e_section_tooltip.configure(message="", visibility=False)
 
     def check_class_conflicts(self, event=None):
-        translation = self.load_language()
-        schedule_map = self.schedule_map
-        day_translations = {
+        current_translation = self.load_language()
+        current_schedule_map = self.schedule_map
+        day_translation_map = {
             "Monday": "Lunes",
             "Tuesday": "Martes",
             "Wednesday": "Miércoles",
@@ -4476,154 +4475,164 @@ class TeraTermUI(customtkinter.CTk):
             "Online": "En Línea"
         }
 
-        table_sections = {row.get(translation["course"], "").split("-")[-1].strip()
-                         for row in (self.enrolled_classes_data or []) if row.get(translation["course"])}
-        m_entries = [(entry.get().upper().replace(" ", ""), entry) for entry in self.m_section_entry
-                    if entry and entry.get().strip()]
-        change_entries = [(entry.get().upper().replace(" ", ""), entry) for entry in (self.change_section_entries or [])
-                         if entry and entry.get().strip()]
+        enrolled_table_sections = {row.get(current_translation["course"], "").split("-")[-1].strip()
+                                   for row in (self.enrolled_classes_data or [])
+                                   if row.get(current_translation["course"])}
 
-        def build_schedule(section_entries):
-            schedule = {}
-            for sec_code, _ in section_entries:
-                prefix_code = sec_code[:2]
-                if prefix_code in schedule_map:
-                    day_list, start_time_schedule, end_time_schedule = schedule_map[prefix_code]
-                    if day_list == "Online" or prefix_code == "EL":
-                        continue
-                    for day in day_list.split(", "):
-                        if day not in schedule:
-                            schedule[day] = []
-                        schedule[day].append((start_time_schedule, end_time_schedule, sec_code))
-            for enrolled_section in table_sections:
-                if enrolled_section in schedule_map:
-                    day_list, start_time_schedule, end_time_schedule = schedule_map[enrolled_section]
-                    if day_list == "Online" or enrolled_section[:2] == "EL":
-                        continue
-                    for day in day_list.split(", "):
-                        if day not in schedule:
-                            schedule[day] = []
-                        schedule[day].append((start_time_schedule, end_time_schedule, enrolled_section))
-            return schedule
+        def process_entries(entry_list):
+            return [(entry.get().upper().replace(" ", ""), entry)
+                    for entry in entry_list if entry and entry.get().strip()]
 
-        m_schedule = build_schedule(m_entries)
-        change_schedule = build_schedule(change_entries)
+        processed_m_entries = process_entries(self.m_section_entry)
+        processed_change_entries = process_entries(self.change_section_entries or [])
 
-        def find_conflicts(schedule):
-            conflict_entries = set()
-            for day, times in schedule.items():
-                times.sort()
-                for i, (current_start, current_end, current_code) in enumerate(times):
-                    for next_start, next_end, next_code in times[i + 1:]:
-                        if current_start < next_end and next_start < current_end:
-                            conflict_entries.add((current_code, current_start, current_end))
-                            conflict_entries.add((next_code, next_start, next_end))
-            return conflict_entries
+        def build_schedule(entry_set):
+            built_schedule = {}
+            for entry_code, _ in entry_set:
+                current_prefix = entry_code[:2]
+                if current_prefix not in current_schedule_map:
+                    continue
+                entry_day_list, entry_start, entry_end = current_schedule_map[current_prefix]
+                if entry_day_list == "Online" or current_prefix == "EL":
+                    continue
+                for entry_day in entry_day_list.split(", "):
+                    built_schedule.setdefault(entry_day, []).append((entry_start, entry_end, entry_code))
 
-        m_conflicts = find_conflicts(m_schedule)
-        change_conflicts = find_conflicts(change_schedule)
-        theme_border_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
+            for enrolled_section in enrolled_table_sections:
+                if enrolled_section not in current_schedule_map:
+                    continue
+                enrolled_day_list, enrolled_start, enrolled_end = current_schedule_map[enrolled_section]
+                if enrolled_day_list == "Online" or enrolled_section[:2] == "EL":
+                    continue
+                for enrolled_day in enrolled_day_list.split(", "):
+                    built_schedule.setdefault(enrolled_day, []).append((enrolled_start, enrolled_end, enrolled_section))
 
-        def update_entries(entry_list, detected_conflicts, tooltip_list, is_change=False):
-            for entry_index, entry_widget in enumerate(entry_list):
-                section_code = entry_widget.get().upper().replace(" ", "")
-                if not section_code:
-                    entry_widget.configure(border_color=theme_border_color)
-                    tooltip_list[entry_index].configure(message="", visibility=False)
+            return built_schedule
+
+        built_m_schedule = build_schedule(processed_m_entries)
+        built_change_schedule = build_schedule(processed_change_entries)
+
+        def find_conflicts(schedule_dict):
+            found_conflicts = set()
+            for time_slots in schedule_dict.values():
+                time_slots.sort()
+                for slot_idx, (slot_start, slot_end, slot_code) in enumerate(time_slots):
+                    for next_slot_start, next_slot_end, next_slot_code in time_slots[slot_idx + 1:]:
+                        if slot_start < next_slot_end and next_slot_start < slot_end:
+                            found_conflicts.add((slot_code, slot_start, slot_end))
+                            found_conflicts.add((next_slot_code, next_slot_start, next_slot_end))
+            return found_conflicts
+
+        found_m_conflicts = find_conflicts(built_m_schedule)
+        found_change_conflicts = find_conflicts(built_change_schedule)
+        current_theme_border = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
+        selected_language = self.language_menu.get()
+        convert_time_format = TeraTermUI.convert_to_12_hour_format
+
+        def update_entries(entry_list, conflict_set, tooltip_list, is_change=False):
+            for entry_idx, current_entry in enumerate(entry_list):
+                entry_section_code = current_entry.get().upper().replace(" ", "")
+                if not entry_section_code:
+                    current_entry.configure(border_color=current_theme_border)
+                    tooltip_list[entry_idx].configure(message="", visibility=False)
                     continue
 
-                conflict_entry = next((detected_conflict for detected_conflict in detected_conflicts if
-                                   detected_conflict[0] == section_code), None)
-                if conflict_entry:
-                    conflict_period = (f"{TeraTermUI.convert_to_12_hour_format(conflict_entry[1])} - "
-                                    f"{TeraTermUI.convert_to_12_hour_format(conflict_entry[2])}")
-                    entry_widget.configure(border_color="#CC5500")
-                    tooltip_msg = f"{translation['conflict_tooltip']}{conflict_period}"
-                    tooltip_bg_color = "#CC5500"
-                elif section_code[:2] in schedule_map:
-                    day_list, start_time_schedule, end_time_schedule = schedule_map[section_code[:2]]
-                    if day_list == "Online" or section_code[:2] == "EL":
-                        tooltip_msg = translation['online_class']
+                entry_conflict = next((c for c in conflict_set if c[0] == entry_section_code), None)
+                if entry_conflict:
+                    entry_time_range = (f"{convert_time_format(entry_conflict[1])}"
+                                        f" - {convert_time_format(entry_conflict[2])}")
+                    current_entry.configure(border_color="#CC5500")
+                    current_tooltip = f"{current_translation['conflict_tooltip']}{entry_time_range}"
+                    current_bg = "#CC5500"
+
+                elif entry_section_code[:2] in current_schedule_map:
+                    entry_class_days, entry_class_start, entry_class_end = current_schedule_map[entry_section_code[:2]]
+                    if entry_class_days == "Online" or entry_section_code[:2] == "EL":
+                        current_tooltip = current_translation["online_class"]
                     else:
-                        time_details = (f"{TeraTermUI.convert_to_12_hour_format(start_time_schedule)} - "
-                                     f"{TeraTermUI.convert_to_12_hour_format(end_time_schedule)}")
-                        language = self.language_menu.get()
-                        translated_day_list = ", ".join(day_translations.get(day, day) for day in
-                                                    day_list.split(", ")) if language == "Español" else day_list
-                        tooltip_msg = f"{translated_day_list}\n*EST. {time_details}"
+                        entry_time_range = (f"{convert_time_format(entry_class_start)}"
+                                            f" - {convert_time_format(entry_class_end)}")
+                        translated_days = (
+                            ", ".join(day_translation_map.get(day, day) for day in entry_class_days.split(", "))
+                            if selected_language == "Español" else entry_class_days)
+                        current_tooltip = f"{translated_days}\n*EST. {entry_time_range}"
+                    if current_entry.cget("border_color") == "#CC5500":
+                        current_entry.configure(border_color=current_theme_border)
+                    current_bg = "#1E90FF"
 
-                    if entry_widget.cget("border_color") == "#CC5500":
-                        entry_widget.configure(border_color=theme_border_color)
-                    tooltip_bg_color = "#1E90FF"
                 else:
-                    entry_widget.configure(border_color=theme_border_color)
-                    tooltip_msg = translation["change_section_entry"] if is_change else ""
-                    tooltip_bg_color = "#1E90FF" if is_change else ""
+                    current_entry.configure(border_color=current_theme_border)
+                    current_tooltip = current_translation["change_section_entry"] if is_change else ""
+                    current_bg = "#1E90FF" if is_change else ""
 
-                if is_change:
-                    tooltip_index = entry_index * 2 + 1
-                    tooltip_list[tooltip_index].configure(message=tooltip_msg, visibility=bool(tooltip_msg),
-                                                          bg_color=tooltip_bg_color)
-                else:
-                    tooltip_list[entry_index].configure(message=tooltip_msg, visibility=bool(tooltip_msg),
-                                                        bg_color=tooltip_bg_color)
+                tooltip_idx = entry_idx * 2 + 1 if is_change else entry_idx
+                tooltip_list[tooltip_idx].configure(message=current_tooltip, visibility=bool(current_tooltip),
+                                                    bg_color=current_bg)
 
-        update_entries(self.m_section_entry, m_conflicts, self.m_tooltips, is_change=False)
+        update_entries(self.m_section_entry, found_m_conflicts, self.m_tooltips, is_change=False)
+
         if self.change_section_entries:
-            for idx, entry in enumerate(self.change_section_entries):
-                if entry is None:
+            for change_idx, change_entry in enumerate(self.change_section_entries):
+                if change_entry is None:
                     continue
 
-                section = entry.get().upper().replace(" ", "")
-                tooltip_idx = idx * 2 + 1
-                if not section:
-                    entry.configure(border_color=theme_border_color)
-                    self.enrolled_tooltips[tooltip_idx].configure(message=translation["change_section_entry"],
-                                                                  bg_color="#1E90FF")
+                change_section_code = change_entry.get().upper().replace(" ", "")
+                change_tooltip_idx = change_idx * 2 + 1
+
+                if not change_section_code:
+                    change_entry.configure(border_color=current_theme_border)
+                    self.enrolled_tooltips[change_tooltip_idx].configure(
+                        message=current_translation["change_section_entry"], bg_color="#1E90FF")
                     continue
 
-                conflict = next((c for c in change_conflicts if c[0] == section), None)
-                if conflict:
-                    conflict_time = (f"{TeraTermUI.convert_to_12_hour_format(conflict[1])} - "
-                                  f"{TeraTermUI.convert_to_12_hour_format(conflict[2])}")
-                    entry.configure(border_color="#CC5500")
-                    self.enrolled_tooltips[tooltip_idx].configure(
-                        message=f"{translation['conflict_tooltip']}{conflict_time}", bg_color="#CC5500")
-                elif section in table_sections:
-                    conflict_times = [(times[0], times[1]) for day_times in change_schedule.values()
-                                   for times in day_times if times[2] == section]
-                    if conflict_times:
-                        start_time, end_time = conflict_times[0]
-                        conflict_time = (f"{TeraTermUI.convert_to_12_hour_format(start_time)} - "
-                                      f"{TeraTermUI.convert_to_12_hour_format(end_time)}")
-                        entry.configure(border_color="#CC5500")
-                        self.enrolled_tooltips[tooltip_idx].configure(
-                            message=f"{translation['conflict_table_tooltip']}{conflict_time}", bg_color="#CC5500")
+                change_conflict = next((c for c in found_change_conflicts if c[0] == change_section_code), None)
+                if change_conflict:
+                    change_time_range = (f"{convert_time_format(change_conflict[1])}"
+                                         f" - {convert_time_format(change_conflict[2])}")
+                    change_entry.configure(border_color="#CC5500")
+                    self.enrolled_tooltips[change_tooltip_idx].configure(
+                        message=f"{current_translation['conflict_tooltip']}{change_time_range}",
+                        bg_color="#CC5500"
+                    )
+
+                elif change_section_code in enrolled_table_sections:
+                    change_times = [(slot[0], slot[1]) for schedule_slots in built_change_schedule.values()
+                                    for slot in schedule_slots if slot[2] == change_section_code]
+
+                    if change_times:
+                        change_start, change_end = change_times[0]
+                        change_time_range = f"{convert_time_format(change_start)} - {convert_time_format(change_end)}"
+                        change_entry.configure(border_color="#CC5500")
+                        self.enrolled_tooltips[change_tooltip_idx].configure(
+                            message=f"{current_translation['conflict_table_tooltip']}{change_time_range}",
+                            bg_color="#CC5500")
                     else:
-                        entry.configure(border_color=theme_border_color)
-                        self.enrolled_tooltips[tooltip_idx].configure(message=translation["change_section_entry"],
-                                                                      bg_color="#1E90FF")
-                elif section[:2] in schedule_map:
-                    days, start_time, end_time = schedule_map[section[:2]]
-                    if days == "Online" or section[:2] == "EL":
-                        tooltip_msg = translation['online_class']
-                        if entry.cget("border_color") == "#CC5500":
-                            entry.configure(border_color=theme_border_color)
-                        self.enrolled_tooltips[tooltip_idx].configure(message=tooltip_msg, bg_color="#1E90FF")
+                        change_entry.configure(border_color=current_theme_border)
+                        self.enrolled_tooltips[change_tooltip_idx].configure(
+                            message=current_translation["change_section_entry"], bg_color="#1E90FF")
+
+                elif change_section_code[:2] in current_schedule_map:
+                    change_days, change_start, change_end = current_schedule_map[change_section_code[:2]]
+                    if change_days == "Online" or change_section_code[:2] == "EL":
+                        if change_entry.cget("border_color") == "#CC5500":
+                            change_entry.configure(border_color=current_theme_border)
+                        self.enrolled_tooltips[change_tooltip_idx].configure(
+                            message=current_translation["online_class"], bg_color="#1E90FF")
                     else:
-                        time_info = (f"{TeraTermUI.convert_to_12_hour_format(start_time)} - "
-                                  f"{TeraTermUI.convert_to_12_hour_format(end_time)}")
-                        if entry.cget("border_color") == "#CC5500":
-                            entry.configure(border_color=theme_border_color)
-                        lang = self.language_menu.get()
-                        translated_days = ", ".join(
-                            day_translations.get(day, day) for day in days.split(", ")) if lang == "Español" else days
-                        self.enrolled_tooltips[tooltip_idx].configure(message=f"{translated_days}\n*EST. {time_info}",
-                                                                      bg_color="#1E90FF")
+                        change_time_range = f"{convert_time_format(change_start)} - {convert_time_format(change_end)}"
+                        if change_entry.cget("border_color") == "#CC5500":
+                            change_entry.configure(border_color=current_theme_border)
+
+                        change_translated_days = (
+                            ", ".join(day_translation_map.get(day, day) for day in change_days.split(", "))
+                            if selected_language == "Español" else change_days)
+
+                        self.enrolled_tooltips[change_tooltip_idx].configure(
+                            message=f"{change_translated_days}\n*EST. {change_time_range}", bg_color="#1E90FF")
                 else:
-                    entry.configure(border_color=theme_border_color)
-                    self.enrolled_tooltips[tooltip_idx].configure(message=translation["change_section_entry"],
-                                                                  bg_color="#1E90FF")
+                    change_entry.configure(border_color=current_theme_border)
+                    self.enrolled_tooltips[change_tooltip_idx].configure(
+                        message=current_translation["change_section_entry"], bg_color="#1E90FF")
 
     def keybind_auto_enroll(self):
         if self.auto_enroll.get() == "on":
