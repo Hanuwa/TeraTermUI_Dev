@@ -235,7 +235,7 @@ try:
             if line.startswith("#define MyAppVersion"):
                 line = '#define MyAppVersion "' + update_without_v + '"\n'
             elif line.startswith("#define MyAppPath"):
-                line = '#define MyAppPath "' + output_directory + '"\n'
+                line = '#define MyAppPath ".\\TeraTermUI_Builds\\TeraTermUI_' + update + '"\n'
             elif line.startswith("OutputBaseFilename="):
                 line = 'OutputBaseFilename="TeraTermUI_64-bit_Installer-' + update + '"\n'
             file.write(line)
