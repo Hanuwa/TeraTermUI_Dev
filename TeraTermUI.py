@@ -11776,20 +11776,23 @@ class CustomComboBox(customtkinter.CTkComboBox):
         self.teraterm_ui.down_arrow_key_enabled = True
 
     def on_enter(self, event):
-        context_menu = self.find_context_menu()
-        if context_menu:
+        if self.find_context_menu():
             self._entry.configure(cursor="arrow")
+        else:
+            self._entry.configure(cursor="xterm")  
         self._canvas.configure(cursor="hand2")
 
     def on_motion(self, event):
-        context_menu = self.find_context_menu()
-        if context_menu:
+        if self.find_context_menu():
             self._entry.configure(cursor="arrow")
+        else:
+            self._entry.configure(cursor="xterm")  
 
     def on_leave(self, event):
-        context_menu = self.find_context_menu()
-        if context_menu:
+        if self.find_context_menu():
             self._entry.configure(cursor="xterm")
+        else:
+            self._entry.configure(cursor="arrow")  
         self._canvas.configure(cursor="arrow")
 
     def set(self, value, enforce_length_check=True):
