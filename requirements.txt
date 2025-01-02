@@ -37,7 +37,7 @@ Nuitka==2.5.9
 oauthlib==3.2.2
 ordered-set==4.1.0
 packaging==24.2
-pillow==11.0.0
+pillow==11.1.0
 propcache==0.2.1
 proto-plus==1.25.0
 protobuf==5.29.2
