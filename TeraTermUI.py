@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 1/2/25
+# DATE - Started 1/1/23, Current Build v0.9.5 - 1/3/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -11396,19 +11396,24 @@ class CustomEntry(customtkinter.CTkEntry):
         self.teraterm_ui.down_arrow_key_enabled = True
 
     def on_enter(self, event):
-        context_menu = self.find_context_menu()
-        if context_menu:
-            self.configure(cursor="arrow")
+        if self.find_context_menu():
+            self._entry.configure(cursor="arrow")
+        else:
+            self._entry.configure(cursor="xterm")
+        self._canvas.configure(cursor="hand2")
 
     def on_motion(self, event):
-        context_menu = self.find_context_menu()
-        if context_menu:
-            self.configure(cursor="arrow")
+        if self.find_context_menu():
+            self._entry.configure(cursor="arrow")
+        else:
+            self._entry.configure(cursor="xterm")
 
     def on_leave(self, event):
-        context_menu = self.find_context_menu()
-        if context_menu:
-            self.configure(cursor="xterm")
+        if self.find_context_menu():
+            self._entry.configure(cursor="xterm")
+        else:
+            self._entry.configure(cursor="arrow")
+        self._canvas.configure(cursor="arrow")
 
     def update_undo_stack(self, event=None):
         current_text = self.get()
