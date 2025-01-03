@@ -3,10 +3,9 @@
 #define MyAppPublisher "Armando Del Valle Tejada"
 #define MyAppURL "github.com/Hanuwa/TeraTermUI"
 #define MyAppExeName "TeraTermUI.exe"
-#define MyAppPath 
 
 [Setup]
-AppId={{FFAC4B8F-D556-4D37-AA80-246FBE4CB5A1}
+AppId={{FFAC4B8F-D556-4D37-AA80-246FBE4CB5A1}}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 VersionInfoVersion={#MyAppVersion}
@@ -19,7 +18,7 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={code:GetInstallDir}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
-LicenseFile={#MyAppPath}/TeraTermUI_installer/LICENSE.txt
+LicenseFile=TeraTermUI_installer\LICENSE.txt
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 OutputBaseFilename=TeraTermUI_64-bit_Installer-
@@ -30,7 +29,7 @@ SetupIconFile=tera-term.ico
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
-Name: "spanish"; MessagesFile: "compiler:Languages/Spanish.isl"
+Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 
 [CustomMessages]
 english.teraterm=To utilize 'Tera Term UI', 'Tera Term' needs to be installed. Would you like to install 'Tera Term' now as part of this setup?
@@ -45,35 +44,53 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "teraterm"; Description: "{cm:teraterm}"; GroupDescription: "Additional installations"; Flags: unchecked
 
 [Files]
-Source: "{#MyAppPath}/TeraTermUI_installer/{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyAppPath}/database.db"; DestDir: "{code:GetDataDir}"; Flags: external; Check: ShouldUpdateFile(ExpandConstant('{code:GetDataDir}/database.db'), ExpandConstant('{#MyAppPath}/database.db')); Permissions: everyone-modify
-Source: "{#MyAppPath}/feedback.zip"; DestDir: "{code:GetDataDir}"; Flags: external; Check: ShouldUpdateFile(ExpandConstant('{code:GetDataDir}/feedback.zip'), ExpandConstant('{#MyAppPath}/feedback.zip')); Permissions: everyone-modify
-Source: "{#MyAppPath}/updater.exe"; DestDir: "{code:GetDataDir}"; Flags: external; Check: ShouldUpdateFile(ExpandConstant('{code:GetDataDir}/updater.exe'), ExpandConstant('{#MyAppPath}/updater.exe')); Permissions: everyone-modify
-Source: "{#MyAppPath}/TeraTermUI_installer/*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#MyAppPath}/teraterm-4.108.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
-Source: "C:/Program Files/Git/usr/bin/md5sum.exe"; DestDir: "{tmp}"; Flags: ignoreversion
+Source: "TeraTermUI_installer\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "database.db"; DestDir: "{code:GetDataDir}"; Flags: ignoreversion; Check: ShouldUpdateFile(ExpandConstant('{code:GetDataDir}\database.db'), 'database.db'); Permissions: everyone-modify
+Source: "feedback.zip"; DestDir: "{code:GetDataDir}"; Flags: ignoreversion; Check: ShouldUpdateFile(ExpandConstant('{code:GetDataDir}\feedback.zip'), 'feedback.zip'); Permissions: everyone-modify
+Source: "updater.exe"; DestDir: "{code:GetDataDir}"; Flags: ignoreversion; Check: ShouldUpdateFile(ExpandConstant('{code:GetDataDir}\updater.exe'), 'updater.exe'); Permissions: everyone-modify
+Source: "TeraTermUI_installer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "teraterm-4.108.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
+Source: "C:\Program Files\Git\usr\bin\md5sum.exe"; DestDir: "{tmp}"; Flags: ignoreversion
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{code:GetDataDir}"
 
 [Icons]
-Name: "{group}\{#MyAppName}"; Filename: "{app}/{#MyAppExeName}"
+Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}/{#MyAppExeName}"; Tasks: desktopicon
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}/{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
 [Code]
+function GetDataDir(Default: string): string;
+begin
+  if IsAdminInstallMode then
+    Result := ExpandConstant('{commonappdata}\TeraTermUI') 
+  else
+    Result := ExpandConstant('{userappdata}\TeraTermUI');
+end;
+
+procedure CreateDataDirectory();
+begin
+  if not DirExists(GetDataDir('')) then
+    ForceDirectories(GetDataDir(''));
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   ResultCode: Integer;
 begin
+  if CurStep = ssInstall then
+  begin
+    CreateDataDirectory();
+  end;
   if CurStep = ssPostInstall then
   begin
     if WizardIsTaskSelected('teraterm') then
     begin
-      if not Exec(ExpandConstant('{tmp}/teraterm-4.108.exe'), '/SILENT', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
+      if not Exec(ExpandConstant('{tmp}\teraterm-4.108.exe'), '/SILENT', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
       begin
         MsgBox(ExpandConstant('{cm:TeraTermInstallFailed}'), mbError, MB_OK);
       end
@@ -112,17 +129,9 @@ end;
 function GetInstallDir(Default: string): string;
 begin
   if IsAdminInstallMode then
-    Result := ExpandConstant('{commonpf64}/TeraTermUI') 
+    Result := ExpandConstant('{commonpf64}\TeraTermUI') 
   else
-    Result := ExpandConstant('{localappdata}/Programs/TeraTermUI');
-end;
-
-function GetDataDir(Default: string): string;
-begin
-  if IsAdminInstallMode then
-    Result := ExpandConstant('{commonappdata}/TeraTermUI') 
-  else
-    Result := ExpandConstant('{userappdata}/TeraTermUI');
+    Result := ExpandConstant('{localappdata}\Programs\TeraTermUI');
 end;
 
 function GetMD5Hash(const FileName: string): string;
