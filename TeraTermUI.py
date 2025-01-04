@@ -4003,6 +4003,7 @@ class TeraTermUI(customtkinter.CTk):
             elif lang == "Español":
                 self.username.grid(row=3, column=0, padx=(0, 140), pady=(0, 10))
                 self.username_entry.grid(row=3, column=0, padx=(60, 0), pady=(0, 10))
+            self.username_tooltip.configure(message=translation["username_tooltip"])
             self.back.configure(text=translation["back"])
             self.auth.configure(text=translation["authentication"])
         elif self.in_student_frame:
@@ -4019,6 +4020,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.student_id_entry.grid(row=2, column=1, padx=(120, 0), pady=(0, 10))
                 self.code.grid(row=3, column=1, padx=(0, 125), pady=(0, 10))
                 self.code_entry.grid(row=3, column=1, padx=(120, 0), pady=(0, 10))
+            self.student_id_tooltip.configure(message=translation["student_id_tooltip"])
+            self.code_tooltip.configure(message=translation["code_tooltip"])
             self.show.configure(text=translation["show"])
             self.back_student.configure(text=translation["back"])
             self.system.configure(text=translation["system"])
