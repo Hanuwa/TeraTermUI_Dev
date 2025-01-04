@@ -26,13 +26,14 @@ class DrawEngine:
     """
 
     preferred_drawing_method: str = None  # 'polygon_shapes', 'font_shapes', 'circle_shapes'
-    __slots__ = ("_canvas", "_items", "_round_width_to_even_numbers", "_round_height_to_even_numbers",
+    __slots__ = ("_canvas", "_items", "_shape_cache", "_round_width_to_even_numbers", "_round_height_to_even_numbers",
                  "_last_rounded_rect_settings", "_last_background_corners", "_last_dropdown_arrow",
                  "_last_progress_bar_settings", "_last_slider_settings", "_last_scrollbar_settings")
 
     def __init__(self, canvas: CTkCanvas):
         self._canvas = canvas
         self._items = {}
+        self._shape_cache = {}
         self._round_width_to_even_numbers: bool = True
         self._round_height_to_even_numbers: bool = True
         self._last_rounded_rect_settings = None
@@ -60,10 +61,9 @@ class DrawEngine:
             return round(user_corner_radius)
 
     def _on_destroy(self, event):
-        """Cleanup when canvas is destroyed"""
-
         if event.widget == self._canvas:
             self._items.clear()
+            self._shape_cache.clear()
             self._last_rounded_rect_settings = None
             self._last_background_corners = None
             self._last_dropdown_arrow = None
@@ -216,48 +216,69 @@ class DrawEngine:
     def __draw_rounded_rect_with_border_font_shapes(self, width: int, height: int, corner_radius: int,
                                                     border_width: int, inner_corner_radius: int,
                                                     exclude_parts: tuple = ()) -> bool:
+        # Cache key for current configuration
+        cache_key = (width, height, corner_radius, border_width, inner_corner_radius)
+
+        # Check if we can use cached positions
+        if hasattr(self, '_shape_cache') and cache_key in self._shape_cache:
+            cached_data = self._shape_cache[cache_key]
+            # Update all positions from cache
+            for item_id, coords in cached_data['coords'].items():
+                if item_id in self._items:
+                    self._canvas.coords(self._items[item_id], *coords)
+            return False
+
         requires_recoloring = False
 
-        def create_or_update_item(key, create_func, coords, tags, **kwargs):
-            if key not in self._items:
-                self._items[key] = create_func(*coords, tags=tags, **kwargs)
-                nonlocal requires_recoloring
-                requires_recoloring = True
-            else:
-                self._canvas.itemconfig(self._items[key], state='normal')
-                self._canvas.coords(self._items[key], *coords)
+        # Store positions for caching
+        current_positions = {}
+
+        def batch_create_or_update_items(items_data):
+            """Batch create or update multiple items at once"""
+            nonlocal requires_recoloring
+
+            for key, create_info in items_data.items():
+                if key not in self._items:
+                    self._items[key] = create_info['func'](*create_info['coords'],
+                                                           tags=create_info['tags'],
+                                                           **create_info['kwargs'])
+                    requires_recoloring = True
+                else:
+                    self._canvas.itemconfig(self._items[key], state='normal')
+                    self._canvas.coords(self._items[key], *create_info['coords'])
+                current_positions[key] = create_info['coords']
 
         # Border Parts
         if border_width > 0:
             if corner_radius > 0:
-                # Border corner parts
+                # Prepare batch data for border corner parts
+                border_corners = {}
                 for i in range(1, 5):
-                    key_a = f"border_oval_{i}_a"
-                    key_b = f"border_oval_{i}_b"
-                    if key_a in exclude_parts:
-                        continue
-                    tags = ("border_corner_part", "border_parts")
-                    create_or_update_item(
-                        key_a, self._canvas.create_aa_circle,
-                        (0, 0, 0), tags, anchor=tkinter.CENTER
-                    )
-                    create_or_update_item(
-                        key_b, self._canvas.create_aa_circle,
-                        (0, 0, 0), tags, anchor=tkinter.CENTER, angle=180
-                    )
-                # Set positions of border corner parts
-                self._canvas.coords(self._items["border_oval_1_a"], corner_radius, corner_radius, corner_radius)
-                self._canvas.coords(self._items["border_oval_1_b"], corner_radius, corner_radius, corner_radius)
-                self._canvas.coords(self._items["border_oval_2_a"], width - corner_radius, corner_radius, corner_radius)
-                self._canvas.coords(self._items["border_oval_2_b"], width - corner_radius, corner_radius, corner_radius)
-                self._canvas.coords(self._items["border_oval_3_a"], width - corner_radius, height - corner_radius,
-                                    corner_radius)
-                self._canvas.coords(self._items["border_oval_3_b"], width - corner_radius, height - corner_radius,
-                                    corner_radius)
-                self._canvas.coords(self._items["border_oval_4_a"], corner_radius, height - corner_radius,
-                                    corner_radius)
-                self._canvas.coords(self._items["border_oval_4_b"], corner_radius, height - corner_radius,
-                                    corner_radius)
+                    if f"border_oval_{i}_a" not in exclude_parts:
+                        # Calculate positions for all corners at once
+                        corner_positions = {
+                            1: (corner_radius, corner_radius),
+                            2: (width - corner_radius, corner_radius),
+                            3: (width - corner_radius, height - corner_radius),
+                            4: (corner_radius, height - corner_radius)
+                        }
+
+                        pos = corner_positions[i]
+                        border_corners[f"border_oval_{i}_a"] = {
+                            'func': self._canvas.create_aa_circle,
+                            'coords': (*pos, corner_radius),
+                            'tags': ("border_corner_part", "border_parts"),
+                            'kwargs': {'anchor': tkinter.CENTER}
+                        }
+                        border_corners[f"border_oval_{i}_b"] = {
+                            'func': self._canvas.create_aa_circle,
+                            'coords': (*pos, corner_radius),
+                            'tags': ("border_corner_part", "border_parts"),
+                            'kwargs': {'anchor': tkinter.CENTER, 'angle': 180}
+                        }
+
+                # Batch create/update border corners
+                batch_create_or_update_items(border_corners)
             else:
                 # Hide border corner parts
                 for i in range(1, 5):
@@ -265,66 +286,55 @@ class DrawEngine:
                         if key in self._items:
                             self._canvas.itemconfig(self._items[key], state='hidden')
 
-            # Border rectangle parts
-            for i in range(1, 3):
-                key = f"border_rectangle_{i}"
-                tags = ("border_rectangle_part", "border_parts")
-                create_or_update_item(
-                    key, self._canvas.create_rectangle,
-                    (0, 0, 0, 0), tags, width=0
-                )
-            # Set positions of border rectangle parts
-            self._canvas.coords(self._items["border_rectangle_1"], (0, corner_radius, width, height - corner_radius))
-            self._canvas.coords(self._items["border_rectangle_2"], (corner_radius, 0, width - corner_radius, height))
-        else:
-            # Hide border parts
-            for key in [f"border_rectangle_{i}" for i in range(1, 3)] + \
-                       [f"border_oval_{i}_{suffix}" for i in range(1, 5) for suffix in ('a', 'b')]:
-                if key in self._items:
-                    self._canvas.itemconfig(self._items[key], state='hidden')
+            # Prepare batch data for border rectangles
+            border_rectangles = {
+                'border_rectangle_1': {
+                    'func': self._canvas.create_rectangle,
+                    'coords': (0, corner_radius, width, height - corner_radius),
+                    'tags': ("border_rectangle_part", "border_parts"),
+                    'kwargs': {'width': 0}
+                },
+                'border_rectangle_2': {
+                    'func': self._canvas.create_rectangle,
+                    'coords': (corner_radius, 0, width - corner_radius, height),
+                    'tags': ("border_rectangle_part", "border_parts"),
+                    'kwargs': {'width': 0}
+                }
+            }
+
+            # Batch create/update border rectangles
+            batch_create_or_update_items(border_rectangles)
 
         # Inner Parts
         if inner_corner_radius > 0:
-            # Inner corner parts
+            # Prepare batch data for inner corner parts
+            inner_corners = {}
             for i in range(1, 5):
-                key_a = f"inner_oval_{i}_a"
-                key_b = f"inner_oval_{i}_b"
-                if key_a in exclude_parts:
-                    continue
-                tags = ("inner_corner_part", "inner_parts")
-                create_or_update_item(
-                    key_a, self._canvas.create_aa_circle,
-                    (0, 0, 0), tags, anchor=tkinter.CENTER
-                )
-                create_or_update_item(
-                    key_b, self._canvas.create_aa_circle,
-                    (0, 0, 0), tags, anchor=tkinter.CENTER, angle=180
-                )
-            # Set positions of inner corner parts
-            self._canvas.coords(self._items["inner_oval_1_a"],
-                                border_width + inner_corner_radius, border_width + inner_corner_radius,
-                                inner_corner_radius)
-            self._canvas.coords(self._items["inner_oval_1_b"],
-                                border_width + inner_corner_radius, border_width + inner_corner_radius,
-                                inner_corner_radius)
-            self._canvas.coords(self._items["inner_oval_2_a"],
-                                width - border_width - inner_corner_radius, border_width + inner_corner_radius,
-                                inner_corner_radius)
-            self._canvas.coords(self._items["inner_oval_2_b"],
-                                width - border_width - inner_corner_radius, border_width + inner_corner_radius,
-                                inner_corner_radius)
-            self._canvas.coords(self._items["inner_oval_3_a"],
-                                width - border_width - inner_corner_radius, height - border_width - inner_corner_radius,
-                                inner_corner_radius)
-            self._canvas.coords(self._items["inner_oval_3_b"],
-                                width - border_width - inner_corner_radius, height - border_width - inner_corner_radius,
-                                inner_corner_radius)
-            self._canvas.coords(self._items["inner_oval_4_a"],
-                                border_width + inner_corner_radius, height - border_width - inner_corner_radius,
-                                inner_corner_radius)
-            self._canvas.coords(self._items["inner_oval_4_b"],
-                                border_width + inner_corner_radius, height - border_width - inner_corner_radius,
-                                inner_corner_radius)
+                if f"inner_oval_{i}_a" not in exclude_parts:
+                    # Calculate positions for all inner corners at once
+                    corner_positions = {
+                        1: (border_width + inner_corner_radius, border_width + inner_corner_radius),
+                        2: (width - border_width - inner_corner_radius, border_width + inner_corner_radius),
+                        3: (width - border_width - inner_corner_radius, height - border_width - inner_corner_radius),
+                        4: (border_width + inner_corner_radius, height - border_width - inner_corner_radius)
+                    }
+
+                    pos = corner_positions[i]
+                    inner_corners[f"inner_oval_{i}_a"] = {
+                        'func': self._canvas.create_aa_circle,
+                        'coords': (*pos, inner_corner_radius),
+                        'tags': ("inner_corner_part", "inner_parts"),
+                        'kwargs': {'anchor': tkinter.CENTER}
+                    }
+                    inner_corners[f"inner_oval_{i}_b"] = {
+                        'func': self._canvas.create_aa_circle,
+                        'coords': (*pos, inner_corner_radius),
+                        'tags': ("inner_corner_part", "inner_parts"),
+                        'kwargs': {'anchor': tkinter.CENTER, 'angle': 180}
+                    }
+
+            # Batch create/update inner corners
+            batch_create_or_update_items(inner_corners)
         else:
             # Hide inner corner parts
             for i in range(1, 5):
@@ -332,35 +342,52 @@ class DrawEngine:
                     if key in self._items:
                         self._canvas.itemconfig(self._items[key], state='hidden')
 
-        # Inner rectangle parts
-        for i in range(1, 3):
-            key = f"inner_rectangle_{i}"
-            tags = ("inner_rectangle_part", "inner_parts")
-            create_or_update_item(
-                key, self._canvas.create_rectangle,
-                (0, 0, 0, 0), tags, width=0
-            )
-        # Set positions of inner rectangle parts
-        self._canvas.coords(self._items["inner_rectangle_1"], (
-            border_width + inner_corner_radius, border_width,
-            width - border_width - inner_corner_radius, height - border_width
-        ))
+        # Prepare batch data for inner rectangles
+        inner_rectangles = {
+            'inner_rectangle_1': {
+                'func': self._canvas.create_rectangle,
+                'coords': (
+                    border_width + inner_corner_radius, border_width,
+                    width - border_width - inner_corner_radius, height - border_width
+                ),
+                'tags': ("inner_rectangle_part", "inner_parts"),
+                'kwargs': {'width': 0}
+            }
+        }
 
         needs_inner_rectangle_2 = inner_corner_radius * 2 < height - (border_width * 2)
         if needs_inner_rectangle_2:
-            self._canvas.coords(self._items["inner_rectangle_2"], (
-                border_width, border_width + inner_corner_radius,
-                width - border_width, height - inner_corner_radius - border_width
-            ))
-        else:
-            if "inner_rectangle_2" in self._items:
-                self._canvas.itemconfig(self._items["inner_rectangle_2"], state='hidden')
+            inner_rectangles['inner_rectangle_2'] = {
+                'func': self._canvas.create_rectangle,
+                'coords': (
+                    border_width, border_width + inner_corner_radius,
+                    width - border_width, height - inner_corner_radius - border_width
+                ),
+                'tags': ("inner_rectangle_part", "inner_parts"),
+                'kwargs': {'width': 0}
+            }
+        elif "inner_rectangle_2" in self._items:
+            self._canvas.itemconfig(self._items["inner_rectangle_2"], state='hidden')
+
+        # Batch create/update inner rectangles
+        batch_create_or_update_items(inner_rectangles)
 
         if requires_recoloring:
             # Manage z-order
             self._canvas.tag_lower("inner_parts")
             self._canvas.tag_lower("border_parts")
             self._canvas.tag_lower("background_parts")
+
+        # Cache the positions for future use
+        self._shape_cache[cache_key] = {
+            'coords': current_positions
+        }
+
+        # Implement cache size limit to prevent memory issues
+        if len(self._shape_cache) > 100: 
+            # Remove oldest entries
+            oldest_key = next(iter(self._shape_cache))
+            del self._shape_cache[oldest_key]
 
         return requires_recoloring
 
