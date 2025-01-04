@@ -4475,13 +4475,26 @@ class TeraTermUI(customtkinter.CTk):
             "Online": "En Línea"
         }
 
-        enrolled_table_sections = {row.get(current_translation["course"], "").split("-")[-1].strip()
-                                   for row in (self.enrolled_classes_data or [])
-                                   if row.get(current_translation["course"])}
+        enrolled_table_sections = set()
+        mod_list_length = len(self.mod_selection_list) if self.mod_selection_list else 0
+        for i, row in enumerate(self.enrolled_classes_data or []):
+            course_text = row.get(current_translation["course"], "")
+            if not course_text:
+                continue
+
+            table_section_code = course_text.split("-")[-1].strip()
+            user_option = None
+            if i < mod_list_length and self.mod_selection_list[i] is not None:
+                user_option = self.mod_selection_list[i].get().lower()
+
+            if user_option in ("drop", "section"):
+                continue
+
+            enrolled_table_sections.add(table_section_code)
 
         def process_entries(entry_list):
-            return [(entry.get().upper().replace(" ", ""), entry)
-                    for entry in entry_list if entry and entry.get().strip()]
+            return [(entry.get().upper().replace(" ", ""), entry) for entry in entry_list
+                    if entry and entry.get().strip()]
 
         processed_m_entries = process_entries(self.m_section_entry)
         processed_change_entries = process_entries(self.change_section_entries or [])
@@ -4575,7 +4588,6 @@ class TeraTermUI(customtkinter.CTk):
             for change_idx, change_entry in enumerate(self.change_section_entries):
                 if change_entry is None:
                     continue
-
                 change_section_code = change_entry.get().upper().replace(" ", "")
                 change_tooltip_idx = change_idx * 2 + 1
 
@@ -4591,14 +4603,11 @@ class TeraTermUI(customtkinter.CTk):
                                          f" - {convert_time_format(change_conflict[2])}")
                     change_entry.configure(border_color="#CC5500")
                     self.enrolled_tooltips[change_tooltip_idx].configure(
-                        message=f"{current_translation['conflict_tooltip']}{change_time_range}",
-                        bg_color="#CC5500"
-                    )
+                        message=f"{current_translation['conflict_tooltip']}{change_time_range}", bg_color="#CC5500")
 
                 elif change_section_code in enrolled_table_sections:
                     change_times = [(slot[0], slot[1]) for schedule_slots in built_change_schedule.values()
                                     for slot in schedule_slots if slot[2] == change_section_code]
-
                     if change_times:
                         change_start, change_end = change_times[0]
                         change_time_range = f"{convert_time_format(change_start)} - {convert_time_format(change_end)}"
@@ -4626,7 +4635,6 @@ class TeraTermUI(customtkinter.CTk):
                         change_translated_days = (
                             ", ".join(day_translation_map.get(day, day) for day in change_days.split(", "))
                             if selected_language == "Español" else change_days)
-
                         self.enrolled_tooltips[change_tooltip_idx].configure(
                             message=f"{change_translated_days}\n*EST. {change_time_range}", bg_color="#1E90FF")
                 else:
