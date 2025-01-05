@@ -12783,6 +12783,8 @@ class ClipboardHandler:
             gc.collect()
 
     def restore_clipboard_content(self):
+        import struct
+        
         if not self.clipboard_data:
             return
 
