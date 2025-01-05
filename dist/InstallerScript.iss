@@ -45,12 +45,18 @@ Name: "teraterm"; Description: "{cm:teraterm}"; GroupDescription: "Additional in
 
 [Files]
 Source: "TeraTermUI_installer\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "database.db"; DestDir: "{code:GetDataDir}"; Flags: ignoreversion; Check: ShouldUpdateFile(ExpandConstant('{code:GetDataDir}\database.db'), 'database.db'); Permissions: everyone-modify
-Source: "feedback.zip"; DestDir: "{code:GetDataDir}"; Flags: ignoreversion; Check: ShouldUpdateFile(ExpandConstant('{code:GetDataDir}\feedback.zip'), 'feedback.zip'); Permissions: everyone-modify
-Source: "updater.exe"; DestDir: "{code:GetDataDir}"; Flags: ignoreversion; Check: ShouldUpdateFile(ExpandConstant('{code:GetDataDir}\updater.exe'), 'updater.exe'); Permissions: everyone-modify
+Source: "database.db"; DestDir: "{code:GetDataDir}"; Check: ShouldUpdateFile(ExpandConstant('{code:GetDataDir}\database.db'), 'database.db'); Permissions: everyone-modify
+Source: "feedback.zip"; DestDir: "{code:GetDataDir}"; Check: ShouldUpdateFile(ExpandConstant('{code:GetDataDir}\feedback.zip'), 'feedback.zip'); Permissions: everyone-modify
+Source: "updater.exe"; DestDir: "{code:GetDataDir}"; Check: ShouldUpdateFile(ExpandConstant('{code:GetDataDir}\updater.exe'), 'updater.exe'); Permissions: everyone-modify
 Source: "TeraTermUI_installer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "teraterm-4.108.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
 Source: "C:\Program Files\Git\usr\bin\md5sum.exe"; DestDir: "{tmp}"; Flags: ignoreversion
+
+[Registry]
+Root: HKCU; Subkey: "Software\TeraTermUI"; ValueType: string; ValueName: "InstallDir"; ValueData: "{app}"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\TeraTermUI"; ValueType: string; ValueName: "InstallDate"; ValueData: "{code:GetCurrentDate}"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\TeraTermUI"; ValueType: string; ValueName: "Version"; ValueData: "{#MyAppVersion}"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\TeraTermUI"; Flags: uninsdeletekey
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{code:GetDataDir}"
@@ -67,7 +73,7 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
 function GetDataDir(Default: string): string;
 begin
   if IsAdminInstallMode then
-    Result := ExpandConstant('{commonappdata}\TeraTermUI') 
+    Result := ExpandConstant('{commonappdata}\TeraTermUI')
   else
     Result := ExpandConstant('{userappdata}\TeraTermUI');
 end;
@@ -129,7 +135,7 @@ end;
 function GetInstallDir(Default: string): string;
 begin
   if IsAdminInstallMode then
-    Result := ExpandConstant('{commonpf64}\TeraTermUI') 
+    Result := ExpandConstant('{commonpf64}\TeraTermUI')
   else
     Result := ExpandConstant('{localappdata}\Programs\TeraTermUI');
 end;
@@ -140,7 +146,7 @@ var
   OutputFile: string;
   OutputLines: TArrayOfString;
 begin
-  Result := ''; 
+  Result := '';
   if not FileExists(FileName) then
     Exit;
 
@@ -151,23 +157,23 @@ begin
     begin
       LoadStringsFromFile(OutputFile, OutputLines);
       if GetArrayLength(OutputLines) > 0 then
-        Result := Copy(OutputLines[0], 1, Pos(' ', OutputLines[0]) - 1); 
+        Result := Copy(OutputLines[0], 1, Pos(' ', OutputLines[0]) - 1);
     end;
   end;
   if FileExists(OutputFile) then
-    DeleteFile(OutputFile); 
+    DeleteFile(OutputFile);
 end;
 
 function ShouldUpdateFile(DestFile: string; SourceFile: string): Boolean;
 var
   DestHash, SourceHash: string;
 begin
-  Result := True; 
+  Result := True;
   if FileExists(DestFile) then
   begin
     DestHash := GetMD5Hash(DestFile);
     SourceHash := GetMD5Hash(SourceFile);
-    Result := DestHash <> SourceHash; 
+    Result := DestHash <> SourceHash;
   end;
 end;
 
@@ -180,8 +186,8 @@ begin
   begin
     try
       repeat
-        if ((FindRec.Attributes and FILE_ATTRIBUTE_DIRECTORY) <> 0) and 
-           (FindRec.Name <> '.') and (FindRec.Name <> '..') and 
+        if ((FindRec.Attributes and FILE_ATTRIBUTE_DIRECTORY) <> 0) and
+           (FindRec.Name <> '.') and (FindRec.Name <> '..') and
            (Pos(TeraTermUIDirPrefix, FindRec.Name) = 1) then
         begin
           SubDirName := ParentDir + FindRec.Name;
@@ -197,6 +203,11 @@ begin
     RemoveDir(ParentDir);
   end;
 end;
+
+function GetCurrentDate(Param: string): String;
+begin
+   result := GetDateTimeString('mm/dd/yyyy hh:nn:ss', '-', ':');
+end; 
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
