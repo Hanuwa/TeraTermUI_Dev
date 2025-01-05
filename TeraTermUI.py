@@ -4987,9 +4987,9 @@ class TeraTermUI(customtkinter.CTk):
         self.end_countdown()
         if not self.disable_audio:
             winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/notification.wav"), winsound.SND_ASYNC)
+        self.forceful_countdown_end = True
         CTkMessagebox(title=translation["automation_error_title"], icon="info", message=translation["end_countdown"],
                       button_width=380)
-        self.forceful_countdown_end = True
 
     def create_timer_window(self):
         translation = self.load_language()
