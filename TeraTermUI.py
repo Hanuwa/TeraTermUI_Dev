@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 1/4/25
+# DATE - Started 1/1/23, Current Build v0.9.5 - 1/5/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 12600 lines of codes, it definitely makes things harder to work with
+# and with over 12700 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -23,6 +23,7 @@ import ctypes
 import customtkinter
 import gc
 import json
+import locale
 import logging
 import os
 import psutil
@@ -54,10 +55,11 @@ from chardet import detect as chardet_detect
 from collections import deque, defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
-from Cryptodome.Hash import HMAC, SHA256
 from Cryptodome.Cipher import AES
-from Cryptodome.Util.Padding import pad, unpad
+from Cryptodome.Hash import HMAC, SHA256
+from Cryptodome.Protocol.KDF import HKDF, PBKDF2
 from Cryptodome.Random import get_random_bytes
+from Cryptodome.Util.Padding import pad, unpad
 from CTkMessagebox import CTkMessagebox
 from CTkTable import CTkTable
 from CTkToolTip import CTkToolTip
@@ -65,6 +67,7 @@ from ctypes import wintypes
 from datetime import datetime, timedelta
 from filelock import FileLock, Timeout
 from functools import wraps
+from hmac import compare_digest
 from mss import mss
 from pathlib import Path
 from PIL import Image
@@ -1136,50 +1139,48 @@ class TeraTermUI(customtkinter.CTk):
         future = self.thread_pool.submit(self.student_event)
         self.update_loading_screen(loading_screen, future)
 
-    # Enrolling/Searching classes Frame
+    # Enrolling/Searching/Other classes screen
     def student_event(self):
-        # Deletes these encrypted variables from memory
+        # Securely delete variables from memory
         def secure_delete(variable):
             if isinstance(variable, bytes):
                 variable_len = len(variable)
-                new_value = secrets.token_bytes(variable_len)
-                ctypes.memset(id(variable) + 0x10, 0, variable_len)
+                new_value = get_random_bytes(variable_len)
+                ctypes.memset(ctypes.addressof(ctypes.create_string_buffer(variable)), 0, variable_len)
                 variable = new_value
             elif isinstance(variable, int):
                 new_value = secrets.randbits(variable.bit_length())
                 variable = new_value
             return variable
 
+        # Derive encryption and MAC keys using HKDF
+        def derive_keys(master_key_input):
+            aes_key = HKDF(master_key_input, 32, salt=b"student_event_salt", hashmod=SHA256)
+            mac_key = HKDF(master_key_input, 32, salt=b"mac_salt", hashmod=SHA256)
+            return aes_key, mac_key
+
         # Encrypt and compute MAC
-        def aes_encrypt_then_mac(plaintext, key, inner_mac_key):
-            # Generate a new IV for each encryption
-            inner_iv = get_random_bytes(16)  # for AES CBC mode
-            cipher = AES.new(key, AES.MODE_CBC, iv=inner_iv)
+        def aes_encrypt_then_mac(plaintext, encryption_key, mac_key_input):
+            iv = get_random_bytes(16)  # Generate a new IV for AES CBC mode
+            cipher = AES.new(encryption_key, AES.MODE_CBC, iv=iv)
             ciphertext = cipher.encrypt(pad(plaintext.encode(), AES.block_size))
-            # Compute a MAC over the ciphertext
-            hmac = HMAC.new(inner_mac_key, digestmod=SHA256)
-            hmac.update(ciphertext)
-            mac = hmac.digest()
-            # Prepend the IV to the ciphertext and append the MAC
-            return inner_iv + ciphertext + mac
+            # Compute HMAC over IV + ciphertext
+            hmac = HMAC.new(mac_key_input, digestmod=SHA256)
+            hmac.update(iv + ciphertext)
+            return iv + ciphertext + hmac.digest()
 
         # Decrypt and verify MAC
-        def aes_decrypt_and_verify_mac(ciphertext_with_iv_mac, key, inner_mac_key):
-            # Extract the IV from the beginning of the data
-            inner_iv = ciphertext_with_iv_mac[:16]
-            ciphertext_with_mac = ciphertext_with_iv_mac[16:]
-            # Separate the MAC from the ciphertext
-            ciphertext = ciphertext_with_mac[:-SHA256.digest_size]
-            mac = ciphertext_with_mac[-SHA256.digest_size:]
-            # Compute the expected MAC over the ciphertext
-            hmac = HMAC.new(inner_mac_key, digestmod=SHA256)
-            hmac.update(ciphertext)
-            expected_mac = hmac.digest()
-            # Verify the MAC
-            if expected_mac != mac:
-                raise ValueError("MAC check failed")
-            # If the MAC is valid, decrypt the ciphertext
-            cipher = AES.new(key, AES.MODE_CBC, iv=inner_iv)
+        def aes_decrypt_and_verify_mac(ciphertext_with_iv_mac, decryption_key, mac_key_input):
+            iv = ciphertext_with_iv_mac[:16]
+            ciphertext = ciphertext_with_iv_mac[16:-32]
+            mac = ciphertext_with_iv_mac[-32:]
+            # Verify HMAC using constant-time comparison
+            hmac = HMAC.new(mac_key_input, digestmod=SHA256)
+            hmac.update(iv + ciphertext)
+            if not compare_digest(hmac.digest(), mac):
+                raise ValueError("MAC verification failed")
+            # Decrypt the ciphertext
+            cipher = AES.new(decryption_key, AES.MODE_CBC, iv=iv)
             plaintext = unpad(cipher.decrypt(ciphertext), AES.block_size).decode()
             return plaintext
 
@@ -1187,14 +1188,18 @@ class TeraTermUI(customtkinter.CTk):
             try:
                 self.automation_preparations()
                 translation = self.load_language()
-                aes_key = secrets.token_bytes(32)  # 256-bit key
-                mac_key = secrets.token_bytes(32)  # separate 256-bit key for HMAC
+                # Generate a master key and derive AES and MAC keys
+                master_key = get_random_bytes(32)
+                aes_key, mac_key = derive_keys(master_key)
                 if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
                         code = self.code_entry.get().replace(" ", "")
-                        student_id_enc = aes_encrypt_then_mac(str(student_id), aes_key, mac_key)
-                        code_enc = aes_encrypt_then_mac(str(code), aes_key, mac_key)
+                        # Input validation
+                        if len(student_id) > 100 or len(code) > 10:
+                            raise ValueError("Input data length exceeds allowed limit")
+                        student_id_enc = aes_encrypt_then_mac(student_id, aes_key, mac_key)
+                        code_enc = aes_encrypt_then_mac(code, aes_key, mac_key)
                         if ((re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", student_id) or
                              (student_id.isdigit() and len(student_id) == 9)) and code.isdigit() and len(code) == 4):
                             secure_delete(student_id)
@@ -1221,12 +1226,12 @@ class TeraTermUI(customtkinter.CTk):
                                 self.in_student_frame = False
                                 secure_delete(student_id_enc)
                                 secure_delete(code_enc)
-                                secure_delete(aes_key)
-                                secure_delete(mac_key)
-                                del student_id, code, student_id_enc, code_enc, aes_key, mac_key
+                                secure_delete(master_key)
+                                del student_id, code, student_id_enc, code_enc, master_key
                                 self.switch_tab()
                             else:
-                                self.after(350, self.bind, "<Return>", lambda event: self.student_event_handler())
+                                self.after(350, self.bind, "<Return>",
+                                           lambda event: self.student_event_handler())
                                 if "ON FILE" in text_output:
                                     self.uprb.UprbayTeraTermVt.type_keys("{TAB 3}")
                                     self.after(0, self.student_id_entry.configure(border_color="#c30101"))
@@ -1244,23 +1249,27 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(100, self.show_error_message, 305, 225,
                                                translation["error_student_id_code"])
                                 else:
-                                    self.after(100, self.show_error_message, 315, 230, translation["error_sign-in"])
+                                    self.after(100, self.show_error_message, 315, 230,
+                                               translation["error_sign-in"])
                         else:
                             self.after(350, self.bind, "<Return>", lambda event: self.student_event_handler())
                             if (not student_id or not student_id.isdigit() or len(student_id) != 9) and \
                                     (not code.isdigit() or len(code) != 4):
                                 self.after(0, self.student_id_entry.configure(border_color="#c30101"))
                                 self.after(0, self.code_entry.configure(border_color="#c30101"))
-                                self.after(100, self.show_error_message, 305, 225, translation["error_student_id_code"])
+                                self.after(100, self.show_error_message, 305, 225,
+                                           translation["error_student_id_code"])
                             elif not student_id or not student_id.isdigit() or len(student_id) != 9:
                                 self.after(0, self.student_id_entry.configure(border_color="#c30101"))
-                                self.after(100, self.show_error_message, 315, 230, translation["error_student_id"])
+                                self.after(100, self.show_error_message, 315, 230,
+                                           translation["error_student_id"])
                             elif not code.isdigit() or len(code) != 4:
                                 self.after(0, self.code_entry.configure(border_color="#c30101"))
                                 self.after(100, self.show_error_message, 315, 230, translation["error_code"])
                     else:
                         self.after(350, self.bind, "<Return>", lambda event: self.student_event_handler())
-                        self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+                        self.after(100, self.show_error_message, 300, 215,
+                                   translation["tera_term_not_running"])
                 else:
                     self.after(350, self.bind, "<Return>", lambda event: self.student_event_handler())
             except Exception as err:
@@ -12250,14 +12259,20 @@ class ImageSlideshow(customtkinter.CTkFrame):
 
 
 class ClipboardHandler:
-    def __init__(self, max_data_size=50 * 1024 * 1024, retention_time=timedelta(minutes=30)):
+    def __init__(self, max_data_size=100 * 1024 * 1024, retention_time=timedelta(minutes=30),
+                 key_rotation_interval=timedelta(hours=24)):
         self.MAX_DATA_SIZE = max_data_size
         self.RETENTION_TIME = retention_time
+        self.KEY_ROTATION_INTERVAL = key_rotation_interval
 
         # Thread synchronization
         self.clipboard_lock = threading.Lock()
         # Clipboard data storage with timestamps
         self.clipboard_data = {}
+
+        # Key management
+        self.current_key = self._generate_new_key()
+        self.last_key_rotation = datetime.now()
 
         # Register special clipboard formats
         self.CF_HTML = win32clipboard.RegisterClipboardFormat("HTML Format")
@@ -12265,49 +12280,26 @@ class ClipboardHandler:
         self.CF_PNG = win32clipboard.RegisterClipboardFormat("PNG")
         self.CF_TIFF = win32clipboard.RegisterClipboardFormat("TIFF")
         self.CF_GIF = win32clipboard.RegisterClipboardFormat("GIF")
-        self.CF_JFIF = win32clipboard.RegisterClipboardFormat("JFIF")  # JPEG Format
+        self.CF_JFIF = win32clipboard.RegisterClipboardFormat("JFIF")
         self.CF_SHELLURL = win32clipboard.RegisterClipboardFormat("UniformResourceLocator")
         self.CF_FILENAME = win32clipboard.RegisterClipboardFormat("FileName")
         self.CF_ENHMETAFILE = win32con.CF_ENHMETAFILE
         self.CF_METAFILEPICT = win32con.CF_METAFILEPICT
 
         # Define allowed clipboard formats
-        self.allowed_formats = [
-            win32con.CF_TEXT,
-            win32con.CF_UNICODETEXT,
-            win32con.CF_DIB,
-            win32con.CF_BITMAP,
-            win32con.CF_HDROP,
-            win32con.CF_ENHMETAFILE,
-            win32con.CF_METAFILEPICT,
-            win32con.CF_LOCALE,
-            self.CF_HTML,
-            self.CF_RTF,
-            self.CF_PNG,
-            self.CF_TIFF,
-            self.CF_GIF,
-            self.CF_JFIF,
-            self.CF_SHELLURL,
-            self.CF_FILENAME,
-        ]
-        self._format_names = {
-            win32con.CF_TEXT: "Text",
-            win32con.CF_UNICODETEXT: "Unicode Text",
-            win32con.CF_DIB: "DIB",
-            win32con.CF_BITMAP: "Bitmap",
-            win32con.CF_HDROP: "File Drop",
-            win32con.CF_ENHMETAFILE: "Enhanced Metafile",
-            win32con.CF_METAFILEPICT: "Metafile Picture",
-            self.CF_HTML: "HTML",
-            self.CF_RTF: "RTF",
-            self.CF_PNG: "PNG",
-            self.CF_TIFF: "TIFF",
-            self.CF_GIF: "GIF",
-            self.CF_JFIF: "JPEG",
-            self.CF_SHELLURL: "URL",
-            self.CF_FILENAME: "Filename",
-            win32con.CF_LOCALE: "Locale"
-        }
+        self.allowed_formats = [win32con.CF_TEXT, win32con.CF_UNICODETEXT, win32con.CF_DIB, win32con.CF_BITMAP,
+                                win32con.CF_HDROP, win32con.CF_ENHMETAFILE, win32con.CF_METAFILEPICT,
+                                win32con.CF_LOCALE, self.CF_HTML, self.CF_RTF, self.CF_PNG, self.CF_TIFF, self.CF_GIF,
+                                self.CF_JFIF, self.CF_SHELLURL, self.CF_FILENAME]
+        self._format_names = {win32con.CF_TEXT: "Text", win32con.CF_UNICODETEXT: "Unicode Text", win32con.CF_DIB: "DIB",
+                              win32con.CF_BITMAP: "Bitmap", win32con.CF_HDROP: "File Drop",
+                              win32con.CF_ENHMETAFILE: "Enhanced Metafile", win32con.CF_LOCALE: "Locale",
+                              win32con.CF_METAFILEPICT: "Metafile Picture", self.CF_HTML: "HTML", self.CF_RTF: "RTF",
+                              self.CF_PNG: "PNG", self.CF_TIFF: "TIFF", self.CF_GIF: "GIF", self.CF_JFIF: "JPEG",
+                              self.CF_SHELLURL: "URL", self.CF_FILENAME: "Filename"}
+
+        # Determine system's default ANSI code page
+        self.default_encoding = locale.getpreferredencoding()
 
     def __del__(self):
         try:
@@ -12317,6 +12309,40 @@ class ClipboardHandler:
             pass
         finally:
             self.cleanup_all_resources()
+
+    @staticmethod
+    def _generate_new_key():
+        master_key = get_random_bytes(32)
+        salt = get_random_bytes(16)
+        return HKDF(master_key, 32, salt=salt, hashmod=SHA256)
+
+    def _rotate_keys(self):
+        current_time = datetime.now()
+        if current_time - self.last_key_rotation >= self.KEY_ROTATION_INTERVAL:
+            self.current_key = self._generate_new_key()
+            self.last_key_rotation = current_time
+            logging.info("Encryption key rotated")
+
+    def encrypt_data(self, plaintext):
+        self._rotate_keys()
+        iv = get_random_bytes(16)
+        cipher = AES.new(self.current_key, AES.MODE_CFB, iv=iv)
+        ciphertext = cipher.encrypt(plaintext)
+        self.secure_erase(plaintext)
+        return iv + ciphertext
+
+    def decrypt_data(self, encrypted_data):
+        iv = encrypted_data[:16]
+        ciphertext = encrypted_data[16:]
+        cipher = AES.new(self.current_key, AES.MODE_CFB, iv=iv)
+        plaintext = cipher.decrypt(ciphertext)
+        self.secure_erase(ciphertext)
+        return plaintext
+
+    @staticmethod
+    def secure_erase(data):
+        if isinstance(data, (bytes, bytearray)):
+            ctypes.memset(ctypes.addressof(ctypes.create_string_buffer(data)), 0, len(data))
 
     @contextmanager
     def clipboard_access(self):
@@ -12349,14 +12375,13 @@ class ClipboardHandler:
         if hasattr(data, "__len__"):
             size = len(data)
             if size > self.MAX_DATA_SIZE:
-                logging.warning(
-                    f"Data for format {format_name} exceeds size limit "
-                    f"({size} > {self.MAX_DATA_SIZE} bytes)"
-                )
+                logging.warning(f"Data for format {format_name} exceeds size limit "
+                                f"({size} > {self.MAX_DATA_SIZE} bytes)")
                 return False
         return True
 
-    def cleanup_bitmap(self, handle):
+    @staticmethod
+    def cleanup_bitmap(handle):
         try:
             if handle:
                 win32gui.DeleteObject(handle)
@@ -12369,10 +12394,10 @@ class ClipboardHandler:
                 self.cleanup_bitmap(data)
         self.clipboard_data.clear()
 
-    def sanitize_file_paths(self, paths):
+    @staticmethod
+    def sanitize_file_paths(paths):
         sanitized = []
         for path in paths:
-            # Remove any null bytes and normalize path
             clean_path = os.path.normpath(path.replace("\0", ""))
             if os.path.exists(clean_path):
                 sanitized.append(clean_path)
@@ -12380,135 +12405,144 @@ class ClipboardHandler:
 
     def cleanup_expired_data(self):
         current_time = datetime.now()
-        expired_formats = [
-            fmt for fmt, (_, timestamp) in self.clipboard_data.items()
-            if current_time - timestamp > self.RETENTION_TIME
-        ]
+        expired_formats = [fmt for fmt, (_, timestamp) in self.clipboard_data.items()
+                           if current_time - timestamp > self.RETENTION_TIME]
 
         for fmt in expired_formats:
             if fmt == win32con.CF_BITMAP:
                 self.cleanup_bitmap(self.clipboard_data[fmt][0])
             del self.clipboard_data[fmt]
 
+    @staticmethod
+    def validate_data_length(data, expected_length):
+        if len(data) < expected_length:
+            logging.warning(f"Data length {len(data)} is less than expected {expected_length}")
+            return False
+        return True
+
+    def decode_cf_text(self, data):
+        encodings = [self.default_encoding, "utf-8", "latin-1", "ascii", "windows-1252", "iso-8859-15", "shift_jis",
+                     "utf-16", "utf-32", "big5", "gb2312", "gbk", "euc-kr", "koi8-r", "mac_roman", "cp437"]
+        for encoding in encodings:
+            try:
+                return data.decode(encoding)
+            except (UnicodeDecodeError, AttributeError):
+                continue
+        logging.warning("Failed to decode CF_TEXT with all attempted encodings")
+        return data.decode(self.default_encoding, errors="replace")
+
     def save_clipboard_content(self):
         import struct
 
         self.cleanup_expired_data()
+        clipboard_cache = {}
+
         try:
             with self.clipboard_access():
-                # Enumerate available clipboard formats
                 formats = []
                 fmt = win32clipboard.EnumClipboardFormats(0)
                 while fmt:
                     if fmt in self.allowed_formats:
                         formats.append(fmt)
                     fmt = win32clipboard.EnumClipboardFormats(fmt)
-        except (RuntimeError, TimeoutError) as error:
-            logging.error(f"Failed to access clipboard: {error}")
-            return
 
-        for format_id in formats:
-            try:
-                with self.clipboard_access():
-                    data = win32clipboard.GetClipboardData(format_id)
+            for format_id in formats:
+                if format_id not in clipboard_cache:
+                    with self.clipboard_access():
+                        clipboard_cache[format_id] = win32clipboard.GetClipboardData(format_id)
 
-                    if not self.check_data_size(data, self._format_names.get(format_id, "Unknown")):
+                data = clipboard_cache[format_id]
+                if not self.check_data_size(data, self._format_names.get(format_id, "Unknown")):
+                    continue
+
+                # Handle text content (CF_TEXT, CF_UNICODETEXT)
+                if format_id in (win32con.CF_TEXT, win32con.CF_UNICODETEXT):
+                    if format_id == win32con.CF_TEXT:
+                        if isinstance(data, str):
+                            data = data.encode("mbcs")
+                    elif format_id == win32con.CF_UNICODETEXT:
+                        if isinstance(data, str):
+                            data = data.encode("utf-16le")
+
+                # Handle DIB images
+                elif format_id == win32con.CF_DIB:
+                    try:
+                        if len(data) < 4:
+                            logging.warning("DIB data is too short to contain a valid header")
+                            continue
+                        bmih_size = struct.unpack("I", data[:4])[0]
+                        if bmih_size < 40:  # Minimum valid BITMAPINFOHEADER size
+                            logging.warning("Invalid DIB format - header too small")
+                            continue
+                    except struct.error:
+                        logging.warning("Failed to parse DIB header")
                         continue
 
-                    # Handle text content (CF_TEXT, CF_UNICODETEXT)
-                    if format_id in (win32con.CF_UNICODETEXT, win32con.CF_TEXT):
-                        if isinstance(data, str):
-                            if format_id == win32con.CF_UNICODETEXT:
-                                # Keep as string for UNICODETEXT
-                                pass
-                            else:
-                                # Convert to bytes for CF_TEXT
-                                data = data.encode("mbcs")
-                        elif isinstance(data, bytes) and format_id == win32con.CF_UNICODETEXT:
-                            # Convert bytes to string for UNICODETEXT
-                            data = data.decode("utf-16le")
+                # Handle HTML, RTF, and image format content
+                elif format_id in (self.CF_HTML, self.CF_RTF, self.CF_PNG, self.CF_TIFF, self.CF_GIF, self.CF_JFIF):
+                    if isinstance(data, str):
+                        data = data.encode("utf-8")
 
-                    # Handle DIB images
-                    elif format_id == win32con.CF_DIB:
-                        try:
-                            # Validate DIB header
-                            bmih_size = struct.unpack("I", data[:4])[0]
-                            if bmih_size < 40:  # Minimum valid BITMAPINFOHEADER size
-                                logging.warning("Invalid DIB format - header too small")
-                                continue
-                        except struct.error:
-                            logging.warning("Failed to parse DIB header")
+                # Handle file drops (CF_HDROP)
+                elif format_id == win32con.CF_HDROP:
+                    if isinstance(data, tuple):
+                        sanitized_paths = self.sanitize_file_paths(data)
+                        if not sanitized_paths:
                             continue
 
-                    # Handle HTML, RTF, and image format content
-                    elif format_id in (self.CF_HTML, self.CF_RTF, self.CF_PNG, self.CF_TIFF,
-                                       self.CF_GIF, self.CF_JFIF):
-                        if isinstance(data, str):
-                            data = data.encode("utf-8")
+                        # Create DROPFILES structure
+                        offset = 20  # Size of DROPFILES structure
+                        file_list = b""
+                        for path in sanitized_paths:
+                            file_list += path.encode("utf-16le") + b"\0\0"
+                        file_list += b"\0\0"  # End of file list marker
 
-                    # Handle file drops (CF_HDROP)
-                    elif format_id == win32con.CF_HDROP:
-                        if isinstance(data, tuple):
-                            sanitized_paths = self.sanitize_file_paths(data)
-                            if not sanitized_paths:
-                                continue
+                        dropfiles = struct.pack("Iiii", offset, 0, 0, 0x0001)  # fWide = 1 (Unicode)
+                        data = dropfiles + file_list
 
-                            # Create DROPFILES structure
-                            offset = 20  # Size of DROPFILES structure
-                            file_list = b""
-                            for path in sanitized_paths:
-                                file_list += path.encode("utf-16le") + b"\0\0"
-                            file_list += b"\0\0"  # End of file list marker
+                # Handle URL content
+                elif format_id == self.CF_SHELLURL:
+                    if isinstance(data, str):
+                        data = data.encode("utf-8")
+                        if not data.endswith(b"\0"):
+                            data += b"\0"  # Null-terminate the URL
 
-                            dropfiles = struct.pack("Iiii", offset, 0, 0, 0x0001)  # fWide = 1 (Unicode)
-                            data = dropfiles + file_list
+                # Handle filename content
+                elif format_id == self.CF_FILENAME:
+                    if isinstance(data, str):
+                        data = data.encode("utf-8")
+                        if not data.endswith(b"\0"):
+                            data += b"\0"
 
-                    # Handle URL content
-                    elif format_id == self.CF_SHELLURL:
-                        if isinstance(data, str):
-                            # Ensure URL is properly encoded
-                            data = data.encode("utf-8")
-                            if not data.endswith(b"\0"):
-                                data += b"\0"  # Null-terminate the URL
+                # Handle locale information
+                elif format_id == win32con.CF_LOCALE:
+                    try:
+                        if isinstance(data, bytes):
+                            lcid = int.from_bytes(data, byteorder="little")
+                        elif not isinstance(data, int):
+                            lcid = int(data)
+                        else:
+                            lcid = data
 
-                    # Handle filename content
-                    elif format_id == self.CF_FILENAME:
-                        if isinstance(data, str):
-                            data = data.encode("utf-8")
-                            if not data.endswith(b"\0"):
-                                data += b"\0"
-
-                    # Handle locale information
-                    elif format_id == win32con.CF_LOCALE:
-                        try:
-                            # Convert input to integer LCID if needed
-                            if isinstance(data, bytes):
-                                lcid = int.from_bytes(data, byteorder="little")
-                            elif not isinstance(data, int):
-                                lcid = int(data)
-                            else:
-                                lcid = data
-
-                            # Validate LCID range (valid LCIDs are typically below 0xFFFF)
-                            if not 0 <= lcid <= 0xFFFF:
-                                logging.warning(f"LCID {lcid} outside valid range")
-                                continue
-
-                            # Create buffer and pack LCID into it
-                            buf = ctypes.create_string_buffer(struct.pack("i", lcid))
-                            data = bytes(buf)
-
-                        except (ValueError, TypeError) as error:
-                            logging.warning(f"Invalid locale identifier: {error}")
+                        if not 0 <= lcid <= 0xFFFF:
+                            logging.warning(f"LCID {lcid} outside valid range")
                             continue
 
-                    self.clipboard_data[format_id] = (data, datetime.now())
+                        buf = ctypes.create_string_buffer(struct.pack("i", lcid))
+                        data = bytes(buf)
 
-            except Exception as error:
-                logging.warning(f"Error processing format {self._format_names.get(format_id, format_id)}: {error}")
-                continue
-            finally:
-                gc.collect()
+                    except (ValueError, TypeError) as error:
+                        logging.warning(f"Invalid locale identifier: {error}")
+                        continue
+
+                # Encrypt and store clipboard data
+                encrypted_data = self.encrypt_data(data)
+                self.clipboard_data[format_id] = (encrypted_data, datetime.now())
+
+        except (RuntimeError, TimeoutError) as error:
+            logging.error(f"Failed to access clipboard: {error}")
+        finally:
+            gc.collect()
 
     def restore_clipboard_content(self):
         if not self.clipboard_data:
@@ -12520,21 +12554,20 @@ class ClipboardHandler:
             with self.clipboard_access():
                 win32clipboard.EmptyClipboard()
 
-                for fmt, (data, _) in self.clipboard_data.items():
+                for fmt, (encrypted_data, _) in self.clipboard_data.items():
                     try:
-                        if fmt in (win32con.CF_TEXT, win32con.CF_UNICODETEXT):
-                            if fmt == win32con.CF_TEXT and not isinstance(data, bytes):
-                                logging.warning(f"Invalid data type for CF_TEXT: {type(data)}")
-                                continue
-                            if fmt == win32con.CF_UNICODETEXT and not isinstance(data, str):
-                                logging.warning(f"Invalid data type for CF_UNICODETEXT: {type(data)}")
-                                continue
+                        decrypted_data = self.decrypt_data(encrypted_data)
 
-                        win32clipboard.SetClipboardData(fmt, data)
+                        if fmt in (win32con.CF_TEXT, win32con.CF_UNICODETEXT):
+                            if fmt == win32con.CF_TEXT and not isinstance(decrypted_data, bytes):
+                                logging.warning(f"Invalid data type for CF_TEXT: {type(decrypted_data)}")
+                                continue
+                            if fmt == win32con.CF_UNICODETEXT and not isinstance(decrypted_data, str):
+                                decrypted_data = decrypted_data.decode("utf-16le")
+
+                        win32clipboard.SetClipboardData(fmt, decrypted_data)
                     except Exception as error:
-                        logging.warning(
-                            f"Error restoring format {self._format_names.get(fmt, fmt)}: {error}"
-                        )
+                        logging.warning(f"Error restoring format {self._format_names.get(fmt, fmt)}: {error}")
                         continue
         except (RuntimeError, TimeoutError) as error:
             logging.error(f"Failed to restore clipboard content: {error}")
@@ -12680,4 +12713,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
