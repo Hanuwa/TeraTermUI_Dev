@@ -634,6 +634,7 @@ class TeraTermUI(customtkinter.CTk):
         self.in_multiple_screen = False
         self.started_auto_enroll = False
         self.error_auto_enroll = False
+        self.forceful_countdown_end = False
         self.connection_error = False
         self.check_update = False
         self.delete_tesseract_dir = False
@@ -4988,6 +4989,7 @@ class TeraTermUI(customtkinter.CTk):
             winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/notification.wav"), winsound.SND_ASYNC)
         CTkMessagebox(title=translation["automation_error_title"], icon="info", message=translation["end_countdown"],
                       button_width=380)
+        self.forceful_countdown_end = True
 
     def create_timer_window(self):
         translation = self.load_language()
@@ -9221,6 +9223,7 @@ class TeraTermUI(customtkinter.CTk):
                     if not_running_count > 1 and self.stop_check_idle.is_set():
                         self.start_check_idle_thread()
                     not_running_count = 0
+                    self.forceful_countdown_end = False
                 else:
                     not_running_count += 1
                     if not_running_count == 1:
@@ -9232,7 +9235,9 @@ class TeraTermUI(customtkinter.CTk):
                             CTkMessagebox(title=translation["automation_error_title"], icon="warning",
                                           message=translation["tera_term_stopped_running"], button_width=380)
 
-                        self.after(50, not_running)
+                        if not self.forceful_countdown_end:
+                            self.after(50, not_running)
+                        self.forceful_countdown_end = False
                     if not_running_count > 1:
                         self.stop_check_process_thread()
             time.sleep(30 + random.uniform(5, 15))
