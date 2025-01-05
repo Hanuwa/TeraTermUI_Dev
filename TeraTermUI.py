@@ -12261,20 +12261,20 @@ class ImageSlideshow(customtkinter.CTkFrame):
 class ClipboardHandler:
     def __init__(self, max_data_size=100 * 1024 * 1024, retention_time=timedelta(minutes=30),
                  key_rotation_interval=timedelta(hours=24)):
+        # General configuration settings for size, retention, and key rotation
         self.MAX_DATA_SIZE = max_data_size
         self.RETENTION_TIME = retention_time
         self.KEY_ROTATION_INTERVAL = key_rotation_interval
 
-        # Thread synchronization
+        # Single lock to synchronize clipboard
         self.clipboard_lock = threading.Lock()
-        # Clipboard data storage with timestamps
+        # Stores encrypted clipboard data 
         self.clipboard_data = {}
 
-        # Key management
         self.current_key = self._generate_new_key()
         self.last_key_rotation = datetime.now()
 
-        # Register special clipboard formats
+        # Register additional clipboard formats
         self.CF_HTML = win32clipboard.RegisterClipboardFormat("HTML Format")
         self.CF_RTF = win32clipboard.RegisterClipboardFormat("Rich Text Format")
         self.CF_PNG = win32clipboard.RegisterClipboardFormat("PNG")
@@ -12286,11 +12286,12 @@ class ClipboardHandler:
         self.CF_ENHMETAFILE = win32con.CF_ENHMETAFILE
         self.CF_METAFILEPICT = win32con.CF_METAFILEPICT
 
-        # Define allowed clipboard formats
+        # Allowed formats and their readable names
         self.allowed_formats = [win32con.CF_TEXT, win32con.CF_UNICODETEXT, win32con.CF_DIB, win32con.CF_BITMAP,
                                 win32con.CF_HDROP, win32con.CF_ENHMETAFILE, win32con.CF_METAFILEPICT,
                                 win32con.CF_LOCALE, self.CF_HTML, self.CF_RTF, self.CF_PNG, self.CF_TIFF, self.CF_GIF,
                                 self.CF_JFIF, self.CF_SHELLURL, self.CF_FILENAME]
+
         self._format_names = {win32con.CF_TEXT: "Text", win32con.CF_UNICODETEXT: "Unicode Text", win32con.CF_DIB: "DIB",
                               win32con.CF_BITMAP: "Bitmap", win32con.CF_HDROP: "File Drop",
                               win32con.CF_ENHMETAFILE: "Enhanced Metafile", win32con.CF_LOCALE: "Locale",
@@ -12298,15 +12299,15 @@ class ClipboardHandler:
                               self.CF_PNG: "PNG", self.CF_TIFF: "TIFF", self.CF_GIF: "GIF", self.CF_JFIF: "JPEG",
                               self.CF_SHELLURL: "URL", self.CF_FILENAME: "Filename"}
 
-        # Determine system's default ANSI code page
+        # Default system encoding for text
         self.default_encoding = locale.getpreferredencoding()
 
     def __del__(self):
         try:
             with self.clipboard_access():
                 win32clipboard.EmptyClipboard()
-        except:
-            pass
+        except Exception as error:
+            logging.warning(f"Failed to empty clipboard: {error}")
         finally:
             self.cleanup_all_resources()
 
@@ -12342,7 +12343,11 @@ class ClipboardHandler:
     @staticmethod
     def secure_erase(data):
         if isinstance(data, (bytes, bytearray)):
-            ctypes.memset(ctypes.addressof(ctypes.create_string_buffer(data)), 0, len(data))
+            try:
+                buffer_obj = ctypes.create_string_buffer(len(data))
+                ctypes.memset(ctypes.addressof(buffer_obj), 0, len(data))
+            except Exception as error:
+                logging.warning(f"Failed to securely erase data: {error}")
 
     @contextmanager
     def clipboard_access(self):
@@ -12355,8 +12360,9 @@ class ClipboardHandler:
         finally:
             try:
                 win32clipboard.CloseClipboard()
-            finally:
-                self.clipboard_lock.release()
+            except Exception as error:
+                logging.warning(f"Failed to close clipboard: {error}")
+            self.clipboard_lock.release()
 
     @staticmethod
     def open_clipboard_with_retries(max_retries=3, retry_delay=0.1):
@@ -12407,7 +12413,6 @@ class ClipboardHandler:
         current_time = datetime.now()
         expired_formats = [fmt for fmt, (_, timestamp) in self.clipboard_data.items()
                            if current_time - timestamp > self.RETENTION_TIME]
-
         for fmt in expired_formats:
             if fmt == win32con.CF_BITMAP:
                 self.cleanup_bitmap(self.clipboard_data[fmt][0])
@@ -12421,6 +12426,7 @@ class ClipboardHandler:
         return True
 
     def decode_cf_text(self, data):
+        # Attempts multiple encodings to decode text data
         encodings = [self.default_encoding, "utf-8", "latin-1", "ascii", "windows-1252", "iso-8859-15", "shift_jis",
                      "utf-16", "utf-32", "big5", "gb2312", "gbk", "euc-kr", "koi8-r", "mac_roman", "cp437"]
         for encoding in encodings:
@@ -12446,12 +12452,10 @@ class ClipboardHandler:
                         formats.append(fmt)
                     fmt = win32clipboard.EnumClipboardFormats(fmt)
 
-            for format_id in formats:
-                if format_id not in clipboard_cache:
-                    with self.clipboard_access():
-                        clipboard_cache[format_id] = win32clipboard.GetClipboardData(format_id)
+                for format_id in formats:
+                    clipboard_cache[format_id] = win32clipboard.GetClipboardData(format_id)
 
-                data = clipboard_cache[format_id]
+            for format_id, data in clipboard_cache.items():
                 if not self.check_data_size(data, self._format_names.get(format_id, "Unknown")):
                     continue
 
@@ -12553,25 +12557,24 @@ class ClipboardHandler:
         try:
             with self.clipboard_access():
                 win32clipboard.EmptyClipboard()
-
-                for fmt, (encrypted_data, _) in self.clipboard_data.items():
+                items = list(self.clipboard_data.items())
+                for fmt, (encrypted_data, _) in items:
                     try:
                         decrypted_data = self.decrypt_data(encrypted_data)
-
                         if fmt in (win32con.CF_TEXT, win32con.CF_UNICODETEXT):
                             if fmt == win32con.CF_TEXT and not isinstance(decrypted_data, bytes):
                                 logging.warning(f"Invalid data type for CF_TEXT: {type(decrypted_data)}")
                                 continue
-                            if fmt == win32con.CF_UNICODETEXT and not isinstance(decrypted_data, str):
+                            if fmt == win32con.CF_UNICODETEXT and isinstance(decrypted_data, bytes):
                                 decrypted_data = decrypted_data.decode("utf-16le")
 
                         win32clipboard.SetClipboardData(fmt, decrypted_data)
+
                     except Exception as error:
                         logging.warning(f"Error restoring format {self._format_names.get(fmt, fmt)}: {error}")
                         continue
         except (RuntimeError, TimeoutError) as error:
             logging.error(f"Failed to restore clipboard content: {error}")
-            return
         finally:
             self.cleanup_all_resources()
 
