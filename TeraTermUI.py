@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 12700 lines of codes, it definitely makes things harder to work with
+# and with over 12900 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -693,8 +693,8 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Control-space>", lambda event: self.focus_set())
             self.bind("<Escape>", lambda event: self.on_closing())
             self.bind("<Alt-F4>", lambda event: self.direct_close())
-            user_data_fields = ["directory", "location", "config", "pdf_dir", "host", "language", "appearance",
-                                "scaling", "welcome", "default_semester", "audio", "skip_auth", "win_pos_x", "win_pos_y"]
+            user_data_fields = ["directory", "location", "config", "pdf_dir", "host", "language", "appearance", "audio",
+                                "scaling", "welcome", "default_semester", "skip_auth", "win_pos_x", "win_pos_y"]
             results = {}
             for field in user_data_fields:
                 query_user = f"SELECT {field} FROM user_data"
@@ -1497,7 +1497,8 @@ class TeraTermUI(customtkinter.CTk):
                                 if semester == curr_sem:
                                     result = self.handle_current_semester()
                                     if result == "error":
-                                        self.after(100, self.show_error_message, 300, 210, translation["failed_enroll"])
+                                        self.after(100, self.show_error_message, 300, 210,
+                                                   translation["failed_enroll"])
                                         return
                                     elif result == "negative":
                                         return
@@ -1606,7 +1607,8 @@ class TeraTermUI(customtkinter.CTk):
                                                 self.enrollment_error_check = True
                             else:
                                 if not classes or not section or not semester:
-                                    self.after(100, self.show_error_message, 350, 230, translation["missing_info"])
+                                    self.after(100, self.show_error_message, 350, 230,
+                                               translation["missing_info"])
                                     if not classes:
                                         self.after(0, self.e_classes_entry.configure(border_color="#c30101"))
                                     if not section:
@@ -1627,11 +1629,14 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(0, self.e_semester_entry.configure(border_color="#c30101"))
                         else:
                             if section in self.classes_status and self.classes_status[section]["status"] == "ENROLLED":
-                                self.after(100, self.show_error_message, 335, 240, translation["already_enrolled"])
+                                self.after(100, self.show_error_message, 335, 240,
+                                           translation["already_enrolled"])
                             elif section in self.classes_status and self.classes_status[section]["status"] == "DROPPED":
-                                self.after(100, self.show_error_message, 335, 240, translation["already_dropped"])
+                                self.after(100, self.show_error_message, 335, 240,
+                                           translation["already_dropped"])
                     else:
-                        self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+                        self.after(100, self.show_error_message, 300, 215,
+                                   translation["tera_term_not_running"])
             except Exception as err:
                 logging.error("An error occurred: %s", err)
                 self.error_occurred = True
@@ -1683,7 +1688,8 @@ class TeraTermUI(customtkinter.CTk):
                             if semester == curr_sem:
                                 result = self.handle_current_semester()
                                 if result == "error":
-                                    self.after(100, self.show_error_message, 320, 235, translation["failed_to_search"])
+                                    self.after(100, self.show_error_message, 320, 235,
+                                               translation["failed_to_search"])
                                     return
                                 elif result == "negative":
                                     return
@@ -1699,7 +1705,8 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                     self.reset_activity_timer()
-                                    self.after(100, self.show_error_message, 320, 235, translation["invalid_semester"])
+                                    self.after(100, self.show_error_message, 320, 235,
+                                               translation["invalid_semester"])
                                     return
                             try:
                                 self.clipboard_handler.save_clipboard_content()
@@ -1718,14 +1725,16 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                     self.reset_activity_timer()
-                                    self.after(100, self.show_error_message, 320, 235, translation["failed_to_search"])
+                                    self.after(100, self.show_error_message, 320, 235,
+                                               translation["failed_to_search"])
                                     return
                                 elif "INVALID ACTION" in copy and "LISTA DE SECCIONES" in copy:
                                     self.uprb.UprbayTeraTermVt.type_keys("{TAB 2}")
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM")
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                     self.reset_activity_timer()
-                                    self.after(100, self.show_error_message, 320, 235, translation["failed_to_search"])
+                                    self.after(100, self.show_error_message, 320, 235,
+                                               translation["failed_to_search"])
                                     return
                                 if data or course_found or invalid_action or y_n_found:
                                     self.search_function_counter += 1
@@ -1789,9 +1798,11 @@ class TeraTermUI(customtkinter.CTk):
                                 self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                 self.reset_activity_timer()
                                 if "INVALID TERM SELECTION" in text_output:
-                                    self.after(100, self.show_error_message, 320, 235, translation["invalid_semester"])
+                                    self.after(100, self.show_error_message, 320, 235,
+                                               translation["invalid_semester"])
                                 if "INVALID ACTION" in text_output:
-                                    self.after(100, self.show_error_message, 320, 235, translation["failed_to_search"])
+                                    self.after(100, self.show_error_message, 320, 235,
+                                               translation["failed_to_search"])
                                 self.search_function_counter += 1
                             else:
                                 TeraTermUI.disable_user_input()
@@ -1812,19 +1823,23 @@ class TeraTermUI(customtkinter.CTk):
                                     logging.error(f"An error occurred while restoring clipboard content: {err}")
                         else:
                             if not classes or not semester:
-                                self.after(100, self.show_error_message, 350, 230, translation["missing_info_search"])
+                                self.after(100, self.show_error_message, 350, 230,
+                                           translation["missing_info_search"])
                                 if not classes:
                                     self.after(0, self.s_classes_entry.configure(border_color="#c30101"))
                                 if not semester:
                                     self.after(0, self.s_semester_entry.configure(border_color="#c30101"))
                             elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes):
-                                self.after(100, self.show_error_message, 360, 230, translation["class_format_error"])
+                                self.after(100, self.show_error_message, 360, 230,
+                                           translation["class_format_error"])
                                 self.after(0, self.s_classes_entry.configure(border_color="#c30101"))
                             elif not re.fullmatch("^[A-Z][0-9]{2}$", semester) and semester != curr_sem:
-                                self.after(100, self.show_error_message, 360, 230, translation["semester_format_error"])
+                                self.after(100, self.show_error_message, 360, 230,
+                                           translation["semester_format_error"])
                                 self.after(0, self.s_semester_entry.configure(border_color="#c30101"))
                     else:
-                        self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+                        self.after(100, self.show_error_message, 300, 215,
+                                   translation["tera_term_not_running"])
             except Exception as err:
                 logging.error("An error occurred: %s", err)
                 self.error_occurred = True
@@ -1994,7 +2009,8 @@ class TeraTermUI(customtkinter.CTk):
                             if dialog_input == curr_sem:
                                 result = self.handle_current_semester()
                                 if result == "error":
-                                    self.after(100, self.show_error_message, 300, 215, translation["invalid_semester"])
+                                    self.after(100, self.show_error_message, 300, 215,
+                                               translation["invalid_semester"])
                                     return
                                 elif result == "negative":
                                     return
@@ -2028,13 +2044,17 @@ class TeraTermUI(customtkinter.CTk):
                                 self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                 self.reset_activity_timer()
                                 if "INVALID ACTION" in text_output:
-                                    self.after(100, self.show_error_message, 320, 235, translation["failed_semester"])
+                                    self.after(100, self.show_error_message, 320, 235,
+                                               translation["failed_semester"])
                                 else:
-                                    self.after(100, self.show_error_message, 300, 215, translation["invalid_semester"])
+                                    self.after(100, self.show_error_message, 300, 215,
+                                               translation["invalid_semester"])
                         else:
-                            self.after(100, self.show_error_message, 300, 215, translation["invalid_semester"])
+                            self.after(100, self.show_error_message, 300, 215,
+                                       translation["invalid_semester"])
                     else:
-                        self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+                        self.after(100, self.show_error_message, 300, 215,
+                                   translation["tera_term_not_running"])
             except Exception as err:
                 logging.error("An error occurred: %s", err)
                 self.error_occurred = True
@@ -2412,7 +2432,8 @@ class TeraTermUI(customtkinter.CTk):
                                     self.submit_multiple.configure(state="disabled")
                                     self.unbind("<Return>")
                                     self.not_rebind = True
-                                    self.after(2500, self.show_enrollment_error_information_multiple, text_output)
+                                    self.after(2500, self.show_enrollment_error_information_multiple,
+                                               text_output)
                                     if "CONFIRMED" in text_output and "DROPPED" in text_output:
                                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                         time.sleep(1)
@@ -2438,7 +2459,8 @@ class TeraTermUI(customtkinter.CTk):
                                     self.submit_multiple.configure(state="disabled")
                                     self.unbind("<Return>")
                                     self.not_rebind = True
-                                    self.after(2500, self.show_enrollment_error_information_multiple, text_output)
+                                    self.after(2500, self.show_enrollment_error_information_multiple,
+                                               text_output)
                                     self.m_counter = self.m_counter - self.a_counter - 1
                             else:
                                 if count_enroll == 15:
@@ -2475,7 +2497,8 @@ class TeraTermUI(customtkinter.CTk):
                             self.after(100, self.show_error_message, 320, 235,
                                        translation["max_enroll"])
                     else:
-                        self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+                        self.after(100, self.show_error_message, 300, 215,
+                                   translation["tera_term_not_running"])
             except Exception as err:
                 logging.error("An error occurred: %s", err)
                 self.error_occurred = True
@@ -2557,7 +2580,8 @@ class TeraTermUI(customtkinter.CTk):
                                 result = self.handle_current_semester()
                                 if result == "error":
                                     self.focus_or_not = True
-                                    self.after(100, self.show_error_message, 300, 215, translation["invalid_semester"])
+                                    self.after(100, self.show_error_message, 300, 215,
+                                               translation["invalid_semester"])
                                     return
                                 elif result == "negative":
                                     return
@@ -2867,7 +2891,8 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(0, self.menu_entry.configure(border_color="#c30101"))
                     else:
                         self.focus_or_not = True
-                        self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+                        self.after(100, self.show_error_message, 300, 215,
+                                   translation["tera_term_not_running"])
             except Exception as err:
                 logging.error("An error occurred: %s", err)
                 self.error_occurred = True
@@ -2951,11 +2976,13 @@ class TeraTermUI(customtkinter.CTk):
                             text_output = self.capture_screenshot()
                             if "RATE NOT ON ARFILE" in text_output:
                                 self.focus_or_not = True
-                                self.after(100, self.show_error_message, 310, 225, translation["unknown_error"])
+                                self.after(100, self.show_error_message, 310, 225,
+                                           translation["unknown_error"])
                             else:
                                 self.after(0, self.disable_go_next_buttons)
                     else:
-                        self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+                        self.after(100, self.show_error_message, 300, 215,
+                                   translation["tera_term_not_running"])
             except Exception as err:
                 logging.error("An error occurred: %s", err)
                 self.error_occurred = True
@@ -3033,7 +3060,8 @@ class TeraTermUI(customtkinter.CTk):
                             self.s_classes_entry.insert(0, self.get_class_for_pdf)
                             self.s_classes_entry.configure(state="disabled")
                     else:
-                        self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+                        self.after(100, self.show_error_message, 300, 215,
+                                   translation["tera_term_not_running"])
             except Exception as err:
                 logging.error("An error occurred: %s", err)
                 self.error_occurred = True
@@ -3154,11 +3182,13 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(125, timeout)
                         elif username != "students":
                             self.after(350, self.bind, "<Return>", lambda event: self.auth_event_handler())
-                            self.after(100, self.show_error_message, 300, 215, translation["invalid_username"])
+                            self.after(100, self.show_error_message, 300, 215,
+                                       translation["invalid_username"])
                             self.after(0, self.username_entry.configure(border_color="#c30101"))
                     else:
                         self.after(350, self.bind, "<Return>", lambda event: self.auth_event_handler())
-                        self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+                        self.after(100, self.show_error_message, 300, 215,
+                                   translation["tera_term_not_running"])
                 else:
                     self.after(350, self.bind, "<Return>", lambda event: self.auth_event_handler())
             except Exception as err:
@@ -3337,8 +3367,10 @@ class TeraTermUI(customtkinter.CTk):
                         if TeraTermUI.checkIfProcessRunning("ttermpro"):
                             count, is_multiple = TeraTermUI.countRunningProcesses("ttermpro")
                             if is_multiple:
-                                self.after(100, self.show_error_message, 450, 270, translation["count_processes"])
-                                self.after(350, self.bind, "<Return>", lambda event: self.login_event_handler())
+                                self.after(100, self.show_error_message, 450, 270,
+                                           translation["count_processes"])
+                                self.after(350, self.bind, "<Return>",
+                                           lambda event: self.login_event_handler())
                                 return
                             if TeraTermUI.window_exists("Tera Term: New connection"):
                                 new_connection = True
@@ -3409,7 +3441,8 @@ class TeraTermUI(customtkinter.CTk):
                                 self.unbind("<Return>")
                                 self.download = True
                             else:
-                                self.after(350, self.bind, "<Return>", lambda event: self.login_event_handler())
+                                self.after(350, self.bind, "<Return>",
+                                           lambda event: self.login_event_handler())
                     else:
                         self.after(350, self.bind, "<Return>", lambda event: self.login_event_handler())
                         self.after(100, self.show_error_message, 300, 215, translation["invalid_host"])
@@ -4814,7 +4847,8 @@ class TeraTermUI(customtkinter.CTk):
                             self.after(100, self.auto_enroll.deselect)
                             self.auto_enroll_bool = False
                     else:
-                        self.after(100, self.show_error_message, 305, 215, translation["tera_term_not_running"])
+                        self.after(100, self.show_error_message, 305, 215,
+                                   translation["tera_term_not_running"])
                         self.auto_enroll_bool = False
                         self.after(100, self.auto_enroll.deselect)
             except Exception as err:
@@ -8027,7 +8061,8 @@ class TeraTermUI(customtkinter.CTk):
                                                 self.classes_status[old_section] = {
                                                     "classes": course_code_no_section, "status": "ENROLLED",
                                                     "semester": dialog_input}
-                                text_output = self.wait_for_response(["CONFIRMED", "DROPPED"], init_timeout=False)
+                                text_output = self.wait_for_response(["CONFIRMED", "DROPPED"],
+                                                                     init_timeout=False)
                                 if "CONFIRMED" in text_output:
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                 if "DROPPED" in text_output:
@@ -8178,7 +8213,8 @@ class TeraTermUI(customtkinter.CTk):
 
                                 self.after(125, explanation)
                     else:
-                        self.after(100, self.show_error_message, 300, 215, translation["tera_term_not_running"])
+                        self.after(100, self.show_error_message, 300, 215,
+                                   translation["tera_term_not_running"])
             except Exception as err:
                 logging.error("An error occurred: %s", err)
                 self.error_occurred = True
@@ -8990,7 +9026,8 @@ class TeraTermUI(customtkinter.CTk):
                                 current = "Actual"
                                 latest = "Nueva"
                             if not self.disable_audio:
-                                winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/update.wav"), winsound.SND_ASYNC)
+                                winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/update.wav"),
+                                                   winsound.SND_ASYNC)
                             msg = CTkMessagebox(title=translation["update_popup_title"],
                                                 message=translation["update_popup_message"] + "\n\n" + current + ": v" +
                                                 self.USER_APP_VERSION + " ---> " + latest + ": v" + latest_version,
@@ -9008,7 +9045,8 @@ class TeraTermUI(customtkinter.CTk):
                             if not self.disable_audio:
                                 winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/notification.wav"),
                                                    winsound.SND_ASYNC)
-                            CTkMessagebox(title=translation["update_popup_title"], message=translation["update_up_to_date"],
+                            CTkMessagebox(title=translation["update_popup_title"],
+                                          message=translation["update_up_to_date"],
                                           button_width=380)
 
                         self.after(50, up_to_date)
@@ -12268,7 +12306,7 @@ class ClipboardHandler:
 
         # Single lock to synchronize clipboard
         self.clipboard_lock = threading.Lock()
-        # Stores encrypted clipboard data 
+        # Stores encrypted clipboard data
         self.clipboard_data = {}
 
         self.current_key = self._generate_new_key()
@@ -12439,6 +12477,7 @@ class ClipboardHandler:
 
     def save_clipboard_content(self):
         import struct
+        from io import BytesIO
 
         self.cleanup_expired_data()
         clipboard_cache = {}
@@ -12461,62 +12500,257 @@ class ClipboardHandler:
 
                 # Handle text content (CF_TEXT, CF_UNICODETEXT)
                 if format_id in (win32con.CF_TEXT, win32con.CF_UNICODETEXT):
-                    if format_id == win32con.CF_TEXT:
-                        if isinstance(data, str):
-                            data = data.encode("mbcs")
-                    elif format_id == win32con.CF_UNICODETEXT:
-                        if isinstance(data, str):
-                            data = data.encode("utf-16le")
+                    try:
+                        if format_id == win32con.CF_TEXT:
+                            if isinstance(data, str):
+                                data = data.encode(self.default_encoding)
+                            # Validate text encoding
+                            self.decode_cf_text(data)
+                        elif format_id == win32con.CF_UNICODETEXT:
+                            if isinstance(data, str):
+                                data = data.encode("utf-16le")
+                            # Validate UTF-16LE encoding
+                            data.decode("utf-16le")
+                    except UnicodeError as error:
+                        logging.warning(f"Text encoding validation failed: {error}")
+                        continue
 
                 # Handle DIB images
                 elif format_id == win32con.CF_DIB:
                     try:
-                        if len(data) < 4:
-                            logging.warning("DIB data is too short to contain a valid header")
+                        if len(data) < 40:  # BITMAPINFOHEADER minimum size
+                            logging.warning("DIB data is too short for valid BITMAPINFOHEADER")
                             continue
-                        bmih_size = struct.unpack("I", data[:4])[0]
-                        if bmih_size < 40:  # Minimum valid BITMAPINFOHEADER size
-                            logging.warning("Invalid DIB format - header too small")
+
+                        # Parse full BITMAPINFOHEADER structure
+                        bmih = struct.unpack("IIIHHIIIIII", data[:40])
+                        size, width, height, planes, bit_count, compression, size_image, \
+                            x_pels_per_meter, y_pels_per_meter, clr_used, clr_important = bmih
+
+                        # Validate header fields
+                        if size != 40 or planes != 1 or bit_count not in (1, 4, 8, 16, 24, 32):
+                            logging.warning("Invalid DIB format parameters")
                             continue
-                    except struct.error:
-                        logging.warning("Failed to parse DIB header")
+
+                        # Calculate expected data size and validate
+                        row_size = ((width * bit_count + 31) // 32) * 4
+                        expected_size = (row_size * abs(height)) + size
+
+                        # Check color table
+                        if bit_count <= 8:
+                            color_table_size = (1 << bit_count) * 4  # 4 bytes per color entry
+                            expected_size += color_table_size
+
+                        if len(data) < expected_size:
+                            logging.warning(f"DIB data truncated: expected {expected_size}, got {len(data)}")
+                            continue
+                    except struct.error as error:
+                        logging.warning(f"Failed to parse DIB header: {error}")
                         continue
 
-                # Handle HTML, RTF, and image format content
-                elif format_id in (self.CF_HTML, self.CF_RTF, self.CF_PNG, self.CF_TIFF, self.CF_GIF, self.CF_JFIF):
+                # Handle HTML content
+                elif format_id == self.CF_HTML:
                     if isinstance(data, str):
-                        data = data.encode("utf-8")
+                        try:
+                            # Extract the HTML fragment using proper parsing of clipboard HTML format
+                            start_html = data.find("<html>")
+                            end_html = data.find("</html>")
+                            if start_html != -1 and end_html != -1:
+                                html_content = data[start_html:end_html + 7]
+                                # Parse the HTML header
+                                header = data[:start_html]
+                                header_dict = dict(
+                                    line.split(":") for line in header.strip().split('\n') if ":" in line)
 
-                # Handle file drops (CF_HDROP)
-                elif format_id == win32con.CF_HDROP:
-                    if isinstance(data, tuple):
-                        sanitized_paths = self.sanitize_file_paths(data)
-                        if not sanitized_paths:
+                                # Validate Version and other required fields
+                                version = header_dict.get('Version', "0.9").strip()
+                                if not version.startswith("0.9"):
+                                    logging.warning(f"Unsupported HTML clipboard version: {version}")
+
+                                # Validate fragment positions
+                                start_fragment = int(header_dict.get("StartFragment", "-1"))
+                                end_fragment = int(header_dict.get("EndFragment", "-1"))
+                                if start_fragment >= 0 and end_fragment >= 0:
+                                    html_content = data[start_fragment:end_fragment]
+
+                                data = html_content.encode("utf-8")
+                            else:
+                                logging.warning("Invalid HTML clipboard format")
+                                continue
+                        except (ValueError, KeyError) as error:
+                            logging.warning(f"HTML parsing error: {error}")
                             continue
 
-                        # Create DROPFILES structure
-                        offset = 20  # Size of DROPFILES structure
-                        file_list = b""
-                        for path in sanitized_paths:
-                            file_list += path.encode("utf-16le") + b"\0\0"
-                        file_list += b"\0\0"  # End of file list marker
+                # Handle RTF content
+                elif format_id == self.CF_RTF:
+                    if isinstance(data, str):
+                        try:
+                            # Validate RTF header
+                            if not data.startswith("{\\rtf1"):
+                                logging.warning("Invalid RTF header")
+                                continue
+                            # Check for balanced braces
+                            brace_count = 0
+                            for char in data:
+                                if char == "{":
+                                    brace_count += 1
+                                elif char == "}":
+                                    brace_count -= 1
+                                if brace_count < 0:
+                                    break
+                            if brace_count != 0:
+                                logging.warning("Unbalanced RTF braces")
+                                continue
+                            data = data.encode("utf-8")
+                        except Exception as error:
+                            logging.warning(f"RTF validation error: {error}")
+                            continue
 
-                        dropfiles = struct.pack("Iiii", offset, 0, 0, 0x0001)  # fWide = 1 (Unicode)
-                        data = dropfiles + file_list
+                # Handle image formats
+                elif format_id in (self.CF_PNG, self.CF_TIFF, self.CF_GIF, self.CF_JFIF):
+                    try:
+                        # Convert string data to bytes if necessary
+                        if isinstance(data, str):
+                            data = data.encode("utf-8")
+
+                        # Validate image format headers and structure
+                        if format_id == self.CF_PNG:
+                            if not data.startswith(b"\x89PNG\r\n\x1a\n"):
+                                logging.warning("Invalid PNG header")
+                                continue
+                            # Parse PNG chunks and dimensions
+                            width, height = struct.unpack(">II", data[16:24])
+
+                        elif format_id == self.CF_GIF:
+                            if not data.startswith((b"GIF87a", b"GIF89a")):
+                                logging.warning("Invalid GIF header")
+                                continue
+                            width, height = struct.unpack("<HH", data[6:10])
+
+                        elif format_id == self.CF_JFIF:
+                            if not data.startswith(b"\xff\xd8"):
+                                logging.warning("Invalid JPEG header")
+                                continue
+                            # Parse JPEG segments for dimensions
+                            bio = BytesIO(data)
+                            bio.seek(2)
+                            while True:
+                                marker = bio.read(2)
+                                if len(marker) < 2:
+                                    break
+                                if marker[0] != 0xFF:
+                                    break
+                                if marker[1] in (0xC0, 0xC1, 0xC2):
+                                    size = struct.unpack(">H", bio.read(2))[0]
+                                    bio.read(1)  # Skip precision
+                                    height, width = struct.unpack(">HH", bio.read(4))
+                                    break
+                                else:
+                                    size = struct.unpack(">H", bio.read(2))[0]
+                                    bio.seek(size - 2, 1)
+
+                        elif format_id == self.CF_TIFF:
+                            if not (data.startswith(b"II*\x00") or data.startswith(b"MM\x00*")):
+                                logging.warning("Invalid TIFF header")
+                                continue
+
+                        # Add reasonable size limits for all images
+                        if "width" in locals() and "height" in locals():
+                            if width * height > 100000000:  # 100MP limit
+                                logging.warning(f"Image dimensions too large: {width}x{height}")
+                                continue
+
+                    except (struct.error, ValueError, IOError) as error:
+                        logging.warning(f"Image format validation error: {error}")
+                        continue
+
+                # Handle file drops
+                elif format_id == win32con.CF_HDROP:
+                    if isinstance(data, tuple):
+                        try:
+                            sanitized_paths = self.sanitize_file_paths(data)
+                            if not sanitized_paths:
+                                continue
+
+                            # Add additional path validation
+                            max_path_length = 32767  # Windows extended path length limit
+                            valid_paths = []
+
+                            for path in sanitized_paths:
+                                # Check for directory traversal attempts
+                                if ".." in path:
+                                    logging.warning(f"Potential directory traversal in path: {path}")
+                                    continue
+                                # Check path length
+                                if len(path) > max_path_length:
+                                    logging.warning(f"Path exceeds maximum length: {path}")
+                                    continue
+                                # Validate path is accessible
+                                try:
+                                    if os.path.exists(path):
+                                        abs_path = os.path.abspath(path)
+                                        valid_paths.append(abs_path)
+                                except (OSError, ValueError) as error:
+                                    logging.warning(f"Invalid path {path}: {error}")
+
+                            if not valid_paths:
+                                continue
+
+                            # Create DROPFILES structure
+                            offset = 20  # Size of DROPFILES structure
+                            file_list = b""
+
+                            for path in valid_paths:
+                                encoded_path = path.encode("utf-16le") + b"\0\0"
+                                if len(file_list) + len(encoded_path) > self.MAX_DATA_SIZE - offset:
+                                    logging.warning("File list exceeds maximum size")
+                                    break
+                                file_list += encoded_path
+
+                            file_list += b"\0\0"  # End of file list marker
+                            dropfiles = struct.pack("Iiii", offset, 0, 0, 0x0001)  # fWide = 1 (Unicode)
+                            data = dropfiles + file_list
+
+                        except Exception as error:
+                            logging.warning(f"Error processing file drop: {error}")
+                            continue
 
                 # Handle URL content
                 elif format_id == self.CF_SHELLURL:
                     if isinstance(data, str):
-                        data = data.encode("utf-8")
-                        if not data.endswith(b"\0"):
-                            data += b"\0"  # Null-terminate the URL
+                        try:
+                            # Basic URL validation
+                            url = data.strip()
+                            if not url.startswith(("http://", "https://", "ftp://")):
+                                logging.warning("Invalid URL protocol")
+                                continue
+                            # Check URL length
+                            if len(url) > 2083:  # Maximum URL length for IE
+                                logging.warning("URL exceeds maximum length")
+                                continue
+
+                            data = url.encode("utf-8") + b"\0"
+                        except Exception as error:
+                            logging.warning(f"URL validation error: {error}")
+                            continue
 
                 # Handle filename content
                 elif format_id == self.CF_FILENAME:
                     if isinstance(data, str):
-                        data = data.encode("utf-8")
-                        if not data.endswith(b"\0"):
-                            data += b"\0"
+                        try:
+                            filename = data.strip()
+                            # Remove invalid filename characters
+                            invalid_chars = '<>:"/\\|?*'
+                            for char in invalid_chars:
+                                filename = filename.replace(char, "")
+                            if not filename:
+                                logging.warning("Invalid filename")
+                                continue
+
+                            data = filename.encode("utf-8") + b"\0"
+                        except Exception as error:
+                            logging.warning(f"Filename validation error: {error}")
+                            continue
 
                 # Handle locale information
                 elif format_id == win32con.CF_LOCALE:
@@ -12528,18 +12762,18 @@ class ClipboardHandler:
                         else:
                             lcid = data
 
+                        # Validate LCID range
                         if not 0 <= lcid <= 0xFFFF:
                             logging.warning(f"LCID {lcid} outside valid range")
                             continue
+                        # Pack LCID into bytes
+                        data = struct.pack("i", lcid)
 
-                        buf = ctypes.create_string_buffer(struct.pack("i", lcid))
-                        data = bytes(buf)
-
-                    except (ValueError, TypeError) as error:
+                    except (ValueError, TypeError, struct.error) as error:
                         logging.warning(f"Invalid locale identifier: {error}")
                         continue
 
-                # Encrypt and store clipboard data
+                # Encrypt and store valid clipboard data
                 encrypted_data = self.encrypt_data(data)
                 self.clipboard_data[format_id] = (encrypted_data, datetime.now())
 
@@ -12558,15 +12792,46 @@ class ClipboardHandler:
             with self.clipboard_access():
                 win32clipboard.EmptyClipboard()
                 items = list(self.clipboard_data.items())
+
                 for fmt, (encrypted_data, _) in items:
                     try:
                         decrypted_data = self.decrypt_data(encrypted_data)
+
+                        # Handle text formats
                         if fmt in (win32con.CF_TEXT, win32con.CF_UNICODETEXT):
-                            if fmt == win32con.CF_TEXT and not isinstance(decrypted_data, bytes):
-                                logging.warning(f"Invalid data type for CF_TEXT: {type(decrypted_data)}")
+                            if fmt == win32con.CF_TEXT:
+                                if not isinstance(decrypted_data, bytes):
+                                    logging.warning(f"Invalid data type for CF_TEXT: {type(decrypted_data)}")
+                                    continue
+                            else:  # CF_UNICODETEXT
+                                if isinstance(decrypted_data, bytes):
+                                    try:
+                                        decrypted_data = decrypted_data.decode("utf-16le")
+                                    except UnicodeError as error:
+                                        logging.warning(f"Failed to decode UNICODETEXT: {error}")
+                                        continue
+
+                        # Handle bitmap conversion for DIB format
+                        elif fmt == win32con.CF_DIB:
+                            try:
+                                # Create bitmap from DIB data
+                                bitmap = win32clipboard.SetClipboardData(fmt, decrypted_data)
+                                if not bitmap:
+                                    logging.warning("Failed to create bitmap from DIB data")
+                                    continue
+                            except Exception as error:
+                                logging.warning(f"Failed to process DIB data: {error}")
                                 continue
-                            if fmt == win32con.CF_UNICODETEXT and isinstance(decrypted_data, bytes):
-                                decrypted_data = decrypted_data.decode("utf-16le")
+
+                        # Handle locale data
+                        elif fmt == win32con.CF_LOCALE:
+                            if isinstance(decrypted_data, bytes) and len(decrypted_data) == 4:
+                                try:
+                                    locale_id = int.from_bytes(decrypted_data, byteorder="little")
+                                    decrypted_data = struct.pack("i", locale_id)
+                                except ValueError as error:
+                                    logging.warning(f"Failed to process locale data: {error}")
+                                    continue
 
                         win32clipboard.SetClipboardData(fmt, decrypted_data)
 
