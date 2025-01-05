@@ -205,7 +205,7 @@
 	"failed_modify": "¡Error! No se pudo modificar\nlas clases actualmente matriculadas",
 	"modify_error": "Este error suele ser causado porque el semestre ya no está disponible para matricularse y dar de baja clases o porque el semestre aún no está disponible",
 	"failed_change_section": "¡Error! No se logró cambiar las\nsecciones de una o más clases",
-	"failed_change_section_exp": "Al cambiar secciones, el programa primero da de baja la clase y luego intenta matricularla en la nueva sección. Si la matrícula falla, se intentará reinscribir en la sección original, que podría no estar disponible.\n\nSu clase fue recuperada y reinscrita"
+	"failed_change_section_exp": "Al cambiar secciones, el programa primero da de baja la clase y luego intenta matricularla en la nueva sección. Si la matrícula falla, se intentará reinscribir en la sección original, que podría no estar disponible.\n\nSu clase fue recuperada y reinscrita",
 	"section_closed": "¡Error Crítico!\n\nAl intentar reinscribir la clase, la sección original se encontraba no disponible",
 	"co_requisite": "Este error probablemente ocurrió porque estás intentando cambiar una clase que depende de otra clase. Debido a la naturaleza de estos casos, necesitas retirar ambas al mismo tiempo, lo cual solo se puede hacer en la pantalla \"Múltiple\"",
 	"co_requisite_warning": "¡Lo lamentamos! Pero no puedes modificar clases que dependen entre sí en esta pantalla (clases de laboratorio). Para esto, primero necesitas retirar ambas clases al mismo tiempo, lo cual puedes hacer en la pantalla \"Múltiple\"\n\nLos siguientes cursos son: ",
