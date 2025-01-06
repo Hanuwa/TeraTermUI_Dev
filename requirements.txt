@@ -63,7 +63,7 @@ pytesseract==0.3.13
 pytweening==1.2.0
 pytz==2024.2
 pywin32==308
-pywinauto==0.6.8
+pywinauto==0.6.9
 pyzipper==0.3.6
 pyzstd==0.16.2
 reportlab==4.2.5
