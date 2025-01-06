@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 1/5/25
+# DATE - Started 1/1/23, Current Build v0.9.5 - 1/6/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 12900 lines of codes, it definitely makes things harder to work with
+# and with over 12800 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -57,7 +57,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from Cryptodome.Cipher import AES
 from Cryptodome.Hash import HMAC, SHA256
-from Cryptodome.Protocol.KDF import HKDF, PBKDF2
+from Cryptodome.Protocol.KDF import HKDF
 from Cryptodome.Random import get_random_bytes
 from Cryptodome.Util.Padding import pad, unpad
 from CTkMessagebox import CTkMessagebox
@@ -198,6 +198,7 @@ class TeraTermUI(customtkinter.CTk):
         # Instance variables not yet needed but defined
         # to avoid the instance attribute defined outside __init__ warning
         self.uprbay_window = None
+        self.host_entry_saved = None
         self.uprb = None
         self.uprb_32 = None
         self.tera_term_window = None
@@ -619,7 +620,6 @@ class TeraTermUI(customtkinter.CTk):
         self.auto_enroll_bool = False
         self.auto_enroll_focus = False
         self.countdown_running = False
-        self.enrollment_error_check = False
         self.modify_error_check = False
         self.download = False
         self.status = None
@@ -658,6 +658,7 @@ class TeraTermUI(customtkinter.CTk):
         self.search_function_counter = 0
         self.last_switch_time = 0
         self.last_remove_time = 0
+        self.enrollment_error_check = 0
         # Storing translations for languages in cache to reuse
         self.translations_cache = {}
         self.curr_lang = self.language_menu.get()
@@ -966,6 +967,9 @@ class TeraTermUI(customtkinter.CTk):
             else:
                 for future in as_completed([self.future_tesseract, self.future_backup, self.future_feedback]):
                     future.result()
+            self.stop_check_process_thread()
+            self.stop_check_idle_thread()
+            self.clipboard_handler.close()
             self.save_user_data()
             self.end_app()
             if self.exit_checkbox_state:
@@ -1004,10 +1008,6 @@ class TeraTermUI(customtkinter.CTk):
 
     def end_app(self, forced=False):
         try:
-            for widget in self.winfo_children():
-                if isinstance(widget, tk.Toplevel) and hasattr(widget, "is_ctkmessagebox") \
-                        and widget.is_ctkmessagebox:
-                    widget.close_messagebox()
             if forced:
                 self.tray.stop()
             self.destroy()
@@ -1155,9 +1155,9 @@ class TeraTermUI(customtkinter.CTk):
 
         # Derive encryption and MAC keys using HKDF
         def derive_keys(master_key_input):
-            aes_key = HKDF(master_key_input, 32, salt=b"student_event_salt", hashmod=SHA256)
-            mac_key = HKDF(master_key_input, 32, salt=b"mac_salt", hashmod=SHA256)
-            return aes_key, mac_key
+            e_aes_key = HKDF(master_key_input, 32, salt=b"student_event_salt", hashmod=SHA256)
+            e_mac_key = HKDF(master_key_input, 32, salt=b"mac_salt", hashmod=SHA256)
+            return e_aes_key, e_mac_key
 
         # Encrypt and compute MAC
         def aes_encrypt_then_mac(plaintext, encryption_key, mac_key_input):
@@ -1205,12 +1205,9 @@ class TeraTermUI(customtkinter.CTk):
                             secure_delete(student_id)
                             secure_delete(code)
                             self.wait_for_window()
-                            self.uprb.UprbayTeraTermVt.type_keys("{TAB}")
-                            self.uprb.UprbayTeraTermVt.type_keys(
-                                aes_decrypt_and_verify_mac(student_id_enc, aes_key, mac_key))
-                            self.uprb.UprbayTeraTermVt.type_keys(
-                                aes_decrypt_and_verify_mac(code_enc, aes_key, mac_key))
-                            self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                            student_id_dec = aes_decrypt_and_verify_mac(student_id_enc, aes_key, mac_key)
+                            code_dec = aes_decrypt_and_verify_mac(code_enc, aes_key, mac_key)
+                            self.uprb.UprbayTeraTermVt.type_keys("{TAB}" + student_id_dec + code_dec + "{ENTER}")
                             text_output = self.wait_for_response(["SIGN-IN", "ON FILE", "PIN NUMBER",
                                                                   "ERRORS FOUND"], init_timeout=False, timeout=7)
                             if "SIGN-IN" in text_output:
@@ -1226,8 +1223,10 @@ class TeraTermUI(customtkinter.CTk):
                                 self.in_student_frame = False
                                 secure_delete(student_id_enc)
                                 secure_delete(code_enc)
+                                secure_delete(student_id_dec)
+                                secure_delete(code_dec)
                                 secure_delete(master_key)
-                                del student_id, code, student_id_enc, code_enc, master_key
+                                del student_id, code, student_id_enc, code_enc, student_id_dec, code_dec, master_key
                                 self.switch_tab()
                             else:
                                 self.after(350, self.bind, "<Return>",
@@ -1491,9 +1490,7 @@ class TeraTermUI(customtkinter.CTk):
                                     and re.fullmatch("^[A-Z]{2}[A-Z0-9]$", section)
                                     and (re.fullmatch("^[A-Z][0-9]{2}$", semester) or semester == curr_sem)):
                                 self.wait_for_window()
-                                self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                                self.uprb.UprbayTeraTermVt.type_keys("1S4")
+                                self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}1S4")
                                 if semester == curr_sem:
                                     result = self.handle_current_semester()
                                     if result == "error":
@@ -1504,8 +1501,7 @@ class TeraTermUI(customtkinter.CTk):
                                         return
                                     else:
                                         semester = result
-                                self.uprb.UprbayTeraTermVt.type_keys(semester)
-                                self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                self.uprb.UprbayTeraTermVt.type_keys(semester + "{ENTER}")
                                 self.after(0, self.disable_go_next_buttons)
                                 text_output = self.capture_screenshot()
                                 enrolled_classes = "ENROLLED"
@@ -1522,9 +1518,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.uprb.UprbayTeraTermVt.type_keys("R")
                                     elif choice == "drop":
                                         self.uprb.UprbayTeraTermVt.type_keys("D")
-                                    self.uprb.UprbayTeraTermVt.type_keys(classes)
-                                    self.uprb.UprbayTeraTermVt.type_keys(section)
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                    self.uprb.UprbayTeraTermVt.type_keys(classes + section + "{ENTER}")
                                     text_output = self.wait_for_response(["CONFIRMED", "DROPPED"])
                                     enrolled_classes = "ENROLLED"
                                     count_enroll = text_output.count(enrolled_classes)
@@ -1575,18 +1569,16 @@ class TeraTermUI(customtkinter.CTk):
                                         self.after(100, self.show_information_message, 350, 265,
                                                    translation["enrollment_limit"])
                                     if "INVALID TERM SELECTION" in text_output:
-                                        self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                        self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                        self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                        self.uprb.UprbayTeraTermVt.type_keys(
+                                            self.DEFAULT_SEMESTER + "SRM{ENTER}")
                                         self.reset_activity_timer()
                                         self.after(100, self.show_error_message, 300, 215,
                                                    translation["invalid_semester"])
                                     else:
                                         if "USO INTERNO" not in text_output and "TERMINO LA MATRICULA" \
                                                 not in text_output:
-                                            self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                            self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                            self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                            self.uprb.UprbayTeraTermVt.type_keys(
+                                                self.DEFAULT_SEMESTER + "SRM{ENTER}")
                                             self.reset_activity_timer()
                                             self.after(100, self.show_error_message, 300, 210,
                                                        translation["failed_enroll"])
@@ -1595,7 +1587,7 @@ class TeraTermUI(customtkinter.CTk):
                                                 self.unbind("<Return>")
                                                 self.not_rebind = True
                                                 self.after(2500, self.show_enrollment_error_information)
-                                                self.enrollment_error_check = True
+                                                self.enrollment_error_check += 1
                                         else:
                                             self.after(100, self.show_error_message, 315, 210,
                                                        translation["failed_enroll"])
@@ -1604,7 +1596,7 @@ class TeraTermUI(customtkinter.CTk):
                                                 self.unbind("<Return>")
                                                 self.not_rebind = True
                                                 self.after(2500, self.show_enrollment_error_information)
-                                                self.enrollment_error_check = True
+                                                self.enrollment_error_check += 1
                             else:
                                 if not classes or not section or not semester:
                                     self.after(100, self.show_error_message, 350, 230,
@@ -1682,9 +1674,7 @@ class TeraTermUI(customtkinter.CTk):
                         if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes) and (
                                 re.fullmatch("^[A-Z][0-9]{2}$", semester) or semester == curr_sem)):
                             self.wait_for_window()
-                            self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                            self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                            self.uprb.UprbayTeraTermVt.type_keys("1CS")
+                            self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}1CS")
                             if semester == curr_sem:
                                 result = self.handle_current_semester()
                                 if result == "error":
@@ -1695,15 +1685,12 @@ class TeraTermUI(customtkinter.CTk):
                                     return
                                 else:
                                     semester = result
-                            self.uprb.UprbayTeraTermVt.type_keys(semester)
-                            self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                            self.uprb.UprbayTeraTermVt.type_keys(semester + "{ENTER}")
                             self.after(0, self.disable_go_next_buttons)
                             if self.search_function_counter == 0 or semester != self.get_semester_for_pdf:
                                 text_output = self.capture_screenshot()
                                 if "INVALID TERM SELECTION" in text_output:
-                                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER + "SRM{ENTER}")
                                     self.reset_activity_timer()
                                     self.after(100, self.show_error_message, 320, 235,
                                                translation["invalid_semester"])
@@ -1722,17 +1709,13 @@ class TeraTermUI(customtkinter.CTk):
                                 data, course_found, invalid_action, \
                                     y_n_found, y_n_value, term_value = TeraTermUI.extract_class_data(copy)
                                 if "INVALID ACTION" in copy and "LISTA DE SECCIONES" not in copy:
-                                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER + "SRM{ENTER}")
                                     self.reset_activity_timer()
                                     self.after(100, self.show_error_message, 320, 235,
                                                translation["failed_to_search"])
                                     return
                                 elif "INVALID ACTION" in copy and "LISTA DE SECCIONES" in copy:
-                                    self.uprb.UprbayTeraTermVt.type_keys("{TAB 2}")
-                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                    self.uprb.UprbayTeraTermVt.type_keys("{TAB 2}SRM{ENTER}")
                                     self.reset_activity_timer()
                                     self.after(100, self.show_error_message, 320, 235,
                                                translation["failed_to_search"])
@@ -1766,8 +1749,7 @@ class TeraTermUI(customtkinter.CTk):
                                 if self.search_function_counter == 0:
                                     self.uprb.UprbayTeraTermVt.type_keys(classes)
                                 if self.search_function_counter >= 1:
-                                    self.uprb.UprbayTeraTermVt.type_keys("1CS")
-                                    self.uprb.UprbayTeraTermVt.type_keys(classes)
+                                    self.uprb.UprbayTeraTermVt.type_keys("1CS" + classes)
                                 self.uprb.UprbayTeraTermVt.type_keys("{TAB}")
                                 if show_all == "on":
                                     self.uprb.UprbayTeraTermVt.type_keys("Y")
@@ -1795,9 +1777,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.search_function_counter += 1
                                 self.after(0, self.s_classes_entry.configure(border_color="#c30101"))
                             elif "INVALID ACTION" in text_output or "INVALID TERM SELECTION" in text_output:
-                                self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER + "SRM{ENTER}")
                                 self.reset_activity_timer()
                                 if "INVALID TERM SELECTION" in text_output:
                                     self.after(100, self.show_error_message, 320, 235,
@@ -2006,9 +1986,7 @@ class TeraTermUI(customtkinter.CTk):
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if re.fullmatch("^[A-Z][0-9]{2}$", dialog_input) or dialog_input == curr_sem:
                             self.wait_for_window()
-                            self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                            self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                            self.uprb.UprbayTeraTermVt.type_keys("1CP")
+                            self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}1CP")
                             if dialog_input == curr_sem:
                                 result = self.handle_current_semester()
                                 if result == "error":
@@ -2019,8 +1997,7 @@ class TeraTermUI(customtkinter.CTk):
                                     return
                                 else:
                                     dialog_input = result
-                            self.uprb.UprbayTeraTermVt.type_keys(dialog_input)
-                            self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                            self.uprb.UprbayTeraTermVt.type_keys(dialog_input + "{ENTER}")
                             self.after(0, self.disable_go_next_buttons)
                             text_output = self.capture_screenshot()
                             if "INVALID TERM SELECTION" not in text_output and "INVALID ACTION" not in text_output:
@@ -2044,9 +2021,7 @@ class TeraTermUI(customtkinter.CTk):
                                 except Exception as err:
                                     logging.error(f"An error occurred while restoring clipboard content: {err}")
                             else:
-                                self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER + "SRM{ENTER}")
                                 self.reset_activity_timer()
                                 if "INVALID ACTION" in text_output:
                                     self.after(100, self.show_error_message, 320, 235,
@@ -2367,9 +2342,7 @@ class TeraTermUI(customtkinter.CTk):
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if can_enroll_classes:
                             self.wait_for_window()
-                            self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                            self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                            self.uprb.UprbayTeraTermVt.type_keys("1S4")
+                            self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}1S4")
                             if semester == curr_sem:
                                 result = self.handle_current_semester()
                                 if result == "error":
@@ -2380,8 +2353,7 @@ class TeraTermUI(customtkinter.CTk):
                                     return
                                 else:
                                     semester = result
-                            self.uprb.UprbayTeraTermVt.type_keys(semester)
-                            self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                            self.uprb.UprbayTeraTermVt.type_keys(semester + "{ENTER}")
                             self.after(0, self.disable_go_next_buttons)
                             text_output = self.capture_screenshot()
                             enrolled_classes = "ENROLLED"
@@ -2400,8 +2372,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.uprb.UprbayTeraTermVt.type_keys("R")
                                     elif choices[i] in ["Drop", "Baja"]:
                                         self.uprb.UprbayTeraTermVt.type_keys("D")
-                                    self.uprb.UprbayTeraTermVt.type_keys(classes[i])
-                                    self.uprb.UprbayTeraTermVt.type_keys(sections[i])
+                                    self.uprb.UprbayTeraTermVt.type_keys(classes[i] + sections[i])
                                     self.m_counter += 1
                                     if i == self.a_counter:
                                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
@@ -2474,17 +2445,13 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(100, self.show_information_message, 350, 265,
                                                translation["enrollment_limit"])
                                 if "INVALID TERM SELECTION" in text_output:
-                                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER + "SRM{ENTER}")
                                     self.reset_activity_timer()
                                     self.after(100, self.show_error_message, 300, 215,
                                                translation["invalid_semester"])
                                 else:
                                     if "USO INTERNO" not in text_output and "TERMINO LA MATRICULA" not in text_output:
-                                        self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                        self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                        self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                        self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER + "SRM{ENTER}")
                                         self.reset_activity_timer()
                                     if "INVALID ACTION" in text_output and self.started_auto_enroll:
                                         self.after(0, self.submit_multiple_event_handler)
@@ -2497,7 +2464,7 @@ class TeraTermUI(customtkinter.CTk):
                                             self.unbind("<Return>")
                                             self.not_rebind = True
                                             self.after(2500, self.show_enrollment_error_information)
-                                            self.enrollment_error_check = True
+                                            self.enrollment_error_check += 1
                         else:
                             self.after(100, self.show_error_message, 320, 235,
                                        translation["max_enroll"])
@@ -2580,8 +2547,7 @@ class TeraTermUI(customtkinter.CTk):
                             result = None
                             if semester == curr_sem:
                                 if not self.found_latest_semester:
-                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                    self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}")
                                 result = self.handle_current_semester()
                                 if result == "error":
                                     self.focus_or_not = True
@@ -2595,22 +2561,13 @@ class TeraTermUI(customtkinter.CTk):
                             match menu:
                                 case "SRM":
                                     if result is None:
-                                        self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                        self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                        self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}")
                                     self.after(0, self.disable_go_next_buttons)
                                 case "004":
-                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                                    self.uprb.UprbayTeraTermVt.type_keys("004")
-                                    self.uprb.UprbayTeraTermVt.type_keys(semester)
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                    self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}004" + semester + "{ENTER}")
                                     self.after(0, self.disable_go_next_buttons)
                                 case "1GP":
-                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                                    self.uprb.UprbayTeraTermVt.type_keys("1GP")
-                                    self.uprb.UprbayTeraTermVt.type_keys(semester)
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                    self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}1GP" + semester + "{ENTER}")
                                     self.after(0, self.disable_go_next_buttons)
                                     text_output = self.capture_screenshot()
                                     if "INVALID TERM SELECTION" not in text_output:
@@ -2629,48 +2586,32 @@ class TeraTermUI(customtkinter.CTk):
                                         self.after(0, go_next_grid)
                                     else:
                                         self.focus_or_not = True
-                                        self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                        self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                        self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                        self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER + "SRM{ENTER}")
                                         self.reset_activity_timer()
                                         self.after(100, self.show_error_message, 300, 215,
                                                    translation["invalid_semester"])
                                 case "118":
-                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                                    self.uprb.UprbayTeraTermVt.type_keys("118")
-                                    self.uprb.UprbayTeraTermVt.type_keys(semester)
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                    self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}118" + semester + "{ENTER}")
                                     self.after(0, self.disable_go_next_buttons)
                                     text_output = self.capture_screenshot()
                                     if "INVALID TERM SELECTION" in text_output:
                                         self.focus_or_not = True
-                                        self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                        self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                        self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                        self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER + "SRM" + "{ENTER}")
                                         self.reset_activity_timer()
                                         self.after(100, self.show_error_message, 300, 215,
                                                    translation["invalid_semester"])
                                 case "1VE":
-                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                                    self.uprb.UprbayTeraTermVt.type_keys("1VE")
-                                    self.uprb.UprbayTeraTermVt.type_keys(semester)
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                    self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}1VE" + semester + "{ENTER}")
                                     self.after(0, self.disable_go_next_buttons)
                                     text_output = self.capture_screenshot()
                                     if "CONFLICT" in text_output:
                                         self.focus_or_not = True
-                                        self.uprb.UprbayTeraTermVt.type_keys("004")
-                                        self.uprb.UprbayTeraTermVt.type_keys(semester)
-                                        self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                        self.uprb.UprbayTeraTermVt.type_keys("004" + semester + "{ENTER}")
                                         self.after(100, self.show_information_message, 310, 225,
                                                    translation["hold_flag"])
                                     if "INVALID TERM SELECTION" in text_output:
                                         self.focus_or_not = True
-                                        self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                        self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                        self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                        self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER + "SRM{ENTER}")
                                         self.reset_activity_timer()
                                         self.after(100, self.show_error_message, 300, 215,
                                                    translation["invalid_semester"])
@@ -2689,27 +2630,17 @@ class TeraTermUI(customtkinter.CTk):
 
                                         self.after(0, go_next_grid)
                                 case "3DD":
-                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                                    self.uprb.UprbayTeraTermVt.type_keys("3DD")
-                                    self.uprb.UprbayTeraTermVt.type_keys(semester)
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                    self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}3DD" + semester + "{ENTER}")
                                     self.after(0, self.disable_go_next_buttons)
                                     text_output = self.capture_screenshot()
                                     if "INVALID TERM SELECTION" in text_output:
                                         self.focus_or_not = True
-                                        self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                        self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                        self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                        self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER + "SRM{ENTER}")
                                         self.reset_activity_timer()
                                         self.after(100, self.show_error_message, 300, 215,
                                                    translation["invalid_semester"])
                                 case "409":
-                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                                    self.uprb.UprbayTeraTermVt.type_keys("409")
-                                    self.uprb.UprbayTeraTermVt.type_keys(semester)
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                    self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}409" + semester + "{ENTER}")
                                     self.after(0, self.disable_go_next_buttons)
                                     text_output = self.capture_screenshot()
                                     if "INVALID TERM SELECTION" not in text_output:
@@ -2728,24 +2659,17 @@ class TeraTermUI(customtkinter.CTk):
                                         self.after(0, go_next_grid)
                                     else:
                                         self.focus_or_not = True
-                                        self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                        self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                        self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                        self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER + "SRM{ENTER}")
                                         self.reset_activity_timer()
                                         self.after(100, self.show_error_message, 300, 215,
                                                    translation["invalid_semester"])
                                 case "683":
-                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                                    self.uprb.UprbayTeraTermVt.type_keys("683")
-                                    self.uprb.UprbayTeraTermVt.type_keys(semester)
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                    self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}683" + semester + "{ENTER}")
                                     self.after(0, self.disable_go_next_buttons)
                                     text_output = self.capture_screenshot()
                                     if "CONFLICT" in text_output:
                                         self.focus_or_not = True
-                                        self.uprb.UprbayTeraTermVt.type_keys("004")
-                                        self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                        self.uprb.UprbayTeraTermVt.type_keys("004{ENTER}")
                                         self.after(100, self.show_information_message, 310, 225,
                                                    translation["hold_flag"])
                                     if "CONFLICT" not in text_output:
@@ -2763,11 +2687,7 @@ class TeraTermUI(customtkinter.CTk):
 
                                         self.after(0, go_next_grid)
                                 case "1PL":
-                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                                    self.uprb.UprbayTeraTermVt.type_keys("1PL")
-                                    self.uprb.UprbayTeraTermVt.type_keys(semester)
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                    self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}1PL" + semester + "{ENTER}")
                                     self.after(0, self.disable_go_next_buttons)
                                     text_output = self.capture_screenshot()
                                     if "TERM OUTDATED" in text_output or "NO PUEDE REALIZAR CAMBIOS" in text_output or \
@@ -2775,9 +2695,7 @@ class TeraTermUI(customtkinter.CTk):
                                             in text_output:
                                         self.focus_or_not = True
                                         if "TERM OUTDATED" in text_output or "INVALID TERM SELECTION" in text_output:
-                                            self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                            self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                            self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                            self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER + "SRM{ENTER}")
                                             self.reset_activity_timer()
                                         if lang == "English":
                                             self.after(100, self.show_error_message, 325, 240,
@@ -2801,11 +2719,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.focus_or_not = True
                                         self.after(100, warning)
                                 case "4CM":
-                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                                    self.uprb.UprbayTeraTermVt.type_keys("4CM")
-                                    self.uprb.UprbayTeraTermVt.type_keys(semester)
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                    self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}4CM" + semester + "{ENTER}")
                                     self.after(0, self.disable_go_next_buttons)
                                     text_output = self.capture_screenshot()
                                     if "TERM OUTDATED" not in text_output and "NO PUEDE REALIZAR CAMBIOS" not in \
@@ -2828,9 +2742,7 @@ class TeraTermUI(customtkinter.CTk):
                                             "NO PUEDE HACER CAMBIOS" in text_output:
                                         self.focus_or_not = True
                                         if "TERM OUTDATED" in text_output:
-                                            self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                            self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                            self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                            self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER + "SRM{ENTER}")
                                             self.reset_activity_timer()
                                         if lang == "English":
                                             self.after(100, self.show_error_message, 325, 240,
@@ -2840,20 +2752,14 @@ class TeraTermUI(customtkinter.CTk):
                                                        "Error! No se pudo entrar"
                                                        "\n a la pantalla" + self.menu_entry.get())
                                 case "4SP":
-                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                                    self.uprb.UprbayTeraTermVt.type_keys("4SP")
-                                    self.uprb.UprbayTeraTermVt.type_keys(semester)
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                    self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}4SP" + semester + "{ENTER}")
                                     self.after(0, self.disable_go_next_buttons)
                                     text_output = self.capture_screenshot()
                                     if "TERM OUTDATED" in text_output or "NO PUEDE REALIZAR CAMBIOS" in text_output or \
                                             "NO PUEDE HACER CAMBIOS" in text_output:
                                         self.focus_or_not = True
                                         if "TERM OUTDATED" in text_output:
-                                            self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                            self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                            self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                            self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER + "SRM{ENTER}")
                                             self.reset_activity_timer()
                                         if lang == "English":
                                             self.after(100, self.show_error_message, 325, 240,
@@ -2936,8 +2842,7 @@ class TeraTermUI(customtkinter.CTk):
         if TeraTermUI.checkIfProcessRunning("ttermpro") and response[0] == "Yes" \
                 or response[0] == "Sí":
             self.wait_for_window()
-            self.uprb.UprbayTeraTermVt.type_keys("SO")
-            self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+            self.uprb.UprbayTeraTermVt.type_keys("SO{ENTER}")
             self.after(0, self.disable_go_next_buttons)
         elif not TeraTermUI.checkIfProcessRunning("ttermpro") and response[0] == "Yes" \
                 or response[0] == "Sí":
@@ -2961,15 +2866,13 @@ class TeraTermUI(customtkinter.CTk):
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         self.wait_for_window()
                         if self._1VE_screen:
-                            self.uprb.UprbayTeraTermVt.type_keys("{TAB 3}")
-                            self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                            self.uprb.UprbayTeraTermVt.type_keys("{TAB 3}{ENTER}")
                             self.reset_activity_timer()
                         elif self._1GP_screen:
                             self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                             self.reset_activity_timer()
                         elif self._409_screen:
-                            self.uprb.UprbayTeraTermVt.type_keys("{TAB 4}")
-                            self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                            self.uprb.UprbayTeraTermVt.type_keys("{TAB 4}{ENTER}")
                             self.reset_activity_timer()
                         elif self._683_screen:
                             self.went_to_683_screen = True
@@ -3135,18 +3038,19 @@ class TeraTermUI(customtkinter.CTk):
                             username = "students"
                             self.wait_for_window()
                             TeraTermUI.check_window_exists("SSH Authentication")
-                            user = self.uprb.UprbayTeraTermVt.child_window(title="User name:", control_type="Edit")
-                            if user.get_value() != username:
-                                user.set_text(username)
-                            check = self.uprb.UprbayTeraTermVt.child_window(
-                                title="Remember password in memory", control_type="CheckBox")
-                            if check.get_toggle_state() == 0:
-                                check.invoke()
-                            radio = self.uprb.UprbayTeraTermVt.child_window(
-                                title="Use plain password to log in", control_type="RadioButton")
-                            if not radio.is_selected():
-                                radio.invoke()
-                            self.uprb.UprbayTeraTermVt.child_window(title="OK", control_type="Button").invoke()
+                            ssh_auth_window = self.uprb.UprbayTeraTermVt
+                            user_field = ssh_auth_window.child_window(title="User name:", control_type="Edit")
+                            remember_checkbox = ssh_auth_window.child_window(title="Remember password in memory",
+                                                                             control_type="CheckBox")
+                            plain_password_radio = ssh_auth_window.child_window(title="Use plain password to log in",
+                                                                                control_type="RadioButton")
+                            ok_button = ssh_auth_window.child_window(title="OK", control_type="Button")
+                            user_field.set_text(username)
+                            if not remember_checkbox.get_toggle_state():
+                                remember_checkbox.invoke()
+                            if not plain_password_radio.is_selected():
+                                plain_password_radio.invoke()
+                            ok_button.invoke()
                             self.server_status = self.wait_for_prompt(
                                 "return to continue", "REGRESE PRONTO")
                             if self.server_status == "Maintenance message found":
@@ -3388,9 +3292,8 @@ class TeraTermUI(customtkinter.CTk):
                         try:
                             if self.teraterm5_first_boot:
                                 first_boot = Application(backend="uia").start(self.location, timeout=3)
-                                timings.wait_until_passes(10, 1, lambda: first_boot.window(
-                                    title="Tera Term - [disconnected] VT", class_name="VTWin32",
-                                    control_type="Window").exists())
+                                first_boot.window(title="Tera Term - [disconnected] VT", class_name="VTWin32",
+                                                  control_type="Window").wait("visible", timeout=10)
                                 first_boot.connect(title="Tera Term - [disconnected] VT", class_name="VTWin32",
                                                    control_type="Window", timeout=3)
                                 first_boot.kill(soft=True)
@@ -3428,9 +3331,10 @@ class TeraTermUI(customtkinter.CTk):
                                 title="uprbay.uprb.edu - Tera Term VT", class_name="VTWin32", control_type="Window")
                             self.uprbay_window.wait("visible", timeout=3)
                             self.tera_term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
-                            if self.uprbay_window.child_window(title="Continue", control_type="Button").exists(
-                                    timeout=2):
-                                self.uprbay_window.child_window(title="Continue", control_type="Button").invoke()
+                            if self.host_entry_saved != "uprbay.uprb.edu":
+                                if self.uprbay_window.child_window(
+                                        title="Continue", control_type="Button").exists(timeout=2):
+                                    self.uprbay_window.child_window(title="Continue", control_type="Button").invoke()
                             if not self.skip_auth:
                                 self.bind("<Return>", lambda event: self.auth_event_handler())
                                 self.after(0, self.initialization_auth)
@@ -3570,8 +3474,7 @@ class TeraTermUI(customtkinter.CTk):
                 elif count_to_continue == 1 or "automaticamente" in text_output:
                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                 else:
-                    self.uprb.UprbayTeraTermVt.type_keys("{VK_RIGHT}")
-                    self.uprb.UprbayTeraTermVt.type_keys("{VK_LEFT}")
+                    self.uprb.UprbayTeraTermVt.type_keys("{VK_RIGHT}{VK_LEFT}")
                 self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_home())
                 self.bind("<Return>", lambda event: self.student_event_handler())
                 self.home_frame.grid_forget()
@@ -3589,8 +3492,7 @@ class TeraTermUI(customtkinter.CTk):
             elif any(keyword in text_output for keyword in keywords):
                 if hwnd_tt:
                     win32gui.PostMessage(hwnd_tt, win32con.WM_CLOSE, 0, 0)
-                self.uprb.UprbayTeraTermVt.type_keys("{VK_RIGHT}")
-                self.uprb.UprbayTeraTermVt.type_keys("{VK_LEFT}")
+                self.uprb.UprbayTeraTermVt.type_keys("{VK_RIGHT}{VK_LEFT}")
                 self.connect_to_uprb()
                 self.home_frame.grid_forget()
                 self.intro_box.grid_forget()
@@ -3639,18 +3541,18 @@ class TeraTermUI(customtkinter.CTk):
         new_connection = window.child_window(title="Tera Term: New connection")
         new_connection.wait("visible", timeout=5)
         tcp_ip_radio = new_connection.child_window(title="TCP/IP", control_type="RadioButton")
+        history_checkbox = new_connection.child_window(title="History", control_type="CheckBox")
+        ssh_radio = new_connection.child_window(title="SSH", control_type="RadioButton")
+        tcp_port_edit = new_connection.child_window(title="TCP port#:", control_type="Edit")
+        ssh_version_combo = new_connection.child_window(title="SSH version:", control_type="ComboBox")
         if not tcp_ip_radio.is_selected():
             tcp_ip_radio.invoke()
-        history_checkbox = new_connection.child_window(title="History", control_type="CheckBox")
         if not history_checkbox.get_toggle_state():
             history_checkbox.invoke()
-        ssh_radio = new_connection.child_window(title="SSH", control_type="RadioButton")
         if not ssh_radio.is_selected():
             ssh_radio.invoke()
-        tcp_port_edit = new_connection.child_window(title="TCP port#:", control_type="Edit")
         if tcp_port_edit.get_value() != "22":
             tcp_port_edit.set_text("22")
-        ssh_version_combo = new_connection.child_window(title="SSH version:", control_type="ComboBox")
         if ssh_version_combo.selected_text() != "SSH2":
             ssh_version_combo.expand()
             ssh_version_combo.child_window(title="SSH2", control_type="ListItem").select()
@@ -4760,16 +4662,14 @@ class TeraTermUI(customtkinter.CTk):
                 if asyncio.run(self.test_connection()) and self.check_server() and self.check_format():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         self.wait_for_window()
-                        self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                        self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                        self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}")
                         self.after(0, self.disable_go_next_buttons)
                         text_output = self.capture_screenshot()
                         if "OPCIONES PARA EL ESTUDIANTE" in text_output or "BALANCE CTA" in text_output or \
                                 "PANTALLAS MATRICULA" in text_output or "PANTALLAS GENERALES" in text_output or \
                                 "LISTA DE SECCIONES" in text_output:
                             if "LISTA DE SECCIONES" in text_output:
-                                self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}")
                                 self.reset_activity_timer()
                             TeraTermUI.disable_user_input()
                             self.automate_copy_class_data()
@@ -4843,9 +4743,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(100, self.auto_enroll.deselect)
                             if ("INVALID ACTION" in text_output and "PANTALLAS MATRICULA" in text_output) or \
                                     ("LISTA DE SECCIONES" in text_output and "COURSE NOT" in text_output):
-                                self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER + "SRM{ENTER}")
                                 self.reset_activity_timer()
                                 self.after(0, self.bring_back_timer_window)
                         else:
@@ -7294,22 +7192,16 @@ class TeraTermUI(customtkinter.CTk):
             copy = pyperclip.paste()
             latest_term = TeraTermUI.get_latest_term(copy)
             if latest_term == "Latest term not found":
-                self.uprb.UprbayTeraTermVt.type_keys("{TAB 2}")
-                self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                self.uprb.UprbayTeraTermVt.type_keys("{TAB 2}SRM{ENTER}")
                 self.reset_activity_timer()
                 return "error"
             elif latest_term == "No active semester":
                 translation = self.load_language()
                 if "INVALID ACTION" in copy:
-                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                    self.uprb.UprbayTeraTermVt.type_keys("SRM" + self.DEFAULT_SEMESTER + "{ENTER}")
                     self.reset_activity_timer()
                 else:
-                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                    self.uprb.UprbayTeraTermVt.type_keys("SRM" + self.DEFAULT_SEMESTER + "{ENTER}")
                     self.reset_activity_timer()
                 self.after(100, self.show_error_message, 320, 235, translation["no_active_semester"])
                 return "negative"
@@ -7965,11 +7857,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(0, mod_selection.configure(button_color="#c30101"))
                         if not_all_choose and section_pattern and not edge_cases_bool:
                             self.wait_for_window()
-                            self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                            self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                            self.uprb.UprbayTeraTermVt.type_keys("1S4")
-                            self.uprb.UprbayTeraTermVt.type_keys(dialog_input)
-                            self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                            self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}1S4" + dialog_input + "{ENTER}")
                             self.after(0, self.disable_go_next_buttons)
                             text_output = self.capture_screenshot()
                             enrolled_classes = "ENROLLED"
@@ -7999,9 +7887,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.uprb.UprbayTeraTermVt.type_keys("{TAB 3}")
                                         for i in range(count_enroll, 0, -1):
                                             self.uprb.UprbayTeraTermVt.type_keys("{TAB 2}")
-                                        self.uprb.UprbayTeraTermVt.type_keys("D")
-                                        self.uprb.UprbayTeraTermVt.type_keys(course_code)
-                                        self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                        self.uprb.UprbayTeraTermVt.type_keys("D" + course_code + "{ENTER}")
                                         self.reset_activity_timer()
                                         text_output = self.capture_screenshot()
                                         if "REQUIRED CO-REQUISITE" in text_output:
@@ -8022,10 +7908,8 @@ class TeraTermUI(customtkinter.CTk):
                                             self.uprb.UprbayTeraTermVt.type_keys("{TAB 3}")
                                             for i in range(count_enroll, 0, -1):
                                                 self.uprb.UprbayTeraTermVt.type_keys("{TAB 2}")
-                                            self.uprb.UprbayTeraTermVt.type_keys("R")
-                                            self.uprb.UprbayTeraTermVt.type_keys(course_code_no_section)
-                                            self.uprb.UprbayTeraTermVt.type_keys(section)
-                                            self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                            self.uprb.UprbayTeraTermVt.type_keys(
+                                                "R" + course_code_no_section + section + "{ENTER}")
                                             self.reset_activity_timer()
                                             text_output = self.capture_screenshot()
                                             if not is_final:
@@ -8041,9 +7925,7 @@ class TeraTermUI(customtkinter.CTk):
                                                 self.uprb.UprbayTeraTermVt.type_keys("{TAB 3}")
                                                 for i in range(count_enroll, 0, -1):
                                                     self.uprb.UprbayTeraTermVt.type_keys("{TAB 2}")
-                                                self.uprb.UprbayTeraTermVt.type_keys("R")
-                                                self.uprb.UprbayTeraTermVt.type_keys(course_code)
-                                                self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                                self.uprb.UprbayTeraTermVt.type_keys("R" + course_code + "{ENTER}")
                                                 self.reset_activity_timer()
                                                 text_output = self.capture_screenshot()
                                                 if not is_final:
@@ -8075,11 +7957,7 @@ class TeraTermUI(customtkinter.CTk):
                                 if "DROPPED" in text_output:
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                 try:
-                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
-                                    self.uprb.UprbayTeraTermVt.type_keys("1CP")
-                                    self.uprb.UprbayTeraTermVt.type_keys(dialog_input)
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                    self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}1CP" + dialog_input + "{ENTER}")
                                     self.reset_activity_timer()
                                     try:
                                         with self.clipboard_handler.saving():
@@ -8172,18 +8050,14 @@ class TeraTermUI(customtkinter.CTk):
                                                translation["success_modify"])
                             else:
                                 if "INVALID TERM SELECTION" in text_output:
-                                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER + "SRM{ENTER}")
                                     self.reset_activity_timer()
                                     self.after(100, self.show_error_message, 300, 215,
                                                translation["invalid_semester"])
                                 else:
                                     if "USO INTERNO" not in text_output and "TERMINO LA MATRICULA" \
                                             not in text_output:
-                                        self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                                        self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                                        self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                                        self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER + "SRM{ENTER}")
                                         self.reset_activity_timer()
                                         self.after(100, self.show_error_message, 315, 225,
                                                    translation["failed_modify"])
@@ -8261,7 +8135,7 @@ class TeraTermUI(customtkinter.CTk):
                 return "Timeout"
             time.sleep(0.5)
 
-    def wait_for_response(self, keywords, init_timeout=True, timeout=3):
+    def wait_for_response(self, keywords, init_timeout=True, timeout=2.5):
         if init_timeout:
             time.sleep(1)
         start_time = time.time()
@@ -8281,12 +8155,10 @@ class TeraTermUI(customtkinter.CTk):
             self.focus_tera_term()
             self.uprbay_window.wait("visible", timeout=3)
             if self.went_to_1PL_screen and self.run_fix:
-                self.uprb.UprbayTeraTermVt.type_keys("X")
-                self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                self.uprb.UprbayTeraTermVt.type_keys("X{ENTER}")
                 self.went_to_1PL_screen = False
             elif self.went_to_683_screen and self.run_fix:
-                self.uprb.UprbayTeraTermVt.type_keys("00")
-                self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                self.uprb.UprbayTeraTermVt.type_keys("00{ENTER}")
                 self.went_to_683_screen = False
         except Exception as err:
             logging.error("An error occurred: %s", err)
@@ -8308,8 +8180,7 @@ class TeraTermUI(customtkinter.CTk):
                     elif count_to_continue == 1 or "automaticamente" in text_output:
                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                     else:
-                        self.uprb.UprbayTeraTermVt.type_keys("{VK_RIGHT}")
-                        self.uprb.UprbayTeraTermVt.type_keys("{VK_LEFT}")
+                        self.uprb.UprbayTeraTermVt.type_keys("{VK_RIGHT}{VK_LEFT}")
             self.move_window()
 
     # checks whether the user has the requested file
@@ -8483,6 +8354,12 @@ class TeraTermUI(customtkinter.CTk):
                             current_value = line.strip().split("=")[1]
                             if current_value not in ["0", "1"]:
                                 lines[index] = "AuthBanner=1\n"
+                        if line.startswith("[Hosts]"):
+                            for host_index in range(index + 1, len(lines)):
+                                host_line = lines[host_index].strip()
+                                if host_line.startswith("Host") and "uprbay.uprb.edu" in host_line:
+                                    self.host_entry_saved = host_line.split("=")[1].strip()
+                                    break
                         self.can_edit = True
                     with open(file_path, "w", encoding=detected_encoding) as file:
                         file.writelines(lines)
@@ -8699,10 +8576,11 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
         else:
             self.switch_tab()
-        if self.enrollment_error_check:
+        if self.enrollment_error_check == 1:
             self.destroy_windows()
             if not self.disable_audio:
                 winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/notification.wav"), winsound.SND_ASYNC)
+            self.enrollment_error_check += 1
             CTkMessagebox(title=translation["automation_error_title"], message=translation["enrollment_error"],
                           button_width=380)
 
@@ -8742,10 +8620,11 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
         else:
             self.switch_tab()
-        if self.enrollment_error_check:
+        if self.enrollment_error_check == 1:
             self.destroy_windows()
             if not self.disable_audio:
                 winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/notification.wav"), winsound.SND_ASYNC)
+            self.enrollment_error_check += 1
             CTkMessagebox(title=translation["automation_error_title"], message=translation["enrollment_error"],
                           button_width=380)
 
@@ -9132,22 +9011,14 @@ class TeraTermUI(customtkinter.CTk):
                 if self.search_function_counter == 0:
                     text_output = self.capture_screenshot()
                     if "INVALID ACTION" in text_output and "LISTA DE SECCIONES" in text_output:
-                        self.uprb.UprbayTeraTermVt.type_keys("{TAB 2}")
-                        self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                        self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                        self.uprb.UprbayTeraTermVt.type_keys("{TAB 2}SRM{ENTER}")
                         self.reset_activity_timer()
                 else:
-                    self.uprb.UprbayTeraTermVt.type_keys("{TAB}")
-                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                    self.uprb.UprbayTeraTermVt.type_keys("{TAB}SRM" + self.DEFAULT_SEMESTER + "{ENTER}")
                     self.reset_activity_timer()
                 text_output = self.capture_screenshot()
                 if "INVALID ACTION" in text_output:
-                    self.uprb.UprbayTeraTermVt.type_keys("{TAB}")
-                    self.uprb.UprbayTeraTermVt.type_keys("SRM")
-                    self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER)
-                    self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
+                    self.uprb.UprbayTeraTermVt.type_keys("{TAB}SRM" + self.DEFAULT_SEMESTER + "{ENTER}")
                     self.reset_activity_timer()
                 elif "PF4" in text_output:
                     self.error_occurred = True
@@ -9313,14 +9184,14 @@ class TeraTermUI(customtkinter.CTk):
             self.check_idle_thread.daemon = True
             self.check_idle_thread.start()
 
-    # Checks if the user is idle for 5 minutes and does some action so that Tera Term doesn't close by itself
+    # Checks if the user is idle for 3 minutes and does some action so that Tera Term doesn't close by itself
     def check_idle(self):
         translation = self.load_language()
         self.idle_num_check = 0
         self.last_activity = time.time()
         try:
             while not self.stop_check_idle.is_set():
-                if time.time() - self.last_activity >= 210:
+                if time.time() - self.last_activity >= 180:
                     with self.lock_thread:
                         if TeraTermUI.checkIfProcessRunning("ttermpro"):
                             translation = self.load_language()
@@ -9332,7 +9203,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.idle_num_check += 1
                             if self.countdown_running:
                                 self.idle_num_check = 1
-                            if self.idle_num_check == 32:
+                            if self.idle_num_check == 34:
                                 def idle_warning():
                                     if not self.disable_audio:
                                         winsound.PlaySound(
@@ -9347,9 +9218,9 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(50, idle_warning)
                         else:
                             self.stop_check_idle_thread()
-                if self.idle_num_check == 33:
+                if self.idle_num_check == 35:
                     self.stop_check_idle_thread()
-                time.sleep(30)
+                time.sleep(25)
         except Exception as err:
             logging.error("An error occurred: %s", err)
             self.log_error()
@@ -10591,6 +10462,12 @@ class TeraTermUI(customtkinter.CTk):
                         current_value = line.strip().split("=")[1]
                         if current_value not in ["0", "1"]:
                             lines[index] = "AuthBanner=1\n"
+                    if line.startswith("[Hosts]"):
+                        for host_index in range(index + 1, len(lines)):
+                            host_line = lines[host_index].strip()
+                            if host_line.startswith("Host") and "uprbay.uprb.edu" in host_line:
+                                self.host_entry_saved = host_line.split("=")[1].strip()
+                                break
                     self.can_edit = True
                 with open(file_path, "w", encoding=detected_encoding) as file:
                     file.writelines(lines)
@@ -12380,7 +12257,6 @@ class ClipboardHandler:
         try:
             yield
             self.restore_clipboard_content()
-            self.close()
         finally:
             pass
 
