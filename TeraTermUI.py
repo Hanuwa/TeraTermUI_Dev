@@ -1709,7 +1709,8 @@ class TeraTermUI(customtkinter.CTk):
                                                translation["invalid_semester"])
                                     return
                             try:
-                                self.clipboard_handler.save_clipboard_content()
+                                with self.clipboard_handler.saving():
+                                    self.clipboard_handler.save_clipboard_content()
                             except Exception as err:
                                 logging.error(f"An error occurred while saving clipboard content: {err}")
                             if self.search_function_counter == 0 and "\"R-AOOO7" not in text_output and \
@@ -1755,7 +1756,8 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(0, self.display_searched_class_data, data)
                                     self.clipboard_clear()
                                     try:
-                                        self.clipboard_handler.restore_clipboard_content()
+                                        with self.clipboard_handler.restoring():
+                                            self.clipboard_handler.restore_clipboard_content()
                                     except Exception as err:
                                         logging.error(f"An error occurred while restoring clipboard content: {err}")
                                     return
@@ -1818,7 +1820,8 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(0, self.display_searched_class_data, data)
                                 self.clipboard_clear()
                                 try:
-                                    self.clipboard_handler.restore_clipboard_content()
+                                    with self.clipboard_handler.restoring():
+                                        self.clipboard_handler.restore_clipboard_content()
                                 except Exception as err:
                                     logging.error(f"An error occurred while restoring clipboard content: {err}")
                         else:
@@ -2022,7 +2025,8 @@ class TeraTermUI(customtkinter.CTk):
                             text_output = self.capture_screenshot()
                             if "INVALID TERM SELECTION" not in text_output and "INVALID ACTION" not in text_output:
                                 try:
-                                    self.clipboard_handler.save_clipboard_content()
+                                    with self.clipboard_handler.saving():
+                                        self.clipboard_handler.save_clipboard_content()
                                 except Exception as err:
                                     logging.error(f"An error occurred while saving clipboard content: {err}")
                                 TeraTermUI.disable_user_input()
@@ -2035,7 +2039,8 @@ class TeraTermUI(customtkinter.CTk):
                                            total_credits, dialog_input)
                                 self.clipboard_clear()
                                 try:
-                                    self.clipboard_handler.restore_clipboard_content()
+                                    with self.clipboard_handler.restoring():
+                                        self.clipboard_handler.restore_clipboard_content()
                                 except Exception as err:
                                     logging.error(f"An error occurred while restoring clipboard content: {err}")
                             else:
@@ -3028,7 +3033,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                         time.sleep(0.5)
                         try:
-                            self.clipboard_handler.save_clipboard_content()
+                            with self.clipboard_handler.saving():
+                                self.clipboard_handler.save_clipboard_content()
                         except Exception as err:
                             logging.error(f"An error occurred while saving clipboard content: {err}")
                         TeraTermUI.disable_user_input()
@@ -3040,7 +3046,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.after(0, self.display_searched_class_data, data)
                         self.clipboard_clear()
                         try:
-                            self.clipboard_handler.restore_clipboard_content()
+                            with self.clipboard_handler.restoring():
+                                self.clipboard_handler.restore_clipboard_content()
                         except Exception as err:
                             logging.error(f"An error occurred while restoring clipboard content: {err}")
                         self.reset_activity_timer()
@@ -8075,7 +8082,8 @@ class TeraTermUI(customtkinter.CTk):
                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                     self.reset_activity_timer()
                                     try:
-                                        self.clipboard_handler.save_clipboard_content()
+                                        with self.clipboard_handler.saving():
+                                            self.clipboard_handler.save_clipboard_content()
                                     except Exception as err:
                                         logging.error(f"An error occurred while saving clipboard content: {err}")
                                     time.sleep(1)
@@ -8088,7 +8096,8 @@ class TeraTermUI(customtkinter.CTk):
                                                total_credits, dialog_input)
                                     self.clipboard_clear()
                                     try:
-                                        self.clipboard_handler.restore_clipboard_content()
+                                        with self.clipboard_handler.restoring():
+                                            self.clipboard_handler.restore_clipboard_content()
                                     except Exception as err:
                                         logging.error(f"An error occurred while restoring clipboard content: {err}")
                                     time.sleep(1)
@@ -12304,11 +12313,16 @@ class ClipboardHandler:
         self.RETENTION_TIME = retention_time
         self.KEY_ROTATION_INTERVAL = key_rotation_interval
 
-        # Single lock to synchronize clipboard
-        self.clipboard_lock = threading.Lock()
-        # Stores encrypted clipboard data
-        self.clipboard_data = {}
+        # Resource tracking
+        self.gdi_handles = set()  # Track all GDI handles
+        self._active = True  # Track if handler is active
 
+        # Synchronization
+        self.clipboard_lock = threading.Lock()
+        self.key_rotation_lock = threading.Lock()
+
+        # Data storage
+        self.clipboard_data = {}
         self.current_key = self._generate_new_key()
         self.last_key_rotation = datetime.now()
 
@@ -12319,35 +12333,87 @@ class ClipboardHandler:
         self.CF_TIFF = win32clipboard.RegisterClipboardFormat("TIFF")
         self.CF_GIF = win32clipboard.RegisterClipboardFormat("GIF")
         self.CF_JFIF = win32clipboard.RegisterClipboardFormat("JFIF")
+        self.CF_JPEG = win32clipboard.RegisterClipboardFormat("JPEG")
+        self.CF_WEBP = win32clipboard.RegisterClipboardFormat("image/webp")
+        self.CF_SVG = win32clipboard.RegisterClipboardFormat("image/svg+xml")
         self.CF_SHELLURL = win32clipboard.RegisterClipboardFormat("UniformResourceLocator")
         self.CF_FILENAME = win32clipboard.RegisterClipboardFormat("FileName")
-        self.CF_ENHMETAFILE = win32con.CF_ENHMETAFILE
-        self.CF_METAFILEPICT = win32con.CF_METAFILEPICT
 
         # Allowed formats and their readable names
         self.allowed_formats = [win32con.CF_TEXT, win32con.CF_UNICODETEXT, win32con.CF_DIB, win32con.CF_BITMAP,
-                                win32con.CF_HDROP, win32con.CF_ENHMETAFILE, win32con.CF_METAFILEPICT,
-                                win32con.CF_LOCALE, self.CF_HTML, self.CF_RTF, self.CF_PNG, self.CF_TIFF, self.CF_GIF,
-                                self.CF_JFIF, self.CF_SHELLURL, self.CF_FILENAME]
-
-        self._format_names = {win32con.CF_TEXT: "Text", win32con.CF_UNICODETEXT: "Unicode Text", win32con.CF_DIB: "DIB",
-                              win32con.CF_BITMAP: "Bitmap", win32con.CF_HDROP: "File Drop",
-                              win32con.CF_ENHMETAFILE: "Enhanced Metafile", win32con.CF_LOCALE: "Locale",
-                              win32con.CF_METAFILEPICT: "Metafile Picture", self.CF_HTML: "HTML", self.CF_RTF: "RTF",
-                              self.CF_PNG: "PNG", self.CF_TIFF: "TIFF", self.CF_GIF: "GIF", self.CF_JFIF: "JPEG",
-                              self.CF_SHELLURL: "URL", self.CF_FILENAME: "Filename"}
+                                win32con.CF_HDROP, win32con.CF_LOCALE, self.CF_HTML, self.CF_RTF, self.CF_PNG,
+                                self.CF_TIFF, self.CF_GIF, self.CF_JFIF, self.CF_JPEG, self.CF_WEBP, self.CF_SVG,
+                                self.CF_SHELLURL, self.CF_FILENAME]
+        self._format_names = {win32con.CF_TEXT: "Text", win32con.CF_UNICODETEXT: "Unicode Text",
+                              win32con.CF_DIB: "DIB", win32con.CF_BITMAP: "Bitmap",  win32con.CF_HDROP: "File Drop",
+                              win32con.CF_LOCALE: "Locale", self.CF_HTML: "HTML", self.CF_RTF: "RTF",
+                              self.CF_PNG: "PNG", self.CF_TIFF: "TIFF", self.CF_GIF: "GIF", self.CF_JFIF: "JPEG (JFIF)",
+                              self.CF_JPEG: "JPEG", self.CF_WEBP: "WebP", self.CF_SVG: "SVG", self.CF_SHELLURL: "URL",
+                              self.CF_FILENAME: "Filename"}
 
         # Default system encoding for text
         self.default_encoding = locale.getpreferredencoding()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
     def __del__(self):
+        self.close()
+
+    @contextmanager
+    def saving(self):
+        if not self._active:
+            raise RuntimeError("ClipboardHandler is closed")
         try:
-            with self.clipboard_access():
-                win32clipboard.EmptyClipboard()
-        except Exception as error:
-            logging.warning(f"Failed to empty clipboard: {error}")
+            self.save_clipboard_content()
+            yield
         finally:
-            self.cleanup_all_resources()
+            pass
+
+    @contextmanager
+    def restoring(self):
+        if not self._active:
+            raise RuntimeError("ClipboardHandler is closed")
+        try:
+            yield
+            self.restore_clipboard_content()
+            self.close()
+        finally:
+            pass
+
+    def close(self):
+        if not self._active:
+            return
+
+        self._active = False
+        try:
+            if self.clipboard_lock.locked():
+                self.clipboard_lock.release()
+        except Exception as error:
+            logging.warning(f"Error releasing clipboard lock: {error}")
+
+        self.cleanup_all_resources()
+
+    @contextmanager
+    def handle_gdi_resource(self, handle):
+        if not handle:
+            yield None
+            return
+        try:
+            if handle and win32gui.GetObjectType(handle):  # Validate handle
+                self.gdi_handles.add(handle)
+                logging.debug(f"Tracking new GDI handle: {handle}")
+            yield handle
+        finally:
+            try:
+                if handle in self.gdi_handles:
+                    win32gui.DeleteObject(handle)
+                    self.gdi_handles.remove(handle)
+            except Exception as error:
+                logging.warning(f"Failed to cleanup GDI handle {handle}: {error}")
 
     @staticmethod
     def _generate_new_key():
@@ -12357,26 +12423,36 @@ class ClipboardHandler:
 
     def _rotate_keys(self):
         current_time = datetime.now()
-        if current_time - self.last_key_rotation >= self.KEY_ROTATION_INTERVAL:
-            self.current_key = self._generate_new_key()
-            self.last_key_rotation = current_time
-            logging.info("Encryption key rotated")
+        with self.key_rotation_lock:
+            if current_time - self.last_key_rotation >= self.KEY_ROTATION_INTERVAL:
+                old_key = self.current_key
+                self.current_key = self._generate_new_key()
+                self.last_key_rotation = current_time
+                self.secure_erase(old_key)
+                logging.info("Encryption key rotated")
 
     def encrypt_data(self, plaintext):
+        if not plaintext:
+            raise ValueError("Cannot encrypt empty data")
         self._rotate_keys()
         iv = get_random_bytes(16)
-        cipher = AES.new(self.current_key, AES.MODE_CFB, iv=iv)
-        ciphertext = cipher.encrypt(plaintext)
-        self.secure_erase(plaintext)
-        return iv + ciphertext
+        try:
+            cipher = AES.new(self.current_key, AES.MODE_CFB, iv=iv)
+            ciphertext = cipher.encrypt(plaintext)
+            return iv + ciphertext
+        finally:
+            self.secure_erase(plaintext)
 
     def decrypt_data(self, encrypted_data):
+        if len(encrypted_data) < 16:
+            raise ValueError("Encrypted data too short")
         iv = encrypted_data[:16]
         ciphertext = encrypted_data[16:]
-        cipher = AES.new(self.current_key, AES.MODE_CFB, iv=iv)
-        plaintext = cipher.decrypt(ciphertext)
-        self.secure_erase(ciphertext)
-        return plaintext
+        try:
+            cipher = AES.new(self.current_key, AES.MODE_CFB, iv=iv)
+            return cipher.decrypt(ciphertext)
+        finally:
+            self.secure_erase(ciphertext)
 
     @staticmethod
     def secure_erase(data):
@@ -12416,27 +12492,43 @@ class ClipboardHandler:
         return False
 
     def check_data_size(self, data, format_name="Unknown"):
-        if hasattr(data, "__len__"):
-            size = len(data)
-            if size > self.MAX_DATA_SIZE:
-                logging.warning(f"Data for format {format_name} exceeds size limit "
-                                f"({size} > {self.MAX_DATA_SIZE} bytes)")
-                return False
-        return True
-
-    @staticmethod
-    def cleanup_bitmap(handle):
         try:
-            if handle:
-                win32gui.DeleteObject(handle)
+            if isinstance(data, (int, bool)):
+                return True
+            if hasattr(data, "__len__"):
+                size = len(data)
+                if size > self.MAX_DATA_SIZE:
+                    logging.warning(f"Data for format {format_name} exceeds size limit "
+                                    f"({size} > {self.MAX_DATA_SIZE} bytes)")
+                    return False
+            return True
         except Exception as error:
-            logging.warning(f"Failed to cleanup bitmap handle: {error}")
+            logging.warning(f"Error checking size for format {format_name}: {error}")
+            return False
 
     def cleanup_all_resources(self):
-        for fmt, (data, _) in self.clipboard_data.items():
-            if fmt == win32con.CF_BITMAP:
-                self.cleanup_bitmap(data)
+        # Clean up GDI handles
+        handles = self.gdi_handles.copy()
+        for handle in handles:
+            try:
+                if win32gui.GetObjectType(handle):
+                    win32gui.DeleteObject(handle)
+                self.gdi_handles.remove(handle)
+            except Exception as error:
+                logging.warning(f"Failed to delete GDI handle {handle}: {error}")
+
+        # Clean up clipboard data
+        items = list(self.clipboard_data.items())
+        for fmt, (data, _) in items:
+            try:
+                if fmt == win32con.CF_BITMAP and win32gui.GetObjectType(data):
+                    win32gui.DeleteObject(data)
+                self.secure_erase(data)
+            except Exception as error:
+                logging.warning(f"Failed to cleanup format {fmt}: {error}")
+
         self.clipboard_data.clear()
+        gc.collect()
 
     @staticmethod
     def sanitize_file_paths(paths):
@@ -12452,32 +12544,19 @@ class ClipboardHandler:
         expired_formats = [fmt for fmt, (_, timestamp) in self.clipboard_data.items()
                            if current_time - timestamp > self.RETENTION_TIME]
         for fmt in expired_formats:
-            if fmt == win32con.CF_BITMAP:
-                self.cleanup_bitmap(self.clipboard_data[fmt][0])
-            del self.clipboard_data[fmt]
-
-    @staticmethod
-    def validate_data_length(data, expected_length):
-        if len(data) < expected_length:
-            logging.warning(f"Data length {len(data)} is less than expected {expected_length}")
-            return False
-        return True
-
-    def decode_cf_text(self, data):
-        # Attempts multiple encodings to decode text data
-        encodings = [self.default_encoding, "utf-8", "latin-1", "ascii", "windows-1252", "iso-8859-15", "shift_jis",
-                     "utf-16", "utf-32", "big5", "gb2312", "gbk", "euc-kr", "koi8-r", "mac_roman", "cp437"]
-        for encoding in encodings:
             try:
-                return data.decode(encoding)
-            except (UnicodeDecodeError, AttributeError):
-                continue
-        logging.warning("Failed to decode CF_TEXT with all attempted encodings")
-        return data.decode(self.default_encoding, errors="replace")
+                data = self.clipboard_data[fmt][0]
+                if fmt == win32con.CF_BITMAP and win32gui.GetObjectType(data):
+                    win32gui.DeleteObject(data)
+                del self.clipboard_data[fmt]
+            except Exception as error:
+                logging.warning(f"Error cleaning up expired format {fmt}: {error}")
 
     def save_clipboard_content(self):
         import struct
-        from io import BytesIO
+
+        if not self._active:
+            raise RuntimeError("ClipboardHandler is closed")
 
         self.cleanup_expired_data()
         clipboard_cache = {}
@@ -12491,304 +12570,158 @@ class ClipboardHandler:
                         formats.append(fmt)
                     fmt = win32clipboard.EnumClipboardFormats(fmt)
 
+                # First pass: collect all data
                 for format_id in formats:
-                    clipboard_cache[format_id] = win32clipboard.GetClipboardData(format_id)
+                    try:
+                        data = win32clipboard.GetClipboardData(format_id)
+                        if data is not None:  # Skip if no data
+                            clipboard_cache[format_id] = data
+                    except Exception as error:
+                        logging.warning(
+                            f"Failed to get clipboard data for format {self._format_names.get(format_id)}: {error}")
+                        continue
 
+            # Second pass: process and encrypt
             for format_id, data in clipboard_cache.items():
-                if not self.check_data_size(data, self._format_names.get(format_id, "Unknown")):
-                    continue
-
-                # Handle text content (CF_TEXT, CF_UNICODETEXT)
-                if format_id in (win32con.CF_TEXT, win32con.CF_UNICODETEXT):
-                    try:
-                        if format_id == win32con.CF_TEXT:
-                            if isinstance(data, str):
-                                data = data.encode(self.default_encoding)
-                            # Validate text encoding
-                            self.decode_cf_text(data)
-                        elif format_id == win32con.CF_UNICODETEXT:
-                            if isinstance(data, str):
-                                data = data.encode("utf-16le")
-                            # Validate UTF-16LE encoding
-                            data.decode("utf-16le")
-                    except UnicodeError as error:
-                        logging.warning(f"Text encoding validation failed: {error}")
+                try:
+                    if not self.check_data_size(data, self._format_names.get(format_id, "Unknown")):
                         continue
 
-                # Handle DIB images
-                elif format_id == win32con.CF_DIB:
-                    try:
-                        if len(data) < 40:  # BITMAPINFOHEADER minimum size
-                            logging.warning("DIB data is too short for valid BITMAPINFOHEADER")
-                            continue
+                    # Handle text formats - GetClipboardData handles encoding
+                    if format_id in (win32con.CF_TEXT, win32con.CF_UNICODETEXT):
+                        if not data or (isinstance(data, str) and not data.strip()):
+                            continue  # Skip empty or whitespace-only text
+                        if isinstance(data, str):
+                            data = data.encode(
+                                "utf-16le" if format_id == win32con.CF_UNICODETEXT else self.default_encoding)
 
-                        # Parse full BITMAPINFOHEADER structure
-                        bmih = struct.unpack("IIIHHIIIIII", data[:40])
-                        size, width, height, planes, bit_count, compression, size_image, \
-                            x_pels_per_meter, y_pels_per_meter, clr_used, clr_important = bmih
-
-                        # Validate header fields
-                        if size != 40 or planes != 1 or bit_count not in (1, 4, 8, 16, 24, 32):
-                            logging.warning("Invalid DIB format parameters")
-                            continue
-
-                        # Calculate expected data size and validate
-                        row_size = ((width * bit_count + 31) // 32) * 4
-                        expected_size = (row_size * abs(height)) + size
-
-                        # Check color table
-                        if bit_count <= 8:
-                            color_table_size = (1 << bit_count) * 4  # 4 bytes per color entry
-                            expected_size += color_table_size
-
-                        if len(data) < expected_size:
-                            logging.warning(f"DIB data truncated: expected {expected_size}, got {len(data)}")
-                            continue
-                    except struct.error as error:
-                        logging.warning(f"Failed to parse DIB header: {error}")
-                        continue
-
-                # Handle HTML content
-                elif format_id == self.CF_HTML:
-                    if isinstance(data, str):
+                    # Handle bitmap handle
+                    elif format_id == win32con.CF_BITMAP:
                         try:
-                            # Extract the HTML fragment using proper parsing of clipboard HTML format
-                            start_html = data.find("<html>")
-                            end_html = data.find("</html>")
-                            if start_html != -1 and end_html != -1:
-                                html_content = data[start_html:end_html + 7]
-                                # Parse the HTML header
-                                header = data[:start_html]
-                                header_dict = dict(
-                                    line.split(":") for line in header.strip().split('\n') if ":" in line)
-
-                                # Validate Version and other required fields
-                                version = header_dict.get('Version', "0.9").strip()
-                                if not version.startswith("0.9"):
-                                    logging.warning(f"Unsupported HTML clipboard version: {version}")
-
-                                # Validate fragment positions
-                                start_fragment = int(header_dict.get("StartFragment", "-1"))
-                                end_fragment = int(header_dict.get("EndFragment", "-1"))
-                                if start_fragment >= 0 and end_fragment >= 0:
-                                    html_content = data[start_fragment:end_fragment]
-
-                                data = html_content.encode("utf-8")
-                            else:
-                                logging.warning("Invalid HTML clipboard format")
+                            with self.handle_gdi_resource(data):
                                 continue
-                        except (ValueError, KeyError) as error:
-                            logging.warning(f"HTML parsing error: {error}")
-                            continue
-
-                # Handle RTF content
-                elif format_id == self.CF_RTF:
-                    if isinstance(data, str):
-                        try:
-                            # Validate RTF header
-                            if not data.startswith("{\\rtf1"):
-                                logging.warning("Invalid RTF header")
-                                continue
-                            # Check for balanced braces
-                            brace_count = 0
-                            for char in data:
-                                if char == "{":
-                                    brace_count += 1
-                                elif char == "}":
-                                    brace_count -= 1
-                                if brace_count < 0:
-                                    break
-                            if brace_count != 0:
-                                logging.warning("Unbalanced RTF braces")
-                                continue
-                            data = data.encode("utf-8")
                         except Exception as error:
-                            logging.warning(f"RTF validation error: {error}")
+                            logging.warning(f"Failed to process bitmap handle: {error}")
                             continue
 
-                # Handle image formats
-                elif format_id in (self.CF_PNG, self.CF_TIFF, self.CF_GIF, self.CF_JFIF):
-                    try:
-                        # Convert string data to bytes if necessary
+                    # Handle HTML format
+                    elif format_id == self.CF_HTML and isinstance(data, str):
+                        # Extract the HTML fragment with header
+                        start_html = data.find("<html>")
+                        end_html = data.find("</html>")
+                        if start_html != -1 and end_html != -1:
+                            html_content = data[start_html:end_html + 7]
+                            # Create standard clipboard HTML header
+                            header = ("Version:0.9\r\n"
+                                      f"StartHTML:{start_html}\r\n"
+                                      f"EndHTML:{end_html + 7}\r\n"
+                                      f"StartFragment:{start_html}\r\n"
+                                      f"EndFragment:{end_html}\r\n\r\n")
+                            data = (header + html_content).encode("utf-8")
+                        else:
+                            continue
+
+                    # Handle RTF format
+                    elif format_id == self.CF_RTF and isinstance(data, str):
+                        if not data.startswith("{\\rtf1"):
+                            continue
+                        data = data.encode("utf-8")
+
+                    # Handle image formats
+                    elif format_id in (self.CF_PNG, self.CF_GIF, self.CF_JFIF, self.CF_TIFF, self.CF_JPEG, self.CF_WEBP):
                         if isinstance(data, str):
                             data = data.encode("utf-8")
-
-                        # Validate image format headers and structure
-                        if format_id == self.CF_PNG:
-                            if not data.startswith(b"\x89PNG\r\n\x1a\n"):
-                                logging.warning("Invalid PNG header")
+                        if isinstance(data, bytes):
+                            # Validate image headers
+                            if format_id == self.CF_PNG and not data.startswith(b"\x89PNG\r\n\x1a\n"):
                                 continue
-                            # Parse PNG chunks and dimensions
-                            width, height = struct.unpack(">II", data[16:24])
-
-                        elif format_id == self.CF_GIF:
-                            if not data.startswith((b"GIF87a", b"GIF89a")):
-                                logging.warning("Invalid GIF header")
+                            if format_id == self.CF_JPEG and not data.startswith(b"\xff\xd8"):
                                 continue
-                            width, height = struct.unpack("<HH", data[6:10])
-
-                        elif format_id == self.CF_JFIF:
-                            if not data.startswith(b"\xff\xd8"):
-                                logging.warning("Invalid JPEG header")
+                            elif format_id == self.CF_GIF and not data.startswith((b"GIF87a", b"GIF89a")):
                                 continue
-                            # Parse JPEG segments for dimensions
-                            bio = BytesIO(data)
-                            bio.seek(2)
-                            while True:
-                                marker = bio.read(2)
-                                if len(marker) < 2:
-                                    break
-                                if marker[0] != 0xFF:
-                                    break
-                                if marker[1] in (0xC0, 0xC1, 0xC2):
-                                    size = struct.unpack(">H", bio.read(2))[0]
-                                    bio.read(1)  # Skip precision
-                                    height, width = struct.unpack(">HH", bio.read(4))
-                                    break
-                                else:
-                                    size = struct.unpack(">H", bio.read(2))[0]
-                                    bio.seek(size - 2, 1)
-
-                        elif format_id == self.CF_TIFF:
-                            if not (data.startswith(b"II*\x00") or data.startswith(b"MM\x00*")):
-                                logging.warning("Invalid TIFF header")
+                            elif format_id == self.CF_JFIF and not data.startswith(b"\xff\xd8"):
+                                continue
+                            elif format_id == self.CF_TIFF and not (data.startswith(b"II*\x00") or
+                                                                    data.startswith(b"MM\x00*")):
+                                continue
+                            elif format_id == self.CF_WEBP and not data.startswith(b"RIFF"):
                                 continue
 
-                        # Add reasonable size limits for all images
-                        if "width" in locals() and "height" in locals():
-                            if width * height > 100000000:  # 100MP limit
-                                logging.warning(f"Image dimensions too large: {width}x{height}")
-                                continue
+                    elif format_id == self.CF_SVG and isinstance(data, str):
+                        if "<svg" not in data.lower() or "</svg>" not in data.lower():
+                            continue
+                        data = data.encode("utf-8")
 
-                    except (struct.error, ValueError, IOError) as error:
-                        logging.warning(f"Image format validation error: {error}")
-                        continue
-
-                # Handle file drops
-                elif format_id == win32con.CF_HDROP:
-                    if isinstance(data, tuple):
-                        try:
-                            sanitized_paths = self.sanitize_file_paths(data)
-                            if not sanitized_paths:
-                                continue
-
-                            # Add additional path validation
-                            max_path_length = 32767  # Windows extended path length limit
-                            valid_paths = []
-
-                            for path in sanitized_paths:
-                                # Check for directory traversal attempts
-                                if ".." in path:
-                                    logging.warning(f"Potential directory traversal in path: {path}")
-                                    continue
-                                # Check path length
-                                if len(path) > max_path_length:
-                                    logging.warning(f"Path exceeds maximum length: {path}")
-                                    continue
-                                # Validate path is accessible
-                                try:
-                                    if os.path.exists(path):
-                                        abs_path = os.path.abspath(path)
-                                        valid_paths.append(abs_path)
-                                except (OSError, ValueError) as error:
-                                    logging.warning(f"Invalid path {path}: {error}")
-
-                            if not valid_paths:
-                                continue
-
-                            # Create DROPFILES structure
-                            offset = 20  # Size of DROPFILES structure
-                            file_list = b""
-
-                            for path in valid_paths:
-                                encoded_path = path.encode("utf-16le") + b"\0\0"
-                                if len(file_list) + len(encoded_path) > self.MAX_DATA_SIZE - offset:
-                                    logging.warning("File list exceeds maximum size")
-                                    break
-                                file_list += encoded_path
-
-                            file_list += b"\0\0"  # End of file list marker
-                            dropfiles = struct.pack("Iiii", offset, 0, 0, 0x0001)  # fWide = 1 (Unicode)
-                            data = dropfiles + file_list
-
-                        except Exception as error:
-                            logging.warning(f"Error processing file drop: {error}")
+                    # Handle file drops
+                    elif format_id == win32con.CF_HDROP and isinstance(data, tuple):
+                        sanitized_paths = self.sanitize_file_paths(data)
+                        if not sanitized_paths:
                             continue
 
-                # Handle URL content
-                elif format_id == self.CF_SHELLURL:
-                    if isinstance(data, str):
-                        try:
-                            # Basic URL validation
-                            url = data.strip()
-                            if not url.startswith(("http://", "https://", "ftp://")):
-                                logging.warning("Invalid URL protocol")
-                                continue
-                            # Check URL length
-                            if len(url) > 2083:  # Maximum URL length for IE
-                                logging.warning("URL exceeds maximum length")
-                                continue
+                        # Create DROPFILES structure
+                        file_list = b""
+                        for path in sanitized_paths:
+                            encoded_path = path.encode("utf-16le") + b"\0\0"
+                            file_list += encoded_path
+                        file_list += b"\0\0"
+                        data = struct.pack("Iiii", 20, 0, 0, 1) + file_list
+                        # 20 is DROPFILES size, 1 for unicode
 
-                            data = url.encode("utf-8") + b"\0"
-                        except Exception as error:
-                            logging.warning(f"URL validation error: {error}")
+                    # Handle URL
+                    elif format_id == self.CF_SHELLURL and isinstance(data, str):
+                        url = data.strip()
+                        if not url.startswith(("http://", "https://", "ftp://")):
                             continue
-
-                # Handle filename content
-                elif format_id == self.CF_FILENAME:
-                    if isinstance(data, str):
-                        try:
-                            filename = data.strip()
-                            # Remove invalid filename characters
-                            invalid_chars = '<>:"/\\|?*'
-                            for char in invalid_chars:
-                                filename = filename.replace(char, "")
-                            if not filename:
-                                logging.warning("Invalid filename")
-                                continue
-
-                            data = filename.encode("utf-8") + b"\0"
-                        except Exception as error:
-                            logging.warning(f"Filename validation error: {error}")
+                        if len(url) > 2083:  # Maximum URL length for IE
                             continue
+                        data = url.encode("utf-8") + b"\0"
 
-                # Handle locale information
-                elif format_id == win32con.CF_LOCALE:
-                    try:
+                    # Handle filename
+                    elif format_id == self.CF_FILENAME and isinstance(data, str):
+                        filename = data.strip()
+                        invalid_chars = '<>:"/\\|?*'
+                        for char in invalid_chars:
+                            filename = filename.replace(char, "")
+                        if not filename:
+                            continue
+                        data = filename.encode("utf-8") + b"\0"
+
+                    # Handle locale
+                    elif format_id == win32con.CF_LOCALE:
                         if isinstance(data, bytes):
                             lcid = int.from_bytes(data, byteorder="little")
-                        elif not isinstance(data, int):
-                            lcid = int(data)
-                        else:
+                        elif isinstance(data, int):
                             lcid = data
-
-                        # Validate LCID range
+                        else:
+                            lcid = int(data)
                         if not 0 <= lcid <= 0xFFFF:
-                            logging.warning(f"LCID {lcid} outside valid range")
                             continue
-                        # Pack LCID into bytes
                         data = struct.pack("i", lcid)
 
-                    except (ValueError, TypeError, struct.error) as error:
-                        logging.warning(f"Invalid locale identifier: {error}")
-                        continue
+                    # Process and store valid data
+                    if data is not None:
+                        encrypted_data = self.encrypt_data(data)
+                        self.clipboard_data[format_id] = (encrypted_data, datetime.now())
 
-                # Encrypt and store valid clipboard data
-                encrypted_data = self.encrypt_data(data)
-                self.clipboard_data[format_id] = (encrypted_data, datetime.now())
+                except Exception as error:
+                    logging.warning(f"Error processing format {self._format_names.get(format_id)}: {error}")
+                    continue
 
         except (RuntimeError, TimeoutError) as error:
             logging.error(f"Failed to access clipboard: {error}")
+            raise
         finally:
             gc.collect()
 
     def restore_clipboard_content(self):
-        import struct
-        
         if not self.clipboard_data:
             return
 
+        if not self._active:
+            raise RuntimeError("ClipboardHandler is closed")
+
         self.cleanup_expired_data()
+        import struct
 
         try:
             with self.clipboard_access():
@@ -12799,49 +12732,126 @@ class ClipboardHandler:
                     try:
                         decrypted_data = self.decrypt_data(encrypted_data)
 
-                        # Handle text formats
+                        # Handle text formats with empty check
                         if fmt in (win32con.CF_TEXT, win32con.CF_UNICODETEXT):
+                            if not decrypted_data or (
+                                    isinstance(decrypted_data, (str, bytes)) and not decrypted_data.strip()):
+                                continue
                             if fmt == win32con.CF_TEXT:
                                 if not isinstance(decrypted_data, bytes):
-                                    logging.warning(f"Invalid data type for CF_TEXT: {type(decrypted_data)}")
                                     continue
                             else:  # CF_UNICODETEXT
                                 if isinstance(decrypted_data, bytes):
                                     try:
-                                        decrypted_data = decrypted_data.decode("utf-16le")
-                                    except UnicodeError as error:
-                                        logging.warning(f"Failed to decode UNICODETEXT: {error}")
+                                        decrypted_data = decrypted_data.decode("utf-16le").strip()
+                                    except UnicodeError:
                                         continue
 
-                        # Handle bitmap conversion for DIB format
-                        elif fmt == win32con.CF_DIB:
+                        # Handle bitmap handle
+                        elif fmt == win32con.CF_BITMAP and isinstance(decrypted_data, int):
+                            with self.handle_gdi_resource(decrypted_data):
+                                win32clipboard.SetClipboardData(fmt, decrypted_data)
+                            continue
+
+                        # Handle HTML format
+                        elif fmt == self.CF_HTML:
+                            if not isinstance(decrypted_data, bytes):
+                                continue
                             try:
-                                # Create bitmap from DIB data
-                                bitmap = win32clipboard.SetClipboardData(fmt, decrypted_data)
-                                if not bitmap:
-                                    logging.warning("Failed to create bitmap from DIB data")
+                                content = decrypted_data.decode("utf-8")
+                                if "<html>" not in content or "</html>" not in content:
                                     continue
-                            except Exception as error:
-                                logging.warning(f"Failed to process DIB data: {error}")
+                            except UnicodeError:
                                 continue
 
-                        # Handle locale data
-                        elif fmt == win32con.CF_LOCALE:
-                            if isinstance(decrypted_data, bytes) and len(decrypted_data) == 4:
-                                try:
-                                    locale_id = int.from_bytes(decrypted_data, byteorder="little")
-                                    decrypted_data = struct.pack("i", locale_id)
-                                except ValueError as error:
-                                    logging.warning(f"Failed to process locale data: {error}")
+                        # Handle RTF format
+                        elif fmt == self.CF_RTF:
+                            if not isinstance(decrypted_data, bytes):
+                                continue
+                            try:
+                                content = decrypted_data.decode("utf-8")
+                                if not content.startswith("{\\rtf1"):
                                     continue
+                            except UnicodeError:
+                                continue
 
+                        # Handle image formats
+                        elif fmt in (self.CF_PNG, self.CF_GIF, self.CF_JFIF, self.CF_TIFF, self.CF_JPEG, self.CF_WEBP):
+                            if not isinstance(decrypted_data, bytes):
+                                continue
+                            # Basic header validation
+                            if fmt == self.CF_PNG and not decrypted_data.startswith(b"\x89PNG\r\n\x1a\n"):
+                                continue
+                            elif fmt == self.CF_JPEG and not decrypted_data.startswith(b"\xff\xd8"):
+                                continue
+                            elif fmt == self.CF_GIF and not decrypted_data.startswith((b"GIF87a", b"GIF89a")):
+                                continue
+                            elif fmt == self.CF_JFIF and not decrypted_data.startswith(b"\xff\xd8"):
+                                continue
+                            elif fmt == self.CF_TIFF and not (decrypted_data.startswith(b"II*\x00") or
+                                                              decrypted_data.startswith(b"MM\x00*")):
+                                continue
+                            elif fmt == self.CF_WEBP and not decrypted_data.startswith(b"RIFF"):
+                                continue
+
+                        elif fmt == self.CF_SVG:
+                            if not isinstance(decrypted_data, bytes):
+                                continue
+                            try:
+                                content = decrypted_data.decode("utf-8")
+                                if "<svg" not in content.lower() or "</svg>" not in content.lower():
+                                    continue
+                            except UnicodeError:
+                                continue
+
+                        # Handle HDROP
+                        elif fmt == win32con.CF_HDROP:
+                            if not isinstance(decrypted_data, bytes) or len(decrypted_data) < 20:
+                                continue
+                            # Validate DROPFILES structure
+                            try:
+                                offset, = struct.unpack("I", decrypted_data[:4])
+                                is_unicode, = struct.unpack("I", decrypted_data[16:20])
+                                if offset != 20 or not is_unicode:
+                                    continue
+                            except struct.error:
+                                continue
+
+                        # Handle URL and filename
+                        elif fmt in (self.CF_SHELLURL, self.CF_FILENAME):
+                            if not isinstance(decrypted_data, bytes):
+                                continue
+                            try:
+                                # Both should be null-terminated UTF-8 strings
+                                if not decrypted_data.endswith(b"\0"):
+                                    continue
+                                text = decrypted_data[:-1].decode("utf-8")
+                                if not text.strip():
+                                    continue
+                            except UnicodeError:
+                                continue
+
+                        # Handle locale
+                        elif fmt == win32con.CF_LOCALE:
+                            if not isinstance(decrypted_data, bytes) or len(decrypted_data) != 4:
+                                continue
+                            try:
+                                lcid = int.from_bytes(decrypted_data, byteorder="little")
+                                if not 0 <= lcid <= 0xFFFF:
+                                    continue
+                            except ValueError:
+                                continue
+
+                        # Set clipboard data
                         win32clipboard.SetClipboardData(fmt, decrypted_data)
 
                     except Exception as error:
-                        logging.warning(f"Error restoring format {self._format_names.get(fmt, fmt)}: {error}")
+                        logging.warning(f"Error restoring format {self._format_names.get(fmt)}: {error}")
                         continue
+
         except (RuntimeError, TimeoutError) as error:
             logging.error(f"Failed to restore clipboard content: {error}")
+            raise
         finally:
             self.cleanup_all_resources()
 
