@@ -378,19 +378,23 @@ class CustomEntry(CTkEntry):
             if self.is_listbox_entry:
                 self.update_listbox()
 
-    def find_context_menu(self):
+    @staticmethod
+    def find_context_menu():
         import win32process
 
-        def enum_window_proc(hwnd, results):
-            class_name = win32gui.GetClassName(hwnd)
-            if class_name == "#32768":
-                _, pid = win32process.GetWindowThreadProcessId(hwnd)
-                if pid == os.getpid():
-                    results.append(hwnd)
-
-        results = []
-        win32gui.EnumWindows(enum_window_proc, results)
-        return results
+        try:
+            windows = []
+            win32gui.EnumWindows(lambda hwnd_win, results: results.append(hwnd), windows)
+            for hwnd in windows:
+                class_name = win32gui.GetClassName(hwnd)
+                if class_name == "#32768":
+                    _, pid = win32process.GetWindowThreadProcessId(hwnd)
+                    if pid == os.getpid():
+                        return hwnd
+            return None
+        except Exception as err:
+            logging.warning(f"Unexpected error in find_context_menu: {err}")
+        return None
 
     def custom_middle_mouse(self, event=None):
         context_menu = self.find_context_menu()
@@ -444,6 +448,7 @@ class CustomEntry(CTkEntry):
                 self.context_menu.entryconfigure(3, label="Seleccionar Todo")
 
         self.context_menu.post(event.x_root, event.y_root)
+        self.context_menu.bind("<Unmap>", lambda evt: self.configure(cursor="xterm"))
 
     def custom_cut(self, event=None):
         self.cut()
