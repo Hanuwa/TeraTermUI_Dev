@@ -11082,7 +11082,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
 
         try:
             windows = []
-            win32gui.EnumWindows(lambda hwnd_win, results: results.append(hwnd), windows)
+            win32gui.EnumWindows(lambda hwnd_win, results: results.append(hwnd_win), windows)
             for hwnd in windows:
                 class_name = win32gui.GetClassName(hwnd)
                 if class_name == "#32768":
@@ -11472,7 +11472,7 @@ class CustomEntry(customtkinter.CTkEntry):
 
         try:
             windows = []
-            win32gui.EnumWindows(lambda hwnd_win, results: results.append(hwnd), windows)
+            win32gui.EnumWindows(lambda hwnd_win, results: results.append(hwnd_win), windows)
             for hwnd in windows:
                 class_name = win32gui.GetClassName(hwnd)
                 if class_name == "#32768":
@@ -11494,19 +11494,12 @@ class CustomEntry(customtkinter.CTkEntry):
             self.select_clear()
             return "break"
 
-    def find_active_tooltips(self, widget):
-        if isinstance(widget, tk.Toplevel) and hasattr(widget, "is_ctktooltip"):
-            widget.on_focus_out(event=None)
-        for child in widget.winfo_children():
-            self.find_active_tooltips(child)
-
     def show_menu(self, event):
         if self.cget("state") == "disabled":
             return
 
         self.focus_set()
         root = self.winfo_toplevel()
-        self.find_active_tooltips(root)
         self.selected_text = True
 
         if self.lang == "English":
@@ -11905,19 +11898,12 @@ class CustomComboBox(customtkinter.CTkComboBox):
             self._entry.select_clear()
             return "break"
 
-    def find_active_tooltips(self, widget):
-        if isinstance(widget, tk.Toplevel) and hasattr(widget, "is_ctktooltip"):
-            widget.on_focus_out(event=None)
-        for child in widget.winfo_children():
-            self.find_active_tooltips(child)
-
     def show_menu(self, event):
         if self.cget("state") == "disabled":
             return
 
         self.focus_set()
         root = self.winfo_toplevel()
-        self.find_active_tooltips(root)
         self.selected_text = True
 
         if self.lang == "English":
