@@ -775,8 +775,8 @@ class TeraTermUI(customtkinter.CTk):
                     self.status_button.configure(state="normal")
                     self.help_button.configure(state="normal")
                     self.log_in.configure(state="normal")
-                    self.after(0, self.bind, "<Return>", lambda event: self.login_event_handler())
-                    self.after(0, self.bind, "<F1>", lambda event: self.help_button_event())
+                    self.after(150, self.bind, "<Return>", lambda event: self.login_event_handler())
+                    self.after(150, self.bind, "<F1>", lambda event: self.help_button_event())
                     row_check = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
                     if not row_check:
                         self.cursor.execute("INSERT INTO user_data (welcome) VALUES (?)", ("Done",))
@@ -8613,7 +8613,7 @@ class TeraTermUI(customtkinter.CTk):
         self.submit_multiple.configure(state="normal")
         self.not_rebind = False
         if self.in_multiple_screen:
-            self.bind("<Return>", lambda event: self.submit_multiple_event_handler())
+            self.after(150, self.bind, "<Return>", lambda event: self.submit_multiple_event_handler())
         else:
             self.switch_tab()
         if self.enrollment_error_check == 1:
