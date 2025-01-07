@@ -16,7 +16,15 @@ def parse_arguments():
     parser.add_argument("--report", action="store_true", help="Generate Nuitka compilation report")
     parser.add_argument("--lto", choices=["auto", "yes", "no"], default="yes",
                         help="Set LTO (Link-Time Optimization) value")
-    return parser.parse_args()
+    parser.add_argument("--output-dir", type=str,
+                        help="Specify custom output directory path (default: C:/Users/username/TeraTermUI_Builds)")
+    args = parser.parse_args()
+    if args.output_dir:
+        args.output_dir = os.path.normpath(args.output_dir).replace("\\", "/")
+        if not os.path.isabs(args.output_dir):
+            args.output_dir = os.path.abspath(args.output_dir).replace("\\", "/")
+    
+    return args
 
 def extract_second_date_from_file(filepath):
     with open(filepath, "r") as file:
@@ -84,8 +92,7 @@ def attach_manifest(executable_path, manifest_path):
         updated_manifest_content = re.sub(
             r'<file name="TeraTermUI\.exe" hashalg="SHA1" hash=".*?"/>',
             f'<file name="TeraTermUI.exe" hashalg="SHA1" hash="{sha1_checksum}"/>',
-            manifest_content
-        )
+            manifest_content)
         with open(manifest_path, "w") as file:
             file.write(updated_manifest_content)
 
@@ -199,8 +206,11 @@ else:
     update_without_v = user_input
     update = "v" + update_without_v
 versions = ["installer", "portable"]
-output_directory = os.path.join("C:/Users/" + username + "/TeraTermUI_Builds", "TeraTermUI_"
-                                + update).replace("\\", "/")
+if args.output_dir:
+    output_directory = os.path.join(args.output_dir, "TeraTermUI_" + update).replace("\\", "/")
+else:
+    output_directory = os.path.join("C:/Users/" + username + "/TeraTermUI_Builds",
+                                    "TeraTermUI_" + update).replace("\\", "/")
 program_backup = project_directory + "/TeraTermUI.BAK.py"
 check_and_restore_backup()
 shutil.copy2(project_directory + "/TeraTermUI.py", program_backup)
