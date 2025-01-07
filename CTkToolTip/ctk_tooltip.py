@@ -137,7 +137,7 @@ class CTkToolTip(Toplevel):
     def find_context_menu():
         try:
             windows = []
-            win32gui.EnumWindows(lambda hwnd_win, results: results.append(hwnd), windows)
+            win32gui.EnumWindows(lambda hwnd_win, results: results.append(hwnd_win), windows)
             for hwnd in windows:
                 class_name = win32gui.GetClassName(hwnd)
                 if class_name == "#32768":
@@ -148,7 +148,7 @@ class CTkToolTip(Toplevel):
         except Exception as err:
             logging.warning(f"Unexpected error in find_context_menu: {err}")
         return None
-    
+
     def on_enter(self, event) -> None:
         """
         Processes motion within the widget including entering and moving.
