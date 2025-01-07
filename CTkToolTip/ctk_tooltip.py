@@ -5,6 +5,7 @@ version: 0.8
 import os
 import time
 import sys
+import logging
 import win32gui
 import win32process
 import customtkinter
@@ -132,19 +133,22 @@ class CTkToolTip(Toplevel):
         self.visibility = True
         self.disable = False
 
-    def find_context_menu(self):
-
-        def enum_window_proc(hwnd, results):
-            class_name = win32gui.GetClassName(hwnd)
-            if class_name == "#32768":
-                _, pid = win32process.GetWindowThreadProcessId(hwnd)
-                if pid == os.getpid():
-                    results.append(hwnd)
-
-        results = []
-        win32gui.EnumWindows(enum_window_proc, results)
-        return results
-
+    @staticmethod
+    def find_context_menu():
+        try:
+            windows = []
+            win32gui.EnumWindows(lambda hwnd_win, results: results.append(hwnd), windows)
+            for hwnd in windows:
+                class_name = win32gui.GetClassName(hwnd)
+                if class_name == "#32768":
+                    _, pid = win32process.GetWindowThreadProcessId(hwnd)
+                    if pid == os.getpid():
+                        return hwnd
+            return None
+        except Exception as err:
+            logging.warning(f"Unexpected error in find_context_menu: {err}")
+        return None
+    
     def on_enter(self, event) -> None:
         """
         Processes motion within the widget including entering and moving.
