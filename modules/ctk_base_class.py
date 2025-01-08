@@ -60,7 +60,7 @@ class CTkBaseClass(tkinter.Frame, CTkAppearanceModeBaseClass, CTkScalingBaseClas
         self._current_width = width  # _current_width and _current_height in pixel, represent current size of the widget
         self._current_height = height  # _current_width and _current_height are independent of the scale
         self._desired_width = width  # _desired_width and _desired_height, represent desired size set by width and height
-        self._desired_height = height
+        self._desired_height = height  # _desired_width and _desired_height are independent of the scale
 
         # set width and height of tkinter.Frame
         super().configure(width=self._apply_widget_scaling(self._desired_width),
@@ -100,18 +100,38 @@ class CTkBaseClass(tkinter.Frame, CTkAppearanceModeBaseClass, CTkScalingBaseClas
 
     def destroy(self):
         """ Destroy this and all descendants widgets. """
+
         if self.winfo_exists():
+            # Remove Configure event binding
             super().unbind('<Configure>')
-        self._last_geometry_manager_call = None
-        if hasattr(self, '_master_old_configure'):
-            master = self._master_ref()
-            if master is not None and master.winfo_exists():
-                master.config = self._master_old_configure
-                master.configure = self._master_old_configure
-        # call destroy methods of super classes
-        tkinter.Frame.destroy(self)
-        CTkAppearanceModeBaseClass.destroy(self)
-        CTkScalingBaseClass.destroy(self)
+            # Clear geometry manager call history
+            if hasattr(self, '_last_geometry_manager_call'):
+                if self._last_geometry_manager_call is not None:
+                    # Clear function reference and kwargs
+                    self._last_geometry_manager_call["function"] = None
+                    self._last_geometry_manager_call["kwargs"].clear()
+                self._last_geometry_manager_call = None
+            # Restore original configure method on master if it was overwritten
+            if hasattr(self, '_master_old_configure'):
+                master = self._master_ref() if hasattr(self, '_master_ref') else None
+                if master is not None and master.winfo_exists():
+                    master.config = self._master_old_configure
+                    master.configure = self._master_old_configure
+                self._master_old_configure = None
+            # Clear master reference
+            if hasattr(self, '_master_ref'):
+                self._master_ref = None
+            # Reset dimensional attributes
+            self._current_width = 0
+            self._current_height = 0
+            self._desired_width = 0
+            self._desired_height = 0
+            self._bg_color = None
+
+            # Call destroy methods of super classes
+            tkinter.Frame.destroy(self)
+            CTkAppearanceModeBaseClass.destroy(self)
+            CTkScalingBaseClass.destroy(self)
 
     def _draw(self, no_color_updates: bool = False):
         """ can be overridden but super method must be called """
