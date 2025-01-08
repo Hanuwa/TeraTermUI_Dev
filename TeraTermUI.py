@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 1/7/25
+# DATE - Started 1/1/23, Current Build v0.9.5 - 1/8/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -11876,7 +11876,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
 
         try:
             windows = []
-            win32gui.EnumWindows(lambda hwnd_win, results: results.append(hwnd), windows)
+            win32gui.EnumWindows(lambda hwnd_win, results: results.append(hwnd_win), windows)
             for hwnd in windows:
                 class_name = win32gui.GetClassName(hwnd)
                 if class_name == "#32768":
