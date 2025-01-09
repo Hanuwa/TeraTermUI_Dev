@@ -75,10 +75,10 @@ class CTkScrollableFrame(tkinter.Frame, CTkAppearanceModeBaseClass, CTkScalingBa
         self.bind("<Configure>", lambda e: self._parent_canvas.configure(scrollregion=self._parent_canvas.bbox("all")))
         self._parent_canvas.bind("<Configure>", self._fit_frame_dimensions_to_canvas)
         self.bind_all("<MouseWheel>", self._mouse_wheel_all, add="+")
-        self.bind_all("<KeyPress-Shift_L>", self._keyboard_shift_press_all, add="+")
-        self.bind_all("<KeyPress-Shift_R>", self._keyboard_shift_press_all, add="+")
-        self.bind_all("<KeyRelease-Shift_L>", self._keyboard_shift_release_all, add="+")
-        self.bind_all("<KeyRelease-Shift_R>", self._keyboard_shift_release_all, add="+")
+        self.bind_all("<KeyPress-Shift_L>", lambda e: self._set_shift_state(True), add="+")
+        self.bind_all("<KeyPress-Shift_R>", lambda e: self._set_shift_state(True), add="+")
+        self.bind_all("<KeyRelease-Shift_L>", lambda e: self._set_shift_state(False), add="+")
+        self.bind_all("<KeyRelease-Shift_R>", lambda e: self._set_shift_state(False), add="+")
         self._create_window_id = self._parent_canvas.create_window(0, 0, window=self, anchor="nw")
 
         if self._parent_frame.cget("fg_color") == "transparent":
@@ -89,13 +89,6 @@ class CTkScrollableFrame(tkinter.Frame, CTkAppearanceModeBaseClass, CTkScalingBa
             self._parent_canvas.configure(bg=self._apply_appearance_mode(self._parent_frame.cget("fg_color")))
 
         self._shift_pressed = False
-
-    def destroy(self):
-        tkinter.Frame.destroy(self)
-        self._parent_frame.destroy()
-        self._parent_frame = None
-        CTkAppearanceModeBaseClass.destroy(self)
-        CTkScalingBaseClass.destroy(self)
 
     def _create_grid(self):
         border_spacing = self._apply_widget_scaling(self._parent_frame.cget("corner_radius") + self._parent_frame.cget("border_width"))
@@ -247,28 +240,24 @@ class CTkScrollableFrame(tkinter.Frame, CTkAppearanceModeBaseClass, CTkScalingBa
             self._parent_canvas.configure(xscrollincrement=4, yscrollincrement=8)
 
     def _mouse_wheel_all(self, event):
-        if self.check_if_master_is_canvas(event.widget):
-            if sys.platform.startswith("win"):
-                if self._shift_pressed:
-                    if self._parent_canvas.xview() != (0.0, 1.0):
-                        self._parent_canvas.xview("scroll", -int(event.delta / 6), "units")
-                else:
-                    if self._parent_canvas.yview() != (0.0, 1.0):
-                        self._parent_canvas.yview("scroll", -int(event.delta / 6), "units")
-            elif sys.platform == "darwin":
-                if self._shift_pressed:
-                    if self._parent_canvas.xview() != (0.0, 1.0):
-                        self._parent_canvas.xview("scroll", -event.delta, "units")
-                else:
-                    if self._parent_canvas.yview() != (0.0, 1.0):
-                        self._parent_canvas.yview("scroll", -event.delta, "units")
-            else:
-                if self._shift_pressed:
-                    if self._parent_canvas.xview() != (0.0, 1.0):
-                        self._parent_canvas.xview("scroll", -event.delta, "units")
-                else:
-                    if self._parent_canvas.yview() != (0.0, 1.0):
-                        self._parent_canvas.yview("scroll", -event.delta, "units")
+        if not self.check_if_master_is_canvas(event.widget):
+            return
+
+        # Calculate delta based on platform
+        if sys.platform.startswith("win"):
+            delta = int(event.delta / 6)
+        else:
+            delta = event.delta
+
+        # Determine scroll direction
+        if self._shift_pressed:
+            view = self._parent_canvas.xview()
+            if view != (0.0, 1.0):
+                self._parent_canvas.xview("scroll", -delta, "units")
+        else:
+            view = self._parent_canvas.yview()
+            if view != (0.0, 1.0):
+                self._parent_canvas.yview("scroll", -delta, "units")
 
     def scroll_to_widget(self, widget):
         self.update_idletasks()
@@ -292,19 +281,24 @@ class CTkScrollableFrame(tkinter.Frame, CTkAppearanceModeBaseClass, CTkScalingBa
         elif relative_position_bottom > 0:
             self.after(0, self._parent_canvas.yview_scroll(int(relative_position_bottom), "units"))
 
-    def _keyboard_shift_press_all(self, event):
-        self._shift_pressed = True
-
-    def _keyboard_shift_release_all(self, event):
-        self._shift_pressed = False
+    def _set_shift_state(self, state: bool) -> None:
+        self._shift_pressed = state
 
     def check_if_master_is_canvas(self, widget):
-        if widget == self._parent_canvas:
-            return True
-        elif widget.master is not None:
-            return self.check_if_master_is_canvas(widget.master)
-        else:
-            return False
+        current = widget
+        while current:
+            if current == self._parent_canvas:
+                return True
+            current = current.master
+        return False
+
+    def destroy(self) -> None:
+        tkinter.Frame.destroy(self)
+        if self._parent_frame is not None:
+            self._parent_frame.destroy()
+            self._parent_frame = None
+        CTkAppearanceModeBaseClass.destroy(self)
+        CTkScalingBaseClass.destroy(self)
 
     def pack(self, **kwargs):
         self._parent_frame.pack(**kwargs)
