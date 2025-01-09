@@ -4,6 +4,7 @@ import sys
 import os
 import platform
 import ctypes
+import weakref
 from typing import Union, Tuple, Optional
 
 from .widgets.theme import ThemeManager
@@ -19,9 +20,9 @@ class CTkToplevel(tkinter.Toplevel, CTkAppearanceModeBaseClass, CTkScalingBaseCl
     For detailed information check out the documentation.
     """
 
-    _valid_tk_toplevel_arguments: set = {"master", "bd", "borderwidth", "class", "container", "cursor", "height",
-                                         "highlightbackground", "highlightthickness", "menu", "relief",
-                                         "screen", "takefocus", "use", "visual", "width"}
+    _valid_tk_toplevel_arguments = frozenset({"master", "bd", "borderwidth", "class", "container", "cursor", "height",
+                                              "highlightbackground", "highlightthickness", "menu", "relief", "screen",
+                                              "takefocus", "use", "visual", "width"})
 
     _deactivate_macos_window_header_manipulation: bool = False
     _deactivate_windows_window_header_manipulation: bool = False
@@ -30,10 +31,11 @@ class CTkToplevel(tkinter.Toplevel, CTkAppearanceModeBaseClass, CTkScalingBaseCl
                  fg_color: Optional[Union[str, Tuple[str, str]]] = None,
                  **kwargs):
 
+        valid_args = pop_from_dict_by_set(kwargs, self._valid_tk_toplevel_arguments)
         self._enable_macos_dark_title_bar()
 
         # call init methods of super classes
-        super().__init__(*args, **pop_from_dict_by_set(kwargs, self._valid_tk_toplevel_arguments))
+        super().__init__(*args, **valid_args)
         CTkAppearanceModeBaseClass.__init__(self)
         CTkScalingBaseClass.__init__(self, scaling_type="window")
         check_kwargs_empty(kwargs, raise_error=True)
@@ -46,12 +48,9 @@ class CTkToplevel(tkinter.Toplevel, CTkAppearanceModeBaseClass, CTkScalingBaseCl
         # except Exception:
             # pass
 
-        self._current_width = 200  # initial window size, always without scaling
-        self._current_height = 200
-        self._min_width: int = 0
-        self._min_height: int = 0
-        self._max_width: int = 1_000_000
-        self._max_height: int = 1_000_000
+        self._current_width = self._min_width = 600
+        self._current_height = self._min_height = 500
+        self._max_width = self._max_height = 1_000_000
         self._last_resizable_args: Union[Tuple[list, dict], None] = None  # (args, kwargs)
 
         self._fg_color = ThemeManager.theme["CTkToplevel"]["fg_color"] if fg_color is None else self._check_color_type(fg_color)
@@ -90,7 +89,6 @@ class CTkToplevel(tkinter.Toplevel, CTkAppearanceModeBaseClass, CTkScalingBaseCl
 
     def destroy(self):
         self._disable_macos_dark_title_bar()
-        
         if self._resize_after_id is not None:
             try:
                 self.after_cancel(self._resize_after_id)
@@ -98,8 +96,11 @@ class CTkToplevel(tkinter.Toplevel, CTkAppearanceModeBaseClass, CTkScalingBaseCl
                 pass
             self._resize_after_id = None
 
+        self.unbind('<Configure>')
+        self.unbind('<FocusIn>')
+
         # call destroy methods of super classes
-        tkinter.Toplevel.destroy(self)
+        super().destroy()
         CTkAppearanceModeBaseClass.destroy(self)
         CTkScalingBaseClass.destroy(self)
 
@@ -110,18 +111,17 @@ class CTkToplevel(tkinter.Toplevel, CTkAppearanceModeBaseClass, CTkScalingBaseCl
 
     def _update_dimensions_event(self, event=None):
         if not self._block_update_dimensions_event:
-            if self._resize_after_id is not None:
+            if self._resize_after_id:
                 self.after_cancel(self._resize_after_id)
-                self._resize_after_id = None
             self._resize_after_id = self.after(100, self._perform_dimension_update)
 
     def _perform_dimension_update(self):
-        detected_width = self.winfo_width()
-        detected_height = self.winfo_height()
-        new_width = self._reverse_window_scaling(detected_width)
-        new_height = self._reverse_window_scaling(detected_height)
-        if (self._current_width != new_width or
-                self._current_height != new_height):
+        width = super().winfo_width()
+        height = super().winfo_height()
+        new_width = self._reverse_window_scaling(width)
+        new_height = self._reverse_window_scaling(height)
+
+        if self._current_width != new_width or self._current_height != new_height:
             self._current_width = new_width
             self._current_height = new_height
 
@@ -262,33 +262,30 @@ class CTkToplevel(tkinter.Toplevel, CTkAppearanceModeBaseClass, CTkScalingBaseCl
         if self._is_windows and not self._deactivate_windows_window_header_manipulation:
 
             self._state_before_windows_set_titlebar_color = self.state()
-            self.focused_widget_before_widthdraw = self.focus_get()
+            self.focused_widget_before_widthdraw = weakref.proxy(self.focus_get()) if self.focus_get() else None
             super().withdraw()  # hide window so that it can be redrawn after the titlebar change so that the color change is visible
             super().update()
 
-            if color_mode.lower() == "dark":
-                value = 1
-            elif color_mode.lower() == "light":
-                value = 0
-            else:
+            value = 1 if color_mode.lower() == "dark" else 0 if color_mode.lower() == "light" else None
+            if value is None:
                 return
 
             try:
                 hwnd = ctypes.windll.user32.GetParent(self.winfo_id())
-                DWMWA_USE_IMMERSIVE_DARK_MODE = 20
-                DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1 = 19
-
-                # try with DWMWA_USE_IMMERSIVE_DARK_MODE
-                if ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE,
-                                                              ctypes.byref(ctypes.c_int(value)),
-                                                              ctypes.sizeof(ctypes.c_int(value))) != 0:
-                    # try with DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20h1
-                    ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1,
-                                                               ctypes.byref(ctypes.c_int(value)),
-                                                               ctypes.sizeof(ctypes.c_int(value)))
-
-            except Exception as err:
-                print(err)
+                ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                    hwnd, 20,  # DWMWA_USE_IMMERSIVE_DARK_MODE
+                    ctypes.byref(ctypes.c_int(value)),
+                    ctypes.sizeof(ctypes.c_int(value))
+                )
+            except Exception:
+                try:
+                    ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                        hwnd, 19,  # DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1
+                        ctypes.byref(ctypes.c_int(value)),
+                        ctypes.sizeof(ctypes.c_int(value))
+                    )
+                except Exception:
+                    pass
 
             self._windows_set_titlebar_color_called = True
             self.after(5, self._revert_withdraw_after_windows_set_titlebar_color)
