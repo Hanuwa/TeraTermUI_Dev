@@ -87,11 +87,12 @@ def attach_manifest(executable_path, manifest_path):
                 sha1_hash.update(byte_block)
         sha1_checksum = sha1_hash.hexdigest()
 
+        executable_name = os.path.basename(executable_path)
         with open(manifest_path, "r") as file:
             manifest_content = file.read()
         updated_manifest_content = re.sub(
-            r'<file name="TeraTermUI\.exe" hashalg="SHA1" hash=".*?"/>',
-            f'<file name="TeraTermUI.exe" hashalg="SHA1" hash="{sha1_checksum}"/>',
+            fr'<file name="{re.escape(executable_name)}" hashalg="SHA1" hash=".*?"/>',
+            f'<file name="{executable_name}" hashalg="SHA1" hash="{sha1_checksum}"/>',
             manifest_content)
         with open(manifest_path, "w") as file:
             file.write(updated_manifest_content)
