@@ -3,6 +3,7 @@ import sys
 import os
 import platform
 import ctypes
+import weakref
 from typing import Union, Tuple, Optional
 from packaging import version
 
@@ -21,11 +22,11 @@ class CTk(CTK_PARENT_CLASS, CTkAppearanceModeBaseClass, CTkScalingBaseClass):
     For detailed information check out the documentation.
     """
 
-    _valid_tk_constructor_arguments: set = {"screenName", "baseName", "className", "useTk", "sync", "use"}
+    _valid_tk_constructor_arguments = frozenset({"screenName", "baseName", "className", "useTk", "sync", "use"})
 
-    _valid_tk_configure_arguments: set = {'bd', 'borderwidth', 'class', 'menu', 'relief', 'screen',
-                                          'use', 'container', 'cursor', 'height',
-                                          'highlightthickness', 'padx', 'pady', 'takefocus', 'visual', 'width'}
+    _valid_tk_configure_arguments = frozenset({'bd', 'borderwidth', 'class', 'menu', 'relief', 'screen',
+                                               'use', 'container', 'cursor', 'height', 'highlightthickness',
+                                               'padx', 'pady', 'takefocus', 'visual', 'width'})
 
     _deactivate_macos_window_header_manipulation: bool = False
     _deactivate_windows_window_header_manipulation: bool = False
@@ -34,10 +35,11 @@ class CTk(CTK_PARENT_CLASS, CTkAppearanceModeBaseClass, CTkScalingBaseClass):
                  fg_color: Optional[Union[str, Tuple[str, str]]] = None,
                  **kwargs):
 
+        valid_args = pop_from_dict_by_set(kwargs, self._valid_tk_constructor_arguments)
         self._enable_macos_dark_title_bar()
 
         # call init methods of super classes
-        CTK_PARENT_CLASS.__init__(self, **pop_from_dict_by_set(kwargs, self._valid_tk_constructor_arguments))
+        CTK_PARENT_CLASS.__init__(self, **valid_args)
         CTkAppearanceModeBaseClass.__init__(self)
         CTkScalingBaseClass.__init__(self, scaling_type="window")
         check_kwargs_empty(kwargs, raise_error=True)
@@ -87,15 +89,18 @@ class CTk(CTK_PARENT_CLASS, CTkAppearanceModeBaseClass, CTkScalingBaseClass):
     def destroy(self):
         self._disable_macos_dark_title_bar()
 
-        if self._resize_after_id is not None:
+        if self._resize_after_id:
             try:
                 self.after_cancel(self._resize_after_id)
             except ValueError:
                 pass
             self._resize_after_id = None
 
+        self.unbind('<Configure>')
+        self.unbind('<FocusIn>')
+
         # call destroy methods of super classes
-        tkinter.Tk.destroy(self)
+        super().destroy()
         CTkAppearanceModeBaseClass.destroy(self)
         CTkScalingBaseClass.destroy(self)
 
@@ -155,27 +160,21 @@ class CTk(CTK_PARENT_CLASS, CTkAppearanceModeBaseClass, CTkScalingBaseClass):
         super().iconify()
 
     def update(self):
-        if self._window_exists is False:
-            if self._is_windows:
-                if not self._withdraw_called_before_window_exists and not self._iconify_called_before_window_exists:
-                    # print("window dont exists -> deiconify in update")
-                    self.deiconify()
-
+        if not self._window_exists and self._is_windows:
+            if not (self._withdraw_called_before_window_exists or
+                    self._iconify_called_before_window_exists):
+                self.deiconify()
             self._window_exists = True
-
         super().update()
 
     def mainloop(self, *args, **kwargs):
         if not self._window_exists:
             if self._is_windows:
                 self._windows_set_titlebar_color(self._get_appearance_mode())
-
-                if not self._withdraw_called_before_window_exists and not self._iconify_called_before_window_exists:
-                    # print("window dont exists -> deiconify in mainloop")
+                if not (self._withdraw_called_before_window_exists or
+                        self._iconify_called_before_window_exists):
                     self.deiconify()
-
             self._window_exists = True
-
         super().mainloop(*args, **kwargs)
 
     def resizable(self, width: bool = None, height: bool = None):
@@ -278,62 +277,55 @@ class CTk(CTK_PARENT_CLASS, CTkAppearanceModeBaseClass, CTkScalingBaseClass):
         https://docs.microsoft.com/en-us/windows/win32/api/dwmapi/ne-dwmapi-dwmwindowattribute
         """
 
-        if self._is_windows and not self._deactivate_windows_window_header_manipulation:
+        if not self._is_windows or self._deactivate_windows_window_header_manipulation:
+            return
 
-            if self._window_exists:
-                self._state_before_windows_set_titlebar_color = self.state()
-                # print("window_exists -> state_before_windows_set_titlebar_color: ", self.state_before_windows_set_titlebar_color)
-
-                if self._state_before_windows_set_titlebar_color != "iconic" or self._state_before_windows_set_titlebar_color != "withdrawn":
-                    self.focused_widget_before_widthdraw = self.focus_get()
-                    super().withdraw()  # hide window so that it can be redrawn after the titlebar change so that the color change is visible
-            else:
-                # print("window dont exists -> withdraw and update")
-                self.focused_widget_before_widthdraw = self.focus_get()
+        if self._window_exists:
+            self._state_before_windows_set_titlebar_color = self.state()
+            if self._state_before_windows_set_titlebar_color not in ("iconic", "withdrawn"):
+                self.focused_widget_before_widthdraw = weakref.proxy(self.focus_get()) if self.focus_get() else None
                 super().withdraw()
-                super().update()
+        else:
+            self.focused_widget_before_widthdraw = weakref.proxy(self.focus_get()) if self.focus_get() else None
+            super().withdraw()
+            super().update()
 
-            if color_mode.lower() == "dark":
-                value = 1
-            elif color_mode.lower() == "light":
-                value = 0
-            else:
-                return
+        value = 1 if color_mode.lower() == "dark" else 0 if color_mode.lower() == "light" else None
+        if value is None:
+            return
 
+        try:
+            hwnd = ctypes.windll.user32.GetParent(self.winfo_id())
             try:
-                hwnd = ctypes.windll.user32.GetParent(self.winfo_id())
-                DWMWA_USE_IMMERSIVE_DARK_MODE = 20
-                DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1 = 19
+                ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                    hwnd, 20,  # DWMWA_USE_IMMERSIVE_DARK_MODE
+                    ctypes.byref(ctypes.c_int(value)),
+                    ctypes.sizeof(ctypes.c_int(value))
+                )
+            except Exception:
+                ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                    hwnd, 19,  # DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1
+                    ctypes.byref(ctypes.c_int(value)),
+                    ctypes.sizeof(ctypes.c_int(value))
+                )
+        except Exception:
+            pass
 
-                # try with DWMWA_USE_IMMERSIVE_DARK_MODE
-                if ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE,
-                                                              ctypes.byref(ctypes.c_int(value)),
-                                                              ctypes.sizeof(ctypes.c_int(value))) != 0:
-
-                    # try with DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20h1
-                    ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1,
-                                                               ctypes.byref(ctypes.c_int(value)),
-                                                               ctypes.sizeof(ctypes.c_int(value)))
-
-            except Exception as err:
-                print(err)
-
-            if self._window_exists or True:
-                # print("window_exists -> return to original state: ", self.state_before_windows_set_titlebar_color)
-                if self._state_before_windows_set_titlebar_color == "normal":
-                    self.deiconify()
-                elif self._state_before_windows_set_titlebar_color == "iconic":
-                    self.iconify()
-                elif self._state_before_windows_set_titlebar_color == "zoomed":
-                    self.state("zoomed")
-                else:
-                    self.state(self._state_before_windows_set_titlebar_color)  # other states
+        if self._window_exists:
+            state = self._state_before_windows_set_titlebar_color
+            if state == "normal":
+                self.deiconify()
+            elif state == "iconic":
+                self.iconify()
+            elif state == "zoomed":
+                self.state("zoomed")
             else:
-                pass  # wait for update or mainloop to be called
+                self.state(state)
 
-            if self.focused_widget_before_widthdraw is not None:
-                self.after(1, self.focused_widget_before_widthdraw.focus)
-                self.focused_widget_before_widthdraw = None
+        if self.focused_widget_before_widthdraw:
+            self.after(1,
+                       lambda: self.focused_widget_before_widthdraw.focus() if self.focused_widget_before_widthdraw else None)
+            self.focused_widget_before_widthdraw = None
 
     def _set_appearance_mode(self, mode_string: str):
         CTkAppearanceModeBaseClass._set_appearance_mode(self, mode_string)
@@ -342,4 +334,3 @@ class CTk(CTK_PARENT_CLASS, CTkAppearanceModeBaseClass, CTkScalingBaseClass):
         elif self._is_macos:
             self._enable_macos_dark_title_bar()
         self.configure(bg=self._apply_appearance_mode(self._fg_color))
-
