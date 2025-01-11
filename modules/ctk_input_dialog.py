@@ -3,6 +3,7 @@ import os
 import logging
 import pyperclip
 import win32gui
+import weakref
 
 from typing import Union, Tuple, Optional
 
@@ -132,23 +133,30 @@ class CTkInputDialog(CTkToplevel):
 
 
 class CustomButton(CTkButton):
-    __slots__ = ("master", "command")
+    __slots__ = ("master", "command", "text", "image", "is_pressed", "click_command", "bindings")
 
     def __init__(self, master=None, command=None, **kwargs):
         super().__init__(master, cursor="hand2", **kwargs)
-        self.is_pressed = False
-        self.click_command = command
         self.text = kwargs.pop("text", None)
         self.image = kwargs.pop("image", None)
+
+        self.is_pressed = False
+        self.click_command = command
+        self.bindings = []
+
+        self.setup_bindings()
+
         if self.image and not self.text:
             self.configure(image=self.image)
-        else:
-            self.bind("<Enter>", self.on_enter)
-            self.bind("<Motion>", self.on_enter)
-            self.bind("<Leave>", self.on_leave)
-            self.bind("<B1-Motion>", self.on_motion)
-        self.bind("<ButtonPress-1>", self.on_button_down)
-        self.bind("<ButtonRelease-1>", self.on_button_up)
+
+    def setup_bindings(self):
+        bindings = [("<ButtonPress-1>", self.on_button_down), ("<ButtonRelease-1>", self.on_button_up)]
+        if not (self.image and not self.text):
+            bindings.extend([("<Enter>", self.on_enter), ("<Motion>", self.on_enter), ("<Leave>", self.on_leave),
+                             ("<B1-Motion>", self.on_motion)])
+        for event, callback in bindings:
+            bind_id = self.bind(event, callback)
+            self.bindings.append((event, bind_id))
 
     def on_button_down(self, event):
         if self.cget("state") == "disabled":
@@ -202,72 +210,61 @@ class CustomButton(CTkButton):
             self.configure(cursor="")
 
     def destroy(self):
+        if hasattr(self, "bindings"):
+            for event, bind_id in self.bindings:
+                try:
+                    self.unbind(event, bind_id)
+                except Exception as err:
+                    logging.error(f"Error unbinding event {event}: {err}")
         self.text = None
         self.image = None
         self.is_pressed = None
-        self.unbind("<Enter>")
-        self.unbind("<Leave>")
-        self.unbind("<ButtonPress-1>")
-        self.unbind("<ButtonRelease-1>")
-        self.unbind("<B1-Motion>")
-        self.unbind("<Motion>")
+        self.click_command = None
+        self.bindings = None
         super().destroy()
 
 
 class CustomEntry(CTkEntry):
-    __slots__ = ("master", "teraterm_ui_instance", "lang", "max_length")
+    __slots__ = ("master", "teraterm_ui", "lang", "max_length", "is_listbox_entry", "selected_text", "border_color",
+                 "focus_out_bind_id", "context_menu", "bindings", "_undo_stack", "_redo_stack")
 
     def __init__(self, master, teraterm_ui_instance, lang=None, max_length=250, *args, **kwargs):
         if "cursor" not in CTkEntry._valid_tk_entry_attributes:
             CTkEntry._valid_tk_entry_attributes.add("cursor")
         super().__init__(master, cursor="xterm", *args, **kwargs)
+        self.teraterm_ui = weakref.proxy(teraterm_ui_instance)
+
         initial_state = self.get()
         initial_cursor = self.index(tk.INSERT)
         self.root = self.winfo_toplevel()
         self._undo_stack = deque([(initial_state, initial_cursor)], maxlen=100)
         self._redo_stack = deque(maxlen=100)
+
         self.max_length = max_length
         self.lang = lang
         self.is_listbox_entry = False
         self.selected_text = False
         self.border_color = None
+        self.focus_out_bind_id = None
+        self.context_menu = None
 
-        self.teraterm_ui = teraterm_ui_instance
+        self.bindings = []
+        self.setup_bindings()
+        self.setup_context_menu()
+
+    def setup_bindings(self):
         self.focus_out_bind_id = self.root.bind("<FocusOut>", self._on_window_focus_out, add="+")
-        self.bind("<FocusIn>", self.disable_slider_keys)
-        self.bind("<FocusOut>", self.enable_slider_keys)
-        self.bind("<Enter>", self.on_enter)
-        self.bind("<Motion>", self.on_motion)
-        self.bind("<Leave>", self.on_leave)
-
-        self.bind("<Control-z>", self.undo)
-        self.bind("<Control-Z>", self.undo)
-        self.bind("<Control-y>", self.redo)
-        self.bind("<Control-Y>", self.redo)
-
-        self.bind("<Control-v>", self.custom_paste)
-        self.bind("<Control-V>", self.custom_paste)
-
-        self.bind("<Control-x>", self.custom_cut)
-        self.bind("<Control-X>", self.custom_cut)
-
-        self.bind("<Control-a>", self.select_all)
-        self.bind("<Control-A>", self.select_all)
-
-        # Update the undo stack every time the Entry content changes
-        self.bind("<KeyRelease>", self.update_undo_stack)
-
-        # Context Menu
-        self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10), relief="flat", background="gray40", fg="snow")
-        self.context_menu.add_command(label="Cut", command=self.cut)
-        self.context_menu.add_command(label="Copy", command=self.copy)
-        self.context_menu.add_command(label="Paste", command=self.paste)
-        self.context_menu.add_command(label="Select All", command=self.select_all)
-        self.context_menu.add_command(label="Undo", command=self.undo)
-        self.context_menu.add_command(label="Redo", command=self.redo)
-
-        self.bind("<Button-2>", self.custom_middle_mouse)
-        self.bind("<Button-3>", self.show_menu)
+        bindings = [("<FocusIn>", self.disable_slider_keys), ("<FocusOut>", self.enable_slider_keys),
+                    ("<Enter>", self.on_enter), ("<Motion>", self.on_motion), ("<Leave>", self.on_leave),
+                    ("<Control-z>", self.undo), ("<Control-Z>", self.undo), ("<Control-y>", self.redo),
+                    ("<Control-Y>", self.redo), ("<Control-v>", self.custom_paste), ("<Control-V>", self.custom_paste),
+                    ("<Control-x>", self.custom_cut), ("<Control-X>", self.custom_cut),
+                    ("<Control-a>", self.select_all), ("<Control-A>", self.select_all),
+                    ("<KeyRelease>", self.update_undo_stack), ("<Button-2>", self.custom_middle_mouse),
+                    ("<Button-3>", self.show_menu)]
+        for event, callback in bindings:
+            bind_id = self.bind(event, callback)
+            self.bindings.append((event, bind_id))
 
     def _on_window_focus_out(self, event=None):
         if self.get() == "" or self.get().isspace():
@@ -406,12 +403,20 @@ class CustomEntry(CTkEntry):
             self.select_clear()
             return "break"
 
+    def setup_context_menu(self):
+        self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10),
+                                    relief="flat", background="gray40", fg="snow")
+        menu_items = [("Cut", lambda: self.cut()), ("Copy", lambda: self.copy()), ("Paste", lambda: self.paste()),
+                      ("Select All", lambda: self.select_all()), ("Undo", lambda: self.undo()),
+                      ("Redo", lambda: self.redo())]
+        for label, command in menu_items:
+            self.context_menu.add_command(label=label, command=command)
+
     def show_menu(self, event):
         if self.cget("state") == "disabled":
             return
 
         self.focus_set()
-        root = self.winfo_toplevel()
         self.selected_text = True
 
         if self.lang == "English":
@@ -581,33 +586,31 @@ class CustomEntry(CTkEntry):
         self.teraterm_ui.search_classes(None)
 
     def destroy(self):
-        self.unbind("<FocusIn>")
-        self.unbind("<FocusOut>")
-        self.unbind("<Control-z>")
-        self.unbind("<Control-Z>")
-        self.unbind("<Control-y>")
-        self.unbind("<Control-Y>")
-        self.unbind("<Control-v>")
-        self.unbind("<Control-V>")
-        self.unbind("<Control-x>")
-        self.unbind("<Control-X>")
-        self.unbind("<Control-a>")
-        self.unbind("<Control-A>")
-        self.unbind("<Button-2>")
-        self.unbind("<Button-3>")
-        self.unbind("<KeyRelease>")
-        self.root.unbind("<FocusOut>", self.focus_out_bind_id)
-        self.focus_out_bind_id = None
+        if hasattr(self, "bindings"):
+            for event, bind_id in self.bindings:
+                self.unbind(event, bind_id)
+        if hasattr(self, "focus_out_bind_id") and self.focus_out_bind_id:
+            self.root.unbind("<FocusOut>", self.focus_out_bind_id)
+
+        if hasattr(self, "context_menu") and self.context_menu:
+            last_index = self.context_menu.index("end")
+            if last_index is not None:
+                for i in range(last_index + 1):
+                    self.context_menu.entryconfigure(i, command=None)
+            self.context_menu.destroy()
+        if hasattr(self, "_undo_stack"):
+            self._undo_stack.clear()
+        if hasattr(self, "_redo_stack"):
+            self._redo_stack.clear()
+
+        self.teraterm_ui = None
+        self.context_menu = None
+        self._undo_stack = None
+        self._redo_stack = None
+        self.bindings = None
         self.max_length = None
         self.lang = None
         self.is_listbox_entry = None
         self.selected_text = None
         self.border_color = None
-        self.teraterm_ui = None
-        self.context_menu.destroy()
-        self.context_menu = None
-        self._undo_stack.clear()
-        self._redo_stack.clear()
-        self._undo_stack = None
-        self._redo_stack = None
         super().destroy()
