@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 1/8/25
+# DATE - Started 1/1/23, Current Build v0.9.5 - 1/10/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -46,6 +46,7 @@ import tkinter as tk
 import time
 import traceback
 import warnings
+import weakref
 import webbrowser
 import win32clipboard
 import win32con
@@ -1971,8 +1972,6 @@ class TeraTermUI(customtkinter.CTk):
                 future = self.thread_pool.submit(self.my_classes_event, dialog_input)
                 self.update_loading_screen(loading_screen, future)
                 self.my_classes_event_completed = False
-            else:
-                self.dialog.destroy()
 
     # function for seeing the classes you are currently enrolled for
     def my_classes_event(self, dialog_input):
@@ -10752,23 +10751,30 @@ class TeraTermUI(customtkinter.CTk):
 
 
 class CustomButton(customtkinter.CTkButton):
-    __slots__ = ("master", "command")
+    __slots__ = ("master", "command", "text", "image", "is_pressed", "click_command", "bindings")
 
     def __init__(self, master=None, command=None, **kwargs):
         super().__init__(master, cursor="hand2", **kwargs)
-        self.is_pressed = False
-        self.click_command = command
         self.text = kwargs.pop("text", None)
         self.image = kwargs.pop("image", None)
+
+        self.is_pressed = False
+        self.click_command = command
+        self.bindings = []
+
+        self.setup_bindings()
+
         if self.image and not self.text:
             self.configure(image=self.image)
-        else:
-            self.bind("<Enter>", self.on_enter)
-            self.bind("<Motion>", self.on_enter)
-            self.bind("<Leave>", self.on_leave)
-            self.bind("<B1-Motion>", self.on_motion)
-        self.bind("<ButtonPress-1>", self.on_button_down)
-        self.bind("<ButtonRelease-1>", self.on_button_up)
+
+    def setup_bindings(self):
+        bindings = [("<ButtonPress-1>", self.on_button_down), ("<ButtonRelease-1>", self.on_button_up)]
+        if not (self.image and not self.text):
+            bindings.extend([("<Enter>", self.on_enter), ("<Motion>", self.on_enter), ("<Leave>", self.on_leave),
+                             ("<B1-Motion>", self.on_motion)])
+        for event, callback in bindings:
+            bind_id = self.bind(event, callback)
+            self.bindings.append((event, bind_id))
 
     def on_button_down(self, event):
         if self.cget("state") == "disabled":
@@ -10822,15 +10828,17 @@ class CustomButton(customtkinter.CTkButton):
             self.configure(cursor="")
 
     def destroy(self):
+        if hasattr(self, "bindings"):
+            for event, bind_id in self.bindings:
+                try:
+                    self.unbind(event, bind_id)
+                except Exception as err:
+                    logging.error(f"Error unbinding event {event}: {err}")
         self.text = None
         self.image = None
         self.is_pressed = None
-        self.unbind("<Enter>")
-        self.unbind("<Leave>")
-        self.unbind("<ButtonPress-1>")
-        self.unbind("<ButtonRelease-1>")
-        self.unbind("<B1-Motion>")
-        self.unbind("<Motion>")
+        self.click_command = None
+        self.bindings = None
         super().destroy()
 
 
@@ -10882,13 +10890,18 @@ class CustomScrollableFrame(customtkinter.CTkScrollableFrame):
 
 
 class CustomTextBox(customtkinter.CTkTextbox):
-    __slots__ = ("master", "teraterm_ui_instance", "enable_autoscroll", "read_only", "lang", "max_length")
+    __slots__ = ("master", "teraterm_ui_instance", "enable_autoscroll", "read_only", "lang", "max_length",
+                 "disabled_autoscroll", "after_id", "auto_scroll", "selected_text", "saved_cursor_position",
+                 "y_scrollbar_bindings", "x_scrollbar_bindings", "context_menu", "_undo_stack", "_redo_stack",
+                 "bindings")
 
     def __init__(self, master, teraterm_ui_instance, enable_autoscroll=True,
                  read_only=False, lang=None, max_length=10000, **kwargs):
         if "cursor" not in customtkinter.CTkTextbox._valid_tk_text_attributes:
             customtkinter.CTkTextbox._valid_tk_text_attributes.add("cursor")
         super().__init__(master, cursor="xterm", **kwargs)
+        self.teraterm_ui = weakref.proxy(teraterm_ui_instance)
+
         self.auto_scroll = enable_autoscroll
         self.lang = lang
         self.read_only = read_only
@@ -10897,69 +10910,47 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.after_id = None
         self.selected_text = False
         self.saved_cursor_position = None
-
-        self.teraterm_ui = teraterm_ui_instance
-
-        if self.auto_scroll:
-            self.update_text()
-
-        self.bind("<Button-1>", self.stop_autoscroll)
-        self.bind("<MouseWheel>", self.stop_autoscroll)
-        self.bind("<FocusIn>", self.disable_slider_keys)
-        self.bind("<FocusOut>", self.enable_slider_keys)
-        self.bind("<Enter>", self.on_enter)
-        self.bind("<Motion>", self.on_motion)
-        self.bind("<Leave>", self.on_leave)
-
-        if hasattr(self, "_y_scrollbar"):
-            self._y_scrollbar.bind("<Button-1>", self.stop_autoscroll)
-            self._y_scrollbar.bind("<B1-Motion>", self.stop_autoscroll)
-        if hasattr(self, "_x_scrollbar"):
-            self._x_scrollbar.bind("<Button-1>", self.stop_autoscroll)
-            self._x_scrollbar.bind("<B1-Motion>", self.stop_autoscroll)
+        self.y_scrollbar_bindings = None
+        self.x_scrollbar_bindings = None
+        self.context_menu = None
 
         initial_state = self.get("1.0", "end-1c")
         initial_cursor = self.index(tk.INSERT)
         self._undo_stack = deque([(initial_state, initial_cursor)], maxlen=500)
         self._redo_stack = deque(maxlen=500)
 
-        self.bind("<Control-z>", self.undo)
-        self.bind("<Control-Z>", self.undo)
-        self.bind("<Control-y>", self.redo)
-        self.bind("<Control-Y>", self.redo)
+        self.bindings = []
+        self.setup_bindings()
+        self.setup_context_menu()
 
-        if not self.read_only:
-            self.bind("<Control-v>", self.custom_paste)
-            self.bind("<Control-V>", self.custom_paste)
+        if self.auto_scroll:
+            self.update_text()
 
-            self.bind("<Control-x>", self.custom_cut)
-            self.bind("<Control-X>", self.custom_cut)
-
-        self.bind("<Control-a>", self.select_all)
-        self.bind("<Control-A>", self.select_all)
-
-        # Update the undo stack every time the Textbox content changes
-        self.bind("<KeyRelease>", self.update_undo_stack)
-
+    def setup_bindings(self):
+        bindings = [("<Button-1>", self.stop_autoscroll), ("<MouseWheel>", self.stop_autoscroll),
+                    ("<FocusIn>", self.disable_slider_keys), ("<FocusOut>", self.enable_slider_keys),
+                    ("<Enter>", self.on_enter), ("<Motion>", self.on_motion), ("<Leave>", self.on_leave),
+                    ("<Control-z>", self.undo), ("<Control-Z>", self.undo), ("<Control-y>", self.redo),
+                    ("<Control-Y>", self.redo), ("<Control-v>", self.custom_paste), ("<Control-V>", self.custom_paste),
+                    ("<Control-x>", self.custom_cut), ("<Control-X>", self.custom_cut),
+                    ("<Control-a>", self.select_all), ("<Control-A>", self.select_all),
+                    ("<Button-2>", self.custom_middle_mouse), ("<Button-3>", self.show_menu),
+                    ("<KeyRelease>", self.update_undo_stack)]
         if self.read_only:
-            self.bind("<Up>", self.scroll_more_up)
-            self.bind("<Down>", self.scroll_more_down)
-            self.bind("<Left>", self.teraterm_ui.move_slider_left)
-            self.bind("<Right>", self.teraterm_ui.move_slider_right)
-
-        # Context Menu
-        self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10), relief="flat", background="gray40", fg="snow")
-        if not self.read_only:
-            self.context_menu.add_command(label="Cut", command=self.cut)
-        self.context_menu.add_command(label="Copy", command=self.copy)
-        if not self.read_only:
-            self.context_menu.add_command(label="Paste", command=self.paste)
-        self.context_menu.add_command(label="Select All", command=self.select_all)
-        if not self.read_only:
-            self.context_menu.add_command(label="Undo", command=self.undo)
-            self.context_menu.add_command(label="Redo", command=self.redo)
-        self.bind("<Button-2>", self.custom_middle_mouse)
-        self.bind("<Button-3>", self.show_menu)
+            bindings.extend([("<Up>", self.scroll_more_up), ("<Down>", self.scroll_more_down),
+                             ("<Left>", self.teraterm_ui.move_slider_left),
+                             ("<Right>", self.teraterm_ui.move_slider_right)])
+        if hasattr(self, "_y_scrollbar"):
+            self.y_scrollbar_bindings = [("<Button-1>", self.stop_autoscroll), ("<B1-Motion>", self.stop_autoscroll)]
+            for event, callback in self.y_scrollbar_bindings:
+                self._y_scrollbar.bind(event, callback)
+        if hasattr(self, "_x_scrollbar"):
+            self.x_scrollbar_bindings = [("<Button-1>", self.stop_autoscroll), ("<B1-Motion>", self.stop_autoscroll)]
+            for event, callback in self.x_scrollbar_bindings:
+                self._x_scrollbar.bind(event, callback)
+        for event, callback in bindings:
+            bind_id = self.bind(event, callback)
+            self.bindings.append((event, bind_id))
 
     def disable_slider_keys(self, event=None):
         if self.tag_ranges(tk.SEL) and self.selected_text:
@@ -11106,6 +11097,19 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.stop_autoscroll(event=None)
             self.tag_add(tk.SEL, "1.0", tk.END)
             return "break"
+
+    def setup_context_menu(self):
+        self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10),
+                                    relief="flat", background="gray40", fg="snow")
+        menu_items = []
+        if not self.read_only:
+            menu_items.extend([("Cut", lambda: self.cut()), ("Copy", lambda: self.copy()),
+                               ("Paste", lambda: self.paste()), ("Select All", lambda: self.select_all()),
+                               ("Undo", lambda: self.undo()), ("Redo", lambda: self.redo())])
+        else:
+            menu_items.extend([("Copy", lambda: self.copy()), ("Select All", lambda: self.select_all())])
+        for label, command in menu_items:
+            self.context_menu.add_command(label=label, command=command)
 
     def show_menu(self, event):
         self.saved_cursor_position = self.index(tk.INSERT)
@@ -11259,103 +11263,90 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.yview_scroll(scroll_units, "units")
 
     def destroy(self):
-        self.unbind("<Button-1>")
-        self.unbind("<MouseWheel>")
-        self.unbind("<FocusIn>")
-        self.unbind("<FocusOut>")
+        if self.after_id:
+            self.after_cancel(self.after_id)
+            self.after_id = None
+        if hasattr(self, "bindings"):
+            for event, bind_id in self.bindings:
+                self.unbind(event, bind_id)
         if hasattr(self, "_y_scrollbar"):
             self._y_scrollbar.unbind("<Button-1>")
             self._y_scrollbar.unbind("<B1-Motion>")
         if hasattr(self, "_x_scrollbar"):
             self._x_scrollbar.unbind("<Button-1>")
             self._x_scrollbar.unbind("<B1-Motion>")
-        self.unbind("<Control-z>")
-        self.unbind("<Control-Z>")
-        self.unbind("<Control-y>")
-        self.unbind("<Control-Y>")
-        self.unbind("<Control-v>")
-        self.unbind("<Control-V>")
-        self.unbind("<Control-x>")
-        self.unbind("<Control-X>")
-        self.unbind("<Control-a>")
-        self.unbind("<Control-A>")
-        self.unbind("<Button-2>")
-        self.unbind("<Button-3>")
-        self.unbind("<KeyRelease>")
         if self.read_only:
             self.unbind("<Up>")
             self.unbind("<Down>")
+            self.unbind("<Left>")
+            self.unbind("<Right>")
+
+        if hasattr(self, "context_menu") and self.context_menu:
+            last_index = self.context_menu.index("end")
+            if last_index is not None:
+                for i in range(last_index + 1):
+                    self.context_menu.entryconfigure(i, command=None)
+            self.context_menu.destroy()
+        if hasattr(self, "_undo_stack"):
+            self._undo_stack.clear()
+        if hasattr(self, "_redo_stack"):
+            self._redo_stack.clear()
+
+        self.teraterm_ui = None
+        self.context_menu = None
+        self._undo_stack = None
+        self._redo_stack = None
+        self.bindings = None
         self.auto_scroll = None
         self.lang = None
         self.read_only = None
         self.disabled_autoscroll = None
-        self.after_id = None
         self.selected_text = None
-        self.teraterm_ui = None
-        self.context_menu.destroy()
-        self.context_menu = None
         self.saved_cursor_position = None
-        self._undo_stack.clear()
-        self._redo_stack.clear()
-        self._undo_stack = None
-        self._redo_stack = None
         super().destroy()
 
 
 class CustomEntry(customtkinter.CTkEntry):
-    __slots__ = ("master", "teraterm_ui_instance", "lang", "max_length")
+    __slots__ = ("master", "teraterm_ui", "lang", "max_length", "is_listbox_entry", "selected_text", "border_color",
+                 "focus_out_bind_id", "context_menu", "bindings", "_undo_stack", "_redo_stack")
 
     def __init__(self, master, teraterm_ui_instance, lang=None, max_length=250, *args, **kwargs):
         if "cursor" not in customtkinter.CTkEntry._valid_tk_entry_attributes:
             customtkinter.CTkEntry._valid_tk_entry_attributes.add("cursor")
         super().__init__(master, cursor="xterm", *args, **kwargs)
+        self.teraterm_ui = weakref.proxy(teraterm_ui_instance)
+
         initial_state = self.get()
         initial_cursor = self.index(tk.INSERT)
         self.root = self.winfo_toplevel()
         self._undo_stack = deque([(initial_state, initial_cursor)], maxlen=100)
         self._redo_stack = deque(maxlen=100)
+
         self.max_length = max_length
         self.lang = lang
         self.is_listbox_entry = False
         self.selected_text = False
         self.border_color = None
+        self.focus_out_bind_id = None
+        self.context_menu = None
 
-        self.teraterm_ui = teraterm_ui_instance
+        self.bindings = []
+        self.setup_bindings()
+        self.setup_context_menu()
+
+    def setup_bindings(self):
         self.focus_out_bind_id = self.root.bind("<FocusOut>", self._on_window_focus_out, add="+")
-        self.bind("<FocusIn>", self.disable_slider_keys)
-        self.bind("<FocusOut>", self.enable_slider_keys)
-        self.bind("<Enter>", self.on_enter)
-        self.bind("<Motion>", self.on_motion)
-        self.bind("<Leave>", self.on_leave)
-
-        self.bind("<Control-z>", self.undo)
-        self.bind("<Control-Z>", self.undo)
-        self.bind("<Control-y>", self.redo)
-        self.bind("<Control-Y>", self.redo)
-
-        self.bind("<Control-v>", self.custom_paste)
-        self.bind("<Control-V>", self.custom_paste)
-
-        self.bind("<Control-x>", self.custom_cut)
-        self.bind("<Control-X>", self.custom_cut)
-
-        self.bind("<Control-a>", self.select_all)
-        self.bind("<Control-A>", self.select_all)
-
-        # Update the undo stack every time the Entry content changes
-        self.bind("<KeyRelease>", self.update_undo_stack)
-
-        # Context Menu
-        self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10), relief="flat", background="gray40", fg="snow")
-        self.context_menu.add_command(label="Cut", command=self.cut)
-        self.context_menu.add_command(label="Copy", command=self.copy)
-        self.context_menu.add_command(label="Paste", command=self.paste)
-        self.context_menu.add_command(label="Select All", command=self.select_all)
-        self.context_menu.add_command(label="Undo", command=self.undo)
-        self.context_menu.add_command(label="Redo", command=self.redo)
-
-        self.bind("<Button-2>", self.custom_middle_mouse)
-        self.bind("<Button-3>", self.show_menu)
+        bindings = [("<FocusIn>", self.disable_slider_keys), ("<FocusOut>", self.enable_slider_keys),
+                    ("<Enter>", self.on_enter), ("<Motion>", self.on_motion), ("<Leave>", self.on_leave),
+                    ("<Control-z>", self.undo), ("<Control-Z>", self.undo), ("<Control-y>", self.redo),
+                    ("<Control-Y>", self.redo), ("<Control-v>", self.custom_paste), ("<Control-V>", self.custom_paste),
+                    ("<Control-x>", self.custom_cut), ("<Control-X>", self.custom_cut),
+                    ("<Control-a>", self.select_all), ("<Control-A>", self.select_all),
+                    ("<KeyRelease>", self.update_undo_stack), ("<Button-2>", self.custom_middle_mouse),
+                    ("<Button-3>", self.show_menu)]
+        for event, callback in bindings:
+            bind_id = self.bind(event, callback)
+            self.bindings.append((event, bind_id))
 
     def _on_window_focus_out(self, event=None):
         if self.get() == "" or self.get().isspace():
@@ -11494,12 +11485,20 @@ class CustomEntry(customtkinter.CTkEntry):
             self.select_clear()
             return "break"
 
+    def setup_context_menu(self):
+        self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10),
+                                    relief="flat", background="gray40", fg="snow")
+        menu_items = [("Cut", lambda: self.cut()), ("Copy", lambda: self.copy()), ("Paste", lambda: self.paste()),
+                      ("Select All", lambda: self.select_all()), ("Undo", lambda: self.undo()),
+                      ("Redo", lambda: self.redo())]
+        for label, command in menu_items:
+            self.context_menu.add_command(label=label, command=command)
+
     def show_menu(self, event):
         if self.cget("state") == "disabled":
             return
 
         self.focus_set()
-        root = self.winfo_toplevel()
         self.selected_text = True
 
         if self.lang == "English":
@@ -11669,89 +11668,74 @@ class CustomEntry(customtkinter.CTkEntry):
         self.teraterm_ui.search_classes(None)
 
     def destroy(self):
-        self.unbind("<FocusIn>")
-        self.unbind("<FocusOut>")
-        self.unbind("<Control-z>")
-        self.unbind("<Control-Z>")
-        self.unbind("<Control-y>")
-        self.unbind("<Control-Y>")
-        self.unbind("<Control-v>")
-        self.unbind("<Control-V>")
-        self.unbind("<Control-x>")
-        self.unbind("<Control-X>")
-        self.unbind("<Control-a>")
-        self.unbind("<Control-A>")
-        self.unbind("<Button-2>")
-        self.unbind("<Button-3>")
-        self.unbind("<KeyRelease>")
-        self.root.unbind("<FocusOut>", self.focus_out_bind_id)
-        self.focus_out_bind_id = None
+        if hasattr(self, "bindings"):
+            for event, bind_id in self.bindings:
+                self.unbind(event, bind_id)
+        if hasattr(self, "focus_out_bind_id") and self.focus_out_bind_id:
+            self.root.unbind("<FocusOut>", self.focus_out_bind_id)
+
+        if hasattr(self, "context_menu") and self.context_menu:
+            last_index = self.context_menu.index("end")
+            if last_index is not None:
+                for i in range(last_index + 1):
+                    self.context_menu.entryconfigure(i, command=None)
+            self.context_menu.destroy()
+        if hasattr(self, "_undo_stack"):
+            self._undo_stack.clear()
+        if hasattr(self, "_redo_stack"):
+            self._redo_stack.clear()
+
+        self.teraterm_ui = None
+        self.context_menu = None
+        self._undo_stack = None
+        self._redo_stack = None
+        self.bindings = None
         self.max_length = None
         self.lang = None
         self.is_listbox_entry = None
         self.selected_text = None
         self.border_color = None
-        self.teraterm_ui = None
-        self.context_menu.destroy()
-        self.context_menu = None
-        self._undo_stack.clear()
-        self._redo_stack.clear()
-        self._undo_stack = None
-        self._redo_stack = None
         super().destroy()
 
 
 class CustomComboBox(customtkinter.CTkComboBox):
-    __slots__ = ("master", "teraterm_ui_instance", "lang", "max_length")
+    __slots__ = ("master", "teraterm_ui_instance", "lang", "max_length", "selected_text", "border_color",
+                 "context_menu", "bindings", "_undo_stack", "_redo_stack")
 
     def __init__(self, master, teraterm_ui_instance, lang=None, max_length=250, *args, **kwargs):
         if "cursor" not in customtkinter.CTkEntry._valid_tk_entry_attributes:
             customtkinter.CTkEntry._valid_tk_entry_attributes.add("cursor")
         super().__init__(master, cursor="xterm", *args, **kwargs)
+        self.teraterm_ui = weakref.proxy(teraterm_ui_instance)
+
         initial_state = self.get()
         initial_cursor = self._entry.index(tk.INSERT)
         self._undo_stack = deque([(initial_state, initial_cursor)], maxlen=100)
         self._redo_stack = deque(maxlen=100)
+
+        self.bindings = []
+        self.setup_bindings()
+
         self.max_length = max_length
         self.lang = lang
         self.border_color = None
         self.selected_text = False
+        self.context_menu = None
 
-        self.teraterm_ui = teraterm_ui_instance
-        self.bind("<FocusIn>", self.disable_slider_keys)
-        self.bind("<FocusOut>", self.enable_slider_keys)
-        self.bind("<Enter>", self.on_enter)
-        self.bind("<Motion>", self.on_motion)
-        self.bind("<Leave>", self.on_leave)
+        self.setup_context_menu()
 
-        self.bind("<Control-z>", self.undo)
-        self.bind("<Control-Z>", self.undo)
-        self.bind("<Control-y>", self.redo)
-        self.bind("<Control-Y>", self.redo)
-
-        self.bind("<Control-v>", self.custom_paste)
-        self.bind("<Control-V>", self.custom_paste)
-
-        self.bind("<Control-x>", self.custom_cut)
-        self.bind("<Control-X>", self.custom_cut)
-
-        self.bind("<Control-a>", self.select_all)
-        self.bind("<Control-A>", self.select_all)
-
-        # Update the undo stack every time the Entry content changes
-        self.bind("<KeyRelease>", self.update_undo_stack)
-
-        # Context Menu
-        self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10), relief="flat", background="gray40", fg="snow")
-        self.context_menu.add_command(label="Cut", command=self.cut)
-        self.context_menu.add_command(label="Copy", command=self.copy)
-        self.context_menu.add_command(label="Paste", command=self.paste)
-        self.context_menu.add_command(label="Select All", command=self.select_all)
-        self.context_menu.add_command(label="Undo", command=self.undo)
-        self.context_menu.add_command(label="Redo", command=self.redo)
-
-        self.bind("<Button-2>", self.custom_middle_mouse)
-        self.bind("<Button-3>", self.show_menu)
+    def setup_bindings(self):
+        bindings = [("<FocusIn>", self.disable_slider_keys), ("<FocusOut>", self.enable_slider_keys),
+                    ("<Enter>", self.on_enter), ("<Motion>", self.on_motion), ("<Leave>", self.on_leave),
+                    ("<Control-z>", self.undo), ("<Control-Z>", self.undo), ("<Control-y>", self.redo),
+                    ("<Control-Y>", self.redo), ("<Control-v>", self.custom_paste), ("<Control-V>", self.custom_paste),
+                    ("<Control-x>", self.custom_cut), ("<Control-X>", self.custom_cut),
+                    ("<Control-a>", self.select_all), ("<Control-A>", self.select_all),
+                    ("<Button-2>", self.custom_middle_mouse), ("<Button-3>", self.show_menu),
+                    ("<KeyRelease>", self.update_undo_stack)]
+        for event, callback in bindings:
+            bind_id = self.bind(event, callback)
+            self.bindings.append((event, bind_id))
 
     def disable_slider_keys(self, event=None):
         if self.cget("border_color") == "#c30101":
@@ -11898,12 +11882,20 @@ class CustomComboBox(customtkinter.CTkComboBox):
             self._entry.select_clear()
             return "break"
 
+    def setup_context_menu(self):
+        self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10),
+                                    relief="flat", background="gray40", fg="snow")
+        menu_items = [("Cut", lambda: self.cut()), ("Copy", lambda: self.copy()), ("Paste", lambda: self.paste()),
+                      ("Select All", lambda: self.select_all()), ("Undo", lambda: self.undo()),
+                      ("Redo", lambda: self.redo())]
+        for label, command in menu_items:
+            self.context_menu.add_command(label=label, command=command)
+
     def show_menu(self, event):
         if self.cget("state") == "disabled":
             return
 
         self.focus_set()
-        root = self.winfo_toplevel()
         self.selected_text = True
 
         if self.lang == "English":
@@ -12034,37 +12026,35 @@ class CustomComboBox(customtkinter.CTkComboBox):
         return "break"
 
     def destroy(self):
-        self.unbind("<FocusIn>")
-        self.unbind("<FocusOut>")
-        self.unbind("<Control-z>")
-        self.unbind("<Control-Z>")
-        self.unbind("<Control-y>")
-        self.unbind("<Control-Y>")
-        self.unbind("<Control-v>")
-        self.unbind("<Control-V>")
-        self.unbind("<Control-x>")
-        self.unbind("<Control-X>")
-        self.unbind("<Control-a>")
-        self.unbind("<Control-A>")
-        self.unbind("<Button-2>")
-        self.unbind("<Button-3>")
-        self.unbind("<KeyRelease>")
-        self.border_color = None
-        self.max_length = None
-        self.lang = None
-        self.teraterm_ui = None
-        self.selected_text = None
-        self.context_menu.destroy()
-        self.context_menu = None
-        self._undo_stack.clear()
-        self._redo_stack.clear()
-        self._undo_stack = None
-        self._redo_stack = None
-        super().destroy()
+            if hasattr(self, "bindings"):
+                for event, bind_id in self.bindings:
+                    self.unbind(event, bind_id)
+
+            if hasattr(self, "context_menu") and self.context_menu:
+                last_index = self.context_menu.index("end")
+                if last_index is not None:
+                    for i in range(last_index + 1):
+                        self.context_menu.entryconfigure(i, command=None)
+                self.context_menu.destroy()
+            if hasattr(self, "_undo_stack"):
+                self._undo_stack.clear()
+            if hasattr(self, "_redo_stack"):
+                self._redo_stack.clear()
+
+            self.teraterm_ui = None
+            self.context_menu = None
+            self._undo_stack = None
+            self._redo_stack = None
+            self.bindings = None
+            self.border_color = None
+            self.max_length = None
+            self.lang = None
+            self.selected_text = None
+            super().destroy()
 
 
 class SmoothFadeToplevel(customtkinter.CTkToplevel):
-    __slots__ = ("fade_duration", "final_alpha", "alpha", "fade_direction")
+    __slots__ = ("fade_duration", "final_alpha", "alpha", "fade_direction", "alpha", "fade_direction", "_fade_after_id")
 
     def __init__(self, fade_duration=30, final_alpha=1.0, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -12102,7 +12092,7 @@ class SmoothFadeToplevel(customtkinter.CTkToplevel):
         super().destroy()
 
 class SmoothFadeInputDialog(customtkinter.CTkInputDialog):
-    __slots__ = ("fade_duration", "final_alpha", "alpha", "fade_direction")
+    __slots__ = ("fade_duration", "final_alpha", "alpha", "fade_direction", "alpha", "fade_direction", "_fade_after_id")
 
     def __init__(self, fade_duration=30, final_alpha=1.0, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -12140,7 +12130,8 @@ class SmoothFadeInputDialog(customtkinter.CTkInputDialog):
         super().destroy()
 
 class ImageSlideshow(customtkinter.CTkFrame):
-    __slots__ = ("parent", "image_folder", "interval", "width", "height")
+    __slots__ = ("parent", "image_folder", "interval", "width", "height", "image_files", "current_image", "index",
+                 "label", "arrow_left", "arrow_right", "after_id", "is_running")
 
     def __init__(self, parent, image_folder, interval=3, width=300, height=200, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
