@@ -155,6 +155,8 @@ class CTkToolTip(Toplevel):
         """
         context_menu = self.find_context_menu()
         if self.disable or context_menu:
+            self.status = "outside"
+            self.withdraw()
             return
 
         self.last_moved = time.time()
@@ -221,6 +223,12 @@ class CTkToolTip(Toplevel):
         """
         Continuously monitors the tooltip's state and mouse position to ensure proper behavior.
         """
+        context_menu = self.find_context_menu()
+        if context_menu:
+            self.status = "outside"
+            self.withdraw()
+            return
+
         main_win_status = self.widget.winfo_toplevel().attributes("-disabled") == 1
         if self.status == "outside" or self.disable:
             return
