@@ -559,23 +559,30 @@ class CTkMessagebox(customtkinter.CTkToplevel):
 
 
 class CustomButton(customtkinter.CTkButton):
-    __slots__ = ("master", "command")
+    __slots__ = ("master", "command", "text", "image", "is_pressed", "click_command", "bindings")
 
     def __init__(self, master=None, command=None, **kwargs):
         super().__init__(master, cursor="hand2", **kwargs)
-        self.is_pressed = False
-        self.click_command = command
         self.text = kwargs.pop("text", None)
         self.image = kwargs.pop("image", None)
+
+        self.is_pressed = False
+        self.click_command = command
+        self.bindings = []
+
+        self.setup_bindings()
+
         if self.image and not self.text:
             self.configure(image=self.image)
-        else:
-            self.bind("<Enter>", self.on_enter)
-            self.bind("<Motion>", self.on_enter)
-            self.bind("<Leave>", self.on_leave)
-            self.bind("<B1-Motion>", self.on_motion)
-        self.bind("<ButtonPress-1>", self.on_button_down)
-        self.bind("<ButtonRelease-1>", self.on_button_up)
+
+    def setup_bindings(self):
+        bindings = [("<ButtonPress-1>", self.on_button_down), ("<ButtonRelease-1>", self.on_button_up)]
+        if not (self.image and not self.text):
+            bindings.extend([("<Enter>", self.on_enter), ("<Motion>", self.on_enter), ("<Leave>", self.on_leave),
+                             ("<B1-Motion>", self.on_motion)])
+        for event, callback in bindings:
+            bind_id = self.bind(event, callback)
+            self.bindings.append((event, bind_id))
 
     def on_button_down(self, event):
         if self.cget("state") == "disabled":
@@ -629,15 +636,17 @@ class CustomButton(customtkinter.CTkButton):
             self.configure(cursor="")
 
     def destroy(self):
+        if hasattr(self, "bindings"):
+            for event, bind_id in self.bindings:
+                try:
+                    self.unbind(event, bind_id)
+                except Exception as err:
+                    logging.error(f"Error unbinding event {event}: {err}")
         self.text = None
         self.image = None
         self.is_pressed = None
-        self.unbind("<Enter>")
-        self.unbind("<Leave>")
-        self.unbind("<ButtonPress-1>")
-        self.unbind("<ButtonRelease-1>")
-        self.unbind("<B1-Motion>")
-        self.unbind("<Motion>")
+        self.click_command = None
+        self.bindings = None
         super().destroy()
 
 
