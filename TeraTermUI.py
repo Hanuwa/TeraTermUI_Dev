@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 1/10/25
+# DATE - Started 1/1/23, Current Build v0.9.5 - 1/11/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -9646,44 +9646,80 @@ class TeraTermUI(customtkinter.CTk):
         self.status.bind("<Escape>", lambda event: self.on_status_window_close())
 
     def on_status_window_close(self):
-        self.unload_image("update")
-        self.unload_image("link")
-        self.unload_image("plane")
-        self.status_frame.unbind("<Button-1>")
-        self.status_frame.unbind("<Button-2>")
-        self.status_frame.unbind("<Button-3>")
-        self.status_title.unbind("<Button-1>")
-        self.version.unbind("<Button-1>")
-        self.check_update_text.unbind("<Button-1>")
-        self.website.unbind("<Button-1>")
-        self.notaso.unbind("<Button-1>")
-        self.faq_text.unbind("<Button-1>")
-        self.status.unbind("<Control-space>")
-        self.feedback_text.unbind("<FocusIn>")
-        self.status.unbind("<Up>")
-        self.status.unbind("<Down>")
-        self.status.unbind("<Home>")
-        self.status.unbind("<End>")
-        self.status.unbind("<Escape>")
-        self.move_slider_left_enabled = True
-        self.move_slider_right_enabled = True
-        self.up_arrow_key_enabled = True
-        self.down_arrow_key_enabled = True
-        self.status_frame = None
-        self.status_title = None
-        self.version = None
-        self.feedback_text = None
-        self.feedback_send = None
-        self.check_update_text = None
-        self.check_update_btn = None
-        self.website = None
-        self.website_link = None
-        self.notaso = None
-        self.notaso_link = None
-        self.faq_text = None
-        self.faq = None
-        self.status.destroy()
-        self.status = None
+        if self.status:
+            bindings = self.status.bind()
+            if isinstance(bindings, (list, tuple)):
+                for binding in bindings:
+                    self.status.unbind(binding)
+
+        def clear_commands(widget_s):
+            if widget_s and hasattr(widget_s, "children"):
+                for child in list(widget_s.children.values()):
+                    widget_name_s = str(child).lower()
+                    if hasattr(child, "configure") and ("button" in widget_name_s or "menu" in widget_name_s):
+                        child.configure(command=None)
+                    clear_commands(child)
+
+        def safe_destroy(widget_s):
+            try:
+                if hasattr(widget_s, "bindings"):
+                    if isinstance(widget_s.bindings, (list, tuple)):
+                        widget_s.bindings = []
+                widget_s.destroy()
+            except Exception:
+                pass
+
+        if self.status:
+            clear_commands(self.status)
+
+        if self.status_frame:
+            children = list(self.status_frame.winfo_children())
+            for widget in children:
+                widget_name = str(widget).lower()
+                if "ctktable" in widget_name:
+                    if hasattr(widget, "_values"):
+                        widget._values = None
+                elif "entry" in widget_name or "listbox" in widget_name or "text" in widget_name:
+                    if hasattr(widget, "delete"):
+                        try:
+                            widget.delete(0, "end")
+                        except Exception:
+                            pass
+                elif hasattr(widget, "set"):
+                    try:
+                        widget.set("")
+                    except Exception:
+                        pass
+                if hasattr(widget, "_image"):
+                    widget._image = None
+
+                safe_destroy(widget)
+
+        if hasattr(self, "unload_image"):
+            for img_name in ["update", "link", "plane"]:
+                self.unload_image(img_name)
+                if hasattr(self, f"_{img_name}_image"):
+                    setattr(self, f"_{img_name}_image", None)
+
+        attrs_to_clear = ["status_frame", "status_title", "version", "feedback_text", "feedback_send",
+                          "check_update_text", "check_update_btn", "website", "website_link", "notaso", "notaso_link",
+                          "faq_text", "faq", "qa_table"]
+        for attr in attrs_to_clear:
+            if hasattr(self, attr):
+                obj = getattr(self, attr)
+                if obj is not None and hasattr(obj, "destroy"):
+                    safe_destroy(obj)
+                setattr(self, attr, None)
+
+        navigation_flags = ["move_slider_left_enabled", "move_slider_right_enabled",
+                            "up_arrow_key_enabled", "down_arrow_key_enabled"]
+        for flag in navigation_flags:
+            setattr(self, flag, True)
+
+        if self.status:
+            safe_destroy(self.status)
+            self.status = None
+
         gc.collect()
 
     def status_scroll_up(self):
@@ -10285,59 +10321,80 @@ class TeraTermUI(customtkinter.CTk):
         self.help.bind("<Escape>", lambda event: self.on_help_window_close())
 
     def on_help_window_close(self):
-        self.unload_image("folder")
-        self.unload_image("fix")
-        self.help_frame.unbind("<Button-1>")
-        self.help_frame.unbind("<Button-2>")
-        self.help_frame.unbind("<Button-3>")
-        self.disable_idle.unbind("<space>")
-        self.disable_audio_val.unbind("<space>")
-        self.skip_auth_switch.unbind("<space>")
-        self.class_list.unbind("<<ListboxSelect>>")
-        self.class_list.unbind("<MouseWheel>")
-        self.class_list.unbind("<FocusIn>")
-        self.search_box.unbind("<KeyRelease>")
-        self.search_box.unbind("<FocusIn>")
-        self.help_title.unbind("<Button-1>")
-        self.notice.unbind("<Button-1>")
-        self.searchbox_text.unbind("<Button-1>")
-        self.curriculum_text.unbind("<Button-1>")
-        self.keybinds_text.unbind("<Button-1>")
-        self.terms_text.unbind("<Button-1>")
-        self.skip_auth_text.unbind("<Button-1>")
-        self.files_text.unbind("<Button-1>")
-        self.disable_idle_text.unbind("<Button-1>")
-        self.disable_audio_text.unbind("<Button-1>")
-        self.fix_text.unbind("<Button-1>")
-        self.curriculum.unbind("<FocusIn>")
-        self.skip_auth_switch.unbind("<FocusIn>")
-        self.disable_idle.unbind("<FocusIn>")
-        self.disable_audio_val.unbind("<FocusIn>")
-        self.help.unbind("<Control-space>")
-        self.help.unbind("<Up>")
-        self.help.unbind("<Down>")
-        self.help.unbind("<Home>")
-        self.help.unbind("<End>")
-        self.help.unbind("<Escape>")
-        self.move_slider_left_enabled = True
-        self.move_slider_right_enabled = True
-        self.up_arrow_key_enabled = True
-        self.down_arrow_key_enabled = True
-        self.help_frame = None
-        self.help_title = None
-        self.notice = None
-        self.search_box = None
-        self.class_list = None
-        self.curriculum = None
-        self.keybinds_table = None
-        self.terms_table = None
-        self.files = None
-        self.disable_idle = None
-        self.disable_audio_val = None
-        self.fix = None
-        self.skip_auth_switch = None
-        self.help.destroy()
-        self.help = None
+        if self.help:
+            bindings = self.help.bind()
+            if isinstance(bindings, (list, tuple)):
+                for binding in bindings:
+                    self.help.unbind(binding)
+
+        def clear_commands(widget_h):
+            if widget_h and hasattr(widget_h, "children"):
+                for child in list(widget_h.children.values()):
+                    widget_name_h = str(child).lower()
+                    if hasattr(child, "configure") and ("button" in widget_name_h or "menu" in widget_name_h):
+                        child.configure(command=None)
+                    clear_commands(child)
+
+        def safe_destroy(widget_h):
+            try:
+                if hasattr(widget_h, "bindings"):
+                    if isinstance(widget_h.bindings, (list, tuple)):
+                        widget_h.bindings = []
+                widget_h.destroy()
+            except Exception:
+                pass
+
+        if self.help:
+            clear_commands(self.help)
+
+        if self.help_frame:
+            children = list(self.help_frame.winfo_children())
+            for widget in children:
+                widget_name = str(widget).lower()
+                if "ctktable" in widget_name:
+                    if hasattr(widget, "_values"):
+                        widget._values = None
+                elif "entry" in widget_name or "listbox" in widget_name or "text" in widget_name:
+                    if hasattr(widget, "delete"):
+                        try:
+                            widget.delete(0, "end")
+                        except Exception:
+                            pass
+                elif hasattr(widget, "set"):
+                    try:
+                        widget.set("")
+                    except Exception:
+                        pass
+                if hasattr(widget, "_image"):
+                    widget._image = None
+
+                safe_destroy(widget)
+
+        if hasattr(self, "unload_image"):
+            for img_name in ["folder", "fix"]:
+                self.unload_image(img_name)
+                if hasattr(self, f"_{img_name}_image"):
+                    setattr(self, f"_{img_name}_image", None)
+
+        attrs_to_clear = ["help_frame", "help_title", "notice", "search_box", "class_list", "curriculum",
+                          "keybinds_table", "terms_table", "files", "disable_idle", "disable_audio_val", "fix",
+                          "skip_auth_switch", "terms", "keybinds"]
+        for attr in attrs_to_clear:
+            if hasattr(self, attr):
+                obj = getattr(self, attr)
+                if obj is not None and hasattr(obj, "destroy"):
+                    safe_destroy(obj)
+                setattr(self, attr, None)
+
+        navigation_flags = ["move_slider_left_enabled", "move_slider_right_enabled",
+                            "up_arrow_key_enabled", "down_arrow_key_enabled"]
+        for flag in navigation_flags:
+            setattr(self, flag, True)
+
+        if self.help:
+            safe_destroy(self.help)
+            self.help = None
+
         gc.collect()
 
     def help_scroll_up(self):
