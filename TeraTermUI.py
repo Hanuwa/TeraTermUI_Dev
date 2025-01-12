@@ -11039,19 +11039,24 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self.teraterm_ui.down_arrow_key_enabled = True
 
     def on_enter(self, event):
-        context_menu = self.find_context_menu()
-        if context_menu:
+        if self.find_context_menu():
             self.configure(cursor="arrow")
+        else:
+            self.configure(cursor="xterm")
+        self._canvas.configure(cursor="hand2")
 
     def on_motion(self, event):
-        context_menu = self.find_context_menu()
-        if context_menu:
+        if self.find_context_menu():
             self.configure(cursor="arrow")
+        else:
+            self.configure(cursor="xterm")
 
     def on_leave(self, event):
-        context_menu = self.find_context_menu()
-        if context_menu:
+        if self.find_context_menu():
             self.configure(cursor="xterm")
+        else:
+            self.configure(cursor="arrow")
+        self._canvas.configure(cursor="arrow")
 
     def update_text(self):
         if self.after_id:
