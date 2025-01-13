@@ -242,19 +242,20 @@ class TeraTermUI(customtkinter.CTk):
         self.ask_semester_refresh = True
 
         self.images = {
-            "folder": {"path": "images/folder.png", "size": (18, 18), "instance": None},
-            "fix": {"path": "images/fix.png", "size": (15, 15), "instance": None},
-            "error": {"path": "images/error.png", "size": (100, 100), "instance": None},
-            "information": {"path": "images/info.png", "size": (100, 100), "instance": None},
-            "success": {"path": "images/success.png", "size": (200, 150), "instance": None},
-            "status": {"path": "images/home.png", "size": (20, 20), "instance": None},
-            "help": {"path": "images/setting.png", "size": (18, 18), "instance": None},
-            "uprb": {"path": "images/uprb.jpg", "size": (300, 100), "instance": None},
-            "lock": {"path": "images/lock.png", "size": (75, 75), "instance": None},
-            "update": {"path": "images/update.png", "size": (15, 15), "instance": None},
-            "link": {"path": "images/link.png", "size": (15, 15), "instance": None},
-            "plane": {"path": "images/plane.png", "size": (18, 18), "instance": None}
+            "folder": {"path": "images/folder.png", "size": (18, 18)},
+            "fix": {"path": "images/fix.png", "size": (15, 15)},
+            "error": {"path": "images/error.png", "size": (100, 100)},
+            "information": {"path": "images/info.png", "size": (100, 100)},
+            "success": {"path": "images/success.png", "size": (200, 150)},
+            "status": {"path": "images/home.png", "size": (20, 20)},
+            "help": {"path": "images/setting.png", "size": (18, 18)},
+            "uprb": {"path": "images/uprb.jpg", "size": (300, 100)},
+            "lock": {"path": "images/lock.png", "size": (75, 75)},
+            "update": {"path": "images/update.png", "size": (15, 15)},
+            "link": {"path": "images/link.png", "size": (15, 15)},
+            "plane": {"path": "images/plane.png", "size": (18, 18)}
         }
+        self.loaded_images= {}
 
         # path for tesseract application
         self.zip_path = os.path.join(os.path.dirname(__file__), TeraTermUI.get_absolute_path("Tesseract-OCR.7z"))
@@ -10707,25 +10708,30 @@ class TeraTermUI(customtkinter.CTk):
             logging.error(f"Unknown image name: {image_name}")
             return None
 
-        image_data = self.images[image_name]
-        if image_data["instance"] is None:
+        if image_name not in self.loaded_images:
             try:
+                image_data = self.images[image_name]
                 with Image.open(TeraTermUI.get_absolute_path(image_data["path"])) as img:
                     if img.mode not in ("RGB", "RGBA"):
                         img = img.convert("RGBA" if img.mode == "P" and "transparency" in img.info else "RGB")
                     if img.size != image_data["size"]:
                         img = img.resize(image_data["size"], Image.Resampling.LANCZOS)
-
-                    image_data["instance"] = customtkinter.CTkImage(light_image=img, size=image_data["size"])
+                    self.loaded_images[image_name] = customtkinter.CTkImage(light_image=img, size=image_data["size"])
             except Exception as err:
                 logging.error(f"Failed to load image {image_name}: {err}")
                 return None
 
-        return image_data["instance"]
+        return self.loaded_images.get(image_name)
 
     def unload_image(self, image_name):
-        if image_name in self.images:
-            self.images[image_name]["instance"] = None
+        if image_name in self.loaded_images:
+            image = self.loaded_images[image_name]
+            if hasattr(image, "_light_image"):
+                del image._light_image
+            if hasattr(image, "_dark_image"):
+                del image._dark_image
+
+            del self.loaded_images[image_name]
 
     # checks if there is no problems with the information in the entries
     def check_format(self):
