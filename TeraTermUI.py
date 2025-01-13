@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 12900 lines of codes, it definitely makes things harder to work with
+# and with over 13000 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -241,7 +241,20 @@ class TeraTermUI(customtkinter.CTk):
         self.dialog_input = None
         self.ask_semester_refresh = True
 
-        self.image_cache = {}
+        self.images = {
+            "folder": {"path": "images/folder.png", "size": (18, 18), "instance": None},
+            "fix": {"path": "images/fix.png", "size": (15, 15), "instance": None},
+            "error": {"path": "images/error.png", "size": (100, 100), "instance": None},
+            "information": {"path": "images/info.png", "size": (100, 100), "instance": None},
+            "success": {"path": "images/success.png", "size": (200, 150), "instance": None},
+            "status": {"path": "images/home.png", "size": (20, 20), "instance": None},
+            "help": {"path": "images/setting.png", "size": (18, 18), "instance": None},
+            "uprb": {"path": "images/uprb.jpg", "size": (300, 100), "instance": None},
+            "lock": {"path": "images/lock.png", "size": (75, 75), "instance": None},
+            "update": {"path": "images/update.png", "size": (15, 15), "instance": None},
+            "link": {"path": "images/link.png", "size": (15, 15), "instance": None},
+            "plane": {"path": "images/plane.png", "size": (18, 18), "instance": None}
+        }
 
         # path for tesseract application
         self.zip_path = os.path.join(os.path.dirname(__file__), TeraTermUI.get_absolute_path("Tesseract-OCR.7z"))
@@ -726,23 +739,41 @@ class TeraTermUI(customtkinter.CTk):
 
             if results["host"]:
                 self.host_entry.insert(0, results["host"])
+            valid_languages = {"English", "Español"}
+            valid_appearance = {"System", "Sistema", "Dark", "Oscuro", "Light", "Claro"}
+            language_to_set = None
             if not results["language"] and language_id & 0xFF == SPANISH:
-                self.language_menu.set("Español")
-                self.change_language_event(lang="Español")
-            if results["language"]:
-                if results["language"] != self.language_menu.get():
-                    self.language_menu.set(results["language"])
-                    self.change_language_event(lang=results["language"])
+                language_to_set = "Español"
+            elif results["language"] and results["language"] != self.language_menu.get():
+                if results["language"] in valid_languages:
+                    language_to_set = results["language"]
+            if language_to_set:
+                self.language_menu.set(language_to_set)
+                self.change_language_event(lang=language_to_set)
             if results["appearance"]:
-                if results["appearance"] != "System" or results["appearance"] != "Sistema":
-                    self.appearance_mode_optionemenu.set(results["appearance"])
-                    self.change_appearance_mode_event(results["appearance"])
+                if results["appearance"] in valid_appearance:
+                    current_appearance = self.appearance_mode_optionemenu.get()
+                    if results["appearance"] != current_appearance:
+                        self.appearance_mode_optionemenu.set(results["appearance"])
+                        self.change_appearance_mode_event(results["appearance"])
             if results["scaling"]:
-                if float(results["scaling"]) != 100:
-                    self.scaling_slider.set(float(results["scaling"]))
-                    self.change_scaling_event(float(results["scaling"]))
+                scaling_str = str(results["scaling"]).strip()
+                is_numeric = scaling_str.replace(".", "", 1).isdigit() \
+                    if "." in scaling_str else scaling_str.isdigit()
+                if is_numeric:
+                    scale_value = float(scaling_str)
+                    if scale_value != 100:
+                        self.scaling_slider.set(scale_value)
+                        self.change_scaling_event(scale_value)
             if results["win_pos_x"] and results["win_pos_y"]:
-                self.geometry(f"{width}x{height}+{results['win_pos_x']}+{results['win_pos_y']}")
+                x_str = str(results["win_pos_x"]).strip()
+                y_str = str(results["win_pos_y"]).strip()
+                x_is_numeric = x_str.isdigit()
+                y_is_numeric = y_str.isdigit()
+                if x_is_numeric and y_is_numeric:
+                    x_pos = int(x_str)
+                    y_pos = int(y_str)
+                    self.geometry(f"{width}x{height}+{x_pos}+{y_pos}")
             if results["audio"] == "Disabled":
                 self.disable_audio = True
             if results["pdf_dir"]:
@@ -10672,49 +10703,29 @@ class TeraTermUI(customtkinter.CTk):
             gc.collect()
 
     def get_image(self, image_name):
-        if image_name not in self.image_cache:
-            if image_name == "folder":
-                self.image_cache["folder"] = customtkinter.CTkImage(
-                    light_image=Image.open(TeraTermUI.get_absolute_path("images/folder.png")), size=(18, 18))
-            elif image_name == "fix":
-                self.image_cache["fix"] = customtkinter.CTkImage(
-                    light_image=Image.open(TeraTermUI.get_absolute_path("images/fix.png")), size=(15, 15))
-            elif image_name == "error":
-                self.image_cache["error"] = customtkinter.CTkImage(
-                    light_image=Image.open(TeraTermUI.get_absolute_path("images/error.png")), size=(100, 100))
-            elif image_name == "information":
-                self.image_cache["information"] = customtkinter.CTkImage(
-                    light_image=Image.open(TeraTermUI.get_absolute_path("images/info.png")), size=(100, 100))
-            elif image_name == "success":
-                self.image_cache["success"] = customtkinter.CTkImage(
-                    light_image=Image.open(TeraTermUI.get_absolute_path("images/success.png")), size=(200, 150))
-            elif image_name == "status":
-                self.image_cache["status"] = customtkinter.CTkImage(
-                    light_image=Image.open(TeraTermUI.get_absolute_path("images/home.png")), size=(20, 20))
-            elif image_name == "help":
-                self.image_cache["help"] = customtkinter.CTkImage(
-                    light_image=Image.open(TeraTermUI.get_absolute_path("images/setting.png")), size=(18, 18))
-            elif image_name == "uprb":
-                self.image_cache["uprb"] = customtkinter.CTkImage(
-                    light_image=Image.open(TeraTermUI.get_absolute_path("images/uprb.jpg")), size=(300, 100))
-            elif image_name == "lock":
-                self.image_cache["lock"] = customtkinter.CTkImage(
-                    light_image=Image.open(TeraTermUI.get_absolute_path("images/lock.png")), size=(75, 75))
-            elif image_name == "update":
-                self.image_cache["update"] = customtkinter.CTkImage(
-                    light_image=Image.open(TeraTermUI.get_absolute_path("images/update.png")), size=(15, 15))
-            elif image_name == "link":
-                self.image_cache["link"] = customtkinter.CTkImage(
-                    light_image=Image.open(TeraTermUI.get_absolute_path("images/link.png")), size=(15, 15))
-            elif image_name == "plane":
-                self.image_cache["plane"] = customtkinter.CTkImage(
-                    light_image=Image.open(TeraTermUI.get_absolute_path("images/plane.png")), size=(18, 18))
+        if image_name not in self.images:
+            logging.error(f"Unknown image name: {image_name}")
+            return None
 
-        return self.image_cache.get(image_name)
+        image_data = self.images[image_name]
+        if image_data["instance"] is None:
+            try:
+                with Image.open(TeraTermUI.get_absolute_path(image_data["path"])) as img:
+                    if img.mode not in ("RGB", "RGBA"):
+                        img = img.convert("RGBA" if img.mode == "P" and "transparency" in img.info else "RGB")
+                    if img.size != image_data["size"]:
+                        img = img.resize(image_data["size"], Image.Resampling.LANCZOS)
+
+                    image_data["instance"] = customtkinter.CTkImage(light_image=img, size=image_data["size"])
+            except Exception as err:
+                logging.error(f"Failed to load image {image_name}: {err}")
+                return None
+
+        return image_data["instance"]
 
     def unload_image(self, image_name):
-        if image_name in self.image_cache:
-            del self.image_cache[image_name]
+        if image_name in self.images:
+            self.images[image_name]["instance"] = None
 
     # checks if there is no problems with the information in the entries
     def check_format(self):
@@ -12193,9 +12204,10 @@ class SmoothFadeInputDialog(customtkinter.CTkInputDialog):
             self._fade_after_id = None
         super().destroy()
 
+
 class ImageSlideshow(customtkinter.CTkFrame):
-    __slots__ = ("parent", "image_folder", "interval", "width", "height", "image_files", "current_image", "index",
-                 "label", "arrow_left", "arrow_right", "after_id", "is_running")
+    __slots__ = ("slideshow_frame", "image_folder", "interval", "width", "height", "image_files", "_current_image",
+                 "index", "label", "arrow_left", "arrow_right", "after_id", "is_running")
 
     def __init__(self, parent, image_folder, interval=3, width=300, height=200, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
@@ -12205,48 +12217,81 @@ class ImageSlideshow(customtkinter.CTkFrame):
         self.width = width
         self.height = height
         self.image_files = []
-        self.current_image = None
+        self._current_image = None
+        self.after_id = None
+        self.is_running = True
+
+        self._setup_ui()
 
         self.load_images()
         self.index = 0
+        self.show_image()
 
+    def _setup_ui(self):
         self.label = customtkinter.CTkLabel(self, text="")
         self.label.bind("<Button-1>", lambda event: self.focus_set())
         self.label.grid(row=0, column=1)
 
         self.arrow_left = CustomButton(self, text="<", command=self.prev_image, width=25)
-        self.arrow_left.bind("<Button-1>", lambda event: self.focus_set())
-        self.arrow_left.grid(row=0, column=0)
-
         self.arrow_right = CustomButton(self, text=">", command=self.next_image, width=25)
-        self.arrow_right.bind("<Button-1>", lambda event: self.focus_set())
+
+        for arrow in (self.arrow_left, self.arrow_right):
+            arrow.bind("<Button-1>", lambda event: self.focus_set())
+
+        self.arrow_left.grid(row=0, column=0)
         self.arrow_right.grid(row=0, column=2)
 
-        self.after_id = self.after(1, lambda: None)
         self.bind("<Button-1>", lambda event: self.focus_set())
-        self.is_running = True
-        self.show_image()
 
     def load_images(self):
-        image_files = [f for f in os.listdir(self.image_folder) if f.endswith(("png", "jpg", "jpeg"))]
-        random.seed(time.time())
-        random.shuffle(image_files)
-        self.image_files = image_files
+        try:
+            image_files = [f for f in os.listdir(self.image_folder)
+                           if f.lower().endswith(("png", "jpg", "jpeg"))]
+            if not image_files:
+                logging.warning(f"No valid images found in {self.image_folder}")
+                return
+
+            random.seed(time.time())
+            random.shuffle(image_files)
+            self.image_files = image_files
+        except Exception as err:
+            logging.error(f"Error loading images from {self.image_folder}: {err}")
+            self.image_files = []
+
+    def _load_and_resize_image(self, filepath):
+        try:
+            with Image.open(filepath) as img:
+                if img.mode not in ("RGB", "RGBA"):
+                    img = img.convert("RGBA" if img.mode == "P" and "transparency" in img.info else "RGB")
+                resized = img.resize((self.width * 2, self.height * 2), Image.Resampling.LANCZOS)
+                return customtkinter.CTkImage(light_image=resized, size=(self.width, self.height))
+        except Exception as err:
+            logging.error(f"Error loading image {filepath}: {err}")
+            return None
 
     def show_image(self):
-        filepath = os.path.join(self.image_folder, self.image_files[self.index])
-        self.current_image = customtkinter.CTkImage(
-            light_image=Image.open(filepath).resize((self.width * 2, self.height * 2)),
-            size=(self.width, self.height)
-        )
-        self.label.configure(image=self.current_image)
+        if not self.image_files:
+            return
 
-        self.after_cancel(self.after_id)
-        self.reset_timer()
+        if hasattr(self, "_current_image") and self._current_image is not None:
+            if hasattr(self.label, "_last_image"):
+                del self.label._last_image
+            self._current_image = None
+
+        filepath = os.path.join(self.image_folder, self.image_files[self.index])
+        new_image = self._load_and_resize_image(filepath)
+
+        if new_image is not None:
+            self._current_image = new_image
+            self.label.configure(image=self._current_image)
+
+        self._reset_timer()
 
     def cycle_images(self):
-        if self.current_image:
-            del self.current_image
+        if self._current_image:
+            if hasattr(self.label, "_last_image"):
+                del self.label._last_image
+            self._current_image = None
 
         self.index = (self.index + 1) % len(self.image_files)
         self.show_image()
@@ -12263,19 +12308,44 @@ class ImageSlideshow(customtkinter.CTkFrame):
         self.index = 0
         self.show_image()
 
+    def _reset_timer(self):
+        if self.after_id is not None:
+            self.after_cancel(self.after_id)
+            self.after_id = None
+
+        if self.is_running:
+            self.after_id = self.after(self.interval * 1000, self.cycle_images)
+
     def pause_cycle(self):
-        self.after_cancel(self.after_id)
+        if self.after_id is not None:
+            self.after_cancel(self.after_id)
+            self.after_id = None
         self.is_running = False
 
     def resume_cycle(self):
         if not self.is_running:
             self.is_running = True
-            self.reset_timer()
+            self._reset_timer()
 
-    def reset_timer(self):
-        if self.is_running:
+    def destroy(self):
+        if self.after_id is not None:
             self.after_cancel(self.after_id)
-            self.after_id = self.after(self.interval * 1000, self.cycle_images)
+            self.after_id = None
+
+        if hasattr(self, "_current_image") and self._current_image is not None:
+            if hasattr(self.label, "_last_image"):
+                del self.label._last_image
+            self._current_image = None
+
+        if hasattr(self, "arrow_left"):
+            self.arrow_left.destroy()
+        if hasattr(self, "arrow_right"):
+            self.arrow_right.destroy()
+        if hasattr(self, "label"):
+            self.label.destroy()
+
+        self.image_files.clear()
+        super().destroy()
 
 
 class ClipboardHandler:
