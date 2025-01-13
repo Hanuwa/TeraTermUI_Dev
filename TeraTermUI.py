@@ -10728,8 +10728,6 @@ class TeraTermUI(customtkinter.CTk):
             image = self.loaded_images[image_name]
             if hasattr(image, "_light_image"):
                 del image._light_image
-            if hasattr(image, "_dark_image"):
-                del image._dark_image
 
             del self.loaded_images[image_name]
 
