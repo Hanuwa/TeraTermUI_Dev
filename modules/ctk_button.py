@@ -159,27 +159,28 @@ class CTkButton(CTkBaseClass):
             self._canvas.grid(row=0, column=0, rowspan=5, columnspan=5, sticky="nsew")
 
     def _update_image(self):
-        if not self._image_label or not self._image:
+        if not hasattr(self, '_image_label') or self._image_label is None or not hasattr(self, '_image'):
             return
 
         if isinstance(self._image, CTkImage):
-            scaled_image = self._image.create_scaled_photo_image(
+            new_scaled_image = self._image.create_scaled_photo_image(
                 self._get_widget_scaling(), self._get_appearance_mode())
+
             if hasattr(self._image_label, '_last_image'):
                 del self._image_label._last_image
-            self._image_label._last_image = scaled_image
-            self._image_label.configure(image=scaled_image)
+
+            self._image_label._last_image = new_scaled_image
+            self._image_label.configure(image=new_scaled_image)
         else:
             self._image_label.configure(image=self._image)
 
     def destroy(self):
         if isinstance(self._font, CTkFont):
             self._font.remove_size_configure_callback(self._update_font)
-        if isinstance(self._image, CTkImage):
+        if hasattr(self, '_image') and isinstance(self._image, CTkImage):
             self._image.remove_configure_callback(self._update_image)
         if hasattr(self, '_image_label') and hasattr(self._image_label, '_last_image'):
             del self._image_label._last_image
-
         super().destroy()
 
     def _draw(self, no_color_updates=False):
@@ -420,12 +421,26 @@ class CTkButton(CTkBaseClass):
                 self._text_label.configure(textvariable=self._textvariable)
 
         if "image" in kwargs:
-            if isinstance(self._image, CTkImage):
+            if hasattr(self, '_image') and isinstance(self._image, CTkImage):
                 self._image.remove_configure_callback(self._update_image)
+
+            if hasattr(self, '_image_label') and hasattr(self._image_label, '_last_image'):
+                del self._image_label._last_image
+
             self._image = self._check_image_type(kwargs.pop("image"))
+
             if isinstance(self._image, CTkImage):
                 self._image.add_configure_callback(self._update_image)
-            self._update_image()
+
+            if hasattr(self, '_image_label') and self._image_label is not None:
+                if isinstance(self._image, CTkImage):
+                    new_scaled_image = self._image.create_scaled_photo_image(
+                        self._get_widget_scaling(), self._get_appearance_mode())
+                    self._image_label._last_image = new_scaled_image
+                    self._image_label.configure(image=new_scaled_image)
+                else:
+                    self._image_label.configure(image=self._image)
+            require_redraw = True
 
         if "state" in kwargs:
             self._state = kwargs.pop("state")
