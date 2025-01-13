@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 1/11/25
+# DATE - Started 1/1/23, Current Build v0.9.5 - 1/13/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -11046,9 +11046,11 @@ class CustomTextBox(customtkinter.CTkTextbox):
         self._canvas.configure(cursor="hand2")
 
     def on_motion(self, event):
+        current_cursor = str(self.cget("cursor"))
         if self.find_context_menu():
-            self.configure(cursor="arrow")
-        else:
+            if current_cursor != "arrow":
+                self.configure(cursor="arrow")
+        elif current_cursor:
             self.configure(cursor="xterm")
 
     def on_leave(self, event):
