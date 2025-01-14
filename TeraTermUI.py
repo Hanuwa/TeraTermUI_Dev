@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 1/13/25
+# DATE - Started 1/1/23, Current Build v0.9.5 - 1/14/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -10725,10 +10725,6 @@ class TeraTermUI(customtkinter.CTk):
 
     def unload_image(self, image_name):
         if image_name in self.loaded_images:
-            image = self.loaded_images[image_name]
-            if hasattr(image, "_light_image"):
-                del image._light_image
-
             del self.loaded_images[image_name]
 
     # checks if there is no problems with the information in the entries
