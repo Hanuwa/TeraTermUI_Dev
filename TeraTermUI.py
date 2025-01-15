@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 1/14/25
+# DATE - Started 1/1/23, Current Build v0.9.5 - 1/15/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -10989,7 +10989,6 @@ class CustomTextBox(customtkinter.CTkTextbox):
 
         self.bindings = []
         self.setup_bindings()
-        self.setup_context_menu()
 
         if self.auto_scroll:
             self.update_text()
@@ -11173,23 +11172,24 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.tag_add(tk.SEL, "1.0", tk.END)
             return "break"
 
-    def setup_context_menu(self):
-        self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10),
-                                    relief="flat", background="gray40", fg="snow")
-        menu_items = []
-        if not self.read_only:
-            menu_items.extend([("Cut", lambda: self.cut()), ("Copy", lambda: self.copy()),
-                               ("Paste", lambda: self.paste()), ("Select All", lambda: self.select_all()),
-                               ("Undo", lambda: self.undo()), ("Redo", lambda: self.redo())])
-        else:
-            menu_items.extend([("Copy", lambda: self.copy()), ("Select All", lambda: self.select_all())])
-        for label, command in menu_items:
-            self.context_menu.add_command(label=label, command=command)
-
     def show_menu(self, event):
         self.saved_cursor_position = self.index(tk.INSERT)
         self.stop_autoscroll(event=None)
         self.selected_text = True
+
+        if self.context_menu is None:
+            self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10), relief="flat", background="gray40",
+                                        fg="snow")
+            if not self.read_only:
+                self.context_menu.add_command(label="Cut", command=self.cut)
+                self.context_menu.add_command(label="Copy", command=self.copy)
+                self.context_menu.add_command(label="Paste", command=self.paste)
+                self.context_menu.add_command(label="Select All", command=self.select_all)
+                self.context_menu.add_command(label="Undo", command=self.undo)
+                self.context_menu.add_command(label="Redo", command=self.redo)
+            else:
+                self.context_menu.add_command(label="Copy", command=self.copy)
+                self.context_menu.add_command(label="Select All", command=self.select_all)
 
         if self.lang == "English" and not self.read_only:
             self.context_menu.entryconfigure(0, label="Cut")
@@ -11215,14 +11215,18 @@ class CustomTextBox(customtkinter.CTkTextbox):
 
         if self.tag_ranges(tk.SEL):
             if self.lang == "English":
-                self.context_menu.entryconfigure(3, label="Deselect all")
+                idx = 3 if not self.read_only else 1
+                self.context_menu.entryconfigure(idx, label="Deselect All")
             elif self.lang == "Español":
-                self.context_menu.entryconfigure(3, label="Deseleccionar Todo")
+                idx = 3 if not self.read_only else 1
+                self.context_menu.entryconfigure(idx, label="Deseleccionar Todo")
         else:
             if self.lang == "English":
-                self.context_menu.entryconfigure(3, label="Select All")
+                idx = 3 if not self.read_only else 1
+                self.context_menu.entryconfigure(idx, label="Select All")
             elif self.lang == "Español":
-                self.context_menu.entryconfigure(3, label="Seleccionar Todo")
+                idx = 3 if not self.read_only else 1
+                self.context_menu.entryconfigure(idx, label="Seleccionar Todo")
 
         self.context_menu.post(event.x_root, event.y_root)
         self.context_menu.bind("<Unmap>", lambda evt: self.configure(cursor="xterm"))
@@ -11407,7 +11411,6 @@ class CustomEntry(customtkinter.CTkEntry):
 
         self.bindings = []
         self.setup_bindings()
-        self.setup_context_menu()
 
     def setup_bindings(self):
         self.focus_out_bind_id = self.root.bind("<FocusOut>", self._on_window_focus_out, add="+")
@@ -11560,21 +11563,21 @@ class CustomEntry(customtkinter.CTkEntry):
             self.select_clear()
             return "break"
 
-    def setup_context_menu(self):
-        self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10),
-                                    relief="flat", background="gray40", fg="snow")
-        menu_items = [("Cut", lambda: self.cut()), ("Copy", lambda: self.copy()), ("Paste", lambda: self.paste()),
-                      ("Select All", lambda: self.select_all()), ("Undo", lambda: self.undo()),
-                      ("Redo", lambda: self.redo())]
-        for label, command in menu_items:
-            self.context_menu.add_command(label=label, command=command)
-
     def show_menu(self, event):
         if self.cget("state") == "disabled":
             return
 
         self.focus_set()
         self.selected_text = True
+
+        if self.context_menu is None:
+            self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10), relief="flat", background="gray40",
+                                        fg="snow")
+            menu_items = [("Cut", lambda: self.cut()), ("Copy", lambda: self.copy()), ("Paste", lambda: self.paste()),
+                          ("Select All", lambda: self.select_all()), ("Undo", lambda: self.undo()),
+                          ("Redo", lambda: self.redo())]
+            for label, command in menu_items:
+                self.context_menu.add_command(label=label, command=command)
 
         if self.lang == "English":
             self.context_menu.entryconfigure(0, label="Cut")
@@ -11797,8 +11800,6 @@ class CustomComboBox(customtkinter.CTkComboBox):
         self.selected_text = False
         self.context_menu = None
 
-        self.setup_context_menu()
-
     def setup_bindings(self):
         bindings = [("<FocusIn>", self.disable_slider_keys), ("<FocusOut>", self.enable_slider_keys),
                     ("<Enter>", self.on_enter), ("<Motion>", self.on_motion), ("<Leave>", self.on_leave),
@@ -11957,21 +11958,21 @@ class CustomComboBox(customtkinter.CTkComboBox):
             self._entry.select_clear()
             return "break"
 
-    def setup_context_menu(self):
-        self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10),
-                                    relief="flat", background="gray40", fg="snow")
-        menu_items = [("Cut", lambda: self.cut()), ("Copy", lambda: self.copy()), ("Paste", lambda: self.paste()),
-                      ("Select All", lambda: self.select_all()), ("Undo", lambda: self.undo()),
-                      ("Redo", lambda: self.redo())]
-        for label, command in menu_items:
-            self.context_menu.add_command(label=label, command=command)
-
     def show_menu(self, event):
         if self.cget("state") == "disabled":
             return
 
         self.focus_set()
         self.selected_text = True
+
+        if self.context_menu is None:
+            self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10), relief="flat", background="gray40",
+                                        fg="snow")
+            menu_items = [("Cut", lambda: self.cut()), ("Copy", lambda: self.copy()), ("Paste", lambda: self.paste()),
+                          ("Select All", lambda: self.select_all()), ("Undo", lambda: self.undo()),
+                          ("Redo", lambda: self.redo())]
+            for label, command in menu_items:
+                self.context_menu.add_command(label=label, command=command)
 
         if self.lang == "English":
             self.context_menu.entryconfigure(0, label="Cut")
