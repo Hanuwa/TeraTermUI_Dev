@@ -11160,8 +11160,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
         return None
 
     def custom_middle_mouse(self, event=None):
-        context_menu = self.find_context_menu()
-        if context_menu:
+        if self.find_context_menu():
             return "break"
         if self.tag_ranges(tk.SEL):
             self.mark_set(tk.INSERT, "@%d,%d" % (event.x, event.y))
@@ -11554,8 +11553,7 @@ class CustomEntry(customtkinter.CTkEntry):
         return None
 
     def custom_middle_mouse(self, event=None):
-        context_menu = self.find_context_menu()
-        if context_menu:
+        if self.find_context_menu():
             return "break"
         if self.select_present():
             char_index = self.index("@%d" % event.x)
@@ -11949,8 +11947,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
         return None
 
     def custom_middle_mouse(self, event=None):
-        context_menu = self.find_context_menu()
-        if context_menu:
+        if self.find_context_menu():
             return "break"
         if self._entry.select_present():
             char_index = self._entry.index("@%d" % event.x)
