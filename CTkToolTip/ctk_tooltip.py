@@ -200,7 +200,10 @@ class CTkToolTip(Toplevel):
         Hides the ToolTip temporarily.
         """
         main_win_status = self.widget.winfo_toplevel().attributes("-disabled") == 1
-        if self.disable:
+        context_menu = self.find_context_menu()
+        if self.disable or context_menu:
+            self.status = "outside"
+            self.withdraw()
             return
 
         if not self._is_mouse_inside_widget() or not self.widget.winfo_ismapped() or main_win_status:
