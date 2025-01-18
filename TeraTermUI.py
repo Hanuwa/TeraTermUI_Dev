@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 1/17/25
+# DATE - Started 1/1/23, Current Build v0.9.5 - 1/18/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -7654,6 +7654,9 @@ class TeraTermUI(customtkinter.CTk):
         self.show_success_message(350, 265, translation["pdf_save_success"])
 
     def display_enrolled_data(self, data, creds, dialog_input):
+        if not data:
+            self.after(100, self.show_error_message, 320, 235, translation["semester_no_data"] + semester)
+            return
         self.unbind("<Control-Tab>")
         self.unbind("<Control-w>")
         self.unbind("<Control-W>")
@@ -7662,9 +7665,6 @@ class TeraTermUI(customtkinter.CTk):
         semester = dialog_input.upper().replace(" ", "")
         headers = [translation["course"], translation["grade"], translation["days"],
                    translation["times"], translation["room"]]
-        if not data:
-            self.after(100, self.show_error_message, 320, 235, translation["semester_no_data"] + semester)
-            return
         self.dialog_input = dialog_input
         self.ask_semester_refresh = True
         table_values = [headers] + [[cls.get(header, "") for header in headers] for cls in data]
