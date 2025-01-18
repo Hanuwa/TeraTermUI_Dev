@@ -7654,15 +7654,16 @@ class TeraTermUI(customtkinter.CTk):
         self.show_success_message(350, 265, translation["pdf_save_success"])
 
     def display_enrolled_data(self, data, creds, dialog_input):
+        lang = self.language_menu.get()
+        translation = self.load_language()
+        semester = dialog_input.upper().replace(" ", "")
         if not data:
             self.after(100, self.show_error_message, 320, 235, translation["semester_no_data"] + semester)
+            self.after(150, self.switch_tab)
             return
         self.unbind("<Control-Tab>")
         self.unbind("<Control-w>")
         self.unbind("<Control-W>")
-        lang = self.language_menu.get()
-        translation = self.load_language()
-        semester = dialog_input.upper().replace(" ", "")
         headers = [translation["course"], translation["grade"], translation["days"],
                    translation["times"], translation["room"]]
         self.dialog_input = dialog_input
