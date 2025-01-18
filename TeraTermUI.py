@@ -6345,8 +6345,10 @@ class TeraTermUI(customtkinter.CTk):
                     self.m_register_menu[existing_index].set(translation["register"])
                     replaced_section = True
                     self.check_class_conflicts()
+                    dummy_event = type("Dummy", (object,), {"widget": self.m_section_entry[existing_index]})()
+                    self.detect_change(dummy_event)
                     msg = translation["pasted_mult"]
-                    delay = 3500
+                    delay = 5000
                 else:
                     for i in range(8):
                         if not self.m_classes_entry[i].get().strip() and not self.m_section_entry[i].get().strip():
@@ -6360,6 +6362,11 @@ class TeraTermUI(customtkinter.CTk):
                             if i >= current_visible:
                                 while self.a_counter < i:
                                     self.add_event()
+
+                            dummy_event_class = type("Dummy", (object,), {"widget": self.m_classes_entry[i]})()
+                            self.detect_change(dummy_event_class)
+                            dummy_event_section = type("Dummy", (object,), {"widget": self.m_section_entry[i]})()
+                            self.detect_change(dummy_event_section)
                             break
                 if added_multiple:
                     self.check_class_conflicts()
