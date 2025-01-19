@@ -6310,6 +6310,7 @@ class TeraTermUI(customtkinter.CTk):
         self.e_section_entry.insert(0, section_text)
         self.e_semester_entry.set(semester_text)
         self.register.select()
+        self.check_class_time()
 
         translation = self.load_language()
         added_multiple = False
@@ -6320,7 +6321,6 @@ class TeraTermUI(customtkinter.CTk):
 
         first_entry_semester = self.m_semester_entry[0].get() if self.m_classes_entry[0].get().strip() else None
         if first_entry_semester and first_entry_semester != semester_text:
-            self.check_class_time()
             msg = translation["pasted"]
             delay = 3500
         else:
@@ -6363,21 +6363,19 @@ class TeraTermUI(customtkinter.CTk):
                                 while self.a_counter < i:
                                     self.add_event()
 
+                            self.check_class_conflicts()
                             dummy_event_class = type("Dummy", (object,), {"widget": self.m_classes_entry[i]})()
                             self.detect_change(dummy_event_class)
                             dummy_event_section = type("Dummy", (object,), {"widget": self.m_section_entry[i]})()
                             self.detect_change(dummy_event_section)
                             break
                 if added_multiple:
-                    self.check_class_conflicts()
                     msg = translation["pasted_mult"]
                     delay = 5000
                 elif not replaced_section:
-                    self.check_class_time()
                     msg = translation["pasted"]
                     delay = 3500
             else:
-                self.check_class_time()
                 msg = translation["pasted"]
                 delay = 3500
 
