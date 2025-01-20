@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 1/18/25
+# DATE - Started 1/1/23, Current Build v0.9.5 - 1/20/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -9295,6 +9295,10 @@ class TeraTermUI(customtkinter.CTk):
                                     self.idle_warning = CTkMessagebox(
                                         title=translation["idle_warning_title"], message=translation["idle_warning"],
                                         button_width=380)
+                                    self.idle_warning.lift()
+                                    self.idle_warning.focus_force()
+                                    self.idle_warning.attributes("-topmost", 1)
+                                    self.idle_warning.after_idle(self.idle_warning.attributes, "-topmost", 0)
                                     response = self.idle_warning.get()[0]
                                     if response == "OK":
                                         self.idle_num_check = 0
