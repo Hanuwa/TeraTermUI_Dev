@@ -32,6 +32,7 @@
 	"register": "Registra",
 	"drop": "Baja",
 	"title_search": "Buscar Clases",
+	"notice_search": "Las clases que busques\naparecerán aquí", 
 	"show_all": "¿Enseñar\nTodas?",
 	"title_menu": "Menú de Opciones",
 	"explanation_menu": "Selecciona el Código de la pantalla\na la que quieres acceder:",
