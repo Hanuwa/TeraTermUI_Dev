@@ -32,6 +32,7 @@
 	"register": "Register",
 	"drop": "Drop",
 	"title_search": "Search Classes",
+	"notice_search": "Classes you search\nappear here", 
 	"show_all": "Show All?",
 	"title_menu": "Option Menu",
 	"explanation_menu": "Select code for the screen\nyou want to go to:",
