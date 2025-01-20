@@ -460,6 +460,8 @@ class TeraTermUI(customtkinter.CTk):
         self.in_search_frame = False
         self.search_scrollbar = None
         self.title_search = None
+        self.image_search = None
+        self.notice_search = None
         self.s_classes = None
         self.s_classes_entry = None
         self.s_semester = None
@@ -1352,6 +1354,8 @@ class TeraTermUI(customtkinter.CTk):
             self.submit.grid(row=5, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
             self.search_scrollbar.grid(row=0, column=1, padx=(0, 0), pady=(0, 0), sticky="nsew")
             self.title_search.grid(row=0, column=1, padx=(0, 0), pady=(0, 20), sticky="n")
+            self.image_search.grid(row=2, column=1, padx=(0, 0), pady=(35, 0), sticky="n")
+            self.notice_search.grid(row=2, column=1, padx=(0, 0), pady=(130, 0), sticky="n")
             self.s_classes.grid(row=1, column=1, padx=(0, 550), pady=(0, 0), sticky="n")
             self.s_classes_entry.grid(row=1, column=1, padx=(0, 425), pady=(0, 0), sticky="n")
             self.s_semester.grid(row=1, column=1, padx=(0, 270), pady=(0, 0), sticky="n")
@@ -1563,10 +1567,6 @@ class TeraTermUI(customtkinter.CTk):
                                         self.e_section_entry.configure(state="normal")
                                         self.e_classes_entry.delete(0, "end")
                                         self.e_section_entry.delete(0, "end")
-                                        self.e_classes_entry.configure(
-                                            placeholder_text="MATE3032")
-                                        self.e_section_entry.configure(
-                                            placeholder_text="LM1")
                                         self.e_classes_entry.configure(state="disabled")
                                         self.e_section_entry.configure(state="disabled")
                                         self.e_counter -= count_dropped
@@ -4023,6 +4023,7 @@ class TeraTermUI(customtkinter.CTk):
             self.drop.configure(text=translation["drop"])
             self.update_section_tooltip(lang)
             self.title_search.configure(text=translation["title_search"])
+            self.notice_search.configure(text=translation["notice_search"])
             self.s_classes.configure(text=translation["class"])
             self.s_semester.configure(text=translation["semester"])
             self.s_semester_entry.configure(values=self.semester_values + [translation["current"]])
@@ -5347,8 +5348,10 @@ class TeraTermUI(customtkinter.CTk):
                                                        text=translation["title_enroll"],
                                                        font=customtkinter.CTkFont(size=20, weight="bold"))
             self.e_classes = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab), text=translation["class"])
+            query = "SELECT code FROM courses ORDER BY RANDOM() LIMIT 1"
+            class_code = self.cursor.execute(query).fetchone()[0]
             self.e_classes_entry = CustomEntry(self.tabview.tab(self.enroll_tab), self, lang,
-                                               placeholder_text="MATE3032")
+                                               placeholder_text=class_code)
             self.e_section = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab),
                                                     text=translation["section"])
             self.e_section_entry = CustomEntry(self.tabview.tab(self.enroll_tab), self, lang, placeholder_text="LM1")
@@ -5380,11 +5383,17 @@ class TeraTermUI(customtkinter.CTk):
             # Second Tab
             self.search_scrollbar = customtkinter.CTkScrollableFrame(master=self.tabview.tab(self.search_tab),
                                                                      corner_radius=10)
-            self.title_search = customtkinter.CTkLabel(self.search_scrollbar,
-                                                       text=translation["title_search"],
+            self.title_search = customtkinter.CTkLabel(self.search_scrollbar, text=translation["title_search"],
                                                        font=customtkinter.CTkFont(size=20, weight="bold"))
+            calendar_img = customtkinter.CTkImage(light_image=Image.open(
+                TeraTermUI.get_absolute_path("images/calendar.png")), size=(75, 75))
+            self.image_search = customtkinter.CTkLabel(self.search_scrollbar, text="", image=calendar_img)
+            self.notice_search = customtkinter.CTkLabel(self.search_scrollbar, text=translation["notice_search"],
+                                                        font=customtkinter.CTkFont(size=16, weight="bold"))
             self.s_classes = customtkinter.CTkLabel(self.search_scrollbar, text=translation["class"])
-            self.s_classes_entry = CustomEntry(self.search_scrollbar, self, lang, placeholder_text="MATE3032",
+            query = "SELECT code FROM courses ORDER BY RANDOM() LIMIT 1"
+            class_code = self.cursor.execute(query).fetchone()[0]
+            self.s_classes_entry = CustomEntry(self.search_scrollbar, self, lang, placeholder_text=class_code,
                                                width=80)
             self.s_semester = customtkinter.CTkLabel(self.search_scrollbar, text=translation["semester"])
             self.s_semester_entry = CustomComboBox(self.search_scrollbar, self, lang, width=80,
@@ -6483,6 +6492,8 @@ class TeraTermUI(customtkinter.CTk):
             self.after(100, self.show_error_message, 320, 235, translation["failed_to_search"])
             return
 
+        self.image_search.grid_forget()
+        self.notice_search.grid_forget()
         table_values = [headers] + [[item.get(header, "") for header in headers] for item in modified_data]
         original_table_values = table_values.copy()
         if self.sort_by is not None and self.sort_by.get() != translation["sort_by"] and \
@@ -7179,6 +7190,8 @@ class TeraTermUI(customtkinter.CTk):
             self.remove_button.grid_forget()
             self.download_search_pdf.grid_forget()
             self.sort_by.grid_forget()
+            self.image_search.grid(row=2, column=1, padx=(0, 0), pady=(35, 0), sticky="n")
+            self.notice_search.grid(row=2, column=1, padx=(0, 0), pady=(130, 0), sticky="n")
             self.search_scrollbar.scroll_to_top()
             self.unbind("<Control-s>")
             self.unbind("<Control-S>")
