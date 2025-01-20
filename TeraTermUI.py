@@ -5349,7 +5349,11 @@ class TeraTermUI(customtkinter.CTk):
                                                        font=customtkinter.CTkFont(size=20, weight="bold"))
             self.e_classes = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab), text=translation["class"])
             query = "SELECT code FROM courses ORDER BY RANDOM() LIMIT 1"
-            class_code = self.cursor.execute(query).fetchone()[0]
+            result = self.cursor.execute(query).fetchone()
+            if result is not None:
+                class_code = result[0]
+            else:
+                class_code = "ESPA3101"
             self.e_classes_entry = CustomEntry(self.tabview.tab(self.enroll_tab), self, lang,
                                                placeholder_text=class_code)
             self.e_section = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab),
@@ -5392,7 +5396,11 @@ class TeraTermUI(customtkinter.CTk):
                                                         font=customtkinter.CTkFont(size=16, weight="bold"))
             self.s_classes = customtkinter.CTkLabel(self.search_scrollbar, text=translation["class"])
             query = "SELECT code FROM courses ORDER BY RANDOM() LIMIT 1"
-            class_code = self.cursor.execute(query).fetchone()[0]
+            result = self.cursor.execute(query).fetchone()
+            if result is not None:
+                class_code = result[0]
+            else:
+                class_code = "ESPA3101"
             self.s_classes_entry = CustomEntry(self.search_scrollbar, self, lang, placeholder_text=class_code,
                                                width=80)
             self.s_semester = customtkinter.CTkLabel(self.search_scrollbar, text=translation["semester"])
