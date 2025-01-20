@@ -6696,6 +6696,8 @@ class TeraTermUI(customtkinter.CTk):
         if len(self.class_table_pairs) == 20:
             self.table_count.configure(text_color="red")
         self.table_count.bind("<Button-1>", lambda event: self.focus_set())
+        self.table_pipe.bind("<Button-1>", lambda event: self.focus_set())
+        self.table_position.bind("<Button-1>", lambda event: self.focus_set())
         self.sort_by.bind("<FocusIn>", lambda event: self.search_scrollbar.scroll_to_widget(self.sort_by))
         self.bind("<Control-s>", lambda event: self.download_search_classes_as_pdf())
         self.bind("<Control-S>", lambda event: self.download_search_classes_as_pdf())
