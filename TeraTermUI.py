@@ -5422,6 +5422,8 @@ class TeraTermUI(customtkinter.CTk):
             self.tabview.tab(self.search_tab).bind("<Button-1>", lambda event: self.focus_set())
             self.search_scrollbar.bind("<Button-1>", lambda event: self.focus_set())
             self.title_search.bind("<Button-1>", lambda event: self.focus_set())
+            self.image_search.bind("<Button-1>", lambda event: self.focus_set())
+            self.notice_search.bind("<Button-1>", lambda event: self.focus_set())
             self.s_classes.bind("<Button-1>", lambda event: self.focus_set())
             self.s_semester.bind("<Button-1>", lambda event: self.focus_set())
             self.s_classes_entry.bind("<FocusIn>", lambda event:
