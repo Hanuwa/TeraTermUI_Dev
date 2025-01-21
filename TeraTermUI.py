@@ -7726,63 +7726,60 @@ class TeraTermUI(customtkinter.CTk):
                 tooltip_message = tooltip_messages[header]
                 tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#989898", alpha=0.90)
                 self.enrolled_header_tooltips[cell] = tooltip
-            current_entries_count = len(self.change_section_entries)
-            new_entries_count = len(data)
+            while len(self.mod_selection_list) < len(data):
+                self.mod_selection_list.append(None)
+                self.change_section_entries.append(None)
             previous_row_had_widgets = True
-            pad_y = 9
-            for row_index in range(min(current_entries_count, new_entries_count)):
+            for row_index, row_data in enumerate(data):
                 if row_index == 0:
-                    pad_y = 30
-                self.change_section_entries[row_index].grid(row=row_index, column=0, padx=(56, 0), pady=(pad_y, 0))
-                self.mod_selection_list[row_index].grid(row=row_index, column=0, padx=(0, 100), pady=(pad_y, 0))
-                self.change_section_entries[row_index].configure(state="normal")
-                if self.change_section_entries[row_index].get():
-                    self.change_section_entries[row_index].delete(0, "end")
-                self.change_section_entries[row_index].configure(state="disabled")
-                self.mod_selection_list[row_index].configure(state="normal")
-                self.mod_selection_list[row_index].set(translation["choose"])
-                pad_y = 9
-            if new_entries_count > current_entries_count:
-                for row_index in range(current_entries_count, new_entries_count):
-                    if row_index == 0:
-                        pad_y = 30
-                    else:
-                        pad_y = 9 if previous_row_had_widgets else 45
-
-                    if data[row_index][translation["course"]] != "":
+                    pad_y = 28
+                else:
+                    pad_y = 6 if previous_row_had_widgets else 40
+                if row_data[translation["course"]] != "":
+                    if self.mod_selection_list[row_index] is None:
                         combined_placeholders = self.placeholder_texts_sections + (
                             "KJ1", "LJ1", "KI1", "LI1", "VM1", "JM1")
                         placeholder_text = combined_placeholders[row_index % len(combined_placeholders)]
-                        mod_selection = customtkinter.CTkOptionMenu(self.modify_classes_frame,
-                                                                    values=[translation["choose"], translation["drop"],
-                                                                            translation["section"]], width=80,
-                                                                    command=lambda value, index=row_index:
-                                                                    self.modify_enrolled_classes(value, index))
+                        mod_selection = customtkinter.CTkOptionMenu(
+                            self.modify_classes_frame, values=[translation["choose"], translation["drop"],
+                                                               translation["section"]], width=80,
+                            command=lambda value, index=row_index: self.modify_enrolled_classes(value, index))
                         change_section_entry = CustomEntry(self.modify_classes_frame, self, lang,
                                                            placeholder_text=placeholder_text, width=50)
                         change_section_entry.bind("<FocusOut>", self.check_class_conflicts)
-                        mod_selection.grid(row=row_index, column=0, padx=(0, 100), pady=(pad_y, 0))
-                        change_section_entry.grid(row=row_index, column=0, padx=(56, 0), pady=(pad_y, 0))
+                        self.mod_selection_list[row_index] = mod_selection
+                        self.change_section_entries[row_index] = change_section_entry
                         mod_selection_tooltip = CTkToolTip(mod_selection, bg_color="#1E90FF",
                                                            message=translation["mod_selection"])
                         change_section_entry_tooltip = CTkToolTip(change_section_entry, bg_color="#1E90FF",
                                                                   message=translation["change_section_entry"])
-                        change_section_entry.configure(state="disabled")
-                        self.mod_selection_list.append(mod_selection)
-                        self.change_section_entries.append(change_section_entry)
                         self.enrolled_tooltips.append(mod_selection_tooltip)
                         self.enrolled_tooltips.append(change_section_entry_tooltip)
-                        previous_row_had_widgets = True
                     else:
-                        self.mod_selection_list.append(None)
-                        self.change_section_entries.append(None)
-                        previous_row_had_widgets = False
-            elif new_entries_count < current_entries_count:
-                for row_index in range(new_entries_count, current_entries_count):
-                    if self.change_section_entries[row_index] is not None:
-                        self.change_section_entries[row_index].grid_forget()
+                        mod_selection = self.mod_selection_list[row_index]
+                        change_section_entry = self.change_section_entries[row_index]
+                        mod_selection.configure(state="normal")
+                        mod_selection.set(translation["choose"])
+                        change_section_entry.configure(state="normal")
+                        if change_section_entry.get():
+                            change_section_entry.delete(0, "end")
+                        change_section_entry.configure(state="disabled")
+                        self.check_class_conflicts()
+                    mod_selection.grid(row=row_index, column=0, padx=(0, 100), pady=(pad_y, 0))
+                    change_section_entry.grid(row=row_index, column=0, padx=(56, 0), pady=(pad_y, 0))
+                    change_section_entry.configure(state="disabled")
+                    previous_row_had_widgets = True
+                else:
                     if self.mod_selection_list[row_index] is not None:
                         self.mod_selection_list[row_index].grid_forget()
+                    if self.change_section_entries[row_index] is not None:
+                        self.change_section_entries[row_index].grid_forget()
+                    previous_row_had_widgets = False
+            for extra_index in range(len(data), len(self.mod_selection_list)):
+                if self.mod_selection_list[extra_index] is not None:
+                    self.mod_selection_list[extra_index].grid_forget()
+                if self.change_section_entries[extra_index] is not None:
+                    self.change_section_entries[extra_index].grid_forget()
         else:
             self.change_section_entries = []
             self.mod_selection_list = []
@@ -7833,13 +7830,12 @@ class TeraTermUI(customtkinter.CTk):
             self.submit_my_classes.grid(row=4, column=1, padx=(180, 0))
             self.download_enrolled_pdf.grid(row=5, column=1, padx=(180, 0), pady=(10, 0))
             self.modify_classes_frame.grid(row=2, column=2, sticky="nw", padx=(12, 0))
-            self.modify_classes_title.grid(row=0, column=0, padx=(0, 40), pady=(0, 30))
+            self.modify_classes_title.grid(row=0, column=0, padx=(0, 40), pady=(0, 25))
             self.back_my_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
 
-            pad_y = 9
             for row_index in range(len(self.enrolled_classes_data)):
                 if row_index == 0:
-                    pad_y = 30
+                    pad_y = 28
                 if self.enrolled_classes_data[row_index][translation["course"]] != "":
                     combined_placeholders = self.placeholder_texts_sections + ("KJ1", "LJ1", "KI1", "LI1", "VM1", "JM1")
                     placeholder_text = combined_placeholders[row_index % len(combined_placeholders)]
@@ -7862,11 +7858,11 @@ class TeraTermUI(customtkinter.CTk):
                     self.change_section_entries.append(change_section_entry)
                     self.enrolled_tooltips.append(mod_selection_tooltip)
                     self.enrolled_tooltips.append(change_section_entry_tooltip)
-                    pad_y = 9
+                    pad_y = 6
                 else:
                     self.mod_selection_list.append(None)
                     self.change_section_entries.append(None)
-                    pad_y = 45
+                    pad_y = 40
             if self.countdown_running:
                 self.submit_my_classes.configure(state="disabled")
             self.show_classes.configure(text=translation["show_my_new"])
@@ -9326,7 +9322,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.idle_warning.after_idle(self.idle_warning.attributes, "-topmost", 0)
                                     response = self.idle_warning.get()[0]
                                     if response == "OK":
-                                        self.idle_num_check = max(1, self.idle_num_check // 2)
+                                        self.idle_num_check = max(0, self.idle_num_check // 2)
 
                                 self.after(50, idle_warning)
                         else:
@@ -9369,7 +9365,7 @@ class TeraTermUI(customtkinter.CTk):
         self.last_activity = time.time()
         if not isinstance(self.idle_num_check, int):
             self.idle_num_check = 0
-        self.idle_num_check = max(1, self.idle_num_check // 2)
+        self.idle_num_check = max(0, self.idle_num_check // 2)
 
     def keybind_disable_enable_idle(self):
         if self.disable_idle.get() == "on":
