@@ -9367,6 +9367,8 @@ class TeraTermUI(customtkinter.CTk):
     # resets the idle timer when user interacts with something within the application
     def reset_activity_timer(self):
         self.last_activity = time.time()
+        if not isinstance(self.idle_num_check, int):
+            self.idle_num_check = 0
         self.idle_num_check = max(1, self.idle_num_check // 2)
 
     def keybind_disable_enable_idle(self):
