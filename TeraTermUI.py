@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 1/20/25
+# DATE - Started 1/1/23, Current Build v0.9.5 - 1/21/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -9326,7 +9326,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.idle_warning.after_idle(self.idle_warning.attributes, "-topmost", 0)
                                     response = self.idle_warning.get()[0]
                                     if response == "OK":
-                                        self.idle_num_check = 0
+                                        self.idle_num_check = max(1, self.idle_num_check // 2)
 
                                 self.after(50, idle_warning)
                         else:
@@ -9367,7 +9367,7 @@ class TeraTermUI(customtkinter.CTk):
     # resets the idle timer when user interacts with something within the application
     def reset_activity_timer(self):
         self.last_activity = time.time()
-        self.idle_num_check = 0
+        self.idle_num_check = max(1, self.idle_num_check // 2)
 
     def keybind_disable_enable_idle(self):
         if self.disable_idle.get() == "on":
