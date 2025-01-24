@@ -302,6 +302,9 @@ class CTkToolTip(Toplevel):
             self.delay = delay
         if bg_color:
             self.frame.configure(fg_color=bg_color)
+            if self.visibility:
+                self.hide()
+                self.deiconify()
         if visibility is not None:
             self.visibility = visibility
             if self.visibility:
