@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 1/21/25
+# DATE - Started 1/1/23, Current Build v0.9.5 - 1/24/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -4235,13 +4235,17 @@ class TeraTermUI(customtkinter.CTk):
         lines = current_message.split("\n")
         if len(lines) != 2:
             return
+
         days, time_info = lines
-        time_info = time_info.replace("*EST. ", "").strip()
         if new_lang == "Español":
             translated_days = ", ".join(day_translations.get(day, day) for day in days.split(", "))
+            time_label = "*Aprox"
         else:
             translated_days = ", ".join(reverse_day_translations.get(day, day) for day in days.split(", "))
-        self.e_section_tooltip.configure(message=f"{translated_days}\n*EST. {time_info}", visibility=True)
+            time_label = "*Approx"
+
+        time_info = time_info.replace("*Aprox", "").replace("*Approx", "").strip()
+        self.e_section_tooltip.configure(message=f"{translated_days}\n{time_label} {time_info}", visibility=True)
 
     def update_sections_multiple_tooltips(self, new_lang):
         day_translations = {
@@ -4267,33 +4271,36 @@ class TeraTermUI(customtkinter.CTk):
                 continue
 
             lines = current_message.split("\n")
-            if len(lines) == 4 and "*EST." in lines[-1]:
-                conflict_tooltip = translation.get("conflict_tooltip", "Section potentially conflicting with"
-                                                                       "\nthe schedule of another section\n").strip()
-                tooltip_lines = conflict_tooltip.split("\n")
+            if len(lines) == 4:
                 day_line = lines[2]
                 day_list = [day.strip() for day in day_line.split(",")]
                 if new_lang == "Español":
                     translated_days = [day_translations.get(day, day) for day in day_list]
                     lines[2] = ", ".join(translated_days)
+                    time_label = "*Aprox"
                 else:
                     un_translated_days = [reverse_day_translations.get(day, day) for day in day_list]
                     lines[2] = ", ".join(un_translated_days)
-                lines[0] = tooltip_lines[0]
-                lines[1] = tooltip_lines[1]
-                new_message = "\n".join(lines)
-                tooltip.configure(message=new_message)
+                    time_label = "*Approx"
 
-            elif len(lines) == 2 and "*EST." in lines[1]:
+                lines[-1] = lines[-1].replace("*Aprox", "").replace("*Approx", "").strip()
+                lines[-1] = f"{time_label} {lines[-1]}"
+                tooltip.configure(message="\n".join(lines))
+
+            elif len(lines) == 2:
                 days, time_info = lines
                 day_list = [day.strip() for day in days.split(",")]
                 if new_lang == "Español":
                     translated_days = [day_translations.get(day, day) for day in day_list]
                     days = ", ".join(translated_days)
+                    time_label = "*Aprox"
                 else:
                     un_translated_days = [reverse_day_translations.get(day, day) for day in day_list]
                     days = ", ".join(un_translated_days)
-                tooltip.configure(message=f"{days}\n{time_info}")
+                    time_label = "*Approx"
+
+                time_info = time_info.replace("*Aprox", "").replace("*Approx", "").strip()
+                tooltip.configure(message=f"{days}\n{time_label} {time_info}")
 
     def update_sections_enrolled_tooltips(self, new_lang):
         day_translations = {
@@ -4316,7 +4323,6 @@ class TeraTermUI(customtkinter.CTk):
             current_message = tooltip.cget("message")
             if not current_message:
                 continue
-
             if idx % 2 == 1:
                 entry_idx = idx // 2
                 if self.change_section_entries[entry_idx].get().upper().startswith("EL"):
@@ -4324,7 +4330,7 @@ class TeraTermUI(customtkinter.CTk):
                     continue
 
             lines = current_message.split("\n")
-            if len(lines) >= 4 and "*EST." in lines[-1]:
+            if len(lines) >= 4 and ("*Aprox" in lines[-1] or "*Approx" in lines[-1]):
                 is_table_conflict = len(lines) > 4 or "in your currently enrolled classes" in current_message
                 tooltip_key = "conflict_table_tooltip" if is_table_conflict else "conflict_tooltip"
                 conflict_tooltip = translation.get(
@@ -4335,25 +4341,31 @@ class TeraTermUI(customtkinter.CTk):
                 if new_lang == "Español":
                     translated_days = [day_translations.get(day, day) for day in day_list]
                     translated_days_line = ", ".join(translated_days)
+                    time_label = "*Aprox"
                 else:
                     un_translated_days = [reverse_day_translations.get(day, day) for day in day_list]
                     translated_days_line = ", ".join(un_translated_days)
+                    time_label = "*Approx"
                 new_message = "\n".join(tooltip_lines)
-                new_message += f"\n{translated_days_line}\n{lines[-1]}"
+                new_message += f"\n{translated_days_line}\n{time_label} {lines[-1].replace(
+                    "*Aprox", "").replace("*Approx", "").strip()}"
                 tooltip.configure(message=new_message)
 
-            elif len(lines) == 2 and "*EST." in lines[1]:
+            elif len(lines) == 2 and ("*Aprox" in lines[1] or "*Approx" in lines[1]):
                 days, time_info = lines
                 day_list = [day.strip() for day in days.split(",")]
                 if new_lang == "Español":
                     translated_days = [day_translations.get(day, day) for day in day_list]
                     days = ", ".join(translated_days)
+                    time_label = "*Aprox"
                 else:
                     un_translated_days = [reverse_day_translations.get(day, day) for day in day_list]
                     days = ", ".join(un_translated_days)
-                tooltip.configure(message=f"{days}\n{time_info}")
+                    time_label = "*Approx"
+                time_info = time_info.replace("*Aprox", "").replace("*Approx", "").strip()
+                tooltip.configure(message=f"{days}\n{time_label} {time_info}")
 
-            elif len(lines) == 2 and "*EST." not in current_message:
+            elif len(lines) == 2 and "*Aprox" not in current_message and "*Approx" not in current_message:
                 tooltip.configure(message=translation["change_section_entry"])
 
     def change_semester(self, semester):
@@ -4469,7 +4481,10 @@ class TeraTermUI(customtkinter.CTk):
                 end_time_12hr = TeraTermUI.convert_to_12_hour_format(end_time)
                 translated_days = ", ".join(
                     day_translations.get(day, day) for day in days.split(", ")) if lang == "Español" else days
-                message = f"{translated_days}\n *EST. {start_time_12hr} - {end_time_12hr}"
+                if lang == "Español":
+                    message = f"{translated_days}\n *Aprox. {start_time_12hr} - {end_time_12hr}"
+                else:
+                    message = f"{translated_days}\n *Approx. {start_time_12hr} - {end_time_12hr}"
 
             self.e_section_tooltip.configure(message=message, visibility=True)
         else:
@@ -4582,8 +4597,12 @@ class TeraTermUI(customtkinter.CTk):
                                              if selected_language == "Español" else conflict_days)
                     entry_time_range = (f"{convert_time_format(conflict_start_time)} "
                                         f"- {convert_time_format(conflict_end_time)}")
-                    current_tooltip = (f"{current_translation['conflict_tooltip']}"
-                                       f"{entry_translated_days}\n*EST. {entry_time_range}")
+                    if current_translation == "Español":
+                        current_tooltip = (f"{current_translation['conflict_tooltip']}"
+                                           f"{entry_translated_days}\n*Aprox. {entry_time_range}")
+                    else:
+                        current_tooltip = (f"{current_translation['conflict_tooltip']}"
+                                           f"{entry_translated_days}\n*Approx. {entry_time_range}")
                     current_entry.configure(border_color="#CC5500")
                     current_bg = "#CC5500"
 
@@ -4598,7 +4617,10 @@ class TeraTermUI(customtkinter.CTk):
                         entry_translated_days = (", ".join(day_translation_map.get(day, day)
                                                  for day in schedule_days.split(", "))
                                                  if selected_language == "Español" else schedule_days)
-                        current_tooltip = f"{entry_translated_days}\n*EST. {entry_time_range}"
+                        if current_translation == "Español":
+                            current_tooltip = f"{entry_translated_days}\n*Aprox. {entry_time_range}"
+                        else:
+                            current_tooltip = f"{entry_translated_days}\n*Approx. {entry_time_range}"
                         current_bg = "#1E90FF"
                     if current_entry.cget("border_color") == "#CC5500":
                         current_entry.configure(border_color=current_theme_border)
@@ -4634,8 +4656,12 @@ class TeraTermUI(customtkinter.CTk):
                                        if selected_language == "Español" else day_list)
                     change_time_range = (f"{convert_time_format(start_time)}"
                                          f" - {convert_time_format(end_time)}")
-                    conflict_message = (f"{current_translation['conflict_table_tooltip']}"
-                        f"{translated_days}\n*EST. {change_time_range}")
+                    if current_translation == "Español":
+                        conflict_message = (f"{current_translation['conflict_table_tooltip']}"
+                                            f"{translated_days}\n*Aprox. {change_time_range}")
+                    else:
+                        conflict_message = (f"{current_translation['conflict_table_tooltip']}"
+                                            f"{translated_days}\n*Approx {change_time_range}")
                     change_entry.configure(border_color="#CC5500")
                     self.enrolled_tooltips[change_tooltip_idx].configure(message=conflict_message,
                                                                          bg_color="#CC5500")
@@ -4647,22 +4673,44 @@ class TeraTermUI(customtkinter.CTk):
                     translated_days = (", ".join(day_translation_map.get(day, day) for day in day_list.split(", "))
                                        if selected_language == "Español" else day_list)
                     change_time_range = f"{convert_time_format(start_time)} - {convert_time_format(end_time)}"
-                    conflict_message = (f"{current_translation['conflict_tooltip']}"
-                                        f"{translated_days}\n*EST. {change_time_range}")
+                    if current_translation == "Español":
+                        conflict_message = (f"{current_translation['conflict_tooltip']}"
+                                            f"{translated_days}\n*Aprox. {change_time_range}")
+                    else:
+                        conflict_message = (f"{current_translation['conflict_tooltip']}"
+                                            f"{translated_days}\n*Approx. {change_time_range}")
                     change_entry.configure(border_color="#CC5500")
                     self.enrolled_tooltips[change_tooltip_idx].configure(message=conflict_message, bg_color="#CC5500")
                     continue
 
+
                 elif change_section_code in enrolled_table_sections:
                     day_list, start_time, end_time = get_schedule_info(change_section_code)
-                    translated_days = (", ".join(day_translation_map.get(day, day) for day in day_list.split(", "))
-                                       if selected_language == "Español" else day_list)
+                    if day_list == "Online":
+                        change_entry.configure(border_color=current_theme_border)
+                        self.enrolled_tooltips[change_tooltip_idx].configure(
+                            message=current_translation["online_class"], bg_color="#1E90FF")
+                        continue
+
+                    if change_section_code[:2] == "EL":
+                        change_entry.configure(border_color=current_theme_border)
+                        self.enrolled_tooltips[change_tooltip_idx].configure(
+                            message=current_translation["online_class"], bg_color="#1E90FF")
+                        continue
+
                     change_time_range = f"{convert_time_format(start_time)} - {convert_time_format(end_time)}"
-                    conflict_message = (f"{current_translation['conflict_table_tooltip']}"
-                                        f"{translated_days}\n*EST. {change_time_range}")
+                    translated_days = (
+                        ", ".join(day_translation_map.get(day, day) for day in day_list.split(", "))
+                        if selected_language == "Español" else day_list)
+                    if current_translation == "Español":
+                        conflict_message = (f"{current_translation['conflict_table_tooltip']}"
+                                            f"{translated_days}\n*Aprox. {change_time_range}")
+                    else:
+                        conflict_message = (f"{current_translation['conflict_table_tooltip']}"
+                                            f"{translated_days}\n*Approx. {change_time_range}")
+
                     change_entry.configure(border_color="#CC5500")
-                    self.enrolled_tooltips[change_tooltip_idx].configure(message=conflict_message,
-                                                                         bg_color="#CC5500")
+                    self.enrolled_tooltips[change_tooltip_idx].configure(message=conflict_message, bg_color="#CC5500")
                     continue
 
                 elif change_section_code in current_schedule_map or change_section_code[:2] in current_schedule_map:
@@ -4679,8 +4727,12 @@ class TeraTermUI(customtkinter.CTk):
                         change_translated_days = (", ".join(day_translation_map.get(day, day)
                                                   for day in change_days.split(", "))
                                                   if selected_language == "Español" else change_days)
-                        self.enrolled_tooltips[change_tooltip_idx].configure(
-                            message=f"{change_translated_days}\n*EST. {change_time_range}", bg_color="#1E90FF")
+                        if current_translation == "Español":
+                            self.enrolled_tooltips[change_tooltip_idx].configure(
+                                message=f"{change_translated_days}\n*Aprox. {change_time_range}", bg_color="#1E90FF")
+                        else:
+                            self.enrolled_tooltips[change_tooltip_idx].configure(
+                                message=f"{change_translated_days}\n*Approx. {change_time_range}", bg_color="#1E90FF")
 
                 else:
                     change_entry.configure(border_color=current_theme_border)
@@ -11884,20 +11936,20 @@ class CustomComboBox(customtkinter.CTkComboBox):
         if self.find_context_menu():
             self._entry.configure(cursor="arrow")
         else:
-            self._entry.configure(cursor="xterm")  
+            self._entry.configure(cursor="xterm")
         self._canvas.configure(cursor="hand2")
 
     def on_motion(self, event):
         if self.find_context_menu():
             self._entry.configure(cursor="arrow")
         else:
-            self._entry.configure(cursor="xterm")  
+            self._entry.configure(cursor="xterm")
 
     def on_leave(self, event):
         if self.find_context_menu():
             self._entry.configure(cursor="xterm")
         else:
-            self._entry.configure(cursor="arrow")  
+            self._entry.configure(cursor="arrow")
         self._canvas.configure(cursor="arrow")
 
     def set(self, value, enforce_length_check=True):
