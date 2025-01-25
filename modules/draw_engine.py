@@ -675,7 +675,7 @@ class DrawEngine:
             for side in ["left", "right"]:
                 key1 = f"border_rectangle_1_{side}"
                 key2 = f"border_rectangle_2_{side}"
-                tags = (f"border_rectangle_part", f"border_parts_{side}", "border_parts")
+                tags = ("border_rectangle_part", f"border_parts_{side}", "border_parts")
                 if side == "right":
                     tags += ("right_parts",)
 
@@ -701,6 +701,7 @@ class DrawEngine:
                                 height - corner_radius)
             self._canvas.coords(self._items["border_rectangle_2_right"], left_section_width, 0, width - corner_radius,
                                 height)
+
         else:
             # Hide border parts
             for side in ["left", "right"]:
@@ -721,7 +722,53 @@ class DrawEngine:
                         self._canvas.itemconfig(self._items[key_b], state='hidden')
 
         # Inner parts
-        if inner_corner_radius > 0:
+        for side in ["left", "right"]:
+            # Renaming these so they're consistently defined
+            key1 = f"inner_rectangle_{side}_1"
+            key2 = f"inner_rectangle_{side}_2"
+            tags = ("inner_rectangle_part", f"inner_parts_{side}", "inner_parts")
+            if side == "right":
+                tags += ("right_parts",)
+
+            if key1 not in self._items:
+                self._items[key1] = self._canvas.create_rectangle(
+                    0, 0, 0, 0, tags=tags, width=0)
+                requires_recoloring = True
+            else:
+                self._canvas.itemconfig(self._items[key1], state='normal')
+
+            needs_inner_rectangle_2 = inner_corner_radius * 2 < height - (border_width * 2)
+            if needs_inner_rectangle_2:
+                if key2 not in self._items:
+                    self._items[key2] = self._canvas.create_rectangle(
+                        0, 0, 0, 0, tags=tags, width=0)
+                    requires_recoloring = True
+                else:
+                    self._canvas.itemconfig(self._items[key2], state='normal')
+            else:
+                if key2 in self._items:
+                    self._canvas.itemconfig(self._items[key2], state='hidden')
+
+        # Coordinates for the left inner rectangle
+        self._canvas.coords(self._items["inner_rectangle_left_1"],
+                            border_width + inner_corner_radius, border_width,
+                            left_section_width, height - border_width)
+
+        # Coordinates for the right inner rectangle
+        self._canvas.coords(self._items["inner_rectangle_right_1"],
+                            left_section_width, border_width,
+                            width - border_width - inner_corner_radius, height - border_width)
+
+        # Additional inner rectangle if there's space for it (both sides)
+        if inner_corner_radius * 2 < height - (border_width * 2):
+            self._canvas.coords(self._items["inner_rectangle_left_2"],
+                                border_width, border_width + inner_corner_radius,
+                                left_section_width, height - inner_corner_radius - border_width)
+            self._canvas.coords(self._items["inner_rectangle_right_2"],
+                                left_section_width, border_width + inner_corner_radius,
+                                width - border_width, height - inner_corner_radius - border_width)
+
+        if corner_radius > 0:
             # Inner corner parts
             # Left side
             for i in [1, 4]:
@@ -756,7 +803,7 @@ class DrawEngine:
                     self._canvas.itemconfig(self._items[key_a], state='normal')
                     self._canvas.itemconfig(self._items[key_b], state='normal')
 
-            # Set positions of inner corner parts
+            # Position inner corner parts
             self._canvas.coords(self._items["inner_oval_1_a_left"],
                                 border_width + inner_corner_radius, border_width + inner_corner_radius,
                                 inner_corner_radius)
@@ -795,49 +842,6 @@ class DrawEngine:
                 if key_a in self._items:
                     self._canvas.itemconfig(self._items[key_a], state='hidden')
                     self._canvas.itemconfig(self._items[key_b], state='hidden')
-
-        # Inner rectangle parts
-        for side in ["left", "right"]:
-            key1 = f"inner_rectangle_1_{side}"
-            key2 = f"inner_rectangle_2_{side}"
-            tags = (f"inner_rectangle_part", f"inner_parts_{side}", "inner_parts")
-            if side == "right":
-                tags += ("right_parts",)
-
-            if key1 not in self._items:
-                self._items[key1] = self._canvas.create_rectangle(
-                    0, 0, 0, 0, tags=tags, width=0)
-                requires_recoloring = True
-            else:
-                self._canvas.itemconfig(self._items[key1], state='normal')
-
-            needs_inner_rectangle_2 = inner_corner_radius * 2 < height - (border_width * 2)
-            if needs_inner_rectangle_2:
-                if key2 not in self._items:
-                    self._items[key2] = self._canvas.create_rectangle(
-                        0, 0, 0, 0, tags=tags, width=0)
-                    requires_recoloring = True
-                else:
-                    self._canvas.itemconfig(self._items[key2], state='normal')
-            else:
-                if key2 in self._items:
-                    self._canvas.itemconfig(self._items[key2], state='hidden')
-
-        # Set positions of inner rectangle parts
-        self._canvas.coords(self._items["inner_rectangle_1_left"],
-                            border_width + inner_corner_radius, border_width,
-                            left_section_width, height - border_width)
-        self._canvas.coords(self._items["inner_rectangle_1_right"],
-                            left_section_width, border_width,
-                            width - border_width - inner_corner_radius, height - border_width)
-
-        if inner_corner_radius * 2 < height - (border_width * 2):
-            self._canvas.coords(self._items["inner_rectangle_2_left"],
-                                border_width, border_width + inner_corner_radius,
-                                left_section_width, height - inner_corner_radius - border_width)
-            self._canvas.coords(self._items["inner_rectangle_2_right"],
-                                left_section_width, border_width + inner_corner_radius,
-                                width - border_width, height - inner_corner_radius - border_width)
 
         if requires_recoloring:
             # Manage z-order
