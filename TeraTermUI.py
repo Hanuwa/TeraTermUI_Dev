@@ -7205,6 +7205,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.table_tooltips[cell].widget = None
                     self.table_tooltips[cell].message = None
                     del self.table_tooltips[cell]
+                table_to_remove.unbind_cell(i, j)
         self.hidden_tables.append(table_to_remove)
         self.hidden_labels.append(display_class_to_remove)
 
