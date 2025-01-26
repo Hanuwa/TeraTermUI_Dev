@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 13000 lines of codes, it definitely makes things harder to work with
+# and with over 13100 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -6620,8 +6620,6 @@ class TeraTermUI(customtkinter.CTk):
                 tooltip_message = tooltip_messages[header]
                 tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#989898", alpha=0.90)
                 self.table_tooltips[cell] = tooltip
-            display_class.grid(row=1, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
-            new_table.grid(row=2, column=1, padx=(0, 15), pady=(40, 0), sticky="n")
         else:
             new_table = CTkTable(self.search_scrollbar, column=len(headers), row=len(table_values),
                                  values=table_values, header_color="#145DA0", hover_color="#339CFF", command=lambda row,
@@ -6725,7 +6723,6 @@ class TeraTermUI(customtkinter.CTk):
 
         self.display_current_table()
 
-        new_table.grid(row=2, column=1, padx=(0, 15), pady=(40, 0), sticky="n")
         self.table_count.grid(row=4, column=1, padx=(0, 95), pady=(10, 0), sticky="n")
         self.table_pipe.grid(row=4, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
         self.table_position.grid(row=4, column=1, padx=(95, 0), pady=(10, 0), sticky="n")
@@ -7020,8 +7017,8 @@ class TeraTermUI(customtkinter.CTk):
                                 f"/{len(self.class_table_pairs)}")
         if self.table_position.cget("text") != table_position_label:
             self.table_position.configure(text=table_position_label)
-        display_class.grid(row=2, column=1, padx=(0, 0), pady=(8, 0), sticky="n")
-        curr_table.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
+        display_class.grid(row=2, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
+        curr_table.grid(row=2, column=1, padx=(0, 15), pady=(40, 0), sticky="n")
         self.table = curr_table
         self.current_class = display_class
         section = self.s_classes_entry.get().upper().replace(" ", "").replace("-", "")
