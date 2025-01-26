@@ -993,6 +993,7 @@ class TeraTermUI(customtkinter.CTk):
         on_exit = self.cursor.execute("SELECT exit FROM user_data").fetchone()
         if on_exit and on_exit[0] is not None and on_exit[0] == 1:
             msg.check_checkbox()
+        self.destroy_tooltip()
         response, self.exit_checkbox_state = msg.get()
         self.is_exit_dialog_open = False
         if response == "Yes" or response == "Sí":
@@ -2202,6 +2203,7 @@ class TeraTermUI(customtkinter.CTk):
             self.modify_classes_frame.grid_forget()
             self.back_my_classes.grid_forget()
             self.show_classes.configure(text=translation["show_my_classes"])
+        self.destroy_tooltip()
         self.in_enroll_frame = False
         self.in_search_frame = False
         self.in_multiple_screen = True
@@ -3609,6 +3611,7 @@ class TeraTermUI(customtkinter.CTk):
                                 hover_color=("darkred", "darkred", "use_default"))
             if self.back_checkbox_state == 1:
                 msg.check_checkbox()
+            self.destroy_tooltip()
             response, checkbox = msg.get()
             self.back_checkbox_state = checkbox
         if TeraTermUI.checkIfProcessRunning("ttermpro") and (
@@ -7971,6 +7974,7 @@ class TeraTermUI(customtkinter.CTk):
                             option_2=translation["option_2"], option_3=translation["option_3"], icon_size=(65, 65),
                             button_color=("#c30101", "#145DA0", "#145DA0"),
                             hover_color=("darkred", "use_default", "use_default"))
+        self.destroy_tooltip()
         response = msg.get()
         if response[0] == "Yes" or response[0] == "Sí":
             loading_screen = self.show_loading_screen()
@@ -9718,6 +9722,7 @@ class TeraTermUI(customtkinter.CTk):
             return
         lang = self.language_menu.get()
         translation = self.load_language()
+        self.destroy_tooltip()
         self.status = SmoothFadeToplevel()
         self.status_widgets()
         main_window_x = self.winfo_x()
@@ -9898,6 +9903,7 @@ class TeraTermUI(customtkinter.CTk):
                             option_3=translation["option_3"], icon_size=(65, 65),
                             button_color=("#c30101", "#145DA0", "#145DA0"),
                             hover_color=("darkred", "use_default", "use_default"))
+        self.destroy_tooltip()
         response = msg.get()
         if response[0] == "Yes" or response[0] == "Sí":
             if not self.disable_feedback:
@@ -10351,6 +10357,7 @@ class TeraTermUI(customtkinter.CTk):
             return
         lang = self.language_menu.get()
         translation = self.load_language()
+        self.destroy_tooltip()
         self.help = SmoothFadeToplevel()
         self.help_widgets()
         main_window_x = self.winfo_x()
