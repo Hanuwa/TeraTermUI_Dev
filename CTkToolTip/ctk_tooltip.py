@@ -304,7 +304,7 @@ class CTkToolTip(Toplevel):
             self.frame.configure(fg_color=bg_color)
             if self.visibility:
                 self.hide()
-                self.deiconify()
+                self.show()
         if visibility is not None:
             self.visibility = visibility
             if self.visibility:
