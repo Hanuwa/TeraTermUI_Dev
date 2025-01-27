@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 1/26/25
+# DATE - Started 1/1/23, Current Build v0.9.5 - 1/27/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -6603,18 +6603,29 @@ class TeraTermUI(customtkinter.CTk):
             target_rows = len(table_values)
             best_index = len(self.hidden_tables) - 1
             smallest_row_change = float("inf")
+            matched_table_index = None
             for i, table in enumerate(self.hidden_tables):
-                diff = abs(table.cget("row") - target_rows)
-                if diff < smallest_row_change:
-                    smallest_row_change = diff
-                    best_index = i
-                    if diff == 0:
-                        break
+                if table.values == table_values:
+                    matched_table_index = i
+                    break
+            if matched_table_index is not None:
+                new_table = self.hidden_tables.pop(matched_table_index)
+                display_class = self.hidden_labels.pop(matched_table_index)
+                display_class.configure(text=self.get_class_for_pdf)
+                self.current_table_index = matched_table_index
+            else:
+                for i, table in enumerate(self.hidden_tables):
+                    diff = abs(table.cget("row") - target_rows)
+                    if diff < smallest_row_change:
+                        smallest_row_change = diff
+                        best_index = i
+                        if diff == 0:
+                            break
+                new_table = self.hidden_tables.pop(best_index)
+                display_class = self.hidden_labels.pop(best_index)
+                display_class.configure(text=self.get_class_for_pdf)
+                new_table.refresh_table(table_values)
 
-            new_table = self.hidden_tables.pop(best_index)
-            display_class = self.hidden_labels.pop(best_index)
-            display_class.configure(text=self.get_class_for_pdf)
-            new_table.refresh_table(table_values)
             for i, header in enumerate(headers):
                 cell = new_table.get_cell(0, i)
                 tooltip_message = tooltip_messages[header]
