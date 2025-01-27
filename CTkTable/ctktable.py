@@ -32,7 +32,7 @@ class CTkTable(customtkinter.CTkFrame):
             border_color: str or tuple = None,
             font: tuple = None,
             header_color: str or tuple = None,
-            corner_radius: int = 25,
+            corner_radius: int = 11,
             write: str = False,
             command=None,
             anchor: str = "c",
