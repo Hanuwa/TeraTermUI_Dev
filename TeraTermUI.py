@@ -1891,7 +1891,7 @@ class TeraTermUI(customtkinter.CTk):
             return False
 
         translation = self.load_language()
-        headers = [translation["course"], translation["grade"], translation["days"],
+        headers = [translation["course"], translation["m"], translation["grade"], translation["days"],
                    translation["times"], translation["room"]]
         enrolled_courses = set()
         discrepancies_found = False
@@ -3810,12 +3810,13 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language()
         tooltip_messages = {
             translation["course"]: translation["tooltip_course"],
+            translation["m"]: translation["tooltip_m"],
             translation["grade"]: translation["tooltip_grd"],
             translation["days"]: translation["tooltip_days"],
             translation["times"]: translation["tooltip_times"],
             translation["room"]: translation["tooltip_croom"]
         }
-        new_headers = [translation["course"], translation["grade"], translation["days"],
+        new_headers = [translation["course"], translation["m"], translation["grade"], translation["days"],
                        translation["times"], translation["room"]]
         self.enrolled_classes_table.update_headers(new_headers)
         if self.enrolled_classes_table.values:
@@ -6212,14 +6213,15 @@ class TeraTermUI(customtkinter.CTk):
             gray = colors.Color(0.7, 0.7, 0.7)  # Lighter gray
             # Define the table style
             style = TableStyle([
-                ("BACKGROUND", (0, 0), (-1, 0), blue),
-                ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
-                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("FONTSIZE", (0, 0), (-1, 0), 14),
-                ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
-                ("BACKGROUND", (0, 1), (-1, -1), gray),
-                ("GRID", (0, 0), (-1, -1), 1, colors.black)
+                ("BACKGROUND", (0, 0), (-1, 0), blue),  # Header background color
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),  # Text color
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),  # Center text horizontally
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),  # Center text vertically
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),  # Bold font for headers
+                ("FONTSIZE", (0, 0), (-1, 0), 14),  # Header font size
+                ("BOTTOMPADDING", (0, 0), (-1, 0), 12),  # Padding for headers
+                ("BACKGROUND", (0, 1), (-1, -1), gray),  # Background color for data rows
+                ("GRID", (0, 0), (-1, -1), 1, colors.black),  # Add grid lines
             ])
 
             table.setStyle(style)
@@ -7611,16 +7613,17 @@ class TeraTermUI(customtkinter.CTk):
             r"(\b[A-Z])\s+([A-Z]{4}\d{4}[A-Z]{2}\d)\s+([A-Z])?\s+(.*?)\s+([A-Z]{2})\s*([A-FI-NPW]*)\s+"
             r"([A-Z]{1,5}|TBA)\s+(\d{4}[AP]M-\d{4}[AP]M|TBA)\s*(?:\s+([\dA-Z]*?)\s+([A-Z\d]{3,4})?)?"
             r"(?:\s+([A-Z]{1,5}|TBA)\s+(\d{4}[AP]M-\d{4}[AP]M|TBA)\s*(?:\s+([\dA-Z]*?)\s+([A-Z\d]{3,4})?)?)"
-            r"?(?=\s+\b[A-Z]|\s*$)",
-            re.DOTALL
-        )
+            r"?(?=\s+\b[A-Z]|\s*$)", re.DOTALL)
+
         matches = class_pattern.findall(text)
         enrolled_classes = []
         for match in matches:
             course_code = f"{match[1][:4]}-{match[1][4:8]}-{match[1][8:]}"
+            modality = match[2] if match[2] else ""
             formatted_time = TeraTermUI.parse_time(match[7])
             class_info = {
                 translation["course"]: course_code,
+                translation["m"]: modality,
                 translation["grade"]: match[5],
                 translation["days"]: match[6],
                 translation["times"]: formatted_time,
@@ -7633,6 +7636,7 @@ class TeraTermUI(customtkinter.CTk):
                 additional_formatted_time = TeraTermUI.parse_time(match[11])
                 additional_class_info = {
                     translation["course"]: "",
+                    translation["m"]: modality,
                     translation["grade"]: "",
                     translation["days"]: match[10],
                     translation["times"]: additional_formatted_time,
@@ -7683,25 +7687,27 @@ class TeraTermUI(customtkinter.CTk):
         elems = []
 
         # Extract and prepare table data with translated headers
-        headers = [translation["course"], translation["grade"], translation["days"],
+        headers = [translation["course"], translation["m"], translation["grade"], translation["days"],
                    translation["times"], translation["room"]]
         table_data = [headers] + [[cls.get(header, "") for header in headers] for cls in data]
 
+        column_widths = [120, 50, 60, 55, 120, 55]
         # Create the table
-        table = Table(table_data)
+        table = Table(table_data, colWidths=column_widths)
 
         # Define and set the same table style as in your create_pdf method
         blue = colors.Color(0, 0.5, 0.75)
         gray = colors.Color(0.7, 0.7, 0.7)
         table_style = TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), blue),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTSIZE", (0, 0), (-1, 0), 14),
-            ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
-            ("BACKGROUND", (0, 1), (-1, -1), gray),
-            ("GRID", (0, 0), (-1, -1), 1, colors.black),
+            ("BACKGROUND", (0, 0), (-1, 0), blue),  # Header background color
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),  # Text color
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),  # Center text horizontally
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),  # Center text vertically
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),  # Bold font for headers
+            ("FONTSIZE", (0, 0), (-1, 0), 14),  # Header font size
+            ("BOTTOMPADDING", (0, 0), (-1, 0), 12),  # Padding for headers
+            ("BACKGROUND", (0, 1), (-1, -1), gray),  # Background color for data rows
+            ("GRID", (0, 0), (-1, -1), 1, colors.black),  # Add grid lines
         ])
         table.setStyle(table_style)
 
@@ -7761,21 +7767,23 @@ class TeraTermUI(customtkinter.CTk):
         self.unbind("<Control-Tab>")
         self.unbind("<Control-w>")
         self.unbind("<Control-W>")
-        headers = [translation["course"], translation["grade"], translation["days"],
+        headers = [translation["course"], translation["m"], translation["grade"], translation["days"],
                    translation["times"], translation["room"]]
         self.dialog_input = dialog_input
         self.ask_semester_refresh = True
         table_values = [headers] + [[cls.get(header, "") for header in headers] for cls in data]
         enrolled_rows = len(data) + 1
         column_widths = {
-            translation["course"]: 100,
+            translation["course"]: 112,
+            translation["m"]: 50,
             translation["grade"]: 50,
             translation["days"]: 50,
-            translation["times"]: 150,
+            translation["times"]: 112,
             translation["room"]: 50
         }
         tooltip_messages = {
             translation["course"]: translation["tooltip_course"],
+            translation["m"]: translation["tooltip_m"],
             translation["grade"]: translation["tooltip_grd"],
             translation["days"]: translation["tooltip_days"],
             translation["times"]: translation["tooltip_times"],
