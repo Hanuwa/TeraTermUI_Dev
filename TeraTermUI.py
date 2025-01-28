@@ -6613,6 +6613,8 @@ class TeraTermUI(customtkinter.CTk):
                 display_class.configure(text=self.get_class_for_pdf)
                 instructor_col_index = headers.index(translation["instructor"])
                 new_table.edit_column(instructor_col_index, width=140)
+                last_column_index = new_table.columns - 1
+                new_table.unhover_cell(0, last_column_index)
             else:
                 if self.hidden_tables and self.hidden_labels:
                     target_rows = len(table_values)
@@ -6628,8 +6630,6 @@ class TeraTermUI(customtkinter.CTk):
                     display_class = self.hidden_labels.pop(best_index)
                     new_table = self.hidden_tables.pop(best_index)
                     display_class.configure(text=self.get_class_for_pdf)
-                    instructor_col_index = headers.index(translation["instructor"])
-                    new_table.edit_column(instructor_col_index, width=140)
                     new_table.refresh_table(table_values)
         else:
             new_table = CTkTable(self.search_scrollbar, column=len(headers), row=len(table_values),
