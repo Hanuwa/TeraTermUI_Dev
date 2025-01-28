@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 1/27/25
+# DATE - Started 1/1/23, Current Build v0.9.5 - 1/28/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -6599,53 +6599,50 @@ class TeraTermUI(customtkinter.CTk):
             translation["instructor"]: translation["tooltip_instructor"],
         }
 
+        new_table = None
+        display_class = None
         if self.hidden_tables and self.hidden_labels:
-            target_rows = len(table_values)
-            best_index = len(self.hidden_tables) - 1
-            smallest_row_change = float("inf")
-            matched_table_index = None
-            for i, table in enumerate(self.hidden_tables):
-                if table.values == table_values:
-                    matched_table_index = i
+            matched_index = None
+            for i, hidden_table in enumerate(self.hidden_tables):
+                if hidden_table.values == table_values:
+                    matched_index = i
                     break
-            if matched_table_index is not None:
-                new_table = self.hidden_tables.pop(matched_table_index)
-                display_class = self.hidden_labels.pop(matched_table_index)
+            if matched_index is not None:
+                new_table = self.hidden_tables.pop(matched_index)
+                display_class = self.hidden_labels.pop(matched_index)
                 display_class.configure(text=self.get_class_for_pdf)
-                self.current_table_index = matched_table_index
             else:
-                for i, table in enumerate(self.hidden_tables):
-                    diff = abs(table.cget("row") - target_rows)
-                    if diff < smallest_row_change:
-                        smallest_row_change = diff
-                        best_index = i
-                        if diff == 0:
-                            break
-                new_table = self.hidden_tables.pop(best_index)
-                display_class = self.hidden_labels.pop(best_index)
-                display_class.configure(text=self.get_class_for_pdf)
-                new_table.refresh_table(table_values)
-
-            for i, header in enumerate(headers):
-                cell = new_table.get_cell(0, i)
-                tooltip_message = tooltip_messages[header]
-                tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#989898", alpha=0.90)
-                self.table_tooltips[cell] = tooltip
+                if self.hidden_tables and self.hidden_labels:
+                    target_rows = len(table_values)
+                    best_index = len(self.hidden_tables) - 1
+                    smallest_row_change = float("inf")
+                    for i, table in enumerate(self.hidden_tables):
+                        diff = abs(table.cget("row") - target_rows)
+                        if diff < smallest_row_change:
+                            smallest_row_change = diff
+                            best_index = i
+                            if diff == 0:
+                                break
+                    new_table = self.hidden_tables.pop(best_index)
+                    display_class = self.hidden_labels.pop(best_index)
+                    display_class.configure(text=self.get_class_for_pdf)
+                    new_table.refresh_table(table_values)
         else:
             new_table = CTkTable(self.search_scrollbar, column=len(headers), row=len(table_values),
                                  values=table_values, header_color="#145DA0", hover_color="#339CFF", command=lambda row,
                                  col: self.copy_cell_data_to_clipboard(new_table.get_cell(row, col)))
-            for i, header in enumerate(headers):
-                cell = new_table.get_cell(0, i)
-                tooltip_message = tooltip_messages[header]
-                tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#989898", alpha=0.90)
-                self.table_tooltips[cell] = tooltip
             display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_pdf,
                                                    font=customtkinter.CTkFont(size=15, weight="bold", underline=True))
             display_class.bind("<Button-1>", lambda event: self.focus_set())
 
         self.table = new_table
         self.original_table_data[new_table] = original_table_values
+
+        for i, header in enumerate(headers):
+            cell = new_table.get_cell(0, i)
+            tooltip_message = tooltip_messages[header]
+            tooltip = CTkToolTip(cell, message=tooltip_message, bg_color="#989898", alpha=0.90)
+            self.table_tooltips[cell] = tooltip
 
         for i, header in enumerate(headers):
             if i < 4 or i == 5:
@@ -7774,6 +7771,12 @@ class TeraTermUI(customtkinter.CTk):
         self.enrolled_classes_data = data
         self.enrolled_classes_credits = creds
         if self.enrolled_classes_table is not None:
+            if self.enrolled_classes_table.values == table_values:
+                self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
+                self.my_classes_frame.scroll_to_top()
+                return
+            self.my_classes_frame.grid_forget()
+            self.modify_classes_frame.grid_forget()
             self.enrolled_classes_table.refresh_table(table_values)
             for tooltip in self.enrolled_header_tooltips.values():
                 tooltip.destroy()
@@ -7897,6 +7900,7 @@ class TeraTermUI(customtkinter.CTk):
             self.modify_classes_title.grid(row=0, column=0, padx=(0, 40), pady=(0, 25))
             self.back_my_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
 
+            pad_y = 6
             for row_index in range(len(self.enrolled_classes_data)):
                 if row_index == 0:
                     pad_y = 28
@@ -7947,6 +7951,8 @@ class TeraTermUI(customtkinter.CTk):
             self.title_my_classes.bind("<Button-1>", lambda event: self.focus_set())
             self.modify_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.total_credits_label.bind("<Button-1>", lambda event: self.focus_set())
+        self.my_classes_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
+        self.modify_classes_frame.grid(row=2, column=2, sticky="nw", padx=(12, 0))
         self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
         self.enrolled_entry_cache.clear()
         self.my_classes_frame.scroll_to_top()
