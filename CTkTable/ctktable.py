@@ -283,7 +283,20 @@ class CTkTable(customtkinter.CTkFrame):
             background_corner_colors=color, fg_color=fg_color))
         frame.bind("<Leave>", lambda e, x=i, y=j, color=corners, fg_color=fg: self.frame[x, y].configure(
             background_corner_colors=color, fg_color=fg_color))
-
+    
+    def unhover_cell(self, row, column):
+        """ Remove the hover effect from a specified cell """
+        if 0 <= row < self.rows and 0 <= column < self.columns:
+            cell = self.frame.get((row, column))
+            if cell:
+                if self.header_color and (
+                        (self.orient == "horizontal" and row == 0) or (self.orient != "horizontal" and column == 0)):
+                    original_fg_color = self.header_color
+                else:
+                    original_fg_color = self.fg_color if row % 2 == 0 else self.fg_color2
+                corners = [original_fg_color] * 4
+                cell.configure(background_corner_colors=corners, fg_color=original_fg_color)
+    
     def manipulate_data(self, row, column):
         """ entry callback """
         self.update_data()
