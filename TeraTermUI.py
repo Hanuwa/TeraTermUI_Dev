@@ -6608,9 +6608,11 @@ class TeraTermUI(customtkinter.CTk):
                     matched_index = i
                     break
             if matched_index is not None:
-                new_table = self.hidden_tables.pop(matched_index)
                 display_class = self.hidden_labels.pop(matched_index)
+                new_table = self.hidden_tables.pop(matched_index)
                 display_class.configure(text=self.get_class_for_pdf)
+                instructor_col_index = headers.index(translation["instructor"])
+                new_table.edit_column(instructor_col_index, width=140)
             else:
                 if self.hidden_tables and self.hidden_labels:
                     target_rows = len(table_values)
@@ -6623,9 +6625,11 @@ class TeraTermUI(customtkinter.CTk):
                             best_index = i
                             if diff == 0:
                                 break
-                    new_table = self.hidden_tables.pop(best_index)
                     display_class = self.hidden_labels.pop(best_index)
+                    new_table = self.hidden_tables.pop(best_index)
                     display_class.configure(text=self.get_class_for_pdf)
+                    instructor_col_index = headers.index(translation["instructor"])
+                    new_table.edit_column(instructor_col_index, width=140)
                     new_table.refresh_table(table_values)
         else:
             new_table = CTkTable(self.search_scrollbar, column=len(headers), row=len(table_values),
@@ -6713,6 +6717,15 @@ class TeraTermUI(customtkinter.CTk):
             display_class_to_remove, table_to_remove, _, _, _, more_sections = self.class_table_pairs[0]
             display_class_to_remove.grid_remove()
             table_to_remove.grid_remove()
+            for i in range(table_to_remove.rows):
+                for j in range(table_to_remove.columns):
+                    cell = table_to_remove.get_cell(i, j)
+                    if cell in self.table_tooltips:
+                        self.table_tooltips[cell].destroy()
+                        self.table_tooltips[cell].widget = None
+                        self.table_tooltips[cell].message = None
+                        del self.table_tooltips[cell]
+                    table_to_remove.unbind_cell(i, j)
             self.hidden_tables.append(table_to_remove)
             self.hidden_labels.append(display_class_to_remove)
 
