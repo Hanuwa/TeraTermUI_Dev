@@ -3651,7 +3651,6 @@ class TeraTermUI(customtkinter.CTk):
             self.unbind("<Control-Tab>")
             self.unbind("<Control-BackSpace>")
             self.bind("<Return>", lambda event: self.login_event_handler())
-            self.destroy_tooltip()
             if self.in_auth_frame:
                 self.destroy_auth()
             elif self.in_student_frame:
