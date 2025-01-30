@@ -29,4 +29,5 @@ https://github.com/TomSchimansky/CustomTkinter & https://customtkinter.tomschima
       
 # Convert from .py to .exe
 We convert the application to an executable using Nuitka, which is a library that basically coverts your python code into C then it compiles and bundles your application together
-and makes the .py file into an executable **(C compiler required)**, it's a really good tool and it even increases the performance of some tasks. https://github.com/Nuitka/Nuitka 
+and makes the .py file into an executable **(C compiler required)**, it's a really good tool and it even increases the performance of some tasks. Be aware that the application is compiled using LTO, 
+which is very demanding, for doing test builds make sure to disable it https://github.com/Nuitka/Nuitka 
