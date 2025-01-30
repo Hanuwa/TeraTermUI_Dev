@@ -148,6 +148,10 @@ class UpdateGUI:
         self.update_progress(0, "Cancelling update, please wait...", force_update=True)
         self.pause_button.configure(state="disabled")
         self.cancel_button.configure(state="disabled")
+        self.pause_button.unbind("<Enter>")
+        self.pause_button.unbind("<Leave>") 
+        self.cancel_button.unbind("<Enter>")
+        self.cancel_button.unbind("<Leave>") 
 
         def cleanup_task():
             cleanup_success = True
@@ -284,6 +288,8 @@ class UpdateGUI:
         self.root.unbind("<Alt-F4>")
         self.root.bind("<Alt-F4>", lambda e: self.exit_updater())
         self.pause_button.configure(state="disabled")
+        self.pause_button.unbind("<Enter>")
+        self.pause_button.unbind("<Leave>") 
         logging.info("Updater GUI has been set to failure state. Buttons reconfigured to exit")
 
     def exit_updater(self):
@@ -1280,4 +1286,3 @@ if __name__ == "__main__":
             "Critical Error",
             f"An unexpected error occurred:\n\n{str(e)}\n\nPlease check the logs for details")
         sys.exit(1)
-        
