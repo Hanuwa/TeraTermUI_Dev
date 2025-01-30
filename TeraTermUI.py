@@ -8622,13 +8622,15 @@ class TeraTermUI(customtkinter.CTk):
         msg = CTkMessagebox(title=translation["update_popup_title"],
                             message=translation["update_popup_message"] + "\n\n" + current + ": v" +
                             self.USER_APP_VERSION + " ---> " + latest + ": v" + latest_version,
-                            option_1=translation["option_1"], option_2=translation["option_2"],
-                            option_3=translation["option_3"], icon_size=(65, 65),
+                            option_1=translation["option_1"], option_3=translation["update_now"],
+                            option_2=translation["download_title"], icon_size=(65, 65),
                             button_color=("#c30101", "#145DA0", "#145DA0"), icon="question",
                             hover_color=("darkred", "use_default", "use_default"))
         response = msg.get()
-        if response[0] == "Yes" or response[0] == "Sí":
+        if response[0] == translation["update_now"]:
             self.run_updater(latest_version)
+        elif response[0] == translation["download_title"]:
+            webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
 
     # Deletes Tesseract OCR and tera term config file from the temp folder
     def cleanup_temp(self):
@@ -9115,13 +9117,15 @@ class TeraTermUI(customtkinter.CTk):
                             msg = CTkMessagebox(title=translation["update_popup_title"],
                                                 message=translation["update_popup_message"] + "\n\n" + current + ": v" +
                                                 self.USER_APP_VERSION + " ---> " + latest + ": v" + latest_version,
-                                                option_1=translation["option_1"], option_2=translation["option_2"],
-                                                option_3=translation["option_3"], icon_size=(65, 65),
+                                                option_1=translation["option_1"], option_3=translation["update_now"],
+                                                option_2=translation["download_title"], icon_size=(65, 65),
                                                 button_color=("#c30101", "#145DA0", "#145DA0"), icon="question",
                                                 hover_color=("darkred", "use_default", "use_default"))
                             response = msg.get()
-                            if response[0] == "Yes" or response[0] == "Sí":
+                            if response[0] == translation["update_now"]:
                                 self.run_updater(latest_version)
+                            elif response[0] == translation["download_title"]:
+                                webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
 
                         self.after(50, update)
                     else:
@@ -9151,6 +9155,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.timeout_occurred = False
 
                     self.after(50, error_update)
+                else:
+                    self.status.focus_set()
                 self.update_event_completed = True
 
     def run_updater(self, latest_version):
@@ -10045,6 +10051,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.timeout_occurred = False
 
                     self.after(100, error_feedback)
+                else:
+                    self.status.focus_set()
                 self.submit_feedback_event_completed = True
 
     @staticmethod
