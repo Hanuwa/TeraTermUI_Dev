@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 1/29/25
+# DATE - Started 1/1/23, Current Build v0.9.5 - 1/31/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -235,6 +235,8 @@ class TeraTermUI(customtkinter.CTk):
         self.remove_button_tooltip = None
         self.download_search_pdf_tooltip = None
         self.tooltip = None
+        self.notice_user_text = None
+        self.notice_user_msg = None
         self.last_closing_time = None
         self.is_exit_dialog_open = False
         self.dialog = None
@@ -3255,10 +3257,12 @@ class TeraTermUI(customtkinter.CTk):
         if running_launchers:
             launchers_list = ", ".join([launcher_names[launcher] for launcher in running_launchers])
             text = translation["game_launchers"].format(launchers_list)
+            self.notice_user_text = ("launchers", launchers_list)
         else:
-            text = translation["exec_time"]
-        label = tk.Label(self.tooltip, text=text, bg="#FFD700", fg="#000", font=("Verdana", 11, "bold"))
-        label.pack(padx=5, pady=5)
+            text = ("exec", translation["exec_time"])
+            self.notice_user_text = text
+        self.notice_user_msg = tk.Label(self.tooltip, text=text, bg="#FFD700", fg="#000", font=("Verdana", 11, "bold"))
+        self.notice_user_msg.pack(padx=5, pady=5)
         self.lift_tooltip()
         if not self.skip_auth:
             self.tooltip.after(15000, self.destroy_tooltip)
@@ -3979,6 +3983,14 @@ class TeraTermUI(customtkinter.CTk):
             self.fix_text.configure(text=translation["fix_title"])
             self.fix.configure(text=translation["fix"])
             self.search_box.lang = lang
+        if self.notice_user_text is not None:
+            key, value = self.notice_user_text
+            new_text = None
+            if key == "launchers":
+                new_text = translation["game_launchers"].format(value)
+            elif key == "exec":
+                new_text = translation["exec_time"]
+            self.notice_user_msg.configure(text=new_text)
         if self.in_auth_frame:
             self.title_login.configure(text=translation["title_auth"])
             self.disclaimer.configure(text=translation["disclaimer"])
@@ -6364,6 +6376,9 @@ class TeraTermUI(customtkinter.CTk):
         if self.tooltip is not None and self.tooltip.winfo_exists():
             self.tooltip.destroy()
             self.tooltip = None
+            self.notice_user_text = None
+            self.notice_user_msg.destroy()
+            self.notice_user_msg = None
             gc.collect()
 
     def lift_tooltip(self):
