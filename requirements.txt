@@ -6,7 +6,7 @@ async-timeout==5.0.1
 attrs==25.1.0
 Brotli==1.1.0
 cachetools==5.5.1
-certifi==2024.12.14
+certifi==2025.1.31
 cffi==1.17.1
 chardet==5.2.0
 charset-normalizer==3.4.1
@@ -62,7 +62,7 @@ PyScreeze==1.0.1
 pystray==0.19.5
 pytesseract==0.3.13
 pytweening==1.2.0
-pytz==2024.2
+pytz==2025.1
 pywin32==308
 pywinauto==0.6.9
 pyzipper==0.3.6
