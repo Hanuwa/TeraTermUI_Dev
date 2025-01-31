@@ -6377,7 +6377,8 @@ class TeraTermUI(customtkinter.CTk):
             self.tooltip.destroy()
             self.tooltip = None
             self.notice_user_text = None
-            self.notice_user_msg.destroy()
+            if self.notice_user_msg is not None:
+                self.notice_user_msg.destroy()
             self.notice_user_msg = None
             gc.collect()
 
