@@ -77,7 +77,7 @@ from pytz import timezone
 from tkinter import filedialog
 from tkinter import messagebox
 
-MAX_RESTARTS = 5
+MAX_RESTARTS = 3
 restart_count = 0
 try:
     if len(sys.argv) > 1:
