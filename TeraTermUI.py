@@ -4260,7 +4260,12 @@ class TeraTermUI(customtkinter.CTk):
             time_label = "*Approx"
 
         time_info = time_info.replace("*Aprox", "").replace("*Approx", "").strip()
-        self.e_section_tooltip.configure(message=f"{translated_days}\n{time_label} {time_info}", visibility=True)
+        if time_info.startswith("."):
+            combined_time = f"{time_label}{time_info}"
+        else:
+            combined_time = f"{time_label} {time_info}"
+
+        self.e_section_tooltip.configure(message=f"{translated_days}\n{combined_time}", visibility=True)
 
     def update_sections_multiple_tooltips(self, new_lang):
         day_translations = {
@@ -4297,9 +4302,13 @@ class TeraTermUI(customtkinter.CTk):
                     un_translated_days = [reverse_day_translations.get(day, day) for day in day_list]
                     lines[2] = ", ".join(un_translated_days)
                     time_label = "*Approx"
+                raw_time = lines[-1].replace("*Aprox", "").replace("*Approx", "").strip()
+                if raw_time.startswith("."):
+                    combined_time = f"{time_label}{raw_time}"
+                else:
+                    combined_time = f"{time_label} {raw_time}"
+                lines[-1] = combined_time
 
-                lines[-1] = lines[-1].replace("*Aprox", "").replace("*Approx", "").strip()
-                lines[-1] = f"{time_label} {lines[-1]}"
                 tooltip.configure(message="\n".join(lines))
 
             elif len(lines) == 2:
@@ -4313,9 +4322,12 @@ class TeraTermUI(customtkinter.CTk):
                     un_translated_days = [reverse_day_translations.get(day, day) for day in day_list]
                     days = ", ".join(un_translated_days)
                     time_label = "*Approx"
-
                 time_info = time_info.replace("*Aprox", "").replace("*Approx", "").strip()
-                tooltip.configure(message=f"{days}\n{time_label} {time_info}")
+                if time_info.startswith("."):
+                    combined_time = f"{time_label}{time_info}"
+                else:
+                    combined_time = f"{time_label} {time_info}"
+                tooltip.configure(message=f"{days}\n{combined_time}")
 
     def update_sections_enrolled_tooltips(self, new_lang):
         day_translations = {
@@ -4338,6 +4350,7 @@ class TeraTermUI(customtkinter.CTk):
             current_message = tooltip.cget("message")
             if not current_message:
                 continue
+
             if idx % 2 == 1:
                 entry_idx = idx // 2
                 if self.change_section_entries[entry_idx].get().upper().startswith("EL"):
@@ -4361,9 +4374,13 @@ class TeraTermUI(customtkinter.CTk):
                     un_translated_days = [reverse_day_translations.get(day, day) for day in day_list]
                     translated_days_line = ", ".join(un_translated_days)
                     time_label = "*Approx"
+                raw_time = lines[-1].replace("*Aprox", "").replace("*Approx", "").strip()
+                if raw_time.startswith("."):
+                    combined_time = f"{time_label}{raw_time}"
+                else:
+                    combined_time = f"{time_label} {raw_time}"
                 new_message = "\n".join(tooltip_lines)
-                new_message += f"\n{translated_days_line}\n{time_label} {lines[-1].replace(
-                    "*Aprox", "").replace("*Approx", "").strip()}"
+                new_message += f"\n{translated_days_line}\n{combined_time}"
                 tooltip.configure(message=new_message)
 
             elif len(lines) == 2 and ("*Aprox" in lines[1] or "*Approx" in lines[1]):
@@ -4378,7 +4395,11 @@ class TeraTermUI(customtkinter.CTk):
                     days = ", ".join(un_translated_days)
                     time_label = "*Approx"
                 time_info = time_info.replace("*Aprox", "").replace("*Approx", "").strip()
-                tooltip.configure(message=f"{days}\n{time_label} {time_info}")
+                if time_info.startswith("."):
+                    combined_time = f"{time_label}{time_info}"
+                else:
+                    combined_time = f"{time_label} {time_info}"
+                tooltip.configure(message=f"{days}\n{combined_time}")
 
             elif len(lines) == 2 and "*Aprox" not in current_message and "*Approx" not in current_message:
                 tooltip.configure(message=translation["change_section_entry"])
