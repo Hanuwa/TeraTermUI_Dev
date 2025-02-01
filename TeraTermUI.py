@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 1/31/25
+# DATE - Started 1/1/23, Current Build v0.9.5 - 2/1/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -2631,7 +2631,7 @@ class TeraTermUI(customtkinter.CTk):
                                     text_output = self.capture_screenshot()
                                     if "INVALID TERM SELECTION" in text_output:
                                         self.focus_or_not = True
-                                        self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER + "SRM" + "{ENTER}")
+                                        self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER + "SRM{ENTER}")
                                         self.reset_activity_timer()
                                         self.after(100, self.show_error_message, 300, 215,
                                                    translation["invalid_semester"])
@@ -7406,7 +7406,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.uprb.UprbayTeraTermVt.type_keys("SRM" + self.DEFAULT_SEMESTER + "{ENTER}")
                     self.reset_activity_timer()
                 else:
-                    self.uprb.UprbayTeraTermVt.type_keys("SRM" + self.DEFAULT_SEMESTER + "{ENTER}")
+                    self.uprb.UprbayTeraTermVt.type_keys("{TAB}SRM" + self.DEFAULT_SEMESTER + "{ENTER}")
                     self.reset_activity_timer()
                 self.after(100, self.show_error_message, 320, 235, translation["no_active_semester"])
                 return "negative"
