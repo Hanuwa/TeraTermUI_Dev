@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 2/1/25
+# DATE - Started 1/1/23, Current Build v0.9.5 - 2/2/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -258,6 +258,7 @@ class TeraTermUI(customtkinter.CTk):
             "plane": {"path": "images/plane.png", "size": (18, 18)}
         }
         self.loaded_images= {}
+        self.url_cache = {}
 
         # path for tesseract application
         self.zip_path = os.path.join(os.path.dirname(__file__), TeraTermUI.get_absolute_path("Tesseract-OCR.7z"))
@@ -6516,29 +6517,48 @@ class TeraTermUI(customtkinter.CTk):
         if av_value == "RSVD":
             webbrowser.open("https://studenthelp.uprb.edu/")
 
-    @staticmethod
-    def open_professor_profile(event, cell):
-        def remove_prefixes(p_names):
-            return [name for name in p_names if name.lower() not in ["de", "del"]]
+    def open_professor_profile(self, event, cell):
+        def remove_prefixes(name_parts):
+            return [part for part in name_parts if part.lower() not in ["de", "del"]]
 
-        def attempt_open_url(p_names):
-            first_name = p_names[2].lower()
-            last_names = [p_names[0].lower(), "-".join(p_names[:2]).lower()]
-            urls = [f"https://notaso.com/professors/{first_name}-{ln}/" for ln in last_names]
+        def attempt_open_url(prof_names, cache_key):
+            first_name = prof_names[2].lower()
+            prioritized_last_names = [prof_names[0].lower(), "-".join(prof_names[:2]).lower()]
+            urls = [f"https://notaso.com/professors/{first_name}-{ln}/" for ln in prioritized_last_names]
             headers = {"User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                                       "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")}
-            with requests.Session() as session:
-                for url in urls:
-                    try:
-                        response = session.head(url, headers=headers, timeout=5)
-                        if response.status_code == 200:
-                            webbrowser.open(url)
-                            return
-                    except requests.exceptions.RequestException as err:
-                        logging.warning(f"Failed to open URL: {url}, Error: {err}")
+            found_event = threading.Event()
+
+            def head_request(url, session_in):
+                if found_event.is_set():
+                    return None, url
+                try:
+                    head_respond = session_in.head(url, headers=headers, timeout=5)
+                    return head_respond, url
+                except requests.exceptions.RequestException as err:
+                    logging.warning(f"Failed to open URL: {url}, Error: {err}")
+                    return None, url
+
+            with requests.Session() as session_obj:
+                future_to_url = {self.thread_pool.submit(head_request, url, session_obj) for url in urls}
+                for future in as_completed(future_to_url):
+                    head_resp, url = future.result()
+                    if head_resp and head_resp.status_code == 200:
+                        found_event.set()
+                        self.url_cache[cache_key] = url
+                        self.thread_pool.submit(lambda: webbrowser.open(url))
+                        for fut in future_to_url:
+                            fut.cancel()
+                        break
 
         instructor_text = cell.cget("text")
         if not instructor_text.strip():
+            return
+
+        norm_name = " ".join(instructor_text.split())
+        if norm_name in self.url_cache:
+            cached_url = self.url_cache[norm_name]
+            self.thread_pool.submit(lambda: webbrowser.open(cached_url))
             return
 
         url_mapping = {
@@ -6570,15 +6590,15 @@ class TeraTermUI(customtkinter.CTk):
             "SIERRA PADILLA": "https://notaso.com/professors/javier-sierra-padilla-2/",
             "CORREA ROSADO ALVARO R.": "https://notaso.com/professors/alvaro-correa-2/"
         }
-        hardcoded_name = " ".join(instructor_text.split())
-        if hardcoded_name in url_mapping:
-            hard_coded_url = url_mapping[hardcoded_name]
-            threading.Thread(target=webbrowser.open, args=(hard_coded_url,)).start()
+        if norm_name in url_mapping:
+            hard_coded_url = url_mapping[norm_name]
+            self.url_cache[norm_name] = hard_coded_url
+            self.thread_pool.submit(lambda: webbrowser.open(hard_coded_url))
             return
 
-        names = remove_prefixes(instructor_text.split())
-        if len(names) >= 3:
-            threading.Thread(target=attempt_open_url, args=(names,)).start()
+        processed_parts = remove_prefixes(instructor_text.split())
+        if len(processed_parts) >= 3:
+            self.thread_pool.submit(attempt_open_url, processed_parts, norm_name)
 
     # displays the extracted data of searched classes into a table
     def display_searched_class_data(self, data):
@@ -6697,7 +6717,7 @@ class TeraTermUI(customtkinter.CTk):
             self.transfer_class_data_to_enroll_tab(event, t_cell))
             instructor_cell = new_table.get_cell(row, instructor_col_index)
             new_table.bind_cell(row, instructor_col_index, "<Button-3>", lambda event, t_cell=instructor_cell:
-            TeraTermUI.open_professor_profile(event, t_cell))
+            self.open_professor_profile(event, t_cell))
             av_cell = new_table.get_cell(row, av_col_index)
             new_table.bind_cell(row, av_col_index, "<Button-3>", lambda event, t_cell=av_cell:
             TeraTermUI.open_student_help(event, t_cell))
