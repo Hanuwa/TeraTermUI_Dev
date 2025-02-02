@@ -2579,7 +2579,8 @@ class TeraTermUI(customtkinter.CTk):
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if menu and menu in valid_menu_options and (
                                 re.fullmatch("^[A-Z][0-9]{2}$", semester) or semester == curr_sem):
-                            self.wait_for_window()
+                            if menu != "SO":
+                                self.wait_for_window()
                             result = None
                             if semester == curr_sem:
                                 if not self.found_latest_semester:
