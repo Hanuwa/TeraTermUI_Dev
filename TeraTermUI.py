@@ -11753,7 +11753,7 @@ class CustomEntry(customtkinter.CTkEntry):
         return None
 
     def custom_middle_mouse(self, event=None):
-        if self.find_context_menu() or self._placeholder_text_active:
+        if self.find_context_menu() or (self.get() == "" and not self._placeholder_text_active):
             return "break"
         if self.select_present():
             char_index = self.index("@%d" % event.x)
