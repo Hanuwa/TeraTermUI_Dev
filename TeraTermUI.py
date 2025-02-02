@@ -2819,7 +2819,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.after(100, warning)
                                 case "SO":
                                     self.focus_or_not = True
-                                    self.after(50, self.sign_out)
+                                    self.after(100, self.sign_out)
                         else:
                             self.focus_or_not = True
                             if not semester or not menu:
