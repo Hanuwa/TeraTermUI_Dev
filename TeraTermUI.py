@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 2/2/25
+# DATE - Started 1/1/23, Current Build v0.9.5 - 2/3/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -7543,10 +7543,17 @@ class TeraTermUI(customtkinter.CTk):
                     parts = [part.strip() for part in instructor_name.split(",") if part.strip()]
                     # Check if the last part is a single letter
                     if len(parts[-1]) == 1 and len(parts) > 1:
-                        # Combine the last two parts
-                        parts[-2] = f"{parts[-2]}, {parts[-1]}"
-                        parts.pop()
-                    item["INSTRUCTOR"] = "\n".join(parts)
+                        # If it's a standalone initial without a period, move to the next line
+                        if not parts[-1].endswith("."):
+                            item["INSTRUCTOR"] = "\n".join(parts)
+                        else:
+                            # If it has a period, keep it in the same line
+                            parts[-2] = f"{parts[-2]}, {parts[-1]}"
+                            parts.pop()
+                            item["INSTRUCTOR"] = "\n".join(parts)
+                    else:
+                        # If there's no single-letter issue, format normally
+                        item["INSTRUCTOR"] = "\n".join(parts)
                 else:
                     # If there's no comma, just ensure the name is clean with no extra newlines
                     item["INSTRUCTOR"] = instructor_name
