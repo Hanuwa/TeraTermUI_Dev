@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 2/3/25
+# DATE - Started 1/1/23, Current Build v0.9.5 - 2/4/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -634,6 +634,7 @@ class TeraTermUI(customtkinter.CTk):
         self.can_edit = False
         self.original_font = None
         self.original_color = None
+        self.original_terminal_size = None
         self.renamed_tabs = None
         self.disable_feedback = False
         self.sending_feedback = False
@@ -878,7 +879,7 @@ class TeraTermUI(customtkinter.CTk):
             p = psutil.Process(os.getpid())
             p.nice(psutil.HIGH_PRIORITY_CLASS)
         atexit.register(self.cleanup_temp)
-        atexit.register(self.restore_original_font, self.teraterm_file)
+        atexit.register(self.restore_teraterm_ini, self.teraterm_file)
         self.after(0, self.unload_image("status"))
         self.after(0, self.unload_image("help"))
         self.after(0, self.set_focus_to_tkinter)
@@ -8611,6 +8612,11 @@ class TeraTermUI(customtkinter.CTk):
                             if current_value != "255,255,255,0,0,0":
                                 self.original_color = current_value
                                 lines[index] = "VTColor=255,255,255,0,0,0\n"
+                        if line.startswith("TerminalSize="):
+                            current_value = line.strip().split("=")[1]
+                            if current_value != "80,24":
+                                self.original_terminal_size = current_value
+                                lines[index] = "TerminalSize=80,24\n"
                         if line.startswith("AuthBanner="):
                             current_value = line.strip().split("=")[1]
                             if current_value not in ["0", "1"]:
@@ -10213,8 +10219,8 @@ class TeraTermUI(customtkinter.CTk):
             self.changed_location = True
             self.after(100, self.show_success_message, 350, 265, translation["tera_term_success"])
             self.edit_teraterm_ini(self.teraterm_file)
-            atexit.unregister(self.restore_original_font)
-            atexit.register(self.restore_original_font, self.teraterm_file)
+            atexit.unregister(self.restore_teraterm_ini)
+            atexit.register(self.restore_teraterm_ini, self.teraterm_file)
             if self.help is not None and self.help.winfo_exists():
                 self.files.configure(state="normal")
         else:
@@ -10295,8 +10301,8 @@ class TeraTermUI(customtkinter.CTk):
             self.changed_location = True
             self.show_success_message(350, 265, translation["tera_term_success"])
             self.edit_teraterm_ini(self.teraterm_file)
-            atexit.unregister(self.restore_original_font)
-            atexit.register(self.restore_original_font, self.teraterm_file)
+            atexit.unregister(self.restore_teraterm_ini)
+            atexit.register(self.restore_teraterm_ini, self.teraterm_file)
         if not re.search("ttermpro.exe", filename):
             if self.help is not None and self.help.winfo_exists():
                 self.help.lift()
@@ -10793,6 +10799,11 @@ class TeraTermUI(customtkinter.CTk):
                         if current_value != "255,255,255,0,0,0":
                             self.original_color = current_value
                             lines[index] = "VTColor=255,255,255,0,0,0\n"
+                    if line.startswith("TerminalSize="):
+                        current_value = line.strip().split("=")[1]
+                        if current_value != "80,24":
+                            self.original_terminal_size = current_value
+                            lines[index] = "TerminalSize=80,24\n"
                     if line.startswith("AuthBanner="):
                         current_value = line.strip().split("=")[1]
                         if current_value not in ["0", "1"]:
@@ -10818,7 +10829,7 @@ class TeraTermUI(customtkinter.CTk):
             self.teraterm_not_found = True
 
     # Restores the original font option the user had
-    def restore_original_font(self, file_path):
+    def restore_teraterm_ini(self, file_path):
         if not self.can_edit:
             return
 
@@ -10863,13 +10874,16 @@ class TeraTermUI(customtkinter.CTk):
                 # Extract font and color settings from the backup
                 backup_font = None
                 backup_color = None
+                backup_terminal_size = None
                 for line in backup_lines:
                     if line.startswith("VTFont="):
                         backup_font = line.strip().split("=")[1]
                     if line.startswith("VTColor=") and not line.startswith(";"):
                         backup_color = line.strip().split("=")[1]
-                if backup_font is None or backup_color is None:
-                    logging.warning("Backup font or color setting not found in the backup file")
+                    if line.startswith("TerminalSize="):
+                        backup_terminal_size = line.strip().split("=")[1]
+                if backup_font is None or backup_color is None or backup_terminal_size is None:
+                    logging.warning("Backup font, color, or TerminalSize setting not found in the backup file")
                     return
 
                 # Update the .ini file with the settings from the backup
@@ -10878,6 +10892,8 @@ class TeraTermUI(customtkinter.CTk):
                         lines[index] = f"VTFont={backup_font}\n"
                     if line.startswith("VTColor=") and not line.startswith(";"):
                         lines[index] = f"VTColor={backup_color}\n"
+                    if line.startswith("TerminalSize="):
+                        lines[index] = f"TerminalSize={backup_terminal_size}\n"
                 if self.disable_audio_val is not None and self.disable_audio_val.get() == "on":
                     for index, line in enumerate(lines):
                         if line.startswith("Beep=") and line.strip() != "Beep=off":
