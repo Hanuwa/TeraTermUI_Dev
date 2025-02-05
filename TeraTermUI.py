@@ -184,6 +184,7 @@ class TeraTermUI(customtkinter.CTk):
         # disabled/enables keybind events
         self.move_slider_left_enabled = True
         self.move_slider_right_enabled = True
+        self.debounce_slider = None
         self.up_arrow_key_enabled = True
         self.down_arrow_key_enabled = True
 
@@ -324,6 +325,7 @@ class TeraTermUI(customtkinter.CTk):
         self.scaling_slider.grid(row=8, column=0, padx=20, pady=(10, 20))
         self.bind("<Left>", self.move_slider_left)
         self.bind("<Right>", self.move_slider_right)
+        self.bind("<Control-MouseWheel>", self.move_slider)
 
         # create main entry
         self.home_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
@@ -3969,6 +3971,7 @@ class TeraTermUI(customtkinter.CTk):
                              ["<Ctrl-A>", translation["ctrl_a"]],
                              ["<Ctrl-S>", translation["ctrl_s"]],
                              ["<Ctrl-W>", translation["ctrl_w"]],
+                             ["<Ctrl-MouseWheel>", translation["ctrl_mwheel"]],
                              ["<Right-Click>", translation["mouse_2"]],
                              ["<Home>", translation["home"]],
                              ["<End>", translation["end"]],
@@ -9014,6 +9017,18 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Left>", self.move_slider_left)
             self.bind("<Right>", self.move_slider_right)
 
+    def move_slider(self, event):
+        if self.debounce_slider:
+            self.after_cancel(self.debounce_slider)
+
+        self.debounce_slider = self.after(50, lambda: self._execute_slider(event))
+
+    def _execute_slider(self, event):
+        if event.delta > 0:
+            self.move_slider_right(event)
+        else:
+            self.move_slider_left(event)
+
     # Moves the scaling slider to the left
     def move_slider_left(self, event):
         if self.move_slider_left_enabled:
@@ -10420,6 +10435,7 @@ class TeraTermUI(customtkinter.CTk):
                          ["<Ctrl-A>", translation["ctrl_a"]],
                          ["<Ctrl-S>", translation["ctrl_s"]],
                          ["<Ctrl-W>", translation["ctrl_w"]],
+                         ["<Ctrl-MouseWheel>", translation["ctrl_mwheel"]],
                          ["<Right-Click>", translation["mouse_2"]],
                          ["<Home>", translation["home"]],
                          ["<End>", translation["end"]],
@@ -10504,7 +10520,7 @@ class TeraTermUI(customtkinter.CTk):
         self.terms_table = CTkTable(self.help_frame, column=2, row=7, values=self.terms, hover=False)
         self.terms_table.pack(expand=True, fill="both", padx=20, pady=10)
         self.keybinds_text.pack(pady=(20, 0))
-        self.keybinds_table = CTkTable(self.help_frame, column=2, row=21, values=self.keybinds, hover=False)
+        self.keybinds_table = CTkTable(self.help_frame, column=2, row=22, values=self.keybinds, hover=False)
         self.keybinds_table.pack(expand=True, fill="both", padx=20, pady=10)
         if not self.ask_skip_auth:
             self.skip_auth_text.pack()
