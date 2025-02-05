@@ -101,7 +101,7 @@
 	"q1": "¿Es seguro poner \nmi información aquí?",
 	"a1": "Sí, la aplicación no almacena su data\npersonal pero, si todavía estás escéptico,\nentonces puedes ver que información sí\nalmacenamos accediendo al archivo\nllamado database.db y cosas como el\nnúmero de estudiante o el ssn son\ncifrados usando una llave asimétrica.",
 	"q2": "¿Qué es una sección?",
-	"a2": "La sección determina qué días y a qué\nhoras tomas tus clases, por ejemplo,\n\"LM1\" la L y la M te dice que las clases\nson los lunes y miercoles, el hecho\nde que las letras \"LM\" estén juntas\nimplica que comienzan a la 1:00 PM, y\nfinalmente, el \"1\" básicamente determina\nel número de una clase dada que se toma\nen el mismo horario.",
+	"a2": "La sección determina que días y a que\nhoras tomas tus clases, por ejemplo,\n\"LM1\" la L y la M te dice que las clases\nson los lunes y miercoles, pero con la\nsegunda letra también puedes determinar\nla hora en que se llevará a cabo la clase,\nla letra \"M\" es la número 13 en el alfabeto\ny, utilizando el reloj militar, esto significa\nque la clase se lleva a cabo a la 1:00 PM,\ny finalmente, el \"1\" básicamente\ndetermina el número de una clase dada\nque se toma en el mismo horario.",
 	
 	"help": "Ayuda",
 	"notice": "*No toque Tera Term\nmientras use esta aplicación*",
