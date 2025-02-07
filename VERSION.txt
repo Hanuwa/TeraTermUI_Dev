@@ -1,8 +1,8 @@
 Version Number: v0.9.5
 
-SHA-256 Checksum: f10b8ae485088cc32de395faae8348b00b6aadff8a1292807627a91edded292d
+SHA-256 Checksum: 4e7be6117a6d1c37d02a3b0f576a68e22458ffa686b5b108a9340fb74f2d69f6
 
-Release Date: 02/05/2025
+Release Date: 02/06/2025
 
 Patch Notes:
  - Introducing the first public release!
@@ -15,6 +15,8 @@ Patch Notes:
  - Tera Term remains active without closing due to inactivity (this feature is optional)
  - Easily find the codification for the class you wish to enroll in
  - Supports enrolling in multiple classes simultaneously, with the option to save class details
+ - Ability to flag scheduling conflicts between selected class sections 
+   and displays their corresponding time and day
  - Designed with accessibility in mind: choose between languages (Español/English), 
    alter the theme and appearance, and adjust UI scaling for better visibility
  - Enhanced with numerous keyboard shortcuts for efficiency
