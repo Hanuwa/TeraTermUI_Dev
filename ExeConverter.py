@@ -35,19 +35,6 @@ def extract_second_date_from_file(filepath):
         return None
 
 
-def extract_version_main_file(filepath):
-    with open(filepath, "r") as file:
-        for line in file:
-            if "v" in line:
-                positions = [pos for pos, char in enumerate(line) if char == "v"]
-                for pos in positions:
-                    if line[pos + 1].isdigit():
-                        start_pos = pos + 1
-                        end_pos = line[start_pos:].find(" ")
-                        return line[start_pos:start_pos + end_pos]
-        return None
-
-
 def check_and_restore_backup():
     main_file_path = os.path.join(project_directory, "TeraTermUI.py")
     if os.path.exists(main_file_path) and os.path.getsize(main_file_path) > 0:
@@ -62,13 +49,8 @@ def check_and_restore_backup():
         else:
             program_backup_date = extract_second_date_from_file(program_backup)
             tera_term_ui_date = extract_second_date_from_file(main_file_path)
-            tera_term_ui_version = extract_version_main_file(main_file_path)
             if program_backup_date != tera_term_ui_date:
                 print(Fore.YELLOW + "\nDate mismatch detected between the main file and the backup one. "
-                                    "\nRestoration from backup skipped. Delete backup file if no longer needed"
-                      + Style.RESET_ALL)
-            elif tera_term_ui_version != update_without_v:
-                print(Fore.YELLOW + "\nVersion mismatch detected between the main file and the backup one. "
                                     "\nRestoration from backup skipped. Delete backup file if no longer needed"
                       + Style.RESET_ALL)
             else:
@@ -349,6 +331,8 @@ try:
     else:
         versions = ["portable", "installer"]
     data = re.sub(r'self.USER_APP_VERSION = ".*?"', f'self.USER_APP_VERSION = "{update_without_v}"', data)
+    data = re.sub(r"^(# DATE - Started .*?, Current Build )v[\d.]+( - .+)$",
+                  r"\1" + update + r"\2", data, flags=re.MULTILINE)
     with open(project_directory + "/TeraTermUI.py", "w", encoding="utf-8") as file:
         file.write(data)
     shutil.copy2(project_directory + "/TeraTermUI.py", program_backup)
