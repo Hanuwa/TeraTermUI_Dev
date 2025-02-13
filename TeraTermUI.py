@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 2/4/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/12/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -176,8 +176,9 @@ class TeraTermUI(customtkinter.CTk):
         parts = ["$QojxnTKT8ecke49mf%bd", "U64m#8XaR$QNog$QdPL1Fp", "3%fHhv^ds7@CDDSag8PYt", "dM&R8fqu*&bUjmSZfgM^%"]
         os.environ["REAZIONE"] = TeraTermUI.purkaa_reazione(parts)
         self.REAZIONE = os.getenv("REAZIONE")
-        self.USER_APP_VERSION = "0.9.5"
+        self.USER_APP_VERSION = "0.9.0"
         self.mode = "Portable"
+        self.updater_hash = "82788f7994c9b3cbd362dca51acff80a7b35febd48eed830b69fb9b570a6b8ac"
         self.update_db = False
         self.running_updater = False
         self.credentials = None
@@ -9245,6 +9246,24 @@ class TeraTermUI(customtkinter.CTk):
                     self.status.focus_set()
                 self.update_event_completed = True
 
+    @staticmethod
+    def verify_file_integrity(file_path, expected_hash):
+        import hashlib
+
+        hasher = hashlib.sha256()
+        try:
+            with open(file_path, "rb") as f:
+                while chunk := f.read(8192):
+                    hasher.update(chunk)
+            actual_hash = hasher.hexdigest()
+
+            if actual_hash != expected_hash:
+                raise ValueError(f"Hash mismatch for {file_path}. Expected: {expected_hash}, Got: {actual_hash}")
+            return True
+        except Exception as err:
+            logging.error(f"Failed to compute hash for {file_path}: {err}")
+            raise
+
     def run_updater(self, latest_version):
         try:
             current_exe = sys.executable
@@ -9263,6 +9282,8 @@ class TeraTermUI(customtkinter.CTk):
                 if appdata_path:
                     updater_exe_src = Path(appdata_path) / "TeraTermUI" / "updater.exe"
                     shutil.copy2(str(updater_exe_src), str(updater_exe_dest))
+            if not TeraTermUI.verify_file_integrity(updater_exe_dest, self.updater_hash):
+                return
             updater_args = [str(updater_exe_dest), self.mode, latest_version,
                             str(self.update_db), sys_path]
             subprocess.Popen(updater_args)
