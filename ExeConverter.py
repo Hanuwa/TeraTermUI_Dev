@@ -133,6 +133,19 @@ def generate_checksum(version_filename, executable_filename):
         print(Fore.RED + f"Failed to generate SHA-256 checksum {e}\n" + Style.RESET_ALL)
 
 
+def update_updater_hash_value(main_file_path, new_hash):
+    try:
+        with open(main_file_path, "r", encoding="utf-8") as file:
+            content = file.read()
+        updated_content = re.sub(r'self\.updater_hash\s*=\s*".*?"',
+                                 f'self.updater_hash = "{new_hash}"',
+                                 content)
+        with open(main_file_path, "w", encoding="utf-8") as file:
+            file.write(updated_content)
+    except Exception as e:
+        print(Fore.RED + f"Error updating updater_hash: {e}\n" + Style.RESET_ALL)
+
+
 def freeze_requirements(project_directory):
     scripts_directory = os.path.join(project_directory, ".venv", "Scripts")
     requirements_path = os.path.join(scripts_directory, "requirements.txt")
@@ -297,7 +310,8 @@ try:
             subprocess.run(nuitka_updater_command, shell=True, check=True)
             print(Fore.GREEN + "\nSuccessfully compiled updater.py\n" + Style.RESET_ALL)
             manifest_path = os.path.join(project_directory, "updater.manifest")
-            generate_checksum(None, updater_exe_path)
+            updater_checksum = generate_checksum(None, updater_exe_path)
+            update_updater_hash_value(os.path.join(project_directory, "TeraTermUI.py"), updater_checksum)
             attach_manifest(updater_exe_path, manifest_path)
             shutil.copy2(updater_exe_path, updater_dist_path)
             shutil.copy2(updater_exe_path, output_directory)
