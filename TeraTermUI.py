@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/12/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/14/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,10 +15,11 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 13200 lines of codes, it definitely makes things harder to work with
+# and with over 13300 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
+import base64
 import ctypes
 import customtkinter
 import gc
@@ -173,12 +174,10 @@ class TeraTermUI(customtkinter.CTk):
 
         # GitHub's information for feedback and key data for updating app
         self.SERVICE_ACCOUNT_FILE = TeraTermUI.get_absolute_path("feedback.zip")
-        parts = ["$QojxnTKT8ecke49mf%bd", "U64m#8XaR$QNog$QdPL1Fp", "3%fHhv^ds7@CDDSag8PYt", "dM&R8fqu*&bUjmSZfgM^%"]
-        os.environ["REAZIONE"] = TeraTermUI.purkaa_reazione(parts)
-        self.REAZIONE = os.getenv("REAZIONE")
+        self.REAZIONE = self.ottenere_protetta_salasana()
         self.USER_APP_VERSION = "0.9.0"
         self.mode = "Portable"
-        self.updater_hash = "82788f7994c9b3cbd362dca51acff80a7b35febd48eed830b69fb9b570a6b8ac"
+        self.updater_hash = "0b89106e20653b13ffe4fb85b6bfe18be6ddff40d48ca6e7079a55db8a6ef32b"
         self.update_db = False
         self.running_updater = False
         self.credentials = None
@@ -8643,6 +8642,13 @@ class TeraTermUI(customtkinter.CTk):
         else:
             self.teraterm_not_found = True
 
+    def ottenere_protetta_salasana(self):
+        parts = ["$QojxnTKT8ecke49mf%bd", "U64m#8XaR$QNog$QdPL1Fp", "3%fHhv^ds7@CDDSag8PYt", "dM&R8fqu*&bUjmSZfgM^%"]
+        scrambled_password = self.purkaa_reazione(parts)
+        runtime_key = os.getenv("DURATA_FUSCAZIONE_AVAIN", "oletuksena_segreto").encode()
+        encoded_password = base64.b64encode(scrambled_password.encode())
+        return base64.b64encode(runtime_key + encoded_password).decode()
+
     @staticmethod
     def purkaa_reazione(scrambled_parts):
         original_parts = []
@@ -8660,17 +8666,23 @@ class TeraTermUI(customtkinter.CTk):
         return "".join(original_parts)
 
     def setup_feedback(self):
+        from google.auth.transport.requests import Request
         from google.oauth2 import service_account
         from pyzipper import AESZipFile
 
         # Reads from the feedback.json file to connect to Google's Sheets Api for user feedback
         try:
+            encoded_password = base64.b64decode(self.REAZIONE.encode())
+            runtime_key = os.getenv("RUNTIME_OBFUSCATION_KEY", "default_secret").encode()
+            actual_password = base64.b64decode(encoded_password[len(runtime_key):]).decode()
             with AESZipFile(self.SERVICE_ACCOUNT_FILE) as archive:
-                archive.setpassword(self.REAZIONE.encode())
+                archive.setpassword(actual_password.encode())
                 file_contents = archive.read("feedback.json")
                 credentials_dict = json.loads(file_contents.decode())
             self.credentials = service_account.Credentials.from_service_account_info(
                 credentials_dict, scopes=["https://www.googleapis.com/auth/spreadsheets"])
+            if self.credentials.expired or not self.credentials.valid:
+                self.credentials.refresh(Request())
         except Exception as err:
             logging.warning(f"Failed to load credentials: {str(err)}")
             self.log_error()
@@ -8680,6 +8692,8 @@ class TeraTermUI(customtkinter.CTk):
             if hasattr(self, "REAZIONE"):
                 del self.REAZIONE
             os.environ.pop("REAZIONE", None)
+            os.environ.pop("DURATA_FUSCAZIONE_AVAIN", None)
+            os.environ.pop("oletuksena_segreto", None)
 
     def update_app(self, latest_version):
         lang = self.language_menu.get()
@@ -10017,8 +10031,16 @@ class TeraTermUI(customtkinter.CTk):
 
     # Function to call the Google Sheets API
     def call_sheets_api(self, values):
+        from google.auth.transport.requests import Request
         from googleapiclient.errors import HttpError
         from googleapiclient.discovery import build
+
+        if self.credentials.expired or not self.credentials.valid:
+            try:
+                self.credentials.refresh(Request())
+            except Exception as refresh_error:
+                logging.error(f"Failed to refresh OAuth token: {refresh_error}")
+                return None
 
         if asyncio.run(self.test_connection()):
             self.connection_error = False
@@ -10033,11 +10055,11 @@ class TeraTermUI(customtkinter.CTk):
 
             try:
                 result = service.spreadsheets().values().append(
-                    spreadsheetId= "1ffJLgp8p-goOlxC10OFEu0JefBgQDsgEo_suis4k0Pw", range="Sheet1!A:A",
+                    spreadsheetId="1ffJLgp8p-goOlxC10OFEu0JefBgQDsgEo_suis4k0Pw", range="Sheet1!A:A",
                     valueInputOption="RAW", insertDataOption="INSERT_ROWS", body=body).execute()
                 return result
             except HttpError as error:
-                logging.error(f"An error occurred: {error}")
+                logging.error(f"Google Sheets API error: {error}")
                 self.log_error()
                 return None
         else:
