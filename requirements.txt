@@ -42,7 +42,7 @@ pillow==11.1.0
 propcache==0.2.1
 proto-plus==1.26.0
 protobuf==5.29.3
-psutil==6.1.1
+psutil==7.0.0
 py7zr==0.22.0
 pyasn1==0.6.1
 pyasn1_modules==0.4.1
