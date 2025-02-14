@@ -8673,7 +8673,7 @@ class TeraTermUI(customtkinter.CTk):
         # Reads from the feedback.json file to connect to Google's Sheets Api for user feedback
         try:
             encoded_password = base64.b64decode(self.REAZIONE.encode())
-            runtime_key = os.getenv("RUNTIME_OBFUSCATION_KEY", "default_secret").encode()
+            runtime_key = os.getenv("DURATA_FUSCAZIONE_AVAIN", "oletuksena_segreto").encode()
             actual_password = base64.b64decode(encoded_password[len(runtime_key):]).decode()
             with AESZipFile(self.SERVICE_ACCOUNT_FILE) as archive:
                 archive.setpassword(actual_password.encode())
