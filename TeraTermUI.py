@@ -27,6 +27,7 @@ import json
 import locale
 import logging
 import os
+import platform
 import psutil
 import pygetwindow as gw
 import pyperclip
@@ -10029,6 +10030,14 @@ class TeraTermUI(customtkinter.CTk):
         if self.move_slider_right_enabled or self.move_slider_left_enabled:
             self.status_frame.scroll_to_bottom()
 
+    @staticmethod
+    def get_os_info():
+        os_name = platform.system()
+        os_version = platform.release()
+        os_build = platform.version()
+
+        return f"{os_name} {os_version} (Build {os_build})"
+
     # Function to call the Google Sheets API
     def call_sheets_api(self, values):
         from google.auth.transport.requests import Request
@@ -10050,12 +10059,11 @@ class TeraTermUI(customtkinter.CTk):
                 DISCOVERY_SERVICE_URL = "https://sheets.googleapis.com/$discovery/rest?version=v4"
                 service = build("sheets", "v4", credentials=self.credentials,
                                 discoveryServiceUrl=DISCOVERY_SERVICE_URL, cache_discovery=False)
-            now = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
-            body = {"values": [[now, values[0][0]]]}
+            body = {"values": values}
 
             try:
                 result = service.spreadsheets().values().append(
-                    spreadsheetId="1ffJLgp8p-goOlxC10OFEu0JefBgQDsgEo_suis4k0Pw", range="Sheet1!A:A",
+                    spreadsheetId="1ffJLgp8p-goOlxC10OFEu0JefBgQDsgEo_suis4k0Pw", range="Sheet1!A:E",
                     valueInputOption="RAW", insertDataOption="INSERT_ROWS", body=body).execute()
                 return result
             except HttpError as error:
@@ -10131,12 +10139,18 @@ class TeraTermUI(customtkinter.CTk):
 
     # Submits feedback from the user to a Google sheet
     def submit_feedback(self):
+        from cpuinfo import get_cpu_info
+
         with self.lock_thread:
             try:
                 translation = self.load_language()
-                current_date = datetime.today().strftime("%Y-%m-%d")
+                current_date = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
                 feedback = self.feedback_text.get("1.0", customtkinter.END).strip()
-                result = self.call_sheets_api([[feedback]])
+                cpu_info = get_cpu_info()
+                cpu_model = cpu_info["brand_raw"] if "brand_raw" in cpu_info else "Unknown CPU"
+                os_info = TeraTermUI.get_os_info()
+                app_version = self.USER_APP_VERSION
+                result = self.call_sheets_api([[current_date, cpu_model, os_info, app_version, feedback]])
                 if result:
                     def show_success():
                         if not self.disable_audio:
