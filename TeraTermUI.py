@@ -9380,10 +9380,8 @@ class TeraTermUI(customtkinter.CTk):
     @staticmethod
     def get_device_type():
         try:
-            result = subprocess.run(
-                ["powershell", "-Command", "(Get-WmiObject -Class Win32_Battery).Status"],
-                stdout=subprocess.PIPE, text=True, creationflags=subprocess.CREATE_NO_WINDOW
-            )
+            result = subprocess.run(["powershell", "-Command", "(Get-WmiObject -Class Win32_Battery).Status"],
+                                    stdout=subprocess.PIPE, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
             if "BatteryStatus" in result.stdout:
                 return "laptop"
             else:
@@ -9396,10 +9394,8 @@ class TeraTermUI(customtkinter.CTk):
     def get_power_timeout():
         def query_timeout(subgroup, setting):
             try:
-                result = subprocess.run(
-                    ["powercfg", "/query", "SCHEME_CURRENT", subgroup, setting],
-                    stdout=subprocess.PIPE, text=True, creationflags=subprocess.CREATE_NO_WINDOW
-                )
+                result = subprocess.run(["powercfg", "/query", "SCHEME_CURRENT", subgroup, setting],
+                                        stdout=subprocess.PIPE, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
                 output = result.stdout
                 ac_match = re.search(r"Current AC Power Setting Index: 0x([0-9a-fA-F]+)", output)
                 dc_match = re.search(r"Current DC Power Setting Index: 0x([0-9a-fA-F]+)", output)
@@ -10031,11 +10027,21 @@ class TeraTermUI(customtkinter.CTk):
             self.status_frame.scroll_to_bottom()
 
     @staticmethod
+    def get_cpu_info():
+        try:
+            result = subprocess.run(
+                ["powershell", "-command", "Get-CimInstance Win32_Processor | Select-Object -ExpandProperty Name"],
+                capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW
+            )
+            return result.stdout.strip() or "Unknown"
+        except Exception:
+            return "Unknown"
+
+    @staticmethod
     def get_os_info():
         os_name = platform.system()
         os_version = platform.release()
         os_build = platform.version()
-
         return f"{os_name} {os_version} (Build {os_build})"
 
     # Function to call the Google Sheets API
@@ -10139,18 +10145,16 @@ class TeraTermUI(customtkinter.CTk):
 
     # Submits feedback from the user to a Google sheet
     def submit_feedback(self):
-        from cpuinfo import get_cpu_info
-
         with self.lock_thread:
             try:
                 translation = self.load_language()
-                current_date = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
+                current_date = datetime.today().strftime("%Y-%m-%d")
+                current_exact_time = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
                 feedback = self.feedback_text.get("1.0", customtkinter.END).strip()
-                cpu_info = get_cpu_info()
-                cpu_model = cpu_info["brand_raw"] if "brand_raw" in cpu_info else "Unknown CPU"
+                cpu_model = TeraTermUI.get_cpu_info()
                 os_info = TeraTermUI.get_os_info()
                 app_version = self.USER_APP_VERSION
-                result = self.call_sheets_api([[current_date, cpu_model, os_info, app_version, feedback]])
+                result = self.call_sheets_api([[current_exact_time, cpu_model, os_info, app_version, feedback]])
                 if result:
                     def show_success():
                         if not self.disable_audio:
