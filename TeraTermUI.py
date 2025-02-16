@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/15/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/16/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -635,9 +635,6 @@ class TeraTermUI(customtkinter.CTk):
         self.timeout_occurred = False
         self.show_fix_exe = False
         self.can_edit = False
-        self.original_font = None
-        self.original_color = None
-        self.original_terminal_size = None
         self.renamed_tabs = None
         self.disable_feedback = False
         self.sending_feedback = False
@@ -783,6 +780,10 @@ class TeraTermUI(customtkinter.CTk):
                 if x_is_numeric and y_is_numeric:
                     x_pos = int(x_str)
                     y_pos = int(y_str)
+                    screen_width = self.winfo_screenwidth()
+                    screen_height = self.winfo_screenheight()
+                    x_pos = max(0, min(x_pos, screen_width - width))
+                    y_pos = max(0, min(y_pos, screen_height - height))
                     self.geometry(f"{width}x{height}+{x_pos}+{y_pos}")
             if results["audio"] == "Disabled":
                 self.disable_audio = True
@@ -8594,6 +8595,24 @@ class TeraTermUI(customtkinter.CTk):
                     logging.error("Tera Term Probably not installed\nor installed"
                                   " in a different location from the default")
 
+            known_hosts_path = os.path.join(os.path.dirname(file_path), "ssh_known_hosts")
+            if os.path.exists(known_hosts_path):
+                try:
+                    with open(known_hosts_path, "rb") as file:
+                        raw_data = file.read()
+                        encoding_info = chardet_detect(raw_data)
+                        detected_encoding = encoding_info["encoding"]
+                    with open(known_hosts_path, "r", encoding=detected_encoding) as file:
+                        for line in file:
+                            parts = line.strip().split()
+                            if not parts or parts[0].startswith("#"):
+                                continue
+                            self.host_entry_saved = parts[0]
+                            break
+                except Exception as err:
+                    self.log_error()
+                    logging.error(f"Error reading ssh_known_hosts file: {err}")
+
             # Edits the font that tera term uses to "Lucida Console" to mitigate the chance of the OCR mistaking words
             if not self.can_edit:
                 try:
@@ -8608,29 +8627,26 @@ class TeraTermUI(customtkinter.CTk):
                         if line.startswith("VTFont="):
                             current_value = line.strip().split("=")[1]
                             font_name = current_value.split(",")[0]
-                            self.original_font = current_value
                             updated_value = "Lucida Console" + current_value[len(font_name):]
                             lines[index] = f"VTFont={updated_value}\n"
                         if line.startswith("VTColor=") and not line.startswith(";"):
                             current_value = line.strip().split("=")[1]
                             if current_value != "255,255,255,0,0,0":
-                                self.original_color = current_value
                                 lines[index] = "VTColor=255,255,255,0,0,0\n"
-                        if line.startswith("TerminalSize="):
+                        geometry = self.geometry()
+                        _, x_pos, y_pos = geometry.split("+")
+                        if line.startswith("VTPos="):
+                            lines[index] = f"VTPos={int(x_pos)},{int(y_pos)}\n"
+                        if line.startswith("TEKPos="):
+                            lines[index] = f"TEKPos={int(x_pos)},{int(y_pos)}\n"
+                        if line.startswith("TermIsWin="):
                             current_value = line.strip().split("=")[1]
-                            if current_value != "80,24":
-                                self.original_terminal_size = current_value
-                                lines[index] = "TerminalSize=80,24\n"
+                            if current_value != "on":
+                                lines[index] = "TermIsWin=on\n"
                         if line.startswith("AuthBanner="):
                             current_value = line.strip().split("=")[1]
                             if current_value not in ["0", "1"]:
                                 lines[index] = "AuthBanner=1\n"
-                        if line.startswith("[Hosts]"):
-                            for host_index in range(index + 1, len(lines)):
-                                host_line = lines[host_index].strip()
-                                if host_line.startswith("Host") and "uprbay.uprb.edu" in host_line:
-                                    self.host_entry_saved = host_line.split("=")[1].strip()
-                                    break
                         self.can_edit = True
                     with open(file_path, "w", encoding=detected_encoding) as file:
                         file.writelines(lines)
@@ -10857,6 +10873,26 @@ class TeraTermUI(customtkinter.CTk):
                 except FileNotFoundError:
                     logging.error("Tera Term probably not installed or installed\n"
                                   " in a different location from the default")
+
+
+            known_hosts_path = os.path.join(os.path.dirname(file_path), "ssh_known_hosts")
+            if os.path.exists(known_hosts_path):
+                try:
+                    with open(known_hosts_path, "rb") as file:
+                        raw_data = file.read()
+                        encoding_info = chardet_detect(raw_data)
+                        detected_encoding = encoding_info["encoding"]
+                    with open(known_hosts_path, "r", encoding=detected_encoding) as file:
+                        for line in file:
+                            parts = line.strip().split()
+                            if not parts or parts[0].startswith("#"):
+                                continue
+                            self.host_entry_saved = parts[0]
+                            break
+                except Exception as err:
+                    self.log_error()
+                    logging.error(f"Error reading ssh_known_hosts file: {err}")
+
             try:
                 with open(file_path, "rb") as file:
                     raw_data = file.read()
@@ -10868,29 +10904,26 @@ class TeraTermUI(customtkinter.CTk):
                     if line.startswith("VTFont="):
                         current_value = line.strip().split("=")[1]
                         font_name = current_value.split(",")[0]
-                        self.original_font = current_value
                         updated_value = "Lucida Console" + current_value[len(font_name):]
                         lines[index] = f"VTFont={updated_value}\n"
                     if line.startswith("VTColor=") and not line.startswith(";"):
                         current_value = line.strip().split("=")[1]
                         if current_value != "255,255,255,0,0,0":
-                            self.original_color = current_value
                             lines[index] = "VTColor=255,255,255,0,0,0\n"
-                    if line.startswith("TerminalSize="):
+                    geometry = self.geometry()
+                    _, x_pos, y_pos = geometry.split("+")
+                    if line.startswith("VTPos="):
+                        lines[index] = f"VTPos={int(x_pos)},{int(y_pos)}\n"
+                    if line.startswith("TEKPos="):
+                        lines[index] = f"TEKPos={int(x_pos)},{int(y_pos)}\n"
+                    if line.startswith("TermIsWin="):
                         current_value = line.strip().split("=")[1]
-                        if current_value != "80,24":
-                            self.original_terminal_size = current_value
-                            lines[index] = "TerminalSize=80,24\n"
+                        if current_value != "on":
+                            lines[index] = "TermIsWin=on\n"
                     if line.startswith("AuthBanner="):
                         current_value = line.strip().split("=")[1]
                         if current_value not in ["0", "1"]:
                             lines[index] = "AuthBanner=1\n"
-                    if line.startswith("[Hosts]"):
-                        for host_index in range(index + 1, len(lines)):
-                            host_line = lines[host_index].strip()
-                            if host_line.startswith("Host") and "uprbay.uprb.edu" in host_line:
-                                self.host_entry_saved = host_line.split("=")[1].strip()
-                                break
                     self.can_edit = True
                 with open(file_path, "w", encoding=detected_encoding) as file:
                     file.writelines(lines)
@@ -10951,16 +10984,23 @@ class TeraTermUI(customtkinter.CTk):
                 # Extract font and color settings from the backup
                 backup_font = None
                 backup_color = None
-                backup_terminal_size = None
+                backup_vtpos = None
+                backup_tekpos = None
+                backup_term_win = None
                 for line in backup_lines:
                     if line.startswith("VTFont="):
                         backup_font = line.strip().split("=")[1]
                     if line.startswith("VTColor=") and not line.startswith(";"):
                         backup_color = line.strip().split("=")[1]
-                    if line.startswith("TerminalSize="):
-                        backup_terminal_size = line.strip().split("=")[1]
-                if backup_font is None or backup_color is None or backup_terminal_size is None:
-                    logging.warning("Backup font, color, or TerminalSize setting not found in the backup file")
+                    if line.startswith("VTPos="):
+                        backup_vtpos = line.strip().split("=")[1]
+                    if line.startswith("TEKPos="):
+                        backup_tekpos = line.strip().split("=")[1]
+                    if line.startswith("TermIsWin="):
+                        backup_term_win = line.strip().split("=")[1]
+                if backup_font is None or backup_color is None or backup_vtpos is None or \
+                        backup_tekpos is None or backup_term_win is None:
+                    logging.warning("Settings not found in the backup file")
                     return
 
                 # Update the .ini file with the settings from the backup
@@ -10969,8 +11009,12 @@ class TeraTermUI(customtkinter.CTk):
                         lines[index] = f"VTFont={backup_font}\n"
                     if line.startswith("VTColor=") and not line.startswith(";"):
                         lines[index] = f"VTColor={backup_color}\n"
-                    if line.startswith("TerminalSize="):
-                        lines[index] = f"TerminalSize={backup_terminal_size}\n"
+                    if line.startswith("VTPos="):
+                        lines[index] = f"VTPos={backup_vtpos}\n"
+                    if line.startswith("TEKPos="):
+                        lines[index] = f"TEKPos={backup_tekpos}\n"
+                    if line.startswith("TermIsWin="):
+                        lines[index] = f"TermIsWin={backup_term_win}\n"
                 if self.disable_audio_val is not None and self.disable_audio_val.get() == "on":
                     for index, line in enumerate(lines):
                         if line.startswith("Beep=") and line.strip() != "Beep=off":
