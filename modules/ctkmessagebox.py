@@ -10,6 +10,7 @@ import os
 import sys
 import time
 from typing import Literal
+from screeninfo import get_monitors
 
 class CTkMessagebox(customtkinter.CTkToplevel):
     ICONS = {
@@ -63,12 +64,17 @@ class CTkMessagebox(customtkinter.CTkToplevel):
         self.width = width
         self.height = height
 
-        self.spawn_x = int(self._root().winfo_width() * 0.5 + self._root().winfo_x() - 0.5 * self.width + 50)
-        self.spawn_y = int(self._root().winfo_height() * 0.5 + self._root().winfo_y() - 0.5 * self.height + 15)
-        screen_width = self._root().winfo_screenwidth()
-        screen_height = self._root().winfo_screenheight()
-        self.spawn_x = max(0, min(self.spawn_x, screen_width - self.width))
-        self.spawn_y = max(0, min(self.spawn_y, screen_height - self.height))
+        main_window_x = self._root().winfo_x()
+        main_window_y = self._root().winfo_y()
+        main_window_width = self._root().winfo_width()
+        main_window_height = self._root().winfo_height()
+
+        self.spawn_x = int(main_window_width * 0.5 + main_window_x - 0.5 * self.width + 50)
+        self.spawn_y = int(main_window_height * 0.5 + main_window_y - 0.5 * self.height + 15)
+        monitor = self.get_monitor_bounds(main_window_x, main_window_y)
+        monitor_x, monitor_y, monitor_width, monitor_height = monitor.x, monitor.y, monitor.width, monitor.height
+        self.spawn_x = max(monitor_x, min(self.spawn_x, monitor_x + monitor_width - self.width))
+        self.spawn_y = max(monitor_y, min(self.spawn_y, monitor_y + monitor_height - self.height))
 
         self.after(10)
         self.geometry(f"{self.width}x{self.height}+{self.spawn_x}+{self.spawn_y}")
@@ -547,6 +553,13 @@ class CTkMessagebox(customtkinter.CTkToplevel):
                 self.destroy()
         if self.master_window and self.master_window.winfo_exists():
             self.master_window.focus_force()
+
+    def get_monitor_bounds(self, window_x, window_y):
+        for monitor in get_monitors():
+            if (monitor.x <= window_x < monitor.x + monitor.width and
+                    monitor.y <= window_y < monitor.y + monitor.height):
+                return monitor
+        return get_monitors()[0]
 
     def destroy(self):
         if self.winfo_exists():
