@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 13300 lines of codes, it definitely makes things harder to work with
+# and with over 13400 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -1083,17 +1083,17 @@ class TeraTermUI(customtkinter.CTk):
         except Exception as err:
             logging.error(f"Error converting path '{relative_path}' to absolute path: {err}")
             raise
-    
+
     @staticmethod
     def get_monitor_bounds(window_x, window_y):
         from screeninfo import get_monitors
-        
+
         for monitor in get_monitors():
             if (monitor.x <= window_x < monitor.x + monitor.width and
                     monitor.y <= window_y < monitor.y + monitor.height):
                 return monitor
         return get_monitors()[0]
-    
+
     @staticmethod
     def set_focus_tabview(event):
         if (str(event.widget) == ".!ctktabview.!ctkframe2.!ctkframe.!canvas" or
