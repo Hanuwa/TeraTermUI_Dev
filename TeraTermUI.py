@@ -773,18 +773,21 @@ class TeraTermUI(customtkinter.CTk):
                         self.scaling_slider.set(scale_value)
                         self.change_scaling_event(scale_value)
             if results["win_pos_x"] and results["win_pos_y"]:
-                x_str = str(results["win_pos_x"]).strip()
-                y_str = str(results["win_pos_y"]).strip()
-                x_is_numeric = x_str.isdigit()
-                y_is_numeric = y_str.isdigit()
-                if x_is_numeric and y_is_numeric:
-                    x_pos = int(x_str)
-                    y_pos = int(y_str)
-                    screen_width = self.winfo_screenwidth()
-                    screen_height = self.winfo_screenheight()
-                    x_pos = max(0, min(x_pos, screen_width - width))
-                    y_pos = max(0, min(y_pos, screen_height - height))
-                    self.geometry(f"{width}x{height}+{x_pos}+{y_pos}")
+                if results["win_pos_x"] is not None and results["win_pos_y"] is not None:
+                    x_str = str(results["win_pos_x"]).strip()
+                    y_str = str(results["win_pos_y"]).strip()
+                    x_is_numeric = x_str.lstrip("-").isdigit()
+                    y_is_numeric = y_str.lstrip("-").isdigit()
+                    if x_is_numeric and y_is_numeric:
+                        x_pos = int(x_str)
+                        y_pos = int(y_str)
+                        screen_x = self.winfo_vrootx()
+                        screen_y = self.winfo_vrooty()
+                        screen_width = self.winfo_screenwidth()
+                        screen_height = self.winfo_screenheight()
+                        x_pos = max(screen_x, min(x_pos, screen_width - width))
+                        y_pos = max(screen_y, min(y_pos, screen_height - height))
+                        self.geometry(f"{width}x{height}+{x_pos}+{y_pos}")
             if results["audio"] == "Disabled":
                 self.disable_audio = True
             if results["pdf_dir"]:
@@ -1080,7 +1083,17 @@ class TeraTermUI(customtkinter.CTk):
         except Exception as err:
             logging.error(f"Error converting path '{relative_path}' to absolute path: {err}")
             raise
-
+    
+    @staticmethod
+    def get_monitor_bounds(window_x, window_y):
+        from screeninfo import get_monitors
+        
+        for monitor in get_monitors():
+            if (monitor.x <= window_x < monitor.x + monitor.width and
+                    monitor.y <= window_y < monitor.y + monitor.height):
+                return monitor
+        return get_monitors()[0]
+    
     @staticmethod
     def set_focus_tabview(event):
         if (str(event.widget) == ".!ctktabview.!ctkframe2.!ctkframe.!canvas" or
@@ -1999,8 +2012,10 @@ class TeraTermUI(customtkinter.CTk):
             dialog_y = main_window_y + (main_window_height // 2) - (dialog_height // 2)
             screen_width = self.winfo_screenwidth()
             screen_height = self.winfo_screenheight()
-            dialog_x = max(0, min(dialog_x + 75, screen_width - dialog_width))
-            dialog_y = max(0, min(dialog_y + 60, screen_height - dialog_height))
+            screen_x = self.winfo_vrootx()
+            screen_y = self.winfo_vrooty()
+            dialog_x = max(screen_x, min(dialog_x + 75, screen_width - dialog_width))
+            dialog_y = max(screen_y, min(dialog_y + 60, screen_height - dialog_height))
             self.dialog = SmoothFadeInputDialog(text=translation["dialog_message"], title=translation["dialog_title"],
                                                 ok_text=translation["submit"], cancel_text=translation["option_1"],
                                                 lang=lang)
@@ -5135,10 +5150,12 @@ class TeraTermUI(customtkinter.CTk):
         timer_window_height = 175
         center_x = main_window_x + (main_window_width // 2) - (timer_window_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (timer_window_height // 2)
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        center_x = max(0, min(center_x + 70, screen_width - timer_window_width))
-        center_y = max(0, min(center_y - 15, screen_height - timer_window_height))
+        center_x += 70
+        center_y -= 15
+        monitor = TeraTermUI.get_monitor_bounds(main_window_x, main_window_y)
+        monitor_x, monitor_y, monitor_width, monitor_height = monitor.x, monitor.y, monitor.width, monitor.height
+        center_x = max(monitor_x, min(center_x, monitor_x + monitor_width - timer_window_width))
+        center_y = max(monitor_y, min(center_y, monitor_y + monitor_height - timer_window_height))
         window_geometry = f"{timer_window_width}x{timer_window_height}+{center_x}+{center_y}"
         self.timer_window = SmoothFadeToplevel(fade_duration=15)
         self.timer_window.geometry(window_geometry)
@@ -5707,8 +5724,8 @@ class TeraTermUI(customtkinter.CTk):
             "appearance": self.appearance_mode_optionemenu.get(),
             "scaling": self.scaling_slider.get(),
             "pdf_dir": self.last_save_pdf_dir,
-            "win_pos_x": self.winfo_x() if not self.state() == "zoomed" and self.winfo_x() >= 0 else None,
-            "win_pos_y": self.winfo_y() if not self.state() == "zoomed" and self.winfo_y() >= 0 else None,
+            "win_pos_x": self.winfo_x() if not self.state() == "zoomed" else None,
+            "win_pos_y": self.winfo_y() if not self.state() == "zoomed" else None,
             "exit": self.exit_checkbox_state,
         }
         try:
@@ -5926,10 +5943,11 @@ class TeraTermUI(customtkinter.CTk):
         loading_screen_height = height
         center_x = main_window_x + (main_window_width // 2) - (loading_screen_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (loading_screen_height // 2)
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        center_x = max(0, min(center_x + 105, screen_width - loading_screen_width))
-        center_y = max(0, min(center_y, screen_height - loading_screen_height))
+        center_x += 105
+        monitor = TeraTermUI.get_monitor_bounds(main_window_x, main_window_y)
+        monitor_x, monitor_y, monitor_width, monitor_height = monitor.x, monitor.y, monitor.width, monitor.height
+        center_x = max(monitor_x, min(center_x, monitor_x + monitor_width - loading_screen_width))
+        center_y = max(monitor_y, min(center_y, monitor_y + monitor_height - loading_screen_height))
         window_geometry = f"{loading_screen_width}x{loading_screen_height}+{center_x}+{center_y}"
         self.loading_screen.geometry(window_geometry)
 
@@ -7187,8 +7205,8 @@ class TeraTermUI(customtkinter.CTk):
         checkboxes_per_row = 10
         total_rows = (num_tables + checkboxes_per_row - 1) // checkboxes_per_row
         total_checkbox_width = min(num_tables, checkboxes_per_row) * (checkbox_width + checkbox_padding)
-        total_width = total_checkbox_width + 110
-        total_height = total_rows * 32 + 50
+        move_window_width = total_checkbox_width + 110
+        move_window_height = total_rows * 32 + 50
         self.move_tables_overlay.grid_rowconfigure(0, weight=1)
         self.move_tables_overlay.grid_rowconfigure(1, weight=1)
         self.move_tables_overlay.grid_columnconfigure(0, weight=1)
@@ -7198,13 +7216,15 @@ class TeraTermUI(customtkinter.CTk):
         main_window_y = self.winfo_y()
         main_window_width = self.winfo_width()
         main_window_height = self.winfo_height()
-        center_x = main_window_x + (main_window_width // 2) - (total_width // 2)
-        center_y = main_window_y + (main_window_height // 2) - (total_height // 2)
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        center_x = max(0, min(center_x + 105, screen_width - total_width))
-        center_y = max(0, min(center_y + 13, screen_height - total_height))
-        window_geometry = f"{total_width}x{total_height}+{center_x}+{center_y}"
+        center_x = main_window_x + (main_window_width // 2) - (move_window_width // 2)
+        center_y = main_window_y + (main_window_height // 2) - (move_window_height // 2)
+        center_x += 105
+        center_y -= 13
+        monitor = TeraTermUI.get_monitor_bounds(main_window_x, main_window_y)
+        monitor_x, monitor_y, monitor_width, monitor_height = monitor.x, monitor.y, monitor.width, monitor.height
+        center_x = max(monitor_x, min(center_x, monitor_x + monitor_width - move_window_width))
+        center_y = max(monitor_y, min(center_y, monitor_y + monitor_height - move_window_height))
+        window_geometry = f"{move_window_width}x{move_window_height}+{center_x}+{center_y}"
         self.move_tables_overlay.geometry(window_geometry)
 
     def update_table_checkboxes(self):
@@ -8778,10 +8798,12 @@ class TeraTermUI(customtkinter.CTk):
         top_level_height = height
         center_x = main_window_x + (main_window_width // 2) - (top_level_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (top_level_height // 2)
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        center_x = max(0, min(center_x + 100, screen_width - top_level_width))
-        center_y = max(0, min(center_y - 20, screen_height - top_level_height))
+        center_x += 100
+        center_y -= 20
+        monitor = TeraTermUI.get_monitor_bounds(main_window_x, main_window_y)
+        monitor_x, monitor_y, monitor_width, monitor_height = monitor.x, monitor.y, monitor.width, monitor.height
+        center_x = max(monitor_x, min(center_x, monitor_x + monitor_width - top_level_width))
+        center_y = max(monitor_y, min(center_y, monitor_y + monitor_height - top_level_height))
         window_geometry = f"{width}x{height}+{center_x}+{center_y}"
         if not self.disable_audio:
             winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/error.wav"), winsound.SND_ASYNC)
@@ -8821,10 +8843,12 @@ class TeraTermUI(customtkinter.CTk):
         top_level_height = height
         center_x = main_window_x + (main_window_width // 2) - (top_level_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (top_level_height // 2)
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        center_x = max(0, min(center_x + 100, screen_width - top_level_width))
-        center_y = max(0, min(center_y - 20, screen_height - top_level_height))
+        center_x += 100
+        center_y -= 20
+        monitor = TeraTermUI.get_monitor_bounds(main_window_x, main_window_y)
+        monitor_x, monitor_y, monitor_width, monitor_height = monitor.x, monitor.y, monitor.width, monitor.height
+        center_x = max(monitor_x, min(center_x, monitor_x + monitor_width - top_level_width))
+        center_y = max(monitor_y, min(center_y, monitor_y + monitor_height - top_level_height))
         window_geometry = f"{width}x{height}+{center_x}+{center_y}"
         if not self.disable_audio:
             winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/success.wav"), winsound.SND_ASYNC)
@@ -8959,10 +8983,12 @@ class TeraTermUI(customtkinter.CTk):
         top_level_height = height
         center_x = main_window_x + (main_window_width // 2) - (top_level_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (top_level_height // 2)
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        center_x = max(0, min(center_x + 100, screen_width - top_level_width))
-        center_y = max(0, min(center_y - 20, screen_height - top_level_height))
+        center_x += 100
+        center_y -= 20
+        monitor = TeraTermUI.get_monitor_bounds(main_window_x, main_window_y)
+        monitor_x, monitor_y, monitor_width, monitor_height = monitor.x, monitor.y, monitor.width, monitor.height
+        center_x = max(monitor_x, min(center_x, monitor_x + monitor_width - top_level_width))
+        center_y = max(monitor_y, min(center_y, monitor_y + monitor_height - top_level_height))
         window_geometry = f"{width}x{height}+{center_x}+{center_y}"
         if not self.disable_audio:
             winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/notification.wav"), winsound.SND_ASYNC)
@@ -9907,10 +9933,12 @@ class TeraTermUI(customtkinter.CTk):
         status_window_height = 280
         center_x = main_window_x + (main_window_width // 2) - (status_window_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (status_window_height // 2)
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        center_x = max(0, min(center_x + 70, screen_width - status_window_width))
-        center_y = max(0, min(center_y - 15, screen_height - status_window_height))
+        center_x += 70
+        center_y -= 15
+        monitor = TeraTermUI.get_monitor_bounds(main_window_x, main_window_y)
+        monitor_x, monitor_y, monitor_width, monitor_height = monitor.x, monitor.y, monitor.width, monitor.height
+        center_x = max(monitor_x, min(center_x, monitor_x + monitor_width - status_window_width))
+        center_y = max(monitor_y, min(center_y, monitor_y + monitor_height - status_window_height))
         self.status.geometry(f"{status_window_width}x{status_window_height}+{center_x}+{center_y}")
         self.status.title(translation["status"])
         self.status.iconbitmap(self.icon_path)
@@ -10574,10 +10602,12 @@ class TeraTermUI(customtkinter.CTk):
         help_window_height = 280
         center_x = main_window_x + (main_window_width // 2) - (help_window_width // 2)
         center_y = main_window_y + (main_window_height // 2) - (help_window_height // 2)
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        center_x = max(0, min(center_x + 70, screen_width - help_window_width))
-        center_y = max(0, min(center_y - 15, screen_height - help_window_height))
+        center_x += 70
+        center_y -= 15
+        monitor = TeraTermUI.get_monitor_bounds(main_window_x, main_window_y)
+        monitor_x, monitor_y, monitor_width, monitor_height = monitor.x, monitor.y, monitor.width, monitor.height
+        center_x = max(monitor_x, min(center_x, monitor_x + monitor_width - help_window_width))
+        center_y = max(monitor_y, min(center_y, monitor_y + monitor_height - help_window_height))
         self.help.geometry(f"{help_window_width}x{help_window_height}+{center_x}+{center_y}")
         self.help.title(translation["help"])
         self.help.iconbitmap(self.icon_path)
