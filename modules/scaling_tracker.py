@@ -152,7 +152,7 @@ class ScalingTracker:
         """Debounced callback triggered during window resizing."""
         if hasattr(window, "_dpi_after_id"):
             window.after_cancel(window._dpi_after_id)
-        window._dpi_after_id = window.after(300, lambda: cls.check_dpi_scaling_for_window(window))
+        window._dpi_after_id = window.after(150, lambda: cls.check_dpi_scaling_for_window(window))
 
     @classmethod
     def check_dpi_scaling_for_window(cls, window):
