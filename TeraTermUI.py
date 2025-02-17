@@ -2016,9 +2016,14 @@ class TeraTermUI(customtkinter.CTk):
             screen_y = self.winfo_vrooty()
             dialog_x = max(screen_x, min(dialog_x + 75, screen_width - dialog_width))
             dialog_y = max(screen_y, min(dialog_y + 60, screen_height - dialog_height))
-            self.dialog = SmoothFadeInputDialog(text=translation["dialog_message"], title=translation["dialog_title"],
-                                                ok_text=translation["submit"], cancel_text=translation["option_1"],
-                                                lang=lang)
+            example = None
+            if lang == "English":
+                example = "   Ex. \""
+            elif lang == "Español":
+                example = "   Ej. \""
+            self.dialog = SmoothFadeInputDialog(
+                text=f'{translation["dialog_message"]}{example}{self.DEFAULT_SEMESTER}"', lang=lang,
+                title=translation["dialog_title"], ok_text=translation["submit"], cancel_text=translation["option_1"])
             self.dialog.geometry("+%d+%d" % (dialog_x, dialog_y))
             self.dialog.iconbitmap(self.icon_path)
             self.dialog.bind("<Escape>", lambda event: self.dialog.destroy())
