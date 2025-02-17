@@ -29,6 +29,13 @@ class ScalingTracker:
     MONITOR_DEFAULT_NEAREST = 2
 
     @classmethod
+    def _on_configure(cls, event, window):
+        """Debounced callback triggered during window resizing."""
+        if hasattr(window, "_dpi_after_id"):
+            window.after_cancel(window._dpi_after_id)
+        window._dpi_after_id = window.after(300, lambda: cls.check_dpi_scaling_for_window(window))
+
+    @classmethod
     @lru_cache(maxsize=128)
     def get_widget_scaling(cls, widget) -> float:
         """Get the scaling factor for a widget with built-in caching."""
@@ -147,26 +154,6 @@ class ScalingTracker:
             window_root.bind("<Configure>", lambda event, w=window_root: cls._on_configure(event, w))
             window_root._dpi_configure_bound = True
 
-    @classmethod
-    def _on_configure(cls, event, window):
-        """Debounced callback triggered during window resizing."""
-        if hasattr(window, "_dpi_after_id"):
-            window.after_cancel(window._dpi_after_id)
-        window._dpi_after_id = window.after(150, lambda: cls.check_dpi_scaling_for_window(window))
-
-    @classmethod
-    def check_dpi_scaling_for_window(cls, window):
-        """Check DPI scaling for one window instead of polling all windows."""
-        if not window.winfo_exists() or window.state() == "iconic":
-            return
-
-        current_dpi_scaling = cls.get_window_dpi_scaling(window)
-        old_dpi_scaling = cls.window_dpi_scaling_dict.get(window, 1.0)
-        if abs(current_dpi_scaling - old_dpi_scaling) > 0.01:
-            cls.window_dpi_scaling_dict[window] = current_dpi_scaling
-            cls.get_widget_scaling.cache_clear()
-            cls.get_window_scaling.cache_clear()
-            cls.update_scaling_callbacks_for_window(window)
 
     @classmethod
     def remove_widget(cls, widget_callback: Callable, widget):
@@ -239,6 +226,20 @@ class ScalingTracker:
             except Exception:
                 return 1.0
         return 1.0
+
+    @classmethod
+    def check_dpi_scaling_for_window(cls, window):
+        """Check DPI scaling for one window instead of polling all windows."""
+        if not window.winfo_exists() or window.state() == "iconic":
+            return
+
+        current_dpi_scaling = cls.get_window_dpi_scaling(window)
+        old_dpi_scaling = cls.window_dpi_scaling_dict.get(window, 1.0)
+        if abs(current_dpi_scaling - old_dpi_scaling) > 0.01:
+            cls.window_dpi_scaling_dict[window] = current_dpi_scaling
+            cls.get_widget_scaling.cache_clear()
+            cls.get_window_scaling.cache_clear()
+            cls.update_scaling_callbacks_for_window(window)
 
     @classmethod
     def check_dpi_scaling(cls):
