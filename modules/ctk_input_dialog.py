@@ -65,6 +65,7 @@ class CTkInputDialog(CTkToplevel):
         self._create_widgets()
         self.resizable(False, False)
         self.transient(master)
+        self.geometry("325x165")
         self.grab_set()  # make other windows not clickable
 
     def _create_widgets(self):
@@ -78,7 +79,7 @@ class CTkInputDialog(CTkToplevel):
                                text_color=self._text_color,
                                text=self._text,
                                font=self._font)
-        self._label.grid(row=0, column=0, columnspan=2, padx=20, pady=20, sticky="ew")
+        self._label.grid(row=0, column=0, columnspan=2, padx=20, pady=(10, 0), sticky="ew")
 
         self._entry = CustomEntry(self, self,
                                   lang=self._lang,
