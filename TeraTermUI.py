@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/16/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/17/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -8815,8 +8815,7 @@ class TeraTermUI(customtkinter.CTk):
         my_image = self.get_image("error")
         image = customtkinter.CTkLabel(self.error, text="", image=my_image)
         image.pack(padx=10, pady=20)
-        error_msg = customtkinter.CTkLabel(self.error,
-                                           text=error_msg_text,
+        error_msg = customtkinter.CTkLabel(self.error, text=error_msg_text,
                                            font=customtkinter.CTkFont(size=15, weight="bold"))
         error_msg.pack(side="top", fill="both", expand=True, padx=10, pady=20)
         self.error.protocol("WM_DELETE_WINDOW", self.on_error_window_close)
@@ -9887,7 +9886,7 @@ class TeraTermUI(customtkinter.CTk):
         translation["app_version"] = translation["app_version"].replace("{version}", self.USER_APP_VERSION)
         self.version = customtkinter.CTkLabel(self.status_frame, text=translation["app_version"])
         self.feedback_text = CustomTextBox(self.status_frame, self, enable_autoscroll=False, lang=lang,
-                                           wrap="word", border_spacing=8, width=300, height=170,
+                                           wrap="word", border_spacing=8, width=340, height=200,
                                            fg_color=("#ffffff", "#111111"))
         self.feedback_send = CustomButton(self.status_frame, text=translation["feedback"], anchor="w", width=150,
                                           image=self.get_image("plane"), text_color=("gray10", "#DCE4EE"),
@@ -10507,7 +10506,7 @@ class TeraTermUI(customtkinter.CTk):
         self.searchbox_text = customtkinter.CTkLabel(self.help_frame, text=translation["searchbox_title"])
         self.search_box = CustomEntry(self.help_frame, self, lang, placeholder_text=translation["searchbox"])
         self.search_box.is_listbox_entry = True
-        self.class_list = tk.Listbox(self.help_frame, width=35, bg="#0e95eb", fg="#333333", font=("Roboto", 12))
+        self.class_list = tk.Listbox(self.help_frame, width=38, bg="#0e95eb", fg="#333333", font=("Roboto", 12))
         self.curriculum_text = customtkinter.CTkLabel(self.help_frame, text=translation["curriculums_title"])
         self.curriculum = customtkinter.CTkOptionMenu(self.help_frame,
                                                       values=[translation["dep"], translation["acc"],
