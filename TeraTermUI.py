@@ -10148,7 +10148,7 @@ class TeraTermUI(customtkinter.CTk):
                 if date_record is None or date_record[0] != current_date:
                     feedback = self.feedback_text.get("1.0", customtkinter.END).strip()
                     word_count = len(feedback.split())
-                    if word_count < 1000:
+                    if word_count < 1250:
                         feedback = self.feedback_text.get("1.0", customtkinter.END).strip()
                         if feedback:
                             self.sending_feedback = True
@@ -10172,8 +10172,8 @@ class TeraTermUI(customtkinter.CTk):
                                 if not self.disable_audio:
                                     winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/error.wav"),
                                                        winsound.SND_ASYNC)
-                                CTkMessagebox(title=translation["error"], message=translation["feedback_1000"],
-                                              icon="cancel", button_width=380)
+                                CTkMessagebox(title=translation["error"], message=f"{translation['feedback_1000']}"
+                                              f"\n\nWord count: {word_count}", icon="cancel", button_width=380)
 
                             self.after(50, show_error)
                 else:
@@ -10202,7 +10202,7 @@ class TeraTermUI(customtkinter.CTk):
             try:
                 translation = self.load_language()
                 current_date = datetime.today().strftime("%Y-%m-%d")
-                current_exact_time = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
+                current_exact_time = datetime.today().strftime("%m/%d/%Y %I:%M %p")
                 feedback = self.feedback_text.get("1.0", customtkinter.END).strip()
                 cpu_model = TeraTermUI.get_cpu_info()
                 os_info = TeraTermUI.get_os_info()
