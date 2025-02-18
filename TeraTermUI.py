@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/17/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/18/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -2021,11 +2021,13 @@ class TeraTermUI(customtkinter.CTk):
                 example = "   Ex. \""
             elif lang == "Español":
                 example = "   Ej. \""
+            self.show_classes_tooltip.hide()
             self.dialog = SmoothFadeInputDialog(
                 text=f'{translation["dialog_message"]}{example}{self.DEFAULT_SEMESTER}"', lang=lang,
                 title=translation["dialog_title"], ok_text=translation["submit"], cancel_text=translation["option_1"])
             self.dialog.geometry("+%d+%d" % (dialog_x, dialog_y))
             self.dialog.iconbitmap(self.icon_path)
+            self.show_classes_tooltip.show()
             self.dialog.bind("<Escape>", lambda event: self.dialog.destroy())
             dialog_input = self.dialog.get_input()
             if dialog_input is not None:
@@ -4725,7 +4727,7 @@ class TeraTermUI(customtkinter.CTk):
                                             f"{translated_days}\n*Aprox. {change_time_range}")
                     else:
                         conflict_message = (f"{current_translation['conflict_table_tooltip']}"
-                                            f"{translated_days}\n*Approx {change_time_range}")
+                                            f"{translated_days}\n*Approx. {change_time_range}")
                     change_entry.configure(border_color="#CC5500")
                     self.enrolled_tooltips[change_tooltip_idx].configure(message=conflict_message,
                                                                          bg_color="#CC5500")
@@ -5982,7 +5984,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.help.attributes("-disabled", False)
             if self.status is not None and self.status.winfo_exists():
                 self.status.attributes("-disabled", False)
-            self.update_widgets()
+            self.after(0, self.update_widgets)
             if self.loading_screen is not None and self.loading_screen.winfo_exists():
                 self.loading_screen.withdraw()
             self.progress_bar.reset()
@@ -9918,15 +9920,17 @@ class TeraTermUI(customtkinter.CTk):
     def status_button_event(self):
         if self.status is not None and self.status.winfo_exists():
             windows_status = gw.getWindowsWithTitle("Status") + gw.getWindowsWithTitle("Estado")
-            min_win = windows_status[0].isMinimized
-            if min_win:
-                self.status.deiconify()
-            self.status.lift()
-            self.status.focus_set()
+            if windows_status:
+                min_win = windows_status[0].isMinimized
+                if min_win:
+                    self.status.deiconify()
+                self.status.lift()
+                self.status.focus_set()
             return
         lang = self.language_menu.get()
         translation = self.load_language()
         self.destroy_tooltip()
+        self.status_tooltip.hide()
         self.status = SmoothFadeToplevel()
         self.status_widgets()
         main_window_x = self.winfo_x()
@@ -9963,6 +9967,7 @@ class TeraTermUI(customtkinter.CTk):
         self.faq.pack(expand=True, fill="both", padx=20, pady=10)
         self.feedback_text.lang = lang
         self.status.focus_set()
+        self.status_tooltip.show()
         self.status_frame.bind("<Button-1>", lambda event: self.status_frame.focus_set())
         self.status_frame.bind("<Button-2>", lambda event: self.status_frame.focus_set())
         self.status_frame.bind("<Button-3>", lambda event: self.status_frame.focus_set())
@@ -10587,15 +10592,17 @@ class TeraTermUI(customtkinter.CTk):
 
         if self.help is not None and self.help.winfo_exists():
             windows_help = gw.getWindowsWithTitle("Help") + gw.getWindowsWithTitle("Ayuda")
-            min_win = windows_help[0].isMinimized
-            if min_win:
-                self.help.deiconify()
-            self.help.lift()
-            self.help.focus_set()
+            if windows_help:
+                min_win = windows_help[0].isMinimized
+                if min_win:
+                    self.help.deiconify()
+                self.help.lift()
+                self.help.focus_set()
             return
         lang = self.language_menu.get()
         translation = self.load_language()
         self.destroy_tooltip()
+        self.help_tooltip.hide()
         self.help = SmoothFadeToplevel()
         self.help_widgets()
         main_window_x = self.winfo_x()
@@ -10658,6 +10665,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.skip_auth_switch.select()
         self.search_box.lang = lang
         self.help.focus_set()
+        self.help_tooltip.show()
         self.help_frame.bind("<Button-1>", lambda event: self.help_frame.focus_set())
         self.help_frame.bind("<Button-2>", lambda event: self.help_frame.focus_set())
         self.help_frame.bind("<Button-3>", lambda event: self.help_frame.focus_set())
@@ -12514,7 +12522,12 @@ class SmoothFadeToplevel(customtkinter.CTkToplevel):
         self.alpha = 0.0
         self.fade_direction = 1  # 1 for fade-in, -1 for fade-out
         self._fade_after_id = None  # Initialize the fade callback ID
-        self.after_idle(self._start_fade_in)
+        self.withdraw()
+        self.after(0, self._setup_geometry)
+
+    def _setup_geometry(self):
+        self.deiconify()
+        self._start_fade_in()
 
     def _start_fade_in(self):
         self.fade_direction = 1
@@ -12552,7 +12565,12 @@ class SmoothFadeInputDialog(customtkinter.CTkInputDialog):
         self.alpha = 0.0
         self.fade_direction = 1  # 1 for fade-in, -1 for fade-out
         self._fade_after_id = None  # Initialize the fade callback ID
-        self.after_idle(self._start_fade_in)
+        self.withdraw()
+        self.after(0, self._setup_geometry)
+
+    def _setup_geometry(self):
+        self.deiconify()
+        self._start_fade_in()
 
     def _start_fade_in(self):
         self.fade_direction = 1
