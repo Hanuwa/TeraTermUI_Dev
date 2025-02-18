@@ -128,56 +128,39 @@ class CTkScalingBaseClass:
         return width, height, x, y
 
     def _apply_geometry_scaling(self, geometry_string: str) -> str:
-        """Applies window scaling to the given geometry string."""
-        assert self._is_window_scaling
+        """Scales the geometry string (width, height, x, y) based on window scaling."""
+        if not self._is_window_scaling:
+            return geometry_string  # Only apply if it's a window
 
         width, height, x, y = self._parse_geometry_string(geometry_string)
 
         if width is not None and height is not None:
             scaled_width = round(width * self.__window_scaling)
             scaled_height = round(height * self.__window_scaling)
-        else:
-            scaled_width, scaled_height = None, None
+            if x is not None and y is not None:
+                return f"{scaled_width}x{scaled_height}+{x}+{y}"
+            return f"{scaled_width}x{scaled_height}"
 
         if x is not None and y is not None:
-            scaled_x = round(x * self.__window_scaling)
-            scaled_y = round(y * self.__window_scaling)
-        else:
-            scaled_x, scaled_y = None, None
+            return f"+{x}+{y}"
 
-        # Construct the final geometry string
-        geometry_parts = []
-        if scaled_width is not None and scaled_height is not None:
-            geometry_parts.append(f"{scaled_width}x{scaled_height}")
-        if scaled_x is not None and scaled_y is not None:
-            geometry_parts.append(f"+{scaled_x}+{scaled_y}")
-
-        return "".join(geometry_parts)
+        return geometry_string  # Return as-is if parsing failed
 
     def _reverse_geometry_scaling(self, scaled_geometry_string: str) -> str:
-        """Reverses scaling of window geometry."""
-        assert self._is_window_scaling
+        """Reverses the scaling effect on the geometry string."""
+        if not self._is_window_scaling:
+            return scaled_geometry_string  # Only apply if it's a window
 
         width, height, x, y = self._parse_geometry_string(scaled_geometry_string)
 
         if width is not None and height is not None:
             original_width = round(width / self.__window_scaling)
             original_height = round(height / self.__window_scaling)
-        else:
-            original_width, original_height = None, None
+            if x is not None and y is not None:
+                return f"{original_width}x{original_height}+{x}+{y}"
+            return f"{original_width}x{original_height}"
 
         if x is not None and y is not None:
-            original_x = round(x / self.__window_scaling)
-            original_y = round(y / self.__window_scaling)
-        else:
-            original_x, original_y = None, None
+            return f"+{x}+{y}"
 
-        geometry_parts = []
-        if original_width is not None and original_height is not None:
-            geometry_parts.append(f"{original_width}x{original_height}")
-        if original_x is not None and original_y is not None:
-            geometry_parts.append(f"+{original_x}+{original_y}")
-
-        return "".join(geometry_parts)
-
-
+        return scaled_geometry_string  # Return as-is if parsing failed
