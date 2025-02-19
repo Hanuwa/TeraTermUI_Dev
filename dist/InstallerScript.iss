@@ -45,12 +45,11 @@ Name: "teraterm"; Description: "{cm:teraterm}"; GroupDescription: "Additional in
 
 [Files]
 Source: "TeraTermUI_installer\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "database.db"; DestDir: "{code:GetDataDir}"; Check: ShouldUpdateFile(ExpandConstant('{code:GetDataDir}\database.db'), 'database.db'); Permissions: everyone-modify
-Source: "feedback.zip"; DestDir: "{code:GetDataDir}"; Check: ShouldUpdateFile(ExpandConstant('{code:GetDataDir}\feedback.zip'), 'feedback.zip'); Permissions: everyone-modify
-Source: "updater.exe"; DestDir: "{code:GetDataDir}"; Check: ShouldUpdateFile(ExpandConstant('{code:GetDataDir}\updater.exe'), 'updater.exe'); Permissions: everyone-modify
+Source: "database.db"; DestDir: "{code:GetDataDir}"; Flags: ignoreversion
+Source: "feedback.zip"; DestDir: "{code:GetDataDir}"; Flags: ignoreversion
+Source: "updater.exe"; DestDir: "{code:GetDataDir}"; Flags: ignoreversion
 Source: "TeraTermUI_installer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "teraterm-4.108.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
-Source: "C:\Program Files\Git\usr\bin\md5sum.exe"; DestDir: "{tmp}"; Flags: ignoreversion
 
 [Registry]
 Root: HKCU; Subkey: "Software\TeraTermUI"; ValueType: string; ValueName: "InstallDir"; ValueData: "{app}"; Flags: uninsdeletekey
@@ -138,43 +137,6 @@ begin
     Result := ExpandConstant('{commonpf64}\TeraTermUI')
   else
     Result := ExpandConstant('{localappdata}\Programs\TeraTermUI');
-end;
-
-function GetMD5Hash(const FileName: string): string;
-var
-  ResultCode: Integer;
-  OutputFile: string;
-  OutputLines: TArrayOfString;
-begin
-  Result := '';
-  if not FileExists(FileName) then
-    Exit;
-
-  OutputFile := ExpandConstant('{tmp}\md5output.txt');
-  if Exec(ExpandConstant('{tmp}\md5sum.exe'), '"' + FileName + '" > "' + OutputFile + '"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
-  begin
-    if (ResultCode = 0) and FileExists(OutputFile) then
-    begin
-      LoadStringsFromFile(OutputFile, OutputLines);
-      if GetArrayLength(OutputLines) > 0 then
-        Result := Copy(OutputLines[0], 1, Pos(' ', OutputLines[0]) - 1);
-    end;
-  end;
-  if FileExists(OutputFile) then
-    DeleteFile(OutputFile);
-end;
-
-function ShouldUpdateFile(DestFile: string; SourceFile: string): Boolean;
-var
-  DestHash, SourceHash: string;
-begin
-  Result := True;
-  if FileExists(DestFile) then
-  begin
-    DestHash := GetMD5Hash(DestFile);
-    SourceHash := GetMD5Hash(SourceFile);
-    Result := DestHash <> SourceHash;
-  end;
 end;
 
 procedure DeleteTeraTermUIDirectories(const ParentDir: string);
