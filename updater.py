@@ -755,7 +755,6 @@ def download_update(gui, mode, checksum_info):
 
     return None
 
-
 def install_extract_update(gui, mode, update_db, version, downloaded_file, app_directory):
     if gui.cancel_requested:
         logging.info("Update cancelled by user during installation")
@@ -859,29 +858,32 @@ def install_extract_update(gui, mode, update_db, version, downloaded_file, app_d
 
             try:
                 removed_files = 0
-                for root, _, files in os.walk(app_directory):
-                    for file in files:
+                removed_dirs = 0
+                with os.scandir(app_directory) as entries:
+                    for entry in entries:
                         if gui.cancel_requested:
                             logging.info("Update cancelled during file removal")
                             return False
 
                         while gui.pause_requested and not gui.cancel_requested:
                             time.sleep(0.1)
+
+                        if not update_db and entry.name == "database.db":
+                            logging.info(f"Skipping deletion of database file: {entry.path}")
                             continue
 
-                        if file == "database.db" and not update_db:
-                            logging.info(f"Skipping database file: {file}")
-                            continue
-
-                        file_path = os.path.join(root, file)
                         try:
-                            os.remove(file_path)
-                            removed_files += 1
+                            if entry.is_file() or entry.is_symlink():
+                                os.remove(entry.path)
+                                removed_files += 1
+                            elif entry.is_dir():
+                                shutil.rmtree(entry.path)
+                                removed_dirs += 1
                         except Exception as e:
-                            logging.error(f"Failed to remove file {file_path}: {e}")
-                            return False
+                            logging.warning(f"Failed to remove {entry.path}: {e}")
 
                 logging.info(f"Total files removed: {removed_files}")
+                logging.info(f"Total directories removed: {removed_dirs}")
 
                 total_files = sum(len(files) for _, _, files in os.walk(gui.temp_extract_folder))
                 processed_files = 0
@@ -897,7 +899,7 @@ def install_extract_update(gui, mode, update_db, version, downloaded_file, app_d
                             time.sleep(0.1)
                             continue
 
-                        if file == "database.db" and not update_db:
+                        if not update_db and file == "database.db":
                             logging.info(f"Skipping database file update: {file}")
                             continue
 
@@ -1034,7 +1036,7 @@ def handle_installation_mode(gui, downloaded_file, version, app_directory):
                             "The installer will now start. Please note:\n\n"
                             "1. Administrative privileges may be required\n"
                             "2. Follow the installer prompts\n"
-                            "3. Do not close this update window")
+                            "3. Do not close the updater window")
 
         startupinfo = None
         if os.name == "nt":
@@ -1075,7 +1077,17 @@ def cleanup_update_files(gui):
 
         for folder in gui.temp_folders:
             if os.path.exists(folder):
-                shutil.rmtree(folder)
+                with os.scandir(folder) as entries:
+                    for entry in entries:
+                        try:
+                            if entry.is_file() or entry.is_symlink():
+                                os.remove(entry.path)
+                            elif entry.is_dir():
+                                shutil.rmtree(entry.path)
+                        except Exception as e:
+                            logging.warning(f"Failed to remove {entry.path}: {e}")
+                            success = False
+                shutil.rmtree(folder, ignore_errors=True)
                 logging.info(f"Removed temporary folder: {folder}")
 
         updater_dir = os.path.dirname(gui.temp_extract_folder) if gui.temp_extract_folder else None
@@ -1099,11 +1111,15 @@ def restore_from_backup(app_directory, backup_folder):
         raise ValueError("Backup folder not found")
 
     try:
-        for root, dirs, files in os.walk(app_directory):
-            for file in files:
-                os.remove(os.path.join(root, file))
-            for dir in dirs:
-                shutil.rmtree(os.path.join(root, dir))
+        with os.scandir(app_directory) as entries:
+            for entry in entries:
+                try:
+                    if entry.is_file() or entry.is_symlink():
+                        os.remove(entry.path)
+                    elif entry.is_dir():
+                        shutil.rmtree(entry.path)
+                except Exception as e:
+                    logging.error(f"Failed to remove {entry.path}: {e}")
 
         shutil.copytree(backup_folder, app_directory, dirs_exist_ok=True)
         logging.info(f"Successfully restored from backup: {backup_folder}")
@@ -1114,14 +1130,15 @@ def restore_from_backup(app_directory, backup_folder):
 
 def check_update_success(app_directory, version):
     logging.info(f"Performing update verification for version {version}")
+    required_files = ["TeraTermUI.exe", "VERSION.txt"]
 
-    required_files = ["TeraTermUI.exe", "VERSION.txt",]
+    with os.scandir(app_directory) as entries:
+        found_files = {entry.name for entry in entries}
 
-    for item in required_files:
-        path = os.path.join(app_directory, item)
-        if not os.path.exists(path):
-            logging.error(f"Required item not found: {item}")
-            return False
+        for item in required_files:
+            if item not in found_files:
+                logging.error(f"Required item not found: {item}")
+                return False
 
     exe_path = os.path.join(app_directory, "TeraTermUI.exe")
     try:
@@ -1158,7 +1175,7 @@ def verify_and_finalize_installation(gui, version, downloaded_file, app_director
             raise FileNotFoundError(f"Executable not found at: {executable_path}")
 
         if not check_update_success(app_directory, version):
-            raise ValueError("Installation verification failed - version mismatch")
+            raise ValueError("version mismatch")
 
         cleanup_successful = cleanup_installer(downloaded_file)
         if not cleanup_successful:
@@ -1228,6 +1245,10 @@ def restart_application(app_directory):
             "Error",
             f"{error_msg}\nPlease start the application manually")
         sys.exit(1)
+
+    if is_application_running("TeraTermUI.exe"):
+        logging.info("TeraTermUI is already running. Restart skipped")
+        return
 
     try:
         startupinfo = None
