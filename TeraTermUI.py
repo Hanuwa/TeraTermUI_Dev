@@ -306,9 +306,9 @@ class TeraTermUI(customtkinter.CTk):
         self.scaling_label.grid(row=5, column=0, padx=20, pady=(10, 10))
         self.language_menu = customtkinter.CTkOptionMenu(self.sidebar_frame, values=["English", "Español"],
                                                          canvas_takefocus=False, command=self.change_language_event,
-                                                         corner_radius=15)
+                                                         corner_radius=13)
         self.language_menu.grid(row=6, column=0, padx=20, pady=(10, 10))
-        self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame, corner_radius=15,
+        self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame, corner_radius=13,
                                                                        canvas_takefocus=False,
                                                                        values=["Dark", "Light", "System"],
                                                                        command=self.change_appearance_mode_event)
@@ -6620,7 +6620,9 @@ class TeraTermUI(customtkinter.CTk):
             "SEXTO SANTIAGO MARIELIS": "https://notaso.com/professors/marie-sexto/",
             "ALEMAN JIMENEZ": "https://notaso.com/professors/keila-aleman/",
             "SIERRA PADILLA": "https://notaso.com/professors/javier-sierra-padilla-2/",
-            "CORREA ROSADO ALVARO R.": "https://notaso.com/professors/alvaro-correa-2/"
+            "CORREA ROSADO ALVARO R.": "https://notaso.com/professors/alvaro-correa-2/",
+            "QUINONES CRUZ MIRIAM I.": "https://notaso.com/professors/miriam-quinonez/",
+            "BEAUCHAMP RODRIGUEZ ELIA": "https://notaso.com/professors/elias-beauchamp-2/"
         }
         if norm_name in url_mapping:
             hard_coded_url = url_mapping[norm_name]
