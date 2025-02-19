@@ -471,7 +471,7 @@ def start_update(gui, args):
                                 "The update failed. Please check the logs for more information")
                             gui.set_failure_state()
                     else:
-                        gui.root.after(250,lambda: (gui.root.destroy(), restart_application(args.app_directory)))
+                        gui.root.after(250, lambda: (gui.root.destroy(), restart_application(args.app_directory)))
 
             try:
                 LOCK.release()
@@ -1196,7 +1196,8 @@ def verify_and_finalize_installation(gui, version, downloaded_file, app_director
         gui.update_progress(0, "Installation verification failed")
         messagebox.showerror("Installation Failed", error_msg)
         gui.set_failure_state()
-        gui.root.after(1000, gui.root.destroy)
+        cleanup_installer_files(downloaded_file)
+        gui.root.after(1000, lambda: (gui.root.destroy(), restart_application(app_directory)))
 
 def cleanup_installer(installer_path):
     max_attempts = 3
