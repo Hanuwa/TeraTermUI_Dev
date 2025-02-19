@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/18/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/19/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -178,7 +178,7 @@ class TeraTermUI(customtkinter.CTk):
         self.REAZIONE = self.ottenere_protetta_salasana()
         self.USER_APP_VERSION = "0.9.0"
         self.mode = "Portable"
-        self.updater_hash = "17290bb1f03913ccfd44324879283c4c45cff00c9f44b490223b6c0c757d6ec6"
+        self.updater_hash = "4b038c205cba8759fe7bc242826e4db7a0bdd8f0ef9c35ccb7299fb6268fd1eb"
         self.update_db = False
         self.running_updater = False
         self.credentials = None
@@ -8790,9 +8790,10 @@ class TeraTermUI(customtkinter.CTk):
         # Delete the 'TERATERM.ini.bak' file
         if backup_file_path.exists() and not TeraTermUI.checkIfProcessRunning("ttermpro"):
             os.remove(backup_file_path)
-            if self.mode == "Portable" or (self.mode == "Installation" and self.delete_tesseract_dir):
-                if not self.running_updater:
-                    shutil.rmtree(self.app_temp_dir)
+        if self.mode == "Portable" or (self.mode == "Installation" and self.delete_tesseract_dir) \
+                and not TeraTermUI.checkIfProcessRunning("ttermpro"):
+            if not self.running_updater:
+                shutil.rmtree(self.app_temp_dir)
 
     # error window pop up message
     def show_error_message(self, width, height, error_msg_text):
@@ -10258,42 +10259,96 @@ class TeraTermUI(customtkinter.CTk):
                 self.submit_feedback_event_completed = True
 
     @staticmethod
+    def get_file_version_info(file_path):
+        size = ctypes.windll.version.GetFileVersionInfoSizeW(file_path, None)
+        if size == 0:
+            return None
+
+        buffer = ctypes.create_string_buffer(size)
+        ctypes.windll.version.GetFileVersionInfoW(file_path, None, size, buffer)
+
+        def query_value(subblock):
+            result = wintypes.LPVOID()
+            length = wintypes.UINT()
+            if ctypes.windll.version.VerQueryValueW(buffer, subblock, ctypes.byref(result), ctypes.byref(length)):
+                return ctypes.wstring_at(result, length.value)
+            return None
+
+        company = query_value(r"\StringFileInfo\040904b0\CompanyName")
+        product = query_value(r"\StringFileInfo\040904b0\ProductName")
+
+        return {"CompanyName": company.strip("\x00") if company else None,
+                "ProductName": product.strip("\x00") if product else None}
+
+    @staticmethod
+    def is_valid_teraterm_exe(exe_path):
+        if not os.path.exists(exe_path):
+            return False
+
+        metadata = TeraTermUI.get_file_version_info(exe_path)
+        if not metadata:
+            return False
+
+        return metadata.get("ProductName", "").lower() == "tera term"
+
+    @staticmethod
     def find_ttermpro():
         main_drive = os.path.abspath(os.sep)
-        # Prioritize common installation directories
-        common_paths = [
-            main_drive + "Program Files (x86)/",
-            main_drive + "Program Files/",
-            main_drive + "Users/*/AppData/Local/Programs/",
-        ]
 
-        # Function to search within a given path to a certain depth
-        def search_within_path(search_root, depth=10):
-            excluded_dirs = ["Recycler", "Recycled", "System Volume Information",
-                             "$RECYCLE.BIN", "Prefetch", "Windows", "ProgramData",
-                             "Temp", "System32", "SysWOW64", "Recovery", "Boot",
-                             "Documents", "Pictures", "Music", "Videos"]
+        # Prioritize common installation directories with recommended depth limits
+        common_paths = {
+            os.path.join(main_drive, "Program Files (x86)"): 5,
+            os.path.join(main_drive, "Program Files"): 5,
+            os.path.expandvars(r"%LOCALAPPDATA%\Programs"): 3,
+        }
+        # Exclude certain system & user directories during full scan
+        excluded_dirs = {name.lower() for name in [
+            "Recycler", "Recycled", "$RECYCLE.BIN", "System Volume Information",
+            "Recovery", "Boot", "EFI", "Windows", "WinSxS", "ProgramData",
+            "System32", "SysWOW64", "Prefetch", "Temp", "Users\\Default", "PerfLogs",
+            "Pictures", "Music", "Videos", "Saved Games"
+        ]}
 
-            for root, dirs, files in os.walk(search_root, topdown=True):
-                # Exclude directories and stop descending after reaching the maximum depth
-                if root[len(search_root):].count(os.sep) >= depth:
-                    del dirs[:]
-                else:
-                    dirs[:] = [d for d in dirs if d not in excluded_dirs and not d.startswith("$")]
+        def search_in_path(search_path, search_depth=None):
+            if not os.path.exists(path):
+                return None
 
-                for file in files:
-                    if file.lower() == "ttermpro.exe":
-                        return os.path.join(root, file)
+            stack = [(search_path, 0)]  # (directory, current depth)
+            while stack:
+                current_path, current_depth = stack.pop()
+                if search_depth is not None and current_depth > search_depth:
+                    continue
+                try:
+                    with os.scandir(current_path) as entries:
+                        for entry in entries:
+                            if entry.is_dir(follow_symlinks=False):
+                                # Skip symbolic links to avoid potential cycles
+                                if entry.is_symlink():
+                                    continue
+                                if entry.name.lower() in excluded_dirs:
+                                    continue
+                            if entry.is_file() and entry.name.lower() == "ttermpro.exe":
+                                exe_path = entry.path
+                                if TeraTermUI.is_valid_teraterm_exe(exe_path):
+                                    return exe_path
+                            elif entry.is_dir(follow_symlinks=False):
+                                stack.append((entry.path, current_depth + 1))
+                except (PermissionError, FileNotFoundError):
+                    continue
 
             return None
 
-        for path in common_paths:
-            result = search_within_path(os.path.expandvars(path))
+        for path, depth in common_paths.items():
+            result = search_in_path(path, search_depth=depth)
             if result:
                 return result
 
-        # If not found, search the entire main drive with a limited depth
-        return search_within_path(main_drive)
+        # If not found, scan the entire main drive
+        full_drive_result = search_in_path(main_drive, search_depth=None)
+        if full_drive_result:
+            return full_drive_result
+        else:
+            return None
 
     def change_location_auto_handler(self):
         lang = self.language_menu.get()
@@ -10324,7 +10379,7 @@ class TeraTermUI(customtkinter.CTk):
         lang = self.language_menu.get()
         translation = self.load_language()
         tera_term_path = TeraTermUI.find_ttermpro()
-        if tera_term_path:
+        if tera_term_path is not None:
             self.location = tera_term_path.replace("\\", "/")
             directory, filename = os.path.split(self.location)
             self.teraterm_directory = directory
@@ -10355,29 +10410,38 @@ class TeraTermUI(customtkinter.CTk):
             if self.help is not None and self.help.winfo_exists():
                 self.files.configure(state="normal")
         else:
-            message_english = ("Tera Term executable was not found on the main drive.\n\n"
-                               "the application is probably not installed\nor it's located on another drive")
-            message_spanish = ("No se encontró el ejecutable de Tera Term en la unidad principal.\n\n"
-                               "Probablemente no tiene la aplicación instalada\no está localizada en otra unidad")
-            message = message_english if lang == "English" else message_spanish
-            messagebox.showinfo("Tera Term", message)
-            self.manually_change_location()
+            def handle_not_found():
+                message_english = ("Tera Term executable was not found on the main drive.\n\n"
+                                   "the application is probably not installed\nor it's located on another drive")
+                message_spanish = ("No se encontró el ejecutable de Tera Term en la unidad principal.\n\n"
+                                   "Probablemente no tiene la aplicación instalada\no está localizada en otra unidad")
+                message = message_english if lang == "English" else message_spanish
+                messagebox.showinfo("Tera Term", message)
+                self.manually_change_location()
+
+            self.after(0, handle_not_found)
 
     @staticmethod
     def find_teraterm_directory():
         import glob
 
         main_drive = os.path.abspath(os.sep)
-        possible_dirs = []
-
         base_paths = [
             os.path.join(main_drive, "Program Files (x86)"),
             os.path.join(main_drive, "Program Files"),
-            main_drive
         ]
+        possible_dirs = []
 
         for base_path in base_paths:
-            possible_dirs += glob.glob(os.path.join(base_path, "teraterm*"))
+            if not os.path.exists(base_path):
+                continue
+            try:
+                with os.scandir(base_path) as entries:
+                    for entry in entries:
+                        if entry.is_dir() and entry.name.lower().startswith("teraterm"):
+                            possible_dirs.append(entry.path)
+            except PermissionError:
+                continue
 
         teraterm5 = os.path.join(base_paths[0], "teraterm5")
         original_teraterm = os.path.join(base_paths[0], "teraterm")
@@ -10388,15 +10452,10 @@ class TeraTermUI(customtkinter.CTk):
         elif possible_dirs:
             return possible_dirs[0]
 
-        full_search_path = os.path.join(main_drive, "teraterm*")
-        full_possible_dirs = glob.glob(full_search_path, recursive=True)
-
-        for directory in full_possible_dirs:
-            if "teraterm5" in directory:
-                return directory
-
-        if full_possible_dirs:
-            return full_possible_dirs[0]
+        for base_path in base_paths:
+            glob_matches = glob.glob(os.path.join(base_path, "teraterm*"))
+            if glob_matches:
+                return glob_matches[0]
 
         return None
 
