@@ -310,9 +310,9 @@ try:
             subprocess.run(nuitka_updater_command, shell=True, check=True)
             print(Fore.GREEN + "\nSuccessfully compiled updater.py\n" + Style.RESET_ALL)
             manifest_path = os.path.join(project_directory, "updater.manifest")
+            attach_manifest(updater_exe_path, manifest_path)
             updater_checksum = generate_checksum(None, updater_exe_path)
             update_updater_hash_value(os.path.join(project_directory, "TeraTermUI.py"), updater_checksum)
-            attach_manifest(updater_exe_path, manifest_path)
             shutil.copy2(updater_exe_path, updater_dist_path)
             shutil.copy2(updater_exe_path, output_directory)
             for folder in ["updater.build", "updater.onefile-build", "updater.dist"]:
@@ -414,8 +414,8 @@ for version in versions:
         executable_path = os.path.join(output_directory, "TeraTermUI.dist", "TeraTermUI.exe")
         version_path = os.path.join(output_directory, "TeraTermUI.dist", "VERSION.txt")
         manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
-        generate_checksum(version_path, executable_path)
         attach_manifest(executable_path, manifest_path)
+        generate_checksum(version_path, executable_path)
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
         os.remove(program_backup)
