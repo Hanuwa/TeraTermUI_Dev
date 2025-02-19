@@ -45,9 +45,9 @@ Name: "teraterm"; Description: "{cm:teraterm}"; GroupDescription: "Additional in
 
 [Files]
 Source: "TeraTermUI_installer\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "database.db"; DestDir: "{code:GetDataDir}"; Flags: ignoreversion
-Source: "feedback.zip"; DestDir: "{code:GetDataDir}"; Flags: ignoreversion
-Source: "updater.exe"; DestDir: "{code:GetDataDir}"; Flags: ignoreversion
+Source: "database.db"; DestDir: "{code:GetDataDir}"; Permissions: everyone-modify; Flags: ignoreversion
+Source: "feedback.zip"; DestDir: "{code:GetDataDir}"; Permissions: everyone-modify; Flags: ignoreversion
+Source: "updater.exe"; DestDir: "{code:GetDataDir}"; Permissions: everyone-modify; Flags: ignoreversion
 Source: "TeraTermUI_installer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "teraterm-4.108.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
 
