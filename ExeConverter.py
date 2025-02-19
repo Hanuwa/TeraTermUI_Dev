@@ -65,7 +65,7 @@ def attach_manifest(executable_path, manifest_path):
     try:
         sha1_hash = hashlib.sha1()
         with open(executable_path, "rb") as file:
-            for byte_block in iter(lambda: file.read(4096), b""):
+            for byte_block in iter(lambda: file.read(8192), b""):
                 sha1_hash.update(byte_block)
         sha1_checksum = sha1_hash.hexdigest()
 
@@ -96,7 +96,7 @@ def generate_checksum(version_filename, executable_filename):
     try:
         sha256_hash = hashlib.sha256()
         with open(executable_filename, "rb") as file:
-            for byte_block in iter(lambda: file.read(4096), b""):
+            for byte_block in iter(lambda: file.read(8192), b""):
                 sha256_hash.update(byte_block)
         sha256_checksum = sha256_hash.hexdigest()
 
