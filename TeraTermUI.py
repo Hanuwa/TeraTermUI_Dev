@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/19/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/20/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -285,34 +285,38 @@ class TeraTermUI(customtkinter.CTk):
                                                  font=customtkinter.CTkFont(size=20, weight="bold"))
         self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
         self.logo_label.bind("<Button-1>", lambda event: self.focus_set())
-        self.status_button = CustomButton(self.sidebar_frame, text="     Status", image=self.get_image("status"),
-                                          command=self.status_button_event, anchor="w")
-        self.status_tooltip = CTkToolTip(self.status_button, message="See the status and the state\n"
-                                                                     " of the application", bg_color="#1E90FF")
-        self.status_button.grid(row=1, column=0, padx=20, pady=10)
-        self.help_button = CustomButton(self.sidebar_frame, text="       Help", image=self.get_image("help"),
-                                        command=self.help_button_event, anchor="w")
-        self.help_tooltip = CTkToolTip(self.help_button, message="Contains useful utilities for the user",
-                                       bg_color="#1E90FF")
-        self.help_button.grid(row=2, column=0, padx=20, pady=10)
-        self.scaling_label = customtkinter.CTkLabel(self.sidebar_frame, text="Language, Appearance and\n\n"
-                                                                             "UI Scaling", anchor="w")
-        self.scaling_label_tooltip = CTkToolTip(self.scaling_label, message="Change the language, the theme and "
-                                                                            "the\nscaling of the widgets of the "
-                                                                            "application.\nThese settings are saved so "
-                                                                            "next time you open\nthe app you won't have"
-                                                                            " to reconfigured them", bg_color="#1E90FF")
-        self.scaling_label.bind("<Button-1>", lambda event: self.focus_set())
-        self.scaling_label.grid(row=5, column=0, padx=20, pady=(10, 10))
         self.language_menu = customtkinter.CTkOptionMenu(self.sidebar_frame, values=["English", "Español"],
                                                          canvas_takefocus=False, command=self.change_language_event,
                                                          corner_radius=13)
         self.language_menu.grid(row=6, column=0, padx=20, pady=(10, 10))
-        self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame, corner_radius=13,
-                                                                       canvas_takefocus=False,
-                                                                       values=["Dark", "Light", "System"],
-                                                                       command=self.change_appearance_mode_event)
-        self.appearance_mode_optionemenu.set("System")
+        # Storing translations for languages in cache to reuse
+        SPANISH = 0x0A
+        language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
+        if language_id & 0xFF == SPANISH:
+            self.language_menu.set("Español")
+        self.translations_cache = {}
+        self.curr_lang = self.language_menu.get()
+        translation = self.load_language()
+        self.status_button = CustomButton(self.sidebar_frame, text=translation["status_button"],
+                                          image=self.get_image("status"), command=self.status_button_event, anchor="w")
+        self.status_tooltip = CTkToolTip(self.status_button, message="See the status and the state\n"
+                                                                     " of the application", bg_color="#1E90FF")
+        self.status_button.grid(row=1, column=0, padx=20, pady=10)
+        self.help_button = CustomButton(self.sidebar_frame, text=translation["help_button"],
+                                        image=self.get_image("help"), command=self.help_button_event, anchor="w")
+        self.help_tooltip = CTkToolTip(self.help_button, message=translation["help_tooltip"],
+                                       bg_color="#1E90FF")
+        self.help_button.grid(row=2, column=0, padx=20, pady=10)
+        self.scaling_label = customtkinter.CTkLabel(self.sidebar_frame, text=translation["option_label"], anchor="w")
+        self.scaling_label_tooltip = CTkToolTip(self.scaling_label, message=translation["option_label_tooltip"],
+                                                bg_color="#1E90FF")
+        self.scaling_label.bind("<Button-1>", lambda event: self.focus_set())
+        self.scaling_label.grid(row=5, column=0, padx=20, pady=(10, 10))
+        self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(
+            self.sidebar_frame, corner_radius=13, canvas_takefocus=False, values=[
+                translation["dark"], translation["light"], translation["default"]],
+            command=self.change_appearance_mode_event)
+        self.appearance_mode_optionemenu.set(translation["default"])
         self.curr_appearance = self.appearance_mode_optionemenu.get()
         self.appearance_mode_optionemenu.grid(row=7, column=0, padx=20, pady=(10, 10))
         self.scaling_slider = customtkinter.CTkSlider(self.sidebar_frame, from_=97, to=103, number_of_steps=2,
@@ -332,20 +336,20 @@ class TeraTermUI(customtkinter.CTk):
         self.home_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
         self.home_frame.bind("<Button-1>", lambda event: self.focus_set())
         self.home_frame.grid(row=0, column=1, rowspan=5, columnspan=5, padx=(0, 0), pady=(0, 0))
-        self.introduction = customtkinter.CTkLabel(self.home_frame, text="UPRB Enrollment Process",
+        self.introduction = customtkinter.CTkLabel(self.home_frame, text=translation["introduction"],
                                                    font=customtkinter.CTkFont(size=20, weight="bold"))
         self.introduction.bind("<Button-1>", lambda event: self.focus_set())
         self.introduction.grid(row=0, column=1, columnspan=2, padx=(20, 0), pady=(20, 0))
-        self.host = customtkinter.CTkLabel(self.home_frame, text="Host")
+        self.host = customtkinter.CTkLabel(self.home_frame, text=translation["host"])
         self.host.grid(row=2, column=1, padx=(0, 170), pady=(15, 15))
         self.host.bind("<Button-1>", lambda event: self.focus_set())
         self.host_entry = CustomEntry(self.home_frame, self, self.language_menu.get(),
-                                      placeholder_text="myhost.example.edu")
+                                      placeholder_text=translation["host_placeholder"])
         self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(15, 15))
-        self.host_tooltip = CTkToolTip(self.host_entry, message="Enter the name of the server\n of the university",
+        self.host_tooltip = CTkToolTip(self.host_entry, message=translation["host_tooltip"],
                                        bg_color="#1E90FF")
-        self.log_in = CustomButton(self.home_frame, border_width=2, text="Log-In", text_color=("gray10", "#DCE4EE"),
-                                   command=self.login_event_handler)
+        self.log_in = CustomButton(self.home_frame, border_width=2, text=translation["log_in"],
+                                   text_color=("gray10", "#DCE4EE"), command=self.login_event_handler)
         self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(15, 15))
         self.log_in.configure(state="disabled")
         self.slideshow_frame = ImageSlideshow(self.home_frame, TeraTermUI.get_absolute_path("slideshow"),
@@ -353,31 +357,7 @@ class TeraTermUI(customtkinter.CTk):
         self.slideshow_frame.grid(row=1, column=1, padx=(20, 0), pady=(140, 0))
         self.intro_box = CustomTextBox(self.home_frame, self, read_only=True, lang=self.language_menu.get(),
                                        height=120, width=400)
-        self.intro_box.insert("0.0", "Welcome to the Tera Term UI Application!\n\n" +
-                              "The purpose of this application"
-                              " is to facilitate the process enrolling and dropping classes, "
-                              "since Tera Term uses a terminal interface, "
-                              "it's hard for new users to use and learn how to navigate and do things in "
-                              "Tera Term. "
-                              "This application has a very nice and clean user interface that most users are "
-                              "used to.\n\n" +
-                              "There's a few things you should know before using this tool: \n\n" +
-                              "The application is very early in development, which means it still got things to work, "
-                              "fix and implement. "
-                              "Right now, the applications lets you do the essentials like enrolling/dropping classes, "
-                              "searching for the sections of the classes and modifying currently enrolled classes. "
-                              "Other functionality will/might be implemented later down the road, "
-                              "the priority right now is getting the user experience right, everything must looks nice"
-                              " and be easy to understand. "
-                              + "Everything you input here is stored locally, meaning only you can access the "
-                                "information"
-                                " so you will not have to worry about securities issues plus for sensitive information "
-                                "like the Social Security Number, they get encrypted using AES. \n\n" +
-                              "Thanks for using our application, for more information, help and to customize your "
-                              "experience"
-                              " make sure to click the buttons on the sidebar, the application is also planned to be"
-                              " open source for anyone who is interested in working/seeing the project. \n\n" +
-                              "IMPORTANT: DO NOT USE WHILE HAVING ANOTHER INSTANCE OF THE APPLICATION OPENED.""")
+        self.intro_box.insert("0.0", translation["intro_box"])
         self.intro_box.configure(state="disabled", wrap="word", border_spacing=7)
         self.intro_box.grid(row=1, column=1, padx=(20, 0), pady=(0, 150))
 
@@ -680,11 +660,6 @@ class TeraTermUI(customtkinter.CTk):
         self.last_switch_time = 0
         self.last_remove_time = 0
         self.enrollment_error_check = 0
-        # Storing translations for languages in cache to reuse
-        self.translations_cache = {}
-        self.curr_lang = self.language_menu.get()
-        SPANISH = 0x0A
-        language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
         # System tray for the application
         self.tray = pystray.Icon("tera-term", Image.open(self.icon_path), "Tera Term UI", self.create_tray_menu())
         self.tray.run_detached()
@@ -749,9 +724,7 @@ class TeraTermUI(customtkinter.CTk):
             valid_languages = {"English", "Español"}
             valid_appearance = {"System", "Sistema", "Dark", "Oscuro", "Light", "Claro"}
             language_to_set = None
-            if not results["language"] and language_id & 0xFF == SPANISH:
-                language_to_set = "Español"
-            elif results["language"] and results["language"] != self.language_menu.get():
+            if results["language"] and results["language"] != self.language_menu.get():
                 if results["language"] in valid_languages:
                     language_to_set = results["language"]
             if language_to_set:
@@ -811,7 +784,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.intro_box.stop_autoscroll(event=None)
                 # Pop up message that appears only the first time the user uses the application
                 def show_message_box():
-                    translation = self.load_language()
                     if not self.disable_audio:
                         winsound.PlaySound(TeraTermUI.get_absolute_path("sounds/welcome.wav"), winsound.SND_ASYNC)
                     CTkMessagebox(title=translation["welcome_title"], message=translation["welcome_message"],
@@ -5933,6 +5905,8 @@ class TeraTermUI(customtkinter.CTk):
             self.help.attributes("-disabled", True)
         if self.status is not None and self.status.winfo_exists():
             self.status.attributes("-disabled", True)
+        if self.timer_window is not None and self.timer_window.winfo_exists():
+            self.timer_window.attributes("-disabled", True)
         self.disable_widgets(self, self.help, self.status)
         self.loading_screen_start_time = time.time()
         return self.loading_screen
@@ -5984,6 +5958,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.help.attributes("-disabled", False)
             if self.status is not None and self.status.winfo_exists():
                 self.status.attributes("-disabled", False)
+            if self.timer_window is not None and self.timer_window.winfo_exists():
+                self.timer_window.attributes("-disabled", False)
             self.after(0, self.update_widgets)
             if self.loading_screen is not None and self.loading_screen.winfo_exists():
                 self.loading_screen.withdraw()
