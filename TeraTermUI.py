@@ -178,7 +178,7 @@ class TeraTermUI(customtkinter.CTk):
         self.REAZIONE = self.ottenere_protetta_salasana()
         self.USER_APP_VERSION = "0.9.0"
         self.mode = "Portable"
-        self.updater_hash = "bf128fa1472658f1d2deab7210f8ae9e2e26460780051f5f660ce74c758efcc6"
+        self.updater_hash = "8b48c5ff978128d560f30b4a883a9150d5906b168ae9a308784ff470f062bc00"
         self.update_db = False
         self.running_updater = False
         self.credentials = None
@@ -10404,7 +10404,7 @@ class TeraTermUI(customtkinter.CTk):
         main_drive = os.path.abspath(os.sep)
         base_paths = [
             os.path.join(main_drive, "Program Files (x86)"),
-            os.path.join(main_drive, "Program Files"),
+            os.path.join(main_drive, "Program Files")
         ]
         possible_dirs = []
 
@@ -10428,10 +10428,15 @@ class TeraTermUI(customtkinter.CTk):
         elif possible_dirs:
             return possible_dirs[0]
 
-        for base_path in base_paths:
-            glob_matches = glob.glob(os.path.join(base_path, "teraterm*"))
-            if glob_matches:
-                return glob_matches[0]
+        full_search_path = os.path.join(main_drive, "teraterm*")
+        full_possible_dirs = glob.glob(full_search_path, recursive=True)
+
+        for directory in full_possible_dirs:
+            if "teraterm5" in directory:
+                return directory
+
+        if full_possible_dirs:
+            return full_possible_dirs[0]
 
         return None
 
