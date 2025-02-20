@@ -593,7 +593,7 @@ def fetch_checksums_and_urls(version):
                 if asset_name == f"TeraTermUI-v{version}.zip":
                     result["portable"]["url"] = asset.get("browser_download_url")
                     logging.info(f"Found portable download URL: {result['portable']['url']}")
-                elif asset_name == f"TeraTermUI_64-bit_Installer-v{version}.exe":
+                elif asset_name == f"TeraTermUI_x64_Installer-v{version}.exe":
                     result["installer"]["url"] = asset.get("browser_download_url")
                     logging.info(f"Found installer download URL: {result['installer']['url']}")
 
