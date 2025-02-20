@@ -241,7 +241,7 @@ try:
             if line.startswith("#define MyAppVersion"):
                 line = '#define MyAppVersion "' + update_without_v + '"\n'
             elif line.startswith("OutputBaseFilename="):
-                line = 'OutputBaseFilename="TeraTermUI_64-bit_Installer-' + update + '"\n'
+                line = 'OutputBaseFilename="TeraTermUI_x64_Installer-' + update + '"\n'
             file.write(line)
     print(Fore.GREEN + "\nSuccessfully created distribution directory\n" + Style.RESET_ALL)
 except PermissionError as e:
@@ -478,8 +478,8 @@ for version in versions:
             os.remove(program_backup)
             print(Fore.RED + f"Error compiling Inno Setup script: {e}\n" + Style.RESET_ALL)
         try:
-            installer_executable_path = output_directory + "/TeraTermUI_64-bit_Installer-" + update + ".exe"
-            shutil.move(output_directory + "/output/TeraTermUI_64-bit_Installer-" + update + ".exe", output_directory)
+            installer_executable_path = output_directory + "/TeraTermUI_x64_Installer-" + update + ".exe"
+            shutil.move(output_directory + "/output/TeraTermUI_x64_Installer-" + update + ".exe", output_directory)
             shutil.rmtree(output_directory + "/output")
             installer_checksum = generate_checksum(None, installer_executable_path)
             print(Fore.GREEN + "Successfully completed installer version\n" + Style.RESET_ALL)
