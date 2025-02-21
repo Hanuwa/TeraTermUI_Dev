@@ -155,9 +155,11 @@ class TeraTermUI(customtkinter.CTk):
         scaling_factor = self.tk.call("tk", "scaling")
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
-        x = (screen_width - width * scaling_factor) / 2
-        y = (screen_height - height * scaling_factor) / 2
-        self.geometry(f"{width}x{height}+{int(x) + 90}+{int(y + 50)}")
+        offset_x = 90
+        offset_y = 50
+        x = (screen_width - width * scaling_factor) / 2 + offset_x
+        y = (screen_height - height * scaling_factor) / 2 + offset_y
+        self.geometry(f"{width}x{height}+{int(x)}+{int(y)}")
         self.icon_path = TeraTermUI.get_absolute_path("images/tera-term.ico")
         self.iconbitmap(self.icon_path)
         self.bind("<Button-2>", lambda event: self.focus_set())
@@ -5224,11 +5226,14 @@ class TeraTermUI(customtkinter.CTk):
         target_y = tk_y + offset_y
         # Get current position of the Tera Term window
         current_x, current_y = window.left, window.top
-        # Step size and delay time
-        step_size = 25
-        delay_time = 0.01
+        # Check if the window is already in the correct position
+        if (current_x, current_y) == (target_x, target_y):
+            return
         # Move the Tera Term window
         while (current_x, current_y) != (target_x, target_y):
+            distance = abs(target_x - current_x) + abs(target_y - current_y)
+            step_size = max(5, min(40, distance // 12))
+            delay_time = max(0.003, min(0.010, distance / 4000))
             if current_x < target_x:
                 current_x += min(step_size, target_x - current_x)
             elif current_x > target_x:
