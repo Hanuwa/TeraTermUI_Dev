@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/20/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/22/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -2224,7 +2224,7 @@ class TeraTermUI(customtkinter.CTk):
         self.destroy_tooltip()
         self.multiple_frame.grid(row=0, column=1, columnspan=4, rowspan=4, padx=(0, 0), pady=(0, 50))
         self.multiple_frame.grid_columnconfigure(2, weight=1)
-        self.m_button_frame.grid(row=3, column=1, columnspan=4, rowspan=4, padx=(0, 0), pady=(0, 10))
+        self.m_button_frame.grid(row=3, column=1, columnspan=4, rowspan=4, padx=(0, 0), pady=(0, 11))
         self.m_button_frame.grid_columnconfigure(2, weight=1)
         self.save_frame.grid(row=3, column=2, padx=(0, 50), pady=(0, 8), sticky="e")
         self.save_frame.grid_columnconfigure(2, weight=1)
