@@ -274,12 +274,13 @@ class CTkScrollableFrame(tkinter.Frame, CTkAppearanceModeBaseClass, CTkScalingBa
         relative_position_top = widget_y - visible_top
         relative_position_bottom = widget_y + widget_height - visible_bottom
 
+        scroll_margin = 25
         if relative_position_top >= 0 and relative_position_bottom <= 0:
-            return
+            return 
         if relative_position_top < 0:
-            self.after(0, self._parent_canvas.yview_scroll(int(relative_position_top), "units"))
+            self.after(0, self._parent_canvas.yview_scroll(int(relative_position_top - scroll_margin), "units"))
         elif relative_position_bottom > 0:
-            self.after(0, self._parent_canvas.yview_scroll(int(relative_position_bottom), "units"))
+            self.after(0, self._parent_canvas.yview_scroll(int(relative_position_bottom + scroll_margin), "units"))
 
     def _set_shift_state(self, state: bool) -> None:
         self._shift_pressed = state
