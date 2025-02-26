@@ -11,7 +11,25 @@ are included here because they have some modifications.
 
 Priorities of the development of the application is working on improving the UI since it's a bit too simple and not polished,
 funtionality wise the application is mostly feature-complete but it could use some performance/optimization improvements since
-the application sometimes suffers from slowdows which can make it feel sluggish to use. Works on both Tera Term 5 and 4
+the application sometimes suffers from slowdows which can make it feel sluggish to use. Works on both Tera Term 5 and 4.
+
+# Setting up the environment
+To automate the building process, this project includes a **setup.py** file. However, **Tesseract requires manual installation**, 
+as its installer does not support silent execution. Follow the steps below to configure it correctly:
+
+1. **Run the Tesseract installer** (triggered by the setup script).
+2. **Select installation type**: Choose **"Install just for me"**.
+3. **Customize installation options**:
+   - **Untick**:
+     - ScrollView
+     - Training Tools
+     - Shortcuts creation
+4. **Set the installation path**:
+   - Install Tesseract in a folder named **`Tesseract-OCR`** at the **root** of the project directory.
+5. **Finalize setup**:
+   - Tick **"Do not create shortcuts"** before proceeding with the installation.
+
+After installation, the setup script will ensure Tesseract is properly configured for the project.
 
 # Tesseract OCR
 Must install this application under a folder within the TeraTermUI project called "Tesseract-OCR".
