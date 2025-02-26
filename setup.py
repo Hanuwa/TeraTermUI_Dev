@@ -298,7 +298,7 @@ def install_msvc():
         "--add", "Microsoft.VisualStudio.Workload.VCTools",  
         "--add", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",  
         "--add", "Microsoft.VisualStudio.Component.Windows10SDK.19041",  
-        "--add", "Microsoft.VisualStudio.Component.VC.CMake.Project"
+        "--add", "Microsoft.VisualStudio.Component.VC.CMake.Project"],
         check=True, startupinfo=startupinfo
     )
     os.remove(installer_filename)
