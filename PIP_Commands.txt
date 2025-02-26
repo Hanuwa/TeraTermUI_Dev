@@ -15,7 +15,7 @@ Latest release of Tera Term UI,
 
 Release Date: ** **
 
-**Tera Term must be installed in your computer (Windows Only)**
+**Tera Term must be installed on your computer (Windows Only)**  <img src="https://raw.githubusercontent.com/Hanuwa/TeraTermUI/main/win11icon.png" alt="Windows" width="25" height="25"/>
 
 1. Portable Version (Zip File) - **Checksum** : ``` ```
 2. Installation File (64-Bit) - **Checksum** : ``` ```
