@@ -1,10 +1,10 @@
+import ctypes
 import os
-import sys
-import time
 import shutil
 import subprocess
+import sys
+import time
 import urllib.request
-import ctypes
 import winreg
 
 PYTHON_REQUIRED = (3, 12, 9)
