@@ -38,6 +38,7 @@ because we don't have access to the database of the University and to error proo
 the Social Security Number we have no way of validating that information so what we do is after the action is performed on Tera Term,
 we take a screenshot of the result and perform OCR using Tesseract to see if an error occured within Tera Term. 
 Now using this tool we can now stop the execution of code and show error message within our app if the user did something wrong. 
+The folder gets compressed into a 7zip archive
 https://github.com/UB-Mannheim/tesseract/wiki
 
 # GUI Framework
