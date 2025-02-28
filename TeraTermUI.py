@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/25/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 2/28/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -9724,7 +9724,8 @@ class TeraTermUI(customtkinter.CTk):
         async with ClientSession(connector=TCPConnector(limit=5)) as session:
             tasks = [asyncio.create_task(TeraTermUI.fetch(session, url)) for url in urls]
             done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-            connected = any(task.result() for task in done if isinstance(task.result(), bool) and task.result() is True)
+            connected = any(task.result() for task in done if not task.exception()
+                            and isinstance(task.result(), bool) and task.result())
             for task in pending:
                 task.cancel()
             if not connected:
