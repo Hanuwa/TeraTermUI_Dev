@@ -34,9 +34,9 @@ CTK_FOLDERS = {
         "ctk_switch.py", "ctk_tabview.py", "ctk_textbox.py"
     ],
     "appearance_mode": ["appearance_mode_tracker.py"],
-    "core_rendering": ["ctk_canvas.py", "ctk_draw_engine.py"],
+    "core_rendering": ["ctk_canvas.py", "draw_engine.py"],
     "core_widget_classes": ["ctk_base_class.py", "dropdown_menu.py"],
-    "font": ["ctk_font.py", "font_manager.py"],
+    "font": ["ctk_font.py"],
     "image": ["ctk_image.py"],
     "scaling": ["scaling_base_class.py", "scaling_tracker.py"],
     "theme": ["theme_manager.py"]
@@ -112,14 +112,6 @@ def move_ctk_files():
                 print(f"[WARNING] {file} not found in modules")
     if os.path.exists("modules"):
         shutil.rmtree("modules")
-    for extra in ["PIP_Commands.txt", "README.md"]:
-        extra_path = os.path.join(ROOT_DIR, extra)
-        if os.path.exists(extra_path):
-            os.remove(extra_path)
-    license_path = os.path.join(ROOT_DIR, "LICENSE")
-    if os.path.exists(license_path):
-        new_license_path = os.path.join(ROOT_DIR, "LICENSE.txt")
-        os.rename(license_path, new_license_path)
 
 def install_tesseract():
     if not os.path.exists(TESSERACT_DIR):
@@ -319,6 +311,14 @@ def copy_dist_files():
             print(f"[OK] Copied '{file}' to root")
         else:
             print(f"[WARNING] '{file}' not found in 'dist'. Skipping")
+    for extra in ["PIP_Commands.txt", "README.md"]:
+        extra_path = os.path.join(ROOT_DIR, extra)
+        if os.path.exists(extra_path):
+            os.remove(extra_path)
+    license_path = os.path.join(ROOT_DIR, "LICENSE")
+    if os.path.exists(license_path):
+        new_license_path = os.path.join(ROOT_DIR, "LICENSE.txt")
+        os.rename(license_path, new_license_path)
 
 def main():
     print("|-----------------------------------------------------|")
@@ -331,10 +331,10 @@ def main():
     create_virtualenv()
     install_dependencies()
     move_ctk_files()
+    copy_dist_files()
     install_tesseract()
     install_inno_setup()
     install_msvc()
-    copy_dist_files()
     print("\n[SETUP COMPLETE] Your Dev environment is ready to use!")
     input("Press Enter to exit...")
 
