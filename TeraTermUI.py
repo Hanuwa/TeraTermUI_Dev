@@ -1329,7 +1329,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.timeout_occurred = False
 
                     self.after(100, error_automation)
-                TeraTermUI.disable_user_input()
+                TeraTermUI.manage_user_input()
 
     def student_info_frame(self):
         if not self.init_multiple:
@@ -1685,7 +1685,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.after(100, error_automation)
                 if not self.not_rebind:
                     self.after(350, self.bind, "<Return>", lambda event: self.submit_event_handler())
-                TeraTermUI.disable_user_input()
+                TeraTermUI.manage_user_input()
 
     def search_event_handler(self):
         loading_screen = self.show_loading_screen()
@@ -1737,9 +1737,9 @@ class TeraTermUI(customtkinter.CTk):
                                 logging.error(f"An error occurred while saving clipboard content: {err}")
                             if self.search_function_counter == 0 and "\"R-AOOO7" not in text_output and \
                                     "*R-A0007" not in text_output:
-                                TeraTermUI.disable_user_input()
+                                TeraTermUI.manage_user_input()
                                 self.automate_copy_class_data()
-                                TeraTermUI.disable_user_input("on")
+                                TeraTermUI.manage_user_input("on")
                                 copy = pyperclip.paste()
                                 data, course_found, invalid_action, \
                                     y_n_found, y_n_value, term_value = TeraTermUI.extract_class_data(copy)
@@ -1822,10 +1822,10 @@ class TeraTermUI(customtkinter.CTk):
                                                translation["failed_to_search"])
                                 self.search_function_counter += 1
                             else:
-                                TeraTermUI.disable_user_input()
+                                TeraTermUI.manage_user_input()
                                 self.search_function_counter += 1
                                 self.automate_copy_class_data()
-                                TeraTermUI.disable_user_input("on")
+                                TeraTermUI.manage_user_input("on")
                                 copy = pyperclip.paste()
                                 data, course_found, invalid_action, \
                                     y_n_found, y_n_value, term_value = TeraTermUI.extract_class_data(copy)
@@ -1878,7 +1878,7 @@ class TeraTermUI(customtkinter.CTk):
 
                     self.after(100, error_automation)
                 self.after(350, self.bind, "<Return>", lambda event: self.search_event_handler())
-                TeraTermUI.disable_user_input()
+                TeraTermUI.manage_user_input()
                 self.search_event_completed = True
 
     def search_next_page_layout(self):
@@ -2048,9 +2048,9 @@ class TeraTermUI(customtkinter.CTk):
                                         self.clipboard_handler.save_clipboard_content()
                                 except Exception as err:
                                     logging.error(f"An error occurred while saving clipboard content: {err}")
-                                TeraTermUI.disable_user_input()
+                                TeraTermUI.manage_user_input()
                                 self.automate_copy_class_data()
-                                TeraTermUI.disable_user_input("on")
+                                TeraTermUI.manage_user_input("on")
                                 copy = pyperclip.paste()
                                 enrolled_classes, total_credits = self.extract_my_enrolled_classes(copy)
                                 self.after(0, self.enable_widgets, self)
@@ -2097,7 +2097,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.timeout_occurred = False
 
                     self.after(100, error_automation)
-                TeraTermUI.disable_user_input()
+                TeraTermUI.manage_user_input()
                 self.my_classes_event_completed = True
 
     # function that adds new entries
@@ -2537,7 +2537,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.after(100, error_automation)
                 if not self.not_rebind:
                     self.after(350, self.bind, "<Return>", lambda event: self.submit_multiple_event_handler())
-                TeraTermUI.disable_user_input()
+                TeraTermUI.manage_user_input()
 
     def option_menu_event_handler(self):
         loading_screen = self.show_loading_screen()
@@ -2872,7 +2872,7 @@ class TeraTermUI(customtkinter.CTk):
 
                     self.after(100, error_automation)
                 self.after(350, self.bind, "<Return>", lambda event: self.option_menu_event_handler())
-                TeraTermUI.disable_user_input()
+                TeraTermUI.manage_user_input()
                 self.option_menu_event_completed = True
 
     def sign_out(self):
@@ -2959,7 +2959,7 @@ class TeraTermUI(customtkinter.CTk):
 
                     self.after(100, error_automation)
                 self.after(350, self.bind, "<Return>", lambda event: self.option_menu_event_handler())
-                TeraTermUI.disable_user_input()
+                TeraTermUI.manage_user_input()
                 self.go_next_event_completed = True
 
     def go_next_search_handler(self):
@@ -2984,9 +2984,9 @@ class TeraTermUI(customtkinter.CTk):
                                 self.clipboard_handler.save_clipboard_content()
                         except Exception as err:
                             logging.error(f"An error occurred while saving clipboard content: {err}")
-                        TeraTermUI.disable_user_input()
+                        TeraTermUI.manage_user_input()
                         self.automate_copy_class_data()
-                        TeraTermUI.disable_user_input("on")
+                        TeraTermUI.manage_user_input("on")
                         copy = pyperclip.paste()
                         data, course_found, invalid_action, \
                             y_n_found, y_n_value, term_value = TeraTermUI.extract_class_data(copy)
@@ -3036,7 +3036,7 @@ class TeraTermUI(customtkinter.CTk):
 
                     self.after(100, error_automation)
                 self.after(350, self.bind, "<Return>", lambda event: self.search_event_handler())
-                TeraTermUI.disable_user_input()
+                TeraTermUI.manage_user_input()
                 self.search_go_next_event_completed = True
 
     # disable these buttons if the user changed screen
@@ -3159,7 +3159,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.after(0, self.go_back_home)
                 if self.log_in.cget("state") == "disabled":
                     self.log_in.configure(state="normal")
-                TeraTermUI.disable_user_input()
+                TeraTermUI.manage_user_input()
                 self.curr_skipping_auth = False
 
     def auth_info_frame(self):
@@ -3443,7 +3443,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.timeout_occurred = False
 
                     self.after(100, error_automation)
-                TeraTermUI.disable_user_input()
+                if not self.skip_auth:
+                    TeraTermUI.manage_user_input()
 
     def login_frame(self):
         lang = self.language_menu.get()
@@ -4862,9 +4863,9 @@ class TeraTermUI(customtkinter.CTk):
                             if "LISTA DE SECCIONES" in text_output:
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}")
                                 self.reset_activity_timer()
-                            TeraTermUI.disable_user_input()
+                            TeraTermUI.manage_user_input()
                             self.automate_copy_class_data()
-                            TeraTermUI.disable_user_input("on")
+                            TeraTermUI.manage_user_input("on")
                             copy = pyperclip.paste()
                             turno_index = copy.find("TURNO MATRICULA:")
                             sliced_text = copy[turno_index:]
@@ -4968,7 +4969,7 @@ class TeraTermUI(customtkinter.CTk):
 
                     self.after(100, error_automation)
                 self.after(350, self.bind, "<Return>", lambda event: self.submit_multiple_event_handler())
-                TeraTermUI.disable_user_input()
+                TeraTermUI.manage_user_input()
 
     # Starts the enrollment countdown when the auto-enroll process is activated
     def countdown(self, pr_date):
@@ -7458,9 +7459,9 @@ class TeraTermUI(customtkinter.CTk):
     def handle_current_semester(self):
         if not self.found_latest_semester:
             time.sleep(1)
-            TeraTermUI.disable_user_input()
+            TeraTermUI.manage_user_input()
             self.automate_copy_class_data()
-            TeraTermUI.disable_user_input("on")
+            TeraTermUI.manage_user_input("on")
             copy = pyperclip.paste()
             latest_term = TeraTermUI.get_latest_term(copy)
             if latest_term == "Latest term not found":
@@ -8251,9 +8252,9 @@ class TeraTermUI(customtkinter.CTk):
                                     except Exception as err:
                                         logging.error(f"An error occurred while saving clipboard content: {err}")
                                     time.sleep(1)
-                                    TeraTermUI.disable_user_input()
+                                    TeraTermUI.manage_user_input()
                                     self.automate_copy_class_data()
-                                    TeraTermUI.disable_user_input("on")
+                                    TeraTermUI.manage_user_input("on")
                                     copy = pyperclip.paste()
                                     enrolled_classes, total_credits = self.extract_my_enrolled_classes(copy)
                                     self.after(0, self.display_enrolled_data, enrolled_classes,
@@ -8405,7 +8406,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.after(100, error_automation)
                 if not self.not_rebind:
                     self.after(350, self.bind, "<Return>", lambda event: self.submit_modify_classes_handler())
-                TeraTermUI.disable_user_input()
+                TeraTermUI.manage_user_input()
 
     # checks whether the program can continue its normal execution or if the server is on maintenance
     def wait_for_prompt(self, prompt_text, maintenance_text, timeout=15):
@@ -9033,7 +9034,7 @@ class TeraTermUI(customtkinter.CTk):
                     stack.append(widget)
 
     @staticmethod
-    def disable_user_input(state="off"):
+    def manage_user_input(state="off"):
         if TeraTermUI.is_admin():
             if state == "on":
                 ctypes.windll.user32.BlockInput(True)
@@ -9046,7 +9047,7 @@ class TeraTermUI(customtkinter.CTk):
         self.unbind("<Return>")
         TeraTermUI.check_and_update_border_color(self)
         self.destroy_tooltip()
-        TeraTermUI.disable_user_input("on")
+        TeraTermUI.manage_user_input("on")
         self.timeout_occurred = False
 
     # function that changes the theme of the application
@@ -9415,7 +9416,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.timeout_occurred = False
 
                     self.after(100, error_automation)
-                TeraTermUI.disable_user_input()
+                TeraTermUI.manage_user_input()
                 self.fix_execution_event_completed = True
 
     @staticmethod
