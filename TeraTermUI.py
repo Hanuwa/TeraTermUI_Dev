@@ -3443,8 +3443,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.timeout_occurred = False
 
                     self.after(100, error_automation)
-                if not self.skip_auth:
-                    TeraTermUI.manage_user_input()
+                TeraTermUI.manage_user_input()
 
     def login_frame(self):
         lang = self.language_menu.get()
