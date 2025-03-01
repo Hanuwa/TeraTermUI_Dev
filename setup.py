@@ -1,5 +1,6 @@
 import ctypes
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -278,7 +279,14 @@ def install_msvc():
     if cl_path:
         print(f"[OK] MSVC Compiler is already installed")
         return
-
+    
+    os_version = platform.version()
+    print(f"[INFO] Detected Windows Version: {os_version}")
+    sdk_component = None
+    if "10" in os_version:
+        sdk_component = "Microsoft.VisualStudio.Component.Windows10SDK.20348"
+    elif "11" in os_version:
+        sdk_component = "Microsoft.VisualStudio.Component.Windows11SDK.26100"
     print("[INFO] Installing MSVC Compiler... (this might take a while)")
     installer_filename = "vs_build_tools.exe"
     urllib.request.urlretrieve(MSVC_URL, installer_filename)
@@ -288,7 +296,8 @@ def install_msvc():
     subprocess.run(
         [installer_filename, "--quiet", "--wait", "--norestart", 
         "--add", "Microsoft.VisualStudio.Workload.VCTools",  
-        "--add", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64"],
+        "--add", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+        "--add", sdk_component],
         check=True, startupinfo=startupinfo
     )
     os.remove(installer_filename)
