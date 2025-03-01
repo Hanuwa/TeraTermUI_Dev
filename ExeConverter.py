@@ -323,7 +323,7 @@ except Exception as e:
     print(Fore.RED + f"An error occurred: {e}\n" + Style.RESET_ALL)
     sys.exit(1)
 try:
-    connection = sqlite3.connect(f"C:/Users/{username}/PycharmProjects/TeraTermUI/database.db")
+    connection = sqlite3.connect(project_directory + "/database.db")
     cursor = connection.cursor()
     cursor.execute("DELETE FROM user_data")
     cursor.execute("DELETE FROM saved_classes")
