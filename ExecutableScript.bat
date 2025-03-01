@@ -26,7 +26,16 @@ if '%errorlevel%' NEQ '0' (
     CD /D "%~dp0"
 :--------------------------------------
 
-:: Check if colorama is installed
+:: Check if virtual environment exists
+if not exist "%CD%\.venv\Scripts\activate.bat" (
+    echo Virtual environment not found
+    goto RunScript
+)
+
+:: Activate the virtual environment
+call "%CD%\.venv\Scripts\activate.bat"
+
+:: Check if colorama is installed in the virtual environment
 python -c "import colorama" >nul 2>&1
 if '%errorlevel%' NEQ '0' (
     goto InstallColorama
@@ -35,11 +44,11 @@ if '%errorlevel%' NEQ '0' (
 )
 
 :InstallColorama
-:: Run command to install colorama
+:: Install colorama in the virtual environment
 echo Installing colorama...
 pip install colorama
 if '%errorlevel%' NEQ '0' (
-    echo Failed to install colorama. Please install it manually.
+    echo Failed to install colorama. Please install it manually
     pause
     exit /B
 )
@@ -50,7 +59,7 @@ echo.
 python ExeConverter.py %*
 
 if '%errorlevel%' NEQ '0' (
-    echo Failed to run ExeConverter.py. Please check the script for errors.
+    echo Failed to run ExeConverter.py. Please check the script for errors
     pause
     exit /B
 )
