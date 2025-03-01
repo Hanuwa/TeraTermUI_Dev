@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 2/28/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/1/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -381,6 +381,7 @@ class TeraTermUI(customtkinter.CTk):
         self.skip_auth = False
         self.ask_skip_auth = False
         self.skipped_login = False
+        self.curr_skipping_auth = False
 
         # Student Information
         self.init_student = False
@@ -3074,8 +3075,8 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     username = "students"
                 translation = self.load_language()
-                if asyncio.run(self.test_connection()) and self.check_server():
-                    if TeraTermUI.checkIfProcessRunning("ttermpro"):
+                if self.skip_auth or (asyncio.run(self.test_connection()) and self.check_server()):
+                    if self.skip_auth or TeraTermUI.checkIfProcessRunning("ttermpro"):
                         allowed_roles = {"students", "student", "estudiantes", "estudiante"}
                         if username in allowed_roles:
                             username = "students"
@@ -3159,6 +3160,7 @@ class TeraTermUI(customtkinter.CTk):
                 if self.log_in.cget("state") == "disabled":
                     self.log_in.configure(state="normal")
                 TeraTermUI.disable_user_input()
+                self.curr_skipping_auth = False
 
     def auth_info_frame(self):
         lang = self.language_menu.get()
@@ -3467,6 +3469,7 @@ class TeraTermUI(customtkinter.CTk):
             self.after(100, self.auth_event_handler)
             self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_home())
         self.main_menu = False
+        self.curr_skipping_auth = True
         if self.help is not None and self.help.winfo_exists():
             self.files.configure(state="disabled")
         self.intro_box.stop_autoscroll(event=None)
@@ -5963,7 +5966,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.loading_screen.lower()
                 self.loading_screen.lift()
                 self.lift_loading_screen()
-        if future.done() or current_time - self.loading_screen_start_time > 90:
+        if (not self.curr_skipping_auth and future.done()) or (current_time - self.loading_screen_start_time > 90):
             self.attributes("-disabled", False)
             if self.help is not None and self.help.winfo_exists():
                 self.help.attributes("-disabled", False)
@@ -9688,8 +9691,10 @@ class TeraTermUI(customtkinter.CTk):
     async def fetch(session, url):
         from aiohttp import ClientConnectionError
 
+        headers = {"User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                                  "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")}
         try:
-            async with session.head(url, timeout=5.0) as response:
+            async with session.head(url, timeout=5.0, headers=headers) as response:
                 if response.status == 200:
                     return True
                 logging.error(f"Non-200 response code with HEAD: {response.status}")
@@ -9701,7 +9706,7 @@ class TeraTermUI(customtkinter.CTk):
             logging.error(f"An unexpected error occurred during HEAD request: {err}")
 
         try:
-            async with session.get(url, timeout=5.0) as response:
+            async with session.get(url, timeout=5.0, headers=headers) as response:
                 if response.status == 200:
                     return True
                 logging.error(f"Non-200 response code with GET: {response.status}")
