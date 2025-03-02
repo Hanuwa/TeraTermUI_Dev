@@ -3427,6 +3427,7 @@ class TeraTermUI(customtkinter.CTk):
                     logging.error("An error occurred: %s", error_message)
                     self.error_occurred = True
                     self.log_error()
+                self.curr_skipping_auth = False
             finally:
                 self.after(100, self.set_focus_to_tkinter)
                 if self.error_occurred and not self.timeout_occurred:
