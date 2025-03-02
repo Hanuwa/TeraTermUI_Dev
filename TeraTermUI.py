@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/1/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/2/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -3388,6 +3388,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.in_auth_frame = True
                             else:
                                 self.after(0, self.log_in.configure(state="disabled"))
+                                self.curr_skipping_auth = True
                             self.after(50, self.login_frame)
                         except AppStartError as err:
                             logging.error("An error occurred: %s", err)
@@ -3469,7 +3470,6 @@ class TeraTermUI(customtkinter.CTk):
             self.after(100, self.auth_event_handler)
             self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_home())
         self.main_menu = False
-        self.curr_skipping_auth = True
         if self.help is not None and self.help.winfo_exists():
             self.files.configure(state="disabled")
         self.intro_box.stop_autoscroll(event=None)
@@ -9704,22 +9704,33 @@ class TeraTermUI(customtkinter.CTk):
             logging.error(f"HEAD request to {url} timed out")
         except Exception as err:
             logging.error(f"An unexpected error occurred during HEAD request: {err}")
-
-        try:
-            async with session.get(url, timeout=5.0, headers=headers) as response:
-                if response.status == 200:
-                    return True
-                logging.error(f"Non-200 response code with GET: {response.status}")
+        delay = 1
+        retries = 5
+        for attempt in range(retries):
+            try:
+                async with session.get(url, timeout=5.0, headers=headers) as response:
+                    if response.status == 200:
+                        return True
+                    elif response.status == 429:
+                        retry_after = response.headers.get("Retry-After")
+                        if retry_after and retry_after.isdigit():
+                            delay = int(retry_after)
+                        logging.warning(f"GET request to {url} rate-limited. Retrying in {delay} seconds...")
+                        await asyncio.sleep(delay)
+                        delay *= 2
+                        continue
+                    logging.error(f"Non-200 response code with GET: {response.status}")
+                    return False
+            except ClientConnectionError:
+                logging.error(f"Failed to connect to {url} with GET request")
                 return False
-        except ClientConnectionError:
-            logging.error(f"Failed to connect to {url} with GET request")
-            return False
-        except asyncio.TimeoutError:
-            logging.error(f"GET request to {url} timed out")
-            return False
-        except Exception as err:
-            logging.error(f"An unexpected error occurred during GET request: {err}")
-            return False
+            except asyncio.TimeoutError:
+                logging.error(f"GET request to {url} timed out")
+                return False
+            except Exception as err:
+                logging.error(f"An unexpected error occurred during GET request: {err}")
+                return False
+        return False
 
     async def test_connection(self):
         from aiohttp import ClientSession, TCPConnector
