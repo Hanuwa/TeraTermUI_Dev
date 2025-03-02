@@ -55,7 +55,7 @@ def is_admin():
 
 def force_admin():
     if not is_admin():
-        time.sleep(2)
+        time.sleep(1)
         python_required_str = '.'.join(map(str, PYTHON_REQUIRED))
         python_exe = find_python_312()
         if not python_exe:
@@ -234,6 +234,17 @@ def install_inno_setup():
         else:
             print("[WARNING] Inno Setup installation could not be fully verified")
 
+def ensure_msvc_in_path(new_path):
+    key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment", 0, winreg.KEY_ALL_ACCESS)
+    try:
+        current_path, _ = winreg.QueryValueEx(key, "Path")
+        if new_path.lower() not in current_path.lower():
+            new_path_value = f"{current_path};{new_path}"
+            winreg.SetValueEx(key, "Path", 0, winreg.REG_EXPAND_SZ, new_path_value)
+            print(f"[OK] Added {new_path} to system PATH")
+    finally:
+        winreg.CloseKey(key)
+
 def detect_msvc():
     vswhere_path = r"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
     if os.path.exists(vswhere_path):
@@ -275,18 +286,25 @@ def detect_msvc():
     return None
 
 def install_msvc():
-    cl_path = detect_msvc()
-    if cl_path:
-        print(f"[OK] MSVC Compiler is already installed")
-        return
-    
     os_version = platform.version()
     print(f"[INFO] Detected Windows Version: {os_version}")
     sdk_component = None
+    sdk_version = None
     if "10" in os_version:
+        sdk_version = "10.0.20348.0"
         sdk_component = "Microsoft.VisualStudio.Component.Windows10SDK.20348"
     elif "11" in os_version:
+        sdk_version = "10.0.26100.0"
         sdk_component = "Microsoft.VisualStudio.Component.Windows11SDK.26100"
+    else:
+        raise ValueError(f"Unsupported OS version: {os_version}")
+    sdk_path = fr"C:\Program Files (x86)\Windows Kits\10\bin\{sdk_version}\x64"
+    cl_path = detect_msvc()
+    if cl_path:
+        print(f"[OK] MSVC Compiler is already installed")
+        ensure_msvc_in_path(sdk_path)
+        return
+    
     print("[INFO] Installing MSVC Compiler... (this might take a while)")
     installer_filename = "vs_build_tools.exe"
     urllib.request.urlretrieve(MSVC_URL, installer_filename)
@@ -304,6 +322,7 @@ def install_msvc():
     cl_path = detect_msvc()
     if cl_path:
         print(f"[OK] MSVC Compiler installed at: {cl_path}")
+        ensure_msvc_in_path(sdk_path)
     else:
         print("[ERROR] MSVC Compiler installation failed to detect cl.exe.")
 
