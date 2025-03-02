@@ -55,7 +55,6 @@ def is_admin():
 
 def force_admin():
     if not is_admin():
-        time.sleep(1)
         python_required_str = '.'.join(map(str, PYTHON_REQUIRED))
         python_exe = find_python_312()
         if not python_exe:
@@ -63,6 +62,7 @@ def force_admin():
             input("Press Enter to exit...")
             sys.exit(1)
         print(f"[INFO] Restarting as admin using {python_exe} (Python {python_required_str})...")
+        time.sleep(2)
         script_path = os.path.abspath(__file__)
         cmd = f'powershell -Command "Start-Process \'{python_exe}\' -ArgumentList \'{script_path}\' -Verb RunAs"'
         subprocess.run(cmd, shell=True)
