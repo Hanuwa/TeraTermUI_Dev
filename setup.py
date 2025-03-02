@@ -55,7 +55,7 @@ def is_admin():
 
 def force_admin():
     if not is_admin():
-        python_required_str = '.'.join(map(str, PYTHON_REQUIRED))
+        python_required_str = ".".join(map(str, PYTHON_REQUIRED))
         python_exe = find_python_312()
         if not python_exe:
             print(f"[ERROR] Python {python_required_str} not found")
