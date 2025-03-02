@@ -180,7 +180,7 @@ class TeraTermUI(customtkinter.CTk):
         self.REAZIONE = self.ottenere_protetta_salasana()
         self.USER_APP_VERSION = "0.9.0"
         self.mode = "Portable"
-        self.updater_hash = "fe5eb143d0f0ad539e29319da58f0329cdf336dcbb7fec61b95c08c2e7e8feaa"
+        self.updater_hash = "074b0989e6222d650360dcc470c22bd39ba7c1c60413164407c49709f01f3c15"
         self.update_db = False
         self.running_updater = False
         self.credentials = None
