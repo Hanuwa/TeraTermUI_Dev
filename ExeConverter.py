@@ -502,7 +502,7 @@ for version in versions:
                 jaraco_folder = os.path.join(output_directory, "TeraTermUI", "jaraco")
                 if os.path.exists(jaraco_folder) and os.path.isdir(jaraco_folder):
                     shutil.rmtree(jaraco_folder)
-                zip_file_path = output_directory + f"/{app_folder}-" + update + ""
+                zip_file_path = output_directory + f"/{app_folder}_x64-" + update + ""
                 shutil.make_archive(zip_file_path, "zip", output_directory, app_folder)
                 version_path = os.path.join(output_directory, app_folder, "VERSION.txt")
                 destination_path = os.path.join(project_directory, "VERSION.txt")
