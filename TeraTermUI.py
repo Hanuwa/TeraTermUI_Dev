@@ -6659,7 +6659,7 @@ class TeraTermUI(customtkinter.CTk):
 
         available_key = translation["av"]
         available_values = sorted([row[available_key] for row in modified_data])
-        duplicate_index = self.find_duplicate(self.get_class_for_table, self.get_semester_for_table, 
+        duplicate_index = self.find_duplicate(self.get_class_for_table, self.get_semester_for_table,
                                               self.show_all_sections, available_values)
         if duplicate_index is not None:
             _, _, _, _, existing_available_values, _ = self.class_table_pairs[duplicate_index]
@@ -6792,7 +6792,7 @@ class TeraTermUI(customtkinter.CTk):
             self.sort_by_tooltip = CTkToolTip(self.sort_by, message=translation["sort_by_tooltip"],
                                               bg_color="#1E90FF")
 
-        self.class_table_pairs.append((display_class, new_table, self.get_semester_for_table, self.show_all_sections, 
+        self.class_table_pairs.append((display_class, new_table, self.get_semester_for_table, self.show_all_sections,
                                        available_values, self.search_next_page_status))
         if self.sort_by is not None and self.sort_by.get() != translation["sort_by"] and \
                 self.sort_by.get() != translation["original_data"]:
