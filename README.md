@@ -14,7 +14,7 @@ funtionality wise the application is mostly feature-complete but it could use so
 the application sometimes suffers from slowdows which can make it feel sluggish to use. Works on both Tera Term 5 and 4.
 
 # Setting up the environment
-To automate the building process, this project includes a **setup.py** file. However, **Tesseract requires manual installation**, 
+To automate the building process, this project includes a **setup.py** file that will create the dev environment, download and install anything that is necessary and organize the files and folders properly. However, **Tesseract requires manual installation**, 
 as its installer does not support silent execution. Follow the steps below to configure it correctly:
 
 1. **Run the Tesseract installer** (triggered by the setup script).
