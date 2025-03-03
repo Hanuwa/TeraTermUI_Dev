@@ -7095,21 +7095,18 @@ class TeraTermUI(customtkinter.CTk):
 
     def check_and_update_labels(self):
         class_info = {}
+        all_semesters = set()
         for display_class, _, semester, _, _, _ in self.class_table_pairs:
             display_class_text = display_class.cget("text").split("-")[0].strip()
             if display_class_text not in class_info:
                 class_info[display_class_text] = []
             class_info[display_class_text].append((display_class, semester))
+            all_semesters.add(semester)
 
+        multiple_semesters_exist = len(all_semesters) > 1
         for display_class_text, class_semesters in class_info.items():
-            if len(class_semesters) > 1:
-                for display_class, semester in class_semesters:
-                    new_text = f"{display_class_text} - {semester}"
-                    if display_class.cget("text") != new_text:
-                        display_class.configure(text=new_text)
-            else:
-                display_class, _ = class_semesters[0]
-                new_text = display_class_text
+            for display_class, semester in class_semesters:
+                new_text = f"{display_class_text} - {semester}" if multiple_semesters_exist else display_class_text
                 if display_class.cget("text") != new_text:
                     display_class.configure(text=new_text)
 
