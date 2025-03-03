@@ -3163,8 +3163,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
                 self.log_error()
             finally:
+                self.after(125, self.set_focus_to_tkinter)
                 self.reset_activity_timer()
-                self.after(100, self.set_focus_to_tkinter)
                 if self.server_status == "Maintenance message found" or self.server_status == "Timeout":
                     self.after(3500, self.go_back_home)
                 elif self.error_occurred:
