@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/2/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/3/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -192,10 +192,10 @@ class TeraTermUI(customtkinter.CTk):
         self.down_arrow_key_enabled = True
 
         # Installer Directories
-        self.scope, _ = TeraTermUI.get_installation_scope()
+        scope, _ = TeraTermUI.get_installation_scope()
         if self.mode == "Installation":
-            if self.scope in ["all_users", "current_user"]:
-                appdata_path = os.environ.get("PROGRAMDATA") if self.scope == "all_users" else os.environ.get("APPDATA")
+            if scope in ["all_users", "current_user"]:
+                appdata_path = os.environ.get("PROGRAMDATA") if scope == "all_users" else os.environ.get("APPDATA")
                 self.db_path = os.path.join(appdata_path, "TeraTermUI", "database.db")
                 self.ath = os.path.join(appdata_path, "TeraTermUI", "feedback.zip")
                 self.logs = os.path.join(appdata_path, "TeraTermUI", "logs.txt")
@@ -1154,7 +1154,7 @@ class TeraTermUI(customtkinter.CTk):
             # Create a separator based on the length of the error message
             separator = "-" * error_length + "\n"
             if self.mode == "Installation":
-                scope, install_path = self.scope
+                scope, install_path = TeraTermUI.get_installation_scope()
                 if scope in ["all_users", "current_user"]:
                     tera_term_ui_path = install_path
                 else:
@@ -1241,7 +1241,8 @@ class TeraTermUI(customtkinter.CTk):
                              (student_id.isdigit() and len(student_id) == 9)) and code.isdigit() and len(code) == 4):
                             secure_delete(student_id)
                             secure_delete(code)
-                            self.wait_for_window()
+                            if not self.wait_for_window():
+                                return
                             student_id_dec = aes_decrypt_and_verify_mac(student_id_enc, aes_key, mac_key)
                             code_dec = aes_decrypt_and_verify_mac(code_enc, aes_key, mac_key)
                             self.uprb.UprbayTeraTermVt.type_keys("{TAB}" + student_id_dec + code_dec + "{ENTER}")
@@ -1528,7 +1529,8 @@ class TeraTermUI(customtkinter.CTk):
                             if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes)
                                     and re.fullmatch("^[A-Z]{2}[A-Z0-9]$", section)
                                     and (re.fullmatch("^[A-Z][0-9]{2}$", semester) or semester == curr_sem)):
-                                self.wait_for_window()
+                                if not self.wait_for_window():
+                                    return
                                 self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}1S4")
                                 if semester == curr_sem:
                                     result = self.handle_current_semester()
@@ -1708,7 +1710,8 @@ class TeraTermUI(customtkinter.CTk):
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes) and (
                                 re.fullmatch("^[A-Z][0-9]{2}$", semester) or semester == curr_sem)):
-                            self.wait_for_window()
+                            if not self.wait_for_window():
+                                return
                             self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}1CS")
                             if semester == curr_sem:
                                 result = self.handle_current_semester()
@@ -2029,7 +2032,8 @@ class TeraTermUI(customtkinter.CTk):
                 if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if re.fullmatch("^[A-Z][0-9]{2}$", dialog_input) or dialog_input == curr_sem:
-                            self.wait_for_window()
+                            if not self.wait_for_window():
+                                return
                             self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}1CP")
                             if dialog_input == curr_sem:
                                 result = self.handle_current_semester()
@@ -2386,7 +2390,8 @@ class TeraTermUI(customtkinter.CTk):
                 if asyncio.run(self.test_connection()) and self.check_server() and self.check_format():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if can_enroll_classes:
-                            self.wait_for_window()
+                            if not self.wait_for_window():
+                                return
                             self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}1S4")
                             if semester == curr_sem:
                                 result = self.handle_current_semester()
@@ -2589,7 +2594,8 @@ class TeraTermUI(customtkinter.CTk):
                         if menu and menu in valid_menu_options and (
                                 re.fullmatch("^[A-Z][0-9]{2}$", semester) or semester == curr_sem):
                             if menu != "SO":
-                                self.wait_for_window()
+                                if not self.wait_for_window():
+                                    return
                             result = None
                             if semester == curr_sem:
                                 if not self.found_latest_semester:
@@ -2887,7 +2893,8 @@ class TeraTermUI(customtkinter.CTk):
         response = msg.get()
         if TeraTermUI.checkIfProcessRunning("ttermpro") and response[0] == "Yes" \
                 or response[0] == "Sí":
-            self.wait_for_window()
+            if not self.wait_for_window():
+                return
             self.uprb.UprbayTeraTermVt.type_keys("SO{ENTER}")
             self.after(0, self.disable_go_next_buttons)
         elif not TeraTermUI.checkIfProcessRunning("ttermpro") and response[0] == "Yes" \
@@ -2910,7 +2917,8 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language()
                 if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
-                        self.wait_for_window()
+                        if not self.wait_for_window():
+                            return
                         if self._1VE_screen:
                             self.uprb.UprbayTeraTermVt.type_keys("{TAB 3}{ENTER}")
                             self.reset_activity_timer()
@@ -2978,7 +2986,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.automation_preparations()
                 if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
-                        self.wait_for_window()
+                        if not self.wait_for_window():
+                            return
                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                         time.sleep(0.5)
                         try:
@@ -3082,7 +3091,8 @@ class TeraTermUI(customtkinter.CTk):
                         allowed_roles = {"students", "student", "estudiantes", "estudiante"}
                         if username in allowed_roles:
                             username = "students"
-                            self.wait_for_window()
+                            if not self.wait_for_window():
+                                return
                             TeraTermUI.check_window_exists("SSH Authentication")
                             ssh_auth_window = self.uprb.UprbayTeraTermVt
                             user_field = ssh_auth_window.child_window(title="User name:", control_type="Edit")
@@ -4858,7 +4868,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.auto_enroll_flag = True
                 if asyncio.run(self.test_connection()) and self.check_server() and self.check_format():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
-                        self.wait_for_window()
+                        if not self.wait_for_window():
+                            return
                         self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}")
                         self.after(0, self.disable_go_next_buttons)
                         text_output = self.capture_screenshot()
@@ -8153,7 +8164,8 @@ class TeraTermUI(customtkinter.CTk):
                                     edge_cases_classes_met.append(course_code_no_section)
                                     self.after(0, mod_selection.configure(button_color="#c30101"))
                         if not_all_choose and section_pattern and not edge_cases_bool:
-                            self.wait_for_window()
+                            if not self.wait_for_window():
+                                return
                             self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}1S4" + dialog_input + "{ENTER}")
                             self.after(0, self.disable_go_next_buttons)
                             text_output = self.capture_screenshot()
@@ -8457,12 +8469,19 @@ class TeraTermUI(customtkinter.CTk):
             elif self.went_to_683_screen and self.run_fix:
                 self.uprb.UprbayTeraTermVt.type_keys("00{ENTER}")
                 self.went_to_683_screen = False
+            return True
         except Exception as err:
             logging.error("An error occurred: %s", err)
+            translation = self.load_language()
             self.search_function_counter = 0
             self.e_counter = 0
             self.m_counter = 0
             self.classes_status.clear()
+            count, is_multiple = TeraTermUI.countRunningProcesses("ttermpro")
+            if is_multiple:
+                self.after(100, self.show_error_message, 450, 270,
+                           translation["count_processes"])
+                return False
             self.connect_to_uprb()
             if not TeraTermUI.window_exists("SSH Authentication") and \
                     not TeraTermUI.window_exists("Tera Term - [disconnected] VT"):
@@ -8479,6 +8498,7 @@ class TeraTermUI(customtkinter.CTk):
                     else:
                         self.uprb.UprbayTeraTermVt.type_keys("{VK_RIGHT}{VK_LEFT}")
             self.move_window()
+            return True
 
     # checks whether the user has the requested file
     @staticmethod
@@ -9342,9 +9362,10 @@ class TeraTermUI(customtkinter.CTk):
                 shutil.copy2(str(updater_exe_src), str(updater_exe_dest))
             elif self.mode == "Installation":
                 appdata_path = None
-                if self.scope == "all_users":
+                scope, _ = TeraTermUI.get_installation_scope()
+                if scope == "all_users":
                     appdata_path = os.environ.get("PROGRAMDATA")
-                elif self.scope == "current_user":
+                elif scope == "current_user":
                     appdata_path = os.environ.get("APPDATA")
                 if appdata_path:
                     updater_exe_src = Path(appdata_path) / "TeraTermUI" / "updater.exe"
@@ -9383,7 +9404,8 @@ class TeraTermUI(customtkinter.CTk):
             try:
                 translation = self.load_language()
                 self.automation_preparations()
-                self.wait_for_window()
+                if not self.wait_for_window():
+                    return
                 if self.search_function_counter == 0:
                     text_output = self.capture_screenshot()
                     if "INVALID ACTION" in text_output and "LISTA DE SECCIONES" in text_output:
