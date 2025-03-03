@@ -180,7 +180,7 @@ class TeraTermUI(customtkinter.CTk):
         self.REAZIONE = self.ottenere_protetta_salasana()
         self.USER_APP_VERSION = "0.9.0"
         self.mode = "Portable"
-        self.updater_hash = "074b0989e6222d650360dcc470c22bd39ba7c1c60413164407c49709f01f3c15"
+        self.updater_hash = "e9b47fe2a85b0e0e783ace0c65445c76a4b292158b4fcfa4bf1a504b6dfcafca"
         self.update_db = False
         self.running_updater = False
         self.credentials = None
@@ -223,8 +223,8 @@ class TeraTermUI(customtkinter.CTk):
         self.idle_warning = None
         self.back_checkbox_state = None
         self.exit_checkbox_state = None
-        self.get_class_for_pdf = None
-        self.get_semester_for_pdf = None
+        self.get_class_for_table = None
+        self.get_semester_for_table = None
         self.show_all_sections = None
         self.download_search_pdf = None
         self.download_enrolled_pdf = None
@@ -1722,7 +1722,7 @@ class TeraTermUI(customtkinter.CTk):
                                     semester = result
                             self.uprb.UprbayTeraTermVt.type_keys(semester + "{ENTER}")
                             self.after(0, self.disable_go_next_buttons)
-                            if self.search_function_counter == 0 or semester != self.get_semester_for_pdf:
+                            if self.search_function_counter == 0 or semester != self.get_semester_for_table:
                                 text_output = self.capture_screenshot()
                                 if "INVALID TERM SELECTION" in text_output:
                                     self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER + "SRM{ENTER}")
@@ -1768,8 +1768,8 @@ class TeraTermUI(customtkinter.CTk):
                                             self.search_next_page_status = False
 
                                         self.after(0, hide_next_button)
-                                    self.get_class_for_pdf = classes
-                                    self.get_semester_for_pdf = semester
+                                    self.get_class_for_table = classes
+                                    self.get_semester_for_table = semester
                                     self.show_all_sections = show_all
                                     self.after(0, self.display_searched_class_data, data)
                                     self.clipboard_clear()
@@ -1779,7 +1779,7 @@ class TeraTermUI(customtkinter.CTk):
                                     except Exception as err:
                                         logging.error(f"An error occurred while restoring clipboard content: {err}")
                                     return
-                            if not (self.get_class_for_pdf == classes and self.get_semester_for_pdf != semester and
+                            if not (self.get_class_for_table == classes and self.get_semester_for_table != semester and
                                     show_all == self.show_all_sections):
                                 if self.search_function_counter == 0:
                                     self.uprb.UprbayTeraTermVt.type_keys(classes)
@@ -1831,8 +1831,8 @@ class TeraTermUI(customtkinter.CTk):
                                 if data or course_found or invalid_action or y_n_found:
                                     self.search_function_counter += 1
                                 if classes in copy and show_all == y_n_value and semester == term_value:
-                                    self.get_class_for_pdf = classes
-                                    self.get_semester_for_pdf = semester
+                                    self.get_class_for_table = classes
+                                    self.get_semester_for_table = semester
                                     self.show_all_sections = show_all
                                 self.after(0, self.display_searched_class_data, data)
                                 self.clipboard_clear()
@@ -3010,10 +3010,10 @@ class TeraTermUI(customtkinter.CTk):
 
                             self.after(0, hide_next_button)
                         section = self.s_classes_entry.get().upper().replace(" ", "").replace("-", "")
-                        if section != self.get_class_for_pdf:
+                        if section != self.get_class_for_table:
                             self.s_classes_entry.configure(state="normal")
                             self.s_classes_entry.delete(0, "end")
-                            self.s_classes_entry.insert(0, self.get_class_for_pdf)
+                            self.s_classes_entry.insert(0, self.get_class_for_table)
                             self.s_classes_entry.configure(state="disabled")
                     else:
                         self.after(100, self.show_error_message, 300, 215,
@@ -6659,8 +6659,8 @@ class TeraTermUI(customtkinter.CTk):
 
         available_key = translation["av"]
         available_values = sorted([row[available_key] for row in modified_data])
-        duplicate_index = self.find_duplicate(self.get_class_for_pdf, self.get_semester_for_pdf, self.show_all_sections,
-                                              available_values)
+        duplicate_index = self.find_duplicate(self.get_class_for_table, self.get_semester_for_table, 
+                                              self.show_all_sections, available_values)
         if duplicate_index is not None:
             _, _, _, _, existing_available_values, _ = self.class_table_pairs[duplicate_index]
             if sorted(existing_available_values) != available_values:
@@ -6698,7 +6698,7 @@ class TeraTermUI(customtkinter.CTk):
             if matched_index is not None:
                 display_class = self.hidden_labels.pop(matched_index)
                 new_table = self.hidden_tables.pop(matched_index)
-                display_class.configure(text=self.get_class_for_pdf)
+                display_class.configure(text=self.get_class_for_table)
                 instructor_col_index = headers.index(translation["instructor"])
                 new_table.edit_column(instructor_col_index, width=140)
                 last_column_index = new_table.columns - 1
@@ -6717,13 +6717,13 @@ class TeraTermUI(customtkinter.CTk):
                                 break
                     display_class = self.hidden_labels.pop(best_index)
                     new_table = self.hidden_tables.pop(best_index)
-                    display_class.configure(text=self.get_class_for_pdf)
+                    display_class.configure(text=self.get_class_for_table)
                     new_table.refresh_table(table_values)
         else:
             new_table = CTkTable(self.search_scrollbar, column=len(headers), row=len(table_values),
                                  values=table_values, header_color="#145DA0", hover_color="#339CFF", command=lambda row,
                                  col: self.copy_cell_data_to_clipboard(new_table.get_cell(row, col)))
-            display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_pdf,
+            display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_table,
                                                    font=customtkinter.CTkFont(size=15, weight="bold", underline=True))
             display_class.bind("<Button-1>", lambda event: self.focus_set())
 
@@ -6792,8 +6792,8 @@ class TeraTermUI(customtkinter.CTk):
             self.sort_by_tooltip = CTkToolTip(self.sort_by, message=translation["sort_by_tooltip"],
                                               bg_color="#1E90FF")
 
-        self.class_table_pairs.append((display_class, new_table, self.get_semester_for_pdf,
-                                       self.show_all_sections, available_values, self.search_next_page_status))
+        self.class_table_pairs.append((display_class, new_table, self.get_semester_for_table, self.show_all_sections, 
+                                       available_values, self.search_next_page_status))
         if self.sort_by is not None and self.sort_by.get() != translation["sort_by"] and \
                 self.sort_by.get() != translation["original_data"]:
             self.last_sort_option = (self.sort_by.get(), len(self.class_table_pairs))
@@ -7104,11 +7104,16 @@ class TeraTermUI(customtkinter.CTk):
             all_semesters.add(semester)
 
         multiple_semesters_exist = len(all_semesters) > 1
+        updated_labels = []
         for display_class_text, class_semesters in class_info.items():
             for display_class, semester in class_semesters:
                 new_text = f"{display_class_text} - {semester}" if multiple_semesters_exist else display_class_text
-                if display_class.cget("text") != new_text:
-                    display_class.configure(text=new_text)
+                current_text = display_class.cget("text")
+                if current_text != new_text:
+                    updated_labels.append((display_class, new_text))
+
+        for display_class, new_text in updated_labels:
+            display_class.configure(text=new_text)
 
     def display_current_table(self):
         translation = self.load_language()
@@ -7118,7 +7123,7 @@ class TeraTermUI(customtkinter.CTk):
             curr_table.grid_forget()
 
         # Show the current display_class and table
-        display_class, curr_table, _, _, _, _ = self.class_table_pairs[self.current_table_index]
+        display_class, curr_table, semester, _, _, _ = self.class_table_pairs[self.current_table_index]
         table_position_label = (f" {translation['table_position']}{self.current_table_index + 1}"
                                 f"/{len(self.class_table_pairs)}")
         if self.table_position.cget("text") != table_position_label:
@@ -7130,8 +7135,11 @@ class TeraTermUI(customtkinter.CTk):
         section = self.s_classes_entry.get().upper().replace(" ", "").replace("-", "")
         display_class_text = display_class.cget("text").split(" ")[0]
         if section != display_class_text and self.loading_screen_status is None:
-            self.s_classes_entry.delete(0, "end")
-            self.s_classes_entry.insert(0, display_class_text)
+            if self.s_classes_entry.get() != display_class_text:
+                self.s_classes_entry.delete(0, "end")
+                self.s_classes_entry.insert(0, display_class_text)
+            if self.s_semester_entry.get() != semester:
+                self.s_semester_entry.set(semester)
         self.after(0, self.focus_set)
 
     def update_buttons(self):
