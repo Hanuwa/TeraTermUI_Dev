@@ -252,7 +252,7 @@
 	"unknown_error": "¡Error Desconocido!",
 	"timeout_server": "¡Error! No se pudo conectar al servidor de la universidad, esto puede ser porque hay mucho tráfico y el servidor está en su capacidad máxima",
 	"invalid_username": "¡Error! Usuario Incorrecto",
-	"tera_term_already_running": "¡Error! No es posible conectarse al servidor\n\nsi otra instancia de Tera Term ya está corriendo",
+	"tera_term_failed_to_connect": "¡Error! No se pudo conectar a\n\nla instancia de Tera Term",
 	"tera_term_failed_to_start": "¡Error! No se pudo iniciar la aplicación.\n\nLa localización de tu Tera Term\n\nes diferente de la normal, presiona\n\nel botón de \"Ayuda\" para encontrarlo",
 	"invalid_host": "¡Error! Servidor Incorrecto",
 	"count_processes": "¡Error! Tienes más de una instancia de Tera Term\n\nabierta. Elige cuál sesión deseas usar\n\ny cierra las demás",
