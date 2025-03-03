@@ -1823,15 +1823,17 @@ class TeraTermUI(customtkinter.CTk):
                                 self.search_function_counter += 1
                             else:
                                 TeraTermUI.manage_user_input()
-                                self.search_function_counter += 1
                                 self.automate_copy_class_data()
                                 TeraTermUI.manage_user_input("on")
                                 copy = pyperclip.paste()
                                 data, course_found, invalid_action, \
                                     y_n_found, y_n_value, term_value = TeraTermUI.extract_class_data(copy)
-                                self.get_class_for_pdf = classes
-                                self.get_semester_for_pdf = semester
-                                self.show_all_sections = show_all
+                                if data or course_found or invalid_action or y_n_found:
+                                    self.search_function_counter += 1
+                                if classes in copy and show_all == y_n_value and semester == term_value:
+                                    self.get_class_for_pdf = classes
+                                    self.get_semester_for_pdf = semester
+                                    self.show_all_sections = show_all
                                 self.after(0, self.display_searched_class_data, data)
                                 self.clipboard_clear()
                                 try:
@@ -3500,6 +3502,9 @@ class TeraTermUI(customtkinter.CTk):
         elif TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT") and not skip:
             self.connect_to_uprb()
             text_output = self.capture_screenshot()
+            if "PF4=exit" in text_output or "press PF4" in text_output:
+                self.uprb.UprbayTeraTermVt.type_keys("^v")
+                text_output = self.capture_screenshot()
             to_continue = "return to continue"
             count_to_continue = text_output.count(to_continue)
             if "REGRESE PRONTO" in text_output:
@@ -3564,12 +3569,12 @@ class TeraTermUI(customtkinter.CTk):
                 self.move_window()
             else:
                 self.after(350, self.bind, "<Return>", lambda event: self.login_event_handler())
-                self.after(100, self.show_error_message, 450, 265,
-                           translation["tera_term_already_running"])
+                self.after(100, self.show_error_message, 315, 235,
+                           translation["tera_term_failed_to_connect"])
         else:
             self.after(350, self.bind, "<Return>", lambda event: self.login_event_handler())
-            self.after(100, self.show_error_message, 450, 265,
-                       translation["tera_term_already_running"])
+            self.after(100, self.show_error_message, 315, 235,
+                       translation["tera_term_failed_to_connect"])
 
     def connect_to_uprb(self):
         self.uprb = Application(backend="uia").connect(
@@ -9386,9 +9391,9 @@ class TeraTermUI(customtkinter.CTk):
                 if "INVALID ACTION" in text_output:
                     self.uprb.UprbayTeraTermVt.type_keys("{TAB}SRM" + self.DEFAULT_SEMESTER + "{ENTER}")
                     self.reset_activity_timer()
-                elif "PF4" in text_output:
-                    self.error_occurred = True
-                    self.after(250, self.go_back_home)
+                elif "PF4=exit" in text_output or "press PF4" in text_output:
+                    self.uprb.UprbayTeraTermVt.type_keys("^v")
+                    self.reset_activity_timer()
                 self.classes_status.clear()
                 self.cursor.execute("UPDATE user_data SET default_semester=NULL")
                 self.connection.commit()
@@ -9737,7 +9742,7 @@ class TeraTermUI(customtkinter.CTk):
         from aiohttp import ClientSession, TCPConnector
 
         translation = self.load_language()
-        urls = ["https://www.google.com/", "https://www.bing.com/", "https://www.yahoo.com/"]
+        urls = ["https://www.google.com/", "https://www.bing.com/", "https://duckduckgo.com/"]
         async with ClientSession(connector=TCPConnector(limit=5)) as session:
             tasks = [asyncio.create_task(TeraTermUI.fetch(session, url)) for url in urls]
             done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
