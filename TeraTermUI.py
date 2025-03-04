@@ -671,13 +671,13 @@ class TeraTermUI(customtkinter.CTk):
         # default location of Tera Term
         teraterm_directory = TeraTermUI.find_teraterm_directory()
         if teraterm_directory:
-            self.location = os.path.join(teraterm_directory, "ttermpro.exe")
-            self.teraterm_file = os.path.join(teraterm_directory, "TERATERM.ini")
+            self.teraterm_exe_location = os.path.join(teraterm_directory, "ttermpro.exe")
+            self.teraterm_config = os.path.join(teraterm_directory, "TERATERM.ini")
             self.teraterm_directory = teraterm_directory
         else:
             main_drive = os.path.abspath(os.sep)
-            self.location = os.path.join(main_drive, "Program Files (x86)", "teraterm", "ttermpro.exe")
-            self.teraterm_file = os.path.join(main_drive, "Program Files (x86)", "teraterm", "TERATERM.ini")
+            self.teraterm_exe_location = os.path.join(main_drive, "Program Files (x86)", "teraterm", "ttermpro.exe")
+            self.teraterm_config = os.path.join(main_drive, "Program Files (x86)", "teraterm", "TERATERM.ini")
             self.teraterm_directory = os.path.join(main_drive, "Program Files (x86)", "teraterm")
         # Database
         try:
@@ -703,27 +703,27 @@ class TeraTermUI(customtkinter.CTk):
                 query_user = f"SELECT {field} FROM user_data"
                 result = self.cursor.execute(query_user).fetchone()
                 results[field] = result[0] if result else None
-            if results["location"]:
-                if results["location"] != self.location:
-                    if os.path.exists(results["location"]):
-                        self.location = results["location"]
-                    else:
-                        self.cursor.execute("UPDATE user_data SET location=NULL")
             if results["directory"] and results["config"]:
-                if results["directory"] != self.teraterm_directory or results["config"] != self.teraterm_file:
+                if results["directory"] != self.teraterm_directory or results["config"] != self.teraterm_config:
                     if os.path.exists(results["directory"]) and os.path.exists(results["config"]):
-                        self.teraterm_file = results["config"]
+                        self.teraterm_config = results["config"]
                         self.teraterm_directory = results["directory"]
-                        self.edit_teraterm_ini(self.teraterm_file)
+                        self.edit_teraterm_ini(self.teraterm_config)
                         self.can_edit = True
                     else:
                         if not os.path.exists(results["directory"]):
                             self.cursor.execute("UPDATE user_data SET directory=NULL")
                         if not os.path.exists(results["config"]):
                             self.cursor.execute("UPDATE user_data SET config=NULL")
+            if results["location"]:
+                if results["location"] != self.teraterm_exe_location:
+                    if os.path.exists(results["location"]):
+                        self.teraterm_exe_location = results["location"]
+                    else:
+                        self.cursor.execute("UPDATE user_data SET location=NULL")
 
             # performs some operations on separate threads when application starts up
-            self.boot_up(self.teraterm_file)
+            self.boot_up(self.teraterm_config)
 
             if results["host"]:
                 self.host_entry.insert(0, results["host"])
@@ -866,7 +866,7 @@ class TeraTermUI(customtkinter.CTk):
             p = psutil.Process(os.getpid())
             p.nice(psutil.HIGH_PRIORITY_CLASS)
         atexit.register(self.cleanup_temp)
-        atexit.register(self.restore_teraterm_ini, self.teraterm_file)
+        atexit.register(self.restore_teraterm_ini, self.teraterm_config)
         self.after(0, self.unload_image("status"))
         self.after(0, self.unload_image("help"))
         self.after(0, self.set_focus_to_tkinter)
@@ -3350,7 +3350,7 @@ class TeraTermUI(customtkinter.CTk):
                                 return
                         try:
                             if self.teraterm5_first_boot:
-                                first_boot = Application(backend="uia").start(self.location, timeout=3)
+                                first_boot = Application(backend="uia").start(self.teraterm_exe_location, timeout=3)
                                 first_boot.window(title="Tera Term - [disconnected] VT", class_name="VTWin32",
                                                   control_type="Window").wait("visible", timeout=10)
                                 first_boot.connect(title="Tera Term - [disconnected] VT", class_name="VTWin32",
@@ -3358,9 +3358,9 @@ class TeraTermUI(customtkinter.CTk):
                                 first_boot.kill(soft=True)
                                 self.set_focus_to_tkinter()
                             if self.download or self.teraterm_not_found or self.teraterm5_first_boot:
-                                self.edit_teraterm_ini(self.teraterm_file)
+                                self.edit_teraterm_ini(self.teraterm_config)
                             if not new_connection:
-                                self.uprb = Application(backend="uia").start(self.location, timeout=3)
+                                self.uprb = Application(backend="uia").start(self.teraterm_exe_location, timeout=3)
                                 timings.wait_until_passes(10, 1, lambda: self.uprb.window(
                                     title="Tera Term - [disconnected] VT", class_name="VTWin32",
                                     control_type="Window").exists())
@@ -8621,12 +8621,12 @@ class TeraTermUI(customtkinter.CTk):
         # backup for config file of tera term
         if TeraTermUI.is_file_in_directory("ttermpro.exe", self.teraterm_directory):
             minimum_required_version = "5.0.0.0"
-            version = TeraTermUI.get_teraterm_version(self.location)
+            version = TeraTermUI.get_teraterm_version(self.teraterm_exe_location)
             version_parts = list(map(int, version.split(".")))
             compare_version_parts = list(map(int, minimum_required_version.split(".")))
             if version and version_parts >= compare_version_parts:
                 appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
-                if appdata_ini_path:
+                if appdata_ini_path and not os.path.isfile(os.path.join(self.teraterm_directory, "portable.ini")):
                     file_path = appdata_ini_path
                 elif os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
                         and self.has_write_permission():
@@ -8675,10 +8675,7 @@ class TeraTermUI(customtkinter.CTk):
                         lines = file.readlines()
                     for index, line in enumerate(lines):
                         if line.startswith("VTFont="):
-                            current_value = line.strip().split("=")[1]
-                            font_name = current_value.split(",")[0]
-                            updated_value = "Lucida Console" + current_value[len(font_name):]
-                            lines[index] = f"VTFont={updated_value}\n"
+                            lines[index] = "VTFont=Lucida Console,0,-12,255\n"
                         if line.startswith("VTColor=") and not line.startswith(";"):
                             current_value = line.strip().split("=")[1]
                             if current_value != "255,255,255,0,0,0":
@@ -8904,9 +8901,9 @@ class TeraTermUI(customtkinter.CTk):
         self.success.destroy()
         self.success = None
         if self.help is not None and self.help.winfo_exists() and self.changed_location:
+            self.after(250, self.files.configure(state="normal"))
             self.after(250, self.help.lift)
             self.after(250, self.help.focus_set)
-            self.after(250, self.files.configure(state="normal"))
             self.changed_location = False
         gc.collect()
 
@@ -9715,7 +9712,7 @@ class TeraTermUI(customtkinter.CTk):
             self.cursor.execute(f"UPDATE user_data SET {column_name}=?", (new_value,))
         self.connection.commit()
         if source == "tera":
-            self.set_beep_sound(self.teraterm_file, is_on)
+            self.set_beep_sound(self.teraterm_config, is_on)
             self.muted_tera = is_on
         elif source == "app":
             self.muted_app = is_on
@@ -10415,9 +10412,9 @@ class TeraTermUI(customtkinter.CTk):
             self.manually_change_location()
         else:
             if self.help is not None and self.help.winfo_exists():
+                self.files.configure(state="normal")
                 self.help.lift()
                 self.help.focus_set()
-                self.files.configure(state="normal")
 
     # Automatically tries to find where the Tera Term application is located
     def change_location_event(self):
@@ -10425,33 +10422,45 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language()
         tera_term_path = TeraTermUI.find_ttermpro()
         if tera_term_path is not None:
-            self.location = tera_term_path.replace("\\", "/")
-            directory, filename = os.path.split(self.location)
+            self.teraterm_exe_location = os.path.normpath(tera_term_path)
+            directory, filename = os.path.split(self.teraterm_exe_location)
             self.teraterm_directory = directory
-            ini_location = TeraTermUI.find_appdata_teraterm_ini()
-            if ini_location:
-                self.teraterm_file = ini_location
-            elif os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
-                     and self.has_write_permission():
-                self.teraterm_file = os.path.join(self.teraterm_directory, "TERATERM.ini")
+            minimum_required_version = "5.0.0.0"
+            version = TeraTermUI.get_teraterm_version(self.teraterm_exe_location)
+            version_parts = list(map(int, version.split(".")))
+            compare_version_parts = list(map(int, minimum_required_version.split(".")))
+            if version and version_parts >= compare_version_parts:
+                ini_location = TeraTermUI.find_appdata_teraterm_ini()
+                if ini_location and not os.path.isfile(os.path.join(self.teraterm_directory, "portable.ini")):
+                    self.teraterm_config = ini_location
+                else:
+                    if os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
+                            and self.has_write_permission():
+                        self.teraterm_config = os.path.join(self.teraterm_directory, "TERATERM.ini")
+                    else:
+                        self.teraterm5_first_boot = True
             else:
-                self.teraterm5_first_boot = True
+                if os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
+                        and self.has_write_permission():
+                    self.teraterm_config = os.path.join(self.teraterm_directory, "TERATERM.ini")
+                else:
+                    self.teraterm5_first_boot = True
             row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
             if not row_exists:
                 self.cursor.execute(
-                    "INSERT INTO user_data (location, config, directory) VALUES (?, ?, ?)",
-                    (self.location, self.teraterm_file, self.teraterm_directory)
+                    "INSERT INTO user_data (directory, location, config) VALUES (?, ?, ?)",
+                    (self.teraterm_directory, self.teraterm_exe_location, self.teraterm_config)
                 )
             else:
-                self.cursor.execute("UPDATE user_data SET location=?", (self.location,))
-                self.cursor.execute("UPDATE user_data SET config=?", (self.teraterm_file,))
                 self.cursor.execute("UPDATE user_data SET directory=?", (self.teraterm_directory,))
+                self.cursor.execute("UPDATE user_data SET location=?", (self.teraterm_exe_location,))
+                self.cursor.execute("UPDATE user_data SET config=?", (self.teraterm_config,))
             self.connection.commit()
             self.changed_location = True
+            self.edit_teraterm_ini(self.teraterm_config)
             self.after(100, self.show_success_message, 350, 265, translation["tera_term_success"])
-            self.edit_teraterm_ini(self.teraterm_file)
             atexit.unregister(self.restore_teraterm_ini)
-            atexit.register(self.restore_teraterm_ini, self.teraterm_file)
+            atexit.register(self.restore_teraterm_ini, self.teraterm_config)
             if self.help is not None and self.help.winfo_exists():
                 self.files.configure(state="normal")
         else:
@@ -10516,38 +10525,50 @@ class TeraTermUI(customtkinter.CTk):
             initialdir=os.path.abspath(os.sep), title=translation["select_tera_term"],
             filetypes=(("Tera Term", "*ttermpro.exe"),))
         if re.search("ttermpro.exe", filename):
-            self.location = filename.replace("\\", "/")
-            directory, filename = os.path.split(self.location)
+            self.teraterm_exe_location = os.path.normpath(filename)
+            directory, filename = os.path.split(self.teraterm_exe_location)
             self.teraterm_directory = directory
-            ini_location = TeraTermUI.find_appdata_teraterm_ini()
-            if ini_location:
-                self.teraterm_file = ini_location
-            elif os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
-                     and self.has_write_permission():
-                self.teraterm_file = os.path.join(self.teraterm_directory, "TERATERM.ini")
+            minimum_required_version = "5.0.0.0"
+            version = TeraTermUI.get_teraterm_version(self.teraterm_exe_location)
+            version_parts = list(map(int, version.split(".")))
+            compare_version_parts = list(map(int, minimum_required_version.split(".")))
+            if version and version_parts >= compare_version_parts:
+                ini_location = TeraTermUI.find_appdata_teraterm_ini()
+                if ini_location and not os.path.isfile(os.path.join(self.teraterm_directory, "portable.ini")):
+                    self.teraterm_config = ini_location
+                else:
+                    if os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
+                            and self.has_write_permission():
+                        self.teraterm_config = os.path.join(self.teraterm_directory, "TERATERM.ini")
+                    else:
+                        self.teraterm5_first_boot = True
             else:
-                self.teraterm5_first_boot = True
+                if os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
+                        and self.has_write_permission():
+                    self.teraterm_config = os.path.join(self.teraterm_directory, "TERATERM.ini")
+                else:
+                    self.teraterm5_first_boot = True
             row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
             if not row_exists:
                 self.cursor.execute(
-                    "INSERT INTO user_data (location, config, directory) VALUES (?, ?, ?)",
-                    (self.location, self.teraterm_file, self.teraterm_directory)
+                    "INSERT INTO user_data (directory, location, config) VALUES (?, ?, ?)",
+                    (self.teraterm_directory, self.teraterm_exe_location, self.teraterm_config)
                 )
             else:
-                self.cursor.execute("UPDATE user_data SET location=?", (self.location,))
-                self.cursor.execute("UPDATE user_data SET config=?", (self.teraterm_file,))
                 self.cursor.execute("UPDATE user_data SET directory=?", (self.teraterm_directory,))
+                self.cursor.execute("UPDATE user_data SET location=?", (self.teraterm_exe_location,))
+                self.cursor.execute("UPDATE user_data SET config=?", (self.teraterm_config,))
             self.connection.commit()
             self.changed_location = True
+            self.edit_teraterm_ini(self.teraterm_config)
             self.show_success_message(350, 265, translation["tera_term_success"])
-            self.edit_teraterm_ini(self.teraterm_file)
             atexit.unregister(self.restore_teraterm_ini)
-            atexit.register(self.restore_teraterm_ini, self.teraterm_file)
+            atexit.register(self.restore_teraterm_ini, self.teraterm_config)
         if not re.search("ttermpro.exe", filename):
             if self.help is not None and self.help.winfo_exists():
+                self.files.configure(state="normal")
                 self.help.lift()
                 self.help.focus_set()
-                self.files.configure(state="normal")
 
     def is_listbox_focused(self):
         return self.class_list == self.class_list.focus_get()
@@ -10970,12 +10991,12 @@ class TeraTermUI(customtkinter.CTk):
 
         if TeraTermUI.is_file_in_directory("ttermpro.exe", self.teraterm_directory):
             minimum_required_version = "5.0.0.0"
-            version = TeraTermUI.get_teraterm_version(self.location)
+            version = TeraTermUI.get_teraterm_version(self.teraterm_exe_location)
             version_parts = list(map(int, version.split(".")))
             compare_version_parts = list(map(int, minimum_required_version.split(".")))
             if version and version_parts >= compare_version_parts:
                 appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
-                if appdata_ini_path:
+                if appdata_ini_path and not os.path.isfile(os.path.join(self.teraterm_directory, "portable.ini")):
                     file_path = appdata_ini_path
                 elif os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
                         and self.has_write_permission():
@@ -11017,12 +11038,12 @@ class TeraTermUI(customtkinter.CTk):
     def edit_teraterm_ini(self, file_path):
         if TeraTermUI.is_file_in_directory("ttermpro.exe", self.teraterm_directory):
             minimum_required_version = "5.0.0.0"
-            version = TeraTermUI.get_teraterm_version(self.location)
+            version = TeraTermUI.get_teraterm_version(self.teraterm_exe_location)
             version_parts = list(map(int, version.split(".")))
             compare_version_parts = list(map(int, minimum_required_version.split(".")))
             if version and version_parts >= compare_version_parts:
                 appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
-                if appdata_ini_path:
+                if appdata_ini_path and not os.path.isfile(os.path.join(self.teraterm_directory, "portable.ini")):
                     file_path = appdata_ini_path
                 elif os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
                         and self.has_write_permission():
@@ -11068,10 +11089,7 @@ class TeraTermUI(customtkinter.CTk):
                     lines = file.readlines()
                 for index, line in enumerate(lines):
                     if line.startswith("VTFont="):
-                        current_value = line.strip().split("=")[1]
-                        font_name = current_value.split(",")[0]
-                        updated_value = "Lucida Console" + current_value[len(font_name):]
-                        lines[index] = f"VTFont={updated_value}\n"
+                        lines[index] = "VTFont=Lucida Console,0,-12,255\n"
                     if line.startswith("VTColor=") and not line.startswith(";"):
                         current_value = line.strip().split("=")[1]
                         if current_value != "255,255,255,0,0,0":
@@ -11111,12 +11129,12 @@ class TeraTermUI(customtkinter.CTk):
 
         if TeraTermUI.is_file_in_directory("ttermpro.exe", self.teraterm_directory):
             minimum_required_version = "5.0.0.0"
-            version = TeraTermUI.get_teraterm_version(self.location)
+            version = TeraTermUI.get_teraterm_version(self.teraterm_exe_location)
             version_parts = list(map(int, version.split(".")))
             compare_version_parts = list(map(int, minimum_required_version.split(".")))
             if version and version_parts >= compare_version_parts:
                 appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
-                if appdata_ini_path:
+                if appdata_ini_path and not os.path.isfile(os.path.join(self.teraterm_directory, "portable.ini")):
                     file_path = appdata_ini_path
                 elif os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
                         and self.has_write_permission():
