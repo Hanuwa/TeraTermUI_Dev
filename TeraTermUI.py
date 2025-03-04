@@ -8639,7 +8639,7 @@ class TeraTermUI(customtkinter.CTk):
             if not os.path.exists(backup_path):
                 backup_path = os.path.join(self.app_temp_dir, os.path.basename(file_path) + ".bak")
                 try:
-                    shutil.copyfile(file_path, backup_path)
+                    shutil.copy2(backup_path, file_path)
                 except FileNotFoundError:
                     self.log_error()
                     logging.error("Tera Term Probably not installed\nor installed"
@@ -8702,7 +8702,7 @@ class TeraTermUI(customtkinter.CTk):
                 except IOError as err:
                     logging.error(f"Error occurred: {err}")
                     logging.info("Restoring from backup...")
-                    shutil.copyfile(backup_path, file_path)
+                    shutil.copy2(backup_path, file_path)
         else:
             self.teraterm_not_found = True
 
@@ -11009,7 +11009,7 @@ class TeraTermUI(customtkinter.CTk):
             if not os.path.exists(backup_path):
                 backup_path = os.path.join(self.app_temp_dir, os.path.basename(file_path) + ".bak")
                 try:
-                    shutil.copyfile(file_path, backup_path)
+                    shutil.copy2(backup_path, file_path)
                 except FileNotFoundError:
                     logging.error("Tera Term probably not installed or installed\n"
                                   " in a different location from the default")
@@ -11032,7 +11032,7 @@ class TeraTermUI(customtkinter.CTk):
             except Exception as err:
                 logging.error(f"Error occurred: {err}")
                 logging.info("Restoring from backup...")
-                shutil.copyfile(backup_path, file_path)
+                shutil.copy2(backup_path, file_path)
 
     # Edits the font that tera term uses to "Terminal" to mitigate the chance of the OCR mistaking words
     def edit_teraterm_ini(self, file_path):
@@ -11056,7 +11056,7 @@ class TeraTermUI(customtkinter.CTk):
             if not os.path.exists(backup_path):
                 backup_path = os.path.join(self.app_temp_dir, os.path.basename(file_path) + ".bak")
                 try:
-                    shutil.copyfile(file_path, backup_path)
+                    shutil.copy2(backup_path, file_path)
                 except FileNotFoundError:
                     logging.error("Tera Term probably not installed or installed\n"
                                   " in a different location from the default")
@@ -11118,7 +11118,7 @@ class TeraTermUI(customtkinter.CTk):
             except Exception as err:
                 logging.error(f"Error occurred: {err}")
                 logging.info("Restoring from backup...")
-                shutil.copyfile(backup_path, file_path)
+                shutil.copy2(backup_path, file_path)
         else:
             self.teraterm_not_found = True
 
@@ -11143,78 +11143,34 @@ class TeraTermUI(customtkinter.CTk):
                     self.teraterm5_first_boot = True
                     return
 
-            backup_path = os.path.join(self.app_temp_dir, "TERATERM.ini.bak")
-            try:
-                # Detect encoding of the current .ini file
+        backup_path = os.path.join(self.app_temp_dir, "TERATERM.ini.bak")
+        try:
+            if not os.path.exists(backup_path):
+                logging.warning(f"Backup file not found at {backup_path}")
+                return
+            shutil.copy2(backup_path, file_path)
+
+            if self.disable_audio_tera is not None and self.disable_audio_tera.get() == "on":
                 with open(file_path, "rb") as file:
                     raw_data = file.read()
                     ini_encoding_info = chardet_detect(raw_data)
                     ini_detected_encoding = ini_encoding_info["encoding"]
-                # Detect encoding of the backup file
-                if os.path.exists(backup_path):
-                    with open(backup_path, "rb") as backup_file:
-                        backup_raw_data = backup_file.read()
-                        backup_encoding_info = chardet_detect(backup_raw_data)
-                        backup_detected_encoding = backup_encoding_info["encoding"]
-                else:
-                    logging.warning(f"Backup file not found at {backup_path}")
-                    return
-
-                # Read the lines from both the .ini file and the backup using their respective encodings
                 with open(file_path, "r", encoding=ini_detected_encoding) as file:
                     lines = file.readlines()
-                with open(backup_path, "r", encoding=backup_detected_encoding) as backup_file:
-                    backup_lines = backup_file.readlines()
-                # Extract font and color settings from the backup
-                backup_font = None
-                backup_color = None
-                backup_vtpos = None
-                backup_tekpos = None
-                backup_term_win = None
-                for line in backup_lines:
-                    if line.startswith("VTFont="):
-                        backup_font = line.strip().split("=")[1]
-                    if line.startswith("VTColor=") and not line.startswith(";"):
-                        backup_color = line.strip().split("=")[1]
-                    if line.startswith("VTPos="):
-                        backup_vtpos = line.strip().split("=")[1]
-                    if line.startswith("TEKPos="):
-                        backup_tekpos = line.strip().split("=")[1]
-                    if line.startswith("TermIsWin="):
-                        backup_term_win = line.strip().split("=")[1]
-                if backup_font is None or backup_color is None or backup_vtpos is None or \
-                        backup_tekpos is None or backup_term_win is None:
-                    logging.warning("Settings not found in the backup file")
-                    return
-
-                # Update the .ini file with the settings from the backup
                 for index, line in enumerate(lines):
-                    if line.startswith("VTFont="):
-                        lines[index] = f"VTFont={backup_font}\n"
-                    if line.startswith("VTColor=") and not line.startswith(";"):
-                        lines[index] = f"VTColor={backup_color}\n"
-                    if line.startswith("VTPos="):
-                        lines[index] = f"VTPos={backup_vtpos}\n"
-                    if line.startswith("TEKPos="):
-                        lines[index] = f"TEKPos={backup_tekpos}\n"
-                    if line.startswith("TermIsWin="):
-                        lines[index] = f"TermIsWin={backup_term_win}\n"
-                if self.disable_audio_tera is not None and self.disable_audio_tera.get() == "on":
-                    for index, line in enumerate(lines):
-                        if line.startswith("Beep=") and line.strip() != "Beep=off":
-                            lines[index] = "Beep=off\n"
-                # Write the modified .ini file back using its original encoding
+                    if line.startswith("Beep=") and line.strip() != "Beep=off":
+                        lines[index] = "Beep=off\n"
                 with open(file_path, "w", encoding=ini_detected_encoding) as file:
                     file.writelines(lines)
+        except FileNotFoundError:
+            logging.warning(f"File or backup not found: {file_path} or {backup_path}")
+        except IOError as err:
+            logging.error(f"Error occurred while restoring: {err}")
+            logging.info("Restoring from backup...")
+            try:
+                shutil.copy2(backup_path, file_path)
             except FileNotFoundError:
-                logging.warning(f"File or backup not found: {file_path} or {backup_path}")
-            except IOError as err:
-                logging.error(f"Error occurred: {err}")
-                logging.info("Restoring from backup...")
-                try:
-                    shutil.copyfile(backup_path, file_path)
-                except FileNotFoundError:
-                    logging.error(f"The backup file at {backup_path} was not found")
+                logging.error(f"The backup file at {backup_path} was not found")
 
     # When the user performs an action to do something in tera term it destroys windows that might get in the way
     def destroy_windows(self):
