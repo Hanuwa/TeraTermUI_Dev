@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/3/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/4/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -8639,7 +8639,7 @@ class TeraTermUI(customtkinter.CTk):
             if not os.path.exists(backup_path):
                 backup_path = os.path.join(self.app_temp_dir, os.path.basename(file_path) + ".bak")
                 try:
-                    shutil.copy2(backup_path, file_path)
+                    shutil.copy2(file_path, backup_path)
                 except FileNotFoundError:
                     self.log_error()
                     logging.error("Tera Term Probably not installed\nor installed"
@@ -11009,7 +11009,7 @@ class TeraTermUI(customtkinter.CTk):
             if not os.path.exists(backup_path):
                 backup_path = os.path.join(self.app_temp_dir, os.path.basename(file_path) + ".bak")
                 try:
-                    shutil.copy2(backup_path, file_path)
+                    shutil.copy2(file_path, backup_path)
                 except FileNotFoundError:
                     logging.error("Tera Term probably not installed or installed\n"
                                   " in a different location from the default")
@@ -11056,7 +11056,7 @@ class TeraTermUI(customtkinter.CTk):
             if not os.path.exists(backup_path):
                 backup_path = os.path.join(self.app_temp_dir, os.path.basename(file_path) + ".bak")
                 try:
-                    shutil.copy2(backup_path, file_path)
+                    shutil.copy2(file_path, backup_path)
                 except FileNotFoundError:
                     logging.error("Tera Term probably not installed or installed\n"
                                   " in a different location from the default")
