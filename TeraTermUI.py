@@ -703,6 +703,12 @@ class TeraTermUI(customtkinter.CTk):
                 query_user = f"SELECT {field} FROM user_data"
                 result = self.cursor.execute(query_user).fetchone()
                 results[field] = result[0] if result else None
+            if results["location"]:
+                if results["location"] != self.teraterm_exe_location:
+                    if os.path.exists(results["location"]):
+                        self.teraterm_exe_location = results["location"]
+                    else:
+                        self.cursor.execute("UPDATE user_data SET location=NULL")
             if results["directory"] and results["config"]:
                 if results["directory"] != self.teraterm_directory or results["config"] != self.teraterm_config:
                     if os.path.exists(results["directory"]) and os.path.exists(results["config"]):
@@ -715,12 +721,6 @@ class TeraTermUI(customtkinter.CTk):
                             self.cursor.execute("UPDATE user_data SET directory=NULL")
                         if not os.path.exists(results["config"]):
                             self.cursor.execute("UPDATE user_data SET config=NULL")
-            if results["location"]:
-                if results["location"] != self.teraterm_exe_location:
-                    if os.path.exists(results["location"]):
-                        self.teraterm_exe_location = results["location"]
-                    else:
-                        self.cursor.execute("UPDATE user_data SET location=NULL")
 
             # performs some operations on separate threads when application starts up
             self.boot_up(self.teraterm_config)
