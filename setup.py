@@ -157,9 +157,9 @@ def install_tesseract():
             urllib.request.urlretrieve(TESSERACT_URL, TESSERACT_INSTALLER)
             print("[OK] Installer downloaded")
         args = [
-            TESSERACT_INSTALLER, "/VERYSILENT", "/SUPPRESSMSGBOXES",  
-            "/NORESTART", "/SP-", "/NODESKTOP", "/NOSTARTMENU",  
-            f"/DIR={TESSERACT_DIR}", "/COMPONENTS=!scrollview,!trainingtools,!shortcuts"  
+            TESSERACT_INSTALLER, "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART",
+            "/SP-", "/NODESKTOP", "/NOSTARTMENU",  f"/DIR={TESSERACT_DIR}",
+            "/COMPONENTS=!scrollview,!trainingtools,!shortcuts,tessdata_spa"
         ]
         subprocess.run(args, check=True)
         os.remove(TESSERACT_INSTALLER)
