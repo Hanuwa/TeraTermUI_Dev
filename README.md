@@ -24,6 +24,9 @@ and organize the files and folders properly. However, **Tesseract requires manua
      - ScrollView
      - Training Tools
      - Shortcuts creation
+   - **Tick**:
+     - Additional language data:
+       - Spanish
 4. **Set the installation path**:
    - Install Tesseract in a folder named **`Tesseract-OCR`** at the **root** of the project directory.
 5. **Finalize setup**:
