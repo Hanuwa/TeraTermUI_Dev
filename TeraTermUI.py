@@ -180,7 +180,7 @@ class TeraTermUI(customtkinter.CTk):
         self.REAZIONE = self.ottenere_protetta_salasana()
         self.USER_APP_VERSION = "0.9.0"
         self.mode = "Portable"
-        self.updater_hash = "e9b47fe2a85b0e0e783ace0c65445c76a4b292158b4fcfa4bf1a504b6dfcafca"
+        self.updater_hash = "959117a31f75df1e01fd8104bf64e71483f3b033f4be4626a25cc4a4e286bbbc"
         self.update_db = False
         self.running_updater = False
         self.credentials = None
@@ -4032,7 +4032,7 @@ class TeraTermUI(customtkinter.CTk):
             self.e_semester_entry.configure(values=["C31", "C32", "C33", "C41", "C42", "C43", translation["current"]])
             for widget in [self.e_semester_entry, self.s_semester_entry,
                            self.menu_semester_entry, self.m_semester_entry[0]]:
-                if widget in  self.semesters_tooltips:
+                if widget in self.semesters_tooltips:
                     selected_semester = widget.get().upper().replace(" ", "")
                     self.semesters_tooltips[widget].configure(message=self.get_semester_season(selected_semester))
             self.register.configure(text=translation["register"])
@@ -7563,8 +7563,12 @@ class TeraTermUI(customtkinter.CTk):
 
     def get_semester_season(self, semester_code):
         lang = self.language_menu.get()
+        translation = self.load_language()
+        if semester_code == "CURRENT" or semester_code == "ACTUAL":
+            return translation["current_tooltip"]
+
         if len(semester_code) != 3 or not semester_code[0].isalpha() or not semester_code[1].isdigit() or not \
-                semester_code[2].isdigit():
+        semester_code[2].isdigit():
             return ""
 
         letter = semester_code[0]
@@ -7573,11 +7577,9 @@ class TeraTermUI(customtkinter.CTk):
 
         base_year = 2000 + (ord(letter) - ord("A")) * 10
         full_year = base_year + year_digit
-        semester_map = {
-            "English": {"1": "Spring", "2": "Fall", "3": "Summer"},
-            "Español": {"1": "Primavera", "2": "Otoño", "3": "Verano"}
-        }
 
+        semester_map = {"English": {"1": "Spring", "2": "Fall", "3": "Summer"},
+                        "Español": {"1": "Primavera", "2": "Otoño", "3": "Verano"}}
         semester_names = semester_map.get(lang, semester_map["English"])
         semester_name = semester_names.get(semester_part, "")
         if not semester_name:
