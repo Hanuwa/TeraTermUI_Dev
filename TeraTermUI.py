@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/5/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/9/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 13400 lines of codes, it definitely makes things harder to work with
+# and with over 13500 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -420,6 +420,7 @@ class TeraTermUI(customtkinter.CTk):
         self.e_section_tooltip = None
         self.e_semester = None
         self.e_semester_entry = None
+        self.semesters_tooltips = None
         self.radio_var = None
         self.register = None
         self.register_tooltip = None
@@ -4029,6 +4030,11 @@ class TeraTermUI(customtkinter.CTk):
                 self.e_section.grid(row=2, column=1, padx=(0, 202), pady=(20, 0))
             self.e_semester.configure(text=translation["semester"])
             self.e_semester_entry.configure(values=["C31", "C32", "C33", "C41", "C42", "C43", translation["current"]])
+            for widget in [self.e_semester_entry, self.s_semester_entry,
+                           self.menu_semester_entry, self.m_semester_entry[0]]:
+                if widget in  self.semesters_tooltips:
+                    selected_semester = widget.get().upper().replace(" ", "")
+                    self.semesters_tooltips[widget].configure(message=self.get_semester_season(selected_semester))
             self.register.configure(text=translation["register"])
             self.drop.configure(text=translation["drop"])
             self.update_section_tooltip(lang)
@@ -4401,6 +4407,7 @@ class TeraTermUI(customtkinter.CTk):
 
     def change_semester(self, semester):
         translation = self.load_language()
+        self.update_semester_tooltip(self.m_semester_entry[0])
         semester = self.m_semester_entry[0].get().upper().replace(" ", "")
         curr_sem = translation["current"].upper()
         dummy_event = type("Dummy", (object,), {"widget": self.m_semester_entry[0]})()
@@ -5420,6 +5427,7 @@ class TeraTermUI(customtkinter.CTk):
             translation = self.load_language()
             self.tabview = customtkinter.CTkTabview(self, corner_radius=10, command=self.switch_tab)
             self.t_buttons_frame = customtkinter.CTkFrame(self, corner_radius=10)
+            self.semesters_tooltips = {}
             self.init_class = True
             self.enroll_tab = translation["enroll_tab"]
             self.search_tab = translation["search_tab"]
@@ -5449,7 +5457,12 @@ class TeraTermUI(customtkinter.CTk):
                                                      text=translation["semester"])
             self.e_semester_entry = CustomComboBox(self.tabview.tab(self.enroll_tab), self, lang,
                                                    values=self.semester_values + [translation["current"]])
+            self.e_semester_entry.configure(command=lambda event: self.update_semester_tooltip(self.e_semester_entry))
+            self.e_semester_entry.bind("<FocusOut>", lambda event: self.update_semester_tooltip(
+                self.e_semester_entry))
             self.e_semester_entry.set(self.DEFAULT_SEMESTER)
+            self.semesters_tooltips[self.e_semester_entry] = CTkToolTip(
+                self.e_semester_entry, message=self.get_semester_season(self.DEFAULT_SEMESTER), bg_color="#1E90FF")
             self.radio_var = tk.StringVar()
             self.register = customtkinter.CTkRadioButton(master=self.tabview.tab(self.enroll_tab),
                                                          text=translation["register"], value="register",
@@ -5492,6 +5505,12 @@ class TeraTermUI(customtkinter.CTk):
             self.s_semester_entry = CustomComboBox(self.search_scrollbar, self, lang, width=80,
                                                    values=self.semester_values + [translation["current"]])
             self.s_semester_entry.set(self.DEFAULT_SEMESTER)
+            self.s_semester_entry.configure(command=lambda event: self.update_semester_tooltip(
+                self.s_semester_entry))
+            self.s_semester_entry.bind("<FocusOut>", lambda event: self.update_semester_tooltip(
+                self.s_semester_entry))
+            self.semesters_tooltips[self.s_semester_entry] = CTkToolTip(
+                self.s_semester_entry, message=self.get_semester_season(self.DEFAULT_SEMESTER), bg_color="#1E90FF")
             self.show_all = customtkinter.CTkCheckBox(self.search_scrollbar, text=translation["show_all"],
                                                       onvalue="on", offvalue="off", command=self.focus_set)
             self.show_all_tooltip = CTkToolTip(self.show_all, message=translation["show_all_tooltip"],
@@ -5533,6 +5552,12 @@ class TeraTermUI(customtkinter.CTk):
             self.menu_semester_entry = CustomComboBox(self.tabview.tab(self.other_tab), self, lang, width=141,
                                                       values=self.semester_values + [translation["current"]])
             self.menu_semester_entry.set(self.DEFAULT_SEMESTER)
+            self.menu_semester_entry.configure(command=lambda event: self.update_semester_tooltip(
+                self.menu_semester_entry))
+            self.menu_semester_entry.bind("<FocusOut>", lambda event: self.update_semester_tooltip(
+                self.menu_semester_entry))
+            self.semesters_tooltips[self.menu_semester_entry] = CTkToolTip(
+                self.menu_semester_entry, message=self.get_semester_season(self.DEFAULT_SEMESTER), bg_color="#1E90FF")
             self.menu_submit = CustomButton(master=self.tabview.tab(self.other_tab), border_width=2,
                                             text=translation["submit"], text_color=("gray10", "#DCE4EE"),
                                             command=self.option_menu_event_handler, width=141)
@@ -5641,6 +5666,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.m_num_class[i].bind("<Button-1>", lambda event: self.focus_set())
             self.m_semester_entry[0].bind("<FocusOut>", self.change_semester)
             self.m_semester_entry[0].configure(command=self.change_semester)
+            self.semesters_tooltips[self.m_semester_entry[0]] = CTkToolTip(
+                self.m_semester_entry[0], message=self.get_semester_season(self.DEFAULT_SEMESTER), bg_color="#1E90FF")
             self.m_add = CustomButton(master=self.m_button_frame, border_width=2, text="+",
                                       text_color=("gray10", "#DCE4EE"), command=self.add_event, height=38, width=50,
                                       fg_color="#0F52BA")
@@ -7533,6 +7560,40 @@ class TeraTermUI(customtkinter.CTk):
 
         # Return the last six semester codes
         return values[-6:]
+
+    def get_semester_season(self, semester_code):
+        lang = self.language_menu.get()
+        if len(semester_code) != 3 or not semester_code[0].isalpha() or not semester_code[1].isdigit() or not \
+                semester_code[2].isdigit():
+            return ""
+
+        letter = semester_code[0]
+        year_digit = int(semester_code[1])
+        semester_part = semester_code[2]
+
+        base_year = 2000 + (ord(letter) - ord("A")) * 10
+        full_year = base_year + year_digit
+        semester_map = {
+            "English": {"1": "Spring", "2": "Fall", "3": "Summer"},
+            "Español": {"1": "Primavera", "2": "Otoño", "3": "Verano"}
+        }
+
+        semester_names = semester_map.get(lang, semester_map["English"])
+        semester_name = semester_names.get(semester_part, "")
+        if not semester_name:
+            return ""
+
+        return f"{semester_name} {full_year}"
+
+    def update_semester_tooltip(self, widget):
+        selected_semester = widget.get().upper().replace(" ", "")
+        new_tooltip_text = self.get_semester_season(selected_semester)
+        if widget in self.semesters_tooltips:
+            self.semesters_tooltips[widget].configure(message=new_tooltip_text)
+            if new_tooltip_text:
+                self.semesters_tooltips[widget].show()
+            else:
+                self.semesters_tooltips[widget].hide()
 
     @staticmethod
     def specific_class_data(data):
@@ -12139,8 +12200,7 @@ class CustomEntry(customtkinter.CTkEntry):
             self._placeholder_text_active = True
             self._pre_placeholder_arguments = {"show": self._entry.cget("show")}
             self._entry.config(fg=self._apply_appearance_mode(self._placeholder_text_color),
-                               disabledforeground=self._apply_appearance_mode(self._placeholder_text_color),
-                               show="")
+                               disabledforeground=self._apply_appearance_mode(self._placeholder_text_color), show="")
             self._entry.delete(0, tk.END)
             self._entry.insert(0, self._placeholder_text)
 
