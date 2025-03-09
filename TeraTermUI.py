@@ -625,6 +625,7 @@ class TeraTermUI(customtkinter.CTk):
         self.sending_feedback = False
         self.auto_enroll_flag = False
         self.auto_enroll_focus = False
+        self.auto_enroll_status = "Not Auto-Enrolling"
         self.countdown_running = False
         self.modify_error_check = False
         self.download = False
@@ -2342,6 +2343,8 @@ class TeraTermUI(customtkinter.CTk):
             self.after(500, self.submit_multiple_event_handler)
         elif self.started_auto_enroll:
             self.end_countdown()
+            self.auto_enroll_status = "Auto-Enrolling"
+            self.idle_num_check = 32
         if self.countdown_running:
             return
 
@@ -2519,6 +2522,8 @@ class TeraTermUI(customtkinter.CTk):
             finally:
                 translation = self.load_language()
                 self.after(100, self.set_focus_to_tkinter)
+                if self.auto_enroll_status == "Auto-Enrolling":
+                    self.auto_enroll_status = "Not Auto-Enrolling"
                 if not self.error_auto_enroll:
                     self.started_auto_enroll = False
                 if self.error_occurred and not self.timeout_occurred:
@@ -9640,10 +9645,11 @@ class TeraTermUI(customtkinter.CTk):
 
     # resets the idle timer when user interacts with something within the application
     def reset_activity_timer(self):
-        self.last_activity = time.time()
-        if not isinstance(self.idle_num_check, int):
-            self.idle_num_check = 0
-        self.idle_num_check = max(0, self.idle_num_check // 2)
+        if self.auto_enroll_status == "Not Auto-Enrolling":
+            self.last_activity = time.time()
+            if not isinstance(self.idle_num_check, int):
+                self.idle_num_check = 0
+            self.idle_num_check = max(0, self.idle_num_check // 2)
 
     def keybind_disable_enable_idle(self):
         if self.disable_idle.get() == "on":
