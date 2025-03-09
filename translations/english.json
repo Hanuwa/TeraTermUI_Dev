@@ -350,6 +350,7 @@
 	"exec_time": "NOTICE\n\nConsider closing any application\nthat might be using a lot of resources.\nTask took longer to perform than expected",
 	"game_launchers": "NOTICE\n\nFor unknown reasons, it has been observed that some\ngame launchers like: {} may slow\ndown the performance of this application.\nFor optimal performance, consider closing them.",
 	"current": "Current",
+	"current_tooltip": "The ongoing or upcoming\nsemester will be used",
 	"sort_by": "Sort By",
 	"sort_by_tooltip": "Customize the table arrangement by\nselecting your preferred sorting criteria",
 	"time_asc": "Time Ascending ↑",
