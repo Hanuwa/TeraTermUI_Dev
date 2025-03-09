@@ -7578,8 +7578,8 @@ class TeraTermUI(customtkinter.CTk):
         base_year = 2000 + (ord(letter) - ord("A")) * 10
         full_year = base_year + year_digit
 
-        semester_map = {"English": {"1": "Spring", "2": "Fall", "3": "Summer"},
-                        "Español": {"1": "Primavera", "2": "Otoño", "3": "Verano"}}
+        semester_map = {"English": {"1": "Fall", "2": "Spring", "3": "Summer"},
+                        "Español": {"1": "Otoño", "2": "Primavera", "3": "Verano"}}
         semester_names = semester_map.get(lang, semester_map["English"])
         semester_name = semester_names.get(semester_part, "")
         if not semester_name:
