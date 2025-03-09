@@ -350,6 +350,7 @@
 	"exec_time": "AVISO\n\nConsidere cerrar cualquier aplicación\nque esté utilizando muchos recursos.\nLa tarea tardó más de lo esperado en realizarse",
 	"game_launchers": "AVISO\n\nPor razones desconocidas, se ha observado que algunos\niniciadores de juegos como: {} pueden disminuir\nel rendimiento de esta aplicación.\nPara un rendimiento óptimo, considere cerrarlos",
 	"current": "Actual",
+	"current_tooltip": "Se utilizará el semestre\nen curso o el próximo",
 	"sort_by": "Ordenar Por",
 	"sort_by_tooltip": "Personaliza la disposición de la\ntabla seleccionando tus criterios\nde ordenación preferidos",
 	"time_asc": "Horas Ascendente ↑",
