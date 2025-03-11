@@ -33,10 +33,10 @@ objgraph==3.6.2
 ordered-set==4.1.0
 packaging==24.2
 pillow==11.1.0
-pipdeptree==2.25.0
+pipdeptree==2.25.1
 propcache==0.3.0
 proto-plus==1.26.1
-protobuf==5.29.3
+protobuf==6.30.0
 psutil==7.0.0
 py7zr==0.22.0
 pyasn1==0.6.1
