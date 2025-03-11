@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/10/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/11/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 13400 lines of codes, it definitely makes things harder to work with
+# and with over 13500 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -179,7 +179,7 @@ class TeraTermUI(customtkinter.CTk):
         self.REAZIONE = self.ottenere_protetta_salasana()
         self.USER_APP_VERSION = "0.9.0"
         self.mode = "Portable"
-        self.updater_hash = "66009bb08e25d64f9f2eeafb19d4549d62faac2e042f5dc67321a33ad658808a"
+        self.updater_hash = "54981e94a996eae21a7516228ddd1b9415a0bff489acff256e5d9a86a73038ad"
         self.update_db = False
         self.running_updater = False
         self.credentials = None
@@ -6342,6 +6342,18 @@ class TeraTermUI(customtkinter.CTk):
 
         return merged_classes_list, merged_data_list, merged_semesters_list
 
+    @staticmethod
+    def get_unique_filename(directory, filename):
+        base, ext = os.path.splitext(filename)
+        filepath = os.path.join(directory, filename)
+
+        counter = 1
+        while os.path.exists(filepath):
+            filepath = os.path.join(directory, f"{base} ({counter}){ext}")
+            counter += 1
+
+        return os.path.basename(filepath)
+
     # function for the user to download the created pdf to their computer
     def download_search_classes_as_pdf(self):
         if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
@@ -6365,21 +6377,23 @@ class TeraTermUI(customtkinter.CTk):
 
         all_same_semester = all(semester == semester_list[0] for semester in semester_list)
         if len(self.class_table_pairs) == 1:
-            initial_file_name = f"{semester_list[0]}_{classes_list[0]}_{translation['class_data']}.pdf"
+            base_filename = f"{semester_list[0]}_{classes_list[0]}_{translation['class_data']}.pdf"
         elif all_same_semester:
-            initial_file_name = f"{semester_list[0]}_{translation['classes_data']}.pdf"
+            base_filename = f"{semester_list[0]}_{translation['classes_data']}.pdf"
         else:
-            initial_file_name = f"{translation['multiple_semesters']}_{translation['classes_data']}.pdf"
+            base_filename = f"{translation['multiple_semesters']}_{translation['classes_data']}.pdf"
 
-        # Define where the PDF will be saved
+        # Define default save directory
         if self.last_save_pdf_dir is not None:
             initial_dir = self.last_save_pdf_dir
         else:
             home = os.path.expanduser("~")
             initial_dir = os.path.join(home, "Downloads")
+
+        unique_filename = TeraTermUI.get_unique_filename(initial_dir, base_filename)
         filepath = filedialog.asksaveasfilename(
             title=translation["save_pdf"], defaultextension=".pdf", initialdir=initial_dir,
-            filetypes=[("PDF Files", "*.pdf")], initialfile=initial_file_name)
+            filetypes=[("PDF Files", "*.pdf")], initialfile=unique_filename)
 
         # Check if user cancelled the file dialog
         if not filepath:
@@ -7875,16 +7889,18 @@ class TeraTermUI(customtkinter.CTk):
         semester = self.dialog_input.upper().replace(" ", "")
         self.focus_set()
 
-        # Define where the PDF will be saved
+        # Define default save directory
         if self.last_save_pdf_dir is not None:
             initial_dir = self.last_save_pdf_dir
         else:
             home = os.path.expanduser("~")
             initial_dir = os.path.join(home, "Downloads")
+
+        base_filename = f"{semester}_{translation['enrolled_classes']}.pdf"
+        unique_filename = TeraTermUI.get_unique_filename(initial_dir, base_filename)
         filepath = filedialog.asksaveasfilename(
             title=translation["save_pdf"], defaultextension=".pdf", initialdir=initial_dir,
-            filetypes=[("PDF Files", "*.pdf")], initialfile=f"{semester}_{translation['enrolled_classes']}"
-        )
+            filetypes=[("PDF Files", "*.pdf")], initialfile=unique_filename)
 
         # Check if user cancelled the file dialog
         if not filepath:
