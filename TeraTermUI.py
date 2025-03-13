@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/11/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/13/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -8651,6 +8651,15 @@ class TeraTermUI(customtkinter.CTk):
         except PermissionError:
             return False
 
+    @staticmethod
+    def detect_encoding(file_path, sample_size=4096):
+        import chardet
+
+        with open(file_path, "rb") as f:
+            raw_data = f.read(sample_size)
+        result = chardet.detect(raw_data)
+        return result["encoding"]
+
     def backup_and_config_ini(self, file_path):
         # backup for config file of tera term
         if TeraTermUI.is_file_in_directory("ttermpro.exe", self.teraterm_directory):
@@ -8682,7 +8691,8 @@ class TeraTermUI(customtkinter.CTk):
             known_hosts_path = os.path.join(os.path.dirname(file_path), "ssh_known_hosts")
             if os.path.exists(known_hosts_path):
                 try:
-                    with open(known_hosts_path, "r", encoding="ascii") as file:
+                    detected_encoding = TeraTermUI.detect_encoding(known_hosts_path) or "utf-8"
+                    with open(known_hosts_path, "r", encoding=detected_encoding) as file:
                         for line in file:
                             parts = line.strip().split()
                             if not parts or parts[0].startswith("#"):
@@ -8696,7 +8706,8 @@ class TeraTermUI(customtkinter.CTk):
             # Edits the font that tera term uses to "Lucida Console" to mitigate the chance of the OCR mistaking words
             if not self.can_edit:
                 try:
-                    with open(file_path, "r", encoding="utf-16") as file:
+                    detected_encoding = TeraTermUI.detect_encoding(file_path) or "utf-8"
+                    with open(file_path, "r", encoding=detected_encoding) as file:
                         lines = file.readlines()
                     for index, line in enumerate(lines):
                         if line.startswith("VTFont="):
@@ -8720,7 +8731,7 @@ class TeraTermUI(customtkinter.CTk):
                             if current_value not in ["0", "1"]:
                                 lines[index] = "AuthBanner=1\n"
                         self.can_edit = True
-                    with open(file_path, "w", encoding="utf-16") as file:
+                    with open(file_path, "w", encoding=detected_encoding) as file:
                         file.writelines(lines)
                 except FileNotFoundError:
                     return
@@ -11009,14 +11020,15 @@ class TeraTermUI(customtkinter.CTk):
                     logging.error("Tera Term probably not installed or installed\n"
                                   " in a different location from the default")
             try:
-                with open(file_path, "r", encoding="utf-16") as file:
+                detected_encoding = TeraTermUI.detect_encoding(file_path) or "utf-8"
+                with open(file_path, "r", encoding=detected_encoding) as file:
                     lines = file.readlines()
                 beep_setting = "off" if disable_beep else "on"
                 for index, line in enumerate(lines):
                     if line.startswith("Beep="):
                         lines[index] = f"Beep={beep_setting}\n"
                         self.muted_tera = disable_beep
-                with open(file_path, "w", encoding="utf-16") as file:
+                with open(file_path, "w", encoding=detected_encoding) as file:
                     file.writelines(lines)
             except FileNotFoundError:
                 return
@@ -11055,7 +11067,8 @@ class TeraTermUI(customtkinter.CTk):
             known_hosts_path = os.path.join(os.path.dirname(file_path), "ssh_known_hosts")
             if os.path.exists(known_hosts_path):
                 try:
-                    with open(known_hosts_path, "r", encoding="ascii") as file:
+                    detected_encoding = TeraTermUI.detect_encoding(known_hosts_path) or "utf-8"
+                    with open(known_hosts_path, "r", encoding=detected_encoding) as file:
                         for line in file:
                             parts = line.strip().split()
                             if not parts or parts[0].startswith("#"):
@@ -11067,7 +11080,8 @@ class TeraTermUI(customtkinter.CTk):
                     logging.error(f"Error reading ssh_known_hosts file: {err}")
 
             try:
-                with open(file_path, "r", encoding="utf-16") as file:
+                detected_encoding = TeraTermUI.detect_encoding(file_path) or "utf-8"
+                with open(file_path, "r", encoding=detected_encoding) as file:
                     lines = file.readlines()
                 for index, line in enumerate(lines):
                     if line.startswith("VTFont="):
@@ -11091,7 +11105,7 @@ class TeraTermUI(customtkinter.CTk):
                         if current_value not in ["0", "1"]:
                             lines[index] = "AuthBanner=1\n"
                     self.can_edit = True
-                with open(file_path, "w", encoding="utf-16") as file:
+                with open(file_path, "w", encoding=detected_encoding) as file:
                     file.writelines(lines)
                 self.teraterm_not_found = False
                 self.download = False
@@ -11133,12 +11147,13 @@ class TeraTermUI(customtkinter.CTk):
             shutil.copy2(backup_path, file_path)
 
             if self.disable_audio_tera is not None and self.disable_audio_tera.get() == "on":
-                with open(file_path, "r", encoding="utf-16") as file:
+                detected_encoding = TeraTermUI.detect_encoding(file_path) or "utf-8"
+                with open(file_path, "r", encoding=detected_encoding) as file:
                     lines = file.readlines()
                 for index, line in enumerate(lines):
                     if line.startswith("Beep=") and line.strip() != "Beep=off":
                         lines[index] = "Beep=off\n"
-                with open(file_path, "w", encoding="utf-16") as file:
+                with open(file_path, "w", encoding=detected_encoding) as file:
                     file.writelines(lines)
         except FileNotFoundError:
             logging.warning(f"File or backup not found: {file_path} or {backup_path}")
