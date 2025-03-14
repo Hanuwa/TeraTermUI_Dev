@@ -327,4 +327,4 @@ class CTkToplevel(tkinter.Toplevel, CTkAppearanceModeBaseClass, CTkScalingBaseCl
             self._windows_set_titlebar_color(mode_string)
         elif self._is_macos:
             self._enable_macos_dark_title_bar()
-        self.configure(bg=self._apply_appearance_mode(self._fg_color))
+        super().configure(bg=self._apply_appearance_mode(self._fg_color))
