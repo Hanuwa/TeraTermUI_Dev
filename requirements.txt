@@ -43,7 +43,7 @@ pyasn1==0.6.1
 pyasn1_modules==0.4.1
 PyAutoGUI==0.9.54
 pybcj==1.0.3
-pycryptodomex==3.21.0
+pycryptodomex==3.22.0
 PyGetWindow==0.0.9
 PyMsgBox==1.0.9
 pyparsing==3.2.1
