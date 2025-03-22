@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/20/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/22/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -4109,6 +4109,10 @@ class TeraTermUI(customtkinter.CTk):
             self.m_section.configure(text=translation["section"])
             self.m_semester.configure(text=translation["semester"])
             self.m_semester_entry[0].configure(values=self.semester_values + [translation["current"]])
+            semester_multiple = self.m_semester_entry[0].get().upper().replace(" ", "")
+            if semester_multiple == "CURRENT" or semester_multiple == "ACTUAL":
+                self.m_semester_entry[0].set(translation["current"])
+                self.change_semester(translation["current"])
             self.m_choice.configure(text=translation["choice"])
             self.back_multiple.configure(text=translation["back"])
             self.submit_multiple.configure(text=translation["submit"])
