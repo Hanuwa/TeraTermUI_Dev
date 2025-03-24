@@ -46,7 +46,7 @@ pybcj==1.0.3
 pycryptodomex==3.22.0
 PyGetWindow==0.0.9
 PyMsgBox==1.0.9
-pyparsing==3.2.1
+pyparsing==3.2.2
 pyperclip==1.9.0
 pyppmd==1.1.1
 PyRect==0.2.0
@@ -64,7 +64,7 @@ requests==2.32.3
 requests-oauthlib==2.0.0
 rsa==4.9
 screeninfo==0.8.1
-setuptools==77.0.3
+setuptools==78.0.1
 six==1.17.0
 texttable==1.7.0
 uritemplate==4.1.1
