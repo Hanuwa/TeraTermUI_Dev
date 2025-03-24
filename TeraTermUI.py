@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/22/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 3/24/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -179,7 +179,7 @@ class TeraTermUI(customtkinter.CTk):
         self.REAZIONE = self.ottenere_protetta_salasana()
         self.USER_APP_VERSION = "0.9.0"
         self.mode = "Portable"
-        self.updater_hash = "34888551334572744b8f76ff6c6ab8741fe7d4c43e956b7fbadc76fff718b3d2"
+        self.updater_hash = "5c03f7ed737f41a752cc406da3eb6101cb2b124953b0b51f43669a6cf8570126"
         self.update_db = False
         self.running_updater = False
         self.credentials = None
@@ -8812,7 +8812,7 @@ class TeraTermUI(customtkinter.CTk):
             latest = "Nueva"
         self.play_sound("update.wav")
         msg = CTkMessagebox(title=translation["update_popup_title"],
-                            message=translation["update_popup_message"] + "\n\n" + current + ": v" +
+                            message=translation["update_popup_message_1"] + "\n\n" + current + ": v" +
                             self.USER_APP_VERSION + " ---> " + latest + ": v" + latest_version,
                             option_1=translation["option_1"], option_3=translation["update_now"],
                             option_2=translation["download_title"], icon_size=(65, 65),
@@ -9313,7 +9313,7 @@ class TeraTermUI(customtkinter.CTk):
                                 latest = "Nueva"
                             self.play_sound("update.wav")
                             msg = CTkMessagebox(title=translation["update_popup_title"],
-                                                message=translation["update_popup_message"] + "\n\n" + current + ": v" +
+                                                message=translation["update_popup_message_2"] + "\n\n" + current + ": v" +
                                                 self.USER_APP_VERSION + " ---> " + latest + ": v" + latest_version,
                                                 option_1=translation["option_1"], option_3=translation["update_now"],
                                                 option_2=translation["download_title"], icon_size=(65, 65),
@@ -10403,10 +10403,10 @@ class TeraTermUI(customtkinter.CTk):
         self.files.configure(state="disabled")
         message_english = "Would you like the application to search for Tera Term on the main drive automatically? " \
                           "(click  the \"no\" button to search for it manually)\n\n" \
-                          "Note: This process may take some time and make the application unresponsive briefly"
+                          "NOTE: This process may take some time and make the application unresponsive briefly"
         message_spanish = "¿Desea que la aplicación busque automáticamente Tera Term en la unidad principal? " \
                           "(hacer clic al botón \"no\" para buscarlo manualmente)\n\n" \
-                          "Nota:  Este proceso podría tardar un poco y causar que la aplicación brevemente no responda"
+                          "NOTA:  Este proceso podría tardar un poco y causar que la aplicación brevemente no responda"
         message = message_english if lang == "English" else message_spanish
         response = messagebox.askyesnocancel("Tera Term", message)
         if response is True:
