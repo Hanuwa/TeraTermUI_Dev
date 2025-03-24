@@ -11,7 +11,8 @@ are included here because they have some modifications.
 
 Priorities of the development of the application is working on improving the UI since it's a bit too simple and not polished,
 funtionality wise the application is mostly feature-complete but it could use some performance/optimization improvements since
-the application sometimes suffers from slowdows which can make it feel sluggish to use. Works on both Tera Term 5 and 4.
+the application sometimes suffers from slowdows which can make it feel sluggish to use. Works on both Tera Term 5 and 4 
+which is worth noting because there are some significant changes between the two.
 
 # Setting up the environment
 **This tool is only intended to be used right after cloning the project**
