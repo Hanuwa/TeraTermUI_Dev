@@ -33,7 +33,7 @@ objgraph==3.6.2
 ordered-set==4.1.0
 packaging==24.2
 pillow==11.1.0
-pipdeptree==2.25.1
+pipdeptree==2.26.0
 propcache==0.3.0
 proto-plus==1.26.1
 protobuf==6.30.1
@@ -64,7 +64,7 @@ requests==2.32.3
 requests-oauthlib==2.0.0
 rsa==4.9
 screeninfo==0.8.1
-setuptools==78.0.1
+setuptools==78.0.2
 six==1.17.0
 texttable==1.7.0
 uritemplate==4.1.1
