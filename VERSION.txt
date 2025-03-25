@@ -1,8 +1,8 @@
 Version Number: v0.9.0
 
-SHA-256 Checksum: 8e1f9241bfd2201488fa8b63bd74623e070480b6878103ab9c8fc05ebe880326
+SHA-256 Checksum: 7e9004b6c90dac550205aa73844770cf6459e2ff404abbde22c564ca7a7ca105
 
-Release Date: 03/24/2025
+Release Date: 03/25/2025
 
 Patch Notes:
  - Introducing the first public release!
