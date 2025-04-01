@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 13500 lines of codes, it definitely makes things harder to work with
+# and with over 13600 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -4849,7 +4849,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.automation_preparations()
                 self.auto_enroll_flag = True
                 if asyncio.run(self.test_connection()) and self.check_server() and self.check_format():
-                    self.ssh_monitor.sample(count=30)
+                    self.ssh_monitor.sample(count=30, force=True)
                     if not self.ssh_monitor.is_responsive():
                         self.play_sound("error.wav")
                         CTkMessagebox(title=translation["auto_enroll"], icon="cancel", button_width=380,
@@ -6173,9 +6173,14 @@ class TeraTermUI(customtkinter.CTk):
 
         try:
             with socket.create_connection((HOST, PORT), timeout=timeout):
-                idle = self.cursor.execute("SELECT idle FROM user_data").fetchone()
+                try:
+                    idle = self.cursor.execute("SELECT idle FROM user_data").fetchone()
+                except Exception as err:
+                    idle = ["Disabled"]
+                    logging.error("An error occurred: %s", err)
+                    self.log_error()
                 if idle[0] != "Disabled":
-                    self.ssh_monitor.sample(count=10)
+                    self.ssh_monitor.sample()
                 # the connection attempt succeeded
                 return True
         except (socket.timeout, ConnectionRefusedError, OSError):
@@ -12855,6 +12860,7 @@ class SSHMonitor:
         self.host = host
         self.port = port
         self.latencies = []
+        self.last_sample_time = 0
 
     def measure_latency(self, timeout=5):
         try:
@@ -12870,7 +12876,12 @@ class SSHMonitor:
             pass
         return None
 
-    def sample(self, count=10, concurrent=True):
+    def sample(self, count=10, concurrent=True, force=False, cooldown=30):
+        now = time.time()
+        if now - self.last_sample_time < cooldown and not force:
+            return
+
+        self.last_sample_time = now
         if concurrent:
             with ThreadPoolExecutor(max_workers=count) as executor:
                 futures = [executor.submit(self.measure_latency) for _ in range(count)]
