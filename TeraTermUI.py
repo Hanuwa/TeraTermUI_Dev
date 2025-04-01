@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 3/28/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/1/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -40,6 +40,7 @@ import secrets
 import shutil
 import socket
 import sqlite3
+import statistics
 import subprocess
 import sys
 import tempfile
@@ -606,6 +607,7 @@ class TeraTermUI(customtkinter.CTk):
         self.DEFAULT_SEMESTER = TeraTermUI.calculate_default_semester()
         self.semester_values = TeraTermUI.generate_semester_values(self.DEFAULT_SEMESTER)
         self.clipboard_handler = ClipboardHandler()
+        self.ssh_monitor = SSHMonitor("uprbay.uprb.edu")
         self.search_event_completed = True
         self.option_menu_event_completed = True
         self.go_next_event_completed = True
@@ -4847,6 +4849,14 @@ class TeraTermUI(customtkinter.CTk):
                 self.automation_preparations()
                 self.auto_enroll_flag = True
                 if asyncio.run(self.test_connection()) and self.check_server() and self.check_format():
+                    self.ssh_monitor.sample(count=30)
+                    if not self.ssh_monitor.is_responsive():
+                        self.play_sound("error.wav")
+                        CTkMessagebox(title=translation["auto_enroll"], icon="cancel", button_width=380,
+                                      message=translation["auto_enroll_denied"])
+                        self.auto_enroll_flag = False
+                        self.after(100, self.auto_enroll.deselect)
+                        return
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if not self.wait_for_window():
                             return
@@ -6163,6 +6173,9 @@ class TeraTermUI(customtkinter.CTk):
 
         try:
             with socket.create_connection((HOST, PORT), timeout=timeout):
+                idle = self.cursor.execute("SELECT idle FROM user_data").fetchone()
+                if idle[0] != "Disabled":
+                    self.ssh_monitor.sample(count=10)
                 # the connection attempt succeeded
                 return True
         except (socket.timeout, ConnectionRefusedError, OSError):
@@ -9558,6 +9571,7 @@ class TeraTermUI(customtkinter.CTk):
                         pyautogui.press("scrolllock")
                         time.sleep(1)
                         pyautogui.press("scrolllock")
+                self.ssh_monitor.sample(count=5)
                 is_running = TeraTermUI.checkIfProcessRunning("ttermpro")
                 if is_running:
                     if not_running_count > 1 and self.stop_check_idle.is_set():
@@ -12834,6 +12848,61 @@ class ImageSlideshow(customtkinter.CTkFrame):
 
         self.image_files.clear()
         super().destroy()
+
+
+class SSHMonitor:
+    def __init__(self, host, port=22):
+        self.host = host
+        self.port = port
+        self.latencies = []
+
+    def measure_latency(self, timeout=5):
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(timeout)
+            start = time.time()
+            result = sock.connect_ex((self.host, self.port))
+            end = time.time()
+            sock.close()
+            if result == 0:
+                return end - start
+        except (socket.timeout, ConnectionRefusedError, OSError):
+            pass
+        return None
+
+    def sample(self, count=10, concurrent=True):
+        if concurrent:
+            with ThreadPoolExecutor(max_workers=count) as executor:
+                futures = [executor.submit(self.measure_latency) for _ in range(count)]
+                for i, future in enumerate(as_completed(futures), 1):
+                    latency = future.result()
+                    if latency is not None:
+                        self.latencies.append(latency)
+        else:
+            for i in range(count):
+                latency = self.measure_latency()
+                if latency is not None:
+                    self.latencies.append(latency)
+                time.sleep(0.3)
+
+    def get_stats(self):
+        if not self.latencies:
+            return None
+        return {
+            "samples": len(self.latencies),
+            "min": min(self.latencies),
+            "max": max(self.latencies),
+            "average": statistics.mean(self.latencies),
+            "std_dev": statistics.stdev(self.latencies) if len(self.latencies) > 1 else 0.0
+        }
+
+    def is_responsive(self, avg_cutoff=0.8, max_cutoff=1.5):
+        stats = self.get_stats()
+        if not stats:
+            return False
+        if stats["average"] > avg_cutoff or stats["max"] > max_cutoff:
+            return False
+        return True
 
 
 class ClipboardHandler:
