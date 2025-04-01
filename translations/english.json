@@ -262,6 +262,7 @@
 	"go_back_title": "Go back?",
 	"go_back": "Are you sure you want to go back to the home screen?",
 	"auto_enroll_idle": "Anti-Idle must be enabled in order for you to use Auto-Enroll",
+	"auto_enroll_denied": "Auto-enroll is currently unavailable as the university's server is near maximum capacity\n\nPlease try again later",
 	"failed_to_find_date": "Couldn't find enrollment date",
 	"date_past": "The enrollment date already passed",
 	"date_not_within_12_hours": "Auto-Enroll only available\nthe same day of enrollment\nand within a 12 hour margin",
