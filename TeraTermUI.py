@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/1/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/2/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -132,7 +132,7 @@ def measure_time(threshold):
             result = func(self, *args, **kwargs)
             end_time = time.time()
             elapsed_time = end_time - start_time
-            logging.info(f"Elapsed time: {elapsed_time:.2f} seconds")
+            logging.info(f"Elapsed startup time: {elapsed_time:.2f} seconds")
             game_launchers = ["EpicGamesLauncher.exe", "SteamWebHelper.exe",
                               "RiotClientServices.exe", "RockstarService.exe"]
             running_launchers = TeraTermUI.checkMultipleProcessesRunning(*game_launchers)
@@ -9577,6 +9577,8 @@ class TeraTermUI(customtkinter.CTk):
                         time.sleep(1)
                         pyautogui.press("scrolllock")
                 self.ssh_monitor.sample(count=5)
+                logging.info(f"Server \"{self.ssh_monitor.host}\" Response Time Statistics (ms):\n"
+                             f"       {self.ssh_monitor.get_stats()}")
                 is_running = TeraTermUI.checkIfProcessRunning("ttermpro")
                 if is_running:
                     if not_running_count > 1 and self.stop_check_idle.is_set():
@@ -12871,7 +12873,7 @@ class SSHMonitor:
             end = time.time()
             sock.close()
             if result == 0:
-                return end - start
+                return (end - start) * 1000
         except (socket.timeout, ConnectionRefusedError, OSError):
             pass
         return None
@@ -12899,15 +12901,16 @@ class SSHMonitor:
     def get_stats(self):
         if not self.latencies:
             return None
+        
         return {
             "samples": len(self.latencies),
-            "min": min(self.latencies),
-            "max": max(self.latencies),
-            "average": statistics.mean(self.latencies),
-            "std_dev": statistics.stdev(self.latencies) if len(self.latencies) > 1 else 0.0
+            "min": round(min(self.latencies), 2),
+            "max": round(max(self.latencies), 2),
+            "average": round(statistics.mean(self.latencies), 2),
+            "std_dev": round(statistics.stdev(self.latencies), 2) if len(self.latencies) > 1 else 0.0
         }
 
-    def is_responsive(self, avg_cutoff=0.8, max_cutoff=1.5):
+    def is_responsive(self, avg_cutoff=800, max_cutoff=1500):
         stats = self.get_stats()
         if not stats:
             return False
