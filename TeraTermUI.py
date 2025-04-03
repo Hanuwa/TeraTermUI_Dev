@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/2/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/3/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -1078,8 +1078,8 @@ class TeraTermUI(customtkinter.CTk):
 
     @staticmethod
     def set_focus_tabview(event):
-        if (str(event.widget) == ".!ctktabview.!ctkframe2.!ctkframe.!canvas" or 
-            str(event.widget) == ".!ctktabview.!ctkcanvas" or 
+        if (str(event.widget) == ".!ctktabview.!ctkframe2.!ctkframe.!canvas" or
+            str(event.widget) == ".!ctktabview.!ctkcanvas" or
             str(event.widget) == ".!ctktabview.!ctkframe2.!ctkframe.!ctkcanvas"):
             event.widget.focus_set()
 
@@ -9577,9 +9577,14 @@ class TeraTermUI(customtkinter.CTk):
                         pyautogui.press("scrolllock")
                         time.sleep(1)
                         pyautogui.press("scrolllock")
-                self.ssh_monitor.sample(count=5)
-                logging.info(f"Server \"{self.ssh_monitor.host}\" Response Time Statistics (ms):\n"
-                             f"       {self.ssh_monitor.get_stats()}")
+                stats = self.ssh_monitor.get_stats()
+                host = self.ssh_monitor.host
+                if stats["std_dev"] > 100 or stats["max"] > 1000 or stats["average"] > 400:
+                    count = 15
+                else:
+                    count = 5
+                self.ssh_monitor.sample(count=count)
+                logging.info(f"Server \"{host}\" Response Time Statistics (ms):\n       {stats}")
                 is_running = TeraTermUI.checkIfProcessRunning("ttermpro")
                 if is_running:
                     if not_running_count > 1 and self.stop_check_idle.is_set():
