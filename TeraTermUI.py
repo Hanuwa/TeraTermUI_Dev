@@ -4850,7 +4850,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.automation_preparations()
                 self.auto_enroll_flag = True
                 if asyncio.run(self.test_connection()) and self.check_server() and self.check_format():
-                    self.ssh_monitor.sample(count=30, force=True)
+                    self.ssh_monitor.sample(count=50, force=True)
                     if not self.ssh_monitor.is_responsive():
                         self.play_sound("error.wav")
                         CTkMessagebox(title=translation["auto_enroll"], icon="cancel", button_width=380,
@@ -9579,10 +9579,12 @@ class TeraTermUI(customtkinter.CTk):
                         pyautogui.press("scrolllock")
                 stats = self.ssh_monitor.get_stats()
                 host = self.ssh_monitor.host
-                if stats["std_dev"] > 100 or stats["max"] > 1000 or stats["average"] > 400:
-                    count = 15
+                if not stats or stats["samples"] < 10:
+                    count = 40
+                elif stats["std_dev"] > 100 or stats["max"] > 1000 or stats["average"] > 400:
+                    count = 30
                 else:
-                    count = 5
+                    count = 20
                 self.ssh_monitor.sample(count=count)
                 logging.info(f"Server \"{host}\" Response Time Statistics (ms):\n       {stats}")
                 is_running = TeraTermUI.checkIfProcessRunning("ttermpro")
@@ -12868,6 +12870,8 @@ class SSHMonitor:
         self.host = host
         self.port = port
         self.latencies = []
+        self.failures = 0
+        self.failure_streak = 0
         self.last_sample_time = 0
 
     def measure_latency(self, timeout=5):
@@ -12884,7 +12888,7 @@ class SSHMonitor:
             pass
         return None
 
-    def sample(self, count=15, concurrent=True, force=False, cooldown=30):
+    def sample(self, count=30, concurrent=True, force=False, cooldown=30):
         now = time.time()
         if now - self.last_sample_time < cooldown and not force:
             return
@@ -12893,34 +12897,65 @@ class SSHMonitor:
         if concurrent:
             with ThreadPoolExecutor(max_workers=count) as executor:
                 futures = [executor.submit(self.measure_latency) for _ in range(count)]
-                for i, future in enumerate(as_completed(futures), 1):
+                for future in as_completed(futures):
                     latency = future.result()
                     if latency is not None:
                         self.latencies.append(latency)
+                        self.failure_streak = 0
+                    else:
+                        self.failures += 1
+                        self.failure_streak += 1
         else:
-            for i in range(count):
+            for _ in range(count):
                 latency = self.measure_latency()
                 if latency is not None:
                     self.latencies.append(latency)
+                    self.failure_streak = 0
+                else:
+                    self.failures += 1
+                    self.failure_streak += 1
                 time.sleep(0.3)
 
     def get_stats(self):
-        if not self.latencies:
+        total_attempts = len(self.latencies) + self.failures
+        if total_attempts == 0:
             return None
 
-        return {
+        stats = {
             "samples": len(self.latencies),
-            "min": round(min(self.latencies), 2),
-            "max": round(max(self.latencies), 2),
-            "average": round(statistics.mean(self.latencies), 2),
-            "std_dev": round(statistics.stdev(self.latencies), 2) if len(self.latencies) > 1 else 0.0
+            "failures": self.failures,
+            "failure_rate": round((self.failures / total_attempts) * 100, 2),
+            "failure_streak": self.failure_streak,
         }
 
-    def is_responsive(self, avg_cutoff=800, max_cutoff=1500):
+        if self.latencies:
+            min_latency = min(self.latencies)
+            max_latency = max(self.latencies)
+            avg_latency = statistics.mean(self.latencies)
+            std_dev = statistics.stdev(self.latencies) if len(self.latencies) > 1 else 0.0
+
+            stats.update({
+                "min": round(min_latency, 2),
+                "max": round(max_latency, 2),
+                "average": round(avg_latency, 2),
+                "std_dev": round(std_dev, 2)
+            })
+            score = 100
+            score -= stats["failure_rate"] * 0.5
+            score -= min(avg_latency, 1000) * 0.05
+            score -= min(std_dev, 300) * 0.1
+            stats["reliability_score"] = max(0, round(score, 2))
+
+        else:
+            stats["reliability_score"] = 0.0
+
+        return stats
+
+    def is_responsive(self, avg_cutoff=800, max_cutoff=1500, max_failure_rate=20):
         stats = self.get_stats()
-        if not stats:
+        if not stats or stats["samples"] == 0:
             return False
-        if stats["average"] > avg_cutoff or stats["max"] > max_cutoff:
+        if stats["average"] > avg_cutoff or stats["max"] > max_cutoff or stats["failure_rate"] > max_failure_rate:
             return False
         return True
 
