@@ -1078,8 +1078,9 @@ class TeraTermUI(customtkinter.CTk):
 
     @staticmethod
     def set_focus_tabview(event):
-        if (str(event.widget) == ".!ctktabview.!ctkframe2.!ctkframe.!canvas" or
-                str(event.widget) == ".!ctktabview.!ctkcanvas"):
+        if (str(event.widget) == ".!ctktabview.!ctkframe2.!ctkframe.!canvas" or 
+            str(event.widget) == ".!ctktabview.!ctkcanvas" or 
+            str(event.widget) == ".!ctktabview.!ctkframe2.!ctkframe.!ctkcanvas"):
             event.widget.focus_set()
 
     @staticmethod
@@ -12878,7 +12879,7 @@ class SSHMonitor:
             pass
         return None
 
-    def sample(self, count=10, concurrent=True, force=False, cooldown=30):
+    def sample(self, count=15, concurrent=True, force=False, cooldown=30):
         now = time.time()
         if now - self.last_sample_time < cooldown and not force:
             return
@@ -12901,7 +12902,7 @@ class SSHMonitor:
     def get_stats(self):
         if not self.latencies:
             return None
-        
+
         return {
             "samples": len(self.latencies),
             "min": round(min(self.latencies), 2),
