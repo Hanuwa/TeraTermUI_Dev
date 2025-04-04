@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/3/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/4/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -4856,7 +4856,7 @@ class TeraTermUI(customtkinter.CTk):
                         CTkMessagebox(title=translation["auto_enroll"], icon="cancel", button_width=380,
                                       message=translation["auto_enroll_denied"])
                         self.auto_enroll_flag = False
-                        self.after(100, self.auto_enroll.deselect)
+                        self.after(125, self.auto_enroll.deselect)
                         return
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if not self.wait_for_window():
@@ -4884,8 +4884,8 @@ class TeraTermUI(customtkinter.CTk):
                             else:
                                 self.after(100, self.show_error_message, 305, 220,
                                            translation["failed_to_find_date"])
-                                self.after(100, self.auto_enroll.deselect)
                                 self.auto_enroll_flag = False
+                                self.after(125, self.auto_enroll.deselect)
                                 return
                             active_semesters = TeraTermUI.get_latest_term(copy)
                             date_time_string = re.sub(r"[^a-zA-Z0-9:/ ]", "", date_time_string)
@@ -4907,9 +4907,10 @@ class TeraTermUI(customtkinter.CTk):
                             is_current_time_24_hours_ahead = time_difference >= timedelta(hours=-24)
                             if active_semesters["percent"] and active_semesters["asterisk"] \
                                     and semester == active_semesters["percent"]:
-                                self.after(100, self.show_error_message, 305, 220, translation["date_past"])
+                                self.after(100, self.show_error_message, 325, 235,
+                                           translation["date_unknown"])
                                 self.auto_enroll_flag = False
-                                self.after(100, self.auto_enroll.deselect)
+                                self.after(125, self.auto_enroll.deselect)
                                 return
                             # Comparing Dates
                             if (is_same_date and is_time_difference_within_12_hours) or \
@@ -4932,14 +4933,14 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(100, self.show_error_message, 305, 220,
                                                translation["date_past"])
                                     self.auto_enroll_flag = False
-                                    self.after(100, self.auto_enroll.deselect)
+                                    self.after(125, self.auto_enroll.deselect)
                             elif (is_future_date or is_more_than_one_day) or \
                                     (is_same_date and not is_time_difference_within_12_hours) or \
                                     (is_next_date and not is_time_difference_within_12_hours):
                                 self.after(100, self.show_error_message, 320, 235,
                                            translation["date_not_within_12_hours"])
                                 self.auto_enroll_flag = False
-                                self.after(100, self.auto_enroll.deselect)
+                                self.after(125, self.auto_enroll.deselect)
                             if ("INVALID ACTION" in text_output and "PANTALLAS MATRICULA" in text_output) or \
                                     ("LISTA DE SECCIONES" in text_output and "COURSE NOT" in text_output):
                                 self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER + "SRM{ENTER}")
@@ -4948,13 +4949,13 @@ class TeraTermUI(customtkinter.CTk):
                         else:
                             self.after(100, self.show_error_message, 305, 220,
                                        translation["failed_to_find_date"])
-                            self.after(100, self.auto_enroll.deselect)
                             self.auto_enroll_flag = False
+                            self.after(125, self.auto_enroll.deselect)
                     else:
                         self.after(100, self.show_error_message, 305, 215,
                                    translation["tera_term_not_running"])
                         self.auto_enroll_flag = False
-                        self.after(100, self.auto_enroll.deselect)
+                        self.after(125, self.auto_enroll.deselect)
             except Exception as err:
                 logging.error("An error occurred: %s", err)
                 self.error_occurred = True
@@ -11310,19 +11311,19 @@ class TeraTermUI(customtkinter.CTk):
             self.after(100, self.show_error_message, 345, 235, error_msg_short)
             if self.auto_enroll_flag:
                 self.auto_enroll_flag = False
-                self.after(100, self.auto_enroll.deselect)
+                self.after(125, self.auto_enroll.deselect)
             return False
         elif error_msg_medium:
             self.after(100, self.show_error_message, 355, 240, error_msg_medium)
             if self.auto_enroll_flag:
                 self.auto_enroll_flag = False
-                self.after(100, self.auto_enroll.deselect)
+                self.after(125, self.auto_enroll.deselect)
             return False
         elif error_msg_long:
             self.after(100, self.show_error_message, 390, 245, error_msg_long)
             if self.auto_enroll_flag:
                 self.auto_enroll_flag = False
-                self.after(100, self.auto_enroll.deselect)
+                self.after(125, self.auto_enroll.deselect)
             return False
 
         return True
