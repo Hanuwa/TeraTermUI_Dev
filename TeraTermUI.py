@@ -4850,7 +4850,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.automation_preparations()
                 self.auto_enroll_flag = True
                 if asyncio.run(self.test_connection()) and self.check_server() and self.check_format():
-                    self.ssh_monitor.sample(count=50, force=True)
+                    self.ssh_monitor.sample(count=40, force=True)
                     if not self.ssh_monitor.is_responsive():
                         self.play_sound("error.wav")
                         CTkMessagebox(title=translation["auto_enroll"], icon="cancel", button_width=380,
