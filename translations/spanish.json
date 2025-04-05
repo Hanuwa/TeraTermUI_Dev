@@ -265,6 +265,7 @@
 	"auto_enroll_denied": "La Auto-Matrícula no está disponible actualmente porque el servidor de la universidad está cerca de su capacidad máxima\n\nPor favor, intenta nuevamente más tarde",
 	"failed_to_find_date": "No se pudo encontrar\nla fecha de matricula",
 	"date_past": "La fecha de matricula ya pasó",
+	"date_unknown": "La fecha de matrícula ya pasó\n\no aún no está disponible",
 	"date_not_within_12_hours": "Auto-Matrícula solo disponible\nel mismo día de la matrícula\ny dentro de un margen de 12 horas",
 	"performing_auto_enroll": "ejecutando auto-matrícula ahora...",
 	"auto_enroll_activated": "\nAuto-Matrícula ha sido activado",
