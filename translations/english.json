@@ -265,6 +265,7 @@
 	"auto_enroll_denied": "Auto-enroll is currently unavailable as the university's server is near maximum capacity\n\nPlease try again later",
 	"failed_to_find_date": "Couldn't find enrollment date",
 	"date_past": "The enrollment date already passed",
+	"date_unknown": "Either enrollment date already passed\n\nor is not available yet",
 	"date_not_within_12_hours": "Auto-Enroll only available\nthe same day of enrollment\nand within a 12 hour margin",
 	"performing_auto_enroll": "performing auto-enrollment now...",
 	"auto_enroll_activated": "\nAuto-Enrollment activated",
