@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/4/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/6/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -211,7 +211,8 @@ class TeraTermUI(customtkinter.CTk):
         self.server_status = None
         self.timer_window = None
         self.timer_label = None
-        self.message_label = None
+        self.timer_header = None
+        self.server_rating = None
         self.cancel_button = None
         self.pr_date = None
         self.running_countdown = None
@@ -4144,12 +4145,14 @@ class TeraTermUI(customtkinter.CTk):
             self.search_next_page_tooltip.configure(message=translation["search_next_page_tooltip"])
             if self.timer_window is not None and self.timer_window.winfo_exists():
                 self.timer_window.title(translation["auto_enroll"])
-                self.message_label.configure(text=translation["auto_enroll_activated"])
+                self.timer_header.configure(text=translation["auto_enroll_activated"])
                 self.cancel_button.configure(text=translation["option_1"])
+                rating, color = self.ssh_monitor.get_reliability_rating(lang)
                 puerto_rico_tz = timezone("America/Puerto_Rico")
                 current_date = datetime.now(puerto_rico_tz)
                 time_difference = self.pr_date - current_date
                 total_seconds = time_difference.total_seconds()
+                self.server_rating.configure(text=f"{translation["server_status_rating"]}{rating}", text_color=color)
                 self.timer_label.configure(text=self.get_countdown_message(total_seconds))
             for entry in [self.e_classes_entry, self.e_section_entry, self.s_classes_entry, self.m_classes_entry,
                           self.m_section_entry, self.e_semester_entry, self.s_semester_entry, self.menu_entry,
@@ -5137,6 +5140,7 @@ class TeraTermUI(customtkinter.CTk):
                       button_width=380)
 
     def create_timer_window(self):
+        lang = self.language_menu.get()
         translation = self.load_language()
         main_window_x = self.winfo_x()
         main_window_y = self.winfo_y()
@@ -5159,14 +5163,19 @@ class TeraTermUI(customtkinter.CTk):
         self.timer_window.attributes("-alpha", 0.90)
         self.timer_window.resizable(False, False)
         self.timer_window.iconbitmap(self.icon_path)
-        self.message_label = customtkinter.CTkLabel(self.timer_window, font=customtkinter.CTkFont(
+        rating, color = self.ssh_monitor.get_reliability_rating(lang)
+        self.timer_header = customtkinter.CTkLabel(self.timer_window, font=customtkinter.CTkFont(
             size=20, weight="bold"), text=translation["auto_enroll_activated"])
-        self.message_label.pack()
+        self.timer_header.pack()
+        self.server_rating = customtkinter.CTkLabel(
+            self.timer_window, text=f"{translation["server_status_rating"]}{rating}", text_color=color,
+            font=customtkinter.CTkFont(size=15))
+        self.server_rating.pack(pady=(4, 0))
         self.timer_label = customtkinter.CTkLabel(self.timer_window, text="", font=customtkinter.CTkFont(size=15))
-        self.timer_label.pack(pady=(16, 0))
+        self.timer_label.pack()
         self.cancel_button = CustomButton(self.timer_window, text=translation["option_1"], width=260, height=28,
                                           hover_color="darkred", fg_color="red", command=self.end_countdown)
-        self.cancel_button.pack(pady=(24, 0))
+        self.cancel_button.pack(pady=(16, 0))
         new_menu = pystray.Menu(
             pystray.MenuItem(translation["hide_tray"], self.hide_all_windows),
             pystray.MenuItem(translation["show_tray"], self.show_all_windows, default=True),
@@ -6182,7 +6191,7 @@ class TeraTermUI(customtkinter.CTk):
                     logging.error("An error occurred: %s", err)
                     self.log_error()
                 if idle[0] != "Disabled":
-                    self.ssh_monitor.sample()
+                    self.after(500, self.ssh_monitor.sample)
                 # the connection attempt succeeded
                 return True
         except (socket.timeout, ConnectionRefusedError, OSError):
@@ -9546,6 +9555,8 @@ class TeraTermUI(customtkinter.CTk):
     def check_process_periodically(self):
         import pyautogui
 
+        lang = self.language_menu.get()
+        translation = self.load_language()
         time.sleep(30 + random.uniform(5, 25))
         not_running_count = 0
         power_timeout = TeraTermUI.get_power_timeout()
@@ -9580,6 +9591,7 @@ class TeraTermUI(customtkinter.CTk):
                         pyautogui.press("scrolllock")
                 stats = self.ssh_monitor.get_stats()
                 host = self.ssh_monitor.host
+                rating, color = self.ssh_monitor.get_reliability_rating(lang)
                 if not stats or stats["samples"] < 10:
                     count = 40
                 elif stats["std_dev"] > 100 or stats["max"] > 1000 or stats["average"] > 400:
@@ -9587,6 +9599,9 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     count = 20
                 self.ssh_monitor.sample(count=count)
+                if self.timer_window is not None and self.timer_window.winfo_exists():
+                    self.server_rating.configure(text=f"{translation["server_status_rating"]}{rating}",
+                                                 text_color=color)
                 logging.info(f"Server \"{host}\" Response Time Statistics (ms):\n       {stats}")
                 is_running = TeraTermUI.checkIfProcessRunning("ttermpro")
                 if is_running:
@@ -12951,6 +12966,35 @@ class SSHMonitor:
             stats["reliability_score"] = 0.0
 
         return stats
+
+    def get_reliability_rating(self, lang):
+        stats = self.get_stats()
+        if not stats or stats["samples"] == 0:
+            return ("Unknown", ("black", "white")) if lang == "English" else ("Desconocido", ("black", "white"))
+
+        score = stats["reliability_score"]
+        if lang == "Español":
+            if score >= 90:
+                return "Excelente", "#4CAF50"
+            elif score >= 75:
+                return "Buena", "#8BC34A"
+            elif score >= 60:
+                return "Regular", "#FFEB3B"
+            elif score >= 40:
+                return "Deficiente", "#FF9800"
+            else:
+                return "No confiable", "red"
+        else:
+            if score >= 90:
+                return "Excellent", "#4CAF50"
+            elif score >= 75:
+                return "Good", "#8BC34A"
+            elif score >= 60:
+                return "Fair", "#FFEB3B"
+            elif score >= 40:
+                return "Poor", "#FF9800"
+            else:
+                return "Unreliable", "red"
 
     def is_responsive(self, avg_cutoff=800, max_cutoff=1500, max_failure_rate=20):
         stats = self.get_stats()
