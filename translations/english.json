@@ -269,6 +269,7 @@
 	"date_not_within_12_hours": "Auto-Enroll only available\nthe same day of enrollment\nand within a 12 hour margin",
 	"performing_auto_enroll": "performing auto-enrollment now...",
 	"auto_enroll_activated": "\nAuto-Enrollment activated",
+	"server_status_rating": "Server Connection: ",
 	"failed_saved_lack_info": "No classes were saved\ndue to missing information",
 	"failed_saved_invalid_info": "No classes were saved\ndue to incorrect information",
 	"saved_classes_success": "Saved classes successfully",
