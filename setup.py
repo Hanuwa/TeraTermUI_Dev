@@ -12,7 +12,7 @@ PYTHON_REQUIRED = (3, 12, 9)
 TESSERACT_URL = "https://github.com/tesseract-ocr/tesseract/releases/download/5.5.0/tesseract-ocr-w64-setup-5.5.0.20241111.exe"
 INNO_SETUP_URL = "https://jrsoftware.org/download.php/is.exe"
 MSVC_URL = "https://aka.ms/vs/17/release/vs_BuildTools.exe"
-SEVENZIP_URL = "https://www.7-zip.org/a/7z2301-x64.exe"
+SEVENZIP_URL = "https://www.7-zip.org/a/7z2409-x64.exe"
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 VENV_DIR = os.path.join(ROOT_DIR, ".venv")
