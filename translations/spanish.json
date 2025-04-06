@@ -269,6 +269,7 @@
 	"date_not_within_12_hours": "Auto-Matrícula solo disponible\nel mismo día de la matrícula\ny dentro de un margen de 12 horas",
 	"performing_auto_enroll": "ejecutando auto-matrícula ahora...",
 	"auto_enroll_activated": "\nAuto-Matrícula ha sido activado",
+	"server_status_rating": "Conexión del Servidor: ",
 	"failed_saved_lack_info": "No se guardaron clases debido\na que falta información",
 	"failed_saved_invalid_info": "No se guardaron clases debido\na información incorrecta",
 	"saved_classes_success": "Clases guardadas con éxito",
