@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/6/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/7/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 13600 lines of codes, it definitely makes things harder to work with
+# and with over 13700 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -1431,7 +1431,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.m_register_menu[i].configure(
                         command=lambda value, idx=i: self.detect_register_menu_change(value, idx))
                     self.m_classes_entry[i].bind("<FocusOut>", self.detect_change)
-                    self.m_section_entry[i].bind("<FocusOut>", self.section_bind_wrapper)
+                    self.m_section_entry[i].bind("<FocusOut>", self.m_sections_bind_wrapper)
 
         if save:
             num_rows = len(save)
@@ -4435,7 +4435,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.m_semester_entry[i].set(semester)
                 self.m_semester_entry[i].configure(state="disabled")
 
-    def section_bind_wrapper(self, event):
+    def m_sections_bind_wrapper(self, event):
         self.detect_change(event)
         self.check_class_conflicts(event)
 
@@ -5685,7 +5685,7 @@ class TeraTermUI(customtkinter.CTk):
                                                         placeholder_text=self.placeholder_texts_sections[i], height=26))
                 self.m_tooltips.append(CTkToolTip(self.m_section_entry[i], message="", bg_color="#1E90FF",
                                                   visibility=False))
-                self.m_section_entry[i].bind("<FocusOut>", self.section_bind_wrapper)
+                self.m_section_entry[i].bind("<FocusOut>", self.m_sections_bind_wrapper)
                 self.m_semester_entry.append(CustomComboBox(self.multiple_frame, self, lang, height=26,
                                                             values=self.semester_values + [translation["current"]]))
                 self.m_semester_entry[i].set(self.DEFAULT_SEMESTER)
@@ -5849,7 +5849,7 @@ class TeraTermUI(customtkinter.CTk):
                         self.m_register_menu[i].configure(
                             command=lambda value, idx=i: self.detect_register_menu_change(value, idx))
                         self.m_classes_entry[i].bind("<FocusOut>", self.detect_change)
-                        self.m_section_entry[i].bind("<FocusOut>", self.section_bind_wrapper)
+                        self.m_section_entry[i].bind("<FocusOut>", self.m_sections_bind_wrapper)
                     self.show_success_message(350, 265, translation["saved_classes_success"])
         if save == "off":
             self.cursor.execute("DELETE FROM saved_classes")
@@ -7551,6 +7551,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.cursor.execute("UPDATE user_data SET default_semester=?",
                                         (self.DEFAULT_SEMESTER,))
                 self.found_latest_semester = True
+                self.update_all_semester_tooltips()
                 return self.DEFAULT_SEMESTER
             else:
                 return self.DEFAULT_SEMESTER
@@ -7615,18 +7616,20 @@ class TeraTermUI(customtkinter.CTk):
     def get_semester_season(self, semester_code):
         lang = self.language_menu.get()
         translation = self.load_language()
-        if semester_code == "CURRENT" or semester_code == "ACTUAL":
-            return translation["current_tooltip"]
+        if semester_code in ["CURRENT", "ACTUAL"]:
+            current_tooltip = translation["current_tooltip"]
+            if self.found_latest_semester:
+                latest_semester_text = self.get_semester_season(self.DEFAULT_SEMESTER)
+                current_tooltip += f"\n{latest_semester_text}"
+            return current_tooltip
 
-        if len(semester_code) != 3 or not semester_code[0].isalpha() or not semester_code[1].isdigit() or not \
-        semester_code[2].isdigit():
+        if len(semester_code) != 3 or not semester_code[0].isalpha() or not semester_code[1:].isdigit():
             return ""
 
         letter = semester_code[0]
         year_digit = int(semester_code[1])
         semester_part = semester_code[2]
-
-        base_year = 2000 + (ord(letter) - ord("A")) * 10
+        base_year = 2000 + (ord(letter.upper()) - ord("A")) * 10
         full_year = base_year + year_digit
 
         semester_map = {"English": {"1": "Fall", "2": "Spring", "3": "Summer"},
@@ -7647,6 +7650,12 @@ class TeraTermUI(customtkinter.CTk):
                 self.semesters_tooltips[widget].show()
             else:
                 self.semesters_tooltips[widget].hide()
+
+    def update_all_semester_tooltips(self):
+        entries = [self.e_semester_entry, self.s_semester_entry,
+                   self.menu_semester_entry, self.m_semester_entry[0]]
+        for widget in entries:
+            self.update_semester_tooltip(widget)
 
     @staticmethod
     def specific_class_data(data):
