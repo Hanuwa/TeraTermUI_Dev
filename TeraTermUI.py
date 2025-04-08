@@ -7620,7 +7620,7 @@ class TeraTermUI(customtkinter.CTk):
             current_tooltip = translation["current_tooltip"]
             if self.found_latest_semester:
                 latest_semester_text = self.get_semester_season(self.DEFAULT_SEMESTER)
-                current_tooltip += f"\n{latest_semester_text}"
+                current_tooltip += f"\n{self.DEFAULT_SEMESTER} - {latest_semester_text}"
             return current_tooltip
 
         if len(semester_code) != 3 or not semester_code[0].isalpha() or not semester_code[1:].isdigit():
