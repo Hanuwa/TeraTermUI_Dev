@@ -315,7 +315,7 @@
 	"tooltip_grd": "The final grade of the class",
 	"tooltip_croom": "The classroom where your class\nwill take place",
 	"success_title": "Success",
-	"enrollment_error": "This error is usually caused because it isn't time yet for you to be able to enroll classes or because the TERM you selected is outdated",
+	"enrollment_error": "This error is usually caused because it isn't time yet for you to be able to enroll classes or because the term you selected is outdated",
 	"specific_enrollment_error": "You are getting this message because one or more classes failed to enroll for the following reason(s):\n\n",
 	"information_title": "Information",
 	"download_title": "Download",
