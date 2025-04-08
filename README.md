@@ -18,33 +18,15 @@ which is worth noting because there are some significant changes between the two
 **This tool is only intended to be used right after cloning the project**
 
 To automate the building process, this project includes a "**setup.py**" file that will create the dev environment, download and install anything that is necessary 
-and organize the files and folders properly. However, **Tesseract requires manual installation**, as its installer does not support silent execution. Follow the steps below to configure it correctly:
-
-1. **Run the Tesseract installer** (triggered by the setup script).
-2. **Select installation type**: Choose **"Install just for me"**.
-3. **Customize installation options**:
-   - **Untick**:
-     - ScrollView
-     - Training Tools
-     - Shortcuts creation
-   - **Tick**:
-     - Additional language data (download)
-       - Spanish
-4. **Set the installation path**:
-   - Install Tesseract in a folder named **`Tesseract-OCR`** at the **root** of the project directory.
-5. **Finalize setup**:
-   - Tick **"Do not create shortcuts"** before proceeding with the installation.
-
-After installation, the setup script will ensure Tesseract is properly configured for the project.
+and organize the files and folders properly. if you want to interact directly with the"**Tesseract-OCR.7z**" compressed folder you will need to download 7-zip, 
+a file archiver and extractor. https://www.7-zip.org/
 
 # Tesseract OCR
-Must install this application under a folder within the TeraTermUI project called "Tesseract-OCR".
-This application is for OCR scanning, basically reading text from images, the reason we need this is
+This tool is used for OCR scanning, basically reading text from images, the reason we need this is
 because we don't have access to the database of the University and to error proof the application for things like
 the Social Security Number we have no way of validating that information so what we do is after the action is performed on Tera Term,
 we take a screenshot of the result and perform OCR using Tesseract to see if an error occured within Tera Term. 
 Now using this tool we can now stop the execution of code and show error message within our app if the user did something wrong. 
-The folder gets compressed into a 7zip archive
 https://github.com/UB-Mannheim/tesseract/wiki
 
 # GUI Framework
