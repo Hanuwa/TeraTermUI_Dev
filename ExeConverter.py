@@ -36,7 +36,7 @@ def extract_second_date_from_file(filepath):
             dates = re.findall(r"\d{1,2}/\d{1,2}/\d{2,4}", line)
             if len(dates) >= 2:
                 return dates[1]
-            
+
         return None
 
 def check_and_restore_backup():
@@ -225,6 +225,34 @@ updated_license_content = re.sub(r"Copyright \(c\) \d{4}", f"Copyright (c) {curr
 with open(license_file_path, "w") as file:
     file.write(updated_license_content)
 try:
+    connection = sqlite3.connect(project_directory + "/database.db")
+    cursor = connection.cursor()
+    cursor.execute("DELETE FROM user_data")
+    cursor.execute("DELETE FROM saved_classes")
+    utc_now_str = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
+    cursor.execute("SELECT COUNT(*) FROM metadata WHERE key = ?", ("version",))
+    row = cursor.fetchone()
+    if row is None:
+        utc_now_str = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
+        cursor.execute("INSERT INTO metadata (key, value, date) VALUES (?, ?, ?)",
+                       ("version", db_version, utc_now_str))
+    elif row[0] != db_version:
+        utc_now_str = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
+        cursor.execute("UPDATE metadata SET value = ?, date = ? WHERE key = ?",
+                       (db_version, utc_now_str, "version"))
+    connection.close()
+    dist_db_path = os.path.join(project_directory, "dist", "database.db")
+    shutil.copy2(os.path.join(project_directory, "database.db"), dist_db_path)
+except KeyboardInterrupt as e:
+    shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
+    os.remove(program_backup)
+    print(Fore.RED + f"Failed to deal with database: {e}\n" + Style.RESET_ALL)
+    sys.exit(1)
+except Exception as e:
+    shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
+    os.remove(program_backup)
+    print(Fore.RED + f"Failed to deal with database: {e}\n" + Style.RESET_ALL)
+try:
     if os.path.exists(output_directory):
         shutil.rmtree(output_directory)
     os.makedirs(output_directory, exist_ok=True)
@@ -318,28 +346,13 @@ try:
             for folder in ["updater.build", "updater.onefile-build", "updater.dist"]:
                 folder_path = os.path.join(project_directory, folder)
                 if os.path.exists(folder_path):
-                    shutil.rmtree(folder_path)
+                    dest_path = os.path.join(output_directory, folder)
+                    if os.path.exists(dest_path):
+                        shutil.rmtree(dest_path)
+                    shutil.move(folder_path, dest_path)
 except Exception as e:
     print(Fore.RED + f"An error occurred: {e}\n" + Style.RESET_ALL)
     sys.exit(1)
-try:
-    connection = sqlite3.connect(project_directory + "/database.db")
-    cursor = connection.cursor()
-    cursor.execute("DELETE FROM user_data")
-    cursor.execute("DELETE FROM saved_classes")
-    utc_now_str = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
-    cursor.execute("INSERT INTO metadata (key, value, date) VALUES (?, ?, ?)",
-                   ("version", db_version, utc_now_str))
-    connection.commit()
-except KeyboardInterrupt as e:
-    shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
-    os.remove(program_backup)
-    print(Fore.RED + f"Failed to reset database: {e}\n" + Style.RESET_ALL)
-    sys.exit(1)
-except Exception as e:
-    shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
-    os.remove(program_backup)
-    print(Fore.RED + f"Failed to reset database: {e}\n" + Style.RESET_ALL)
 try:
     with open(project_directory + "/TeraTermUI.py", "r", encoding="utf-8") as file:
         data = file.read()
