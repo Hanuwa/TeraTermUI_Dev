@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import shutil
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -323,7 +324,6 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Tera Term UI Updater")
     parser.add_argument("mode", choices=["Portable", "Installation"], help="Update mode")
     parser.add_argument("version", help="Version number to update to")
-    parser.add_argument("update_db", type=lambda x: x.lower() == "true", help="Whether to update the database")
     parser.add_argument("app_directory", help="Application directory path")
 
     try:
@@ -458,7 +458,7 @@ def start_update(gui, args):
 
             if downloaded_file:
                 gui.downloaded_file = downloaded_file
-                update_success = install_extract_update(gui, args.mode, args.update_db, args.version,
+                update_success = install_extract_update(gui, args.mode, args.version,
                                                         downloaded_file, args.app_directory)
 
                 if args.mode == "Portable":
@@ -487,20 +487,15 @@ def start_update(gui, args):
             error_msg = str(e)
             logging.error(f"Update failed: {error_msg}")
             gui.update_progress(0, f"Update failed: {error_msg}")
-
             if "network" in error_msg.lower():
-                messagebox.showerror(
-                    "Network Error",
-                    "Failed to connect to the update server.\nPlease check your internet connection and try again")
+                messagebox.showerror("Network Error","Failed to connect to the update server.\n"
+                                                     "Please check your internet connection and try again")
             elif "permission" in error_msg.lower():
-                messagebox.showerror(
-                    "Permission Error",
-                    "Insufficient permissions to perform the update.\nPlease run the updater with administrative privileges")
+                messagebox.showerror("Permission Error","Insufficient permissions to perform the update.\n"
+                                                        "Please run the updater with administrative privileges")
             else:
-                messagebox.showerror(
-                    "Update Failed",
-                    f"The update failed:\n\n{error_msg}\n\nPlease check the logs for more information")
-
+                messagebox.showerror("Update Failed",f"The update failed:\n\n{error_msg}\n\n"
+                                                     f"Please check the logs for more information")
             gui.set_failure_state()
 
     update_thread = threading.Thread(target=update_task, daemon=True)
@@ -615,6 +610,18 @@ def fetch_checksums_and_urls(version):
         return None
     except Exception as e:
         logging.error(f"Unexpected error fetching release info: {e}")
+        return None
+
+def get_db_version(path):
+    try:
+        conn = sqlite3.connect(path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT value FROM metadata WHERE key = 'version'")
+        row = cursor.fetchone()
+        conn.close()
+        return row[0] if row else None
+    except Exception as e:
+        logging.warning(f"Failed to read database version from {path}: {e}")
         return None
 
 def download_update(gui, mode, checksum_info):
@@ -755,7 +762,7 @@ def download_update(gui, mode, checksum_info):
 
     return None
 
-def install_extract_update(gui, mode, update_db, version, downloaded_file, app_directory):
+def install_extract_update(gui, mode, version, downloaded_file, app_directory):
     if gui.cancel_requested:
         logging.info("Update cancelled by user during installation")
         return False
@@ -835,6 +842,21 @@ def install_extract_update(gui, mode, update_db, version, downloaded_file, app_d
             if gui.cancel_requested:
                 return False
 
+            should_update_db = True
+            try:
+                current_db_path = os.path.join(app_directory, "database.db")
+                new_db_path = os.path.join(gui.temp_extract_folder, "database.db")
+                if os.path.exists(current_db_path) and os.path.exists(new_db_path):
+                    current_ver = get_db_version(current_db_path)
+                    new_ver = get_db_version(new_db_path)
+                    if current_ver == new_ver:
+                        logging.info(f"database.db version unchanged ({current_ver}). Skipping database update.")
+                        should_update_db = False
+                    else:
+                        logging.info(f"database.db version changed: {current_ver} → {new_ver}. Updating.")
+            except Exception as e:
+                logging.warning(f"Unable to compare database versions: {e}")
+
             logging.info("Starting backup creation")
             total_size = sum(
                 os.path.getsize(os.path.join(dp, f))
@@ -868,7 +890,7 @@ def install_extract_update(gui, mode, update_db, version, downloaded_file, app_d
                         while gui.pause_requested and not gui.cancel_requested:
                             time.sleep(0.1)
 
-                        if not update_db and entry.name == "database.db":
+                        if not should_update_db and entry.name == "database.db":
                             logging.info(f"Skipping deletion of database file: {entry.path}")
                             continue
 
@@ -899,7 +921,7 @@ def install_extract_update(gui, mode, update_db, version, downloaded_file, app_d
                             time.sleep(0.1)
                             continue
 
-                        if not update_db and file == "database.db":
+                        if not should_update_db and file == "database.db":
                             logging.info(f"Skipping database file update: {file}")
                             continue
 
