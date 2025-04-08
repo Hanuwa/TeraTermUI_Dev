@@ -9,10 +9,8 @@ import urllib.request
 import winreg
 
 PYTHON_REQUIRED = (3, 12, 9)
-TESSERACT_URL = "https://github.com/tesseract-ocr/tesseract/releases/download/5.5.0/tesseract-ocr-w64-setup-5.5.0.20241111.exe"
-INNO_SETUP_URL = "https://jrsoftware.org/download.php/is.exe"
 MSVC_URL = "https://aka.ms/vs/17/release/vs_BuildTools.exe"
-SEVENZIP_URL = "https://www.7-zip.org/a/7z2409-x64.exe"
+INNO_SETUP_URL = "https://jrsoftware.org/download.php/is.exe"
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 VENV_DIR = os.path.join(ROOT_DIR, ".venv")
@@ -69,10 +67,11 @@ def force_admin():
         sys.exit(0)
 
 def check_python_version():
-    if sys.version_info[:2] == (3, 12) and sys.version_info[2] >= 9:
-        print(f"[OK] Python {sys.version_info[:3]} is compatible")
+    major, minor, patch = sys.version_info[:3]
+    if (major, minor) == (3, 12) and patch >= 9:
+        print(f"[OK] Python {major}.{minor}.{patch} is compatible")
     else:
-        print(f"[ERROR] Python 3.12.9 or higher is required; found {sys.version_info[:3]}")
+        print(f"[ERROR] Python 3.12 with patch version 9 or higher is required; found {major}.{minor}.{patch}")
         input("Press Enter to exit...")
         sys.exit(1)
 
@@ -114,96 +113,6 @@ def move_ctk_files():
     if os.path.exists("modules"):
         shutil.rmtree("modules")
 
-def install_tesseract():
-    if not os.path.exists(TESSERACT_DIR):
-        os.makedirs(TESSERACT_DIR)
-    installed_path = None
-    for reg_path in [r"SOFTWARE\Tesseract-OCR", r"SOFTWARE\WOW6432Node\Tesseract-OCR"]:
-        for root_key in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
-            try:
-                key = winreg.OpenKey(root_key, reg_path)
-                install_dir, _ = winreg.QueryValueEx(key, "InstallDir")
-                winreg.CloseKey(key)
-                if os.path.exists(install_dir):
-                    installed_path = install_dir
-                    break
-            except FileNotFoundError:
-                continue
-        if installed_path:
-            break
-    if installed_path:
-        print(f"[INFO] Found Tesseract at {installed_path}")
-        tesseract_exe = os.path.join(installed_path, "tesseract.exe")
-        if os.path.exists(tesseract_exe):
-            try:
-                vout = subprocess.check_output([tesseract_exe, "--version"], text=True)
-                if "5.5.0" in vout:
-                    print("[INFO] Version 5.5.0 confirmed. Copying files...")
-                    for item in os.listdir(installed_path):
-                        src = os.path.join(installed_path, item)
-                        dst = os.path.join(TESSERACT_DIR, item)
-                        if os.path.isfile(src):
-                            shutil.copy2(src, dst)
-                    print("[OK] Tesseract files copied")
-                else:
-                    print("[INFO] Version mismatch. Proceeding with installation")
-                    installed_path = None
-            except Exception as e:
-                print(f"[WARNING] Tesseract version check failed: {e}")
-                installed_path = None
-    if not installed_path:
-        print("[INFO] Installing Tesseract OCR...")
-        if not os.path.exists(TESSERACT_INSTALLER):
-            urllib.request.urlretrieve(TESSERACT_URL, TESSERACT_INSTALLER)
-            print("[OK] Installer downloaded")
-        args = [
-            TESSERACT_INSTALLER, "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART",
-            "/SP-", "/NODESKTOP", "/NOSTARTMENU",  f"/DIR={TESSERACT_DIR}",
-            "/COMPONENTS=!scrollview,!trainingtools,!shortcuts,tessdata_spa"
-        ]
-        subprocess.run(args, check=True)
-        os.remove(TESSERACT_INSTALLER)
-    for file in os.listdir(TESSERACT_DIR):
-        if file.endswith(".html") or (file.endswith(".exe") and file.lower() != "tesseract.exe"):
-            os.remove(os.path.join(TESSERACT_DIR, file))
-    print("[OK] Tesseract OCR ready")
-    compress_tesseract()
-
-def install_7zip():
-    try:
-        key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\7-Zip", 0, winreg.KEY_READ)
-        path_val, _ = winreg.QueryValueEx(key, "Path")
-        winreg.CloseKey(key)
-        seven_zip_exe = os.path.join(path_val, "7z.exe")
-        if os.path.exists(seven_zip_exe):
-            print(f"[INFO] Found 7-Zip at {seven_zip_exe}")
-            return seven_zip_exe
-    except FileNotFoundError:
-        pass
-    default_path = r"C:\Program Files\7-Zip\7z.exe"
-    if os.path.exists(default_path):
-        print(f"[INFO] Found 7-Zip at {default_path}")
-        return default_path
-    print("[INFO] 7-Zip not found. Installing 7-Zip...")
-    installer = os.path.join(ROOT_DIR, "7z_setup.exe")
-    urllib.request.urlretrieve(SEVENZIP_URL, installer)
-    subprocess.run([installer, "/S"], check=True)
-    os.remove(installer)
-    if os.path.exists(default_path):
-        print(f"[OK] 7-Zip installed at {default_path}")
-        return default_path
-    else:
-        print("[ERROR] 7-Zip installation failed")
-        input("Press Enter to exit...")
-
-def compress_tesseract():
-    print("[INFO] Compressing Tesseract-OCR...")
-    seven_zip_exe = install_7zip()
-    archive = os.path.join(ROOT_DIR, "Tesseract-OCR.7z")
-    subprocess.run([seven_zip_exe, "a", "-t7z", archive, TESSERACT_DIR], check=True)
-    shutil.rmtree(TESSERACT_DIR)
-    print(f"[OK] Compressed to {archive}")
-
 def install_inno_setup():
     reg_paths = [
         r"SOFTWARE\Jordan Russell\Inno Setup 6",
@@ -235,7 +144,9 @@ def install_inno_setup():
             print("[WARNING] Inno Setup installation could not be fully verified")
 
 def ensure_msvc_in_path(new_path):
-    key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment", 0, winreg.KEY_ALL_ACCESS)
+    key = winreg.OpenKey(
+        winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment",
+        0, winreg.KEY_ALL_ACCESS)
     try:
         current_path, _ = winreg.QueryValueEx(key, "Path")
         if new_path.lower() not in current_path.lower():
@@ -288,8 +199,6 @@ def detect_msvc():
 def install_msvc():
     os_version = platform.version()
     print(f"[INFO] Detected Windows Version: {os_version}")
-    sdk_component = None
-    sdk_version = None
     if "10" in os_version:
         sdk_version = "10.0.20348.0"
         sdk_component = "Microsoft.VisualStudio.Component.Windows10SDK.20348"
@@ -360,7 +269,6 @@ def main():
     install_dependencies()
     move_ctk_files()
     copy_dist_files()
-    install_tesseract()
     install_inno_setup()
     install_msvc()
     print("\n[SETUP COMPLETE] Your Dev environment is ready to use!")
