@@ -1,5 +1,4 @@
 import argparse
-import datetime
 import hashlib
 import re
 import os
@@ -9,21 +8,26 @@ import subprocess
 import sys
 import time
 from colorama import init, Fore, Style
-
+from datetime import datetime, UTC
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="TeraTermUI Exe Converter")
-    parser.add_argument("--report", action="store_true", help="Generate Nuitka compilation report")
-    parser.add_argument("--lto", choices=["auto", "yes", "no"], default="yes",
-                        help="Set LTO (Link-Time Optimization) value")
+    parser.add_argument("--updater-version", type=str, default="1.0.0",
+                        help="Specify the version number for updater.exe (default: 1.0.0)")
+    parser.add_argument("--db-version", type=str, default="1.0.0",
+                        help="Specify the version number for the database (default: 1.0.0)")
     parser.add_argument("--output-dir", type=str,
                         help="Specify custom output directory path (default: C:/Users/username/TeraTermUI_Builds)")
+    parser.add_argument("--lto", choices=["auto", "yes", "no"], default="yes",
+                        help="Set LTO (Link-Time Optimization) value")
+    parser.add_argument("--report", action="store_true", help="Generate Nuitka compilation report")
+
     args = parser.parse_args()
     if args.output_dir:
         args.output_dir = os.path.normpath(args.output_dir).replace("\\", "/")
         if not os.path.isabs(args.output_dir):
             args.output_dir = os.path.abspath(args.output_dir).replace("\\", "/")
-    
+
     return args
 
 def extract_second_date_from_file(filepath):
@@ -32,8 +36,8 @@ def extract_second_date_from_file(filepath):
             dates = re.findall(r"\d{1,2}/\d{1,2}/\d{2,4}", line)
             if len(dates) >= 2:
                 return dates[1]
+            
         return None
-
 
 def check_and_restore_backup():
     main_file_path = os.path.join(project_directory, "TeraTermUI.py")
@@ -59,7 +63,6 @@ def check_and_restore_backup():
                     Fore.YELLOW + "\nPrevious session was interrupted. Restoration from backup completed" +
                     Style.RESET_ALL)
                 os.remove(program_backup)
-
 
 def attach_manifest(executable_path, manifest_path):
     try:
@@ -90,7 +93,6 @@ def attach_manifest(executable_path, manifest_path):
         shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
         os.remove(program_backup)
         print(Fore.RED + f"Failed to attach manifest: {e}\n" + Style.RESET_ALL)
-
 
 def generate_checksum(version_filename, executable_filename):
     try:
@@ -132,7 +134,6 @@ def generate_checksum(version_filename, executable_filename):
         os.remove(program_backup)
         print(Fore.RED + f"Failed to generate SHA-256 checksum {e}\n" + Style.RESET_ALL)
 
-
 def update_updater_hash_value(main_file_path, new_hash):
     try:
         with open(main_file_path, "r", encoding="utf-8") as file:
@@ -144,7 +145,6 @@ def update_updater_hash_value(main_file_path, new_hash):
             file.write(updated_content)
     except Exception as e:
         print(Fore.RED + f"Error updating updater_hash: {e}\n" + Style.RESET_ALL)
-
 
 def freeze_requirements(project_directory):
     scripts_directory = os.path.join(project_directory, ".venv", "Scripts")
@@ -164,17 +164,15 @@ def freeze_requirements(project_directory):
     finally:
         os.chdir(original_dir)
 
-
 def validate_version(ver):
     pattern = r"^[vV]?([0-9]{1,3}\.[0-9]{1,3}(\.[0-9]{1,3})?|[0-9]{1,3})$"
     return bool(re.match(pattern, ver, re.IGNORECASE))
-
 
 init()
 username = os.getlogin()
 project_directory = str(os.path.dirname(os.path.abspath(__file__)).replace("\\", "/"))
 inno_directory = "C:/Program Files (x86)/Inno Setup 6/ISCC.exe"
-current_year = datetime.datetime.now().year
+current_year = datetime.now().year
 app_folder = "TeraTermUI"
 while True:
     args = parse_arguments()
@@ -202,6 +200,8 @@ else:
     update_without_v = user_input
     update = "v" + update_without_v
 versions = ["installer", "portable"]
+updater_version = args.updater_version
+db_version = args.db_version
 if args.output_dir:
     output_directory = os.path.join(args.output_dir, "TeraTermUI_" + update).replace("\\", "/")
 else:
@@ -210,7 +210,7 @@ else:
 program_backup = project_directory + "/TeraTermUI.BAK.py"
 check_and_restore_backup()
 shutil.copy2(project_directory + "/TeraTermUI.py", program_backup)
-current_date = datetime.datetime.now().strftime("%m/%d/%Y")
+current_date = datetime.now().strftime("%m/%d/%Y")
 version_file_path = os.path.join(project_directory, "VERSION.txt")
 with open(version_file_path, "r") as file:
     version_file_content = file.read()
@@ -304,8 +304,8 @@ try:
                     r'--nofollow-import-to=unittest --python-flag=no_docstrings --python-flag=no_site ' +
                     r'--output-dir="' + project_directory + r'" ' + '--product-name="Tera Term UI Updater" ' +
                     r'--company-name="Armando Del Valle Tejada" ' + '--file-description="TeraTermUI Updater" ' +
-                    r'--copyright="Copyright (c) 2024 Armando Del Valle Tejada" --file-version="1.0.0" '
-                    r'--product-version="1.0.0" --windows-console-mode=disable --lto="yes" '
+                    r'--copyright="Copyright (c) 2024 Armando Del Valle Tejada" --file-version="' + updater_version + '" ' +
+                    r'--product-version="' + updater_version + '" --windows-console-mode=disable --lto="yes" '
             )
             subprocess.run(nuitka_updater_command, shell=True, check=True)
             print(Fore.GREEN + "\nSuccessfully compiled updater.py\n" + Style.RESET_ALL)
@@ -327,6 +327,9 @@ try:
     cursor = connection.cursor()
     cursor.execute("DELETE FROM user_data")
     cursor.execute("DELETE FROM saved_classes")
+    utc_now_str = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
+    cursor.execute("INSERT INTO metadata (key, value, date) VALUES (?, ?, ?)",
+                   ("version", db_version, utc_now_str))
     connection.commit()
 except KeyboardInterrupt as e:
     shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
