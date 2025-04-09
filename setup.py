@@ -10,7 +10,7 @@ import winreg
 
 PYTHON_REQUIRED = (3, 12, 10)
 MSVC_URL = "https://aka.ms/vs/17/release/vs_BuildTools.exe"
-INNO_SETUP_URL = "https://jrsoftware.org/download.php/is.exe"
+INNO_SETUP_URL = "https://files.jrsoftware.org/is/6/innosetup-6.4.2.exe"
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 VENV_DIR = os.path.join(ROOT_DIR, ".venv")
