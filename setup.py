@@ -110,8 +110,19 @@ def move_ctk_files():
                 print(f"[OK] Moved {file} to {folder}")
             else:
                 print(f"[WARNING] {file} not found in modules")
-    if os.path.exists("modules"):
-        shutil.rmtree("modules")
+
+    ctkmsg_src = os.path.join("modules", "CTkMessageBox")
+    ctkmsg_dst = os.path.join(VENV_LIB_DIR, "CTkMessageBox")
+    if os.path.exists(ctkmsg_src):
+        if os.path.exists(ctkmsg_dst):
+            shutil.rmtree(ctkmsg_dst)
+        shutil.move(ctkmsg_src, ctkmsg_dst)
+        print("[OK] Moved CTkMessageBox package to site-packages")
+    else:
+        print("[WARNING] CTkMessageBox folder not found in modules. Skipping.")
+
+    if os.path.exists("modules") and not os.listdir("modules"):
+        os.rmdir("modules")
 
 def install_inno_setup():
     reg_paths = [
