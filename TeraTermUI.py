@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/8/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/10/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -8992,20 +8992,21 @@ class TeraTermUI(customtkinter.CTk):
         gc.collect()
 
     def parse_enrollment_errors(self, text_output):
+        translation = self.load_language()
         found_errors = []
         lines = text_output.splitlines()
-
-        course_section_pattern = re.compile(r"([A-Z]{4})([0-9]{4})([A-Z0-9]{3})")
+        course_section_pattern = re.compile(r"([A-Z]{4})([0-9@]{4})([A-Z0-9]{3})")
         for line in lines:
             for code, message in self.enrollment_error_messages.items():
                 if code in line:
                     match = course_section_pattern.search(line)
                     if match:
                         subject, number, section = match.groups()
+                        number = number.replace("@", "0")
                         formatted = f"{subject}-{number}-{section}"
                         found_errors.append(f"{formatted}: {message}")
                     else:
-                        found_errors.append(f"(Unknown class): {message}")
+                        found_errors.append(f"{translation['unknown_class_status']}: {message}")
 
         return found_errors
 
