@@ -3475,7 +3475,7 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language()
         keywords = ["STUDENTS REQ/DROP", "HOLD FLAGS", "PROGRAMA DE CLASES", "ACADEMIC STATISTICS", "SNAPSHOT",
                     "SOLICITUD DE PRORROGA", "LISTA DE SECCIONES", "AYUDA ECONOMICA", "EXPEDIENTE ACADEMICO", "AUDIT",
-                    "PERSONAL DATA", "COMPUTO DE MATRICULA"]
+                    "PERSONAL DATA", "COMPUTO DE MATRICULA", "SIGN-IN", "MORE SECTIONS EXIST"]
         while not self.tesseract_unzipped:
             time.sleep(0.5)
             timeout_counter += 1
