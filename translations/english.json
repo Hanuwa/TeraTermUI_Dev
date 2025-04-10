@@ -251,6 +251,7 @@
 	"menu_missing_info": "Error! Missing information about\nthe screen you want to go to",
 	"menu_code_error": "Error! Incorrect Code",
 	"unknown_error": "Unknown Error!",
+	"unknown_class_status": "Unknown class",
 	"timeout_server": "Error! Failed to connect to the universities server, this could be because there's a lot of traffic and the server is overloaded",
 	"invalid_username": "Error! Invalid Username",
 	"tera_term_failed_to_connect": "Error! Failed to connect to\n\nTera Term instance",
