@@ -251,6 +251,7 @@
 	"menu_missing_info": "¡Error! Le falta información de la\npantalla a la que deseas ir", 
 	"menu_code_error": "¡Error! Código Incorrecto",
 	"unknown_error": "¡Error Desconocido!",
+	"unknown_class_status": "Clase desconocida",
 	"timeout_server": "¡Error! No se pudo conectar al servidor de la universidad, esto puede ser porque hay mucho tráfico y el servidor está en su capacidad máxima",
 	"invalid_username": "¡Error! Usuario Incorrecto",
 	"tera_term_failed_to_connect": "¡Error! No se pudo conectar a\n\nla instancia de Tera Term",
