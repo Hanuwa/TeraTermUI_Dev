@@ -32,8 +32,6 @@
       <supportedOS Id="{d3e034d1-0b3a-4d1d-8c7b-97b3c6f7e0e3}"/>
       <!-- Windows 10 -->
       <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"/>
-      <!-- Windows 8.1 -->
-      <supportedOS Id="{4f3a8aa2-8503-47f4-a5b9-d19f1f98d442}"/>
     </application>
   </compatibility>
   <file name="updater.exe" hashalg="SHA1" hash=""/>
