@@ -9710,7 +9710,8 @@ class TeraTermUI(customtkinter.CTk):
                             translation = self.load_language()
                             if TeraTermUI.window_exists(translation["idle_warning_title"]):
                                 self.idle_warning.close_messagebox()
-                            self.keep_teraterm_open()
+                            if TeraTermUI.is_win_session_interactive():
+                                self.keep_teraterm_open()
                             self.last_activity = time.time()
                             if not self.countdown_running:
                                 self.idle_num_check += 1
