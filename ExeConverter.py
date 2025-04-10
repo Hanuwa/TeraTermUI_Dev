@@ -225,22 +225,19 @@ updated_license_content = re.sub(r"Copyright \(c\) \d{4}", f"Copyright (c) {curr
 with open(license_file_path, "w") as file:
     file.write(updated_license_content)
 try:
-    connection = sqlite3.connect(project_directory + "/database.db")
-    cursor = connection.cursor()
-    cursor.execute("DELETE FROM user_data")
-    cursor.execute("DELETE FROM saved_classes")
-    utc_now_str = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
-    cursor.execute("SELECT COUNT(*) FROM metadata WHERE key = ?", ("version",))
-    row = cursor.fetchone()
-    if row is None:
+    with sqlite3.connect(project_directory + "/database.db") as connection:
+        cursor = connection.cursor()
+        cursor.execute("DELETE FROM user_data")
+        cursor.execute("DELETE FROM saved_classes")
         utc_now_str = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
-        cursor.execute("INSERT INTO metadata (key, value, date) VALUES (?, ?, ?)",
-                       ("version", db_version, utc_now_str))
-    elif row[0] != db_version:
-        utc_now_str = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
-        cursor.execute("UPDATE metadata SET value = ?, date = ? WHERE key = ?",
-                       (db_version, utc_now_str, "version"))
-    connection.close()
+        cursor.execute("SELECT COUNT(*) FROM metadata WHERE key = ?", ("version",))
+        row = cursor.fetchone()
+        if row is None or row[0] == 0:
+            cursor.execute("INSERT INTO metadata (key, value, date) VALUES (?, ?, ?)",
+                           ("version", db_version, utc_now_str))
+        elif row[0] != db_version:
+            cursor.execute("UPDATE metadata SET value = ?, date = ? WHERE key = ?",
+                           (db_version, utc_now_str, "version"))
     dist_db_path = os.path.join(project_directory, "dist", "database.db")
     shutil.copy2(os.path.join(project_directory, "database.db"), dist_db_path)
 except KeyboardInterrupt as e:
