@@ -9569,6 +9569,35 @@ class TeraTermUI(customtkinter.CTk):
 
         return power_timeout if power_timeout else None
 
+    @staticmethod
+    def is_win_session_interactive():
+        try:
+            WTSQuerySessionInformation = ctypes.windll.Wtsapi32.WTSQuerySessionInformationW
+            WTSFreeMemory = ctypes.windll.Wtsapi32.WTSFreeMemory
+            session_id = ctypes.windll.kernel32.WTSGetActiveConsoleSessionId()
+            buffer = ctypes.c_void_p()
+            bytes_returned = wintypes.DWORD()
+            WTSConnectState = 0
+
+            result = WTSQuerySessionInformation(
+                None,
+                session_id,
+                WTSConnectState,
+                ctypes.byref(buffer),
+                ctypes.byref(bytes_returned)
+            )
+            is_active = False
+            if result:
+                value = ctypes.cast(buffer, ctypes.POINTER(wintypes.DWORD)).contents.value
+                WTSFreeMemory(buffer)
+                is_active = (value == 0)
+
+            is_unlocked = ctypes.windll.user32.OpenInputDesktop(0, False, 0x100) != 0
+            return is_active and is_unlocked
+        except Exception as err:
+            logging.warning(f"Unable to determine session state: {err}")
+            return True
+
     def stop_check_process_thread(self):
         if not self.stop_check_process.is_set():
             self.stop_check_process.set()
@@ -9612,7 +9641,7 @@ class TeraTermUI(customtkinter.CTk):
             if self.loading_screen_status is None and idle[0] != "Disabled":
                 if threshold is not None:
                     idle_time = get_idle_duration()
-                    if idle_time >= threshold:
+                    if idle_time >= threshold and TeraTermUI.is_win_session_interactive():
                         ES_DISPLAY_REQUIRED = 0x00000002
                         ctypes.windll.kernel32.SetThreadExecutionState(ES_DISPLAY_REQUIRED)
                         pyautogui.press("scrolllock")
@@ -9642,7 +9671,6 @@ class TeraTermUI(customtkinter.CTk):
                     not_running_count += 1
                     if not_running_count == 1:
                         def not_running():
-                            translation = self.load_language()
                             self.play_sound("notification.wav")
                             CTkMessagebox(title=translation["automation_error_title"], icon="warning",
                                           message=translation["tera_term_stopped_running"], button_width=380)
