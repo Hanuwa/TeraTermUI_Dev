@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/11/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/14/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -9574,26 +9574,28 @@ class TeraTermUI(customtkinter.CTk):
         try:
             WTSQuerySessionInformation = ctypes.windll.Wtsapi32.WTSQuerySessionInformationW
             WTSFreeMemory = ctypes.windll.Wtsapi32.WTSFreeMemory
+            WTS_CONNECTSTATE_CLASS = 0
+            WTSActive = 0
+
             session_id = ctypes.windll.kernel32.WTSGetActiveConsoleSessionId()
             buffer = ctypes.c_void_p()
             bytes_returned = wintypes.DWORD()
-            WTSConnectState = 0
 
-            result = WTSQuerySessionInformation(
-                None,
-                session_id,
-                WTSConnectState,
-                ctypes.byref(buffer),
-                ctypes.byref(bytes_returned)
-            )
+            result = WTSQuerySessionInformation(None, session_id, WTS_CONNECTSTATE_CLASS,
+                                                ctypes.byref(buffer), ctypes.byref(bytes_returned))
             is_active = False
             if result:
                 value = ctypes.cast(buffer, ctypes.POINTER(wintypes.DWORD)).contents.value
                 WTSFreeMemory(buffer)
-                is_active = (value == 0)
+                is_active = (value == WTSActive)
 
-            is_unlocked = ctypes.windll.user32.OpenInputDesktop(0, False, 0x100) != 0
+            desktop = ctypes.windll.user32.OpenInputDesktop(0, False, 0x100)
+            is_unlocked = desktop != 0
+            if is_unlocked:
+                ctypes.windll.user32.CloseDesktop(desktop)
+
             return is_active and is_unlocked
+
         except Exception as err:
             logging.warning(f"Unable to determine session state: {err}")
             return True
