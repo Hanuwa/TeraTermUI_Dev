@@ -3945,13 +3945,7 @@ class TeraTermUI(customtkinter.CTk):
             elif lang == "Español":
                 self.curriculum.pack(pady=(5, 20))
             self.terms_text.configure(text=translation["terms_title"])
-            self.terms = [[translation["terms_year"], translation["terms_term"]],
-                          ["2019", "B91, B92, B93"],
-                          ["2020", "C01, C02, C03"],
-                          ["2021", "C11, C12, C13"],
-                          ["2022", "C21, C22, C23"],
-                          ["2023", "C31, C32, C33"],
-                          [translation["semester"], translation["seasons"]]]
+            self.terms = self.get_last_five_terms()
             self.terms_table.configure(values=self.terms)
             self.keybinds_text.configure(text=translation["keybinds_title"])
             self.keybinds = [[translation["keybind"], translation["key_function"]],
@@ -7616,6 +7610,27 @@ class TeraTermUI(customtkinter.CTk):
         # Return the last six semester codes
         return values[-6:]
 
+    def get_last_five_terms(self):
+        translation = self.load_language()
+        current_semester = TeraTermUI.calculate_default_semester()
+        letter = current_semester[0]
+        year_digit = int(current_semester[1])
+
+        decade_index = ord(letter) - ord("A")
+        current_year_number = decade_index * 10 + year_digit
+        base_year = 2000
+        terms = [[translation["terms_year"], translation["terms_term"]]]
+        for offset in range(4, -1, -1):
+            y = current_year_number - offset
+            full_year = base_year + y
+            letter = chr(ord("A") + (y // 10))
+            digit = y % 10
+            semesters = f"{letter}{digit}1, {letter}{digit}2, {letter}{digit}3"
+            terms.append([str(full_year), semesters])
+
+        terms.append([translation["semester"], translation["seasons"]])
+        return terms
+
     def get_semester_season(self, semester_code):
         lang = self.language_menu.get()
         translation = self.load_language()
@@ -10800,13 +10815,7 @@ class TeraTermUI(customtkinter.CTk):
                          ["<Alt-F4>", translation["alt_f4"]]]
         self.terms_text = customtkinter.CTkLabel(self.help_frame, text=translation["terms_title"],
                                                  font=customtkinter.CTkFont(weight="bold", size=15))
-        self.terms = [[translation["terms_year"], translation["terms_term"]],
-                      ["2019", "B91, B92, B93"],
-                      ["2020", "C01, C02, C03"],
-                      ["2021", "C11, C12, C13"],
-                      ["2022", "C21, C22, C23"],
-                      ["2023", "C31, C32, C33"],
-                      [translation["semester"], translation["seasons"]]]
+        self.terms = self.get_last_five_terms()
         self.skip_auth_text = customtkinter.CTkLabel(self.help_frame, text=translation["skip_auth_text"])
         self.skip_auth_switch = customtkinter.CTkSwitch(self.help_frame, text=translation["skip_auth_switch"],
                                                         onvalue="on", offvalue="off", command=self.disable_enable_auth)
