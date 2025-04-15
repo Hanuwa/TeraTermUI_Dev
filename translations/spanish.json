@@ -350,7 +350,7 @@
 	"table_position_tooltip": "Indica cuál tabla del total\nestás viendo actualmente",
 	"previous_tooltip": "Volver a la tabla anterior",
 	"next_tooltip": "Ir a la siguiente tabla",
-	"remove_tooltip": "Elimina la tabla\nque estás viendo actualmente",
+	"remove_tooltip": "Elimina la tabla que\nestás viendo actualmente",
 	"failed_to_find_update": "No se encontraron actualizaciones,\ninténtalo de nuevo más tarde o\nconsulta la página web del programa",
 	"exec_time": "AVISO\n\nConsidere cerrar cualquier aplicación\nque esté utilizando muchos recursos.\nLa tarea tardó más de lo esperado en realizarse",
 	"game_launchers": "AVISO\n\nPor razones desconocidas, se ha observado que algunos\niniciadores de juegos como: {} pueden disminuir\nel rendimiento de esta aplicación.\nPara un rendimiento óptimo, considere cerrarlos",
