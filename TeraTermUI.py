@@ -4135,7 +4135,7 @@ class TeraTermUI(customtkinter.CTk):
             self.show_all_tooltip.configure(message=translation["show_all_tooltip"])
             self.show_classes_tooltip.configure(message=translation["show_classes_tooltip"])
             self.m_add_tooltip.configure(message=translation["add_tooltip"])
-            self.m_remove_tooltip.configure(message=translation["remove_tooltip"])
+            self.m_remove_tooltip.configure(message=translation["m_remove_tooltip"])
             self.multiple_tooltip.configure(message=translation["multiple_tooltip"])
             self.save_data_tooltip.configure(message=translation["save_data_tooltip"])
             self.auto_enroll_tooltip.configure(message=translation["auto_enroll_tooltip"])
