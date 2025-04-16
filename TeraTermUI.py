@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/14/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/15/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 13700 lines of codes, it definitely makes things harder to work with
+# and with over 13900 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -33,10 +33,10 @@ import pygetwindow as gw
 import pyperclip
 import pystray
 import pytesseract
+import pytz
 import random
 import re
 import requests
-import secrets
 import shutil
 import socket
 import sqlite3
@@ -53,8 +53,11 @@ import weakref
 import webbrowser
 import win32clipboard
 import win32con
+import win32crypt
 import win32gui
+import win32security
 import winsound
+from base64 import b64encode, b64decode
 from collections import deque, defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
@@ -67,7 +70,7 @@ from CTkMessagebox import CTkMessagebox
 from CTkTable import CTkTable
 from CTkToolTip import CTkToolTip
 from ctypes import wintypes
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from filelock import FileLock, Timeout
 from functools import wraps
 from hmac import compare_digest
@@ -75,7 +78,6 @@ from mss import mss
 from pathlib import Path
 from PIL import Image
 from py7zr import SevenZipFile
-from pytz import timezone
 from tkinter import filedialog
 from tkinter import messagebox
 
@@ -180,7 +182,7 @@ class TeraTermUI(customtkinter.CTk):
         self.REAZIONE = self.ottenere_protetta_salasana()
         self.USER_APP_VERSION = "0.9.0"
         self.mode = "Portable"
-        self.updater_hash = "3281a7a19c82bd7466554c423fc1db43ba11743b8aa2b29554a3094b2bfca7b6"
+        self.updater_hash = "74f0c267c98db499cbfa5aca13b6fc74809dceda0dc92eb346937fc3b0e130b0"
         self.running_updater = False
         self.credentials = None
         # disabled/enables keybind events
@@ -195,9 +197,13 @@ class TeraTermUI(customtkinter.CTk):
         if self.mode == "Installation":
             if scope in ["all_users", "current_user"]:
                 appdata_path = os.environ.get("PROGRAMDATA") if scope == "all_users" else os.environ.get("APPDATA")
-                self.db_path = os.path.join(appdata_path, "TeraTermUI", "database.db")
-                self.ath = os.path.join(appdata_path, "TeraTermUI", "feedback.zip")
-                self.logs = os.path.join(appdata_path, "TeraTermUI", "logs.txt")
+                tera_path = os.path.join(appdata_path, "TeraTermUI")
+                self.db_path = os.path.join(tera_path, "database.db")
+                self.ath = os.path.join(tera_path, "feedback.zip")
+                self.logs = os.path.join(tera_path, "logs.txt")
+                self.crypto = SecureDataStore(key_path=os.path.join(tera_path, "fieldkey.json"))
+        else:
+            self.crypto = SecureDataStore()
 
         # Instance variables not yet needed but defined
         # to avoid the instance attribute defined outside __init__ warning
@@ -398,9 +404,13 @@ class TeraTermUI(customtkinter.CTk):
         self.code_entry = None
         self.code_tooltip = None
         self.show = None
+        self.remember_me = None
+        self.remember_me_tooltip = None
         self.system = None
         self.back_student = None
         self.back_student_tooltip = None
+        self.delete_user_data = False
+        self.must_save_user_data = False
 
         # Classes
         self.init_class = False
@@ -531,7 +541,7 @@ class TeraTermUI(customtkinter.CTk):
         self.back_multiple = None
         self.back_multiple_tooltip = None
         self.submit_multiple = None
-        self.save_data = None
+        self.save_class_data = None
         self.save_data_tooltip = None
         self.saved_classes = False
         self.auto_enroll = None
@@ -591,6 +601,8 @@ class TeraTermUI(customtkinter.CTk):
         self.keybinds_text = None
         self.keybinds = None
         self.keybinds_table = None
+        self.delete_data_text = None
+        self.delete_data = None
         self.skip_auth_text = None
         self.skip_auth_switch = None
         self.files_text = None
@@ -602,6 +614,7 @@ class TeraTermUI(customtkinter.CTk):
         self.disable_audio_app = None
         self.fix_text = None
         self.fix = None
+        self.last_delete_time = 0
 
         # Top level window management, flags and counters
         self.DEFAULT_SEMESTER = TeraTermUI.calculate_default_semester()
@@ -691,8 +704,8 @@ class TeraTermUI(customtkinter.CTk):
             es_path = "translations/spanish.json"
             if not os.path.isfile(en_path) or not os.path.isfile(es_path):
                 raise Exception("Language file not found")
-            self.connection = sqlite3.connect(db_path, check_same_thread=False)
-            self.cursor = self.connection.cursor()
+            self.connection_db = sqlite3.connect(db_path, check_same_thread=False)
+            self.cursor_db = self.connection_db.cursor()
             self.check_database_lock()
             self.protocol("WM_DELETE_WINDOW", self.on_closing)
             self.bind("<Control-space>", lambda event: self.focus_set())
@@ -703,15 +716,15 @@ class TeraTermUI(customtkinter.CTk):
                                 "win_pos_x", "win_pos_y"]
             results = {}
             for field in user_data_fields:
-                query_user = f"SELECT {field} FROM user_data"
-                result = self.cursor.execute(query_user).fetchone()
+                query_user = f"SELECT {field} FROM user_config"
+                result = self.cursor_db.execute(query_user).fetchone()
                 results[field] = result[0] if result else None
             if results["location"]:
                 if results["location"] != self.teraterm_exe_location:
                     if os.path.exists(results["location"]):
                         self.teraterm_exe_location = results["location"]
                     else:
-                        self.cursor.execute("UPDATE user_data SET location=NULL")
+                        self.cursor_db.execute("UPDATE user_config SET location=NULL")
             if results["directory"] and results["config"]:
                 if results["directory"] != self.teraterm_directory or results["config"] != self.teraterm_config:
                     if os.path.exists(results["directory"]) and os.path.exists(results["config"]):
@@ -721,9 +734,9 @@ class TeraTermUI(customtkinter.CTk):
                         self.can_edit = True
                     else:
                         if not os.path.exists(results["directory"]):
-                            self.cursor.execute("UPDATE user_data SET directory=NULL")
+                            self.cursor_db.execute("UPDATE user_config SET directory=NULL")
                         if not os.path.exists(results["config"]):
-                            self.cursor.execute("UPDATE user_data SET config=NULL")
+                            self.cursor_db.execute("UPDATE user_config SET config=NULL")
 
             # performs some operations on separate threads when application starts up
             self.boot_up(self.teraterm_config)
@@ -778,7 +791,7 @@ class TeraTermUI(customtkinter.CTk):
                 if os.path.isdir(results["pdf_dir"]):
                     self.last_save_pdf_dir = results["pdf_dir"]
                 else:
-                    self.cursor.execute("UPDATE user_data SET pdf_dir=NULL")
+                    self.cursor_db.execute("UPDATE user_config SET pdf_dir=NULL")
             if results["skip_auth"] == "Yes":
                 self.skip_auth = True
             elif not results["skip_auth"]:
@@ -788,7 +801,7 @@ class TeraTermUI(customtkinter.CTk):
                 if results["default_semester"] in values:
                     self.DEFAULT_SEMESTER = results["default_semester"]
                 else:
-                    self.cursor.execute("UPDATE user_data SET default_semester=NULL")
+                    self.cursor_db.execute("UPDATE user_config SET default_semester=NULL")
             if results["welcome"] != "Done":
                 self.help_button.configure(state="disabled")
                 self.status_button.configure(state="disabled")
@@ -805,11 +818,11 @@ class TeraTermUI(customtkinter.CTk):
                     self.log_in.configure(state="normal")
                     self.after(150, self.bind, "<Return>", lambda event: self.login_event_handler())
                     self.after(150, self.bind, "<F1>", lambda event: self.help_button_event())
-                    row_check = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+                    row_check = self.cursor_db.execute("SELECT 1 FROM user_config").fetchone()
                     if not row_check:
-                        self.cursor.execute("INSERT INTO user_data (welcome) VALUES (?)", ("Done",))
+                        self.cursor_db.execute("INSERT INTO user_config (welcome) VALUES (?)", ("Done",))
                     else:
-                        self.cursor.execute("UPDATE user_data SET welcome=?", ("Done",))
+                        self.cursor_db.execute("UPDATE user_config SET welcome=?", ("Done",))
 
                 self.after(3500, show_message_box)
             else:
@@ -818,7 +831,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.bind("<F1>", lambda event: self.help_button_event())
                 # Check for update for the application
                 current_date = datetime.today().strftime("%Y-%m-%d")
-                date_record = self.cursor.execute("SELECT update_date FROM user_data").fetchone()
+                date_record = self.cursor_db.execute("SELECT update_date FROM user_config").fetchone()
                 if date_record is None or date_record[0] is None or not date_record[0].strip() or (
                         datetime.strptime(current_date, "%Y-%m-%d")
                         - datetime.strptime(date_record[0], "%Y-%m-%d")).days >= 14:
@@ -983,7 +996,7 @@ class TeraTermUI(customtkinter.CTk):
                             option_3=translation["option_3"], icon_size=(65, 65), delay_destroy=True,
                             button_color=("#c30101", "#c30101", "#145DA0", "use_default"),
                             option_1_type="checkbox", hover_color=("darkred", "darkred", "use_default"))
-        on_exit = self.cursor.execute("SELECT exit FROM user_data").fetchone()
+        on_exit = self.cursor_db.execute("SELECT exit FROM user_config").fetchone()
         if on_exit and on_exit[0] is not None and on_exit[0] == 1:
             msg.check_checkbox()
         self.destroy_tooltip()
@@ -999,7 +1012,7 @@ class TeraTermUI(customtkinter.CTk):
             self.stop_check_process_thread()
             self.stop_check_idle_thread()
             self.clipboard_handler.close()
-            self.save_user_data()
+            self.save_user_config()
             self.end_app()
             if self.exit_checkbox_state:
                 if TeraTermUI.checkIfProcessRunning("ttermpro"):
@@ -1031,7 +1044,7 @@ class TeraTermUI(customtkinter.CTk):
         else:
             for future in as_completed([self.future_tesseract, self.future_backup, self.future_feedback]):
                 future.result()
-        self.save_user_data(include_exit=False)
+        self.save_user_config(include_exit=False)
         self.end_app()
         sys.exit(0)
 
@@ -1125,7 +1138,7 @@ class TeraTermUI(customtkinter.CTk):
 
     def check_database_lock(self):
         try:
-            self.cursor.execute("SELECT 1")
+            self.cursor_db.execute("SELECT 1")
         except sqlite3.OperationalError as err:
             if "database is locked" in str(err):
                 raise Exception("Database is locked")
@@ -1179,79 +1192,48 @@ class TeraTermUI(customtkinter.CTk):
         future = self.thread_pool.submit(self.student_event)
         self.update_loading_screen(loading_screen, future)
 
-    # Enrolling/Searching/Other classes screen
+    # Enter the Enrolling/Searching/Other classes screen
     def student_event(self):
-        # Securely delete variables from memory
-        def secure_delete(variable):
-            if isinstance(variable, bytes):
-                variable_len = len(variable)
-                new_value = get_random_bytes(variable_len)
-                ctypes.memset(ctypes.addressof(ctypes.create_string_buffer(variable)), 0, variable_len)
-                variable = new_value
-            elif isinstance(variable, int):
-                new_value = secrets.randbits(variable.bit_length())
-                variable = new_value
-            return variable
 
-        # Derive encryption and MAC keys using HKDF
-        def derive_keys(master_key_input):
-            e_aes_key = HKDF(master_key_input, 32, salt=b"student_event_salt", hashmod=SHA256)
-            e_mac_key = HKDF(master_key_input, 32, salt=b"mac_salt", hashmod=SHA256)
-            return e_aes_key, e_mac_key
-
-        # Encrypt and compute MAC
-        def aes_encrypt_then_mac(plaintext, encryption_key, mac_key_input):
-            iv = get_random_bytes(16)  # Generate a new IV for AES CBC mode
-            cipher = AES.new(encryption_key, AES.MODE_CBC, iv=iv)
-            ciphertext = cipher.encrypt(pad(plaintext.encode(), AES.block_size))
-            # Compute HMAC over IV + ciphertext
-            hmac = HMAC.new(mac_key_input, digestmod=SHA256)
-            hmac.update(iv + ciphertext)
-            return iv + ciphertext + hmac.digest()
-
-        # Decrypt and verify MAC
-        def aes_decrypt_and_verify_mac(ciphertext_with_iv_mac, decryption_key, mac_key_input):
-            iv = ciphertext_with_iv_mac[:16]
-            ciphertext = ciphertext_with_iv_mac[16:-32]
-            mac = ciphertext_with_iv_mac[-32:]
-            # Verify HMAC using constant-time comparison
-            hmac = HMAC.new(mac_key_input, digestmod=SHA256)
-            hmac.update(iv + ciphertext)
-            if not compare_digest(hmac.digest(), mac):
-                raise ValueError("MAC verification failed")
-            # Decrypt the ciphertext
-            cipher = AES.new(decryption_key, AES.MODE_CBC, iv=iv)
-            plaintext = unpad(cipher.decrypt(ciphertext), AES.block_size).decode()
-            return plaintext
+        def zeroize_string(value: str):
+            if value:
+                try:
+                    buf = ctypes.create_string_buffer(value.encode())
+                    ctypes.memset(ctypes.addressof(buf), 0, len(buf))
+                except Exception as err:
+                    logging.warning(f"Failed to zeroize string: {err}")
 
         with self.lock_thread:
             try:
                 self.automation_preparations()
                 translation = self.load_language()
-                # Generate a master key and derive AES and MAC keys
-                master_key = get_random_bytes(32)
-                aes_key, mac_key = derive_keys(master_key)
                 if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
                         code = self.code_entry.get().replace(" ", "")
-                        # Input validation
-                        if len(student_id) > 100 or len(code) > 10:
-                            raise ValueError("Input data length exceeds allowed limit")
-                        student_id_enc = aes_encrypt_then_mac(student_id, aes_key, mac_key)
-                        code_enc = aes_encrypt_then_mac(code, aes_key, mac_key)
                         if ((re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", student_id) or
                              (student_id.isdigit() and len(student_id) == 9)) and code.isdigit() and len(code) == 4):
-                            secure_delete(student_id)
-                            secure_delete(code)
                             if not self.wait_for_window():
                                 return
-                            student_id_dec = aes_decrypt_and_verify_mac(student_id_enc, aes_key, mac_key)
-                            code_dec = aes_decrypt_and_verify_mac(code_enc, aes_key, mac_key)
-                            self.uprb.UprbayTeraTermVt.type_keys("{TAB}" + student_id_dec + code_dec + "{ENTER}")
+
+                            self.uprb.UprbayTeraTermVt.type_keys("{TAB}" + student_id + code + "{ENTER}")
                             text_output = self.wait_for_response(["SIGN-IN", "ON FILE", "PIN NUMBER",
                                                                   "ERRORS FOUND"], init_timeout=False, timeout=7)
                             if "SIGN-IN" in text_output:
+                                if self.remember_me.get() == "on" and self.must_save_user_data:
+                                    student_cipher, iv_sid, mac_sid = self.crypto.encrypt(student_id)
+                                    code_cipher, iv_code, mac_code = self.crypto.encrypt(code)
+                                    self.cursor_db.execute(
+                                        "INSERT INTO user_data (id, student_id, code, iv_student_id, iv_code, "
+                                        "mac_student_id, mac_code) VALUES (1, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) "
+                                        "DO UPDATE SET student_id = excluded.student_id, code = excluded.code, "
+                                        "iv_student_id = excluded.iv_student_id, iv_code = excluded.iv_code, "
+                                        "mac_student_id = excluded.mac_student_id, mac_code = excluded.mac_code",
+                                        (student_cipher, code_cipher, iv_sid, iv_code, mac_sid, mac_code))
+                                if self.remember_me.get() == "off":
+                                    self.crypto.reset()
+                                zeroize_string(student_id)
+                                zeroize_string(code)
                                 self.reset_activity_timer()
                                 self.start_check_idle_thread()
                                 self.start_check_process_thread()
@@ -1262,12 +1244,6 @@ class TeraTermUI(customtkinter.CTk):
                                 if self.help is not None and self.help.winfo_exists():
                                     self.fix.configure(state="normal")
                                 self.in_student_frame = False
-                                secure_delete(student_id_enc)
-                                secure_delete(code_enc)
-                                secure_delete(student_id_dec)
-                                secure_delete(code_dec)
-                                secure_delete(master_key)
-                                del student_id, code, student_id_enc, code_enc, student_id_dec, code_dec, master_key
                                 self.switch_tab()
                             else:
                                 self.after(350, self.bind, "<Return>",
@@ -1292,7 +1268,8 @@ class TeraTermUI(customtkinter.CTk):
                                     self.after(100, self.show_error_message, 315, 230,
                                                translation["error_sign-in"])
                         else:
-                            self.after(350, self.bind, "<Return>", lambda event: self.student_event_handler())
+                            self.after(350, self.bind, "<Return>",
+                                       lambda event: self.student_event_handler())
                             if (not student_id or not student_id.isdigit() or len(student_id) != 9) and \
                                     (not code.isdigit() or len(code) != 4):
                                 self.after(0, self.student_id_entry.configure(border_color="#c30101"))
@@ -1317,7 +1294,6 @@ class TeraTermUI(customtkinter.CTk):
                 self.error_occurred = True
                 self.log_error()
             finally:
-                translation = self.load_language()
                 self.reset_activity_timer()
                 self.after(100, self.set_focus_to_tkinter)
                 if self.error_occurred and not self.timeout_occurred:
@@ -1411,21 +1387,21 @@ class TeraTermUI(customtkinter.CTk):
                 "Current": "Actual"
             }
         }
-        save = self.cursor.execute("SELECT class, section, semester, action FROM saved_classes"
+        save = self.cursor_db.execute("SELECT class, section, semester, action FROM saved_classes"
                                    " WHERE class IS NOT NULL").fetchall()
-        save_check = self.cursor.execute('SELECT "id" FROM saved_classes').fetchone()
-        semester = self.cursor.execute("SELECT semester FROM saved_classes ORDER BY id LIMIT 1").fetchone()
+        save_check = self.cursor_db.execute('SELECT "id" FROM saved_classes').fetchone()
+        semester = self.cursor_db.execute("SELECT semester FROM saved_classes ORDER BY id LIMIT 1").fetchone()
         if save_check and save_check[0] is not None:
             if semester[0] != self.DEFAULT_SEMESTER:
                 cutoff = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S")
-                old_entries = self.cursor.execute("SELECT id FROM saved_classes WHERE timestamp "
+                old_entries = self.cursor_db.execute("SELECT id FROM saved_classes WHERE timestamp "
                                                   "IS NULL OR timestamp < ?", (cutoff,)).fetchall()
                 if old_entries:
-                    self.cursor.execute("DELETE FROM saved_classes")
-                    self.connection.commit()
+                    self.cursor_db.execute("DELETE FROM saved_classes")
+                    self.connection_db.commit()
                     return
             if save_check[0] == 1:
-                self.save_data.select()
+                self.save_class_data.select()
                 self.changed_classes = set()
                 self.changed_sections = set()
                 self.changed_semesters = set()
@@ -2254,12 +2230,12 @@ class TeraTermUI(customtkinter.CTk):
         self.back_multiple.grid(row=3, column=1, padx=(0, 20), pady=(0, 0))
         self.submit_multiple.grid(row=3, column=2, padx=(0, 0), pady=(0, 0))
         self.m_remove.grid(row=3, column=3, padx=(20, 0), pady=(0, 0))
-        self.save_data.grid(row=0, column=0, padx=(0, 0), pady=(0, 0))
+        self.save_class_data.grid(row=0, column=0, padx=(0, 0), pady=(0, 0))
         self.auto_enroll.grid(row=0, column=0, padx=(0, 0), pady=(0, 0))
 
     def detect_change(self, event=None):
-        self.cursor.execute("SELECT COUNT(*) FROM saved_classes")
-        count = self.cursor.fetchone()[0]
+        self.cursor_db.execute("SELECT COUNT(*) FROM saved_classes")
+        count = self.cursor_db.fetchone()[0]
         if count == 0:
             return
 
@@ -2293,8 +2269,8 @@ class TeraTermUI(customtkinter.CTk):
                     entry_value = "CURRENT"
             db_row_number = entry_index + 1
             query = f"SELECT {column_name} FROM saved_classes LIMIT 1 OFFSET ?"
-            self.cursor.execute(query, (db_row_number - 1,))
-            result = self.cursor.fetchone()
+            self.cursor_db.execute(query, (db_row_number - 1,))
+            result = self.cursor_db.fetchone()
             if column_name == "semester" and result:
                 db_value = result[0].upper().replace(" ", "").replace("-", "")
                 if db_value in ["CURRENT", "ACTUAL"]:
@@ -2309,8 +2285,8 @@ class TeraTermUI(customtkinter.CTk):
 
     def detect_register_menu_change(self, selected_value, index):
         self.focus_set()
-        self.cursor.execute("SELECT COUNT(*) FROM saved_classes")
-        count = self.cursor.fetchone()[0]
+        self.cursor_db.execute("SELECT COUNT(*) FROM saved_classes")
+        count = self.cursor_db.fetchone()[0]
         if count == 0:
             return
 
@@ -2319,8 +2295,8 @@ class TeraTermUI(customtkinter.CTk):
             return
 
         db_row_number = index + 1
-        self.cursor.execute("SELECT action FROM saved_classes LIMIT 1 OFFSET ?", (db_row_number - 1,))
-        result = self.cursor.fetchone()
+        self.cursor_db.execute("SELECT action FROM saved_classes LIMIT 1 OFFSET ?", (db_row_number - 1,))
+        result = self.cursor_db.fetchone()
 
         if result:
             db_value = result[0]
@@ -2335,11 +2311,11 @@ class TeraTermUI(customtkinter.CTk):
 
     def update_save_data_state(self):
         if any([self.changed_classes, self.changed_sections, self.changed_semesters, self.changed_registers]):
-            if self.save_data.get() == "on":
-                self.save_data.deselect()
+            if self.save_class_data.get() == "on":
+                self.save_class_data.deselect()
         else:
-            if self.save_data.get() == "off":
-                self.save_data.select()
+            if self.save_class_data.get() == "off":
+                self.save_class_data.select()
 
     def submit_multiple_event_handler(self):
         if self.started_auto_enroll and (not self.search_event_completed or not self.option_menu_event_completed or not
@@ -3173,14 +3149,34 @@ class TeraTermUI(customtkinter.CTk):
             self.student_id_entry.grid(row=2, column=1, padx=(100, 0), pady=(0, 10))
             self.code.grid(row=3, column=1, padx=(0, 126), pady=(0, 10))
             self.code_entry.grid(row=3, column=1, padx=(100, 0), pady=(0, 10))
+            self.show.grid(row=4, column=1, padx=(0, 90), pady=(0, 10))
+            self.remember_me.grid(row=4, column=1, padx=(115, 0), pady=(0, 10))
         elif lang == "Español":
             self.student_id.grid(row=2, column=1, padx=(0, 164), pady=(0, 10))
             self.student_id_entry.grid(row=2, column=1, padx=(120, 0), pady=(0, 10))
             self.code.grid(row=3, column=1, padx=(0, 125), pady=(0, 10))
             self.code_entry.grid(row=3, column=1, padx=(120, 0), pady=(0, 10))
-        self.show.grid(row=4, column=1, padx=(10, 0), pady=(0, 10))
+            self.show.grid(row=4, column=1, padx=(0, 100), pady=(0, 10))
+            self.remember_me.grid(row=4, column=1, padx=(125, 0), pady=(0, 10))
         self.back_student.grid(row=5, column=0, padx=(0, 10), pady=(0, 0))
         self.system.grid(row=5, column=1, padx=(10, 0), pady=(0, 0))
+        self.cursor_db.execute("SELECT student_id, code, iv_student_id, iv_code, mac_student_id, "
+                               "mac_code FROM user_data WHERE id = 1")
+        row = self.cursor_db.fetchone()
+        if row and all(isinstance(x, bytes) for x in row):
+            student_ct, code_ct, iv_sid, iv_code, mac_sid, mac_code = row
+            if len(iv_sid) == 16 and len(iv_code) == 16 and len(mac_sid) == 32 and len(mac_code) == 32:
+                try:
+                    student_id = self.crypto.decrypt(student_ct, iv_sid, mac_sid)
+                    code = self.crypto.decrypt(code_ct, iv_code, mac_code)
+                    self.student_id_entry.insert(0, student_id)
+                    self.code_entry.insert(0, code)
+                    self.remember_me.toggle()
+                except Exception as err:
+                    logging.warning(f"Decryption failed: {err}")
+                    self.cursor_db.execute("DELETE FROM user_data")
+                    self.connection_db.commit()
+                    self.crypto.reset()
         if self.ask_skip_auth and not self.skipped_login:
             self.unbind("<Return>")
             self.unbind("<Control-BackSpace>")
@@ -3197,18 +3193,18 @@ class TeraTermUI(customtkinter.CTk):
                             button_color=("#c30101", "#145DA0", "#145DA0"),
                             hover_color=("darkred", "use_default", "use_default"))
         response = msg.get()
-        row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+        row_exists = self.cursor_db.execute("SELECT 1 FROM user_config").fetchone()
         if response[0] == "Yes" or response[0] == "Sí":
             if not row_exists:
-                self.cursor.execute("INSERT INTO user_data (skip_auth) VALUES (?)", ("Yes",))
+                self.cursor_db.execute("INSERT INTO user_config (skip_auth) VALUES (?)", ("Yes",))
             else:
-                self.cursor.execute("UPDATE user_data SET skip_auth=?", ("Yes",))
+                self.cursor_db.execute("UPDATE user_config SET skip_auth=?", ("Yes",))
             self.skip_auth = True
         else:
             if not row_exists:
-                self.cursor.execute("INSERT INTO user_data (skip_auth) VALUES (?)", ("No",))
+                self.cursor_db.execute("INSERT INTO user_config (skip_auth) VALUES (?)", ("No",))
             else:
-                self.cursor.execute("UPDATE user_data SET skip_auth=?", ("No",))
+                self.cursor_db.execute("UPDATE user_config SET skip_auth=?", ("No",))
             self.skip_auth = False
         self.ask_skip_auth = False
         if self.help and self.help.winfo_exists():
@@ -3227,20 +3223,20 @@ class TeraTermUI(customtkinter.CTk):
         self.disable_enable_auth()
 
     def disable_enable_auth(self):
-        row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+        row_exists = self.cursor_db.execute("SELECT 1 FROM user_config").fetchone()
         if self.skip_auth_switch.get() == "on":
             if not row_exists:
-                self.cursor.execute("INSERT INTO user_data (skip_auth) VALUES (?)", ("Yes",))
+                self.cursor_db.execute("INSERT INTO user_config (skip_auth) VALUES (?)", ("Yes",))
             else:
-                self.cursor.execute("UPDATE user_data SET skip_auth=?", ("Yes",))
+                self.cursor_db.execute("UPDATE user_config SET skip_auth=?", ("Yes",))
             self.skip_auth = True
         elif self.skip_auth_switch.get() == "off":
             if not row_exists:
-                self.cursor.execute("INSERT INTO user_data (skip_auth) VALUES (?)", ("No",))
+                self.cursor_db.execute("INSERT INTO user_config (skip_auth) VALUES (?)", ("No",))
             else:
-                self.cursor.execute("UPDATE user_data SET skip_auth=?", ("No",))
+                self.cursor_db.execute("UPDATE user_config SET skip_auth=?", ("No",))
             self.skip_auth = False
-        self.connection.commit()
+        self.connection_db.commit()
 
     def notice_user(self, running_launchers):
         if self.error is not None and self.error.winfo_exists():
@@ -3701,6 +3697,11 @@ class TeraTermUI(customtkinter.CTk):
             self.skipped_login = False
             self.main_menu = True
             self.add_key_bindings(event=None)
+            if self.delete_user_data:
+                self.cursor_db.execute("DELETE FROM user_data")
+                self.connection_db.commit()
+                self.crypto.reset()
+                self.delete_user_data = False
             if self.error_occurred:
                 self.destroy_windows()
                 if self.server_status != "Maintenance message found" and self.server_status != "Timeout" \
@@ -3972,6 +3973,8 @@ class TeraTermUI(customtkinter.CTk):
                              ["<F1>", translation["F1"]],
                              ["<Alt-F4>", translation["alt_f4"]]]
             self.keybinds_table.configure(values=self.keybinds)
+            self.delete_data_text.configure(text=translation["del_data_title"])
+            self.delete_data.configure(text=translation["del_data"])
             self.skip_auth_text.configure(text=translation["skip_auth_text"])
             self.skip_auth_switch.configure(text=translation["skip_auth_switch"])
             self.files_text.configure(text=translation["files_title"])
@@ -4014,14 +4017,20 @@ class TeraTermUI(customtkinter.CTk):
                 self.student_id_entry.grid(row=2, column=1, padx=(100, 0), pady=(0, 10))
                 self.code.grid(row=3, column=1, padx=(0, 126), pady=(0, 10))
                 self.code_entry.grid(row=3, column=1, padx=(100, 0), pady=(0, 10))
+                self.show.grid(row=4, column=1, padx=(0, 90), pady=(0, 10))
+                self.remember_me.grid(row=4, column=1, padx=(115, 0), pady=(0, 10))
             elif lang == "Español":
                 self.student_id.grid(row=2, column=1, padx=(0, 164), pady=(0, 10))
                 self.student_id_entry.grid(row=2, column=1, padx=(120, 0), pady=(0, 10))
                 self.code.grid(row=3, column=1, padx=(0, 125), pady=(0, 10))
                 self.code_entry.grid(row=3, column=1, padx=(120, 0), pady=(0, 10))
+                self.show.grid(row=4, column=1, padx=(0, 100), pady=(0, 10))
+                self.remember_me.grid(row=4, column=1, padx=(125, 0), pady=(0, 10))
             self.student_id_tooltip.configure(message=translation["student_id_tooltip"])
             self.code_tooltip.configure(message=translation["code_tooltip"])
+            self.remember_me_tooltip.configure(message=translation["remember_me_tooltip"])
             self.show.configure(text=translation["show"])
+            self.remember_me.configure(text=translation["remember_me"])
             self.back_student.configure(text=translation["back"])
             self.system.configure(text=translation["system"])
         if self.init_multiple:
@@ -4127,7 +4136,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.m_register_menu[i].set(translation["drop"])
             self.update_sections_multiple_tooltips(lang)
             self.auto_enroll.configure(text=translation["auto_enroll"])
-            self.save_data.configure(text=translation["save_data"])
+            self.save_class_data.configure(text=translation["save_data"])
             self.register_tooltip.configure(message=translation["register_tooltip"])
             self.drop_tooltip.configure(message=translation["drop_tooltip"])
             self.back_classes_tooltip.configure(message=translation["back_tooltip"])
@@ -4145,7 +4154,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.timer_header.configure(text=translation["auto_enroll_activated"])
                 self.cancel_button.configure(text=translation["option_1"])
                 rating, color = self.ssh_monitor.get_reliability_rating(lang)
-                puerto_rico_tz = timezone("America/Puerto_Rico")
+                puerto_rico_tz = pytz.timezone("America/Puerto_Rico")
                 current_date = datetime.now(puerto_rico_tz)
                 time_difference = self.pr_date - current_date
                 total_seconds = time_difference.total_seconds()
@@ -4806,7 +4815,7 @@ class TeraTermUI(customtkinter.CTk):
     def auto_enroll_event_handler(self):
         translation = self.load_language()
         self.focus_set()
-        idle = self.cursor.execute("SELECT idle FROM user_data").fetchone()
+        idle = self.cursor_db.execute("SELECT idle FROM user_config").fetchone()
         if idle[0] != "Disabled":
             if self.auto_enroll.get() == "on":
                 msg = CTkMessagebox(title=translation["auto_enroll"], message=translation["auto_enroll_prompt"],
@@ -4841,8 +4850,6 @@ class TeraTermUI(customtkinter.CTk):
 
     # Auto-Enroll classes
     def auto_enroll_event(self):
-        from pytz import timezone
-
         with self.lock_thread:
             try:
                 translation = self.load_language()
@@ -4890,7 +4897,7 @@ class TeraTermUI(customtkinter.CTk):
                             active_semesters = TeraTermUI.get_latest_term(copy)
                             date_time_string = re.sub(r"[^a-zA-Z0-9:/ ]", "", date_time_string)
                             date_time_naive = datetime.strptime(date_time_string, "%m/%d/%Y %I:%M %p")
-                            puerto_rico_tz = timezone("America/Puerto_Rico")
+                            puerto_rico_tz = pytz.timezone("America/Puerto_Rico")
                             self.pr_date = puerto_rico_tz.localize(date_time_naive, is_dst=None)
                             # Get current datetime
                             current_date = datetime.now(puerto_rico_tz)
@@ -4980,7 +4987,7 @@ class TeraTermUI(customtkinter.CTk):
     # Starts the enrollment countdown when the auto-enroll process is activated
     def countdown(self, pr_date):
         translation = self.load_language()
-        puerto_rico_tz = timezone("America/Puerto_Rico")
+        puerto_rico_tz = pytz.timezone("America/Puerto_Rico")
         current_date = datetime.now(puerto_rico_tz)
         time_difference = pr_date - current_date
         total_seconds = time_difference.total_seconds()
@@ -5212,7 +5219,7 @@ class TeraTermUI(customtkinter.CTk):
             self.m_add.configure(state="disabled")
             self.m_remove.configure(state="disabled")
             self.auto_enroll.configure(state="normal")
-            self.save_data.configure(state="normal")
+            self.save_class_data.configure(state="normal")
             if self.enrolled_classes_data is not None:
                 self.submit_my_classes.configure(state="disabled")
         else:
@@ -5364,7 +5371,12 @@ class TeraTermUI(customtkinter.CTk):
             self.code_tooltip = CTkToolTip(self.code_entry, message=translation["code_tooltip"], bg_color="#1E90FF")
             self.show = customtkinter.CTkSwitch(master=self.student_frame, text=translation["show"],
                                                 command=self.show_event, onvalue="on", offvalue="off")
+            self.remember_me = customtkinter.CTkCheckBox(self.student_frame, text=translation["remember_me"],
+                                                         onvalue="on", offvalue="off", command=self.save_user_data)
+            self.remember_me_tooltip = CTkToolTip(self.remember_me, message=translation["remember_me_tooltip"],
+                                                  bg_color="#1E90FF")
             self.show.bind("<space>", lambda event: self.spacebar_event())
+            self.remember_me.bind("<space>", self.keybind_save_user_data)
             self.student_id_entry.bind("<Command-c>", lambda event: "break")
             self.student_id_entry.bind("<Control-c>", lambda event: "break")
             self.code_entry.bind("<Command-c>", lambda event: "break")
@@ -5407,6 +5419,7 @@ class TeraTermUI(customtkinter.CTk):
             self.student_id.unbind("<Button-1>")
             self.code.unbind("<Button-1>")
             self.show.unbind("<space>")
+            self.remember_me.unbind("<space>")
             def destroy():
                 self.unload_image("lock")
                 self.title_student = None
@@ -5430,6 +5443,11 @@ class TeraTermUI(customtkinter.CTk):
                 self.code_tooltip = None
                 self.show.configure(command=None)
                 self.show = None
+                self.remember_me.configure(command=None)
+                self.remember_me = None
+                self.remember_me_tooltip.destroy()
+                self.remember_me_tooltip.widget = None
+                self.remember_me_tooltip.message = None
                 self.system.configure(command=None)
                 self.system = None
                 self.back_student.configure(command=None)
@@ -5468,7 +5486,7 @@ class TeraTermUI(customtkinter.CTk):
                                                        font=customtkinter.CTkFont(size=20, weight="bold"))
             self.e_classes = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab), text=translation["class"])
             query = "SELECT code FROM courses ORDER BY RANDOM() LIMIT 1"
-            result = self.cursor.execute(query).fetchone()
+            result = self.cursor_db.execute(query).fetchone()
             if result is not None:
                 class_code = result[0]
             else:
@@ -5520,7 +5538,7 @@ class TeraTermUI(customtkinter.CTk):
                                                         font=customtkinter.CTkFont(size=16, weight="bold"))
             self.s_classes = customtkinter.CTkLabel(self.search_scrollbar, text=translation["class"])
             query = "SELECT code FROM courses ORDER BY RANDOM() LIMIT 1"
-            result = self.cursor.execute(query).fetchone()
+            result = self.cursor_db.execute(query).fetchone()
             if result is not None:
                 class_code = result[0]
             else:
@@ -5713,9 +5731,9 @@ class TeraTermUI(customtkinter.CTk):
             self.submit_multiple = CustomButton(master=self.m_button_frame, border_width=2, text=translation["submit"],
                                                 text_color=("gray10", "#DCE4EE"),
                                                 command=self.submit_multiple_event_handler, height=40, width=70)
-            self.save_data = customtkinter.CTkCheckBox(master=self.save_frame, text=translation["save_data"],
-                                                       command=self.save_classes, onvalue="on", offvalue="off")
-            self.save_data_tooltip = CTkToolTip(self.save_data, message=translation["save_data_tooltip"],
+            self.save_class_data = customtkinter.CTkCheckBox(master=self.save_frame, text=translation["save_data"],
+                                                             command=self.save_classes, onvalue="on", offvalue="off")
+            self.save_data_tooltip = CTkToolTip(self.save_class_data, message=translation["save_data_tooltip"],
                                                 bg_color="#1E90FF")
             self.auto_enroll = customtkinter.CTkSwitch(master=self.auto_frame, text=translation["auto_enroll"],
                                                        onvalue="on", offvalue="off",
@@ -5725,7 +5743,7 @@ class TeraTermUI(customtkinter.CTk):
             self.multiple_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.m_button_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.save_frame.bind("<Button-1>", lambda event: self.focus_set())
-            self.save_data.bind("<space>", self.keybind_save_classes)
+            self.save_class_data.bind("<space>", self.keybind_save_classes)
             self.auto_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.auto_enroll.bind("<space>", lambda event: self.keybind_auto_enroll())
             self.title_multiple.bind("<Button-1>", lambda event: self.focus_set())
@@ -5741,8 +5759,8 @@ class TeraTermUI(customtkinter.CTk):
                     entry.lang = lang
             self.load_saved_classes()
 
-    # saves the information to the database when the app closes
-    def save_user_data(self, include_exit=True):
+    # saves the config information to the database when the app closes
+    def save_user_config(self, include_exit=True):
         field_values = {
             "host": "uprbay.uprb.edu",
             "language": self.language_menu.get(),
@@ -5768,36 +5786,72 @@ class TeraTermUI(customtkinter.CTk):
                         host_entry_value = self.host_entry.get().replace(" ", "").lower()
                     if not TeraTermUI.check_host(host_entry_value):
                         continue
-                result = self.cursor.execute(f"SELECT {field} FROM user_data").fetchone()
+                result = self.cursor_db.execute(f"SELECT {field} FROM user_config").fetchone()
                 if result is None:
-                    self.cursor.execute(f"INSERT INTO user_data ({field}) VALUES (?)", (value,))
+                    self.cursor_db.execute(f"INSERT INTO user_config ({field}) VALUES (?)", (value,))
                 elif result[0] != value:
-                    self.cursor.execute(f"UPDATE user_data SET {field} = ? ", (value,))
-            self.connection.commit()
+                    self.cursor_db.execute(f"UPDATE user_config SET {field} = ? ", (value,))
+            if self.delete_user_data:
+                self.cursor_db.execute("DELETE FROM user_data")
+                self.crypto.reset()
+            self.connection_db.commit()
             if not self.saved_classes and self.init_multiple:
                 self.delete_saved_classes()
         except sqlite3.Error as err:
             logging.error(f"Database error occurred: {err}")
             self.log_error()
         finally:
-            self.connection.close()
+            self.connection_db.close()
+
+    def keybind_save_user_data(self, event=None):
+        if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
+            return
+
+        self.remember_me.toggle()
+        self.save_user_data()
+        if event and event.keysym == "space":
+            self.remember_me._on_enter()
+
+    def save_user_data(self):
+        student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
+        code = self.code_entry.get().replace(" ", "")
+        if ((re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", student_id) or
+             (student_id.isdigit() and len(student_id) == 9)) and code.isdigit() and len(code) == 4):
+            if self.remember_me.get() == "on":
+                student_cipher, iv_sid, mac_sid = self.crypto.encrypt(student_id)
+                code_cipher, iv_code, mac_code = self.crypto.encrypt(code)
+                self.cursor_db.execute(
+                    "INSERT INTO user_data (id, student_id, code, iv_student_id, iv_code, "
+                    "mac_student_id, mac_code) VALUES (1, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) "
+                    "DO UPDATE SET student_id = excluded.student_id, code = excluded.code, "
+                    "iv_student_id = excluded.iv_student_id, iv_code = excluded.iv_code, "
+                    "mac_student_id = excluded.mac_student_id, mac_code = excluded.mac_code",
+                    (student_cipher, code_cipher, iv_sid, iv_code, mac_sid, mac_code))
+                self.delete_user_data = False
+                self.must_save_user_data = False
+                self.connection_db.commit()
+            else:
+                self.delete_user_data = True
+                self.must_save_user_data = False
+        else:
+            self.must_save_user_data = True
 
     def keybind_save_classes(self, event=None):
         if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
             return
 
-        self.save_data.toggle()
+        self.save_class_data.toggle()
         self.save_classes()
         if event and event.keysym == "space":
-            self.save_data._on_enter()
+            self.save_class_data._on_enter()
 
     # saves class information for another session
     def save_classes(self):
-        save = self.save_data.get()
+        save = self.save_class_data.get()
         translation = self.load_language()
         if save == "on":
-            self.cursor.execute("DELETE FROM saved_classes")
-            self.connection.commit()
+            self.cursor_db.execute("DELETE FROM saved_classes")
+            self.connection_db.commit()
             is_empty = False
             is_invalid_format = False
             for index in range(self.a_counter + 1):
@@ -5819,24 +5873,24 @@ class TeraTermUI(customtkinter.CTk):
                         "^[A-Z0-9]{3}$", section_value):
                     is_invalid_format = True
                 else:
-                    self.cursor.execute("INSERT INTO saved_classes (class, section, semester, action, timestamp) "
+                    self.cursor_db.execute("INSERT INTO saved_classes (class, section, semester, action, timestamp) "
                                         "VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)",
-                                        (class_value, section_value, semester_value, register_value))
-                    self.connection.commit()
+                                           (class_value, section_value, semester_value, register_value))
+                    self.connection_db.commit()
                     self.saved_classes = True
 
             if is_empty:
                 self.show_error_message(330, 255, translation["failed_saved_lack_info"])
-                self.save_data.deselect()
+                self.save_class_data.deselect()
             elif is_invalid_format:
                 self.show_error_message(330, 255, translation["failed_saved_invalid_info"])
-                self.save_data.deselect()
+                self.save_class_data.deselect()
             else:
-                self.cursor.execute("SELECT COUNT(*) FROM saved_classes")
-                row_count = self.cursor.fetchone()[0]
+                self.cursor_db.execute("SELECT COUNT(*) FROM saved_classes")
+                row_count = self.cursor_db.fetchone()[0]
                 if row_count == 0:
                     self.show_error_message(330, 255, translation["failed_saved_invalid_info"])
-                    self.save_data.deselect()
+                    self.save_class_data.deselect()
                 else:
                     self.changed_classes = set()
                     self.changed_sections = set()
@@ -5849,8 +5903,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.m_section_entry[i].bind("<FocusOut>", self.m_sections_bind_wrapper)
                     self.show_success_message(350, 265, translation["saved_classes_success"])
         if save == "off":
-            self.cursor.execute("DELETE FROM saved_classes")
-            self.connection.commit()
+            self.cursor_db.execute("DELETE FROM saved_classes")
+            self.connection_db.commit()
             self.saved_classes = False
             for i in range(8):
                 self.m_register_menu[i].configure(command=lambda value: self.focus_set())
@@ -5859,7 +5913,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # Compares the saved classes in the database with the current entries in the application
     def delete_saved_classes(self):
-        saved_data = self.cursor.execute(
+        saved_data = self.cursor_db.execute(
             "SELECT class, section, semester, action FROM saved_classes WHERE class IS NOT NULL").fetchall()
 
         if not saved_data:
@@ -5913,8 +5967,8 @@ class TeraTermUI(customtkinter.CTk):
         difference_ratio = num_field_differences / total_fields_compared
         if difference_ratio > 0.5:
             # Data is mostly different; delete from database
-            self.cursor.execute("DELETE FROM saved_classes")
-            self.connection.commit()
+            self.cursor_db.execute("DELETE FROM saved_classes")
+            self.connection_db.commit()
 
     # shows the important information window
     def show_loading_screen(self):
@@ -6182,7 +6236,7 @@ class TeraTermUI(customtkinter.CTk):
         try:
             with socket.create_connection((HOST, PORT), timeout=timeout):
                 try:
-                    idle = self.cursor.execute("SELECT idle FROM user_data").fetchone()
+                    idle = self.cursor_db.execute("SELECT idle FROM user_config").fetchone()
                 except Exception as err:
                     idle = ["Disabled"]
                     logging.error("An error occurred: %s", err)
@@ -7540,13 +7594,13 @@ class TeraTermUI(customtkinter.CTk):
                     self.DEFAULT_SEMESTER = latest_term["percent"]
                 elif latest_term["asterisk"]:
                     self.DEFAULT_SEMESTER = latest_term["asterisk"]
-                row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+                row_exists = self.cursor_db.execute("SELECT 1 FROM user_config").fetchone()
                 if not row_exists:
-                    self.cursor.execute("INSERT INTO user_data (default_semester) VALUES (?)",
-                                        (self.DEFAULT_SEMESTER,))
+                    self.cursor_db.execute("INSERT INTO user_config (default_semester) VALUES (?)",
+                                           (self.DEFAULT_SEMESTER,))
                 else:
-                    self.cursor.execute("UPDATE user_data SET default_semester=?",
-                                        (self.DEFAULT_SEMESTER,))
+                    self.cursor_db.execute("UPDATE user_config SET default_semester=?",
+                                           (self.DEFAULT_SEMESTER,))
                 self.found_latest_semester = True
                 self.update_all_semester_tooltips()
                 return self.DEFAULT_SEMESTER
@@ -9476,6 +9530,21 @@ class TeraTermUI(customtkinter.CTk):
             self.log_error()
             webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
 
+    def del_user_data(self):
+        translation = self.load_language()
+        now = time.time()
+        if now - self.last_delete_time < 3:
+            return
+
+        self.last_delete_time = now
+        self.cursor_db.execute("SELECT COUNT(*) FROM user_data")
+        count = self.cursor_db.fetchone()[0]
+        if count > 0:
+            self.cursor_db.execute("DELETE FROM user_data")
+            self.connection_db.commit()
+            self.crypto.reset()
+            self.show_success_message(340, 255, translation["del_data_success"])
+
     def fix_execution_event_handler(self):
         translation = self.load_language()
         if TeraTermUI.checkIfProcessRunning("ttermpro"):
@@ -9516,8 +9585,8 @@ class TeraTermUI(customtkinter.CTk):
                     self.uprb.UprbayTeraTermVt.type_keys("^v")
                     self.reset_activity_timer()
                 self.classes_status.clear()
-                self.cursor.execute("UPDATE user_data SET default_semester=NULL")
-                self.connection.commit()
+                self.cursor_db.execute("UPDATE user_config SET default_semester=NULL")
+                self.connection_db.commit()
                 if not self.error_occurred and not self.show_fix_exe:
                     self.after(100, self.show_information_message, 355, 235,
                                translation["fix_after"])
@@ -9650,7 +9719,7 @@ class TeraTermUI(customtkinter.CTk):
         pyautogui.FAILSAFE = False
         while not self.stop_check_process.is_set():
             try:
-                idle = self.cursor.execute("SELECT idle FROM user_data").fetchone()
+                idle = self.cursor_db.execute("SELECT idle FROM user_config").fetchone()
             except Exception as err:
                 idle = ["Disabled"]
                 logging.error("An error occurred: %s", err)
@@ -9706,7 +9775,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # Starts the check for idle thread
     def start_check_idle_thread(self):
-        idle = self.cursor.execute("SELECT idle FROM user_data").fetchone()
+        idle = self.cursor_db.execute("SELECT idle FROM user_config").fetchone()
         if idle[0] != "Disabled":
             self.check_idle_thread = threading.Thread(target=self.check_idle)
             if self.stop_check_idle.is_set():
@@ -9801,25 +9870,25 @@ class TeraTermUI(customtkinter.CTk):
 
     # Disables check_idle functionality
     def disable_enable_idle(self):
-        row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+        row_exists = self.cursor_db.execute("SELECT 1 FROM user_config").fetchone()
         if self.disable_idle.get() == "on":
             if not row_exists:
-                self.cursor.execute("INSERT INTO user_data (idle) VALUES (?)", ("Disabled",))
+                self.cursor_db.execute("INSERT INTO user_config (idle) VALUES (?)", ("Disabled",))
             else:
-                self.cursor.execute("UPDATE user_data SET idle=?", ("Disabled",))
+                self.cursor_db.execute("UPDATE user_config SET idle=?", ("Disabled",))
             self.stop_check_idle_thread()
         elif self.disable_idle.get() == "off":
             if not row_exists:
-                self.cursor.execute("INSERT INTO user_data (idle) VALUES (?)", ("Enabled",))
+                self.cursor_db.execute("INSERT INTO user_config (idle) VALUES (?)", ("Enabled",))
             else:
-                self.cursor.execute("UPDATE user_data SET idle=?", ("Enabled",))
+                self.cursor_db.execute("UPDATE user_config SET idle=?", ("Enabled",))
             if self.auto_enroll is not None:
                 self.auto_enroll.configure(state="normal")
             if self.run_fix and TeraTermUI.checkIfProcessRunning("ttermpro"):
                 self.start_check_idle_thread()
                 self.keep_teraterm_open()
                 self.reset_activity_timer()
-        self.connection.commit()
+        self.connection_db.commit()
 
     def keybind_disable_enable_audio(self, source):
         if source == "tera":
@@ -9835,7 +9904,7 @@ class TeraTermUI(customtkinter.CTk):
         self.disable_enable_audio(source)
 
     def disable_enable_audio(self, source):
-        row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+        row_exists = self.cursor_db.execute("SELECT 1 FROM user_config").fetchone()
         if source == "tera":
             is_on = self.disable_audio_tera.get() == "on"
             column_name = "audio_tera"
@@ -9846,10 +9915,10 @@ class TeraTermUI(customtkinter.CTk):
             return
         new_value = "Disabled" if is_on else "Enabled"
         if not row_exists:
-            self.cursor.execute(f"INSERT INTO user_data ({column_name}) VALUES (?)", (new_value,))
+            self.cursor_db.execute(f"INSERT INTO user_config ({column_name}) VALUES (?)", (new_value,))
         else:
-            self.cursor.execute(f"UPDATE user_data SET {column_name}=?", (new_value,))
-        self.connection.commit()
+            self.cursor_db.execute(f"UPDATE user_config SET {column_name}=?", (new_value,))
+        self.connection_db.commit()
         if source == "tera":
             self.set_beep_sound(self.teraterm_config, is_on)
             self.muted_tera = is_on
@@ -10328,7 +10397,7 @@ class TeraTermUI(customtkinter.CTk):
         if response[0] == "Yes" or response[0] == "Sí":
             if not self.disable_feedback:
                 current_date = datetime.today().strftime("%Y-%m-%d")
-                date_record = self.cursor.execute("SELECT feedback_date FROM user_data").fetchone()
+                date_record = self.cursor_db.execute("SELECT feedback_date FROM user_config").fetchone()
                 if date_record is None or date_record[0] != current_date:
                     feedback = self.feedback_text.get("1.0", customtkinter.END).strip()
                     word_count = len(feedback.split())
@@ -10392,14 +10461,14 @@ class TeraTermUI(customtkinter.CTk):
                                       message=translation["feedback_success"], button_width=380)
 
                     self.after(50, show_success)
-                    row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+                    row_exists = self.cursor_db.execute("SELECT 1 FROM user_config").fetchone()
                     if not row_exists:
-                        self.cursor.execute("INSERT INTO user_data (feedback_date) VALUES (?)",
-                                            (current_date,))
+                        self.cursor_db.execute("INSERT INTO user_config (feedback_date) VALUES (?)",
+                                               (current_date,))
                     else:
-                        self.cursor.execute("UPDATE user_data SET feedback_date=?",
-                                            (current_date,))
-                    self.connection.commit()
+                        self.cursor_db.execute("UPDATE user_config SET feedback_date=?",
+                                               (current_date,))
+                    self.connection_db.commit()
                 else:
                     if not self.connection_error:
                         def show_error():
@@ -10571,17 +10640,17 @@ class TeraTermUI(customtkinter.CTk):
                     self.teraterm_config = os.path.join(self.teraterm_directory, "TERATERM.ini")
                 else:
                     self.teraterm5_first_boot = True
-            row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+            row_exists = self.cursor_db.execute("SELECT 1 FROM user_config").fetchone()
             if not row_exists:
-                self.cursor.execute(
-                    "INSERT INTO user_data (directory, location, config) VALUES (?, ?, ?)",
+                self.cursor_db.execute(
+                    "INSERT INTO user_config (directory, location, config) VALUES (?, ?, ?)",
                     (self.teraterm_directory, self.teraterm_exe_location, self.teraterm_config)
                 )
             else:
-                self.cursor.execute("UPDATE user_data SET directory=?", (self.teraterm_directory,))
-                self.cursor.execute("UPDATE user_data SET location=?", (self.teraterm_exe_location,))
-                self.cursor.execute("UPDATE user_data SET config=?", (self.teraterm_config,))
-            self.connection.commit()
+                self.cursor_db.execute("UPDATE user_config SET directory=?", (self.teraterm_directory,))
+                self.cursor_db.execute("UPDATE user_config SET location=?", (self.teraterm_exe_location,))
+                self.cursor_db.execute("UPDATE user_config SET config=?", (self.teraterm_config,))
+            self.connection_db.commit()
             self.changed_location = True
             self.edit_teraterm_ini(self.teraterm_config)
             self.after(100, self.show_success_message, 350, 265, translation["tera_term_success"])
@@ -10674,17 +10743,17 @@ class TeraTermUI(customtkinter.CTk):
                     self.teraterm_config = os.path.join(self.teraterm_directory, "TERATERM.ini")
                 else:
                     self.teraterm5_first_boot = True
-            row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+            row_exists = self.cursor_db.execute("SELECT 1 FROM user_config").fetchone()
             if not row_exists:
-                self.cursor.execute(
-                    "INSERT INTO user_data (directory, location, config) VALUES (?, ?, ?)",
+                self.cursor_db.execute(
+                    "INSERT INTO user_config (directory, location, config) VALUES (?, ?, ?)",
                     (self.teraterm_directory, self.teraterm_exe_location, self.teraterm_config)
                 )
             else:
-                self.cursor.execute("UPDATE user_data SET directory=?", (self.teraterm_directory,))
-                self.cursor.execute("UPDATE user_data SET location=?", (self.teraterm_exe_location,))
-                self.cursor.execute("UPDATE user_data SET config=?", (self.teraterm_config,))
-            self.connection.commit()
+                self.cursor_db.execute("UPDATE user_config SET directory=?", (self.teraterm_directory,))
+                self.cursor_db.execute("UPDATE user_config SET location=?", (self.teraterm_exe_location,))
+                self.cursor_db.execute("UPDATE user_config SET config=?", (self.teraterm_config,))
+            self.connection_db.commit()
             self.changed_location = True
             self.edit_teraterm_ini(self.teraterm_config)
             self.show_success_message(350, 265, translation["tera_term_success"])
@@ -10722,12 +10791,12 @@ class TeraTermUI(customtkinter.CTk):
         try:
             if search_term in ["all", "todo", "todos"]:
                 query = "SELECT name, code FROM courses ORDER BY name"
-                results = self.cursor.execute(query).fetchall()
+                results = self.cursor_db.execute(query).fetchall()
             else:
                 # Use parameterized query with wildcards
                 query = """SELECT name, code FROM courses WHERE LOWER(name) LIKE ? OR LOWER(code) LIKE ?"""
                 search_pattern = f"%{search_term}%"
-                results = self.cursor.execute(query, (search_pattern, search_pattern)).fetchall()
+                results = self.cursor_db.execute(query, (search_pattern, search_pattern)).fetchall()
             if not results:
                 self.class_list.delete(0, tk.END)
                 self.class_list.insert(tk.END, translation["no_results"])
@@ -10752,7 +10821,7 @@ class TeraTermUI(customtkinter.CTk):
             return
         selected_class = self.class_list.get(self.class_list.curselection())
         query = "SELECT code FROM courses WHERE name = ? OR code = ?"
-        result = self.cursor.execute(query, (selected_class, selected_class)).fetchone()
+        result = self.cursor_db.execute(query, (selected_class, selected_class)).fetchone()
         if result is None:
             self.class_list.delete(0, tk.END)
             self.class_list.insert(tk.END, translation["no_results"])
@@ -10823,6 +10892,9 @@ class TeraTermUI(customtkinter.CTk):
         self.files = CustomButton(self.help_frame, image=self.get_image("folder"), text=translation["files_button"],
                                   anchor="w", text_color=("gray10", "#DCE4EE"),
                                   command=self.change_location_auto_handler)
+        self.delete_data_text = customtkinter.CTkLabel(self.help_frame, text=translation["del_data_title"])
+        self.delete_data = CustomButton(self.help_frame, image=self.get_image("fix"), text=translation["del_data"],
+                                        anchor="w", text_color=("gray10", "#DCE4EE"), command=self.del_user_data)
         self.disable_idle_text = customtkinter.CTkLabel(self.help_frame, text=translation["idle_title"])
         self.disable_idle = customtkinter.CTkSwitch(self.help_frame, text=translation["idle"], onvalue="on",
                                                     offvalue="off", command=self.disable_enable_idle)
@@ -10896,6 +10968,8 @@ class TeraTermUI(customtkinter.CTk):
         self.keybinds_text.pack(pady=(20, 0))
         self.keybinds_table = CTkTable(self.help_frame, column=2, row=22, values=self.keybinds, hover=False)
         self.keybinds_table.pack(expand=True, fill="both", padx=20, pady=10)
+        self.delete_data_text.pack()
+        self.delete_data.pack(pady=5)
         if not self.ask_skip_auth:
             self.skip_auth_text.pack()
             self.skip_auth_switch.pack()
@@ -10908,10 +10982,10 @@ class TeraTermUI(customtkinter.CTk):
         self.disable_audio_app.pack()
         self.fix_text.pack()
         self.fix.pack(pady=5)
-        idle = self.cursor.execute("SELECT idle FROM user_data").fetchone()
-        audio_tera = self.cursor.execute("SELECT audio_tera FROM user_data").fetchone()
-        audio_app = self.cursor.execute("SELECT audio_app FROM user_data").fetchone()
-        skip_auth = self.cursor.execute("SELECT skip_auth FROM user_data").fetchone()
+        idle = self.cursor_db.execute("SELECT idle FROM user_config").fetchone()
+        audio_tera = self.cursor_db.execute("SELECT audio_tera FROM user_config").fetchone()
+        audio_app = self.cursor_db.execute("SELECT audio_app FROM user_config").fetchone()
+        skip_auth = self.cursor_db.execute("SELECT skip_auth FROM user_config").fetchone()
         if idle and idle[0] is not None:
             if idle[0] == "Disabled":
                 self.disable_idle.select()
@@ -11074,12 +11148,12 @@ class TeraTermUI(customtkinter.CTk):
                 if latest_version and latest_version.startswith("v"):
                     latest_version = latest_version[1:]
                 current_date = datetime.today().strftime("%Y-%m-%d")
-                row_exists = self.cursor.execute("SELECT 1 FROM user_data").fetchone()
+                row_exists = self.cursor_db.execute("SELECT 1 FROM user_config").fetchone()
                 if not row_exists:
-                    self.cursor.execute("INSERT INTO user_data (update_date) VALUES (?)",
-                                        (current_date,))
+                    self.cursor_db.execute("INSERT INTO user_config (update_date) VALUES (?)",
+                                           (current_date,))
                 else:
-                    self.cursor.execute("UPDATE user_data SET update_date=?", (current_date,))
+                    self.cursor_db.execute("UPDATE user_config SET update_date=?", (current_date,))
 
                 return latest_version
 
@@ -13039,31 +13113,20 @@ class SSHMonitor:
     def get_reliability_rating(self, lang):
         stats = self.get_stats()
         if not stats or stats["samples"] == 0:
-            return ("Unknown", ("black", "white")) if lang == "English" else ("Desconocido", ("black", "white"))
+            return ("Unknown", "black") if lang == "English" else ("Desconocido", "black")
 
         score = stats["reliability_score"]
-        if lang == "Español":
-            if score >= 90:
-                return "Excelente", "#4CAF50"
-            elif score >= 75:
-                return "Buena", "#8BC34A"
-            elif score >= 60:
-                return "Regular", "#FFEB3B"
-            elif score >= 40:
-                return "Deficiente", "#FF9800"
-            else:
-                return "No confiable", "red"
-        else:
-            if score >= 90:
-                return "Excellent", "#4CAF50"
-            elif score >= 75:
-                return "Good", "#8BC34A"
-            elif score >= 60:
-                return "Fair", "#FFEB3B"
-            elif score >= 40:
-                return "Poor", "#FF9800"
-            else:
-                return "Unreliable", "red"
+        thresholds = [
+            (90, {"English": "Excellent", "Español": "Excelente"}, "#4CAF50"),
+            (75, {"English": "Good", "Español": "Buena"}, "#8BC34A"),
+            (60, {"English": "Fair", "Español": "Regular"}, "#FFEB3B"),
+            (40, {"English": "Poor", "Español": "Deficiente"}, "#FF9800"),
+            (0, {"English": "Unreliable", "Español": "No confiable"}, "red"),
+        ]
+
+        for threshold, labels, color in thresholds:
+            if score >= threshold:
+                return labels.get(lang, labels["English"]), color
 
     def is_responsive(self, avg_cutoff=800, max_cutoff=1500, max_failure_rate=20):
         stats = self.get_stats()
@@ -13072,6 +13135,136 @@ class SSHMonitor:
         if stats["average"] > avg_cutoff or stats["max"] > max_cutoff or stats["failure_rate"] > max_failure_rate:
             return False
         return True
+
+
+class SecureDataStore:
+    def __init__(self, key_path=None, auto_rotate_days=30):
+        self.key_path = key_path or os.path.join(os.getcwd(), "fieldkey.json")
+        self.auto_rotate_days = auto_rotate_days
+        self.aes_key = None
+        self.mac_key = None
+        self.initialize_keys()
+
+    # Load the key file, validate its HMAC, and derive AES/HMAC keys
+    def initialize_keys(self):
+        if not os.path.exists(self.key_path):
+            self.create_new_key_file()
+        elif self.is_expired():
+            self.reset()
+            self.create_new_key_file()
+
+        with open(self.key_path, "r") as f:
+            raw = json.load(f)
+
+        metadata = json.dumps({"version": raw["version"], "created_at": raw["created_at"],
+                               "encrypted_key": raw["encrypted_key"]}, separators=(",", ":")).encode()
+
+        hmac_stored = b64decode(raw["hmac"])
+        hmac_calc = HMAC.new(b"teraterm_ui_master_hmac", digestmod=SHA256)
+        hmac_calc.update(metadata)
+
+        if not compare_digest(hmac_stored, hmac_calc.digest()):
+            raise ValueError("HMAC verification failed on fieldkey.json")
+
+        encrypted_key = b64decode(raw["encrypted_key"])
+        master_key = win32crypt.CryptUnprotectData(encrypted_key, None, None, None, 0)[1]
+        self.aes_key = HKDF(master_key, 32, salt=b"student_event_salt", hashmod=SHA256)
+        self.mac_key = HKDF(master_key, 32, salt=b"mac_salt", hashmod=SHA256)
+
+    # Generate and securely store a new DPAPI-encrypted master key with metadata and HMAC
+    def create_new_key_file(self):
+        master_key = get_random_bytes(32)
+        encrypted = win32crypt.CryptProtectData(master_key, None, None, None, None, 0)
+
+        metadata = {"version": 1, "created_at": datetime.now(UTC).isoformat(),
+                    "encrypted_key": b64encode(encrypted).decode()}
+
+        hmac_obj = HMAC.new(b"teraterm_ui_master_hmac", digestmod=SHA256)
+        hmac_obj.update(json.dumps(metadata, separators=(",", ":")).encode())
+        metadata["hmac"] = b64encode(hmac_obj.digest()).decode()
+
+        with open(self.key_path, "w") as f:
+            json.dump(metadata, f, indent=2)
+
+        self.lock_file_to_user(self.key_path)
+        self.hide_file(self.key_path)
+
+    # Marks the file as hidden in Windows Explorer
+    @staticmethod
+    def hide_file(path):
+        FILE_ATTRIBUTE_HIDDEN = 0x02
+        try:
+            ctypes.windll.kernel32.SetFileAttributesW(path, FILE_ATTRIBUTE_HIDDEN)
+        except Exception as err:
+            logging.warning(f"Could not hide file {path}: {err}")
+
+    # Encrypt a plaintext string using AES-CBC and return (ciphertext, iv, hmac)
+    def encrypt(self, plaintext):
+        iv = get_random_bytes(16)
+        cipher = AES.new(self.aes_key, AES.MODE_CBC, iv)
+        ciphertext = cipher.encrypt(pad(plaintext.encode(), AES.block_size))
+        hmac = HMAC.new(self.mac_key, digestmod=SHA256)
+        hmac.update(iv + ciphertext)
+        return ciphertext, iv, hmac.digest()
+
+    # Decrypt a ciphertext and verify its HMAC
+    def decrypt(self, ciphertext: bytes, iv: bytes, mac: bytes) -> str:
+        hmac = HMAC.new(self.mac_key, digestmod=SHA256)
+        hmac.update(iv + ciphertext)
+        if not compare_digest(hmac.digest(), mac):
+            raise ValueError("MAC verification failed")
+        cipher = AES.new(self.aes_key, AES.MODE_CBC, iv)
+        return unpad(cipher.decrypt(ciphertext), AES.block_size).decode()
+
+    def reset(self):
+        self.zeroize(self.aes_key)
+        self.zeroize(self.mac_key)
+        self.aes_key = None
+        self.mac_key = None
+        if os.path.exists(self.key_path):
+            os.remove(self.key_path)
+
+    def is_expired(self):
+        with open(self.key_path, "r") as f:
+            created_at = json.load(f)["created_at"]
+        created = datetime.fromisoformat(created_at)
+        return (datetime.now(UTC) - created).days > self.auto_rotate_days
+
+    def verify_integrity(self):
+        with open(self.key_path, "r") as f:
+            raw = json.load(f)
+
+        metadata = json.dumps({"version": raw["version"], "created_at": raw["created_at"],
+                               "encrypted_key": raw["encrypted_key"]}, separators=(",", ":")).encode()
+
+        expected_hmac = b64decode(raw["hmac"])
+        actual_hmac = HMAC.new(b"teraterm_ui_master_hmac", digestmod=SHA256)
+        actual_hmac.update(metadata)
+
+        return compare_digest(expected_hmac, actual_hmac.digest())
+
+    @staticmethod
+    # Restrict file access to the current Windows user
+    def lock_file_to_user(path):
+        import ntsecuritycon as con
+
+        try:
+            user, _, _ = win32security.LookupAccountName(None, os.getlogin())
+            sd = win32security.GetFileSecurity(path, win32security.DACL_SECURITY_INFORMATION)
+            dacl = win32security.ACL()
+            dacl.AddAccessAllowedAce(win32security.ACL_REVISION,
+                                     con.FILE_GENERIC_READ | con.FILE_GENERIC_WRITE, user)
+            sd.SetSecurityDescriptorDacl(1, dacl, 0)
+            win32security.SetFileSecurity(path, win32security.DACL_SECURITY_INFORMATION, sd)
+        except Exception as err:
+            logging.warning(f"Could not lock file ACL for {path}: {err}")
+
+    @staticmethod
+    # Attempt to zero out memory for a bytes value.
+    def zeroize(value):
+        if value:
+            buf = ctypes.create_string_buffer(value)
+            ctypes.memset(ctypes.addressof(buf), 0, len(buf))
 
 
 class ClipboardHandler:
@@ -13092,7 +13285,7 @@ class ClipboardHandler:
 
         # Data storage
         self.clipboard_data = {}
-        self.current_key = self._generate_new_key()
+        self.current_key = self.generate_new_key()
         self.last_key_rotation = datetime.now()
 
         # Register additional clipboard formats
@@ -13184,7 +13377,7 @@ class ClipboardHandler:
                 logging.warning(f"Failed to cleanup GDI handle {handle}: {error}")
 
     @staticmethod
-    def _generate_new_key():
+    def generate_new_key():
         master_key = get_random_bytes(32)
         salt = get_random_bytes(16)
         return HKDF(master_key, 32, salt=salt, hashmod=SHA256)
@@ -13194,7 +13387,7 @@ class ClipboardHandler:
         with self.key_rotation_lock:
             if current_time - self.last_key_rotation >= self.KEY_ROTATION_INTERVAL:
                 old_key = self.current_key
-                self.current_key = self._generate_new_key()
+                self.current_key = self.generate_new_key()
                 self.last_key_rotation = current_time
                 self.secure_erase(old_key)
                 logging.info("Encryption key rotated")
