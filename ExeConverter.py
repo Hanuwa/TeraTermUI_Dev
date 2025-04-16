@@ -227,6 +227,7 @@ with open(license_file_path, "w") as file:
 try:
     with sqlite3.connect(project_directory + "/database.db") as connection:
         cursor = connection.cursor()
+        cursor.execute("DELETE FROM user_config")
         cursor.execute("DELETE FROM user_data")
         cursor.execute("DELETE FROM saved_classes")
         utc_now_str = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
