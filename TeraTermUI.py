@@ -182,7 +182,7 @@ class TeraTermUI(customtkinter.CTk):
         self.REAZIONE = self.ottenere_protetta_salasana()
         self.USER_APP_VERSION = "0.9.0"
         self.mode = "Portable"
-        self.updater_hash = "74f0c267c98db499cbfa5aca13b6fc74809dceda0dc92eb346937fc3b0e130b0"
+        self.updater_hash = "e7bf6b5c08561de8e41a08886929c185578e73f8de2665860bc4c3bd9f3c59f6"
         self.running_updater = False
         self.credentials = None
         # disabled/enables keybind events
@@ -1200,8 +1200,8 @@ class TeraTermUI(customtkinter.CTk):
                 try:
                     buf = ctypes.create_string_buffer(value.encode())
                     ctypes.memset(ctypes.addressof(buf), 0, len(buf))
-                except Exception as err:
-                    logging.warning(f"Failed to zeroize string: {err}")
+                except Exception as error:
+                    logging.warning(f"Failed to zeroize string: {error}")
 
         with self.lock_thread:
             try:
@@ -5791,7 +5791,9 @@ class TeraTermUI(customtkinter.CTk):
                     self.cursor_db.execute(f"INSERT INTO user_config ({field}) VALUES (?)", (value,))
                 elif result[0] != value:
                     self.cursor_db.execute(f"UPDATE user_config SET {field} = ? ", (value,))
-            if self.delete_user_data:
+            self.cursor_db.execute("SELECT COUNT(*) FROM user_data")
+            count = self.cursor_db.fetchone()[0]
+            if self.delete_user_data or (not self.init_student and count == 0):
                 self.cursor_db.execute("DELETE FROM user_data")
                 self.crypto.reset()
             self.connection_db.commit()
