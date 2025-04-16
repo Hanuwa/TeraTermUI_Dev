@@ -62,7 +62,7 @@ pyzstd==0.16.2
 reportlab==4.3.1
 requests==2.32.3
 requests-oauthlib==2.0.0
-rsa==4.9
+rsa==4.9.1
 screeninfo==0.8.1
 setuptools==78.1.0
 six==1.17.0
