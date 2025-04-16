@@ -409,6 +409,7 @@ class TeraTermUI(customtkinter.CTk):
         self.system = None
         self.back_student = None
         self.back_student_tooltip = None
+        self.save_timer = None
         self.delete_user_data = False
         self.must_save_user_data = False
 
@@ -5815,6 +5816,14 @@ class TeraTermUI(customtkinter.CTk):
             self.remember_me._on_enter()
 
     def save_user_data(self):
+        if self.save_timer is not None:
+            self.save_timer.cancel()
+
+        self.save_timer = threading.Timer(1.5, self.perform_user_data_save)
+        self.save_timer.start()
+
+    def perform_user_data_save(self):
+        self.last_delete_time = time.time()
         student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
         code = self.code_entry.get().replace(" ", "")
         if ((re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", student_id) or
@@ -5829,9 +5838,9 @@ class TeraTermUI(customtkinter.CTk):
                     "iv_student_id = excluded.iv_student_id, iv_code = excluded.iv_code, "
                     "mac_student_id = excluded.mac_student_id, mac_code = excluded.mac_code",
                     (student_cipher, code_cipher, iv_sid, iv_code, mac_sid, mac_code))
+                self.connection_db.commit()
                 self.delete_user_data = False
                 self.must_save_user_data = False
-                self.connection_db.commit()
             else:
                 self.delete_user_data = True
                 self.must_save_user_data = False
