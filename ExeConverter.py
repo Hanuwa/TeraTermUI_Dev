@@ -387,8 +387,8 @@ for version in versions:
                                 'self.mode = "Installation"')
             data = data.replace('if not os.path.isfile(db_path) or not os.access(db_path, os.R_OK):',
                                 'if not os.path.exists(self.db_path):')
-            data = data.replace('self.connection = sqlite3.connect(db_path, check_same_thread=False)',
-                                'self.connection = sqlite3.connect(self.db_path, check_same_thread=False)')
+            data = data.replace('self.connection_db = sqlite3.connect(db_path, check_same_thread=False)',
+                                'self.connection_db = sqlite3.connect(self.db_path, check_same_thread=False)')
             data = data.replace('closing(sqlite3.connect(TeraTermUI.get_absolute_path("database.db"))) as connection',
                                 'closing(sqlite3.connect(self.db_path)) as connection')
             data = data.replace('with AESZipFile(self.SERVICE_ACCOUNT_FILE) as archive:',
@@ -402,8 +402,8 @@ for version in versions:
                                 'self.mode = "Portable"')
             data = data.replace('if not os.path.exists(self.db_path):',
                                 'if not os.path.isfile(db_path) or not os.access(db_path, os.R_OK):')
-            data = data.replace('self.connection = sqlite3.connect(self.db_path, check_same_thread=False)',
-                                'self.connection = sqlite3.connect(db_path, check_same_thread=False)')
+            data = data.replace('self.connection_db = sqlite3.connect(self.db_path, check_same_thread=False)',
+                                'self.connection_db = sqlite3.connect(db_path, check_same_thread=False)')
             data = data.replace('closing(sqlite3.connect(self.db_path)) as connection',
                                 'closing(sqlite3.connect(TeraTermUI.get_absolute_path("database.db"))) as connection')
             data = data.replace('with AESZipFile(self.ath) as archive:',
