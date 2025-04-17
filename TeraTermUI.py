@@ -1176,7 +1176,7 @@ class TeraTermUI(customtkinter.CTk):
             else:
                 logs_path = TeraTermUI.get_absolute_path("logs.txt")
 
-            with open(logs_path, "a") as file:
+            with open(logs_path, "a", encoding="utf-8") as file:
                 file.write(f"{error_message}\n{separator}")
 
         except Exception as err:
@@ -3763,8 +3763,8 @@ class TeraTermUI(customtkinter.CTk):
         # Load the translations from the file and store them in the cache
         if filename:
             try:
-                with open(filename, "r") as f:
-                    translations = json.load(f)
+                with open(filename, "r", encoding="utf-8") as file:
+                    translations = json.load(file)
                 self.translations_cache[lang] = translations
                 return translations
             except Exception as err:
