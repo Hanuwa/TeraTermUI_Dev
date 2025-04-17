@@ -9558,6 +9558,9 @@ class TeraTermUI(customtkinter.CTk):
             self.cursor_db.execute("DELETE FROM user_data")
             self.connection_db.commit()
             self.crypto.reset()
+            if self.in_student_frame:
+                if self.remember_me.get() == "on":
+                    self.remember_me.toggle()
             self.show_success_message(340, 255, translation["del_data_success"])
 
     def fix_execution_event_handler(self):
