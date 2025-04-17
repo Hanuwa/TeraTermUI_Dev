@@ -5,17 +5,17 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/16/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/17/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
-# depends a lot on the user's system and takes a bit time to process.
+# depends a lot on the user's system and takes a bit of time to process.
 # Application sometimes feels sluggish/slow to use, could use some efficiency/performance improvements.
 # The grid of the UI interface and placement of widgets could use some work.
 # Option Menu of all tera term's screens requires more work, project needs more documentation.
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 13900 lines of codes, it definitely makes things harder to work with
+# and with over 13,900 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -807,7 +807,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.help_button.configure(state="disabled")
                 self.status_button.configure(state="disabled")
                 self.intro_box.stop_autoscroll(event=None)
-                # Pop up message that appears only the first time the user uses the application
+                # Pop up a message that appears only the first time the user uses the application
                 def show_message_box():
                     self.play_sound("welcome.wav")
                     CTkMessagebox(title=translation["welcome_title"], message=translation["welcome_message"],
@@ -1150,26 +1150,20 @@ class TeraTermUI(customtkinter.CTk):
         import inspect
 
         try:
-            # Get the current timestamp
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            # Get the current call stack and extract the function or module name
-            stack = inspect.stack()
-            _, filename, lineno, function, code_context, _ = stack[1]
-            # Capture the full traceback
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            tb = traceback.extract_tb(exc_traceback)
-            # Get the last frame in the traceback, to capture the exact line that cause the exception
-            last_frame = tb[-1]
-            lineno = last_frame.lineno
+            full_traceback = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback)).strip()
+            stack = inspect.stack()
+            current_frame = stack[1] if len(stack) > 1 else None
+            filename = current_frame.filename if current_frame else "UnknownFile"
+            function = current_frame.function if current_frame else "UnknownFunction"
+            lineno = current_frame.lineno if current_frame else -1
+
             function_info = f"{filename}:{function}:{lineno}"
-            traceback_summary = traceback.format_exc().strip().split("\n")[-1]
-            # Create a formatted error message with the app version and timestamp
-            error_message = (f"[ERROR] [{self.mode}] [{self.USER_APP_VERSION}] [{timestamp}]"
-                             f" [{function_info}] Traceback: {traceback_summary}")
-            # Calculate the length of the error message
-            error_length = len(error_message)
-            # Create a separator based on the length of the error message
-            separator = "-" * error_length + "\n"
+            error_message = (f"[ERROR] [{self.mode}] [{self.USER_APP_VERSION}] [{timestamp}]\n"
+                             f"Location: {function_info}\n{full_traceback}")
+            separator = "-" * 125 + "\n"
+
             if self.mode == "Installation":
                 scope, install_path = TeraTermUI.get_installation_scope()
                 if scope in ["all_users", "current_user"]:
@@ -1179,14 +1173,14 @@ class TeraTermUI(customtkinter.CTk):
                 if not os.path.isdir(tera_term_ui_path):
                     raise Exception(f"Program Data directory not found at {tera_term_ui_path}")
                 logs_path = os.path.join(tera_term_ui_path, "logs.txt")
-                with open(logs_path, "a") as file:
-                    file.write(f"{error_message}\n{separator}")
             else:
                 logs_path = TeraTermUI.get_absolute_path("logs.txt")
-                with open(logs_path, "a") as file:
-                    file.write(f"{error_message}\n{separator}")
+
+            with open(logs_path, "a") as file:
+                file.write(f"{error_message}\n{separator}")
+
         except Exception as err:
-            logging.error(f"An unexpected error occurred: {str(err)}")
+            logging.error(f"[LOG_ERROR_FAILURE] [{timestamp}] Could not write error log: {str(err)}")
 
     def student_event_handler(self):
         loading_screen = self.show_loading_screen()
@@ -3769,7 +3763,7 @@ class TeraTermUI(customtkinter.CTk):
         # Load the translations from the file and store them in the cache
         if filename:
             try:
-                with open(filename, "r", encoding="utf-8") as f:
+                with open(filename, "r") as f:
                     translations = json.load(f)
                 self.translations_cache[lang] = translations
                 return translations
