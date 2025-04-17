@@ -231,9 +231,9 @@ try:
         cursor.execute("DELETE FROM user_data")
         cursor.execute("DELETE FROM saved_classes")
         utc_now_str = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
-        cursor.execute("SELECT COUNT(*) FROM metadata WHERE key = ?", ("version",))
+        cursor.execute("SELECT value FROM metadata WHERE key = ?", ("version",))
         row = cursor.fetchone()
-        if row is None or row[0] == 0:
+        if row is None:
             cursor.execute("INSERT INTO metadata (key, value, date) VALUES (?, ?, ?)",
                            ("version", db_version, utc_now_str))
         elif row[0] != db_version:
