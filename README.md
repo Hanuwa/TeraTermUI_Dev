@@ -2,7 +2,7 @@
 
 ## Overview
 
-**App Version:** `0.9.0` | **Python Version:** `3.12.10` | **Tesseract Version:** `5.5.0` | **C Compiler:** `MSVC (14.3)` | **Inno Setup:** `6.4.2`
+**App Version:** `0.9.0` | **Python Version:** `3.12.10` | **Tesseract Version:** `5.5.0` | **C Compiler:** `MSVC (14.3)` | **Inno Setup:** `6.4.2` | **OS:** `Windows 10 and 11`
 
 This repository contains the development environment and source code for a GUI automation tool designed specifically for interaction with Tera Term (compatible with versions 4 and 5). The main focus is on refining the user interface (UI), enhancing performance, and ensuring smooth interaction.
 An application designed to automate and streamline the class enrollment process for the University of Puerto Rico at Bayamón through Tera Term, featuring an intuitive and user-friendly interface.
