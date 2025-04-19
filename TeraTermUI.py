@@ -5819,8 +5819,8 @@ class TeraTermUI(customtkinter.CTk):
 
     def save_user_data(self):
         now = time.time()
-        save_threshold = 2.0
-        delay = 1.5
+        save_threshold = 1.25
+        delay = 1.0
         if now - self.last_save_time > save_threshold:
             if self.save_timer is not None:
                 self.save_timer.cancel()
@@ -5839,6 +5839,7 @@ class TeraTermUI(customtkinter.CTk):
         code = self.code_entry.get().replace(" ", "")
         if ((re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", student_id) or
              (student_id.isdigit() and len(student_id) == 9)) and code.isdigit() and len(code) == 4):
+            self.focus_set()
             if self.remember_me.get() == "on":
                 sid_cipher, sid_nonce, sid_tag = self.crypto.encrypt(student_id)
                 code_cipher, code_nonce, code_tag = self.crypto.encrypt(code)
