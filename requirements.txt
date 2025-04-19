@@ -64,7 +64,7 @@ requests==2.32.3
 requests-oauthlib==2.0.0
 rsa==4.9.1
 screeninfo==0.8.1
-setuptools==78.1.0
+setuptools==78.1.1
 six==1.17.0
 texttable==1.7.0
 uritemplate==4.1.1
