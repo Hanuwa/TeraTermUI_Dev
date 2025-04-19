@@ -230,6 +230,8 @@ try:
         cursor.execute("DELETE FROM user_config")
         cursor.execute("DELETE FROM user_data")
         cursor.execute("DELETE FROM saved_classes")
+        if os.path.exists(project_directory + "/masterkey.json"):
+            os.remove(project_directory + "/masterkey.json")
         utc_now_str = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
         cursor.execute("SELECT value FROM metadata WHERE key = ?", ("version",))
         row = cursor.fetchone()
