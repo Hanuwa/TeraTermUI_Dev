@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/17/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/19/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit of time to process.
@@ -65,7 +65,6 @@ from Cryptodome.Cipher import AES
 from Cryptodome.Hash import HMAC, SHA256
 from Cryptodome.Protocol.KDF import HKDF
 from Cryptodome.Random import get_random_bytes
-from Cryptodome.Util.Padding import pad, unpad
 from CTkMessagebox import CTkMessagebox
 from CTkTable import CTkTable
 from CTkToolTip import CTkToolTip
@@ -201,7 +200,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.db_path = os.path.join(tera_path, "database.db")
                 self.ath = os.path.join(tera_path, "feedback.zip")
                 self.logs = os.path.join(tera_path, "logs.txt")
-                self.crypto = SecureDataStore(key_path=os.path.join(tera_path, "fieldkey.json"))
+                self.crypto = SecureDataStore(key_path=os.path.join(tera_path, "masterkey.json"))
         else:
             self.crypto = SecureDataStore()
 
@@ -713,6 +712,10 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Control-space>", lambda event: self.focus_set())
             self.bind("<Escape>", lambda event: self.on_closing())
             self.bind("<Alt-F4>", lambda event: self.direct_close())
+            if self.crypto.key_failed:
+                self.cursor_db.execute("DELETE FROM user_data")
+                self.connection_db.commit()
+                self.crypto.key_failed = False
             user_data_fields = ["directory", "location", "config", "pdf_dir", "host", "language", "appearance",
                                 "audio_tera", "audio_app", "scaling", "welcome", "default_semester", "skip_auth",
                                 "win_pos_x", "win_pos_y"]
@@ -1191,13 +1194,13 @@ class TeraTermUI(customtkinter.CTk):
     # Enter the Enrolling/Searching/Other classes screen
     def student_event(self):
 
-        def zeroize_string(value: str):
+        def secure_zeroize_string(value):
             if value:
                 try:
-                    buf = ctypes.create_string_buffer(value.encode())
-                    ctypes.memset(ctypes.addressof(buf), 0, len(buf))
+                    val_bytes = bytearray(value.encode())
+                    ctypes.memset(ctypes.addressof(ctypes.c_char.from_buffer(val_bytes)), 0, len(val_bytes))
                 except Exception as error:
-                    logging.warning(f"Failed to zeroize string: {error}")
+                    logging.warning(f"Secure zeroize failed: {error}")
 
         with self.lock_thread:
             try:
@@ -1217,19 +1220,20 @@ class TeraTermUI(customtkinter.CTk):
                                                                   "ERRORS FOUND"], init_timeout=False, timeout=7)
                             if "SIGN-IN" in text_output:
                                 if self.remember_me.get() == "on" and self.must_save_user_data:
-                                    student_cipher, iv_sid, mac_sid = self.crypto.encrypt(student_id)
-                                    code_cipher, iv_code, mac_code = self.crypto.encrypt(code)
+                                    sid_cipher, sid_nonce, sid_tag = self.crypto.encrypt(student_id)
+                                    code_cipher, code_nonce, code_tag = self.crypto.encrypt(code)
                                     self.cursor_db.execute(
-                                        "INSERT INTO user_data (id, student_id, code, iv_student_id, iv_code, "
-                                        "mac_student_id, mac_code) VALUES (1, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) "
-                                        "DO UPDATE SET student_id = excluded.student_id, code = excluded.code, "
-                                        "iv_student_id = excluded.iv_student_id, iv_code = excluded.iv_code, "
-                                        "mac_student_id = excluded.mac_student_id, mac_code = excluded.mac_code",
-                                        (student_cipher, code_cipher, iv_sid, iv_code, mac_sid, mac_code))
+                                        "INSERT INTO user_data (id, student_id, code, nonce_student_id, "
+                                        "nonce_code, tag_student_id, tag_code) VALUES (1, ?, ?, ?, ?, ?, ?) "
+                                        "ON CONFLICT(id) DO UPDATE SET student_id = excluded.student_id, "
+                                        "code = excluded.code, nonce_student_id = excluded.nonce_student_id, "
+                                        "nonce_code = excluded.nonce_code, tag_student_id = excluded.tag_student_id, "
+                                        "tag_code = excluded.tag_code",
+                                        (sid_cipher, code_cipher, sid_nonce, code_nonce, sid_tag, code_tag))
                                 if self.remember_me.get() == "off":
                                     self.crypto.reset()
-                                zeroize_string(student_id)
-                                zeroize_string(code)
+                                secure_zeroize_string(student_id)
+                                secure_zeroize_string(code)
                                 self.reset_activity_timer()
                                 self.start_check_idle_thread()
                                 self.start_check_process_thread()
@@ -3156,15 +3160,15 @@ class TeraTermUI(customtkinter.CTk):
             self.remember_me.grid(row=4, column=1, padx=(125, 0), pady=(0, 10))
         self.back_student.grid(row=5, column=0, padx=(0, 10), pady=(0, 0))
         self.system.grid(row=5, column=1, padx=(10, 0), pady=(0, 0))
-        self.cursor_db.execute("SELECT student_id, code, iv_student_id, iv_code, mac_student_id, "
-                               "mac_code FROM user_data WHERE id = 1")
+        self.cursor_db.execute("SELECT student_id, code, nonce_student_id, nonce_code, tag_student_id, tag_code "
+                               "FROM user_data WHERE id = 1")
         row = self.cursor_db.fetchone()
         if row and all(isinstance(x, bytes) for x in row):
-            student_ct, code_ct, iv_sid, iv_code, mac_sid, mac_code = row
-            if len(iv_sid) == 16 and len(iv_code) == 16 and len(mac_sid) == 32 and len(mac_code) == 32:
+            student_ct, code_ct, nonce_sid, nonce_code, tag_sid, tag_code = row
+            if len(nonce_sid) == 16 and len(nonce_code) == 16 and len(tag_sid) == 16 and len(tag_code) == 16:
                 try:
-                    student_id = self.crypto.decrypt(student_ct, iv_sid, mac_sid)
-                    code = self.crypto.decrypt(code_ct, iv_code, mac_code)
+                    student_id = self.crypto.decrypt(student_ct, nonce_sid, tag_sid)
+                    code = self.crypto.decrypt(code_ct, nonce_code, tag_code)
                     self.student_id_entry.insert(0, student_id)
                     self.code_entry.insert(0, code)
                     self.remember_me.toggle()
@@ -4855,11 +4859,14 @@ class TeraTermUI(customtkinter.CTk):
                 if asyncio.run(self.test_connection()) and self.check_server() and self.check_format():
                     self.ssh_monitor.sample(count=40, force=True)
                     if not self.ssh_monitor.is_responsive():
-                        self.play_sound("error.wav")
-                        CTkMessagebox(title=translation["auto_enroll"], icon="cancel", button_width=380,
-                                      message=translation["auto_enroll_denied"])
-                        self.auto_enroll_flag = False
-                        self.after(125, self.auto_enroll.deselect)
+                        def deny_auto_enroll():
+                            self.play_sound("error.wav")
+                            CTkMessagebox(title=translation["auto_enroll"], icon="cancel", button_width=380,
+                                          message=translation["auto_enroll_denied"])
+                            self.auto_enroll_flag = False
+                            self.auto_enroll.deselect()
+
+                        self.after(100, deny_auto_enroll)
                         return
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if not self.wait_for_window():
@@ -5833,15 +5840,15 @@ class TeraTermUI(customtkinter.CTk):
         if ((re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", student_id) or
              (student_id.isdigit() and len(student_id) == 9)) and code.isdigit() and len(code) == 4):
             if self.remember_me.get() == "on":
-                student_cipher, iv_sid, mac_sid = self.crypto.encrypt(student_id)
-                code_cipher, iv_code, mac_code = self.crypto.encrypt(code)
+                sid_cipher, sid_nonce, sid_tag = self.crypto.encrypt(student_id)
+                code_cipher, code_nonce, code_tag = self.crypto.encrypt(code)
                 self.cursor_db.execute(
-                    "INSERT INTO user_data (id, student_id, code, iv_student_id, iv_code, "
-                    "mac_student_id, mac_code) VALUES (1, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) "
-                    "DO UPDATE SET student_id = excluded.student_id, code = excluded.code, "
-                    "iv_student_id = excluded.iv_student_id, iv_code = excluded.iv_code, "
-                    "mac_student_id = excluded.mac_student_id, mac_code = excluded.mac_code",
-                    (student_cipher, code_cipher, iv_sid, iv_code, mac_sid, mac_code))
+                    "INSERT INTO user_data (id, student_id, code, nonce_student_id, nonce_code, tag_student_id, "
+                    "tag_code) VALUES (1, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET student_id "
+                    "= excluded.student_id, code = excluded.code, nonce_student_id = excluded.nonce_student_id, "
+                    "nonce_code = excluded.nonce_code, tag_student_id = excluded.tag_student_id, "
+                    "tag_code = excluded.tag_code",
+                    (sid_cipher, code_cipher, sid_nonce, code_nonce, sid_tag, code_tag))
                 self.connection_db.commit()
                 self.delete_user_data = False
                 self.must_save_user_data = False
@@ -13145,6 +13152,8 @@ class SSHMonitor:
         for threshold, labels, color in thresholds:
             if score >= threshold:
                 return labels.get(lang, labels["English"]), color
+            return None
+        return None
 
     def is_responsive(self, avg_cutoff=800, max_cutoff=1500, max_failure_rate=20):
         stats = self.get_stats()
@@ -13157,42 +13166,46 @@ class SSHMonitor:
 
 class SecureDataStore:
     def __init__(self, key_path=None, auto_rotate_days=30):
-        self.key_path = key_path or os.path.join(os.getcwd(), "fieldkey.json")
+        self.key_path = key_path or os.path.join(os.getcwd(), "masterkey.json")
         self.auto_rotate_days = auto_rotate_days
         self.aes_key = None
-        self.mac_key = None
+        self.key_failed = False
         self.initialize_keys()
 
-    # Load the key file, validate its HMAC, and derive AES/HMAC keys
+    # Load and validate the encrypted master key from the key file
     def initialize_keys(self):
-        if not os.path.exists(self.key_path):
+        try:
+            if not os.path.exists(self.key_path):
+                raise FileNotFoundError("Master key file is missing")
+
+            with open(self.key_path, "r") as f:
+                raw = json.load(f)
+
+            metadata = json.dumps({"version": raw["version"], "created_at": raw["created_at"],
+                                   "encrypted_key": raw["encrypted_key"]}, separators=(",", ":")).encode()
+
+            hmac_stored = b64decode(raw["hmac"])
+            hmac_calc = HMAC.new(b"teraterm_ui_master_hmac", digestmod=SHA256)
+            hmac_calc.update(metadata)
+
+            if not compare_digest(hmac_stored, hmac_calc.digest()):
+                raise ValueError("HMAC verification failed on masterkey.json")
+
+            encrypted_key = b64decode(raw["encrypted_key"])
+            master_key = win32crypt.CryptUnprotectData(encrypted_key, None,
+                                                       None, None, 0)[1]
+            self.aes_key = HKDF(master_key, 32, salt=b"student_event_salt", hashmod=SHA256)
+        except Exception as err:
+            logging.error("Key initialization failed: %s", str(err))
+            self.key_failed = True
             self.create_new_key_file()
-        elif self.is_expired():
-            self.reset()
-            self.create_new_key_file()
+            self.initialize_keys()
 
-        with open(self.key_path, "r") as f:
-            raw = json.load(f)
-
-        metadata = json.dumps({"version": raw["version"], "created_at": raw["created_at"],
-                               "encrypted_key": raw["encrypted_key"]}, separators=(",", ":")).encode()
-
-        hmac_stored = b64decode(raw["hmac"])
-        hmac_calc = HMAC.new(b"teraterm_ui_master_hmac", digestmod=SHA256)
-        hmac_calc.update(metadata)
-
-        if not compare_digest(hmac_stored, hmac_calc.digest()):
-            raise ValueError("HMAC verification failed on fieldkey.json")
-
-        encrypted_key = b64decode(raw["encrypted_key"])
-        master_key = win32crypt.CryptUnprotectData(encrypted_key, None, None, None, 0)[1]
-        self.aes_key = HKDF(master_key, 32, salt=b"student_event_salt", hashmod=SHA256)
-        self.mac_key = HKDF(master_key, 32, salt=b"mac_salt", hashmod=SHA256)
-
-    # Generate and securely store a new DPAPI-encrypted master key with metadata and HMAC
+    # Generate and securely store a new DPAPI-encrypted master key
     def create_new_key_file(self):
         master_key = get_random_bytes(32)
-        encrypted = win32crypt.CryptProtectData(master_key, None, None, None, None, 0)
+        encrypted = win32crypt.CryptProtectData(master_key, None, None,
+                                                None, None, 0)
 
         metadata = {"version": 1, "created_at": datetime.now(UTC).isoformat(),
                     "encrypted_key": b64encode(encrypted).decode()}
@@ -13216,29 +13229,27 @@ class SecureDataStore:
         except Exception as err:
             logging.warning(f"Could not hide file {path}: {err}")
 
-    # Encrypt a plaintext string using AES-CBC and return (ciphertext, iv, hmac)
+    # Encrypt a plaintext string using AES-GCM
     def encrypt(self, plaintext):
-        iv = get_random_bytes(16)
-        cipher = AES.new(self.aes_key, AES.MODE_CBC, iv)
-        ciphertext = cipher.encrypt(pad(plaintext.encode(), AES.block_size))
-        hmac = HMAC.new(self.mac_key, digestmod=SHA256)
-        hmac.update(iv + ciphertext)
-        return ciphertext, iv, hmac.digest()
+        if self.aes_key is None:
+            raise RuntimeError("Encryption key is not initialized. Cannot encrypt")
 
-    # Decrypt a ciphertext and verify its HMAC
-    def decrypt(self, ciphertext: bytes, iv: bytes, mac: bytes) -> str:
-        hmac = HMAC.new(self.mac_key, digestmod=SHA256)
-        hmac.update(iv + ciphertext)
-        if not compare_digest(hmac.digest(), mac):
-            raise ValueError("MAC verification failed")
-        cipher = AES.new(self.aes_key, AES.MODE_CBC, iv)
-        return unpad(cipher.decrypt(ciphertext), AES.block_size).decode()
+        cipher = AES.new(self.aes_key, AES.MODE_GCM)
+        ciphertext, tag = cipher.encrypt_and_digest(plaintext.encode())
+        return ciphertext, cipher.nonce, tag
+
+    # Decrypt a ciphertext and verify its tag
+    def decrypt(self, ciphertext, nonce, tag):
+        try:
+            cipher = AES.new(self.aes_key, AES.MODE_GCM, nonce=nonce)
+            return cipher.decrypt_and_verify(ciphertext, tag).decode()
+        except (ValueError, KeyError) as err:
+            logging.error("Decryption failed or tag mismatch: %s", str(err))
+            raise ValueError("Decryption failed or data integrity check failed")
 
     def reset(self):
         self.zeroize(self.aes_key)
-        self.zeroize(self.mac_key)
         self.aes_key = None
-        self.mac_key = None
         if os.path.exists(self.key_path):
             os.remove(self.key_path)
 
@@ -13261,28 +13272,32 @@ class SecureDataStore:
 
         return compare_digest(expected_hmac, actual_hmac.digest())
 
-    @staticmethod
     # Restrict file access to the current Windows user
+    @staticmethod
     def lock_file_to_user(path):
         import ntsecuritycon as con
 
         try:
-            user, _, _ = win32security.LookupAccountName(None, os.getlogin())
+            user_sid, _, _ = win32security.LookupAccountName(None, os.getlogin())
             sd = win32security.GetFileSecurity(path, win32security.DACL_SECURITY_INFORMATION)
             dacl = win32security.ACL()
-            dacl.AddAccessAllowedAce(win32security.ACL_REVISION,
-                                     con.FILE_GENERIC_READ | con.FILE_GENERIC_WRITE, user)
+            dacl.AddAccessAllowedAceEx(win32security.ACL_REVISION,0, con.FILE_GENERIC_READ
+                                       | con.FILE_GENERIC_WRITE, user_sid)
             sd.SetSecurityDescriptorDacl(1, dacl, 0)
             win32security.SetFileSecurity(path, win32security.DACL_SECURITY_INFORMATION, sd)
         except Exception as err:
             logging.warning(f"Could not lock file ACL for {path}: {err}")
 
-    @staticmethod
     # Attempt to zero out memory for a bytes value.
+    @staticmethod
     def zeroize(value):
         if value:
-            buf = ctypes.create_string_buffer(value)
-            ctypes.memset(ctypes.addressof(buf), 0, len(buf))
+            try:
+                if isinstance(value, bytes):
+                    value = bytearray(value)
+                ctypes.memset(ctypes.addressof(ctypes.c_char.from_buffer(value)), 0, len(value))
+            except Exception as err:
+                logging.warning("Failed to zero memory: %s", str(err))
 
 
 class ClipboardHandler:
