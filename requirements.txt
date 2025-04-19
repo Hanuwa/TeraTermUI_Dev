@@ -31,7 +31,7 @@ Nuitka==2.6.9
 oauthlib==3.2.2
 objgraph==3.6.2
 ordered-set==4.1.0
-packaging==24.2
+packaging==25.0
 pillow==11.2.1
 pipdeptree==2.26.0
 propcache==0.3.1
