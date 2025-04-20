@@ -830,10 +830,13 @@ class TeraTermUI(customtkinter.CTk):
                 self.log_in.configure(state="normal")
                 self.bind("<Return>", lambda event: self.login_event_handler())
                 self.bind("<F1>", lambda event: self.help_button_event())
-                if self.crypto.key_failed:
-                    self.cursor_db.execute("DELETE FROM user_data")
-                    self.connection_db.commit()
-                    self.crypto.key_failed = False
+                if self.crypto.creating_key_file:
+                    self.creating_key_file = False
+                    self.cursor_db.execute("SELECT COUNT(*) FROM user_data")
+                    count = self.cursor_db.fetchone()[0]
+                    if count > 0:
+                        self.cursor_db.execute("DELETE FROM user_data")
+                        self.connection_db.commit()
                 # Check for update for the application
                 current_date = datetime.today().strftime("%Y-%m-%d")
                 date_record = self.cursor_db.execute("SELECT update_date FROM user_config").fetchone()
@@ -3164,8 +3167,11 @@ class TeraTermUI(customtkinter.CTk):
                     self.remember_me.toggle()
                 except Exception as err:
                     logging.warning(f"Decryption failed: {err}")
-                    self.cursor_db.execute("DELETE FROM user_data")
-                    self.connection_db.commit()
+                    self.cursor_db.execute("SELECT COUNT(*) FROM user_data")
+                    count = self.cursor_db.fetchone()[0]
+                    if count > 0:
+                        self.cursor_db.execute("DELETE FROM user_data")
+                        self.connection_db.commit()
                     self.crypto.reset()
         if self.ask_skip_auth and not self.skipped_login:
             self.unbind("<Return>")
@@ -3250,7 +3256,7 @@ class TeraTermUI(customtkinter.CTk):
             text = translation["game_launchers"].format(launchers_list)
             self.notice_user_text = ("launchers", launchers_list)
         else:
-            text = ("exec", translation["exec_time"])
+            text = translation["exec_time"]
             self.notice_user_text = text
         self.notice_user_msg = tk.Label(self.tooltip, text=text, bg="#FFD700", fg="#000", font=("Verdana", 11, "bold"))
         self.notice_user_msg.pack(padx=5, pady=5)
@@ -5840,7 +5846,7 @@ class TeraTermUI(customtkinter.CTk):
         else:
             self.cursor_db.execute("SELECT COUNT(*) FROM user_data")
             count = self.cursor_db.fetchone()[0]
-            if count == 0:
+            if count > 0:
                 self.cursor_db.execute("DELETE FROM user_data")
                 self.connection_db.commit()
                 self.crypto.reset()
@@ -13166,14 +13172,15 @@ class SecureDataStore:
         self.key_path = key_path or os.path.join(os.getcwd(), "masterkey.json")
         self.auto_rotate_days = auto_rotate_days
         self.aes_key = None
-        self.key_failed = False
+        self.creating_key_file = False
         self.initialize_keys()
 
     # Load and validate the encrypted master key from the key file
     def initialize_keys(self):
         try:
             if not os.path.exists(self.key_path):
-                raise FileNotFoundError("Master key file is missing")
+                self.creating_key_file = True
+                self.create_new_key_file()
 
             with open(self.key_path, "r") as f:
                 raw = json.load(f)
@@ -13194,9 +13201,6 @@ class SecureDataStore:
             self.aes_key = HKDF(master_key, 32, salt=b"student_event_salt", hashmod=SHA256)
         except Exception as err:
             logging.error("Key initialization failed: %s", str(err))
-            self.key_failed = True
-            self.create_new_key_file()
-            self.initialize_keys()
 
     # Generate and securely store a new DPAPI-encrypted master key
     def create_new_key_file(self):
