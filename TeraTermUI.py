@@ -13193,8 +13193,7 @@ class SecureDataStore:
                                                        None, None, 0)[1]
             self.aes_key = HKDF(master_key, 32, salt=b"student_event_salt", hashmod=SHA256)
         except Exception as err:
-            if str(err) != "Master key file is missing":
-                logging.error("Key initialization failed: %s", str(err))
+            logging.error("Key initialization failed: %s", str(err))
             self.key_failed = True
             self.create_new_key_file()
             self.initialize_keys()
