@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 13,900 lines of codes, it definitely makes things harder to work with
+# and with over 14,000 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -409,6 +409,7 @@ class TeraTermUI(customtkinter.CTk):
         self.back_student = None
         self.back_student_tooltip = None
         self.save_timer = None
+        self.focus_screen = True
         self.delete_user_data = False
         self.must_save_user_data = False
         self.last_save_time = 0
@@ -1220,6 +1221,7 @@ class TeraTermUI(customtkinter.CTk):
                                                                   "ERRORS FOUND"], init_timeout=False, timeout=7)
                             if "SIGN-IN" in text_output:
                                 if self.remember_me.get() == "on" and self.must_save_user_data:
+                                    self.must_save_user_data = False
                                     sid_cipher, sid_nonce, sid_tag = self.crypto.encrypt(student_id)
                                     code_cipher, code_nonce, code_tag = self.crypto.encrypt(code)
                                     self.cursor_db.execute(
@@ -1230,8 +1232,12 @@ class TeraTermUI(customtkinter.CTk):
                                         "nonce_code = excluded.nonce_code, tag_student_id = excluded.tag_student_id, "
                                         "tag_code = excluded.tag_code",
                                         (sid_cipher, code_cipher, sid_nonce, code_nonce, sid_tag, code_tag))
-                                if self.remember_me.get() == "off":
+                                    self.connection_db.commit()
+                                elif self.delete_user_data:
+                                    self.cursor_db.execute("DELETE FROM user_data")
+                                    self.connection_db.commit()
                                     self.crypto.reset()
+                                    self.delete_user_data = False
                                 secure_zeroize_string(student_id)
                                 secure_zeroize_string(code)
                                 self.reset_activity_timer()
@@ -3697,7 +3703,21 @@ class TeraTermUI(customtkinter.CTk):
             self.skipped_login = False
             self.main_menu = True
             self.add_key_bindings(event=None)
-            if self.delete_user_data:
+            if self.must_save_user_data and self.in_student_frame:
+                student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
+                code = self.code_entry.get().replace(" ", "")
+                self.must_save_user_data = False
+                sid_cipher, sid_nonce, sid_tag = self.crypto.encrypt(student_id)
+                code_cipher, code_nonce, code_tag = self.crypto.encrypt(code)
+                self.cursor_db.execute(
+                    "INSERT INTO user_data (id, student_id, code, nonce_student_id, nonce_code, tag_student_id, "
+                    "tag_code) VALUES (1, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET student_id "
+                    "= excluded.student_id, code = excluded.code, nonce_student_id = excluded.nonce_student_id, "
+                    "nonce_code = excluded.nonce_code, tag_student_id = excluded.tag_student_id, "
+                    "tag_code = excluded.tag_code",
+                    (sid_cipher, code_cipher, sid_nonce, code_nonce, sid_tag, code_tag))
+                self.connection_db.commit()
+            elif self.delete_user_data:
                 self.cursor_db.execute("DELETE FROM user_data")
                 self.connection_db.commit()
                 self.crypto.reset()
@@ -5799,6 +5819,19 @@ class TeraTermUI(customtkinter.CTk):
             if self.delete_user_data or (not self.init_student and count == 0):
                 self.cursor_db.execute("DELETE FROM user_data")
                 self.crypto.reset()
+            elif self.must_save_user_data and self.in_student_frame:
+                student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
+                code = self.code_entry.get().replace(" ", "")
+                self.must_save_user_data = False
+                sid_cipher, sid_nonce, sid_tag = self.crypto.encrypt(student_id)
+                code_cipher, code_nonce, code_tag = self.crypto.encrypt(code)
+                self.cursor_db.execute(
+                    "INSERT INTO user_data (id, student_id, code, nonce_student_id, nonce_code, tag_student_id, "
+                    "tag_code) VALUES (1, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET student_id "
+                    "= excluded.student_id, code = excluded.code, nonce_student_id = excluded.nonce_student_id, "
+                    "nonce_code = excluded.nonce_code, tag_student_id = excluded.tag_student_id, "
+                    "tag_code = excluded.tag_code",
+                    (sid_cipher, code_cipher, sid_nonce, code_nonce, sid_tag, code_tag))
             self.connection_db.commit()
             if not self.saved_classes and self.init_multiple:
                 self.delete_saved_classes()
@@ -5830,6 +5863,7 @@ class TeraTermUI(customtkinter.CTk):
         else:
             if self.save_timer is not None:
                 self.save_timer.cancel()
+            self.focus_screen = False
             self.save_timer = threading.Timer(delay, self.perform_user_data_save)
             self.save_timer.start()
 
@@ -5837,10 +5871,12 @@ class TeraTermUI(customtkinter.CTk):
         self.last_save_time = time.time()
         student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
         code = self.code_entry.get().replace(" ", "")
-        if ((re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", student_id) or
-             (student_id.isdigit() and len(student_id) == 9)) and code.isdigit() and len(code) == 4):
-            self.focus_set()
-            if self.remember_me.get() == "on":
+        if self.remember_me.get() == "on":
+            if ((re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", student_id) or
+                 (student_id.isdigit() and len(student_id) == 9)) and code.isdigit() and len(code) == 4):
+                if self.focus_screen:
+                    self.focus_set()
+                    self.focus_screen = True
                 sid_cipher, sid_nonce, sid_tag = self.crypto.encrypt(student_id)
                 code_cipher, code_nonce, code_tag = self.crypto.encrypt(code)
                 self.cursor_db.execute(
@@ -5854,10 +5890,10 @@ class TeraTermUI(customtkinter.CTk):
                 self.delete_user_data = False
                 self.must_save_user_data = False
             else:
-                self.delete_user_data = True
-                self.must_save_user_data = False
+                self.must_save_user_data = True
         else:
-            self.must_save_user_data = True
+            self.delete_user_data = True
+            self.must_save_user_data = False
 
     def keybind_save_classes(self, event=None):
         if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
@@ -13197,7 +13233,8 @@ class SecureDataStore:
                                                        None, None, 0)[1]
             self.aes_key = HKDF(master_key, 32, salt=b"student_event_salt", hashmod=SHA256)
         except Exception as err:
-            logging.error("Key initialization failed: %s", str(err))
+            if str(err) != "Master key file is missing":
+                logging.error("Key initialization failed: %s", str(err))
             self.key_failed = True
             self.create_new_key_file()
             self.initialize_keys()
