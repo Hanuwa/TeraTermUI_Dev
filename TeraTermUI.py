@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 14,000 lines of codes, it definitely makes things harder to work with
+# and with over 13,900 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -181,7 +181,7 @@ class TeraTermUI(customtkinter.CTk):
         self.REAZIONE = self.ottenere_protetta_salasana()
         self.USER_APP_VERSION = "0.9.0"
         self.mode = "Portable"
-        self.updater_hash = "eb3f69f92f0b9b79b2dbb9a246ee8115e19071b9007eea58e5bf6b3373d8eca3"
+        self.updater_hash = "6838e38be2ebd66c72809c9992a767d65d57c6e956c8d952ae1c5649fa211980"
         self.running_updater = False
         self.credentials = None
         # disabled/enables keybind events
