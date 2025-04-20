@@ -410,7 +410,6 @@ class TeraTermUI(customtkinter.CTk):
         self.back_student_tooltip = None
         self.save_timer = None
         self.focus_screen = True
-        self.delete_user_data = False
         self.must_save_user_data = False
         self.last_save_time = 0
 
@@ -1221,23 +1220,8 @@ class TeraTermUI(customtkinter.CTk):
                                                                   "ERRORS FOUND"], init_timeout=False, timeout=7)
                             if "SIGN-IN" in text_output:
                                 if self.remember_me.get() == "on" and self.must_save_user_data:
-                                    self.must_save_user_data = False
-                                    sid_cipher, sid_nonce, sid_tag = self.crypto.encrypt(student_id)
-                                    code_cipher, code_nonce, code_tag = self.crypto.encrypt(code)
-                                    self.cursor_db.execute(
-                                        "INSERT INTO user_data (id, student_id, code, nonce_student_id, "
-                                        "nonce_code, tag_student_id, tag_code) VALUES (1, ?, ?, ?, ?, ?, ?) "
-                                        "ON CONFLICT(id) DO UPDATE SET student_id = excluded.student_id, "
-                                        "code = excluded.code, nonce_student_id = excluded.nonce_student_id, "
-                                        "nonce_code = excluded.nonce_code, tag_student_id = excluded.tag_student_id, "
-                                        "tag_code = excluded.tag_code",
-                                        (sid_cipher, code_cipher, sid_nonce, code_nonce, sid_tag, code_tag))
+                                    self.encrypt_data_db(student_id, code)
                                     self.connection_db.commit()
-                                elif self.delete_user_data:
-                                    self.cursor_db.execute("DELETE FROM user_data")
-                                    self.connection_db.commit()
-                                    self.crypto.reset()
-                                    self.delete_user_data = False
                                 secure_zeroize_string(student_id)
                                 secure_zeroize_string(code)
                                 self.reset_activity_timer()
@@ -3706,22 +3690,8 @@ class TeraTermUI(customtkinter.CTk):
             if self.must_save_user_data and self.in_student_frame:
                 student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
                 code = self.code_entry.get().replace(" ", "")
-                self.must_save_user_data = False
-                sid_cipher, sid_nonce, sid_tag = self.crypto.encrypt(student_id)
-                code_cipher, code_nonce, code_tag = self.crypto.encrypt(code)
-                self.cursor_db.execute(
-                    "INSERT INTO user_data (id, student_id, code, nonce_student_id, nonce_code, tag_student_id, "
-                    "tag_code) VALUES (1, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET student_id "
-                    "= excluded.student_id, code = excluded.code, nonce_student_id = excluded.nonce_student_id, "
-                    "nonce_code = excluded.nonce_code, tag_student_id = excluded.tag_student_id, "
-                    "tag_code = excluded.tag_code",
-                    (sid_cipher, code_cipher, sid_nonce, code_nonce, sid_tag, code_tag))
+                self.encrypt_data_db(student_id, code)
                 self.connection_db.commit()
-            elif self.delete_user_data:
-                self.cursor_db.execute("DELETE FROM user_data")
-                self.connection_db.commit()
-                self.crypto.reset()
-                self.delete_user_data = False
             if self.error_occurred:
                 self.destroy_windows()
                 if self.server_status != "Maintenance message found" and self.server_status != "Timeout" \
@@ -5814,24 +5784,10 @@ class TeraTermUI(customtkinter.CTk):
                     self.cursor_db.execute(f"INSERT INTO user_config ({field}) VALUES (?)", (value,))
                 elif result[0] != value:
                     self.cursor_db.execute(f"UPDATE user_config SET {field} = ? ", (value,))
-            self.cursor_db.execute("SELECT COUNT(*) FROM user_data")
-            count = self.cursor_db.fetchone()[0]
-            if self.delete_user_data or (not self.init_student and count == 0):
-                self.cursor_db.execute("DELETE FROM user_data")
-                self.crypto.reset()
-            elif self.must_save_user_data and self.in_student_frame:
+            if self.must_save_user_data and self.in_student_frame:
                 student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
                 code = self.code_entry.get().replace(" ", "")
-                self.must_save_user_data = False
-                sid_cipher, sid_nonce, sid_tag = self.crypto.encrypt(student_id)
-                code_cipher, code_nonce, code_tag = self.crypto.encrypt(code)
-                self.cursor_db.execute(
-                    "INSERT INTO user_data (id, student_id, code, nonce_student_id, nonce_code, tag_student_id, "
-                    "tag_code) VALUES (1, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET student_id "
-                    "= excluded.student_id, code = excluded.code, nonce_student_id = excluded.nonce_student_id, "
-                    "nonce_code = excluded.nonce_code, tag_student_id = excluded.tag_student_id, "
-                    "tag_code = excluded.tag_code",
-                    (sid_cipher, code_cipher, sid_nonce, code_nonce, sid_tag, code_tag))
+                self.encrypt_data_db(student_id, code)
             self.connection_db.commit()
             if not self.saved_classes and self.init_multiple:
                 self.delete_saved_classes()
@@ -5869,31 +5825,33 @@ class TeraTermUI(customtkinter.CTk):
 
     def perform_user_data_save(self):
         self.last_save_time = time.time()
-        student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
-        code = self.code_entry.get().replace(" ", "")
         if self.remember_me.get() == "on":
+            student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
+            code = self.code_entry.get().replace(" ", "")
             if ((re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", student_id) or
                  (student_id.isdigit() and len(student_id) == 9)) and code.isdigit() and len(code) == 4):
                 if self.focus_screen:
                     self.focus_set()
                     self.focus_screen = True
-                sid_cipher, sid_nonce, sid_tag = self.crypto.encrypt(student_id)
-                code_cipher, code_nonce, code_tag = self.crypto.encrypt(code)
-                self.cursor_db.execute(
-                    "INSERT INTO user_data (id, student_id, code, nonce_student_id, nonce_code, tag_student_id, "
-                    "tag_code) VALUES (1, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET student_id "
-                    "= excluded.student_id, code = excluded.code, nonce_student_id = excluded.nonce_student_id, "
-                    "nonce_code = excluded.nonce_code, tag_student_id = excluded.tag_student_id, "
-                    "tag_code = excluded.tag_code",
-                    (sid_cipher, code_cipher, sid_nonce, code_nonce, sid_tag, code_tag))
+                self.encrypt_data_db(student_id, code)
                 self.connection_db.commit()
-                self.delete_user_data = False
-                self.must_save_user_data = False
             else:
                 self.must_save_user_data = True
         else:
-            self.delete_user_data = True
-            self.must_save_user_data = False
+            self.cursor_db.execute("DELETE FROM user_data")
+            self.connection_db.commit()
+            self.crypto.reset()
+
+    def encrypt_data_db(self, st_id, code):
+        self.must_save_user_data = False
+        sid_cipher, sid_nonce, sid_tag = self.crypto.encrypt(st_id)
+        code_cipher, code_nonce, code_tag = self.crypto.encrypt(code)
+        self.cursor_db.execute(
+            "INSERT INTO user_data (id, student_id, code, nonce_student_id, nonce_code, tag_student_id, tag_code) "
+            "VALUES (1, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET student_id = excluded.student_id, "
+            "code = excluded.code, nonce_student_id = excluded.nonce_student_id, nonce_code = excluded.nonce_code, "
+            "tag_student_id = excluded.tag_student_id, tag_code = excluded.tag_code",
+            (sid_cipher, code_cipher, sid_nonce, code_nonce, sid_tag, code_tag))
 
     def keybind_save_classes(self, event=None):
         if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
