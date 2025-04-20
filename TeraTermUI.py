@@ -181,7 +181,7 @@ class TeraTermUI(customtkinter.CTk):
         self.REAZIONE = self.ottenere_protetta_salasana()
         self.USER_APP_VERSION = "0.9.0"
         self.mode = "Portable"
-        self.updater_hash = "17be505b0799343e92d8dc2aa04e819d58b18bafe75579cd60f29630ff586468"
+        self.updater_hash = "eb3f69f92f0b9b79b2dbb9a246ee8115e19071b9007eea58e5bf6b3373d8eca3"
         self.running_updater = False
         self.credentials = None
         # disabled/enables keybind events
@@ -712,10 +712,6 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Control-space>", lambda event: self.focus_set())
             self.bind("<Escape>", lambda event: self.on_closing())
             self.bind("<Alt-F4>", lambda event: self.direct_close())
-            if self.crypto.key_failed:
-                self.cursor_db.execute("DELETE FROM user_data")
-                self.connection_db.commit()
-                self.crypto.key_failed = False
             user_data_fields = ["directory", "location", "config", "pdf_dir", "host", "language", "appearance",
                                 "audio_tera", "audio_app", "scaling", "welcome", "default_semester", "skip_auth",
                                 "win_pos_x", "win_pos_y"]
@@ -834,6 +830,10 @@ class TeraTermUI(customtkinter.CTk):
                 self.log_in.configure(state="normal")
                 self.bind("<Return>", lambda event: self.login_event_handler())
                 self.bind("<F1>", lambda event: self.help_button_event())
+                if self.crypto.key_failed:
+                    self.cursor_db.execute("DELETE FROM user_data")
+                    self.connection_db.commit()
+                    self.crypto.key_failed = False
                 # Check for update for the application
                 current_date = datetime.today().strftime("%Y-%m-%d")
                 date_record = self.cursor_db.execute("SELECT update_date FROM user_config").fetchone()
@@ -5838,9 +5838,12 @@ class TeraTermUI(customtkinter.CTk):
             else:
                 self.must_save_user_data = True
         else:
-            self.cursor_db.execute("DELETE FROM user_data")
-            self.connection_db.commit()
-            self.crypto.reset()
+            self.cursor_db.execute("SELECT COUNT(*) FROM user_data")
+            count = self.cursor_db.fetchone()[0]
+            if count == 0:
+                self.cursor_db.execute("DELETE FROM user_data")
+                self.connection_db.commit()
+                self.crypto.reset()
 
     def encrypt_data_db(self, st_id, code):
         self.must_save_user_data = False
@@ -8686,7 +8689,7 @@ class TeraTermUI(customtkinter.CTk):
     # Necessary things to do while the application is booting, gets done on a separate thread
     def boot_up(self, file_path):
         self.future_tesseract = self.thread_pool.submit(self.setup_tesseract)
-        self.future_backup = self.thread_pool.submit(self.backup_and_config_ini, file_path)
+        self.future_backup = self.thread_pool.submit(self.backup_and_config_ini, file_path, self.geometry())
         self.future_feedback = self.thread_pool.submit(self.setup_feedback)
 
     def setup_tesseract(self):
@@ -8797,7 +8800,7 @@ class TeraTermUI(customtkinter.CTk):
         result = chardet.detect(raw_data)
         return result["encoding"]
 
-    def backup_and_config_ini(self, file_path):
+    def backup_and_config_ini(self, file_path, geometry):
         # backup for config file of tera term
         if TeraTermUI.is_file_in_directory("ttermpro.exe", self.teraterm_directory):
             minimum_required_version = "5.0.0.0"
@@ -8853,7 +8856,6 @@ class TeraTermUI(customtkinter.CTk):
                             current_value = line.strip().split("=")[1]
                             if current_value != "255,255,255,0,0,0":
                                 lines[index] = "VTColor=255,255,255,0,0,0\n"
-                        geometry = self.geometry()
                         _, x_pos, y_pos = geometry.split("+")
                         if line.startswith("VTPos="):
                             lines[index] = f"VTPos={int(x_pos)},{int(y_pos)}\n"
