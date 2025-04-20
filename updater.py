@@ -568,8 +568,8 @@ def fetch_checksums_and_urls(version):
             }
 
             patterns = {
-                "portable": r"1\.\s*Portable Version \(Zip File\)\s*-\s*\*\*Checksum\*\*\s*:\s*```([a-fA-F0-9]{64})```",
-                "installer": r"2\.\s*Installation File \(64-Bit\)\s*-\s*\*\*Checksum\*\*\s*:\s*```([a-fA-F0-9]{64})```"
+                "portable": r"1\.\s*Portable Version\s*\(Zip File\)\s*-\s*\*\*Checksum\*\*\s*:\s*`{3}([a-fA-F0-9]{64})`{3}",
+                "installer": r"2\.\s*Installation File\s*\(64-Bit\)\s*-\s*\*\*Checksum\*\*\s*:\s*`{3}([a-fA-F0-9]{64})`{3}"
             }
 
             for key, pattern in patterns.items():
@@ -585,7 +585,7 @@ def fetch_checksums_and_urls(version):
                 if not asset_name:
                     continue
 
-                if asset_name == f"TeraTermUI-v{version}.zip":
+                if asset_name == f"TeraTermUI_x64-v{version}.zip":
                     result["portable"]["url"] = asset.get("browser_download_url")
                     logging.info(f"Found portable download URL: {result['portable']['url']}")
                 elif asset_name == f"TeraTermUI_x64_Installer-v{version}.exe":
