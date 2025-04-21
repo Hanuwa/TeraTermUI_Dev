@@ -3257,7 +3257,7 @@ class TeraTermUI(customtkinter.CTk):
             self.notice_user_text = ("launchers", launchers_list)
         else:
             text = translation["exec_time"]
-            self.notice_user_text = text
+            self.notice_user_text = ("exec", translation["exec_time"])
         self.notice_user_msg = tk.Label(self.tooltip, text=text, bg="#FFD700", fg="#000", font=("Verdana", 11, "bold"))
         self.notice_user_msg.pack(padx=5, pady=5)
         self.lift_tooltip()
@@ -5541,7 +5541,7 @@ class TeraTermUI(customtkinter.CTk):
             if result is not None:
                 class_code = result[0]
             else:
-                class_code = "ESPA3101"
+                class_code = "INGL3101"
             self.s_classes_entry = CustomEntry(self.search_scrollbar, self, lang, placeholder_text=class_code,
                                                width=80)
             self.s_semester = customtkinter.CTkLabel(self.search_scrollbar, text=translation["semester"])
