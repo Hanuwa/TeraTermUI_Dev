@@ -1,3 +1,4 @@
+import time
 import tkinter
 import math
 from typing import Union, Tuple, Optional, Callable, Any
@@ -76,6 +77,9 @@ class CTkProgressBar(CTkBaseClass):
         self._orientation = orientation
         self._mode = mode  # "determinate" or "indeterminate"
 
+        self._last_draw_state = {"mode": None, "orientation": None,
+                                 "determinate_value": None, "indeterminate_value": None}
+
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
@@ -117,35 +121,41 @@ class CTkProgressBar(CTkBaseClass):
     def _draw(self, no_color_updates=False):
         super()._draw(no_color_updates)
 
-        if self._orientation.lower() == "horizontal":
-            orientation = "w"
-        elif self._orientation.lower() == "vertical":
-            orientation = "s"
-        else:
-            orientation = "w"
+        orientation = "w" if self._orientation.lower() == "horizontal" else "s"
+        scaled_width = self._apply_widget_scaling(self._current_width)
+        scaled_height = self._apply_widget_scaling(self._current_height)
+        scaled_corner_radius = self._apply_widget_scaling(self._corner_radius)
+        scaled_border_width = self._apply_widget_scaling(self._border_width)
 
+
+        skip = False
         if self._mode == "determinate":
-            requires_recoloring = self._draw_engine.draw_rounded_progress_bar_with_border(self._apply_widget_scaling(self._current_width),
-                                                                                          self._apply_widget_scaling(self._current_height),
-                                                                                          self._apply_widget_scaling(self._corner_radius),
-                                                                                          self._apply_widget_scaling(self._border_width),
-                                                                                          0,
-                                                                                          self._determinate_value,
-                                                                                          orientation)
-        else:  # indeterminate mode
+            skip = (self._last_draw_state["mode"] == self._mode and
+                    self._last_draw_state["orientation"] == self._orientation and
+                    self._last_draw_state["determinate_value"] == self._determinate_value and
+                    not no_color_updates)
+        else:
+            skip = (self._last_draw_state["mode"] == self._mode and
+                    self._last_draw_state["orientation"] == self._orientation and
+                    self._last_draw_state["indeterminate_value"] == self._indeterminate_value and
+                    not no_color_updates)
+
+        if skip:
+            return
+        if self._mode == "determinate":
+            requires_recoloring = self._draw_engine.draw_rounded_progress_bar_with_border(
+                scaled_width, scaled_height, scaled_corner_radius, scaled_border_width,
+                0, self._determinate_value,orientation)
+        else:
             progress_value = (math.sin(self._indeterminate_value * math.pi / 40) + 1) / 2
             progress_value_1 = min(1.0, progress_value + (self._indeterminate_width / 2))
             progress_value_2 = max(0.0, progress_value - (self._indeterminate_width / 2))
 
-            requires_recoloring = self._draw_engine.draw_rounded_progress_bar_with_border(self._apply_widget_scaling(self._current_width),
-                                                                                          self._apply_widget_scaling(self._current_height),
-                                                                                          self._apply_widget_scaling(self._corner_radius),
-                                                                                          self._apply_widget_scaling(self._border_width),
-                                                                                          progress_value_1,
-                                                                                          progress_value_2,
-                                                                                          orientation)
+            requires_recoloring = self._draw_engine.draw_rounded_progress_bar_with_border(
+                scaled_width, scaled_height, scaled_corner_radius,
+                scaled_border_width, progress_value_1, progress_value_2, orientation)
 
-        if no_color_updates is False or requires_recoloring:
+        if not no_color_updates or requires_recoloring:
             self._canvas.configure(bg=self._apply_appearance_mode(self._bg_color))
             self._canvas.itemconfig("border_parts",
                                     fill=self._apply_appearance_mode(self._border_color),
@@ -156,6 +166,11 @@ class CTkProgressBar(CTkBaseClass):
             self._canvas.itemconfig("progress_parts",
                                     fill=self._apply_appearance_mode(self._progress_color),
                                     outline=self._apply_appearance_mode(self._progress_color))
+
+        self._last_draw_state["mode"] = self._mode
+        self._last_draw_state["orientation"] = self._orientation
+        self._last_draw_state["determinate_value"] = self._determinate_value
+        self._last_draw_state["indeterminate_value"] = self._indeterminate_value
 
     def configure(self, require_redraw=False, **kwargs):
         if "corner_radius" in kwargs:
@@ -267,16 +282,15 @@ class CTkProgressBar(CTkBaseClass):
 
     def _internal_loop(self):
         if self._loop_running:
+            start = time.perf_counter()
             if self._mode == "determinate":
-                self._determinate_value += self._determinate_speed / 50
-                if self._determinate_value > 1:
-                    self._determinate_value -= 1
-                self._draw()
-                self._loop_after_id = self.after(20, self._internal_loop)
+                self._determinate_value = (self._determinate_value + self._determinate_speed / 50) % 1
             else:
                 self._indeterminate_value += self._indeterminate_speed
-                self._draw()
-                self._loop_after_id = self.after(20, self._internal_loop)
+            self._draw()
+            frame_time = time.perf_counter() - start
+            delay = min(max(20, int(20 + frame_time * 1000)), 50)
+            self._loop_after_id = self.after(delay, self._internal_loop)
 
     def step(self):
         """ increase progress """
