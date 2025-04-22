@@ -215,8 +215,10 @@
 	"failed_modify": "¡Error! No se pudo modificar\nlas clases actualmente matriculadas",
 	"modify_error": "Este error suele ser causado porque el semestre ya no está disponible para matricularse y dar de baja clases o porque el semestre aún no está disponible",
 	"failed_change_section": "¡Error! No se logró cambiar las\nsecciones de una o más clases",
-	"failed_change_section_exp": "Al cambiar secciones, el programa primero da de baja la clase y luego intenta matricularla en la nueva sección. Si la matrícula falla, se intentará reinscribir en la sección original, que podría no estar disponible.\n\nSu clase fue recuperada y reinscrita",
-	"section_closed": "¡Error Crítico!\n\nAl intentar reinscribir la clase, la sección original se encontraba no disponible",
+	"failed_change_section_exp_p": "Al cambiar secciones, el programa primero da de baja la clase y luego intenta matricularla en la nueva sección. Si la matrícula falla, se intentará reinscribir en la sección original, que podría no estar disponible.\n\nLa siguiente clase fue recuperada y reinscrita:",
+	"failed_change_section_exp_s": "Al cambiar secciones, el programa primero da de baja la clase y luego intenta matricularla en la nueva sección. Si la matrícula falla, se intentará reinscribir en la sección original, que podría no estar disponible.\n\nLas siguientes clases fueron recuperadas y reinscritas:",
+	"section_closed_s": "¡Error Crítico!\n\nAl intentar reinscribir la clase, la sección original se encontraba no disponible:",
+	"section_closed_p": "¡Error Crítico!\n\nAl intentar reinscribir las clases, las secciones originales se encontraban no disponibles:",
 	"co_requisite": "Este error probablemente ocurrió porque estás intentando cambiar una clase que depende de otra clase. Debido a la naturaleza de estos casos, necesitas retirar ambas al mismo tiempo, lo cual solo se puede hacer en la pantalla \"Múltiple\"",
 	"co_requisite_warning": "¡Lo lamentamos! Pero no puedes modificar clases que dependen entre sí en esta pantalla (clases de laboratorio). Para esto, primero necesitas retirar ambas clases al mismo tiempo, lo cual puedes hacer en la pantalla \"Múltiple\"\n\nLos siguientes cursos son: ",
 	"invalid_semester": "¡Error! Semestre Inválido",
@@ -323,6 +325,8 @@
 	"success_title": "Éxito",
 	"enrollment_error": "Este error generalmente se debe a que todavía no es su turno para matricularse en clases o porque el término que seleccionó está desactualizado",
 	"specific_enrollment_error": "Estás recibiendo este mensaje porque una o más clases no se pudieron matricular por la(s) siguiente(s) razón(es):\n\n",
+	"specific_enrollment_error_s": "Estás recibiendo este mensaje porque la siguiente clase no se pudo matricular por la siguiente razón:\n\n"
+	"specific_enrollment_error_p": "Estás recibiendo este mensaje porque las siguientes clases no se pudieron matricular por las siguientes razones:\n\n"
 	"information_title": "Información",
 	"download_title": "Descargar",
 	"download_tera_term": "Tera Term tiene que estar instalado en su computadora para poder usar esta aplicación\n\n¿Desea instalarlo?",
