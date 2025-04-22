@@ -32,10 +32,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 
 [CustomMessages]
-english.teraterm=To utilize 'Tera Term UI', 'Tera Term' needs to be installed. Would you like to install 'Tera Term' now as part of this setup?
-spanish.teraterm=Para utilizar 'Tera Term UI', es necesario tener instalado 'Tera Term'. ¿Desea instalar 'Tera Term' ahora como parte de esta configuración?
-english.AdminPrivilegesRequired=Administrative privileges are required to install for all users. Please restart the installer with admin rights.
-spanish.AdminPrivilegesRequired=Se requieren privilegios administrativos para instalar para todos los usuarios. Por favor, reinicie el instalador con derechos de administrador.
+english.teraterm=To utilize 'Tera Term UI', 'Tera Term' needs to be installed. Would you like to install 'Tera Term' now as part of this setup? (requires administrator privileges)
+spanish.teraterm=Para utilizar 'Tera Term UI', es necesario tener instalado 'Tera Term'. ¿Desea instalar 'Tera Term' ahora como parte de esta configuración? (requiere privilegios de administrador)
 english.TeraTermInstallFailed=Tera Term installation failed.
 spanish.TeraTermInstallFailed=La instalación de Tera Term falló.
 
@@ -86,7 +84,7 @@ end;
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   ResultCode: Integer;
-  TeraTermPath: string;
+  TeraTermPath4, TeraTermPath5: string;
 begin
   if CurStep = ssInstall then
   begin
@@ -95,10 +93,12 @@ begin
 
   if CurStep = ssPostInstall then
   begin
-    TeraTermPath := ExpandConstant('{pf32}\teraterm\ttermpro.exe');
+    TeraTermPath4 := ExpandConstant('{pf32}\teraterm\ttermpro.exe');
+    TeraTermPath5 := ExpandConstant('{pf32}\teraterm5\ttermpro.exe');
+
     if WizardIsTaskSelected('teraterm') then
     begin
-      if not FileExists(TeraTermPath) then
+      if (not FileExists(TeraTermPath4)) and (not FileExists(TeraTermPath5)) then
       begin
         if not Exec(ExpandConstant('{tmp}\teraterm-4.108.exe'), '/SILENT', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
         begin
