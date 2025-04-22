@@ -86,22 +86,28 @@ end;
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   ResultCode: Integer;
+  TeraTermPath: string;
 begin
   if CurStep = ssInstall then
   begin
     CreateDataDirectory();
   end;
+
   if CurStep = ssPostInstall then
   begin
+    TeraTermPath := ExpandConstant('{pf32}\teraterm\ttermpro.exe');
     if WizardIsTaskSelected('teraterm') then
     begin
-      if not Exec(ExpandConstant('{tmp}\teraterm-4.108.exe'), '/SILENT', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
+      if not FileExists(TeraTermPath) then
       begin
-        MsgBox(ExpandConstant('{cm:TeraTermInstallFailed}'), mbError, MB_OK);
-      end
-      else if ResultCode <> 0 then
-      begin
-        MsgBox(ExpandConstant('{cm:TeraTermInstallFailed}') + ' Error Code: ' + IntToStr(ResultCode), mbError, MB_OK);
+        if not Exec(ExpandConstant('{tmp}\teraterm-4.108.exe'), '/SILENT', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
+        begin
+          MsgBox(ExpandConstant('{cm:TeraTermInstallFailed}'), mbError, MB_OK);
+        end
+        else if ResultCode <> 0 then
+        begin
+          MsgBox(ExpandConstant('{cm:TeraTermInstallFailed}') + ' Error Code: ' + IntToStr(ResultCode), mbError, MB_OK);
+        end;
       end;
     end;
   end;
