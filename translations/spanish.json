@@ -325,8 +325,8 @@
 	"success_title": "Éxito",
 	"enrollment_error": "Este error generalmente se debe a que todavía no es su turno para matricularse en clases o porque el término que seleccionó está desactualizado",
 	"specific_enrollment_error": "Estás recibiendo este mensaje porque una o más clases no se pudieron matricular por la(s) siguiente(s) razón(es):\n\n",
-	"specific_enrollment_error_s": "Estás recibiendo este mensaje porque la siguiente clase no se pudo matricular por la siguiente razón:\n\n"
-	"specific_enrollment_error_p": "Estás recibiendo este mensaje porque las siguientes clases no se pudieron matricular por las siguientes razones:\n\n"
+	"specific_enrollment_error_s": "Estás recibiendo este mensaje porque la siguiente clase no se pudo matricular por la siguiente razón:\n\n",
+	"specific_enrollment_error_p": "Estás recibiendo este mensaje porque las siguientes clases no se pudieron matricular por las siguientes razones:\n\n",
 	"information_title": "Información",
 	"download_title": "Descargar",
 	"download_tera_term": "Tera Term tiene que estar instalado en su computadora para poder usar esta aplicación\n\n¿Desea instalarlo?",
