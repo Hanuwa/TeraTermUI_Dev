@@ -28,7 +28,7 @@ except ImportError:
 MAX_RETRIES = 5
 RETRY_DELAY = 0.2
 CHUNK_SIZE = 8192
-UI_UPDATE_DELAY = 100
+UI_UPDATE_DELAY = 1000
 
 temp_dir = os.path.join(tempfile.gettempdir(), "TeraTermUI")
 os.makedirs(temp_dir, exist_ok=True)
@@ -318,7 +318,7 @@ class UpdateGUI:
         else:
             self.pause_button.configure(text="⏸️ Pause")
             self.update_progress(self.progress["value"], "Resuming update...")
-            self.root.after(1000, lambda: self.update_progress(self.progress["value"], self.last_status_message))
+            self.root.after(UI_UPDATE_DELAY, lambda: self.update_progress(self.progress["value"], self.last_status_message))
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Tera Term UI Updater")
@@ -624,6 +624,25 @@ def get_db_version(path):
         logging.warning(f"Failed to read database version from {path}: {e}")
         return None
 
+def files_are_identical(path1, path2):
+    try:
+        if not os.path.exists(path1) or not os.path.exists(path2):
+            return False
+        if os.path.getsize(path1) != os.path.getsize(path2):
+            return False
+        with open(path1, "rb") as f1, open(path2, "rb") as f2:
+            while True:
+                b1 = f1.read(CHUNK_SIZE)
+                b2 = f2.read(CHUNK_SIZE)
+                if b1 != b2:
+                    return False
+                if not b1:
+                    break
+        return True
+    except Exception as e:
+        logging.warning(f"Comparison failed between {path1} and {path2}: {e}")
+        return False
+
 def download_update(gui, mode, checksum_info):
     gui.current_stage = "downloading"
     logging.info(f"Starting download for mode: {mode}")
@@ -792,26 +811,19 @@ def install_extract_update(gui, mode, version, downloaded_file, app_directory):
                         logging.error("Zip file is empty")
                         return False
 
-                    strip_prefix = ""
-                    if namelist[0].startswith("TeraTermUI/"):
-                        strip_prefix = "TeraTermUI/"
-
+                    strip_prefix = "TeraTermUI/" if namelist[0].startswith("TeraTermUI/") else ""
                     total_size = sum(file.file_size for file in zip_ref.filelist)
                     extracted_size = 0
+
                     for file in zip_ref.infolist():
                         if gui.cancel_requested:
                             logging.info("Update cancelled during extraction")
                             return False
-
                         while gui.pause_requested and not gui.cancel_requested:
                             time.sleep(0.1)
-                            continue
 
-                        if strip_prefix and file.filename.startswith(strip_prefix):
-                            extract_name = file.filename[len(strip_prefix):]
-                        else:
-                            extract_name = file.filename
-
+                        extract_name = file.filename[len(strip_prefix):] if strip_prefix and file.filename.startswith(
+                            strip_prefix) else file.filename
                         if extract_name:
                             zip_ref.extract(file, gui.temp_extract_folder)
                             if strip_prefix:
@@ -823,15 +835,13 @@ def install_extract_update(gui, mode, version, downloaded_file, app_directory):
 
                             extracted_size += file.file_size
                             progress = (extracted_size / total_size) * 100
-                            current_progress = 50 + (progress * 0.25)
-                            gui.update_progress(current_progress, f"Extracting files: {int(progress)}%")
+                            gui.update_progress(50 + progress * 0.25, f"Extracting files: {int(progress)}%")
 
                     nested_dir = os.path.join(gui.temp_extract_folder, "TeraTermUI")
                     if os.path.exists(nested_dir) and not os.listdir(nested_dir):
                         os.rmdir(nested_dir)
-                        logging.info(f"Removed empty nested directory: {nested_dir}")
 
-                logging.info(f"Extraction completed successfully. Files extracted to: {gui.temp_extract_folder}")
+                logging.info(f"Extraction complete to: {gui.temp_extract_folder}")
                 logging.info(f"Total files extracted: {len(namelist)}")
                 logging.info(f"Total size extracted: {total_size / 1024 / 1024:.2f} MB")
 
@@ -850,18 +860,15 @@ def install_extract_update(gui, mode, version, downloaded_file, app_directory):
                     current_ver = get_db_version(current_db_path)
                     new_ver = get_db_version(new_db_path)
                     if current_ver == new_ver:
-                        logging.info(f"database.db version unchanged ({current_ver}). Skipping database update.")
+                        logging.info(f"database.db version unchanged ({current_ver}). Skipping database update")
                         should_update_db = False
                     else:
-                        logging.info(f"database.db version changed: {current_ver} → {new_ver}. Updating.")
+                        logging.info(f"database.db version changed: {current_ver} → {new_ver}. Updating")
             except Exception as e:
                 logging.warning(f"Unable to compare database versions: {e}")
 
-            logging.info("Starting backup creation")
-            total_size = sum(
-                os.path.getsize(os.path.join(dp, f))
-                for dp, dn, filenames in os.walk(app_directory)
-                for f in filenames)
+            total_size = sum(os.path.getsize(os.path.join(dp, f)) for dp, _, filenames in os.walk(app_directory)
+                             for f in filenames)
 
             if not has_enough_disk_space(total_size * 2, os.path.dirname(backup_folder)):
                 gui.update_progress(0, "Insufficient disk space for backup")
@@ -870,7 +877,7 @@ def install_extract_update(gui, mode, version, downloaded_file, app_directory):
 
             try:
                 shutil.copytree(app_directory, backup_folder)
-                logging.info(f"Backup created at: {backup_folder}")
+                logging.info(f"Backup created: {backup_folder}")
             except Exception as e:
                 logging.error(f"Backup creation failed: {e}")
                 return False
@@ -879,50 +886,20 @@ def install_extract_update(gui, mode, version, downloaded_file, app_directory):
             gui.update_progress(75, "Updating files...")
 
             try:
-                removed_files = 0
-                removed_dirs = 0
-                with os.scandir(app_directory) as entries:
-                    for entry in entries:
-                        if gui.cancel_requested:
-                            logging.info("Update cancelled during file removal")
-                            return False
-
-                        while gui.pause_requested and not gui.cancel_requested:
-                            time.sleep(0.1)
-
-                        if not should_update_db and entry.name == "database.db":
-                            logging.info(f"Skipping deletion of database file: {entry.path}")
-                            continue
-
-                        try:
-                            if entry.is_file() or entry.is_symlink():
-                                os.remove(entry.path)
-                                removed_files += 1
-                            elif entry.is_dir():
-                                shutil.rmtree(entry.path)
-                                removed_dirs += 1
-                        except Exception as e:
-                            logging.warning(f"Failed to remove {entry.path}: {e}")
-
-                logging.info(f"Total files removed: {removed_files}")
-                logging.info(f"Total directories removed: {removed_dirs}")
-
                 total_files = sum(len(files) for _, _, files in os.walk(gui.temp_extract_folder))
                 processed_files = 0
                 updated_files = 0
+                skipped_files = 0
 
                 for root, _, files in os.walk(gui.temp_extract_folder):
                     for file in files:
                         if gui.cancel_requested:
                             logging.info("Update cancelled during file copying")
                             return False
-
                         while gui.pause_requested and not gui.cancel_requested:
                             time.sleep(0.1)
-                            continue
 
                         if not should_update_db and file == "database.db":
-                            logging.info(f"Skipping database file update: {file}")
                             continue
 
                         src_file = os.path.join(root, file)
@@ -930,18 +907,21 @@ def install_extract_update(gui, mode, version, downloaded_file, app_directory):
                         dest_file = os.path.join(app_directory, rel_path)
 
                         os.makedirs(os.path.dirname(dest_file), exist_ok=True)
-                        shutil.copy2(src_file, dest_file)
-                        updated_files += 1
+
+                        if os.path.exists(dest_file) and files_are_identical(src_file, dest_file):
+                            skipped_files += 1
+                        else:
+                            shutil.copy2(src_file, dest_file)
+                            updated_files += 1
 
                         processed_files += 1
                         progress = (processed_files / total_files) * 100
-                        current_progress = 75 + (progress * 0.2)
-                        gui.update_progress(current_progress, f"Updating files: {int(progress)}%")
+                        gui.update_progress(75 + progress * 0.2, f"Updating files: {int(progress)}%")
 
-                logging.info(f"Total files updated: {updated_files}")
+                logging.info(f"Update complete. Files updated: {updated_files}, skipped (unchanged): {skipped_files}")
 
-            except Exception as update_error:
-                logging.error(f"Error during file replacement: {update_error}")
+            except Exception as e:
+                logging.error(f"Error during file update: {e}")
                 try:
                     restore_from_backup(app_directory, backup_folder)
                 except Exception as rollback_error:
@@ -949,22 +929,21 @@ def install_extract_update(gui, mode, version, downloaded_file, app_directory):
                 return False
 
             if not gui.cancel_requested:
-                logging.info("Update completed, starting cleanup")
                 gui.update_progress(95, "Finalizing update...")
                 gui.current_stage = "completed"
-
                 cleanup_success = cleanup_update_files(gui)
                 if not cleanup_success:
                     logging.warning("Cleanup completed with some warnings")
-
-                gui.update_progress(100, "Update completed successfully!")
-                logging.info("Update completed successfully")
+                    gui.update_progress(100, "Update completed with warnings")
+                else:
+                    gui.update_progress(100, "Update completed successfully!")
                 return True
 
             return False
 
         elif mode == "Installation":
             return handle_installation_mode(gui, downloaded_file, version, app_directory)
+        return None
 
     except Exception as e:
         logging.error(f"Update failed: {e}")
@@ -982,7 +961,7 @@ def check_installation_status(gui, process, version, downloaded_file, app_direct
                     logging.info("Installation cancelled by user")
                     gui.update_progress(0, "Installation cancelled")
                     messagebox.showinfo("Installation Cancelled", "Installation was cancelled by user")
-                    gui.root.after(1000, gui.root.destroy)
+                    gui.root.after(UI_UPDATE_DELAY, gui.root.destroy)
                     return
                 except Exception as e:
                     logging.error(f"Error terminating installer process: {e}")
@@ -994,7 +973,7 @@ def check_installation_status(gui, process, version, downloaded_file, app_direct
                         "Installing... Please follow the installer prompts. Do not close this window")
                     gui.last_progress_update = current_time
 
-            gui.root.after(1000, lambda: check_installation_status(
+            gui.root.after(UI_UPDATE_DELAY, lambda: check_installation_status(
                 gui, process, version,downloaded_file, app_directory, mode))
             return
 
@@ -1015,11 +994,11 @@ def check_installation_status(gui, process, version, downloaded_file, app_direct
 
             gui.set_failure_state()
             cleanup_installer_files(downloaded_file)
-            gui.root.after(1000, lambda: (gui.root.destroy(), restart_application(app_directory)))
+            gui.root.after(UI_UPDATE_DELAY, lambda: (gui.root.destroy(), restart_application(app_directory)))
             return
 
         logging.info("Installer process completed successfully")
-        gui.root.after( 2000, lambda: verify_and_finalize_installation(
+        gui.root.after(2000, lambda: verify_and_finalize_installation(
             gui, version, downloaded_file, app_directory))
 
     except Exception as e:
@@ -1030,7 +1009,7 @@ def check_installation_status(gui, process, version, downloaded_file, app_direct
             f"Failed to monitor installation:\n\n{str(e)}")
         gui.set_failure_state()
         cleanup_installer_files(downloaded_file)
-        gui.root.after(1000, lambda: (gui.root.destroy(), restart_application(app_directory)))
+        gui.root.after(UI_UPDATE_DELAY, lambda: (gui.root.destroy(), restart_application(app_directory)))
 
 def cleanup_installer_files(downloaded_file):
     try:
@@ -1065,13 +1044,9 @@ def handle_installation_mode(gui, downloaded_file, version, app_directory):
             startupinfo = subprocess.STARTUPINFO()
             startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
 
-        process = subprocess.Popen(
-            [downloaded_file],
-            shell=True,
-            startupinfo=startupinfo
-        )
+        process = subprocess.Popen([downloaded_file], shell=True, startupinfo=startupinfo)
 
-        gui.root.after(1000, lambda: check_installation_status(
+        gui.root.after(UI_UPDATE_DELAY, lambda: check_installation_status(
             gui, process, version, downloaded_file, app_directory, "Installation"))
 
         return True
@@ -1219,7 +1194,7 @@ def verify_and_finalize_installation(gui, version, downloaded_file, app_director
         messagebox.showerror("Installation Failed", error_msg)
         gui.set_failure_state()
         cleanup_installer_files(downloaded_file)
-        gui.root.after(1000, lambda: (gui.root.destroy(), restart_application(app_directory)))
+        gui.root.after(UI_UPDATE_DELAY, lambda: (gui.root.destroy(), restart_application(app_directory)))
 
 def cleanup_installer(installer_path):
     max_attempts = 3
