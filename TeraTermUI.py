@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/21/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/22/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit of time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 13,900 lines of codes, it definitely makes things harder to work with
+# and with over 14,000 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -8407,6 +8407,7 @@ class TeraTermUI(customtkinter.CTk):
                                                 "R" + course_code_no_section + section + "{ENTER}")
                                             self.reset_activity_timer()
                                             text_output = self.capture_screenshot()
+                                            error_classes = text_output
                                             if not is_final:
                                                 self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                                 self.reset_activity_timer()
@@ -8423,6 +8424,7 @@ class TeraTermUI(customtkinter.CTk):
                                                 self.uprb.UprbayTeraTermVt.type_keys("R" + course_code + "{ENTER}")
                                                 self.reset_activity_timer()
                                                 text_output = self.capture_screenshot()
+                                                closed_error = text_output
                                                 if not is_final:
                                                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                                     self.reset_activity_timer()
@@ -8493,11 +8495,18 @@ class TeraTermUI(customtkinter.CTk):
                                                        lambda event: self.submit_modify_classes_handler())
                                             self.submit_my_classes.configure(state="normal")
                                         self.not_rebind = False
-                                        self.play_sound("error.wav")
-                                        CTkMessagebox(title=translation["automation_error_title"], icon="cancel",
-                                                      message=translation["failed_change_section_exp"],
-                                                      button_width=380)
+                                        self.play_sound("notification.wav")
+                                        CTkMessagebox(title=translation["automation_error_title"], icon="info",
+                                                      message=msg, button_width=380)
 
+                                    failed_classes = self.parse_enrollment_errors(error_classes)
+                                    class_list = [error.split(":")[0].rsplit("-", 1)[0] for error in failed_classes]
+                                    class_list = list(dict.fromkeys(class_list))
+                                    class_str = ", ".join(f"{i + 1}. {cls}" for i, cls in enumerate(class_list))
+                                    if len(class_list) == 1:
+                                        msg = f"{translation['failed_change_section_exp_s']}\n{class_str}"
+                                    else:
+                                        msg = f"{translation['failed_change_section_exp_p']}\n{class_str}"
                                     self.unbind("<Return>")
                                     self.submit_my_classes.configure(state="disabled")
                                     self.not_rebind = True
@@ -8514,8 +8523,16 @@ class TeraTermUI(customtkinter.CTk):
                                         self.not_rebind = False
                                         self.play_sound("error.wav")
                                         CTkMessagebox(title=translation["automation_error_title"], icon="cancel",
-                                                      message=translation["section_closed"], button_width=380)
+                                                      message=msg, button_width=380)
 
+                                    failed_classes = self.parse_enrollment_errors(closed_error)
+                                    class_list = [error.split(":")[0].rsplit("-", 1)[0] for error in failed_classes]
+                                    class_list = list(dict.fromkeys(class_list))
+                                    class_str = ", ".join(f"{i + 1}. {cls}" for i, cls in enumerate(class_list))
+                                    if len(class_list) == 1:
+                                        msg = f"{translation['"section_closed_s"']}\n\n{class_str}"
+                                    else:
+                                        msg = f"{translation['"section_closed_p"']}\n\n{class_str}"
                                     self.unbind("<Return>")
                                     self.submit_my_classes.configure(state="disabled")
                                     self.not_rebind = True
@@ -9115,7 +9132,7 @@ class TeraTermUI(customtkinter.CTk):
             error_message_str = "\n".join(f"{i+1}. {error}" for i, error in enumerate(found_errors))
             self.play_sound("notification.wav")
             CTkMessagebox(title=translation["automation_error_title"], icon="cancel",
-                          message=translation["specific_enrollment_error"] + error_message_str, button_width=380)
+                          message=translation["specific_enrollment_error_s"] + error_message_str, button_width=380)
         self.submit.configure(state="normal")
         self.submit_multiple.configure(state="normal")
         self.not_rebind = False
@@ -9138,8 +9155,12 @@ class TeraTermUI(customtkinter.CTk):
             self.destroy_windows()
             error_message_str = "\n".join(f"{i+1}. {error}" for i, error in enumerate(found_errors))
             self.play_sound("notification.wav")
+            if len(found_errors) == 1:
+                msg = translation["specific_enrollment_error_s"]
+            else:
+                msg = translation["specific_enrollment_error_p"]
             CTkMessagebox(title=translation["automation_error_title"], icon="cancel", button_width=380,
-                          message=translation["specific_enrollment_error"] + error_message_str)
+                          message=msg + error_message_str)
             for counter in range(self.a_counter + 1, 0, -1):
                 if self.classes_status:
                     last_item = list(self.classes_status.keys())[-1]
