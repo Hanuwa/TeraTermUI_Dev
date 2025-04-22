@@ -181,7 +181,7 @@ class TeraTermUI(customtkinter.CTk):
         self.REAZIONE = self.ottenere_protetta_salasana()
         self.USER_APP_VERSION = "0.9.0"
         self.mode = "Portable"
-        self.updater_hash = "4d806fc5e8da62a1015befa44aeb9b84facd7a4e8cfcb942a8c4e9b84b3e3007"
+        self.updater_hash = "546b01fdd4e234f9046c7d04bf3dc500486662a63d0860a2faaf5e1e66efefae"
         self.running_updater = False
         self.credentials = None
         # disabled/enables keybind events
@@ -842,7 +842,7 @@ class TeraTermUI(customtkinter.CTk):
                 date_record = self.cursor_db.execute("SELECT update_date FROM user_config").fetchone()
                 if date_record is None or date_record[0] is None or not date_record[0].strip() or (
                         datetime.strptime(current_date, "%Y-%m-%d")
-                        - datetime.strptime(date_record[0], "%Y-%m-%d")).days >= 14:
+                        - datetime.strptime(date_record[0], "%Y-%m-%d")).days >= 7:
                     try:
                         self.check_update = True
                         if asyncio.run(self.test_connection()):
