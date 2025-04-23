@@ -70,6 +70,7 @@ from CTkTable import CTkTable
 from CTkToolTip import CTkToolTip
 from ctypes import wintypes
 from datetime import datetime, timedelta, UTC
+from difflib import SequenceMatcher, get_close_matches
 from filelock import FileLock, Timeout
 from functools import wraps
 from hmac import compare_digest
@@ -424,8 +425,8 @@ class TeraTermUI(customtkinter.CTk):
         # First Tab
         self.in_enroll_frame = False
         self.title_enroll = None
-        self.e_classes = None
-        self.e_classes_entry = None
+        self.e_class = None
+        self.e_class_entry = None
         self.e_section = None
         self.e_section_entry = None
         self.e_section_tooltip = None
@@ -464,7 +465,7 @@ class TeraTermUI(customtkinter.CTk):
         self.image_search = None
         self.notice_search = None
         self.s_classes = None
-        self.s_classes_entry = None
+        self.s_class_entry = None
         self.s_semester = None
         self.s_semester_entry = None
         self.show_all = None
@@ -1313,8 +1314,8 @@ class TeraTermUI(customtkinter.CTk):
             self.t_buttons_frame.grid(row=3, column=1, columnspan=5, padx=(5, 0), pady=(0, 20))
             self.t_buttons_frame.grid_columnconfigure(1, weight=2)
             self.title_enroll.grid(row=0, column=1, padx=(0, 0), pady=(10, 20), sticky="n")
-            self.e_classes.grid(row=1, column=1, padx=(0, 188), pady=(0, 0))
-            self.e_classes_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0))
+            self.e_class.grid(row=1, column=1, padx=(0, 188), pady=(0, 0))
+            self.e_class_entry.grid(row=1, column=1, padx=(0, 0), pady=(0, 0))
             if lang == "English":
                 self.e_section.grid(row=2, column=1, padx=(0, 199), pady=(20, 0))
             elif lang == "Español":
@@ -1330,7 +1331,7 @@ class TeraTermUI(customtkinter.CTk):
             self.image_search.grid(row=2, column=1, padx=(0, 0), pady=(35, 0), sticky="n")
             self.notice_search.grid(row=2, column=1, padx=(0, 0), pady=(130, 0), sticky="n")
             self.s_classes.grid(row=1, column=1, padx=(0, 550), pady=(0, 0), sticky="n")
-            self.s_classes_entry.grid(row=1, column=1, padx=(0, 425), pady=(0, 0), sticky="n")
+            self.s_class_entry.grid(row=1, column=1, padx=(0, 425), pady=(0, 0), sticky="n")
             self.s_semester.grid(row=1, column=1, padx=(0, 270), pady=(0, 0), sticky="n")
             self.s_semester_entry.grid(row=1, column=1, padx=(0, 120), pady=(0, 0), sticky="n")
             if lang == "English":
@@ -1486,7 +1487,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.automation_preparations()
                 translation = self.load_language()
                 choice = self.radio_var.get()
-                classes = self.e_classes_entry.get().upper().replace(" ", "").replace("-", "")
+                course = self.e_class_entry.get().upper().replace(" ", "").replace("-", "")
                 curr_sem = translation["current"].upper()
                 section = self.e_section_entry.get().upper().replace(" ", "")
                 semester = self.e_semester_entry.get().upper().replace(" ", "")
@@ -1500,7 +1501,7 @@ class TeraTermUI(customtkinter.CTk):
                                 section not in self.classes_status or
                                 self.classes_status[section]["status"] != "DROPPED" or
                                 self.classes_status[section]["semester"] != semester)):
-                            if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes)
+                            if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", course)
                                     and re.fullmatch("^[A-Z0-9]{3}$", section)
                                     and (re.fullmatch("^[A-Z][0-9]{2}$", semester) or semester == curr_sem)):
                                 if not self.wait_for_window():
@@ -1533,7 +1534,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.uprb.UprbayTeraTermVt.type_keys("R")
                                     elif choice == "drop":
                                         self.uprb.UprbayTeraTermVt.type_keys("D")
-                                    self.uprb.UprbayTeraTermVt.type_keys(classes + section + "{ENTER}")
+                                    self.uprb.UprbayTeraTermVt.type_keys(course + section + "{ENTER}")
                                     text_output = self.wait_for_response(["CONFIRMED", "DROPPED"])
                                     enrolled_classes = "ENROLLED"
                                     count_enroll = text_output.count(enrolled_classes)
@@ -1541,23 +1542,23 @@ class TeraTermUI(customtkinter.CTk):
                                     count_dropped = text_output.count(dropped_classes)
                                     self.reset_activity_timer()
                                     if "CONFIRMED" in text_output or "DROPPED" in text_output:
-                                        self.e_classes_entry.configure(state="normal")
+                                        self.e_class_entry.configure(state="normal")
                                         self.e_section_entry.configure(state="normal")
-                                        self.e_classes_entry.delete(0, "end")
+                                        self.e_class_entry.delete(0, "end")
                                         self.e_section_entry.delete(0, "end")
-                                        self.e_classes_entry.configure(state="disabled")
+                                        self.e_class_entry.configure(state="disabled")
                                         self.e_section_entry.configure(state="disabled")
                                         self.e_counter -= count_dropped
                                         self.e_counter += count_enroll
                                         if choice == "register":
                                             self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                             time.sleep(1)
-                                            self.classes_status[section] = {"classes": classes, "status": "ENROLLED",
+                                            self.classes_status[section] = {"classes": course, "status": "ENROLLED",
                                                                             "semester": semester}
                                             self.after(100, self.show_success_message, 350, 265,
                                                        translation["success_enrolled"])
                                         elif choice == "drop":
-                                            self.classes_status[section] = {"classes": classes, "status": "DROPPED",
+                                            self.classes_status[section] = {"classes": course, "status": "DROPPED",
                                                                             "semester": semester}
                                             self.after(100, self.show_success_message, 350, 265,
                                                        translation["success_dropped"])
@@ -1572,7 +1573,8 @@ class TeraTermUI(customtkinter.CTk):
                                         self.submit.configure(state="disabled")
                                         self.unbind("<Return>")
                                         self.not_rebind = True
-                                        self.after(2500, self.show_enrollment_error_information, text_output)
+                                        self.after(2500, self.show_enrollment_error_information,
+                                                   text_output, course)
                                 else:
                                     if count_enroll == 15:
                                         self.submit.configure(state="disabled")
@@ -1609,19 +1611,19 @@ class TeraTermUI(customtkinter.CTk):
                                                 self.after(2500, self.show_enrollment_error_information)
                                                 self.enrollment_error_check += 1
                             else:
-                                if not classes or not section or not semester:
+                                if not course or not section or not semester:
                                     self.after(100, self.show_error_message, 350, 230,
                                                translation["missing_info"])
-                                    if not classes:
-                                        self.after(0, self.e_classes_entry.configure(border_color="#c30101"))
+                                    if not course:
+                                        self.after(0, self.e_class_entry.configure(border_color="#c30101"))
                                     if not section:
                                         self.after(0, self.e_section_entry.configure(border_color="#c30101"))
                                     if not semester:
                                         self.after(0, self.e_semester_entry.configure(border_color="#c30101"))
-                                elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes):
+                                elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", course):
                                     self.after(100, self.show_error_message, 360, 230,
                                                translation["class_format_error"])
-                                    self.after(0, self.e_classes_entry.configure(border_color="#c30101"))
+                                    self.after(0, self.e_class_entry.configure(border_color="#c30101"))
                                 elif not re.fullmatch("^[A-Z0-9]{3}$", section):
                                     self.after(100, self.show_error_message, 360, 230,
                                                translation["section_format_error"])
@@ -1674,13 +1676,13 @@ class TeraTermUI(customtkinter.CTk):
                 self.automation_preparations()
                 lang = self.language_menu.get()
                 translation = self.load_language()
-                classes = self.s_classes_entry.get().upper().replace(" ", "").replace("-", "")
+                course = self.s_class_entry.get().upper().replace(" ", "").replace("-", "")
                 semester = self.s_semester_entry.get().upper().replace(" ", "")
                 curr_sem = translation["current"].upper()
                 show_all = self.show_all.get()
                 if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
-                        if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes) and (
+                        if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", course) and (
                                 re.fullmatch("^[A-Z][0-9]{2}$", semester) or semester == curr_sem)):
                             if not self.wait_for_window():
                                 return
@@ -1732,7 +1734,7 @@ class TeraTermUI(customtkinter.CTk):
                                     return
                                 if data or course_found or invalid_action or y_n_found:
                                     self.search_function_counter += 1
-                                if classes in copy and show_all == y_n_value and semester == term_value:
+                                if course in copy and show_all == y_n_value and semester == term_value:
                                     if "MORE SECTIONS" in text_output:
                                         self.after(0, self.search_next_page_layout)
                                     else:
@@ -1743,7 +1745,7 @@ class TeraTermUI(customtkinter.CTk):
                                             self.search_next_page_status = False
 
                                         self.after(0, hide_next_button)
-                                    self.get_class_for_table = classes
+                                    self.get_class_for_table = course
                                     self.get_semester_for_table = semester
                                     self.show_all_sections = show_all
                                     self.after(0, self.display_searched_class_data, data)
@@ -1754,12 +1756,12 @@ class TeraTermUI(customtkinter.CTk):
                                     except Exception as err:
                                         logging.error(f"An error occurred while restoring clipboard content: {err}")
                                     return
-                            if not (self.get_class_for_table == classes and self.get_semester_for_table != semester and
+                            if not (self.get_class_for_table == course and self.get_semester_for_table != semester and
                                     show_all == self.show_all_sections):
                                 if self.search_function_counter == 0:
-                                    self.uprb.UprbayTeraTermVt.type_keys(classes)
+                                    self.uprb.UprbayTeraTermVt.type_keys(course)
                                 if self.search_function_counter >= 1:
-                                    self.uprb.UprbayTeraTermVt.type_keys("1CS" + classes)
+                                    self.uprb.UprbayTeraTermVt.type_keys("1CS" + course)
                                 self.uprb.UprbayTeraTermVt.type_keys("{TAB}")
                                 if show_all == "on":
                                     self.uprb.UprbayTeraTermVt.type_keys("Y")
@@ -1780,12 +1782,12 @@ class TeraTermUI(customtkinter.CTk):
                             if "COURSE NOT IN" in text_output:
                                 if lang == "English":
                                     self.after(100, self.show_error_message, 300, 220,
-                                               "Error! Course: " + classes + " not found")
+                                               "Error! Course: " + course + " not found")
                                 elif lang == "Español":
                                     self.after(100, self.show_error_message, 310, 220,
-                                               "Error! Clase: " + classes + " \nno se encontro")
+                                               "Error! Clase: " + course + " \nno se encontro")
                                 self.search_function_counter += 1
-                                self.after(0, self.s_classes_entry.configure(border_color="#c30101"))
+                                self.after(0, self.s_class_entry.configure(border_color="#c30101"))
                             elif "INVALID ACTION" in text_output or "INVALID TERM SELECTION" in text_output:
                                 self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER + "SRM{ENTER}")
                                 self.reset_activity_timer()
@@ -1805,8 +1807,8 @@ class TeraTermUI(customtkinter.CTk):
                                     y_n_found, y_n_value, term_value = TeraTermUI.extract_class_data(copy)
                                 if data or course_found or invalid_action or y_n_found:
                                     self.search_function_counter += 1
-                                if classes in copy and show_all == y_n_value and semester == term_value:
-                                    self.get_class_for_table = classes
+                                if course in copy and show_all == y_n_value and semester == term_value:
+                                    self.get_class_for_table = course
                                     self.get_semester_for_table = semester
                                     self.show_all_sections = show_all
                                 self.after(0, self.display_searched_class_data, data)
@@ -1817,17 +1819,17 @@ class TeraTermUI(customtkinter.CTk):
                                 except Exception as err:
                                     logging.error(f"An error occurred while restoring clipboard content: {err}")
                         else:
-                            if not classes or not semester:
+                            if not course or not semester:
                                 self.after(100, self.show_error_message, 350, 230,
                                            translation["missing_info_search"])
-                                if not classes:
-                                    self.after(0, self.s_classes_entry.configure(border_color="#c30101"))
+                                if not course:
+                                    self.after(0, self.s_class_entry.configure(border_color="#c30101"))
                                 if not semester:
                                     self.after(0, self.s_semester_entry.configure(border_color="#c30101"))
-                            elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", classes):
+                            elif not re.fullmatch("^[A-Z]{4}[0-9]{4}$", course):
                                 self.after(100, self.show_error_message, 360, 230,
                                            translation["class_format_error"])
-                                self.after(0, self.s_classes_entry.configure(border_color="#c30101"))
+                                self.after(0, self.s_class_entry.configure(border_color="#c30101"))
                             elif not re.fullmatch("^[A-Z][0-9]{2}$", semester) and semester != curr_sem:
                                 self.after(100, self.show_error_message, 360, 230,
                                            translation["semester_format_error"])
@@ -2428,7 +2430,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.unbind("<Return>")
                                     self.not_rebind = True
                                     self.after(2500, self.show_enrollment_error_information_multiple,
-                                               text_output)
+                                               text_output, classes)
                                     if "CONFIRMED" in text_output and "DROPPED" in text_output:
                                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER}")
                                         time.sleep(1)
@@ -2455,7 +2457,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.unbind("<Return>")
                                     self.not_rebind = True
                                     self.after(2500, self.show_enrollment_error_information_multiple,
-                                               text_output)
+                                               text_output, classes)
                                     self.m_counter = self.m_counter - self.a_counter - 1
                             else:
                                 if count_enroll == 15:
@@ -2977,12 +2979,12 @@ class TeraTermUI(customtkinter.CTk):
                                 self.search_next_page_status = False
 
                             self.after(0, hide_next_button)
-                        section = self.s_classes_entry.get().upper().replace(" ", "").replace("-", "")
+                        section = self.s_class_entry.get().upper().replace(" ", "").replace("-", "")
                         if section != self.get_class_for_table:
-                            self.s_classes_entry.configure(state="normal")
-                            self.s_classes_entry.delete(0, "end")
-                            self.s_classes_entry.insert(0, self.get_class_for_table)
-                            self.s_classes_entry.configure(state="disabled")
+                            self.s_class_entry.configure(state="normal")
+                            self.s_class_entry.delete(0, "end")
+                            self.s_class_entry.insert(0, self.get_class_for_table)
+                            self.s_class_entry.configure(state="disabled")
                     else:
                         self.after(100, self.show_error_message, 300, 215,
                                    translation["tera_term_not_running"])
@@ -3272,7 +3274,6 @@ class TeraTermUI(customtkinter.CTk):
     @staticmethod
     def check_host(host, threshold=0.8):
         import unicodedata
-        from difflib import SequenceMatcher
 
         def normalize_string(s):
             return "".join(
@@ -4032,7 +4033,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.init_multiple:
             self.rename_tabs()
             self.title_enroll.configure(text=translation["title_enroll"])
-            self.e_classes.configure(text=translation["class"])
+            self.e_class.configure(text=translation["class"])
             self.e_section.configure(text=translation["section"])
             if lang == "English":
                 self.e_section.grid(row=2, column=1, padx=(0, 199), pady=(20, 0))
@@ -4156,7 +4157,7 @@ class TeraTermUI(customtkinter.CTk):
                 total_seconds = time_difference.total_seconds()
                 self.server_rating.configure(text=f"{translation["server_status_rating"]}{rating}", text_color=color)
                 self.timer_label.configure(text=self.get_countdown_message(total_seconds))
-            for entry in [self.e_classes_entry, self.e_section_entry, self.s_classes_entry, self.m_classes_entry,
+            for entry in [self.e_class_entry, self.e_section_entry, self.s_class_entry, self.m_classes_entry,
                           self.m_section_entry, self.e_semester_entry, self.s_semester_entry, self.menu_entry,
                           self.menu_semester_entry, self.m_semester_entry]:
                 if isinstance(entry, list):
@@ -5483,15 +5484,15 @@ class TeraTermUI(customtkinter.CTk):
             self.title_enroll = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab),
                                                        text=translation["title_enroll"],
                                                        font=customtkinter.CTkFont(size=20, weight="bold"))
-            self.e_classes = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab), text=translation["class"])
+            self.e_class = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab), text=translation["class"])
             query = "SELECT code FROM courses ORDER BY RANDOM() LIMIT 1"
             result = self.cursor_db.execute(query).fetchone()
             if result is not None:
                 class_code = result[0]
             else:
                 class_code = "ESPA3101"
-            self.e_classes_entry = CustomEntry(self.tabview.tab(self.enroll_tab), self, lang,
-                                               placeholder_text=class_code)
+            self.e_class_entry = CustomEntry(self.tabview.tab(self.enroll_tab), self, lang,
+                                             placeholder_text=class_code)
             self.e_section = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab),
                                                     text=translation["section"])
             self.e_section_entry = CustomEntry(self.tabview.tab(self.enroll_tab), self, lang, placeholder_text="LM1")
@@ -5518,7 +5519,7 @@ class TeraTermUI(customtkinter.CTk):
             self.register.select()
             self.tabview.tab(self.enroll_tab).bind("<Button-1>", lambda event: self.focus_set())
             self.title_enroll.bind("<Button-1>", lambda event: self.focus_set())
-            self.e_classes.bind("<Button-1>", lambda event: self.focus_set())
+            self.e_class.bind("<Button-1>", lambda event: self.focus_set())
             self.e_section.bind("<Button-1>", lambda event: self.focus_set())
             self.e_section_entry.bind("<FocusOut>", lambda event: self.check_class_time())
             self.e_semester.bind("<Button-1>", lambda event: self.focus_set())
@@ -5542,8 +5543,8 @@ class TeraTermUI(customtkinter.CTk):
                 class_code = result[0]
             else:
                 class_code = "INGL3101"
-            self.s_classes_entry = CustomEntry(self.search_scrollbar, self, lang, placeholder_text=class_code,
-                                               width=80)
+            self.s_class_entry = CustomEntry(self.search_scrollbar, self, lang, placeholder_text=class_code,
+                                             width=80)
             self.s_semester = customtkinter.CTkLabel(self.search_scrollbar, text=translation["semester"])
             self.s_semester_entry = CustomComboBox(self.search_scrollbar, self, lang, width=80,
                                                    values=self.semester_values + [translation["current"]])
@@ -5573,8 +5574,8 @@ class TeraTermUI(customtkinter.CTk):
             self.notice_search.bind("<Button-1>", lambda event: self.focus_set())
             self.s_classes.bind("<Button-1>", lambda event: self.focus_set())
             self.s_semester.bind("<Button-1>", lambda event: self.focus_set())
-            self.s_classes_entry.bind("<FocusIn>", lambda event:
-            self.search_scrollbar.scroll_to_widget(self.s_classes_entry))
+            self.s_class_entry.bind("<FocusIn>", lambda event:
+            self.search_scrollbar.scroll_to_widget(self.s_class_entry))
             self.show_all.bind("<space>", lambda event: self.spacebar_event())
 
             # Third Tab
@@ -5653,8 +5654,8 @@ class TeraTermUI(customtkinter.CTk):
             self.multiple_tooltip = CTkToolTip(self.multiple, message=translation["multiple_tooltip"],
                                                bg_color="#0F52BA")
             self.t_buttons_frame.bind("<Button-1>", lambda event: self.focus_set())
-            for entry in [self.e_classes_entry, self.e_section_entry, self.s_classes_entry, self.e_semester_entry,
-                          self.s_semester_entry, self.menu_entry,  self.menu_semester_entry]:
+            for entry in [self.e_class_entry, self.e_section_entry, self.s_class_entry, self.e_semester_entry,
+                          self.s_semester_entry, self.menu_entry, self.menu_semester_entry]:
                 entry.lang = lang
         else:
             self.go_next_1VE.grid_forget()
@@ -6570,11 +6571,11 @@ class TeraTermUI(customtkinter.CTk):
         if not section_text.strip():
             return
 
-        self.e_classes_entry.delete(0, "end")
+        self.e_class_entry.delete(0, "end")
         self.e_section_entry.delete(0, "end")
         display_class, _, semester_text, _, _, _ = self.class_table_pairs[self.current_table_index]
         class_text = display_class.cget("text").split("-")[0].strip()
-        self.e_classes_entry.insert(0, class_text)
+        self.e_class_entry.insert(0, class_text)
         self.e_section_entry.insert(0, section_text)
         self.e_semester_entry.set(semester_text)
         self.register.select()
@@ -7259,12 +7260,12 @@ class TeraTermUI(customtkinter.CTk):
         curr_table.grid(row=2, column=1, padx=(0, 15), pady=(40, 0), sticky="n")
         self.table = curr_table
         self.current_class = display_class
-        section = self.s_classes_entry.get().upper().replace(" ", "").replace("-", "")
+        section = self.s_class_entry.get().upper().replace(" ", "").replace("-", "")
         display_class_text = display_class.cget("text").split(" ")[0]
         if section != display_class_text and self.loading_screen_status is None:
-            if self.s_classes_entry.get() != display_class_text:
-                self.s_classes_entry.delete(0, "end")
-                self.s_classes_entry.insert(0, display_class_text)
+            if self.s_class_entry.get() != display_class_text:
+                self.s_class_entry.delete(0, "end")
+                self.s_class_entry.insert(0, display_class_text)
             if self.s_semester_entry.get() != semester:
                 self.s_semester_entry.set(semester)
         self.after(0, self.focus_set)
@@ -8499,7 +8500,7 @@ class TeraTermUI(customtkinter.CTk):
                                         CTkMessagebox(title=translation["automation_error_title"], icon="info",
                                                       message=msg, button_width=380)
 
-                                    failed_classes = self.parse_enrollment_errors(error_classes)
+                                    failed_classes = self.parse_enrollment_errors(error_classes, course_code_no_section)
                                     class_list = [error.split(":")[0].rsplit("-", 1)[0] for error in failed_classes]
                                     class_list = list(dict.fromkeys(class_list))
                                     class_str = ", ".join(f"{i + 1}. {cls}" for i, cls in enumerate(class_list))
@@ -8525,7 +8526,7 @@ class TeraTermUI(customtkinter.CTk):
                                         CTkMessagebox(title=translation["automation_error_title"], icon="cancel",
                                                       message=msg, button_width=380)
 
-                                    failed_classes = self.parse_enrollment_errors(closed_error)
+                                    failed_classes = self.parse_enrollment_errors(closed_error, course_code_no_section)
                                     class_list = [error.split(":")[0].rsplit("-", 1)[0] for error in failed_classes]
                                     class_list = list(dict.fromkeys(class_list))
                                     class_str = ", ".join(f"{i + 1}. {cls}" for i, cls in enumerate(class_list))
@@ -9104,10 +9105,11 @@ class TeraTermUI(customtkinter.CTk):
             self.changed_location = False
         gc.collect()
 
-    def parse_enrollment_errors(self, text_output):
+    def parse_enrollment_errors(self, text_output, submitted_classes=None):
         translation = self.load_language()
         found_errors = []
         lines = text_output.splitlines()
+
         course_section_pattern = re.compile(r"([A-Z]{4})([0-9@]{4})([A-Z0-9]{3})")
         for line in lines:
             for code, message in self.enrollment_error_messages.items():
@@ -9119,14 +9121,24 @@ class TeraTermUI(customtkinter.CTk):
                         formatted = f"{subject}-{number}-{section}"
                         found_errors.append(f"{formatted}: {message}")
                     else:
-                        found_errors.append(f"{translation['unknown_class_status']}: {message}")
+                        if submitted_classes:
+                            cleaned_line = re.sub(r"[^A-Z0-9]", "", line.upper())
+                            match = get_close_matches(cleaned_line, [cls.upper().replace("-", "") for cls in
+                                                                     submitted_classes], n=1, cutoff=0.6)
+                            if match:
+                                formatted_match = match[0]
+                                found_errors.append(f"{formatted_match}: {message}")
+                            else:
+                                found_errors.append(f"{translation['unknown_class_status']}: {message}")
+                        else:
+                            found_errors.append(f"{translation['unknown_class_status']}: {message}")
 
         return found_errors
 
     # Pop window that shows the user more context on why they couldn't enroll their classes
-    def show_enrollment_error_information(self, text="Error"):
+    def show_enrollment_error_information(self, text="Error", submitted_class=None):
         translation = self.load_language()
-        found_errors = self.parse_enrollment_errors(text)
+        found_errors = self.parse_enrollment_errors(text, submitted_class)
         if found_errors:
             self.destroy_windows()
             error_message_str = "\n".join(f"{i+1}. {error}" for i, error in enumerate(found_errors))
@@ -9148,7 +9160,7 @@ class TeraTermUI(customtkinter.CTk):
                           button_width=380)
 
     # Pop window that shows the user more context on why they couldn't enroll their classes
-    def show_enrollment_error_information_multiple(self, text="Error"):
+    def show_enrollment_error_information_multiple(self, text="Error", submitted_classes=None):
         translation = self.load_language()
         found_errors = self.parse_enrollment_errors(text)
         if found_errors:
