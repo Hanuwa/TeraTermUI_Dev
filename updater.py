@@ -2,6 +2,7 @@ import argparse
 import hashlib
 import json
 import logging
+import mmap
 import os
 import re
 import shutil
@@ -628,19 +629,22 @@ def files_are_identical(path1, path2):
     try:
         if not os.path.exists(path1) or not os.path.exists(path2):
             return False
-        if os.path.getsize(path1) != os.path.getsize(path2):
+
+        size1 = os.path.getsize(path1)
+        size2 = os.path.getsize(path2)
+        if size1 != size2 or size1 == 0:
             return False
+
         with open(path1, "rb") as f1, open(path2, "rb") as f2:
-            while True:
-                b1 = f1.read(CHUNK_SIZE)
-                b2 = f2.read(CHUNK_SIZE)
-                if b1 != b2:
-                    return False
-                if not b1:
-                    break
-        return True
+            try:
+                with mmap.mmap(f1.fileno(), 0, access=mmap.ACCESS_READ) as m1, \
+                     mmap.mmap(f2.fileno(), 0, access=mmap.ACCESS_READ) as m2:
+                    return m1[:] == m2[:]
+            except ValueError as ve:
+                logging.warning(f"mmap comparison failed (ValueError): {ve}")
+                return False
     except Exception as e:
-        logging.warning(f"Comparison failed between {path1} and {path2}: {e}")
+        logging.warning(f"Comparison failed with mmap: {e}")
         return False
 
 def download_update(gui, mode, checksum_info):
