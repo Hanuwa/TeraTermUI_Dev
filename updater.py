@@ -1,4 +1,5 @@
 import argparse
+import ctypes
 import hashlib
 import json
 import logging
@@ -625,6 +626,20 @@ def get_db_version(path):
         logging.warning(f"Failed to read database version from {path}: {e}")
         return None
 
+def is_network_drive(path):
+    if os.name != "nt":
+        return False
+
+    path = os.path.abspath(path)
+    drive = os.path.splitdrive(path)[0] + "\\"
+    DRIVE_REMOTE = 4
+    try:
+        drive_type = ctypes.windll.kernel32.GetDriveTypeW(ctypes.c_wchar_p(drive))
+        return drive_type == DRIVE_REMOTE
+    except Exception as e:
+        logging.warning(f"Failed to check drive type for {drive}: {e}")
+        return False
+
 def files_are_identical(path1, path2):
     try:
         if not os.path.exists(path1) or not os.path.exists(path2):
@@ -634,6 +649,10 @@ def files_are_identical(path1, path2):
         size2 = os.path.getsize(path2)
         if size1 != size2 or size1 == 0:
             return False
+
+        if is_network_drive(path1) or is_network_drive(path2):
+            logging.info(f"Skipping mmap due to network location: {path1} or {path2}")
+            return fallback_chunked_compare(path1, path2)
 
         with open(path1, "rb") as f1, open(path2, "rb") as f2:
             try:
@@ -645,6 +664,21 @@ def files_are_identical(path1, path2):
                 return False
     except Exception as e:
         logging.warning(f"Comparison failed with mmap: {e}")
+        return False
+
+def fallback_chunked_compare(p1, p2, chunk_size=262144):
+    try:
+        with open(p1, "rb") as f1, open(p2, "rb") as f2:
+            while True:
+                b1 = f1.read(chunk_size)
+                b2 = f2.read(chunk_size)
+                if b1 != b2:
+                    return False
+                if not b1:  
+                    break
+        return True
+    except Exception as e:
+        logging.warning(f"Chunked comparison failed: {e}")
         return False
 
 def download_update(gui, mode, checksum_info):
