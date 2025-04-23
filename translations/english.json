@@ -214,7 +214,7 @@
 	"failed_enroll": "Error! Failed to enroll class",
 	"failed_modify": "Error! Failed to modify\nthe currently enrolled classes",
 	"modify_error": "This error is usually caused by the semester no longer being available to register and drop classes or that the semester is not yet available",
-	"failed_change_section": "Error! Failed to change the sections\nof 1 or more classes",
+	"failed_change_section": "Error! Failed to change the sections\nof one or more classes",
 	"failed_change_section_exp_s": "Changing sections requires the program to drop the class and re-enroll it in the new section. If the new section enrollment fails, the program will attempt to re-enroll in the original section, which may no longer be available.\n\nThe following classes were successfully recovered and re-enrolled:",
 	"failed_change_section_exp_p": "Changing sections requires the program to drop the class and re-enroll it in the new section. If the new section enrollment fails, the program will attempt to re-enroll in the original section, which may no longer be available.\n\nThe following class was successfully recovered and re-enrolled:",
 	"section_closed_s": "Critical Error!\n\nWhile trying to re-enroll the class, the original section went unavailable:", 
