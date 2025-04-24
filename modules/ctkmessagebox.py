@@ -253,7 +253,7 @@ class CTkMessagebox(customtkinter.CTkToplevel):
 
         self.info = customtkinter.CTkButton(self.frame_top,  width=1, height=self.height/2, corner_radius=0, text=self.message, font=self.font,
                                             fg_color=self.fg_color, hover=False, text_color=self.text_color, image=self.icon)
-        self.info._text_label.configure(wraplength=self.width/2, justify="left")
+        self.info._text_label.configure(wraplength=int(self.width * 0.60), justify="left", anchor="w")
         self.info.grid(row=1, column=0, columnspan=6, sticky="nwes", padx=self.border_width)
 
         if wraplength > 0:
