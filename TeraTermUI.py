@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/22/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/24/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit of time to process.
@@ -13243,7 +13243,7 @@ class SecureDataStore:
         encrypted = win32crypt.CryptProtectData(master_key, None, None,
                                                 None, None, 0)
 
-        metadata = {"version": 1, "created_at": datetime.now(UTC).isoformat(),
+        metadata = {"version": "1.0.0", "created_at": datetime.now(UTC).isoformat(),
                     "encrypted_key": b64encode(encrypted).decode()}
 
         hmac_obj = HMAC.new(b"teraterm_ui_master_hmac", digestmod=SHA256)
