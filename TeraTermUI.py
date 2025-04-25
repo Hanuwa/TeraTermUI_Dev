@@ -9147,6 +9147,8 @@ class TeraTermUI(customtkinter.CTk):
             self.play_sound("notification.wav")
             CTkMessagebox(title=translation["automation_error_title"], icon="cancel",
                           message=translation["specific_enrollment_error_s"] + error_message_str, button_width=380)
+            self.clipboard_clear()
+            self.clipboard_append(error_message_str)
         self.submit.configure(state="normal")
         self.submit_multiple.configure(state="normal")
         self.not_rebind = False
@@ -9164,7 +9166,7 @@ class TeraTermUI(customtkinter.CTk):
     # Pop window that shows the user more context on why they couldn't enroll their classes
     def show_enrollment_error_information_multiple(self, text="Error", submitted_classes=None):
         translation = self.load_language()
-        found_errors = self.parse_enrollment_errors(text)
+        found_errors = self.parse_enrollment_errors(text, submitted_classes)
         if found_errors:
             self.destroy_windows()
             error_message_str = "\n".join(f"{i+1}. {error}" for i, error in enumerate(found_errors))
@@ -9175,6 +9177,8 @@ class TeraTermUI(customtkinter.CTk):
                 msg = translation["specific_enrollment_error_p"]
             CTkMessagebox(title=translation["automation_error_title"], icon="cancel", button_width=380,
                           message=msg + error_message_str)
+            self.clipboard_clear()
+            self.clipboard_append(error_message_str)
             for counter in range(self.a_counter + 1, 0, -1):
                 if self.classes_status:
                     last_item = list(self.classes_status.keys())[-1]
