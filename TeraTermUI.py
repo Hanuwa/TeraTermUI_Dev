@@ -5093,6 +5093,7 @@ class TeraTermUI(customtkinter.CTk):
                     return f"{int(hours)} horas y {int(minutes)} minuto restante\nhasta la matrícula"
                 else:
                     return f"{int(hours)} horas y {int(minutes)} minutos restantes\nhasta la matrícula"
+            return None
         else:
             if seconds > 0:
                 minutes += 1
@@ -5118,6 +5119,7 @@ class TeraTermUI(customtkinter.CTk):
                     return f"{int(total_seconds)} segundos restantes hasta la matrícula"
                 else:
                     return "1 segundo restante hasta la matrícula"
+            return None
 
     def end_countdown(self):
         translation = self.load_language()
@@ -9707,6 +9709,7 @@ class TeraTermUI(customtkinter.CTk):
                         "AC Power Setting": ac_setting,
                         "DC Power Setting": dc_setting
                     }
+                return None
             except Exception as err:
                 logging.error(f"Error querying power settings: {err}")
                 return None
@@ -13110,7 +13113,7 @@ class SSHMonitor:
             pass
         return None
 
-    def sample(self, count=30, concurrent=True, force=False, cooldown=30):
+    def sample(self, count=30, concurrent=True, force=False, cooldown=25):
         now = time.time()
         if now - self.last_sample_time < cooldown and not force:
             return
