@@ -128,7 +128,7 @@
 	"q1": "Is putting information\nhere safe?",
 	"a1": "Yes, the application doesn't store your\npersonal data anywhere unless you\nexplicitly allow it to but, if you are still\nskeptical then you can see which\ninformation we do store by accessing the\nfile called database.db and things like the\nstudent number or the ssn are encrypted\nusing an symmetrical key.",
 	"q2": "What is a section?", 
-	"a2": "The section determines which days and\nat what hours you take your classes,\nfor example, \"LM1\" the L and the M tells\nyou that the classes are on Mondays and\nWednesdays, but with the second letter\nyou can also determine the hour that the\nclass will take place, the letter \"M\" is the\n13th in the alphabet and, using the\nmilitary clock this means that the class\ntakes place at 1:00 PM, and finally, the\n\"1\"basically determines the number of a\ngiven class that are taken\nat the same schedule.",
+	"a2": "The section determines which days and\nat what hours you take your classes,\nfor example, \"LM1\" the L and the M tells\nyou that the classes are on Mondays and\nWednesdays, but with the second letter\nyou can also determine the hour that the\nclass will take place, the letter \"M\" is the\n13th in the alphabet and, using the\nmilitary clock this means that the class\ntakes place at 1:00 PM, and finally, the\n\"1\" basically determines the number of a\ngiven class that are taken\nat the same schedule.",
 	
 	"help": "Help",
 	"notice": "*Don't interact/touch Tera Term\nwhile using this application*",
