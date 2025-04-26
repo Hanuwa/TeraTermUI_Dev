@@ -584,6 +584,9 @@ class TeraTermUI(customtkinter.CTk):
         self.website_link = None
         self.notaso = None
         self.notaso_link = None
+        self.keybinds_text = None
+        self.keybinds = None
+        self.keybinds_table = None
         self.faq = None
         self.faq_text = None
         self.qa_table = None
@@ -598,11 +601,11 @@ class TeraTermUI(customtkinter.CTk):
         self.curriculum_text = None
         self.curriculum = None
         self.terms_text = None
+        self.enrollment_error_text = None
+        self.enroll_error = None
+        self.enroll_error_table = None
         self.terms = None
         self.terms_table = None
-        self.keybinds_text = None
-        self.keybinds = None
-        self.keybinds_table = None
         self.delete_data_text = None
         self.delete_data = None
         self.skip_auth_text = None
@@ -3891,6 +3894,31 @@ class TeraTermUI(customtkinter.CTk):
             self.website_link.configure(text=translation["link"])
             self.notaso.configure(text=translation["notaso_title"])
             self.notaso_link.configure(text=translation["notaso_link"])
+            self.keybinds_text.configure(text=translation["keybinds_title"])
+            self.keybinds = [[translation["keybind"], translation["key_function"]],
+                             ["<Return> / <Enter>", translation["return"]],
+                             ["<Escape>", translation["escape"]],
+                             ["<Ctrl-BackSpace>", translation["ctrl_backspace"]],
+                             ["<Arrow-Keys>", translation["arrow_keys"]],
+                             ["<SpaceBar>", translation["space_bar"]],
+                             ["<Tab>", translation["tab"]],
+                             ["<Ctrl-Tab>", translation["ctrl_tab"]],
+                             ["<Ctrl-Space>", translation["ctrl_space"]],
+                             ["<Ctrl-C>", translation["ctrl_c"]],
+                             ["<Ctrl-V>", translation["ctrl_v"]],
+                             ["<Ctrl-X>", translation["ctrl_x"]],
+                             ["<Ctrl-Z>", translation["ctrl_z"]],
+                             ["<Ctrl-Y>", translation["ctrl_y"]],
+                             ["<Ctrl-A>", translation["ctrl_a"]],
+                             ["<Ctrl-S>", translation["ctrl_s"]],
+                             ["<Ctrl-W>", translation["ctrl_w"]],
+                             ["<Ctrl-MouseWheel>", translation["ctrl_mwheel"]],
+                             ["<Right-Click>", translation["mouse_2"]],
+                             ["<Home>", translation["home"]],
+                             ["<End>", translation["end"]],
+                             ["<F1>", translation["F1"]],
+                             ["<Alt-F4>", translation["alt_f4"]]]
+            self.keybinds_table.configure(values=self.keybinds)
             self.faq_text.configure(text=translation["faq"])
             self.qa_table = [[translation["q"], translation["a"]],
                              [translation["q1"], translation["a1"]],
@@ -3942,34 +3970,28 @@ class TeraTermUI(customtkinter.CTk):
                 self.curriculum.pack(pady=(5, 0))
             elif lang == "Español":
                 self.curriculum.pack(pady=(5, 20))
+            self.enrollment_error_text.configure(text=translation["course_errors_title"])
+            self.enroll_error = [[translation["course_error_msg"], translation["course_error_explained"]],
+                                 ["INVALID COURSE ID", translation["invalid_course"]],
+                                 ["COURSE RESERVED", translation["course_reserved"]],
+                                 ["COURSE CLOSED", translation["course_closed"]],
+                                 ["CRS ALRDY TAKEN/PASSED", translation["course_taken"]],
+                                 ["Closed by Spec-Prog", translation["closed_spec"]],
+                                 ["Pre-Req", translation["pre_req"]],
+                                 ["Closed by College", translation["closed_college"]],
+                                 ["Closed by Major", translation["closed_major"]],
+                                 ["TERM MAX HRS EXCEEDED", translation["terms_max"]],
+                                 ["REQUIRED CO-REQUISITE", translation["req_co_requisite"]],
+                                 ["CO-REQUISITE MISSING", translation["co_requisite_missing"]],
+                                 ["ILLEGAL DROP-NOT ENR", translation["illegal_drop"]],
+                                 ["NEW COURSE, NO FUNCTION", translation["no_course"]],
+                                 ["PRESENTLY ENROLLED", translation["presently_enrolled"]],
+                                 ["COURSE IN PROGRESS", translation["course_progress"]],
+                                 ["R/TC", translation["rtc"]]]
+            self.enroll_error_table.configure(values=self.enroll_error)
             self.terms_text.configure(text=translation["terms_title"])
             self.terms = self.get_last_five_terms()
             self.terms_table.configure(values=self.terms)
-            self.keybinds_text.configure(text=translation["keybinds_title"])
-            self.keybinds = [[translation["keybind"], translation["key_function"]],
-                             ["<Return> / <Enter>", translation["return"]],
-                             ["<Escape>", translation["escape"]],
-                             ["<Ctrl-BackSpace>", translation["ctrl_backspace"]],
-                             ["<Arrow-Keys>", translation["arrow_keys"]],
-                             ["<SpaceBar>", translation["space_bar"]],
-                             ["<Tab>", translation["tab"]],
-                             ["<Ctrl-Tab>", translation["ctrl_tab"]],
-                             ["<Ctrl-Space>", translation["ctrl_space"]],
-                             ["<Ctrl-C>", translation["ctrl_c"]],
-                             ["<Ctrl-V>", translation["ctrl_v"]],
-                             ["<Ctrl-X>", translation["ctrl_x"]],
-                             ["<Ctrl-Z>", translation["ctrl_z"]],
-                             ["<Ctrl-Y>", translation["ctrl_y"]],
-                             ["<Ctrl-A>", translation["ctrl_a"]],
-                             ["<Ctrl-S>", translation["ctrl_s"]],
-                             ["<Ctrl-W>", translation["ctrl_w"]],
-                             ["<Ctrl-MouseWheel>", translation["ctrl_mwheel"]],
-                             ["<Right-Click>", translation["mouse_2"]],
-                             ["<Home>", translation["home"]],
-                             ["<End>", translation["end"]],
-                             ["<F1>", translation["F1"]],
-                             ["<Alt-F4>", translation["alt_f4"]]]
-            self.keybinds_table.configure(values=self.keybinds)
             self.delete_data_text.configure(text=translation["del_data_title"])
             self.delete_data.configure(text=translation["del_data"])
             self.skip_auth_text.configure(text=translation["skip_auth_text"])
@@ -10233,6 +10255,31 @@ class TeraTermUI(customtkinter.CTk):
         self.notaso_link = CustomButton(self.status_frame, image=self.get_image("link"), width=150,
                                         text=translation["notaso_link"], anchor="w", text_color=("gray10", "#DCE4EE"),
                                         command=self.notaso_event)
+        self.keybinds_text = customtkinter.CTkLabel(self.status_frame, text=translation["keybinds_title"],
+                                                    font=customtkinter.CTkFont(weight="bold", size=15))
+        self.keybinds = [[translation["keybind"], translation["key_function"]],
+                         ["<Return> / <Enter>", translation["return"]],
+                         ["<Escape>", translation["escape"]],
+                         ["<Ctrl-BackSpace>", translation["ctrl_backspace"]],
+                         ["<Arrow-Keys>", translation["arrow_keys"]],
+                         ["<SpaceBar>", translation["space_bar"]],
+                         ["<Tab>", translation["tab"]],
+                         ["<Ctrl-Tab>", translation["ctrl_tab"]],
+                         ["<Ctrl-Space>", translation["ctrl_space"]],
+                         ["<Ctrl-C>", translation["ctrl_c"]],
+                         ["<Ctrl-V>", translation["ctrl_v"]],
+                         ["<Ctrl-X>", translation["ctrl_x"]],
+                         ["<Ctrl-Z>", translation["ctrl_z"]],
+                         ["<Ctrl-Y>", translation["ctrl_y"]],
+                         ["<Ctrl-A>", translation["ctrl_a"]],
+                         ["<Ctrl-S>", translation["ctrl_s"]],
+                         ["<Ctrl-W>", translation["ctrl_w"]],
+                         ["<Ctrl-MouseWheel>", translation["ctrl_mwheel"]],
+                         ["<Right-Click>", translation["mouse_2"]],
+                         ["<Home>", translation["home"]],
+                         ["<End>", translation["end"]],
+                         ["<F1>", translation["F1"]],
+                         ["<Alt-F4>", translation["alt_f4"]]]
         self.faq_text = customtkinter.CTkLabel(self.status_frame, text=translation["faq"],
                                                font=customtkinter.CTkFont(size=15, weight="bold"))
         self.qa_table = [[translation["q"], translation["a"]],
@@ -10285,6 +10332,9 @@ class TeraTermUI(customtkinter.CTk):
         self.website_link.pack()
         self.notaso.pack(pady=5)
         self.notaso_link.pack()
+        self.keybinds_text.pack(pady=(25, 0))
+        self.keybinds_table = CTkTable(self.status_frame, column=2, row=22, values=self.keybinds, hover=False)
+        self.keybinds_table.pack(expand=True, fill="both", padx=20)
         self.faq_text.pack()
         self.faq = CTkTable(self.status_frame, row=3, column=2, values=self.qa_table, hover=False)
         self.faq.pack(expand=True, fill="both", padx=20, pady=10)
@@ -10299,6 +10349,7 @@ class TeraTermUI(customtkinter.CTk):
         self.check_update_text.bind("<Button-1>", lambda event: self.status_frame.focus_set())
         self.website.bind("<Button-1>", lambda event: self.status_frame.focus_set())
         self.notaso.bind("<Button-1>", lambda event: self.status_frame.focus_set())
+        self.keybinds_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
         self.faq_text.bind("<Button-1>", lambda event: self.status_frame.focus_set())
         self.status.bind("<Control-space>", lambda event: self.status.focus_set())
         self.feedback_text.bind("<FocusIn>", lambda event: self.status_frame.scroll_to_widget(self.feedback_text))
@@ -10367,7 +10418,7 @@ class TeraTermUI(customtkinter.CTk):
 
         attrs_to_clear = ["status_frame", "status_title", "version", "feedback_text", "feedback_send",
                           "check_update_text", "check_update_btn", "website", "website_link", "notaso", "notaso_link",
-                          "faq_text", "faq", "qa_table"]
+                          "keybinds_text", "keybinds_table", "keybinds", "faq_text", "qa_table", "faq"]
         for attr in attrs_to_clear:
             if hasattr(self, attr):
                 obj = getattr(self, attr)
@@ -10927,31 +10978,25 @@ class TeraTermUI(customtkinter.CTk):
                                                               translation["office"], translation["engi"]],
                                                       command=self.curriculums_link,
                                                       height=30, width=150)
-        self.keybinds_text = customtkinter.CTkLabel(self.help_frame, text=translation["keybinds_title"],
-                                                    font=customtkinter.CTkFont(weight="bold", size=15))
-        self.keybinds = [[translation["keybind"], translation["key_function"]],
-                         ["<Return> / <Enter>", translation["return"]],
-                         ["<Escape>", translation["escape"]],
-                         ["<Ctrl-BackSpace>", translation["ctrl_backspace"]],
-                         ["<Arrow-Keys>", translation["arrow_keys"]],
-                         ["<SpaceBar>", translation["space_bar"]],
-                         ["<Tab>", translation["tab"]],
-                         ["<Ctrl-Tab>", translation["ctrl_tab"]],
-                         ["<Ctrl-Space>", translation["ctrl_space"]],
-                         ["<Ctrl-C>", translation["ctrl_c"]],
-                         ["<Ctrl-V>", translation["ctrl_v"]],
-                         ["<Ctrl-X>", translation["ctrl_x"]],
-                         ["<Ctrl-Z>", translation["ctrl_z"]],
-                         ["<Ctrl-Y>", translation["ctrl_y"]],
-                         ["<Ctrl-A>", translation["ctrl_a"]],
-                         ["<Ctrl-S>", translation["ctrl_s"]],
-                         ["<Ctrl-W>", translation["ctrl_w"]],
-                         ["<Ctrl-MouseWheel>", translation["ctrl_mwheel"]],
-                         ["<Right-Click>", translation["mouse_2"]],
-                         ["<Home>", translation["home"]],
-                         ["<End>", translation["end"]],
-                         ["<F1>", translation["F1"]],
-                         ["<Alt-F4>", translation["alt_f4"]]]
+        self.enrollment_error_text = customtkinter.CTkLabel(self.help_frame, text=translation["course_errors_title"],
+                                                             font=customtkinter.CTkFont(weight="bold", size=15))
+        self.enroll_error = [[translation["course_error_msg"], translation["course_error_explained"]],
+                             ["INVALID COURSE ID", translation["invalid_course"]],
+                             ["COURSE RESERVED", translation["course_reserved"]],
+                             ["COURSE CLOSED", translation["course_closed"]],
+                             ["CRS ALRDY TAKEN/PASSED", translation["course_taken"]],
+                             ["Closed by Spec-Prog", translation["closed_spec"]],
+                             ["Pre-Req", translation["pre_req"]],
+                             ["Closed by College", translation["closed_college"]],
+                             ["Closed by Major", translation["closed_major"]],
+                             ["TERM MAX HRS EXCEEDED", translation["terms_max"]],
+                             ["REQUIRED CO-REQUISITE", translation["req_co_requisite"]],
+                             ["CO-REQUISITE MISSING", translation["co_requisite_missing"]],
+                             ["ILLEGAL DROP-NOT ENR", translation["illegal_drop"]],
+                             ["NEW COURSE, NO FUNCTION", translation["no_course"]],
+                             ["PRESENTLY ENROLLED", translation["presently_enrolled"]],
+                             ["COURSE IN PROGRESS", translation["course_progress"]],
+                             ["R/TC", translation["rtc"]]]
         self.terms_text = customtkinter.CTkLabel(self.help_frame, text=translation["terms_title"],
                                                  font=customtkinter.CTkFont(weight="bold", size=15))
         self.terms = self.get_last_five_terms()
@@ -11035,9 +11080,10 @@ class TeraTermUI(customtkinter.CTk):
         self.terms_text.pack()
         self.terms_table = CTkTable(self.help_frame, column=2, row=7, values=self.terms, hover=False)
         self.terms_table.pack(expand=True, fill="both", padx=20, pady=10)
-        self.keybinds_text.pack(pady=(20, 0))
-        self.keybinds_table = CTkTable(self.help_frame, column=2, row=22, values=self.keybinds, hover=False)
-        self.keybinds_table.pack(expand=True, fill="both", padx=20, pady=10)
+        self.enrollment_error_text.pack(pady=(20, 0))
+        self.enroll_error_table = CTkTable(self.help_frame, column=2, row=17, values=self.enroll_error,
+                                           hover=False)
+        self.enroll_error_table.pack(expand=True, fill="both", padx=20, pady=10)
         self.delete_data_text.pack()
         self.delete_data.pack(pady=5)
         if not self.ask_skip_auth:
@@ -11087,8 +11133,9 @@ class TeraTermUI(customtkinter.CTk):
         self.notice.bind("<Button-1>", lambda event: self.help_frame.focus_set())
         self.searchbox_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
         self.curriculum_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
-        self.keybinds_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
         self.terms_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
+        self.enrollment_error_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
+        self.delete_data.bind("<Button-1>", lambda event: self.help_frame.focus_set())
         self.skip_auth_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
         self.files_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
         self.disable_idle_text.bind("<Button-1>", lambda event: self.help_frame.focus_set())
@@ -11165,9 +11212,10 @@ class TeraTermUI(customtkinter.CTk):
                 if hasattr(self, f"_{img_name}_image"):
                     setattr(self, f"_{img_name}_image", None)
 
-        attrs_to_clear = ["help_frame", "help_title", "notice", "search_box", "class_list", "curriculum",
-                          "keybinds_table", "terms_table", "files", "disable_idle", "disable_audio_val", "fix",
-                          "skip_auth_switch", "terms", "keybinds"]
+        attrs_to_clear = ["help_frame", "help_title", "notice", "search_box", "class_list", "curriculum", "terms_text",
+                          "terms", "terms_table", "enrollment_error_text", "enroll_error_table", "enroll_error",
+                          "delete_data_text", "delete_data" "terms_table", "files", "disable_idle", "disable_audio_val",
+                          "fix", "skip_auth_switch", "terms"]
         for attr in attrs_to_clear:
             if hasattr(self, attr):
                 obj = getattr(self, attr)
