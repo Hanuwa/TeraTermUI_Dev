@@ -10924,7 +10924,7 @@ class TeraTermUI(customtkinter.CTk):
         search_words = normalized_search.split()
 
         try:
-            if normalized_search in ["all", "todo", "todos"]:
+            if normalized_search in ["all", "todo", "todos", "todas"]:
                 query = "SELECT name, code FROM courses ORDER BY name"
                 results = self.cursor_db.execute(query).fetchall()
 
