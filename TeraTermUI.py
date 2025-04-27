@@ -8994,6 +8994,7 @@ class TeraTermUI(customtkinter.CTk):
             current = "Actual"
             latest = "Nueva"
         self.play_sound("update.wav")
+        self.cursor_db.execute("UPDATE user_config SET update_date = NULL")
         msg = CTkMessagebox(title=translation["update_popup_title"],
                             message=translation["update_popup_message_1"] + "\n\n" + current + ": v" +
                             self.USER_APP_VERSION + " ---> " + latest + ": v" + latest_version,
@@ -9526,6 +9527,7 @@ class TeraTermUI(customtkinter.CTk):
                                 current = "Actual"
                                 latest = "Nueva"
                             self.play_sound("update.wav")
+                            self.cursor_db.execute("UPDATE user_config SET update_date = NULL")
                             msg = CTkMessagebox(title=translation["update_popup_title"],
                                                 message=translation["update_popup_message_2"] + "\n\n" + current + ": v" +
                                                 self.USER_APP_VERSION + " ---> " + latest + ": v" + latest_version,
@@ -10925,34 +10927,46 @@ class TeraTermUI(customtkinter.CTk):
             if normalized_search in ["all", "todo", "todos"]:
                 query = "SELECT name, code FROM courses ORDER BY name"
                 results = self.cursor_db.execute(query).fetchall()
-            else:
-                query = "SELECT name, code FROM courses"
-                results = self.cursor_db.execute(query).fetchall()
 
-                scored_results = []
-                for name, code in results:
-                    normalized_name = normalize_string(name)
-                    normalized_code = normalize_string(code)
-                    words_in_name = normalized_name.split()
+                if not results:
+                    self.class_list.insert(tk.END, translation["no_results"])
+                    self.search_box.configure(border_color="#c30101")
+                else:
+                    default_border_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
+                    if self.search_box.border_color != default_border_color:
+                        self.search_box.configure(border_color=default_border_color)
 
-                    exact_match = False
-                    match_count = 0
+                    for name, code in results:
+                        self.class_list.insert(tk.END, name)
 
-                    for word in search_words:
-                        if word == normalized_name or word == normalized_code:
-                            exact_match = True
-                            match_count += 1
-                        elif any(word == course_word for course_word in words_in_name):
-                            exact_match = True
-                            match_count += 1
-                        elif any(is_fuzzy_match(word, course_word) for course_word in words_in_name) or is_fuzzy_match(
-                                word, normalized_code):
-                            match_count += 1
+                return
 
-                    if match_count >= max(1, int(0.6 * len(search_words))):
-                        scored_results.append((exact_match, match_count, name, code))
+            query = "SELECT name, code FROM courses"
+            results = self.cursor_db.execute(query).fetchall()
 
-                results = sorted(scored_results, key=lambda x: (-int(x[0]), -x[1], x[2]))
+            scored_results = []
+            for name, code in results:
+                normalized_name = normalize_string(name)
+                normalized_code = normalize_string(code)
+                words_in_name = normalized_name.split()
+
+                exact_match = False
+                match_count = 0
+                for word in search_words:
+                    if word == normalized_name or word == normalized_code:
+                        exact_match = True
+                        match_count += 1
+                    elif any(word == course_word for course_word in words_in_name):
+                        exact_match = True
+                        match_count += 1
+                    elif (any(is_fuzzy_match(word, course_word) for course_word in words_in_name)
+                          or is_fuzzy_match(word, normalized_code)):
+                        match_count += 1
+
+                if match_count >= max(1, int(0.6 * len(search_words))):
+                    scored_results.append((exact_match, match_count, name, code))
+
+            results = sorted(scored_results, key=lambda x: (-int(x[0]), -x[1], x[2]))
 
             if not results:
                 self.class_list.insert(tk.END, translation["no_results"])
