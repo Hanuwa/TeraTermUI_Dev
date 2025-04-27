@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.0 - 4/25/25
+# DATE - Started 1/1/23, Current Build v0.9.0 - 4/27/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit of time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 14,000 lines of codes, it definitely makes things harder to work with
+# and with over 14,100 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -48,6 +48,7 @@ import threading
 import tkinter as tk
 import time
 import traceback
+import unicodedata
 import warnings
 import weakref
 import webbrowser
@@ -57,7 +58,6 @@ import win32crypt
 import win32gui
 import win32security
 import winsound
-from base64 import b64encode, b64decode
 from collections import deque, defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
@@ -3276,8 +3276,6 @@ class TeraTermUI(customtkinter.CTk):
 
     @staticmethod
     def check_host(host, threshold=0.8):
-        import unicodedata
-
         def normalize_string(s):
             return "".join(
                 c for c in unicodedata.normalize("NFD", s)
@@ -10902,47 +10900,87 @@ class TeraTermUI(customtkinter.CTk):
         else:
             return None
 
-    # list of classes available for all departments in the university
+    # Search function query for searching for either class code or name
     def search_classes(self, event):
+        def normalize_string(s):
+            s = unicodedata.normalize("NFD", s)
+            s = s.encode("ascii", "ignore").decode("utf-8")
+            return s.lower()
+
+        def is_fuzzy_match(needle, haystack, threshold=0.7):
+            if needle in haystack:
+                return True
+            return SequenceMatcher(None, needle, haystack).ratio() >= threshold
+
         translation = self.load_language()
-        self.class_list.delete(0, tk.END)  # Clear the list box first
-        search_term = self.search_box.get().strip().lower()
-        if not search_term:  # Return if search term is empty
+        self.class_list.delete(0, tk.END)
+        search_term = self.search_box.get().strip()
+        if not search_term:
             return
+
+        normalized_search = normalize_string(search_term)
+        search_words = normalized_search.split()
+
         try:
-            if search_term in ["all", "todo", "todos"]:
+            if normalized_search in ["all", "todo", "todos"]:
                 query = "SELECT name, code FROM courses ORDER BY name"
                 results = self.cursor_db.execute(query).fetchall()
             else:
-                # Use parameterized query with wildcards
-                query = """SELECT name, code FROM courses WHERE LOWER(name) LIKE ? OR LOWER(code) LIKE ?"""
-                search_pattern = f"%{search_term}%"
-                results = self.cursor_db.execute(query, (search_pattern, search_pattern)).fetchall()
+                query = "SELECT name, code FROM courses"
+                results = self.cursor_db.execute(query).fetchall()
+
+                scored_results = []
+                for name, code in results:
+                    normalized_name = normalize_string(name)
+                    normalized_code = normalize_string(code)
+                    words_in_name = normalized_name.split()
+
+                    exact_match = False
+                    match_count = 0
+
+                    for word in search_words:
+                        if word == normalized_name or word == normalized_code:
+                            exact_match = True
+                            match_count += 1
+                        elif any(word == course_word for course_word in words_in_name):
+                            exact_match = True
+                            match_count += 1
+                        elif any(is_fuzzy_match(word, course_word) for course_word in words_in_name) or is_fuzzy_match(
+                                word, normalized_code):
+                            match_count += 1
+
+                    if match_count >= max(1, int(0.6 * len(search_words))):
+                        scored_results.append((exact_match, match_count, name, code))
+
+                results = sorted(scored_results, key=lambda x: (-int(x[0]), -x[1], x[2]))
+
             if not results:
-                self.class_list.delete(0, tk.END)
                 self.class_list.insert(tk.END, translation["no_results"])
                 self.search_box.configure(border_color="#c30101")
             else:
                 default_border_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
                 if self.search_box.border_color != default_border_color:
                     self.search_box.configure(border_color=default_border_color)
-                for row in results:
-                    self.class_list.insert(tk.END, row[0])
+
+                for result in results:
+                    name = result[2] if isinstance(result, tuple) else result[0]
+                    self.class_list.insert(tk.END, name)
         except sqlite3.Error as err:
             logging.error(f"Database error: {err}")
             self.class_list.delete(0, tk.END)
             self.class_list.insert(tk.END, translation["no_results"])
             self.search_box.configure(border_color="#c30101")
 
-    # query for searching for either class code or name
     def show_class_code(self, event):
         translation = self.load_language()
         selection = self.class_list.curselection()
         if len(selection) == 0:
             return
-        selected_class = self.class_list.get(self.class_list.curselection())
+        selected_class = self.class_list.get(selection[0])
+
         query = "SELECT code FROM courses WHERE name = ? OR code = ?"
         result = self.cursor_db.execute(query, (selected_class, selected_class)).fetchone()
+
         if result is None:
             self.class_list.delete(0, tk.END)
             self.class_list.insert(tk.END, translation["no_results"])
@@ -13245,8 +13283,8 @@ class SSHMonitor:
         for threshold, labels, color in thresholds:
             if score >= threshold:
                 return labels.get(lang, labels["English"]), color
-            return None
-        return None
+
+        return ("Unknown", "black") if lang == "English" else ("Desconocido", "black")
 
     def is_responsive(self, avg_cutoff=800, max_cutoff=1500, max_failure_rate=20):
         stats = self.get_stats()
@@ -13278,14 +13316,14 @@ class SecureDataStore:
             metadata = json.dumps({"version": raw["version"], "created_at": raw["created_at"],
                                    "encrypted_key": raw["encrypted_key"]}, separators=(",", ":")).encode()
 
-            hmac_stored = b64decode(raw["hmac"])
+            hmac_stored = base64.b64decode(raw["hmac"])
             hmac_calc = HMAC.new(b"teraterm_ui_master_hmac", digestmod=SHA256)
             hmac_calc.update(metadata)
 
             if not compare_digest(hmac_stored, hmac_calc.digest()):
                 raise ValueError("HMAC verification failed on masterkey.json")
 
-            encrypted_key = b64decode(raw["encrypted_key"])
+            encrypted_key = base64.b64decode(raw["encrypted_key"])
             master_key = win32crypt.CryptUnprotectData(encrypted_key, None,
                                                        None, None, 0)[1]
             self.aes_key = HKDF(master_key, 32, salt=b"student_event_salt", hashmod=SHA256)
@@ -13299,11 +13337,11 @@ class SecureDataStore:
                                                 None, None, 0)
 
         metadata = {"version": "1.0.0", "created_at": datetime.now(UTC).isoformat(),
-                    "encrypted_key": b64encode(encrypted).decode()}
+                    "encrypted_key": base64.b64encode(encrypted).decode()}
 
         hmac_obj = HMAC.new(b"teraterm_ui_master_hmac", digestmod=SHA256)
         hmac_obj.update(json.dumps(metadata, separators=(",", ":")).encode())
-        metadata["hmac"] = b64encode(hmac_obj.digest()).decode()
+        metadata["hmac"] = base64.b64encode(hmac_obj.digest()).decode()
 
         with open(self.key_path, "w") as f:
             json.dump(metadata, f, indent=2)
@@ -13357,7 +13395,7 @@ class SecureDataStore:
         metadata = json.dumps({"version": raw["version"], "created_at": raw["created_at"],
                                "encrypted_key": raw["encrypted_key"]}, separators=(",", ":")).encode()
 
-        expected_hmac = b64decode(raw["hmac"])
+        expected_hmac = base64.b64decode(raw["hmac"])
         actual_hmac = HMAC.new(b"teraterm_ui_master_hmac", digestmod=SHA256)
         actual_hmac.update(metadata)
 
