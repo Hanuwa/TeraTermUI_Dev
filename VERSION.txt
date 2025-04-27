@@ -1,8 +1,8 @@
-Version Number: v0.9.0
+Version Number: v0.9.1
 
-SHA-256 Checksum: 2b23350addb0d27553ad4563be7f42b6465e47304e587fb945701b0963fdc2eb
+SHA-256 Checksum: 289220590837cfe3f2c9b710df207aa9412abdee66630acdfe5d1963ec8e12a9
 
-Release Date: 04/26/2025
+Release Date: 04/27/2025
 
 Patch Notes:
  - Introducing the first public release!
@@ -20,6 +20,9 @@ Patch Notes:
  - Designed with accessibility in mind: choose between languages (Español/English), 
    alter the theme and appearance, and adjust UI scaling for better visibility
  - Enhanced with numerous keyboard shortcuts for efficiency
+
+Hotfix*
+ - Improved database search queries for class titles in "Help" window
  
 Updating: To update, the app includes an auto updater tool that will prompt you whenever there's a new version available 
 or you can just choose to simply download the files directly from the GitHub Repository and install it yourself:
