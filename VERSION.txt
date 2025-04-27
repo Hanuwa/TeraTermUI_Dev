@@ -1,6 +1,6 @@
-Version Number: v0.9.1
+Version Number: v0.9.2
 
-SHA-256 Checksum: 289220590837cfe3f2c9b710df207aa9412abdee66630acdfe5d1963ec8e12a9
+SHA-256 Checksum: e7cccf96336e9d0cf25bc521a18d7a6f256140f89c57340107b3e76759991fed
 
 Release Date: 04/27/2025
 
@@ -22,7 +22,8 @@ Patch Notes:
  - Enhanced with numerous keyboard shortcuts for efficiency
 
 Hotfix*
- - Improved database search queries for class titles in "Help" window
+ - Fixed issue where typing "all", "todo", or "todos" in showed no results in "Help" window
+ - Made sure that after updating the app it resets the "update_date" column in the database
  
 Updating: To update, the app includes an auto updater tool that will prompt you whenever there's a new version available 
 or you can just choose to simply download the files directly from the GitHub Repository and install it yourself:
