@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.1 - 4/27/25
+# DATE - Started 1/1/23, Current Build v0.9.2 - 4/27/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit of time to process.
@@ -180,7 +180,7 @@ class TeraTermUI(customtkinter.CTk):
         # GitHub's information for feedback and key data for updating app
         self.SERVICE_ACCOUNT_FILE = TeraTermUI.get_absolute_path("feedback.zip")
         self.REAZIONE = self.ottenere_protetta_salasana()
-        self.USER_APP_VERSION = "0.9.1"
+        self.USER_APP_VERSION = "0.9.2"
         self.mode = "Portable"
         self.updater_hash = "d72b1203b3d8a28b4dc84622e12641514be44245024686cf01b9ca09f3938c68"
         self.running_updater = False
@@ -8994,7 +8994,6 @@ class TeraTermUI(customtkinter.CTk):
             current = "Actual"
             latest = "Nueva"
         self.play_sound("update.wav")
-        self.cursor_db.execute("UPDATE user_config SET update_date = NULL")
         msg = CTkMessagebox(title=translation["update_popup_title"],
                             message=translation["update_popup_message_1"] + "\n\n" + current + ": v" +
                             self.USER_APP_VERSION + " ---> " + latest + ": v" + latest_version,
@@ -9004,8 +9003,10 @@ class TeraTermUI(customtkinter.CTk):
                             hover_color=("darkred", "use_default", "use_default"))
         response = msg.get()
         if response[0] == translation["update_now"]:
+            self.cursor_db.execute("UPDATE user_config SET update_date = NULL")
             self.run_updater(latest_version)
         elif response[0] == translation["download_title"]:
+            self.cursor_db.execute("UPDATE user_config SET update_date = NULL")
             webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
 
     # Deletes Tesseract OCR and tera term config file from the temp folder
@@ -9527,7 +9528,6 @@ class TeraTermUI(customtkinter.CTk):
                                 current = "Actual"
                                 latest = "Nueva"
                             self.play_sound("update.wav")
-                            self.cursor_db.execute("UPDATE user_config SET update_date = NULL")
                             msg = CTkMessagebox(title=translation["update_popup_title"],
                                                 message=translation["update_popup_message_2"] + "\n\n" + current + ": v" +
                                                 self.USER_APP_VERSION + " ---> " + latest + ": v" + latest_version,
@@ -9537,8 +9537,10 @@ class TeraTermUI(customtkinter.CTk):
                                                 hover_color=("darkred", "use_default", "use_default"))
                             response = msg.get()
                             if response[0] == translation["update_now"]:
+                                self.cursor_db.execute("UPDATE user_config SET update_date = NULL")
                                 self.run_updater(latest_version)
                             elif response[0] == translation["download_title"]:
+                                self.cursor_db.execute("UPDATE user_config SET update_date = NULL")
                                 webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
 
                         self.after(50, update)
