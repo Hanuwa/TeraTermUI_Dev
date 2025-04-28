@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.2 - 4/27/25
+# DATE - Started 1/1/23, Current Build v0.9.3 - 4/28/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit of time to process.
@@ -180,9 +180,9 @@ class TeraTermUI(customtkinter.CTk):
         # GitHub's information for feedback and key data for updating app
         self.SERVICE_ACCOUNT_FILE = TeraTermUI.get_absolute_path("feedback.zip")
         self.REAZIONE = self.ottenere_protetta_salasana()
-        self.USER_APP_VERSION = "0.9.2"
+        self.USER_APP_VERSION = "0.9.3"
         self.mode = "Portable"
-        self.updater_hash = "d72b1203b3d8a28b4dc84622e12641514be44245024686cf01b9ca09f3938c68"
+        self.updater_hash = "05e8f98127cbe434f1a540d9f5e649f7dae7a0e3f7f75e220e83f640ea370c39"
         self.running_updater = False
         self.credentials = None
         # disabled/enables keybind events
@@ -3843,12 +3843,14 @@ class TeraTermUI(customtkinter.CTk):
         appearance = self.appearance_mode_optionemenu.get()
         self.curr_lang = lang
         self.focus_set()
-        new_menu = pystray.Menu(
+        tray_menu_items = [
             pystray.MenuItem(translation["hide_tray"], self.hide_all_windows),
             pystray.MenuItem(translation["show_tray"], self.show_all_windows, default=True),
             pystray.MenuItem(translation["exit_tray"], self.direct_close_on_tray)
-        )
-        self.tray.menu = new_menu
+        ]
+        if self.timer_window is not None and self.timer_window.winfo_exists():
+            tray_menu_items.append(pystray.MenuItem(translation["countdown_win"], self.bring_back_timer_window))
+        self.tray.menu = pystray.Menu(*tray_menu_items)
         self.tray.update_menu()
         self.status_button.configure(text=translation["status_button"])
         self.help_button.configure(text=translation["help_button"])
@@ -9598,6 +9600,7 @@ class TeraTermUI(customtkinter.CTk):
             updater_exe_dest = app_temp_dir / "updater.exe"
             if self.mode == "Portable":
                 updater_exe_src = sys_path / "updater.exe"
+                db_folder = sys_path
                 shutil.copy2(str(updater_exe_src), str(updater_exe_dest))
             elif self.mode == "Installation":
                 appdata_path = None
@@ -9608,10 +9611,11 @@ class TeraTermUI(customtkinter.CTk):
                     appdata_path = os.environ.get("APPDATA")
                 if appdata_path:
                     updater_exe_src = Path(appdata_path) / "TeraTermUI" / "updater.exe"
+                    db_folder = Path(appdata_path) / "TeraTermUI"
                     shutil.copy2(str(updater_exe_src), str(updater_exe_dest))
             if not TeraTermUI.verify_file_integrity(updater_exe_dest, self.updater_hash):
                 return
-            updater_args = [str(updater_exe_dest), self.mode, latest_version, sys_path]
+            updater_args = [str(updater_exe_dest), self.mode, latest_version, str(sys_path), str(db_folder)]
             subprocess.Popen(updater_args)
             self.running_updater = True
             self.direct_close()
