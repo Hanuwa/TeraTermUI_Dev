@@ -1,30 +1,19 @@
-Version Number: v0.9.5
+Version Number: v0.91.0
 
-SHA-256 Checksum: fd05a9df52f8e67103933e6bef5dc0f255e81239b29b71fda6283fc892a4285f
+SHA-256 Checksum: 30528993d5fa281980937cb970b2e05d3b3b192653f34a94588b340a79db8f45
 
 Release Date: 04/28/2025
 
 Patch Notes:
- - Introducing the first public release!
- - Gain comprehensive control over Tera Term and your university's enrollment
-   process with an intuitive and visually appealing interface
- - Offers options for class enrollment, select between manual or automatic methods
- - Enables searching for all available sections of any class, with options
-   to sort the information and save it as a PDF for convenient access.
- - Provides functionalities to view or alter your current class enrollments.
- - Tera Term remains active without closing due to inactivity (this feature is optional)
- - Easily find the codification for the class you wish to enroll in
- - Supports enrolling in multiple classes simultaneously, with the option to save class details
- - Ability to flag scheduling conflicts between selected class sections 
-   and displays their corresponding time and day
- - Designed with accessibility in mind: choose between languages (Español/English), 
-   alter the theme and appearance, and adjust UI scaling for better visibility
- - Enhanced with numerous keyboard shortcuts for efficiency
+ - Introduced new feature called "Swap Rows": You can now quickly swap the content between two adjacent rows in the Multiple 
+   Classes Enrollment screen. Clicking the ⇅ Swap Button next to a class row exchanges its class code, section, semester, and 
+   enrollment action with its neighbor
+ - Added new image called "arrows" for the swap buttons for clarity
+ - Improved implementation of "Auto-Enroll", also better responsiveness and accuracy of countdown window
+ - Added awareness to take into account a new class status on enrollment called "RECOMMENDED"
+ - Added new error message from enrollment called "PRESENTLY ENROLLED"
+ - Updated dependencies, one of which is for the .exe covertion tool of the main app and updater for stability
 
-Hotfix*
- - Resolved an issue where the Auto-Enroll and Save Classes widgets were incorrectly disabled while the countdown window was active
- - Improved class transfer behavior: If a transferred class already exists but its row is hidden, the row will now be revealed and updated automatically, ensuring seamless replacement without user intervention
- 
 Updating: To update, the app includes an auto updater tool that will prompt you whenever there's a new version available 
 or you can just choose to simply download the files directly from the GitHub Repository and install it yourself:
 https://github.com/Hanuwa/TeraTermUI/releases/latest
