@@ -12,8 +12,8 @@ from datetime import datetime, UTC
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="TeraTermUI Exe Converter")
-    parser.add_argument("--updater-version", type=str, default="1.0.1",
-                        help="Specify the version number for updater.exe (default: 1.0.1)")
+    parser.add_argument("--updater-version", type=str, default="1.0.2",
+                        help="Specify the version number for updater.exe (default: 1.0.2)")
     parser.add_argument("--db-version", type=str, default="1.0.0",
                         help="Specify the version number for the database (default: 1.0.0)")
     parser.add_argument("--output-dir", type=str,
