@@ -174,6 +174,7 @@
 	"illegal_drop": "No se puede dar de baja:\nno está inscrito",
 	"no_course": "Curso nuevo. Función de inscripción\nno disponible",
 	"presently_enrolled": "Ya está matriculado en este curso",
+	"presently_recommended": "Ya está recomendado en este curso",
 	"course_progress": "Curso actualmente en progreso",
 	"rtc": "Curso repetido o convalidado o\nconflicto de horario con otra clase",
 	"del_data_title": "\nEliminar toda la información personal almacenada",
