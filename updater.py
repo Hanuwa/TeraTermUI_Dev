@@ -327,11 +327,14 @@ def parse_arguments():
     parser.add_argument("mode", choices=["Portable", "Installation"], help="Update mode")
     parser.add_argument("version", help="Version number to update to")
     parser.add_argument("app_directory", help="Application directory path")
+    parser.add_argument("db_directory", help="Directory where database.db is located")
 
     try:
         args = parser.parse_args()
         if not os.path.exists(args.app_directory):
             parser.error(f"Application directory does not exist: {args.app_directory}")
+        if not os.path.exists(args.db_directory):
+            parser.error(f"Database directory does not exist: {args.db_directory}")
         if not re.match(r"^\d+\.\d+\.\d+$", args.version):
             parser.error(f"Invalid version format: {args.version}. Expected format: X.Y.Z")
         return args
@@ -1068,6 +1071,17 @@ def handle_installation_mode(gui, downloaded_file, version, app_directory):
         gui.update_progress(60, "Preparing to start installer...")
         logging.info(f"Starting installer from: {downloaded_file}")
 
+        db_path = os.path.join(args.db_directory, "database.db")
+        if os.path.exists(db_path):
+            backup_db_path = os.path.join(tempfile.gettempdir(), f"database_backup_{int(time.time())}.db")
+            shutil.copy2(db_path, backup_db_path)
+            gui.database_backup_path = backup_db_path
+            gui.original_db_path = db_path
+            logging.info(f"database.db backed up at: {backup_db_path}")
+        else:
+            gui.database_backup_path = None
+            logging.warning("database.db not found; backup skipped")
+
         gui.pause_button.configure(state="disabled")
         gui.cancel_button.configure(state="disabled")
 
@@ -1075,7 +1089,8 @@ def handle_installation_mode(gui, downloaded_file, version, app_directory):
                             "The installer will now start. Please note:\n\n"
                             "1. Administrative privileges may be required\n"
                             "2. Follow the installer prompts\n"
-                            "3. Do not close the updater window")
+                            "3. Do not launch TeraTermUI from the installer\n"
+                            "4. Do not close this updater window manually")
 
         startupinfo = None
         if os.name == "nt":
@@ -1209,13 +1224,34 @@ def verify_and_finalize_installation(gui, version, downloaded_file, app_director
         if not os.path.exists(executable_path):
             raise FileNotFoundError(f"Executable not found at: {executable_path}")
 
+        backup_db_path = getattr(gui, "database_backup_path", None)
+        original_db_path = getattr(gui, "original_db_path", None)
+        if backup_db_path and original_db_path:
+            new_db_path = original_db_path
+            if os.path.exists(new_db_path):
+                backup_ver = get_db_version(backup_db_path)
+                new_ver = get_db_version(new_db_path)
+                if backup_ver == new_ver:
+                    try:
+                        shutil.copy2(backup_db_path, new_db_path)
+                        logging.info(f"database.db version unchanged (v{new_ver}). Restored backup database")
+                    except Exception as e:
+                        logging.warning(f"Failed to restore backup database.db: {e}")
+                else:
+                    logging.info(f"database.db updated from {backup_ver} to {new_ver} by installer. "
+                                 f"Keeping new database")
+                try:
+                    os.remove(backup_db_path)
+                    logging.info("Backup database.db deleted successfully")
+                except Exception as e:
+                    logging.warning(f"Failed to delete backup database.db: {e}")
+            else:
+                logging.warning("New database.db not found after installation")
+
         if not check_update_success(app_directory, version):
-            raise ValueError("version mismatch")
+            raise ValueError("Version mismatch")
 
-        cleanup_successful = cleanup_installer(downloaded_file)
-        if not cleanup_successful:
-            logging.warning("Could not clean up installer file completely")
-
+        cleanup_installer(downloaded_file)
         logging.info("Installation completed and verified successfully")
         gui.current_stage = "completed"
         gui.update_progress(100, "Installation completed successfully!")
