@@ -1,8 +1,8 @@
-Version Number: v0.9.2
+Version Number: v0.9.4
 
-SHA-256 Checksum: e7cccf96336e9d0cf25bc521a18d7a6f256140f89c57340107b3e76759991fed
+SHA-256 Checksum: 1e8174fa22faf26916fe105dc35d1cb69abde6e1abccfeb1ea843257949369ff
 
-Release Date: 04/27/2025
+Release Date: 04/28/2025
 
 Patch Notes:
  - Introducing the first public release!
@@ -22,8 +22,7 @@ Patch Notes:
  - Enhanced with numerous keyboard shortcuts for efficiency
 
 Hotfix*
- - Fixed issue where typing "all", "todo", or "todos" in showed no results in "Help" window
- - Made sure that after updating the app it resets the "update_date" column in the database
+ - Fixed an issue that would cause the option in the tray menu of opening the countdown window of the Auto-Enrollment disappear when changing the language of the app
  
 Updating: To update, the app includes an auto updater tool that will prompt you whenever there's a new version available 
 or you can just choose to simply download the files directly from the GitHub Repository and install it yourself:
