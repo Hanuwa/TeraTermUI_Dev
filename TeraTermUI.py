@@ -6159,6 +6159,8 @@ class TeraTermUI(customtkinter.CTk):
 
     def update_widgets(self):
         if self.countdown_running and self.in_multiple_screen:
+            self.auto_enroll.configure(state="normal")
+            self.save_class_data.configure(state="normal")
             return
 
         self.enable_widgets(self, self.help, self.status)
@@ -6637,6 +6639,11 @@ class TeraTermUI(customtkinter.CTk):
                     self.m_section_entry[existing_index].insert(0, section_text)
                     self.m_register_menu[existing_index].set(translation["register"])
                     replaced_section = True
+                    current_visible = sum(1 for j in range(8) if self.m_classes_entry[j].winfo_viewable())
+                    if existing_index >= current_visible:
+                        while self.a_counter < existing_index:
+                            self.add_event()
+
                     self.check_class_conflicts()
                     dummy_event = type("Dummy", (object,), {"widget": self.m_section_entry[existing_index]})()
                     self.detect_change(dummy_event)
