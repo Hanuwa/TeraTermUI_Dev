@@ -4823,8 +4823,7 @@ class TeraTermUI(customtkinter.CTk):
             self.auto_enroll_flag = False
             self.auto_enroll_focus = False
             self.disable_enable_gui()
-            if hasattr(self, "running_countdown") and self.running_countdown \
-                    is not None and self.running_countdown.get():
+            if self.running_countdown:
                 self.end_countdown()
         elif self.auto_enroll.get() == "off":
             self.auto_enroll_focus = True
@@ -4856,8 +4855,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.countdown_running = False
                 self.auto_enroll_flag = False
                 self.disable_enable_gui()
-                if hasattr(self, "running_countdown") and self.running_countdown \
-                        is not None and self.running_countdown.get():
+                if self.running_countdown:
                     self.end_countdown()
         else:
             self.play_sound("error.wav")
@@ -4876,7 +4874,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.automation_preparations()
                 self.auto_enroll_flag = True
                 if asyncio.run(self.test_connection()) and self.check_server() and self.check_format():
-                    self.ssh_monitor.sample(count=40, force=True)
+                    self.ssh_monitor.sample(count=50, force=True)
                     if not self.ssh_monitor.is_responsive():
                         def deny_auto_enroll():
                             self.play_sound("error.wav")
@@ -4948,14 +4946,11 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(0, self.disable_enable_gui)
                                 # Create timer window
                                 self.after(0, self.create_timer_window)
-                                self.running_countdown = customtkinter.BooleanVar()
-                                self.running_countdown.set(True)
-                                # Start the countdown
+                                self.running_countdown = True
                                 self.after(100, self.countdown, self.pr_date)
                             elif is_past_date or (is_same_date and is_current_time_ahead):
                                 if is_current_time_24_hours_ahead:
-                                    self.running_countdown = customtkinter.BooleanVar()
-                                    self.running_countdown.set(True)
+                                    self.running_countdown = True
                                     self.started_auto_enroll = True
                                     self.after(150, self.submit_multiple_event_handler)
                                 else:
@@ -5013,7 +5008,7 @@ class TeraTermUI(customtkinter.CTk):
         current_date = datetime.now(puerto_rico_tz)
         time_difference = pr_date - current_date
         total_seconds = time_difference.total_seconds()
-        if self.running_countdown.get():
+        if self.running_countdown:
             if not TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
                 self.forceful_end_countdown()
                 return
@@ -5059,26 +5054,24 @@ class TeraTermUI(customtkinter.CTk):
             else:
                 # Update countdown message
                 self.timer_label.configure(text=self.get_countdown_message(total_seconds))
-                # Schedule the next update based on remaining time
-                if total_seconds > 3600:
-                    # Update every minute if more than an hour remains
-                    seconds_until_next_minute = 60 - current_date.second
+                if total_seconds > 60:
+                    # Update every minute if more than a minute remains
+                    seconds_until_next_minute = 60 - datetime.now(puerto_rico_tz).second
                     self.timer_window.after(seconds_until_next_minute * 1000, lambda: self.countdown(pr_date)
-                        if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
-                        else self.forceful_end_countdown())
-                elif total_seconds > 60:
-                    # Update every minute if less than an hour but more than a minute remains
-                    seconds_until_next_minute = 60 - current_date.second
-                    self.timer_window.after(seconds_until_next_minute * 1000, lambda: self.countdown(pr_date)
-                        if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
-                        else self.forceful_end_countdown())
+                    if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
+                    else self.forceful_end_countdown())
                 else:
                     # Update every second if less than a minute remains
-                    if not self.notification_sent:
-                        self.tray.notify(translation["notif_countdown"].replace(
-                            "{semester}", self.m_semester_entry[0].get()), title="Tera Term UI")
-                        self.notification_sent = True
-                    self.timer_window.after(1000, lambda: self.countdown(pr_date)
+                    current_date = datetime.now(puerto_rico_tz)
+                    total_seconds = (pr_date - current_date).total_seconds()
+                    if total_seconds <= 0:
+                        self.countdown(pr_date)
+                    else:
+                        if not self.notification_sent:
+                            self.tray.notify(translation["notif_countdown"].replace(
+                                "{semester}", self.m_semester_entry[0].get()), title="Tera Term UI")
+                            self.notification_sent = True
+                        self.timer_window.after(1000, lambda: self.countdown(pr_date)
                         if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
                         else self.forceful_end_countdown())
 
@@ -5149,7 +5142,7 @@ class TeraTermUI(customtkinter.CTk):
         self.auto_enroll_flag = False
         self.countdown_running = False
         self.notification_sent = False
-        self.running_countdown.set(False)
+        self.running_countdown = False
         if self.timer_window and self.timer_window.winfo_exists():
             if any(i.text == translation["countdown_win"] for i in self.tray.menu.items):
                 updated_menu_items = [i for i in self.tray.menu.items if i.text != translation["countdown_win"]]
