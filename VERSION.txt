@@ -1,6 +1,6 @@
-Version Number: v0.9.4
+Version Number: v0.9.5
 
-SHA-256 Checksum: 1e8174fa22faf26916fe105dc35d1cb69abde6e1abccfeb1ea843257949369ff
+SHA-256 Checksum: fd05a9df52f8e67103933e6bef5dc0f255e81239b29b71fda6283fc892a4285f
 
 Release Date: 04/28/2025
 
@@ -22,7 +22,8 @@ Patch Notes:
  - Enhanced with numerous keyboard shortcuts for efficiency
 
 Hotfix*
- - Fixed an issue that would cause the option in the tray menu of opening the countdown window of the Auto-Enrollment disappear when changing the language of the app
+ - Resolved an issue where the Auto-Enroll and Save Classes widgets were incorrectly disabled while the countdown window was active
+ - Improved class transfer behavior: If a transferred class already exists but its row is hidden, the row will now be revealed and updated automatically, ensuring seamless replacement without user intervention
  
 Updating: To update, the app includes an auto updater tool that will prompt you whenever there's a new version available 
 or you can just choose to simply download the files directly from the GitHub Repository and install it yourself:
