@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.9.5 - 4/28/25
+# DATE - Started 1/1/23, Current Build v0.91.0 - 4/28/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit of time to process.
@@ -180,9 +180,9 @@ class TeraTermUI(customtkinter.CTk):
         # GitHub's information for feedback and key data for updating app
         self.SERVICE_ACCOUNT_FILE = TeraTermUI.get_absolute_path("feedback.zip")
         self.REAZIONE = self.ottenere_protetta_salasana()
-        self.USER_APP_VERSION = "0.9.5"
+        self.USER_APP_VERSION = "0.91.0"
         self.mode = "Portable"
-        self.updater_hash = "05e8f98127cbe434f1a540d9f5e649f7dae7a0e3f7f75e220e83f640ea370c39"
+        self.updater_hash = "02dc47bb5454835d75d2e6b8f0c6bbf2363513f6d71c3493b7f2dd137ef08a88"
         self.running_updater = False
         self.credentials = None
         # disabled/enables keybind events
@@ -265,7 +265,8 @@ class TeraTermUI(customtkinter.CTk):
             "lock": {"path": os.path.join("images", "lock.png"), "size": (75, 75)},
             "update": {"path": os.path.join("images", "update.png"), "size": (15, 15)},
             "link": {"path": os.path.join("images", "link.png"), "size": (15, 15)},
-            "plane": {"path": os.path.join("images", "plane.png"), "size": (18, 18)}
+            "plane": {"path": os.path.join("images", "plane.png"), "size": (18, 18)},
+            "arrows": {"path": os.path.join("images", "arrows.png"), "size": (18, 18)}
         }
         self.loaded_images= {}
         self.url_cache = {}
@@ -447,7 +448,7 @@ class TeraTermUI(customtkinter.CTk):
             "TERM MAX HRS EXCEEDED": "TERM MAX HRS EXCEEDED", "REQUIRED CO-REQUISITE": "REQUIRED CO-REQUISITE",
             "CO-REQUISITE MISSING": "CO-REQUISITE MISSING", "ILLEGAL DROP-NOT ENR": "ILLEGAL DROP-NOT ENR",
             "NEW COURSE,NO FUNCTION": "NEW COURSE, NO FUNCTION", "PRESENTLY ENROLLED": "PRESENTLY ENROLLED",
-            "COURSE IN PROGRESS": "COURSE IN PROGRESS", "R/TC": "R/TC"
+            "PRESENTLY RECOMMENDED": "PRESENTLY RECOMMENDED", "COURSE IN PROGRESS": "COURSE IN PROGRESS", "R/TC": "R/TC"
         }
 
         # Second Tab
@@ -526,6 +527,7 @@ class TeraTermUI(customtkinter.CTk):
         self.m_section = None
         self.m_semester = None
         self.m_choice = None
+        self.m_swap_buttons = []
         self.m_num_class = []
         self.m_classes_entry = []
         self.m_section_entry = []
@@ -1523,8 +1525,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.uprb.UprbayTeraTermVt.type_keys(semester + "{ENTER}")
                                 self.after(0, self.disable_go_next_buttons)
                                 text_output = self.capture_screenshot()
-                                enrolled_classes = "ENROLLED"
-                                count_enroll = text_output.count(enrolled_classes)
+                                count_enroll = text_output.count("ENROLLED") + text_output.count("RECOMMENDED")
                                 if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output and \
                                         "USO INTERNO" not in text_output and "TERMINO LA MATRICULA" \
                                         not in text_output and "ENTER REGISTRATION" in text_output and \
@@ -1539,8 +1540,7 @@ class TeraTermUI(customtkinter.CTk):
                                         self.uprb.UprbayTeraTermVt.type_keys("D")
                                     self.uprb.UprbayTeraTermVt.type_keys(course + section + "{ENTER}")
                                     text_output = self.wait_for_response(["CONFIRMED", "DROPPED"])
-                                    enrolled_classes = "ENROLLED"
-                                    count_enroll = text_output.count(enrolled_classes)
+                                    count_enroll = text_output.count("ENROLLED") + text_output.count("RECOMMENDED")
                                     dropped_classes = "DROPPED"
                                     count_dropped = text_output.count(dropped_classes)
                                     self.reset_activity_timer()
@@ -2078,6 +2078,48 @@ class TeraTermUI(customtkinter.CTk):
                 TeraTermUI.manage_user_input()
                 self.my_classes_event_completed = True
 
+    def swap_rows(self, idx):
+        if idx == 0:
+            swap_idx = idx + 1
+        else:
+            swap_idx = idx - 1
+        if swap_idx < 0 or swap_idx >= len(self.m_classes_entry):
+            return
+
+        class_text_1 = self.m_classes_entry[idx].get()
+        class_text_2 = self.m_classes_entry[swap_idx].get()
+        self.m_classes_entry[idx].delete(0, "end")
+        self.m_classes_entry[idx].insert(0, class_text_2)
+        self.m_classes_entry[idx]._activate_placeholder()
+        self.m_classes_entry[swap_idx].delete(0, "end")
+        self.m_classes_entry[swap_idx].insert(0, class_text_1)
+        self.m_classes_entry[swap_idx]._activate_placeholder()
+
+        section_text_1 = self.m_section_entry[idx].get()
+        section_text_2 = self.m_section_entry[swap_idx].get()
+        self.m_section_entry[idx].delete(0, "end")
+        self.m_section_entry[idx].insert(0, section_text_2)
+        self.m_section_entry[idx]._activate_placeholder()
+        self.m_section_entry[swap_idx].delete(0, "end")
+        self.m_section_entry[swap_idx].insert(0, section_text_1)
+        self.m_section_entry[swap_idx]._activate_placeholder()
+
+        semester_text_1 = self.m_semester_entry[idx].get()
+        semester_text_2 = self.m_semester_entry[swap_idx].get()
+        self.m_semester_entry[idx].set(semester_text_2)
+        self.m_semester_entry[swap_idx].set(semester_text_1)
+
+        register_text_1 = self.m_register_menu[idx].get()
+        register_text_2 = self.m_register_menu[swap_idx].get()
+        self.m_register_menu[idx].set(register_text_2)
+        self.m_register_menu[swap_idx].set(register_text_1)
+
+        self.check_class_conflicts()
+        dummy_event_idx = type("Dummy", (object,), {"widget": self.m_section_entry[idx]})()
+        dummy_event_swap_idx = type("Dummy", (object,), {"widget": self.m_section_entry[swap_idx]})()
+        self.detect_change(dummy_event_idx)
+        self.detect_change(dummy_event_swap_idx)
+
     # function that adds new entries
     def add_event(self):
         self.focus_set()
@@ -2092,10 +2134,12 @@ class TeraTermUI(customtkinter.CTk):
                         action = self.m_register_menu[0].get()
                         for menu in self.m_register_menu:
                             menu.set(action)
-                self.m_num_class[self.a_counter + 1].grid(row=self.a_counter + 2, column=0, padx=(0, 8), pady=(20, 0))
-                self.m_classes_entry[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(0, 500),
+                self.m_swap_buttons[self.a_counter + 1].grid(row=self.a_counter + 2, column=0, padx=(0, 20),
+                                                             pady=(20, 0))
+                self.m_num_class[self.a_counter + 1].grid(row=self.a_counter + 2, column=0, padx=(50, 0), pady=(20, 0))
+                self.m_classes_entry[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(0, 460),
                                                               pady=(20, 0))
-                self.m_section_entry[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(0, 165),
+                self.m_section_entry[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(0, 145),
                                                               pady=(20, 0))
                 self.m_semester_entry[self.a_counter + 1].configure(state="normal")
                 if semester == curr_sem:
@@ -2103,9 +2147,9 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     self.m_semester_entry[self.a_counter + 1].set(semester)
                 self.m_semester_entry[self.a_counter + 1].configure(state="disabled")
-                self.m_semester_entry[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(165, 0),
+                self.m_semester_entry[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(170, 0),
                                                                pady=(20, 0))
-                self.m_register_menu[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(500, 0),
+                self.m_register_menu[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(485, 0),
                                                               pady=(20, 0))
                 self.a_counter += 1
                 if self.m_register_menu[0].get() == translation["register"]:
@@ -2129,6 +2173,7 @@ class TeraTermUI(customtkinter.CTk):
         else:
             self.a_counter -= 1
             self.m_remove.configure(state="normal")
+            self.m_swap_buttons[self.a_counter + 1].grid_forget()
             self.m_num_class[self.a_counter + 1].grid_forget()
             self.m_classes_entry[self.a_counter + 1].grid_forget()
             self.m_section_entry[self.a_counter + 1].grid_forget()
@@ -2215,15 +2260,16 @@ class TeraTermUI(customtkinter.CTk):
         self.auto_frame.grid(row=3, column=1, padx=(50, 0), pady=(0, 8), sticky="w")
         self.auto_frame.grid_columnconfigure(2, weight=1)
         self.title_multiple.grid(row=0, column=1, padx=(0, 0), pady=(0, 20))
-        self.m_class.grid(row=0, column=1, padx=(0, 500), pady=(32, 0))
-        self.m_section.grid(row=0, column=1, padx=(0, 165), pady=(32, 0))
-        self.m_semester.grid(row=0, column=1, padx=(165, 0), pady=(32, 0))
-        self.m_choice.grid(row=0, column=1, padx=(500, 0), pady=(32, 0))
-        self.m_num_class[0].grid(row=1, column=0, padx=(0, 8), pady=(0, 0))
-        self.m_classes_entry[0].grid(row=1, column=1, padx=(0, 500), pady=(0, 0))
-        self.m_section_entry[0].grid(row=1, column=1, padx=(0, 165), pady=(0, 0))
-        self.m_semester_entry[0].grid(row=1, column=1, padx=(165, 0), pady=(0, 0))
-        self.m_register_menu[0].grid(row=1, column=1, padx=(500, 0), pady=(0, 0))
+        self.m_class.grid(row=0, column=1, padx=(0, 460), pady=(32, 0))
+        self.m_section.grid(row=0, column=1, padx=(0, 145), pady=(32, 0))
+        self.m_semester.grid(row=0, column=1, padx=(170, 0), pady=(32, 0))
+        self.m_choice.grid(row=0, column=1, padx=(485, 0), pady=(32, 0))
+        self.m_swap_buttons[0].grid(row=1, column=0, padx=(0, 20), pady=(0, 0))
+        self.m_num_class[0].grid(row=1, column=0, padx=(50, 0), pady=(0, 0))
+        self.m_classes_entry[0].grid(row=1, column=1, padx=(0, 460), pady=(0, 0))
+        self.m_section_entry[0].grid(row=1, column=1, padx=(0, 145), pady=(0, 0))
+        self.m_semester_entry[0].grid(row=1, column=1, padx=(170, 0), pady=(0, 0))
+        self.m_register_menu[0].grid(row=1, column=1, padx=(485, 0), pady=(0, 0))
         self.m_add.grid(row=3, column=0, padx=(0, 20), pady=(0, 0))
         self.back_multiple.grid(row=3, column=1, padx=(0, 20), pady=(0, 0))
         self.submit_multiple.grid(row=3, column=2, padx=(0, 0), pady=(0, 0))
@@ -2380,8 +2426,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys(semester + "{ENTER}")
                             self.after(0, self.disable_go_next_buttons)
                             text_output = self.capture_screenshot()
-                            enrolled_classes = "ENROLLED"
-                            count_enroll = text_output.count(enrolled_classes)
+                            count_enroll = text_output.count("ENROLLED") + text_output.count("RECOMMENDED")
                             if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output and \
                                     "USO INTERNO" not in text_output and "TERMINO LA MATRICULA" not in text_output \
                                     and "ENTER REGISTRATION" in text_output and count_enroll != 15:
@@ -3986,6 +4031,7 @@ class TeraTermUI(customtkinter.CTk):
                                  ["ILLEGAL DROP-NOT ENR", translation["illegal_drop"]],
                                  ["NEW COURSE, NO FUNCTION", translation["no_course"]],
                                  ["PRESENTLY ENROLLED", translation["presently_enrolled"]],
+                                 ["PRESENTLY RECOMMENDED", translation["presently_recommended"]],
                                  ["COURSE IN PROGRESS", translation["course_progress"]],
                                  ["R/TC", translation["rtc"]]]
             self.enroll_error_table.configure(values=self.enroll_error)
@@ -5017,7 +5063,7 @@ class TeraTermUI(customtkinter.CTk):
                 # Enrollment process starts
                 self.timer_label.configure(text=self.get_countdown_message(total_seconds), text_color="#32CD32",
                                            font=customtkinter.CTkFont(size=17))
-                self.timer_label.pack(pady=35)
+                self.timer_label.pack(pady=25)
                 self.cancel_button.pack_forget()
                 if self.state() == "withdrawn":
                     if self.timer_window.state() == "withdrawn":
@@ -5710,6 +5756,9 @@ class TeraTermUI(customtkinter.CTk):
             self.m_semester = customtkinter.CTkLabel(master=self.multiple_frame, text=translation["semester"])
             self.m_choice = customtkinter.CTkLabel(master=self.multiple_frame, text=translation["choice"])
             for i in range(8):
+                self.m_swap_buttons.append(CustomButton(master=self.multiple_frame, text="", width=38, height=26,
+                                                        image=self.get_image("arrows"),
+                                                        command=lambda idx=i: self.swap_rows(idx)))
                 self.m_num_class.append(customtkinter.CTkLabel(master=self.multiple_frame, text=f"{i + 1}.", height=26))
                 self.m_classes_entry.append(CustomEntry(self.multiple_frame, self, lang,
                                                         placeholder_text=self.placeholder_texts_classes[i], height=26))
@@ -8380,8 +8429,7 @@ class TeraTermUI(customtkinter.CTk):
                             self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}1S4" + dialog_input + "{ENTER}")
                             self.after(0, self.disable_go_next_buttons)
                             text_output = self.capture_screenshot()
-                            enrolled_classes = "ENROLLED"
-                            count_enroll = text_output.count(enrolled_classes)
+                            count_enroll = text_output.count("ENROLLED") + text_output.count("RECOMMENDED")
                             if "OUTDATED" not in text_output and "INVALID TERM SELECTION" not in text_output and \
                                     "USO INTERNO" not in text_output and "TERMINO LA MATRICULA" \
                                     not in text_output and "ENTER REGISTRATION" in text_output:
@@ -8401,8 +8449,8 @@ class TeraTermUI(customtkinter.CTk):
                                     if mod == translation["drop"] or mod == translation["section"]:
                                         if not first_loop:
                                             text_output = self.wait_for_response(["ENROLLED"])
-                                            enrolled_classes = "ENROLLED"
-                                            count_enroll = text_output.count(enrolled_classes)
+                                            count_enroll = (text_output.count("ENROLLED") +
+                                                            text_output.count("RECOMMENDED"))
                                         first_loop = False
                                         self.uprb.UprbayTeraTermVt.type_keys("{TAB 3}")
                                         for i in range(count_enroll, 0, -1):
@@ -8423,8 +8471,8 @@ class TeraTermUI(customtkinter.CTk):
                                             self.reset_activity_timer()
                                         if mod == translation["section"]:
                                             text_output = self.capture_screenshot()
-                                            enrolled_classes = "ENROLLED"
-                                            count_enroll = text_output.count(enrolled_classes)
+                                            count_enroll = (text_output.count("ENROLLED") +
+                                                            text_output.count("RECOMMENDED"))
                                             self.uprb.UprbayTeraTermVt.type_keys("{TAB 3}")
                                             for i in range(count_enroll, 0, -1):
                                                 self.uprb.UprbayTeraTermVt.type_keys("{TAB 2}")
@@ -8441,8 +8489,8 @@ class TeraTermUI(customtkinter.CTk):
                                                     "COURSE RESERVED" in text_output:
                                                 show_error = True
                                                 text_output = self.capture_screenshot()
-                                                enrolled_classes = "ENROLLED"
-                                                count_enroll = text_output.count(enrolled_classes)
+                                                count_enroll = (text_output.count("ENROLLED") +
+                                                                text_output.count("RECOMMENDED"))
                                                 self.uprb.UprbayTeraTermVt.type_keys("{TAB 3}")
                                                 for i in range(count_enroll, 0, -1):
                                                     self.uprb.UprbayTeraTermVt.type_keys("{TAB 2}")
@@ -11053,6 +11101,7 @@ class TeraTermUI(customtkinter.CTk):
                              ["ILLEGAL DROP-NOT ENR", translation["illegal_drop"]],
                              ["NEW COURSE, NO FUNCTION", translation["no_course"]],
                              ["PRESENTLY ENROLLED", translation["presently_enrolled"]],
+                             ["PRESENTLY RECOMMENDED", translation["presently_recommended"]],
                              ["COURSE IN PROGRESS", translation["course_progress"]],
                              ["R/TC", translation["rtc"]]]
         self.terms_text = customtkinter.CTkLabel(self.help_frame, text=translation["terms_title"],
