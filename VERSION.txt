@@ -1,6 +1,6 @@
-Version Number: v0.91.0
+Version Number: v0.91.1
 
-SHA-256 Checksum: 901d75e5892082e2d0127ea405e717416828f8d6f9eec6a8b46fe8e48a10b594
+SHA-256 Checksum: 0b9053e074d7a18c27989e8097034ab8fa10a69cc8b5099450d45f93d9bb06e3
 
 Release Date: 04/29/2025
 
@@ -13,8 +13,12 @@ Patch Notes:
  - Added awareness to take into account a new class status on enrollment called "RECOMMENDED"
  - Added new error message from enrollment called "PRESENTLY ENROLLED"
  - Fixed an issue that prevented remembering credentials, when you had data previously saved
- - Improved Anti-Idle functionality, to make it more reliable
  - Updated dependencies, one of which is for the .exe covertion tool of the main app and updater for stability
+
+Hotfix*
+ - Improved Anti-Idle functionality, to make it more reliable
+ - Fixed minor inconsistencies in the code
+ - Updated some dependencies
 
 Updating: To update, the app includes an auto updater tool that will prompt you whenever there's a new version available 
 or you can just choose to simply download the files directly from the GitHub Repository and install it yourself:
