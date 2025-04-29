@@ -2259,7 +2259,7 @@ class TeraTermUI(customtkinter.CTk):
         self.save_frame.grid_columnconfigure(2, weight=1)
         self.auto_frame.grid(row=3, column=1, padx=(50, 0), pady=(0, 8), sticky="w")
         self.auto_frame.grid_columnconfigure(2, weight=1)
-        self.title_multiple.grid(row=0, column=1, padx=(0, 0), pady=(0, 20))
+        self.title_multiple.grid(row=0, column=1, padx=(0, 50), pady=(0, 20))
         self.m_class.grid(row=0, column=1, padx=(0, 460), pady=(32, 0))
         self.m_section.grid(row=0, column=1, padx=(0, 145), pady=(32, 0))
         self.m_semester.grid(row=0, column=1, padx=(170, 0), pady=(32, 0))
@@ -13430,7 +13430,7 @@ class SecureDataStore:
     # Encrypt a plaintext string using AES-GCM
     def encrypt(self, plaintext):
         if self.aes_key is None:
-            raise RuntimeError("Encryption key is not initialized. Cannot encrypt")
+            self.initialize_keys()
 
         cipher = AES.new(self.aes_key, AES.MODE_GCM)
         ciphertext, tag = cipher.encrypt_and_digest(plaintext.encode())
