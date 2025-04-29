@@ -1,6 +1,6 @@
-Version Number: v0.91.1
+Version Number: v0.91.2
 
-SHA-256 Checksum: 0b9053e074d7a18c27989e8097034ab8fa10a69cc8b5099450d45f93d9bb06e3
+SHA-256 Checksum: 5e1db39764b0a1bd094187acfbe3ee25bd1d9e5aa97e7cfac55f0f81c2c2ecee
 
 Release Date: 04/29/2025
 
@@ -16,9 +16,7 @@ Patch Notes:
  - Updated dependencies, one of which is for the .exe covertion tool of the main app and updater for stability
 
 Hotfix*
- - Improved Anti-Idle functionality, to make it more reliable
- - Fixed minor inconsistencies in the code
- - Updated some dependencies
+ - Improved performance of search queries of course titles in "Help" window
 
 Updating: To update, the app includes an auto updater tool that will prompt you whenever there's a new version available 
 or you can just choose to simply download the files directly from the GitHub Repository and install it yourself:
