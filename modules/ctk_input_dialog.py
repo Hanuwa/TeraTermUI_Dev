@@ -102,14 +102,14 @@ class CTkInputDialog(CTkToplevel):
         self._ok_button.grid(row=2, column=0, columnspan=1, padx=(20, 10), pady=(0, 20), sticky="ew")
 
         self._cancel_button = CustomButton(master=self,
-                                            width=100,
-                                            border_width=0,
-                                            fg_color=self._button_fg_color,
-                                            hover_color=self._button_hover_color,
-                                            text_color=self._button_text_color,
-                                            text=self._cancel_text,
-                                            font=self._font,
-                                            command=self._cancel_event)
+                                           width=100,
+                                           border_width=0,
+                                           fg_color=self._button_fg_color,
+                                           hover_color=self._button_hover_color,
+                                           text_color=self._button_text_color,
+                                           text=self._cancel_text,
+                                           font=self._font,
+                                           command=self._cancel_event)
         self._cancel_button.grid(row=2, column=1, columnspan=1, padx=(10, 20), pady=(0, 20), sticky="ew")
 
         self.after(150, lambda: self._entry.focus())  # set focus to entry with slight delay, otherwise it won't work
@@ -151,10 +151,9 @@ class CustomButton(CTkButton):
             self.configure(image=self.image)
 
     def setup_bindings(self):
-        bindings = [("<ButtonPress-1>", self.on_button_down), ("<ButtonRelease-1>", self.on_button_up)]
-        if not (self.image and not self.text):
-            bindings.extend([("<Enter>", self.on_enter), ("<Motion>", self.on_enter), ("<Leave>", self.on_leave),
-                             ("<B1-Motion>", self.on_motion)])
+        bindings = [("<ButtonPress-1>", self.on_button_down), ("<ButtonRelease-1>", self.on_button_up),
+                    ("<Enter>", self.on_enter), ("<Motion>", self.on_enter), ("<Leave>", self.on_leave),
+                    ("<B1-Motion>", self.on_motion)]
         for event, callback in bindings:
             bind_id = self.bind(event, callback)
             self.bindings.append((event, bind_id))
