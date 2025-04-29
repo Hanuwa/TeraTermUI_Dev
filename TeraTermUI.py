@@ -5867,6 +5867,10 @@ class TeraTermUI(customtkinter.CTk):
                 student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
                 code = self.code_entry.get().replace(" ", "")
                 self.encrypt_data_db(student_id, code)
+            self.cursor_db.execute("SELECT COUNT(*) FROM user_data")
+            count = self.cursor_db.fetchone()[0]
+            if count == 0:
+                self.crypto.reset()
             self.connection_db.commit()
             if not self.saved_classes and self.init_multiple:
                 self.delete_saved_classes()
