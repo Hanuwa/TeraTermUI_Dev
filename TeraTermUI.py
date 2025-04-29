@@ -169,6 +169,8 @@ class TeraTermUI(customtkinter.CTk):
 
         # creates separate threads from the main application
         self.last_activity = None
+        self.idle_threshold = None
+        self.use_temp_threshold = False
         self.stop_check_idle = threading.Event()
         self.stop_check_process = threading.Event()
         self.thread_pool = ThreadPoolExecutor(max_workers=5)
@@ -5189,6 +5191,9 @@ class TeraTermUI(customtkinter.CTk):
         self.countdown_running = False
         self.notification_sent = False
         self.running_countdown = False
+        if self.idle_num_check >= 34:
+            self.idle_num_check = 33
+        self.idle_num_check = max(0, self.idle_num_check // 2)
         if self.timer_window and self.timer_window.winfo_exists():
             if any(i.text == translation["countdown_win"] for i in self.tray.menu.items):
                 updated_menu_items = [i for i in self.tray.menu.items if i.text != translation["countdown_win"]]
@@ -6968,7 +6973,7 @@ class TeraTermUI(customtkinter.CTk):
                                                 command=self.show_previous_table)
             self.next_button = CustomButton(master=self.search_scrollbar, text=translation["next"],
                                             command=self.show_next_table)
-            self.remove_button = CustomButton(master=self.search_scrollbar, text=translation["remove"], 
+            self.remove_button = CustomButton(master=self.search_scrollbar, text=translation["remove"],
                                               hover_color="darkred", fg_color="red", command=self.remove_current_table)
             self.download_search_pdf = CustomButton(master=self.search_scrollbar, text=translation["pdf_save_as"],
                                                     hover_color="#173518", fg_color="#2e6930",
@@ -9935,9 +9940,12 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language()
         self.idle_num_check = 0
         self.last_activity = time.time()
+        self.idle_threshold = 180
+        self.use_temp_threshold = False
         try:
             while not self.stop_check_idle.is_set():
-                if time.time() - self.last_activity >= 180:
+                threshold = self.idle_threshold * 0.75 if self.use_temp_threshold else self.idle_threshold
+                if time.time() - self.last_activity >= threshold:
                     with self.lock_thread:
                         if TeraTermUI.checkIfProcessRunning("ttermpro"):
                             translation = self.load_language()
@@ -9946,11 +9954,12 @@ class TeraTermUI(customtkinter.CTk):
                             if TeraTermUI.is_win_session_interactive():
                                 self.keep_teraterm_open()
                             self.last_activity = time.time()
-                            if not self.countdown_running:
-                                self.idle_num_check += 1
-                            if self.countdown_running:
-                                self.idle_num_check = 1
-                            if self.idle_num_check == 34:
+                            self.idle_num_check += 1
+                            if self.use_temp_threshold:
+                                self.use_temp_threshold = False
+                            if self.idle_num_check % 5 == 0:
+                                self.use_temp_threshold = True
+                            if self.idle_num_check == 34 and not self.countdown_running:
                                 def idle_warning():
                                     self.play_sound("notification.wav")
                                     self.idle_warning = CTkMessagebox(
@@ -9967,7 +9976,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.after(50, idle_warning)
                         else:
                             self.stop_check_idle_thread()
-                if self.idle_num_check == 35:
+                if self.idle_num_check == 35 and not self.countdown_running:
                     self.stop_check_idle_thread()
                 time.sleep(25)
         except Exception as err:
@@ -11112,7 +11121,7 @@ class TeraTermUI(customtkinter.CTk):
         self.skip_auth_switch = customtkinter.CTkSwitch(self.help_frame, text=translation["skip_auth_switch"],
                                                         onvalue="on", offvalue="off", command=self.disable_enable_auth)
         self.files_text = customtkinter.CTkLabel(self.help_frame, text=translation["files_title"])
-        self.files = CustomButton(master=self.help_frame, image=self.get_image("folder"), 
+        self.files = CustomButton(master=self.help_frame, image=self.get_image("folder"),
                                   text=translation["files_button"], anchor="w", text_color=("gray10", "#DCE4EE"),
                                   command=self.change_location_auto_handler)
         self.delete_data_text = customtkinter.CTkLabel(self.help_frame, text=translation["del_data_title"])
@@ -11129,7 +11138,7 @@ class TeraTermUI(customtkinter.CTk):
                                                          offvalue="off", command=lambda:
                                                          self.disable_enable_audio("app"))
         self.fix_text = customtkinter.CTkLabel(self.help_frame, text=translation["fix_title"])
-        self.fix = CustomButton(master=self.help_frame, image=self.get_image("fix"), text=translation["fix"], 
+        self.fix = CustomButton(master=self.help_frame, image=self.get_image("fix"), text=translation["fix"],
                                 anchor="w", text_color=("gray10", "#DCE4EE"), command=self.fix_execution_event_handler)
         if not self.main_menu:
             self.files.configure(state="disabled")
