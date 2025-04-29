@@ -15,7 +15,7 @@ darkdetect==0.8.0
 filelock==3.18.0
 frozenlist==1.6.0
 google-api-core==2.24.2
-google-api-python-client==2.168.0
+google-api-python-client==2.169.0
 google-auth==2.39.0
 google-auth-httplib2==0.2.0
 googleapis-common-protos==1.70.0
@@ -42,7 +42,7 @@ py7zr==0.22.0
 pyasn1==0.6.1
 pyasn1_modules==0.4.2
 PyAutoGUI==0.9.54
-pybcj==1.0.3
+pybcj==1.0.6
 pycryptodomex==3.22.0
 PyGetWindow==0.0.9
 PyMsgBox==1.0.9
