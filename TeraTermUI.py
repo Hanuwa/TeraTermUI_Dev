@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.91.0 - 4/28/25
+# DATE - Started 1/1/23, Current Build v0.91.0 - 4/29/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit of time to process.
@@ -5348,8 +5348,9 @@ class TeraTermUI(customtkinter.CTk):
                                                       text=translation["title_auth"],
                                                       font=customtkinter.CTkFont(size=20, weight="bold"))
             self.uprb_image = self.get_image("uprb")
-            self.uprb_image_grid = CustomButton(self.authentication_frame, text="", image=self.uprb_image,
-                                                command=self.uprb_event, fg_color="transparent", hover=False)
+            self.uprb_image_grid = CustomButton(self.authentication_frame, text="", image=self.uprb_image, width=322,
+                                                height=115, command=self.uprb_event, fg_color="transparent",
+                                                hover=False)
             self.disclaimer = customtkinter.CTkLabel(master=self.authentication_frame, text=translation["disclaimer"])
             self.username = customtkinter.CTkLabel(master=self.authentication_frame, text=translation["username"])
             self.username_entry = CustomEntry(self.authentication_frame, self, lang)
@@ -5424,7 +5425,7 @@ class TeraTermUI(customtkinter.CTk):
                                                         font=customtkinter.CTkFont(size=20, weight="bold"))
             self.lock = self.get_image("lock")
             self.lock_grid = CustomButton(self.student_frame, text="", image=self.lock, command=self.lock_event,
-                                          fg_color="transparent", hover=False)
+                                          width=92, height=85, fg_color="transparent", hover=False)
             self.student_id = customtkinter.CTkLabel(master=self.student_frame, text=translation["student_id"])
             self.student_id_entry = CustomEntry(self.student_frame, self, lang, placeholder_text="#########", show="*")
             self.student_id_tooltip = CTkToolTip(self.student_id_entry, message=translation["student_id_tooltip"],
@@ -11730,10 +11731,9 @@ class CustomButton(customtkinter.CTkButton):
             self.configure(image=self.image)
 
     def setup_bindings(self):
-        bindings = [("<ButtonPress-1>", self.on_button_down), ("<ButtonRelease-1>", self.on_button_up)]
-        if not (self.image and not self.text):
-            bindings.extend([("<Enter>", self.on_enter), ("<Motion>", self.on_enter), ("<Leave>", self.on_leave),
-                             ("<B1-Motion>", self.on_motion)])
+        bindings = [("<ButtonPress-1>", self.on_button_down), ("<ButtonRelease-1>", self.on_button_up),
+                    ("<Enter>", self.on_enter), ("<Motion>", self.on_enter), ("<Leave>", self.on_leave),
+                    ("<B1-Motion>", self.on_motion)]
         for event, callback in bindings:
             bind_id = self.bind(event, callback)
             self.bindings.append((event, bind_id))
