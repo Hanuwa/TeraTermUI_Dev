@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.91.0 - 4/29/25
+# DATE - Started 1/1/23, Current Build v0.91.2 - 4/29/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit of time to process.
@@ -182,7 +182,7 @@ class TeraTermUI(customtkinter.CTk):
         # GitHub's information for feedback and key data for updating app
         self.SERVICE_ACCOUNT_FILE = TeraTermUI.get_absolute_path("feedback.zip")
         self.REAZIONE = self.ottenere_protetta_salasana()
-        self.USER_APP_VERSION = "0.91.0"
+        self.USER_APP_VERSION = "0.91.2"
         self.mode = "Portable"
         self.updater_hash = "3625504b8957c0e2b0a5c44aa43c6d1948238d051e30fd27c2c16455dbae52e1"
         self.running_updater = False
@@ -602,6 +602,7 @@ class TeraTermUI(customtkinter.CTk):
         self.searchbox_text = None
         self.search_box = None
         self.class_list = None
+        self.courses_db_cache = None
         self.curriculum_text = None
         self.curriculum = None
         self.terms_text = None
@@ -10976,6 +10977,7 @@ class TeraTermUI(customtkinter.CTk):
 
     # Search function query for searching for either class code or name
     def search_classes(self, event):
+
         def normalize_string(s):
             s = unicodedata.normalize("NFD", s)
             s = s.encode("ascii", "ignore").decode("utf-8")
@@ -10994,28 +10996,24 @@ class TeraTermUI(customtkinter.CTk):
 
         normalized_search = normalize_string(search_term)
         search_words = normalized_search.split()
-
         try:
+            if self.courses_db_cache is None:
+                self.courses_db_cache = self.cursor_db.execute("SELECT name, code FROM courses").fetchall()
+
             if normalized_search in ["all", "todo", "todos", "todas"]:
-                query = "SELECT name, code FROM courses ORDER BY name"
-                results = self.cursor_db.execute(query).fetchall()
+                results = sorted(self.courses_db_cache, key=lambda x: x[0])
 
                 if not results:
                     self.class_list.insert(tk.END, translation["no_results"])
                     self.search_box.configure(border_color="#c30101")
                 else:
                     default_border_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
-                    if self.search_box.border_color != default_border_color:
-                        self.search_box.configure(border_color=default_border_color)
-
+                    self.search_box.configure(border_color=default_border_color)
                     for name, code in results:
                         self.class_list.insert(tk.END, name)
-
                 return
 
-            query = "SELECT name, code FROM courses"
-            results = self.cursor_db.execute(query).fetchall()
-
+            results = self.courses_db_cache
             scored_results = []
             for name, code in results:
                 normalized_name = normalize_string(name)
@@ -11045,14 +11043,12 @@ class TeraTermUI(customtkinter.CTk):
                 self.search_box.configure(border_color="#c30101")
             else:
                 default_border_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
-                if self.search_box.border_color != default_border_color:
-                    self.search_box.configure(border_color=default_border_color)
-
+                self.search_box.configure(border_color=default_border_color)
                 for result in results:
-                    name = result[2] if isinstance(result, tuple) else result[0]
+                    name = result[2]
                     self.class_list.insert(tk.END, name)
         except sqlite3.Error as err:
-            logging.error(f"Database error: {err}")
+            logging.error(f"Database search error: {err}")
             self.class_list.delete(0, tk.END)
             self.class_list.insert(tk.END, translation["no_results"])
             self.search_box.configure(border_color="#c30101")
