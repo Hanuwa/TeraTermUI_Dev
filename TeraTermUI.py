@@ -306,12 +306,12 @@ class TeraTermUI(customtkinter.CTk):
         self.translations_cache = {}
         self.curr_lang = self.language_menu.get()
         translation = self.load_language()
-        self.status_button = CustomButton(self.sidebar_frame, text=translation["status_button"],
+        self.status_button = CustomButton(master=self.sidebar_frame, text=translation["status_button"],
                                           image=self.get_image("status"), command=self.status_button_event, anchor="w")
         self.status_tooltip = CTkToolTip(self.status_button, message="See the status and the state\n"
                                                                      " of the application", bg_color="#1E90FF")
         self.status_button.grid(row=1, column=0, padx=20, pady=10)
-        self.help_button = CustomButton(self.sidebar_frame, text=translation["help_button"],
+        self.help_button = CustomButton(master=self.sidebar_frame, text=translation["help_button"],
                                         image=self.get_image("help"), command=self.help_button_event, anchor="w")
         self.help_tooltip = CTkToolTip(self.help_button, message=translation["help_tooltip"],
                                        bg_color="#1E90FF")
@@ -357,7 +357,7 @@ class TeraTermUI(customtkinter.CTk):
         self.host_entry.grid(row=2, column=1, padx=(20, 0), pady=(15, 15))
         self.host_tooltip = CTkToolTip(self.host_entry, message=translation["host_tooltip"],
                                        bg_color="#1E90FF")
-        self.log_in = CustomButton(self.home_frame, border_width=2, text=translation["log_in"],
+        self.log_in = CustomButton(master=self.home_frame, border_width=2, text=translation["log_in"],
                                    text_color=("gray10", "#DCE4EE"), command=self.login_event_handler)
         self.log_in.grid(row=3, column=1, padx=(20, 0), pady=(15, 15))
         self.log_in.configure(state="disabled")
@@ -5240,7 +5240,7 @@ class TeraTermUI(customtkinter.CTk):
         self.server_rating.pack(pady=(4, 0))
         self.timer_label = customtkinter.CTkLabel(self.timer_window, text="", font=customtkinter.CTkFont(size=15))
         self.timer_label.pack()
-        self.cancel_button = CustomButton(self.timer_window, text=translation["option_1"], width=260, height=28,
+        self.cancel_button = CustomButton(master=self.timer_window, text=translation["option_1"], width=260, height=28,
                                           hover_color="darkred", fg_color="red", command=self.end_countdown)
         self.cancel_button.pack(pady=(16, 0))
         new_menu = pystray.Menu(
@@ -5348,7 +5348,7 @@ class TeraTermUI(customtkinter.CTk):
                                                       text=translation["title_auth"],
                                                       font=customtkinter.CTkFont(size=20, weight="bold"))
             self.uprb_image = self.get_image("uprb")
-            self.uprb_image_grid = CustomButton(self.authentication_frame, text="", image=self.uprb_image, width=322,
+            self.uprb_image_grid = CustomButton(master=self.authentication_frame, text="", image=self.uprb_image, width=322,
                                                 height=115, command=self.uprb_event, fg_color="transparent",
                                                 hover=False)
             self.disclaimer = customtkinter.CTkLabel(master=self.authentication_frame, text=translation["disclaimer"])
@@ -5424,7 +5424,7 @@ class TeraTermUI(customtkinter.CTk):
                                                         text=translation["title_security"],
                                                         font=customtkinter.CTkFont(size=20, weight="bold"))
             self.lock = self.get_image("lock")
-            self.lock_grid = CustomButton(self.student_frame, text="", image=self.lock, command=self.lock_event,
+            self.lock_grid = CustomButton(master=self.student_frame, text="", image=self.lock, command=self.lock_event,
                                           width=92, height=85, fg_color="transparent", hover=False)
             self.student_id = customtkinter.CTkLabel(master=self.student_frame, text=translation["student_id"])
             self.student_id_entry = CustomEntry(self.student_frame, self, lang, placeholder_text="#########", show="*")
@@ -6964,13 +6964,13 @@ class TeraTermUI(customtkinter.CTk):
             self.table_pipe = customtkinter.CTkLabel(self.search_scrollbar, text="|")
             self.table_count = customtkinter.CTkLabel(self.search_scrollbar, text=table_count_label)
             self.table_position = customtkinter.CTkLabel(self.search_scrollbar, text=table_position_label)
-            self.previous_button = CustomButton(self.search_scrollbar, text=translation["previous"],
+            self.previous_button = CustomButton(master=self.search_scrollbar, text=translation["previous"],
                                                 command=self.show_previous_table)
-            self.next_button = CustomButton(self.search_scrollbar, text=translation["next"],
+            self.next_button = CustomButton(master=self.search_scrollbar, text=translation["next"],
                                             command=self.show_next_table)
-            self.remove_button = CustomButton(self.search_scrollbar, text=translation["remove"], hover_color="darkred",
-                                              fg_color="red", command=self.remove_current_table)
-            self.download_search_pdf = CustomButton(self.search_scrollbar, text=translation["pdf_save_as"],
+            self.remove_button = CustomButton(master=self.search_scrollbar, text=translation["remove"], 
+                                              hover_color="darkred", fg_color="red", command=self.remove_current_table)
+            self.download_search_pdf = CustomButton(master=self.search_scrollbar, text=translation["pdf_save_as"],
                                                     hover_color="#173518", fg_color="#2e6930",
                                                     command=self.download_search_classes_as_pdf)
             self.table_count_tooltip = CTkToolTip(self.table_count, message=translation["table_count_tooltip"],
@@ -8250,12 +8250,12 @@ class TeraTermUI(customtkinter.CTk):
                                                            font=customtkinter.CTkFont(size=20, weight="bold"))
             self.total_credits_label = customtkinter.CTkLabel(self.my_classes_frame,
                                                               text=translation["total_creds"] + creds)
-            self.submit_my_classes = CustomButton(self.my_classes_frame, border_width=2,
+            self.submit_my_classes = CustomButton(master=self.my_classes_frame, border_width=2,
                                                   text=translation["submit"], text_color=("gray10", "#DCE4EE"),
                                                   command=self.submit_modify_classes_handler)
             self.submit_my_classes_tooltip = CTkToolTip(self.submit_my_classes, bg_color="#1E90FF",
                                                         message=translation["submit_modify_tooltip"])
-            self.download_enrolled_pdf = CustomButton(self.my_classes_frame, text=translation["pdf_save_as"],
+            self.download_enrolled_pdf = CustomButton(master=self.my_classes_frame, text=translation["pdf_save_as"],
                                                       hover_color="#173518", fg_color="#2e6930",
                                                       command=lambda: self.download_enrolled_classes_as_pdf(
                                                           self.enrolled_classes_data, self.enrolled_classes_credits))
@@ -10295,19 +10295,19 @@ class TeraTermUI(customtkinter.CTk):
         self.feedback_text = CustomTextBox(self.status_frame, self, enable_autoscroll=False, lang=lang,
                                            wrap="word", border_spacing=8, width=340, height=200,
                                            fg_color=("#ffffff", "#111111"))
-        self.feedback_send = CustomButton(self.status_frame, text=translation["feedback"], anchor="w", width=150,
+        self.feedback_send = CustomButton(master=self.status_frame, text=translation["feedback"], anchor="w", width=150,
                                           image=self.get_image("plane"), text_color=("gray10", "#DCE4EE"),
                                           command=self.start_feedback_thread)
         self.check_update_text = customtkinter.CTkLabel(self.status_frame, text=translation["update_title"])
-        self.check_update_btn = CustomButton(self.status_frame, image=self.get_image("update"), width=150,
+        self.check_update_btn = CustomButton(master=self.status_frame, image=self.get_image("update"), width=150,
                                              text=translation["update"], anchor="w", text_color=("gray10", "#DCE4EE"),
                                              command=self.check_update_app_handler)
         self.website = customtkinter.CTkLabel(self.status_frame, text=translation["website"])
-        self.website_link = CustomButton(self.status_frame, image=self.get_image("link"), text=translation["link"],
+        self.website_link = CustomButton(master=self.status_frame, image=self.get_image("link"), text=translation["link"],
                                          anchor="w", text_color=("gray10", "#DCE4EE"), width=150,
                                          command=self.github_event)
         self.notaso = customtkinter.CTkLabel(self.status_frame, text=translation["notaso_title"])
-        self.notaso_link = CustomButton(self.status_frame, image=self.get_image("link"), width=150,
+        self.notaso_link = CustomButton(master=self.status_frame, image=self.get_image("link"), width=150,
                                         text=translation["notaso_link"], anchor="w", text_color=("gray10", "#DCE4EE"),
                                         command=self.notaso_event)
         self.keybinds_text = customtkinter.CTkLabel(self.status_frame, text=translation["keybinds_title"],
@@ -11112,11 +11112,11 @@ class TeraTermUI(customtkinter.CTk):
         self.skip_auth_switch = customtkinter.CTkSwitch(self.help_frame, text=translation["skip_auth_switch"],
                                                         onvalue="on", offvalue="off", command=self.disable_enable_auth)
         self.files_text = customtkinter.CTkLabel(self.help_frame, text=translation["files_title"])
-        self.files = CustomButton(self.help_frame, image=self.get_image("folder"), text=translation["files_button"],
-                                  anchor="w", text_color=("gray10", "#DCE4EE"),
+        self.files = CustomButton(master=self.help_frame, image=self.get_image("folder"), 
+                                  text=translation["files_button"], anchor="w", text_color=("gray10", "#DCE4EE"),
                                   command=self.change_location_auto_handler)
         self.delete_data_text = customtkinter.CTkLabel(self.help_frame, text=translation["del_data_title"])
-        self.delete_data = CustomButton(self.help_frame, image=self.get_image("fix"), text=translation["del_data"],
+        self.delete_data = CustomButton(master=self.help_frame, image=self.get_image("fix"), text=translation["del_data"],
                                         anchor="w", text_color=("gray10", "#DCE4EE"), command=self.del_user_data)
         self.disable_idle_text = customtkinter.CTkLabel(self.help_frame, text=translation["idle_title"])
         self.disable_idle = customtkinter.CTkSwitch(self.help_frame, text=translation["idle"], onvalue="on",
@@ -11129,8 +11129,8 @@ class TeraTermUI(customtkinter.CTk):
                                                          offvalue="off", command=lambda:
                                                          self.disable_enable_audio("app"))
         self.fix_text = customtkinter.CTkLabel(self.help_frame, text=translation["fix_title"])
-        self.fix = CustomButton(self.help_frame, image=self.get_image("fix"), text=translation["fix"], anchor="w",
-                                text_color=("gray10", "#DCE4EE"), command=self.fix_execution_event_handler)
+        self.fix = CustomButton(master=self.help_frame, image=self.get_image("fix"), text=translation["fix"], 
+                                anchor="w", text_color=("gray10", "#DCE4EE"), command=self.fix_execution_event_handler)
         if not self.main_menu:
             self.files.configure(state="disabled")
         if not self.run_fix:
