@@ -5288,6 +5288,8 @@ class TeraTermUI(customtkinter.CTk):
             self.m_remove.configure(state="disabled")
             self.auto_enroll.configure(state="normal")
             self.save_class_data.configure(state="normal")
+            for i in range(self.a_counter + 1):
+                self.m_swap_buttons[i].configure(state="disabled")
             if self.enrolled_classes_data is not None:
                 self.submit_my_classes.configure(state="disabled")
         else:
@@ -5298,6 +5300,8 @@ class TeraTermUI(customtkinter.CTk):
                 self.m_remove.configure(state="normal")
             if self.a_counter < 7:
                 self.m_add.configure(state="normal")
+            for i in range(self.a_counter + 1):
+                self.m_swap_buttons[i].configure(state="normal")
             for i in range(8):
                 self.m_classes_entry[i].configure(state="normal")
                 self.m_section_entry[i].configure(state="normal")
