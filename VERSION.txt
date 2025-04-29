@@ -1,6 +1,6 @@
 Version Number: v0.91.0
 
-SHA-256 Checksum: 30528993d5fa281980937cb970b2e05d3b3b192653f34a94588b340a79db8f45
+SHA-256 Checksum: 7fb440addf26350f5257766e5594f0a929c620be5d0a4ca0a79883d883cbcbaa
 
 Release Date: 04/28/2025
 
@@ -12,6 +12,7 @@ Patch Notes:
  - Improved implementation of "Auto-Enroll", also better responsiveness and accuracy of countdown window
  - Added awareness to take into account a new class status on enrollment called "RECOMMENDED"
  - Added new error message from enrollment called "PRESENTLY ENROLLED"
+ - Fixed an issue that prevented remembering credentials, when you had data previously saved
  - Updated dependencies, one of which is for the .exe covertion tool of the main app and updater for stability
 
 Updating: To update, the app includes an auto updater tool that will prompt you whenever there's a new version available 
