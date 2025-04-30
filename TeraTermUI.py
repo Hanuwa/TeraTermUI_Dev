@@ -10594,9 +10594,9 @@ class TeraTermUI(customtkinter.CTk):
                 date_record = self.cursor_db.execute("SELECT feedback_date FROM user_config").fetchone()
                 if date_record is None or date_record[0] != current_date:
                     feedback = self.feedback_text.get("1.0", customtkinter.END).strip()
+                    feedback = re.sub(r"[\u200B-\u200D\u2060\uFEFF]", "", feedback)
                     word_count = len(feedback.split())
                     if word_count < 1250:
-                        feedback = self.feedback_text.get("1.0", customtkinter.END).strip()
                         if feedback:
                             self.sending_feedback = True
                             loading_screen = self.show_loading_screen()
