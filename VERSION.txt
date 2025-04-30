@@ -1,8 +1,8 @@
-Version Number: v0.91.3
+Version Number: v0.91.4
 
-SHA-256 Checksum: b0a6d348977d90d9fa8808fad85deb5c3797f1abeb9a8e6a1c43281e91058dbb
+SHA-256 Checksum: 7f5dec0dc734391b1c5f4537cf9846f78649b154c278c41d8d224c3e70426312
 
-Release Date: 04/29/2025
+Release Date: 04/30/2025
 
 Patch Notes:
  - Introduced new feature called "Swap Rows": You can now quickly swap the content between two adjacent rows in the Multiple 
@@ -16,7 +16,7 @@ Patch Notes:
  - Updated dependencies, one of which is for the .exe covertion tool of the main app and updater for stability
 
 Hotfix*
- - Improved feedback message sanitization
+ - Updater now handles the installation of the installer automatically
 
 Updating: To update, the app includes an auto updater tool that will prompt you whenever there's a new version available 
 or you can just choose to simply download the files directly from the GitHub Repository and install it yourself:
