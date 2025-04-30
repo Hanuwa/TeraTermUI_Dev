@@ -1011,7 +1011,7 @@ def check_installation_status(gui, process, version, downloaded_file, app_direct
                 current_time = time.time()
                 if not hasattr(gui, "last_progress_update") or current_time - gui.last_progress_update >= 3:
                     gui.update_progress(80,
-                        "Installing... Please follow the installer prompts. Do not close this window")
+                        "Installer is running... Please do not close this window")
                     gui.last_progress_update = current_time
 
             gui.root.after(UI_UPDATE_DELAY, lambda: check_installation_status(
@@ -1085,19 +1085,12 @@ def handle_installation_mode(gui, downloaded_file, version, app_directory):
         gui.pause_button.configure(state="disabled")
         gui.cancel_button.configure(state="disabled")
 
-        messagebox.showinfo("Installer",
-                            "The installer will now start. Please note:\n\n"
-                            "1. Administrative privileges may be required\n"
-                            "2. Follow the installer prompts\n"
-                            "3. Do not launch TeraTermUI from the installer\n"
-                            "4. Do not close this updater window manually")
-
         startupinfo = None
         if os.name == "nt":
             startupinfo = subprocess.STARTUPINFO()
             startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
 
-        process = subprocess.Popen([downloaded_file], shell=True, startupinfo=startupinfo)
+        process = subprocess.Popen([downloaded_file, "/SILENT", "/NORESTART"], startupinfo=startupinfo)
 
         gui.root.after(UI_UPDATE_DELAY, lambda: check_installation_status(
             gui, process, version, downloaded_file, app_directory, "Installation"))
