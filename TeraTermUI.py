@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.91.3 - 4/29/25
+# DATE - Started 1/1/23, Current Build v0.91.4 - 4/30/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit of time to process.
@@ -182,9 +182,9 @@ class TeraTermUI(customtkinter.CTk):
         # GitHub's information for feedback and key data for updating app
         self.SERVICE_ACCOUNT_FILE = TeraTermUI.get_absolute_path("feedback.zip")
         self.REAZIONE = self.ottenere_protetta_salasana()
-        self.USER_APP_VERSION = "0.91.3"
+        self.USER_APP_VERSION = "0.91.4"
         self.mode = "Portable"
-        self.updater_hash = "3625504b8957c0e2b0a5c44aa43c6d1948238d051e30fd27c2c16455dbae52e1"
+        self.updater_hash = "398e9937280dca89f7588c0ab81ac8ca149dcf5daccca00f9ad2b5c509ec104f"
         self.running_updater = False
         self.credentials = None
         # disabled/enables keybind events
@@ -1198,6 +1198,15 @@ class TeraTermUI(customtkinter.CTk):
         except Exception as err:
             logging.error(f"[LOG_ERROR_FAILURE] [{timestamp}] Could not write error log: {str(err)}")
 
+    @staticmethod
+    def secure_zeroize_string(value):
+        if value:
+            try:
+                val_bytes = bytearray(value.encode())
+                ctypes.memset(ctypes.addressof(ctypes.c_char.from_buffer(val_bytes)), 0, len(val_bytes))
+            except Exception as error:
+                logging.warning(f"Secure zeroize failed: {error}")
+
     def student_event_handler(self):
         loading_screen = self.show_loading_screen()
         future = self.thread_pool.submit(self.student_event)
@@ -1205,15 +1214,6 @@ class TeraTermUI(customtkinter.CTk):
 
     # Enter the Enrolling/Searching/Other classes screen
     def student_event(self):
-
-        def secure_zeroize_string(value):
-            if value:
-                try:
-                    val_bytes = bytearray(value.encode())
-                    ctypes.memset(ctypes.addressof(ctypes.c_char.from_buffer(val_bytes)), 0, len(val_bytes))
-                except Exception as error:
-                    logging.warning(f"Secure zeroize failed: {error}")
-
         with self.lock_thread:
             try:
                 self.automation_preparations()
@@ -1234,8 +1234,8 @@ class TeraTermUI(customtkinter.CTk):
                                 if self.remember_me.get() == "on" and self.must_save_user_data:
                                     self.encrypt_data_db(student_id, code)
                                     self.connection_db.commit()
-                                secure_zeroize_string(student_id)
-                                secure_zeroize_string(code)
+                                TeraTermUI.secure_zeroize_string(student_id)
+                                TeraTermUI.secure_zeroize_string(code)
                                 self.reset_activity_timer()
                                 self.start_check_idle_thread()
                                 self.start_check_process_thread()
@@ -5279,6 +5279,65 @@ class TeraTermUI(customtkinter.CTk):
             self.timer_window.lift()
             self.timer_window.attributes("-topmost", 1)
             self.timer_window.after_idle(self.timer_window.attributes, "-topmost", 0)
+
+    def boot_be_ready_for_auto_enroll(self):
+        if not TeraTermUI.checkIfProcessRunning("ttermpro"):
+            self.uprb = Application(backend="uia").start(self.teraterm_exe_location, timeout=3)
+            timings.wait_until_passes(10, 1, lambda: self.uprb.window(
+                title="Tera Term - [disconnected] VT", class_name="VTWin32",
+                control_type="Window").exists())
+            self.uprb.connect(title="Tera Term - [disconnected] VT", class_name="VTWin32",
+                              control_type="Window", timeout=3)
+            self.uprb_32 = Application().connect(title="Tera Term - [disconnected] VT",
+                                                 timeout=3, class_name="VTWin32")
+            edit_menu = self.uprb.UprbayTeraTermVt.child_window(title="Edit", control_type="MenuItem")
+            self.select_screen_item = edit_menu.child_window(
+                title="Select screen", control_type="MenuItem", auto_id="50280")
+            disconnected = self.uprb.window(title="Tera Term - [disconnected] VT", class_name="VTWin32",
+                                            control_type="Window")
+            disconnected.wait("visible", timeout=3)
+            TeraTermUI.check_window_exists("Tera Term: New connection")
+            host_input = self.uprb.TeraTermDisconnectedVt.child_window(
+                title="Host:", control_type="Edit")
+            if host_input.get_value() != "uprbay.uprb.edu":
+                host_input.set_text("uprbay.uprb.edu")
+            self.uprb.TeraTermDisconnectedVt.child_window(title="OK", control_type="Button").invoke()
+            self.uprbay_window = self.uprb.window(
+                title="uprbay.uprb.edu - Tera Term VT", class_name="VTWin32", control_type="Window")
+            self.tera_term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
+            TeraTermUI.check_window_exists("SSH Authentication")
+            ssh_auth_window = self.uprb.UprbayTeraTermVt
+            user_field = ssh_auth_window.child_window(title="User name:", control_type="Edit")
+            remember_checkbox = ssh_auth_window.child_window(title="Remember password in memory",
+                                                             control_type="CheckBox")
+            plain_password_radio = ssh_auth_window.child_window(title="Use plain password to log in",
+                                                                control_type="RadioButton")
+            ok_button = ssh_auth_window.child_window(title="OK", control_type="Button")
+            user_field.set_text("students")
+            if not remember_checkbox.get_toggle_state():
+                remember_checkbox.invoke()
+            if not plain_password_radio.is_selected():
+                plain_password_radio.invoke()
+            ok_button.invoke()
+            self.server_status = self.wait_for_prompt("return to continue", "REGRESE PRONTO")
+            if self.server_status == "Prompt found":
+                self.uprb.UprbayTeraTermVt.type_keys("{ENTER 3}")
+                self.move_window()
+            self.cursor_db.execute("SELECT student_id, code, nonce_student_id, nonce_code, tag_student_id, tag_code "
+                                   "FROM user_data WHERE id = 1")
+            row = self.cursor_db.fetchone()
+            student_ct, code_ct, nonce_sid, nonce_code, tag_sid, tag_code = row
+            student_id = self.crypto.decrypt(student_ct, nonce_sid, tag_sid)
+            code = self.crypto.decrypt(code_ct, nonce_code, tag_code)
+            self.uprb.UprbayTeraTermVt.type_keys("{TAB}" + student_id + code + "{ENTER}")
+            text_output = self.wait_for_response(["SIGN-IN", "ON FILE",  "PIN NUMBER", "ERRORS FOUND"],
+                                                 init_timeout=False, timeout=7)
+            if "SIGN-IN" in text_output:
+                TeraTermUI.secure_zeroize_string(student_id)
+                TeraTermUI.secure_zeroize_string(code)
+                self.reset_activity_timer()
+                self.start_check_idle_thread()
+                self.start_check_process_thread()
 
     def disable_enable_gui(self):
         if self.countdown_running:
