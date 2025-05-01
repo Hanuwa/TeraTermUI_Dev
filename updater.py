@@ -983,7 +983,8 @@ def install_extract_update(gui, mode, version, downloaded_file, app_directory):
             return False
 
         elif mode == "Installation":
-            return handle_installation_mode(gui, downloaded_file, version, app_directory)
+            gui.update_progress(60, "Preparing to start installer...")
+            return  gui.root.after(UI_UPDATE_DELAY, handle_installation_mode(gui, downloaded_file, version, app_directory))
         return None
 
     except Exception as e:
@@ -1039,7 +1040,8 @@ def check_installation_status(gui, process, version, downloaded_file, app_direct
             return
 
         logging.info("Installer process completed successfully")
-        gui.root.after(2000, lambda: verify_and_finalize_installation(
+        gui.update_progress(90, "Verifying installation...")
+        gui.root.after(1500, lambda: verify_and_finalize_installation(
             gui, version, downloaded_file, app_directory))
 
     except Exception as e:
@@ -1068,7 +1070,6 @@ def cleanup_installer_files(downloaded_file):
 
 def handle_installation_mode(gui, downloaded_file, version, app_directory):
     try:
-        gui.update_progress(60, "Preparing to start installer...")
         logging.info(f"Starting installer from: {downloaded_file}")
 
         db_path = os.path.join(args.db_directory, "database.db")
@@ -1210,7 +1211,6 @@ def check_update_success(app_directory, version):
 
 def verify_and_finalize_installation(gui, version, downloaded_file, app_directory):
     logging.info("Starting installation verification")
-    gui.update_progress(90, "Verifying installation...")
 
     try:
         executable_path = os.path.join(app_directory, "TeraTermUI.exe")
@@ -1249,9 +1249,6 @@ def verify_and_finalize_installation(gui, version, downloaded_file, app_director
         gui.current_stage = "completed"
         gui.update_progress(100, "Installation completed successfully!")
 
-        messagebox.showinfo(
-            "Installation Complete",
-            "Installation completed successfully!\n\nThe application will restart automatically")
         gui.root.after(1500, lambda: finalize_and_restart(gui, app_directory))
 
     except Exception as e:
