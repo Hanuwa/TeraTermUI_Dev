@@ -1,6 +1,6 @@
 Version Number: v0.91.5
 
-SHA-256 Checksum: e34dfd562383c0ec3470affbbef8cc51ecc3d6ee78ce756eff6c735362352ef4
+SHA-256 Checksum: aae3e8f8bd85d6f56f2fae16f616e9f9620a3c26748fb624a50bde847f04bf1a
 
 Release Date: 05/01/2025
 
@@ -17,6 +17,7 @@ Patch Notes:
 
 Hotfix*
  - When multiple courses share the same code and semester, they are now enumarated (Ex. ESPA3101 #1 or ESPA3101 #2 - C51)
+ - Optimized the class conflicts functionality
  - Cleanup up some logic inside the updater
  - Updated dependencies
 
