@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.91.4 - 4/30/25
+# DATE - Started 1/1/23, Current Build v0.91.5 - 4/30/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit of time to process.
@@ -182,7 +182,7 @@ class TeraTermUI(customtkinter.CTk):
         # GitHub's information for feedback and key data for updating app
         self.SERVICE_ACCOUNT_FILE = TeraTermUI.get_absolute_path("feedback.zip")
         self.REAZIONE = self.ottenere_protetta_salasana()
-        self.USER_APP_VERSION = "0.91.4"
+        self.USER_APP_VERSION = "0.91.5"
         self.mode = "Portable"
         self.updater_hash = "398e9937280dca89f7588c0ab81ac8ca149dcf5daccca00f9ad2b5c509ec104f"
         self.running_updater = False
@@ -7143,7 +7143,7 @@ class TeraTermUI(customtkinter.CTk):
     def find_duplicate(self, new_display_class, new_semester, show_all_sections_state, available_values):
         for index, (display_class, table, semester, existing_show_all_sections_state,
                     existing_available_values, _) in enumerate(self.class_table_pairs):
-            if (display_class.cget("text").split("-")[0].strip() == new_display_class
+            if (display_class.cget("text").split("-")[0].strip().split(" #")[0] == new_display_class
                     and semester == new_semester and existing_show_all_sections_state == show_all_sections_state
                     and sorted(existing_available_values) == sorted(available_values)):
                 return index
@@ -7372,17 +7372,22 @@ class TeraTermUI(customtkinter.CTk):
         class_info = {}
         all_semesters = set()
         for display_class, _, semester, _, _, _ in self.class_table_pairs:
-            display_class_text = display_class.cget("text").split("-")[0].strip()
-            if display_class_text not in class_info:
-                class_info[display_class_text] = []
-            class_info[display_class_text].append((display_class, semester))
+            base_name = display_class.cget("text").split("-")[0].strip().split(" #")[0]
+            key = (base_name, semester)
+            if key not in class_info:
+                class_info[key] = []
+            class_info[key].append(display_class)
             all_semesters.add(semester)
 
         multiple_semesters_exist = len(all_semesters) > 1
         updated_labels = []
-        for display_class_text, class_semesters in class_info.items():
-            for display_class, semester in class_semesters:
-                new_text = f"{display_class_text} - {semester}" if multiple_semesters_exist else display_class_text
+        for (base_name, semester), labels in class_info.items():
+            add_suffix = len(labels) > 1
+            for idx, display_class in enumerate(labels, 1):
+                suffix = f" #{idx}" if add_suffix else ""
+                new_text = f"{base_name}{suffix}"
+                if multiple_semesters_exist:
+                    new_text += f" - {semester}"
                 current_text = display_class.cget("text")
                 if current_text != new_text:
                     updated_labels.append((display_class, new_text))
