@@ -22,7 +22,6 @@ import atexit
 import base64
 import ctypes
 import customtkinter
-import functools
 import gc
 import json
 import locale
@@ -73,6 +72,7 @@ from ctypes import wintypes
 from datetime import datetime, timedelta, UTC
 from difflib import SequenceMatcher, get_close_matches
 from filelock import FileLock, Timeout
+from functools import wraps, lru_cache
 from hmac import compare_digest
 from mss import mss
 from pathlib import Path
@@ -184,7 +184,7 @@ class TeraTermUI(customtkinter.CTk):
         self.REAZIONE = self.ottenere_protetta_salasana()
         self.USER_APP_VERSION = "0.91.5"
         self.mode = "Portable"
-        self.updater_hash = "2502d1ed5ca52f9962c739a2d5c2062f510ffe73d319b3a743a12f8fd377d560"
+        self.updater_hash = "b9eb992651979ad8122bc169174b80f245654bb48c26fa7f7d786bbf16cb264c"
         self.running_updater = False
         self.credentials = None
         # disabled/enables keybind events
@@ -4640,7 +4640,7 @@ class TeraTermUI(customtkinter.CTk):
         valid_main_entries = collect_valid_entries(self.m_section_entry)
         valid_change_entries = collect_valid_entries(self.change_section_entries or [])
 
-        @functools.lru_cache(maxsize=None)
+        @lru_cache(maxsize=None)
         def resolve_schedule_info(section_codes):
             return current_schedule_map.get(section_codes, current_schedule_map.get(section_codes[:2], ("", "", "")))
 
