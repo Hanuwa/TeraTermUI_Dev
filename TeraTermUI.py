@@ -184,7 +184,7 @@ class TeraTermUI(customtkinter.CTk):
         self.REAZIONE = self.ottenere_protetta_salasana()
         self.USER_APP_VERSION = "0.91.5"
         self.mode = "Portable"
-        self.updater_hash = "b9eb992651979ad8122bc169174b80f245654bb48c26fa7f7d786bbf16cb264c"
+        self.updater_hash = "8df719aaca99d401ff33ba14c76739dbb3add15cf0f991fb43d2d92e13616488"
         self.running_updater = False
         self.credentials = None
         # disabled/enables keybind events
