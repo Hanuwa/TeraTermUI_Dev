@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.91.5 - 5/1/25
+# DATE - Started 1/1/23, Current Build v0.91.5 - 5/2/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit of time to process.
@@ -3132,6 +3132,7 @@ class TeraTermUI(customtkinter.CTk):
 
                                 self.after(125, server_closed)
                             elif self.server_status == "Prompt found":
+                                self.uprb.UprbayTeraTermVt.type_keys("^q")
                                 self.uprb.UprbayTeraTermVt.type_keys("{ENTER 3}")
                                 self.move_window()
                                 self.bind("<Return>", lambda event: self.student_event_handler())
@@ -3553,6 +3554,7 @@ class TeraTermUI(customtkinter.CTk):
             elif "return to continue" in text_output or "INFORMACION ESTUDIANTIL" in text_output:
                 if hwnd_tt:
                     win32gui.PostMessage(hwnd_tt, win32con.WM_CLOSE, 0, 0)
+                self.uprb.UprbayTeraTermVt.type_keys("^q")
                 if "return to continue" in text_output and "Loading" in text_output:
                     self.uprb.UprbayTeraTermVt.type_keys("{ENTER 3}")
                 elif count_to_continue == 2 or "ZZZ" in text_output:
@@ -3578,6 +3580,7 @@ class TeraTermUI(customtkinter.CTk):
             elif any(keyword in text_output for keyword in keywords):
                 if hwnd_tt:
                     win32gui.PostMessage(hwnd_tt, win32con.WM_CLOSE, 0, 0)
+                self.uprb.UprbayTeraTermVt.type_keys("^q")
                 self.uprb.UprbayTeraTermVt.type_keys("{VK_RIGHT}{VK_LEFT}")
                 self.connect_to_uprb()
                 self.home_frame.grid_forget()
@@ -8722,6 +8725,8 @@ class TeraTermUI(customtkinter.CTk):
         try:
             self.focus_tera_term()
             self.uprbay_window.wait("visible", timeout=3)
+            if self.run_fix or self.in_student_frame:
+                self.uprb.UprbayTeraTermVt.type_keys("^q")
             if self.went_to_1PL_screen and self.run_fix:
                 self.uprb.UprbayTeraTermVt.type_keys("X{ENTER}")
                 self.went_to_1PL_screen = False
@@ -8748,6 +8753,7 @@ class TeraTermUI(customtkinter.CTk):
                 to_continue = "return to continue"
                 count_to_continue = text_output.count(to_continue)
                 if "return to continue" in text_output or "INFORMACION ESTUDIANTIL" in text_output:
+                    self.uprb.UprbayTeraTermVt.type_keys("^q")
                     if "return to continue" in text_output and "Loading" in text_output:
                         self.uprb.UprbayTeraTermVt.type_keys("{ENTER 3}")
                     elif count_to_continue == 2 or "ZZZ" in text_output:
@@ -11392,7 +11398,9 @@ class TeraTermUI(customtkinter.CTk):
 
     def play_sound(self, audio_file):
         if not self.muted_app:
-            winsound.PlaySound(TeraTermUI.get_absolute_path(f"sounds/{audio_file}"), winsound.SND_ASYNC)
+            winsound.PlaySound(None, winsound.SND_PURGE)
+            winsound.PlaySound(TeraTermUI.get_absolute_path(f"sounds/{audio_file}"),
+                               winsound.SND_FILENAME | winsound.SND_ASYNC | winsound.SND_NOWAIT)
 
     def set_beep_sound(self, file_path, disable_beep=True):
         if not self.can_edit:
