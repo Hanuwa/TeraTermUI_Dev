@@ -6,7 +6,7 @@ Brotli==1.1.0
 cachetools==5.5.2
 certifi==2025.4.26
 chardet==5.2.0
-charset-normalizer==3.4.1
+charset-normalizer==3.4.2
 colorama==0.4.6
 comtypes==1.4.10
 CTkMessagebox==2.7
