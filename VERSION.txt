@@ -1,8 +1,8 @@
 Version Number: v0.91.5
 
-SHA-256 Checksum: de242c5b7a92ebbdecfcfd7677b4cf9b968d337410d317a29a03de1f3d163a3e
+SHA-256 Checksum: c70081b6bc9960d46cf07e6b10160dda6b3d180f8fa62edcf52ff502c46f8870
 
-Release Date: 05/02/2025
+Release Date: 05/03/2025
 
 Patch Notes:
  - Introduced new feature called "Swap Rows": You can now quickly swap the content between two adjacent rows in the Multiple 
