@@ -1,6 +1,6 @@
 Version Number: v0.91.5
 
-SHA-256 Checksum: 9cbef6fe9e18a86790b3ebe2c9afc8608e27f06144e80354f9a508208dc14330
+SHA-256 Checksum: de242c5b7a92ebbdecfcfd7677b4cf9b968d337410d317a29a03de1f3d163a3e
 
 Release Date: 05/02/2025
 
@@ -17,7 +17,8 @@ Patch Notes:
 
 Hotfix*
  - When multiple courses share the same code and semester, they are now enumarated (Ex. ESPA3101 #1 or ESPA3101 #2 - C51)
- - Optimized the class conflicts functionality
+ - Now before we start to execute any command on the terminal we first send "Ctrl+Q" to resume the shell if it was paused
+ - Optimized and improved the performance of the class schedule conflicts functionality
  - Cleanup up some logic inside the updater
  - Updated dependencies
 
