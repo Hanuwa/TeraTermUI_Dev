@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.91.5 - 5/4/25
+# DATE - Started 1/1/23, Current Build v0.92.0 - 5/8/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit of time to process.
@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 14,100 lines of codes, it definitely makes things harder to work with
+# and with over 14,200 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -182,7 +182,7 @@ class TeraTermUI(customtkinter.CTk):
         # GitHub's information for feedback and key data for updating app
         self.SERVICE_ACCOUNT_FILE = TeraTermUI.get_absolute_path("feedback.zip")
         self.REAZIONE = self.ottenere_protetta_salasana()
-        self.USER_APP_VERSION = "0.91.5"
+        self.USER_APP_VERSION = "0.92.0"
         self.mode = "Portable"
         self.updater_hash = "4504bac48d0aaf70f51d050c908614c6120ada60c0f2aff3e952eb2f6062bfb5"
         self.running_updater = False
@@ -223,6 +223,7 @@ class TeraTermUI(customtkinter.CTk):
         self.cancel_button = None
         self.pr_date = None
         self.running_countdown = None
+        self.booting_in_progress = False
         self.progress_bar = None
         self.loading_label = None
         self.check_idle_thread = None
@@ -631,6 +632,7 @@ class TeraTermUI(customtkinter.CTk):
         self.semester_values = TeraTermUI.generate_semester_values(self.DEFAULT_SEMESTER)
         self.clipboard_handler = ClipboardHandler()
         self.ssh_monitor = SSHMonitor("uprbay.uprb.edu")
+        self.prev_sample_count = None
         self.search_event_completed = True
         self.option_menu_event_completed = True
         self.go_next_event_completed = True
@@ -681,6 +683,7 @@ class TeraTermUI(customtkinter.CTk):
         self.main_menu = True
         self.not_rebind = False
         self.notification_sent = False
+        self.boot_notified = False
         self.first_time_adding = True
         self.last_save_pdf_dir = None
         self.saved_host = None
@@ -841,9 +844,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.bind("<F1>", lambda event: self.help_button_event())
                 if self.crypto.creating_key_file:
                     self.creating_key_file = False
-                    self.cursor_db.execute("SELECT COUNT(*) FROM user_data")
-                    count = self.cursor_db.fetchone()[0]
-                    if count > 0:
+                    if self.has_saved_user_data():
                         self.cursor_db.execute("DELETE FROM user_data")
                         self.connection_db.commit()
                 # Check for update for the application
@@ -951,8 +952,8 @@ class TeraTermUI(customtkinter.CTk):
                     widget.close_messagebox()
                 elif widget is not self.status and widget is not self.help and widget is not self.timer_window:
                     widget.destroy()
-        if not TeraTermUI.window_exists("Tera Term - [disconnected] VT") and \
-                not TeraTermUI.window_exists("SSH Authentication") and not self.in_student_frame:
+        if (not TeraTermUI.window_exists("Tera Term - [disconnected] VT") and
+                not TeraTermUI.window_exists("SSH Authentication") and not self.in_student_frame):
             hwnd = win32gui.FindWindow(None, "uprbay.uprb.edu - Tera Term VT")
             if hwnd and win32gui.IsWindowVisible(hwnd):
                 win32gui.ShowWindow(hwnd, win32con.SW_HIDE)
@@ -1041,8 +1042,8 @@ class TeraTermUI(customtkinter.CTk):
                         except Exception as err:
                             logging.warning("An error occurred: %s", err)
                             TeraTermUI.terminate_process()
-                    elif TeraTermUI.window_exists("Tera Term - [disconnected] VT") or \
-                            TeraTermUI.window_exists("Tera Term - [connecting...] VT"):
+                    elif (TeraTermUI.window_exists("Tera Term - [disconnected] VT") or
+                          TeraTermUI.window_exists("Tera Term - [connecting...] VT")):
                         TeraTermUI.terminate_process()
             sys.exit(0)
         self.last_closing_time = current_time
@@ -1809,8 +1810,8 @@ class TeraTermUI(customtkinter.CTk):
                                 self.automate_copy_class_data()
                                 TeraTermUI.manage_user_input("on")
                                 copy = pyperclip.paste()
-                                data, course_found, invalid_action, \
-                                    y_n_found, y_n_value, term_value = TeraTermUI.extract_class_data(copy)
+                                data, course_found, invalid_action, y_n_found, \
+                                y_n_value, term_value = TeraTermUI.extract_class_data(copy)
                                 if data or course_found or invalid_action or y_n_found:
                                     self.search_function_counter += 1
                                 if course in copy and show_all == y_n_value and semester == term_value:
@@ -3011,8 +3012,8 @@ class TeraTermUI(customtkinter.CTk):
                         self.automate_copy_class_data()
                         TeraTermUI.manage_user_input("on")
                         copy = pyperclip.paste()
-                        data, course_found, invalid_action, \
-                            y_n_found, y_n_value, term_value = TeraTermUI.extract_class_data(copy)
+                        data, course_found, invalid_action, y_n_found \
+                        , y_n_value, term_value = TeraTermUI.extract_class_data(copy)
                         self.after(0, self.display_searched_class_data, data)
                         self.clipboard_clear()
                         try:
@@ -3221,9 +3222,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.remember_me.toggle()
                 except Exception as err:
                     logging.warning(f"Decryption failed: {err}")
-                    self.cursor_db.execute("SELECT COUNT(*) FROM user_data")
-                    count = self.cursor_db.fetchone()[0]
-                    if count > 0:
+                    if self.has_saved_user_data():
                         self.cursor_db.execute("DELETE FROM user_data")
                         self.connection_db.commit()
                     self.crypto.reset()
@@ -3680,8 +3679,8 @@ class TeraTermUI(customtkinter.CTk):
                 except Exception as err:
                     logging.warning("An error occurred: %s", err)
                     TeraTermUI.terminate_process()
-            elif TeraTermUI.window_exists("Tera Term - [disconnected] VT") or \
-                    TeraTermUI.window_exists("Tera Term - [connecting...] VT"):
+            elif (TeraTermUI.window_exists("Tera Term - [disconnected] VT") or
+                  TeraTermUI.window_exists("Tera Term - [connecting...] VT")):
                 if not TeraTermUI.window_exists("SSH Authentication"):
                     def error():
                         self.play_sound("error.wav")
@@ -4167,14 +4166,14 @@ class TeraTermUI(customtkinter.CTk):
                 self.menu_entry.set(translation["SRM"])
             self.menu_semester.configure(text=translation["semester"])
             self.menu_semester_entry.configure(values=self.semester_values + [translation["current"]])
-            if self.e_semester_entry.get().upper().replace(" ", "") == "CURRENT" or \
-                    self.e_semester_entry.get().upper().replace(" ", "") == "ACTUAL":
+            if (self.e_semester_entry.get().upper().replace(" ", "") == "CURRENT" or
+                    self.e_semester_entry.get().upper().replace(" ", "") == "ACTUAL"):
                 self.e_semester_entry.set(translation["current"])
-            if self.s_semester_entry.get().upper().replace(" ", "") == "CURRENT" or \
-                    self.s_semester_entry.get().upper().replace(" ", "") == "ACTUAL":
+            if (self.s_semester_entry.get().upper().replace(" ", "") == "CURRENT" or
+                    self.s_semester_entry.get().upper().replace(" ", "") == "ACTUAL"):
                 self.s_semester_entry.set(translation["current"])
-            if self.menu_semester_entry.get().upper().replace(" ", "") == "CURRENT" or \
-                    self.menu_semester_entry.get().upper().replace(" ", "") == "ACTUAL":
+            if (self.menu_semester_entry.get().upper().replace(" ", "") == "CURRENT" or
+                    self.menu_semester_entry.get().upper().replace(" ", "") == "ACTUAL"):
                 self.menu_semester_entry.set(translation["current"])
             self.menu_submit.configure(text=translation["submit"])
             self.submit.configure(text=translation["submit"])
@@ -4887,8 +4886,8 @@ class TeraTermUI(customtkinter.CTk):
                             is_past_date = current_date > self.pr_date
                             is_future_date = current_date < self.pr_date
                             is_next_date = (self.pr_date.date() - current_date.date() == timedelta(days=1))
-                            is_time_difference_within_12_hours = \
-                                timedelta(hours=12, minutes=55) >= time_difference >= timedelta()
+                            is_time_difference_within_12_hours = timedelta(
+                                hours=12, minutes=55) >= time_difference >= timedelta()
                             is_more_than_one_day = (self.pr_date.date() - current_date.date() > timedelta(days=1))
                             is_current_time_ahead = current_date.time() > self.pr_date.time()
                             is_current_time_24_hours_ahead = time_difference >= timedelta(hours=-24)
@@ -4966,19 +4965,41 @@ class TeraTermUI(customtkinter.CTk):
         translation = self.load_language()
         puerto_rico_tz = pytz.timezone("America/Puerto_Rico")
         current_date = datetime.now(puerto_rico_tz)
-        time_difference = pr_date - current_date
-        total_seconds = time_difference.total_seconds()
-        if self.running_countdown:
-            if not TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
-                self.forceful_end_countdown()
+        total_seconds = (pr_date - current_date).total_seconds()
+        bootup_threshold_low = 15 * 60
+        bootup_threshold_high = 30 * 60
+        skip_boot_feature_threshold_high = 45 * 60
+
+        def check_boot_process():
+            if (not self.has_saved_user_data() or getattr(self, "booting_in_progress", False)
+                    or not self.running_countdown):
                 return
 
+            seconds_left = (self.pr_date - datetime.now(puerto_rico_tz)).total_seconds()
+            if bootup_threshold_low <= seconds_left <= bootup_threshold_high:
+                self.booting_in_progress = True
+                max_delay_sec = seconds_left - bootup_threshold_low
+                delay_ms = int(random.uniform(0, max_delay_sec) * 1000)
+                self.after(delay_ms, self.boot_be_ready_for_auto_enroll)
+            else:
+                self.after(30000, check_boot_process)
+
+        if self.running_countdown:
+            if self.has_saved_user_data():
+                if total_seconds > skip_boot_feature_threshold_high:
+                    self.stop_check_process_thread()
+                    self.stop_check_idle_thread()
+                    self.after(1000, check_boot_process)
+                    if not self.boot_notified:
+                        self.after(3500, self.notify_boot_up)
+                        self.boot_notified = True
+
             if total_seconds <= 0:
-                # Enrollment process starts
-                self.timer_label.configure(text=self.get_countdown_message(total_seconds), text_color="#32CD32",
-                                           font=customtkinter.CTkFont(size=17))
+                self.timer_label.configure(text=self.get_countdown_message(total_seconds),
+                                           text_color="#32CD32", font=customtkinter.CTkFont(size=17))
                 self.timer_label.pack(pady=25)
                 self.cancel_button.pack_forget()
+
                 if self.state() == "withdrawn":
                     if self.timer_window.state() == "withdrawn":
                         self.timer_window.iconify()
@@ -4987,53 +5008,73 @@ class TeraTermUI(customtkinter.CTk):
                     if hwnd and not win32gui.IsWindowVisible(hwnd):
                         win32gui.ShowWindow(hwnd, win32con.SW_SHOW)
                         win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-                    app = gw.getWindowsWithTitle("Tera Term UI")[0]
-                    app.restore()
-                    timer = gw.getWindowsWithTitle(translation["auto_enroll"])[0]
-                    timer.restore()
+                    gw.getWindowsWithTitle("Tera Term UI")[0].restore()
+                    gw.getWindowsWithTitle(translation["auto_enroll"])[0].restore()
+
                 self.timer_window.lift()
                 self.timer_window.focus_force()
                 self.timer_window.attributes("-topmost", 1)
                 self.started_auto_enroll = True
                 self.after(3000, self.submit_multiple_event_handler)
+
                 if TeraTermUI.window_exists(translation["dialog_title"]):
                     self.after(2500, self.dialog.destroy)
+
                 if TeraTermUI.window_exists(translation["save_pdf"]):
                     def close_file_dialog():
-                        file_dialog_hwnd = win32gui.FindWindow("#32770", translation["save_pdf"])
-                        win32gui.PostMessage(file_dialog_hwnd, win32con.WM_CLOSE, 0, 0)
+                        pdf_hwnd = win32gui.FindWindow("#32770", translation["save_pdf"])
+                        win32gui.PostMessage(pdf_hwnd, win32con.WM_CLOSE, 0, 0)
 
                     self.after(2500, close_file_dialog)
-                titles_to_close = [translation["exit"], translation["submit"], translation["success_title"],
-                                   translation["error"], translation["fix_messagebox_title"],
-                                   translation["update_popup_title"], translation["so_title"],
-                                   translation["automation_error_title"]]
-                self.after(2500, TeraTermUI.close_matching_windows, titles_to_close)
+
+                self.after(2500, TeraTermUI.close_matching_windows, [
+                    translation["exit"], translation["submit"], translation["success_title"],
+                    translation["error"], translation["fix_messagebox_title"],
+                    translation["update_popup_title"], translation["so_title"],
+                    translation["automation_error_title"]])
                 return
 
+            if self.has_saved_user_data():
+                lang = self.language_menu.get()
+                stats = self.ssh_monitor.get_stats()
+                host = self.ssh_monitor.host
+                rating, color = self.ssh_monitor.get_reliability_rating(lang)
+                sample_count = (40 if not stats or stats["samples"] < 10 else 30 if stats["std_dev"] > 100
+                                or stats["max"] > 1000 or stats["average"] > 400 else 20)
+                self.ssh_monitor.sample(count=sample_count)
+                if self.prev_sample_count != stats.get("samples"):
+                    self.server_rating.configure(text=f"{translation['server_status_rating']}{rating}",
+                                                 text_color=color)
+                    logging.info(f"Server \"{host}\" Response Time Statistics (ms):\n       {stats}")
+                    self.prev_sample_count = stats.get("samples")
+
+            self.timer_label.configure(text=self.get_countdown_message(total_seconds))
+            if total_seconds > 60:
+                self.timer_window.after(5000, lambda: self.countdown_status(pr_date))
             else:
-                # Update countdown message
-                self.timer_label.configure(text=self.get_countdown_message(total_seconds))
-                if total_seconds > 60:
-                    # Update every minute if more than a minute remains
-                    seconds_until_next_minute = 60 - datetime.now(puerto_rico_tz).second
-                    self.timer_window.after(seconds_until_next_minute * 1000, lambda: self.countdown(pr_date)
-                    if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
-                    else self.forceful_end_countdown())
-                else:
-                    # Update every second if less than a minute remains
-                    current_date = datetime.now(puerto_rico_tz)
-                    total_seconds = (pr_date - current_date).total_seconds()
-                    if total_seconds <= 0:
-                        self.countdown(pr_date)
-                    else:
-                        if not self.notification_sent:
-                            self.tray.notify(translation["notif_countdown"].replace(
-                                "{semester}", self.m_semester_entry[0].get()), title="Tera Term UI")
-                            self.notification_sent = True
-                        self.timer_window.after(1000, lambda: self.countdown(pr_date)
-                        if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT")
-                        else self.forceful_end_countdown())
+                if not self.notification_sent:
+                    self.tray.notify(translation["notif_countdown"].replace(
+                        "{semester}", self.m_semester_entry[0].get()), title="Tera Term UI")
+                    self.notification_sent = True
+                self.timer_window.after(1000, lambda: self.countdown_status(pr_date))
+
+    def countdown_status(self, pr_date):
+        puerto_rico_tz = pytz.timezone("America/Puerto_Rico")
+        total_seconds = (pr_date - datetime.now(puerto_rico_tz)).total_seconds()
+        bootup_threshold_low = 15 * 60
+        if self.has_saved_user_data():
+            if total_seconds <= bootup_threshold_low:
+                if not TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
+                    if not getattr(self, "booting_in_progress", False):
+                        self.forceful_end_countdown()
+                        return
+
+        else:
+            if not TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
+                self.forceful_end_countdown()
+                return
+
+        self.countdown(pr_date)
 
     def get_countdown_message(self, total_seconds):
         lang = self.language_menu.get()
@@ -5103,6 +5144,7 @@ class TeraTermUI(customtkinter.CTk):
         self.countdown_running = False
         self.notification_sent = False
         self.running_countdown = False
+        self.booting_in_progress = False
         if self.idle_num_check >= 34:
             self.idle_num_check = 33
         self.idle_num_check = max(0, self.idle_num_check // 2)
@@ -5121,6 +5163,12 @@ class TeraTermUI(customtkinter.CTk):
         self.play_sound("notification.wav")
         self.forceful_countdown_end = True
         CTkMessagebox(title=translation["automation_error_title"], icon="info", message=translation["end_countdown"],
+                      button_width=380)
+
+    def notify_boot_up(self):
+        translation = self.load_language()
+        self.play_sound("notification.wav")
+        CTkMessagebox(title=translation["notif_auto_boot"], icon="info", message=translation["auto_boot_up"],
                       button_width=380)
 
     def create_timer_window(self):
@@ -5192,63 +5240,131 @@ class TeraTermUI(customtkinter.CTk):
             self.timer_window.after_idle(self.timer_window.attributes, "-topmost", 0)
 
     def boot_be_ready_for_auto_enroll(self):
-        if not TeraTermUI.checkIfProcessRunning("ttermpro"):
-            self.uprb = Application(backend="uia").start(self.teraterm_exe_location, timeout=3)
-            timings.wait_until_passes(10, 1, lambda: self.uprb.window(
-                title="Tera Term - [disconnected] VT", class_name="VTWin32",
-                control_type="Window").exists())
-            self.uprb.connect(title="Tera Term - [disconnected] VT", class_name="VTWin32",
-                              control_type="Window", timeout=3)
-            self.uprb_32 = Application().connect(title="Tera Term - [disconnected] VT",
-                                                 timeout=3, class_name="VTWin32")
-            edit_menu = self.uprb.UprbayTeraTermVt.child_window(title="Edit", control_type="MenuItem")
-            self.select_screen_item = edit_menu.child_window(
-                title="Select screen", control_type="MenuItem", auto_id="50280")
-            disconnected = self.uprb.window(title="Tera Term - [disconnected] VT", class_name="VTWin32",
-                                            control_type="Window")
-            disconnected.wait("visible", timeout=3)
-            TeraTermUI.check_window_exists("Tera Term: New connection")
-            host_input = self.uprb.TeraTermDisconnectedVt.child_window(
-                title="Host:", control_type="Edit")
-            if host_input.get_value() != "uprbay.uprb.edu":
-                host_input.set_text("uprbay.uprb.edu")
-            self.uprb.TeraTermDisconnectedVt.child_window(title="OK", control_type="Button").invoke()
-            self.uprbay_window = self.uprb.window(
-                title="uprbay.uprb.edu - Tera Term VT", class_name="VTWin32", control_type="Window")
-            self.tera_term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
-            TeraTermUI.check_window_exists("SSH Authentication")
-            ssh_auth_window = self.uprb.UprbayTeraTermVt
-            user_field = ssh_auth_window.child_window(title="User name:", control_type="Edit")
-            remember_checkbox = ssh_auth_window.child_window(title="Remember password in memory",
-                                                             control_type="CheckBox")
-            plain_password_radio = ssh_auth_window.child_window(title="Use plain password to log in",
-                                                                control_type="RadioButton")
-            ok_button = ssh_auth_window.child_window(title="OK", control_type="Button")
-            user_field.set_text("students")
-            if not remember_checkbox.get_toggle_state():
-                remember_checkbox.invoke()
-            if not plain_password_radio.is_selected():
-                plain_password_radio.invoke()
-            ok_button.invoke()
-            self.server_status = self.wait_for_prompt("return to continue", "REGRESE PRONTO")
-            if self.server_status == "Prompt found":
-                self.uprb.UprbayTeraTermVt.type_keys("{ENTER 3}")
-                self.move_window()
-            self.cursor_db.execute("SELECT student_id, code, nonce_student_id, nonce_code, tag_student_id, tag_code "
-                                   "FROM user_data WHERE id = 1")
-            row = self.cursor_db.fetchone()
-            student_ct, code_ct, nonce_sid, nonce_code, tag_sid, tag_code = row
-            student_id = self.crypto.decrypt(student_ct, nonce_sid, tag_sid)
-            code = self.crypto.decrypt(code_ct, nonce_code, tag_code)
-            self.uprb.UprbayTeraTermVt.type_keys("{TAB}" + student_id + code + "{ENTER}")
-            text_output = self.wait_for_response(["SIGN-IN", "ON FILE",  "PIN NUMBER", "ERRORS FOUND"],
-                                                 init_timeout=False, timeout=7)
-            if "SIGN-IN" in text_output:
-                TeraTermUI.secure_zeroize_string(student_id)
-                TeraTermUI.secure_zeroize_string(code)
-                self.reset_activity_timer()
-                self.start_check_idle_thread()
-                self.start_check_process_thread()
+        MAX_BOOT_RETRIES = 3
+        retry_delay = 2.5
+        for attempt in range(1, MAX_BOOT_RETRIES + 1):
+            try:
+                TeraTermUI.manage_user_input("on")
+                if TeraTermUI.checkIfProcessRunning("ttermpro"):
+                    keywords = ["STUDENTS REQ/DROP", "HOLD FLAGS", "PROGRAMA DE CLASES", "ACADEMIC STATISTICS",
+                                "SNAPSHOT", "SOLICITUD DE PRORROGA", "LISTA DE SECCIONES", "AYUDA ECONOMICA",
+                                "EXPEDIENTE ACADEMICO", "AUDIT", "PERSONAL DATA", "COMPUTO DE MATRICULA", "SIGN-IN",
+                                "MORE SECTIONS EXIST"]
+                    text_output = self.capture_screenshot()
+                    hwnd_tt = win32gui.FindWindow(None, "Tera Term")
+                    count, is_multiple = TeraTermUI.countRunningProcesses("ttermpro")
+                    if any(keyword in text_output for keyword in keywords) and not is_multiple:
+                        if hwnd_tt:
+                            win32gui.PostMessage(hwnd_tt, win32con.WM_CLOSE, 0, 0)
+                        self.uprb.UprbayTeraTermVt.type_keys("^q")
+                        self.uprb.UprbayTeraTermVt.type_keys("{VK_RIGHT}{VK_LEFT}")
+                        self.connect_to_uprb()
+                    else:
+                        if attempt < MAX_BOOT_RETRIES:
+                            raise RuntimeError("Tera Term running but not at expected screen")
+                        else:
+                            self.forceful_end_countdown()
+                            return
+                else:
+                    self.uprb = Application(backend="uia").start(self.teraterm_exe_location, timeout=3)
+                    timings.wait_until_passes(10, 1, lambda: self.uprb.window(
+                        title="Tera Term - [disconnected] VT", class_name="VTWin32",
+                        control_type="Window").exists())
+                    self.uprb.connect(title="Tera Term - [disconnected] VT", class_name="VTWin32",
+                                      control_type="Window", timeout=3)
+                    self.uprb_32 = Application().connect(title="Tera Term - [disconnected] VT",
+                                                         timeout=3, class_name="VTWin32")
+                    edit_menu = self.uprb.UprbayTeraTermVt.child_window(title="Edit", control_type="MenuItem")
+                    self.select_screen_item = edit_menu.child_window(
+                        title="Select screen", control_type="MenuItem", auto_id="50280")
+                    disconnected = self.uprb.window(title="Tera Term - [disconnected] VT", class_name="VTWin32",
+                                                    control_type="Window")
+                    disconnected.wait("visible", timeout=3)
+                    TeraTermUI.check_window_exists("Tera Term: New connection")
+                    host_input = self.uprb.TeraTermDisconnectedVt.child_window(
+                        title="Host:", control_type="Edit")
+                    if host_input.get_value() != "uprbay.uprb.edu":
+                        host_input.set_text("uprbay.uprb.edu")
+                    self.uprb.TeraTermDisconnectedVt.child_window(title="OK", control_type="Button").invoke()
+                    self.uprbay_window = self.uprb.window(
+                        title="uprbay.uprb.edu - Tera Term VT", class_name="VTWin32", control_type="Window")
+                    self.uprbay_window.wait("visible", timeout=3)
+                    self.tera_term_window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
+                    TeraTermUI.check_window_exists("SSH Authentication")
+                    ssh_auth_window = self.uprb.UprbayTeraTermVt
+                    user_field = ssh_auth_window.child_window(title="User name:", control_type="Edit")
+                    remember_checkbox = ssh_auth_window.child_window(title="Remember password in memory",
+                                                                     control_type="CheckBox")
+                    plain_password_radio = ssh_auth_window.child_window(title="Use plain password to log in",
+                                                                        control_type="RadioButton")
+                    ok_button = ssh_auth_window.child_window(title="OK", control_type="Button")
+                    user_field.set_text("students")
+                    if not remember_checkbox.get_toggle_state():
+                        remember_checkbox.invoke()
+                    if not plain_password_radio.is_selected():
+                        plain_password_radio.invoke()
+                    ok_button.invoke()
+                    self.server_status = self.wait_for_prompt("return to continue",
+                                                              "REGRESE PRONTO")
+                    if self.server_status == "Prompt found":
+                        self.uprb.UprbayTeraTermVt.type_keys("{ENTER 3}")
+                        self.move_window()
+                    else:
+                        if attempt == MAX_BOOT_RETRIES:
+                            if attempt < MAX_BOOT_RETRIES:
+                                raise RuntimeError("Prompt not found after SSH auth")
+                            else:
+                                self.forceful_end_countdown()
+                                return
+                    self.cursor_db.execute("SELECT student_id, code, nonce_student_id, nonce_code, tag_student_id, "
+                                           "tag_code FROM user_data WHERE id = 1")
+                    row = self.cursor_db.fetchone()
+                    student_ct, code_ct, nonce_sid, nonce_code, tag_sid, tag_code = row
+                    student_id = self.crypto.decrypt(student_ct, nonce_sid, tag_sid)
+                    code = self.crypto.decrypt(code_ct, nonce_code, tag_code)
+                    self.uprb.UprbayTeraTermVt.type_keys("{TAB}" + student_id + code + "{ENTER}")
+                    text_output = self.wait_for_response(["SIGN-IN", "ON FILE",  "PIN NUMBER", "ERRORS FOUND"],
+                                                         init_timeout=False, timeout=7)
+                    if "SIGN-IN" in text_output:
+                        TeraTermUI.secure_zeroize_string(student_id)
+                        TeraTermUI.secure_zeroize_string(code)
+                        self.reset_activity_timer()
+                        self.start_check_idle_thread()
+                        self.start_check_process_thread()
+                        if self.state() == "withdrawn":
+                            hwnd = win32gui.FindWindow(None, "uprbay.uprb.edu - Tera Term VT")
+                            if hwnd and win32gui.IsWindowVisible(hwnd):
+                                win32gui.ShowWindow(hwnd, win32con.SW_HIDE)
+                        return
+                    else:
+                        if attempt < MAX_BOOT_RETRIES:
+                            raise RuntimeError("SIGN-IN screen not detected")
+                        else:
+                            self.forceful_end_countdown()
+                            return
+            except Exception as err:
+                logging.warning(f"[Boot Attempt {attempt}] Failed: {err}")
+                self.log_error()
+                if TeraTermUI.checkIfProcessRunning("ttermpro"):
+                    logging.info("Terminating stuck Tera Term instances after failed boot.")
+                    if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
+                        try:
+                            self.uprb.kill(soft=True)
+                            if TeraTermUI.window_exists("uprbay.uprb.edu - Tera Term VT"):
+                                TeraTermUI.terminate_process()
+                        except Exception as kill_err:
+                            logging.warning("Force kill fallback: %s", kill_err)
+                            TeraTermUI.terminate_process()
+                    elif (TeraTermUI.window_exists("Tera Term - [disconnected] VT") or
+                          TeraTermUI.window_exists("Tera Term - [connecting...] VT")):
+                        TeraTermUI.terminate_process()
+                if attempt < MAX_BOOT_RETRIES:
+                    time.sleep(retry_delay)
+                else:
+                    self.forceful_end_countdown()
+            finally:
+                self.set_focus_to_tkinter()
+                TeraTermUI.manage_user_input()
 
     def disable_enable_gui(self):
         if self.countdown_running:
@@ -5806,6 +5922,11 @@ class TeraTermUI(customtkinter.CTk):
                     entry.lang = lang
             self.load_saved_classes()
 
+    def has_saved_user_data(self):
+        self.cursor_db.execute("SELECT COUNT(*) FROM user_data")
+        count = self.cursor_db.fetchone()[0]
+        return count > 0
+
     # saves the config information to the database when the app closes
     def save_user_config(self, include_exit=True):
         field_values = {
@@ -5896,9 +6017,7 @@ class TeraTermUI(customtkinter.CTk):
             else:
                 self.must_save_user_data = True
         else:
-            self.cursor_db.execute("SELECT COUNT(*) FROM user_data")
-            count = self.cursor_db.fetchone()[0]
-            if count > 0:
+            if self.has_saved_user_data():
                 self.cursor_db.execute("DELETE FROM user_data")
                 self.connection_db.commit()
                 self.crypto.reset()
@@ -8747,8 +8866,8 @@ class TeraTermUI(customtkinter.CTk):
                            translation["count_processes"])
                 return False
             self.connect_to_uprb()
-            if not TeraTermUI.window_exists("SSH Authentication") and \
-                    not TeraTermUI.window_exists("Tera Term - [disconnected] VT"):
+            if (not TeraTermUI.window_exists("SSH Authentication") and
+                    not TeraTermUI.window_exists("Tera Term - [disconnected] VT")):
                 text_output = self.capture_screenshot()
                 to_continue = "return to continue"
                 count_to_continue = text_output.count(to_continue)
@@ -8902,8 +9021,8 @@ class TeraTermUI(customtkinter.CTk):
                 appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
                 if appdata_ini_path and not os.path.isfile(os.path.join(self.teraterm_directory, "portable.ini")):
                     file_path = appdata_ini_path
-                elif os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
-                        and self.has_write_permission():
+                elif (os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini"))
+                      and self.has_write_permission()):
                     file_path = os.path.join(self.teraterm_directory, "TERATERM.ini")
                 else:
                     self.teraterm5_first_boot = True
@@ -9672,9 +9791,7 @@ class TeraTermUI(customtkinter.CTk):
             return
 
         self.last_delete_time = now
-        self.cursor_db.execute("SELECT COUNT(*) FROM user_data")
-        count = self.cursor_db.fetchone()[0]
-        if count > 0:
+        if self.has_saved_user_data():
             self.cursor_db.execute("DELETE FROM user_data")
             self.connection_db.commit()
             self.crypto.reset()
@@ -9875,17 +9992,17 @@ class TeraTermUI(customtkinter.CTk):
                 stats = self.ssh_monitor.get_stats()
                 host = self.ssh_monitor.host
                 rating, color = self.ssh_monitor.get_reliability_rating(lang)
-                if not stats or stats["samples"] < 10:
-                    count = 40
-                elif stats["std_dev"] > 100 or stats["max"] > 1000 or stats["average"] > 400:
-                    count = 30
-                else:
-                    count = 20
-                self.ssh_monitor.sample(count=count)
-                if self.timer_window is not None and self.timer_window.winfo_exists():
-                    self.server_rating.configure(text=f"{translation["server_status_rating"]}{rating}",
+                sample_count = (40 if not stats or stats["samples"] < 10 else 30 if stats["std_dev"] > 100
+                                or stats["max"] > 1000 or stats["average"] > 400 else 20)
+                self.ssh_monitor.sample(count=sample_count)
+                new_sample_count = stats.get("samples")
+                has_new_data = (self.prev_sample_count != new_sample_count)
+                if self.timer_window is not None and self.timer_window.winfo_exists() and has_new_data:
+                    self.server_rating.configure(text=f"{translation['server_status_rating']}{rating}",
                                                  text_color=color)
-                logging.info(f"Server \"{host}\" Response Time Statistics (ms):\n       {stats}")
+                if has_new_data:
+                    logging.info(f'Server "{host}" Response Time Statistics (ms):\n       {stats}')
+                    self.prev_sample_count = new_sample_count
                 is_running = TeraTermUI.checkIfProcessRunning("ttermpro")
                 if is_running:
                     if not_running_count > 1 and self.stop_check_idle.is_set():
@@ -10801,14 +10918,14 @@ class TeraTermUI(customtkinter.CTk):
                 if ini_location and not os.path.isfile(os.path.join(self.teraterm_directory, "portable.ini")):
                     self.teraterm_config = ini_location
                 else:
-                    if os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
-                            and self.has_write_permission():
+                    if (os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini"))
+                            and self.has_write_permission()):
                         self.teraterm_config = os.path.join(self.teraterm_directory, "TERATERM.ini")
                     else:
                         self.teraterm5_first_boot = True
             else:
-                if os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
-                        and self.has_write_permission():
+                if (os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini"))
+                        and self.has_write_permission()):
                     self.teraterm_config = os.path.join(self.teraterm_directory, "TERATERM.ini")
                 else:
                     self.teraterm5_first_boot = True
@@ -10904,14 +11021,14 @@ class TeraTermUI(customtkinter.CTk):
                 if ini_location and not os.path.isfile(os.path.join(self.teraterm_directory, "portable.ini")):
                     self.teraterm_config = ini_location
                 else:
-                    if os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
-                            and self.has_write_permission():
+                    if (os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini"))
+                            and self.has_write_permission()):
                         self.teraterm_config = os.path.join(self.teraterm_directory, "TERATERM.ini")
                     else:
                         self.teraterm5_first_boot = True
             else:
-                if os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
-                        and self.has_write_permission():
+                if (os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini"))
+                        and self.has_write_permission()):
                     self.teraterm_config = os.path.join(self.teraterm_directory, "TERATERM.ini")
                 else:
                     self.teraterm5_first_boot = True
@@ -11415,8 +11532,8 @@ class TeraTermUI(customtkinter.CTk):
                 appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
                 if appdata_ini_path and not os.path.isfile(os.path.join(self.teraterm_directory, "portable.ini")):
                     file_path = appdata_ini_path
-                elif os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
-                        and self.has_write_permission():
+                elif (os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini"))
+                      and self.has_write_permission()):
                     file_path = os.path.join(self.teraterm_directory, "TERATERM.ini")
                 else:
                     self.teraterm5_first_boot = True
@@ -11459,8 +11576,8 @@ class TeraTermUI(customtkinter.CTk):
                 appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
                 if appdata_ini_path and not os.path.isfile(os.path.join(self.teraterm_directory, "portable.ini")):
                     file_path = appdata_ini_path
-                elif os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
-                        and self.has_write_permission():
+                elif (os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini"))
+                      and self.has_write_permission()):
                     file_path = os.path.join(self.teraterm_directory, "TERATERM.ini")
                 else:
                     self.teraterm5_first_boot = True
@@ -11543,8 +11660,8 @@ class TeraTermUI(customtkinter.CTk):
                 appdata_ini_path = TeraTermUI.find_appdata_teraterm_ini()
                 if appdata_ini_path and not os.path.isfile(os.path.join(self.teraterm_directory, "portable.ini")):
                     file_path = appdata_ini_path
-                elif os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini")) \
-                        and self.has_write_permission():
+                elif (os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini"))
+                      and self.has_write_permission()):
                     file_path = os.path.join(self.teraterm_directory, "TERATERM.ini")
                 else:
                     self.teraterm5_first_boot = True
@@ -11662,15 +11779,15 @@ class TeraTermUI(customtkinter.CTk):
             if choices in ["Register", "Registra"]:
                 if sections in self.classes_status:
                     status_entry = self.classes_status[sections]
-                    if status_entry["status"] == "ENROLLED" and status_entry["classes"] == classes and \
-                            status_entry["semester"] == semester:
+                    if (status_entry["status"] == "ENROLLED" and status_entry["classes"] == classes and
+                            status_entry["semester"] == semester):
                         error_msg_long = translation["multiple_already_enrolled"]
                         break
             elif choices in ["Drop", "Baja"]:
                 if sections in self.classes_status:
                     status_entry = self.classes_status[sections]
-                    if status_entry["status"] == "DROPPED" and status_entry["classes"] == classes and \
-                            status_entry["semester"] == semester:
+                    if (status_entry["status"] == "DROPPED" and status_entry["classes"] == classes and
+                            status_entry["semester"] == semester):
                         error_msg_long = translation["multiple_already_dropped"]
                         break
 
