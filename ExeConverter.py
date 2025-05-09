@@ -1,12 +1,14 @@
 import argparse
 import hashlib
-import re
 import os
+import platform
+import re
 import shutil
 import sqlite3
 import subprocess
 import sys
 import time
+import win32cred
 from colorama import init, Fore, Style
 from datetime import datetime, UTC
 
@@ -232,6 +234,13 @@ try:
         cursor.execute("DELETE FROM saved_classes")
         if os.path.exists(project_directory + "/masterkey.json"):
             os.remove(project_directory + "/masterkey.json")
+        cred_name = f"TeraTermUI/Passphrase/{os.getlogin()}@{platform.node()}"
+        try:
+            win32cred.CredRead(cred_name, win32cred.CRED_TYPE_GENERIC)
+            win32cred.CredDelete(cred_name, win32cred.CRED_TYPE_GENERIC, 0)
+        except Exception as e:
+            if e.args[0] == 1168:
+                pass
         utc_now_str = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
         cursor.execute("SELECT value FROM metadata WHERE key = ?", ("version",))
         row = cursor.fetchone()
@@ -246,12 +255,12 @@ try:
 except KeyboardInterrupt as e:
     shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
     os.remove(program_backup)
-    print(Fore.RED + f"Failed to deal with database: {e}\n" + Style.RESET_ALL)
+    print(Fore.RED + f"\nFailed to deal with database: {e}" + Style.RESET_ALL)
     sys.exit(1)
 except Exception as e:
     shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
     os.remove(program_backup)
-    print(Fore.RED + f"Failed to deal with database: {e}\n" + Style.RESET_ALL)
+    print(Fore.RED + f"\nFailed to deal with database: {e}" + Style.RESET_ALL)
 try:
     if os.path.exists(output_directory):
         shutil.rmtree(output_directory)
