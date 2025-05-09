@@ -354,6 +354,8 @@
 	"unexpected_error": "Unexpected and rare error, failed to start tera term, please try to log-in again\n\n(Reporting the issue is really appreciated)",
 	"countdown_win": "Auto-Enroll Window",
 	"end_countdown": "The Auto-Enroll event was force to end because Tera Term is not running anymore\n\nIf it closed by itself, then there was probably a server maintenance done by the university",
+	"notif_auto_boot": "Waiting Mode",
+	"auto_boot_up": "Tera Term will now close temporarily to reduce server load. Since your login information is saved, the system will reconnect automatically between 15 and 30 minutes before enrollment",
 
 	"feedback_unavailable": "Error! Feedback submission not currently available",
 	"submit_feedback": "Are you ready to submit your feedback?\n\nNOTE: Submission is completely anonymous",
