@@ -355,6 +355,8 @@
 	"unexpected_error": "Error inesperado y raro, no se pudo iniciar Tera Term, por favor intente iniciar sesión nuevamente\n\n(Se agradecería mucho informar sobre el problema)",
 	"countdown_win": "Ventana de Auto-Matrícula",
 	"end_countdown": "El evento Auto-Matrícula se forzó a terminar porque Tera Term no está corriendo\n\nSi se cerró por sí mismo, probablemente la universidad inicio un mantenimiento para el servidor",
+	"notif_auto_boot": "Modo de espera",
+	"auto_boot_up": "Tera Term se cerrará temporalmente para evitar sobrecargar el servidor. Como tienes datos guardados, el sistema se reconectará automáticamente entre 15 y 30 minutos antes de la matrícula",
 
 	"feedback_unavailable": "¡Error! Mandar comentarios no esta disponible ahora mismo",
 	"submit_feedback": "¿Estás preparado para mandar to comentario?\n\nNOTA: El envío es completamente anónimo",
