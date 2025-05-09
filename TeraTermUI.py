@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.92.0 - 5/8/25
+# DATE - Started 1/1/23, Current Build v0.92.0 - 5/9/25
 
 # BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
 # depends a lot on the user's system and takes a bit of time to process.
@@ -790,18 +790,11 @@ class TeraTermUI(customtkinter.CTk):
                     if x_is_numeric and y_is_numeric:
                         x_pos = int(x_str)
                         y_pos = int(y_str)
-                        screen_x = self.winfo_vrootx()
-                        screen_y = self.winfo_vrooty()
                         screen_width = self.winfo_screenwidth()
                         screen_height = self.winfo_screenheight()
-                        width = int(width)
-                        height = int(height)
-                        within_x = screen_x <= x_pos <= (screen_x + screen_width - width)
-                        within_y = screen_y <= y_pos <= (screen_y + screen_height - height)
-                        if within_x and within_y:
-                            x_pos = max(screen_x, min(x_pos, screen_x + screen_width - width))
-                            y_pos = max(screen_y, min(y_pos, screen_y + screen_height - height))
-                            self.geometry(f"{width}x{height}+{x_pos}+{y_pos}")
+                        x_pos = max(0, min(x_pos, screen_width - width))
+                        y_pos = max(0, min(y_pos, screen_height - height))
+                        self.geometry(f"{width}x{height}+{x_pos}+{y_pos}")
             if results["audio_tera"] == "Disabled":
                 self.muted_tera = True
             if results["audio_app"] == "Disabled":
