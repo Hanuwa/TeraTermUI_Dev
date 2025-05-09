@@ -15,7 +15,7 @@
 
 # FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
 # refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 14,200 lines of codes, it definitely makes things harder to work with
+# and with over 14,400 lines of codes, it definitely makes things harder to work with
 
 import asyncio
 import atexit
@@ -54,6 +54,7 @@ import weakref
 import webbrowser
 import win32clipboard
 import win32con
+import win32cred
 import win32crypt
 import win32gui
 import win32security
@@ -73,6 +74,7 @@ from datetime import datetime, timedelta, UTC
 from difflib import SequenceMatcher, get_close_matches
 from filelock import FileLock, Timeout
 from functools import wraps, lru_cache
+from getpass import getuser
 from hmac import compare_digest
 from mss import mss
 from pathlib import Path
@@ -184,7 +186,7 @@ class TeraTermUI(customtkinter.CTk):
         self.REAZIONE = self.ottenere_protetta_salasana()
         self.USER_APP_VERSION = "0.92.0"
         self.mode = "Portable"
-        self.updater_hash = "4504bac48d0aaf70f51d050c908614c6120ada60c0f2aff3e952eb2f6062bfb5"
+        self.updater_hash = "348d947212262fdf1054853c82af8f134499e429d3ef6d0e383bd93f74e772bb"
         self.running_updater = False
         self.credentials = None
         # disabled/enables keybind events
@@ -704,7 +706,7 @@ class TeraTermUI(customtkinter.CTk):
             self.teraterm_config = os.path.join(teraterm_directory, "TERATERM.ini")
             self.teraterm_directory = teraterm_directory
         else:
-            main_drive = os.path.abspath(os.sep)
+            main_drive = os.environ["SystemRoot"][:3]
             self.teraterm_exe_location = os.path.join(main_drive, "Program Files (x86)", "teraterm", "ttermpro.exe")
             self.teraterm_config = os.path.join(main_drive, "Program Files (x86)", "teraterm", "TERATERM.ini")
             self.teraterm_directory = os.path.join(main_drive, "Program Files (x86)", "teraterm")
@@ -793,9 +795,14 @@ class TeraTermUI(customtkinter.CTk):
                         screen_y = self.winfo_vrooty()
                         screen_width = self.winfo_screenwidth()
                         screen_height = self.winfo_screenheight()
-                        x_pos = max(screen_x, min(x_pos, screen_width - width))
-                        y_pos = max(screen_y, min(y_pos, screen_height - height))
-                        self.geometry(f"{width}x{height}+{x_pos}+{y_pos}")
+                        width = int(width)
+                        height = int(height)
+                        within_x = screen_x <= x_pos <= (screen_x + screen_width - width)
+                        within_y = screen_y <= y_pos <= (screen_y + screen_height - height)
+                        if within_x and within_y:
+                            x_pos = max(screen_x, min(x_pos, screen_x + screen_width - width))
+                            y_pos = max(screen_y, min(y_pos, screen_y + screen_height - height))
+                            self.geometry(f"{width}x{height}+{x_pos}+{y_pos}")
             if results["audio_tera"] == "Disabled":
                 self.muted_tera = True
             if results["audio_app"] == "Disabled":
@@ -3214,18 +3221,24 @@ class TeraTermUI(customtkinter.CTk):
         if row and all(isinstance(x, bytes) for x in row):
             student_ct, code_ct, nonce_sid, nonce_code, tag_sid, tag_code = row
             if len(nonce_sid) == 16 and len(nonce_code) == 16 and len(tag_sid) == 16 and len(tag_code) == 16:
-                try:
-                    student_id = self.crypto.decrypt(student_ct, nonce_sid, tag_sid)
-                    code = self.crypto.decrypt(code_ct, nonce_code, tag_code)
-                    self.student_id_entry.insert(0, student_id)
-                    self.code_entry.insert(0, code)
-                    self.remember_me.toggle()
-                except Exception as err:
-                    logging.warning(f"Decryption failed: {err}")
+                if os.path.exists(self.crypto.key_path):
+                    try:
+                        student_id = self.crypto.decrypt(student_ct, nonce_sid, tag_sid)
+                        code = self.crypto.decrypt(code_ct, nonce_code, tag_code)
+                        self.student_id_entry.insert(0, student_id)
+                        self.code_entry.insert(0, code)
+                        self.remember_me.toggle()
+                    except Exception as err:
+                        logging.warning(f"Decryption failed: {err}")
+                        if self.has_saved_user_data():
+                            self.cursor_db.execute("DELETE FROM user_data")
+                            self.connection_db.commit()
+                        self.crypto.reset()
+                else:
                     if self.has_saved_user_data():
                         self.cursor_db.execute("DELETE FROM user_data")
                         self.connection_db.commit()
-                    self.crypto.reset()
+                    self.crypto.create_new_key_file()
         if self.ask_skip_auth and not self.skipped_login:
             self.unbind("<Return>")
             self.unbind("<Control-BackSpace>")
@@ -10819,7 +10832,7 @@ class TeraTermUI(customtkinter.CTk):
 
     @staticmethod
     def find_ttermpro():
-        main_drive = os.path.abspath(os.sep)
+        main_drive = os.environ["SystemRoot"][:3]
 
         # Prioritize common installation directories with recommended depth limits
         common_paths = {
@@ -10963,7 +10976,7 @@ class TeraTermUI(customtkinter.CTk):
     def find_teraterm_directory():
         import glob
 
-        main_drive = os.path.abspath(os.sep)
+        main_drive = os.environ["SystemRoot"][:3]
         base_paths = [
             os.path.join(main_drive, "Program Files (x86)"),
             os.path.join(main_drive, "Program Files")
@@ -11006,7 +11019,7 @@ class TeraTermUI(customtkinter.CTk):
     def manually_change_location(self):
         translation = self.load_language()
         filename = filedialog.askopenfilename(
-            initialdir=os.path.abspath(os.sep), title=translation["select_tera_term"],
+            initialdir=os.environ["SystemRoot"][:3], title=translation["select_tera_term"],
             filetypes=(("Tera Term", "*ttermpro.exe"),))
         if re.search("ttermpro.exe", filename):
             self.teraterm_exe_location = os.path.normpath(filename)
@@ -13478,11 +13491,12 @@ class SecureDataStore:
     def __init__(self, key_path=None, auto_rotate_days=30):
         self.key_path = key_path or os.path.join(os.getcwd(), "masterkey.json")
         self.auto_rotate_days = auto_rotate_days
+        self.cred_name = f"TeraTermUI/Passphrase/{os.getlogin()}@{platform.node()}"
         self.aes_key = None
         self.creating_key_file = False
         self.initialize_keys()
 
-    # Load and validate the encrypted master key from the key file
+    # Load and validate the encrypted key file, verify HMAC, derive AES
     def initialize_keys(self):
         try:
             if not os.path.exists(self.key_path):
@@ -13492,33 +13506,75 @@ class SecureDataStore:
             with open(self.key_path, "r") as f:
                 raw = json.load(f)
 
-            metadata = json.dumps({"version": raw["version"], "created_at": raw["created_at"],
-                                   "encrypted_key": raw["encrypted_key"]}, separators=(",", ":")).encode()
+            metadata = json.dumps({
+                "version": raw["version"],
+                "key_id": raw["key_id"],
+                "created_at": raw["created_at"],
+                "expires_at": raw["expires_at"],
+                "last_used": raw["last_used"],
+                "encrypted_key": raw["encrypted_key"],
+                "os_username": raw["os_username"],
+                "user_sid": raw["user_sid"],
+                "machine_id": raw["machine_id"],
+                "key_usage": raw["key_usage"],
+                "key_algorithm": raw["key_algorithm"],
+                "protected_by": raw["protected_by"]
+            }, separators=(",", ":")).encode()
 
             hmac_stored = base64.b64decode(raw["hmac"])
-            hmac_calc = HMAC.new(b"teraterm_ui_master_hmac", digestmod=SHA256)
+            hmac_calc = HMAC.new(self.get_dynamic_hmac_key(), digestmod=SHA256)
             hmac_calc.update(metadata)
 
             if not compare_digest(hmac_stored, hmac_calc.digest()):
                 raise ValueError("HMAC verification failed on masterkey.json")
 
+            if self.is_expired():
+                logging.info("Master key expired — rotating key")
+                self.reset()
+                self.creating_key_file = True
+                self.create_new_key_file()
+                return
+
             encrypted_key = base64.b64decode(raw["encrypted_key"])
             master_key = win32crypt.CryptUnprotectData(encrypted_key, None,
                                                        None, None, 0)[1]
-            self.aes_key = HKDF(master_key, 32, salt=b"student_event_salt", hashmod=SHA256)
+            passphrase = self.retrieve_passphrase()
+            hybrid_key = bytes(a ^ b for a, b in zip(master_key, passphrase))
+            self.aes_key = HKDF(hybrid_key, 32, salt=b"student_event_salt", hashmod=SHA256)
+
         except Exception as err:
             logging.error("Key initialization failed: %s", str(err))
+            self.reset()
+            self.creating_key_file = True
+            self.create_new_key_file()
 
-    # Generate and securely store a new DPAPI-encrypted master key
+    # Generate new master key, encrypt using DPAPI, store with metadata and HMAC
     def create_new_key_file(self):
         master_key = get_random_bytes(32)
         encrypted = win32crypt.CryptProtectData(master_key, None, None,
                                                 None, None, 0)
+        key_id = str(os.urandom(16).hex())
+        user_sid, _, _ = win32security.LookupAccountName(None, getuser())
+        user_sid_str = win32security.ConvertSidToStringSid(user_sid)
 
-        metadata = {"version": "1.0.0", "created_at": datetime.now(UTC).isoformat(),
-                    "encrypted_key": base64.b64encode(encrypted).decode()}
+        passphrase = get_random_bytes(32)
+        self.store_passphrase(passphrase)
 
-        hmac_obj = HMAC.new(b"teraterm_ui_master_hmac", digestmod=SHA256)
+        metadata = {
+            "version": "1.1.0",
+            "key_id": key_id,
+            "created_at": datetime.now(UTC).isoformat(),
+            "expires_at": (datetime.now(UTC) + timedelta(days=self.auto_rotate_days)).isoformat(),
+            "last_used": None,
+            "encrypted_key": base64.b64encode(encrypted).decode(),
+            "os_username": getuser(),
+            "user_sid": user_sid_str,
+            "machine_id": platform.node(),
+            "key_usage": "encryption",
+            "key_algorithm": "AES-GCM-256-HKDF-SHA256",
+            "protected_by": "DPAPI-SID"
+        }
+        hmac_obj = HMAC.new(self.get_dynamic_hmac_key(), digestmod=SHA256)
         hmac_obj.update(json.dumps(metadata, separators=(",", ":")).encode())
         metadata["hmac"] = base64.b64encode(hmac_obj.digest()).decode()
 
@@ -13528,59 +13584,140 @@ class SecureDataStore:
         self.lock_file_to_user(self.key_path)
         self.hide_file(self.key_path)
 
-    # Marks the file as hidden in Windows Explorer
-    @staticmethod
-    def hide_file(path):
-        FILE_ATTRIBUTE_HIDDEN = 0x02
-        try:
-            ctypes.windll.kernel32.SetFileAttributesW(path, FILE_ATTRIBUTE_HIDDEN)
-        except Exception as err:
-            logging.warning(f"Could not hide file {path}: {err}")
+    # Securely store passphrase in Windows Credential Manager
+    def store_passphrase(self, passphrase):
+        encoded = base64.b64encode(passphrase).decode("utf-8")
+        win32cred.CredWrite({
+            "Type": win32cred.CRED_TYPE_GENERIC,
+            "TargetName": self.cred_name,
+            "UserName": os.getlogin(),
+            "CredentialBlob": encoded,
+            "Persist": win32cred.CRED_PERSIST_LOCAL_MACHINE
+        }, 0)
 
-    # Encrypt a plaintext string using AES-GCM
-    def encrypt(self, plaintext):
+    def retrieve_passphrase(self):
+        cred = win32cred.CredRead(self.cred_name, win32cred.CRED_TYPE_GENERIC)
+        return base64.b64decode(cred["CredentialBlob"])
+
+    def delete_passphrase(self):
+        try:
+            win32cred.CredRead(self.cred_name, win32cred.CRED_TYPE_GENERIC)
+            win32cred.CredDelete(self.cred_name, win32cred.CRED_TYPE_GENERIC, 0)
+        except Exception as err:
+            if err.args[0] == 1168:
+                pass
+            else:
+                logging.warning(f"Could not delete passphrase from Credential Manager: {err}")
+
+    @contextmanager
+    def unlock_aes_key(self):
         if self.aes_key is None:
             self.initialize_keys()
 
-        cipher = AES.new(self.aes_key, AES.MODE_GCM)
-        ciphertext, tag = cipher.encrypt_and_digest(plaintext.encode())
-        return ciphertext, cipher.nonce, tag
+        key = bytearray(self.aes_key)
+        try:
+            yield key
+        finally:
+            self.zeroize(key)
 
-    # Decrypt a ciphertext and verify its tag
+    # Encrypt plaintext string using AES-GCM and return ciphertext, nonce, tag
+    def encrypt(self, plaintext):
+        with self.unlock_aes_key() as key:
+            cipher = AES.new(bytes(key), AES.MODE_GCM)
+            ciphertext, tag = cipher.encrypt_and_digest(plaintext.encode())
+            self.update_last_used()
+            return ciphertext, cipher.nonce, tag
+
+    # Decrypt ciphertext using AES-GCM, verify tag, and return plaintext
     def decrypt(self, ciphertext, nonce, tag):
         try:
-            cipher = AES.new(self.aes_key, AES.MODE_GCM, nonce=nonce)
-            return cipher.decrypt_and_verify(ciphertext, tag).decode()
+            with self.unlock_aes_key() as key:
+                cipher = AES.new(bytes(key), AES.MODE_GCM, nonce=nonce)
+                return cipher.decrypt_and_verify(ciphertext, tag).decode()
         except (ValueError, KeyError) as err:
             logging.error("Decryption failed or tag mismatch: %s", str(err))
             raise ValueError("Decryption failed or data integrity check failed")
+        finally:
+            self.update_last_used()
 
-    def reset(self):
-        self.zeroize(self.aes_key)
-        self.aes_key = None
-        if os.path.exists(self.key_path):
-            os.remove(self.key_path)
+    def update_last_used(self):
+        if not os.path.exists(self.key_path):
+            logging.warning("Key file missing — skipping last_used update")
+            return
 
+        try:
+            with open(self.key_path, "r+") as f:
+                raw = json.load(f)
+                raw["last_used"] = datetime.now(UTC).isoformat()
+                metadata = json.dumps({
+                    k: raw[k] for k in ["version", "key_id", "created_at", "expires_at", "last_used",
+                                        "encrypted_key", "os_username", "user_sid", "machine_id", "key_usage",
+                                        "key_algorithm", "protected_by"]},
+                    separators=(",", ":")).encode()
+
+                hmac_obj = HMAC.new(self.get_dynamic_hmac_key(), digestmod=SHA256)
+                hmac_obj.update(metadata)
+                raw["hmac"] = base64.b64encode(hmac_obj.digest()).decode()
+                f.seek(0)
+                f.truncate()
+                json.dump(raw, f, indent=2)
+        except Exception as err:
+            logging.warning("Could not update last_used timestamp: %s", str(err))
+
+    # Check if the key has expired based on created_at and rotation period
     def is_expired(self):
         with open(self.key_path, "r") as f:
             created_at = json.load(f)["created_at"]
         created = datetime.fromisoformat(created_at)
         return (datetime.now(UTC) - created).days > self.auto_rotate_days
 
+    # Verify the integrity of the key file using its HMAC
     def verify_integrity(self):
         with open(self.key_path, "r") as f:
             raw = json.load(f)
-
-        metadata = json.dumps({"version": raw["version"], "created_at": raw["created_at"],
-                               "encrypted_key": raw["encrypted_key"]}, separators=(",", ":")).encode()
-
+        metadata = json.dumps({
+            "version": raw["version"],
+            "key_id": raw["key_id"],
+            "created_at": raw["created_at"],
+            "expires_at": raw["expires_at"],
+            "last_used": raw["last_used"],
+            "encrypted_key": raw["encrypted_key"],
+            "os_username": raw["os_username"],
+            "user_sid": raw["user_sid"],
+            "machine_id": raw["machine_id"],
+            "key_usage": raw["key_usage"],
+            "key_algorithm": raw["key_algorithm"],
+            "protected_by": raw["protected_by"]
+        }, separators=(",", ":")).encode()
         expected_hmac = base64.b64decode(raw["hmac"])
-        actual_hmac = HMAC.new(b"teraterm_ui_master_hmac", digestmod=SHA256)
+        actual_hmac = HMAC.new(self.get_dynamic_hmac_key(), digestmod=SHA256)
         actual_hmac.update(metadata)
-
         return compare_digest(expected_hmac, actual_hmac.digest())
 
-    # Restrict file access to the current Windows user
+    def get_dynamic_hmac_key(self) -> bytes:
+        seed = f"{self.cred_name}:{platform.node()}:{os.getlogin()}".encode()
+        return SHA256.new(seed).digest()
+
+    def reset(self):
+        self.zeroize(self.aes_key)
+        self.aes_key = None
+        if os.path.exists(self.key_path):
+            os.remove(self.key_path)
+        self.delete_passphrase()
+
+    @staticmethod
+    def hide_file(path):
+        FILE_ATTRIBUTE_HIDDEN = 0x02
+        try:
+            attrs = ctypes.windll.kernel32.GetFileAttributesW(str(path))
+            if attrs == -1:
+                raise OSError("Invalid file or folder path")
+            if not attrs & FILE_ATTRIBUTE_HIDDEN:
+                ctypes.windll.kernel32.SetFileAttributesW(str(path), attrs | FILE_ATTRIBUTE_HIDDEN)
+        except Exception as err:
+            logging.warning(f"Could not hide file {path}: {err}")
+
+    # Set ACL to restrict access to the current user only
     @staticmethod
     def lock_file_to_user(path):
         import ntsecuritycon as con
@@ -13589,7 +13726,7 @@ class SecureDataStore:
             user_sid, _, _ = win32security.LookupAccountName(None, os.getlogin())
             sd = win32security.GetFileSecurity(path, win32security.DACL_SECURITY_INFORMATION)
             dacl = win32security.ACL()
-            dacl.AddAccessAllowedAceEx(win32security.ACL_REVISION,0, con.FILE_GENERIC_READ
+            dacl.AddAccessAllowedAceEx(win32security.ACL_REVISION, 0, con.FILE_GENERIC_READ
                                        | con.FILE_GENERIC_WRITE, user_sid)
             sd.SetSecurityDescriptorDacl(1, dacl, 0)
             win32security.SetFileSecurity(path, win32security.DACL_SECURITY_INFORMATION, sd)
