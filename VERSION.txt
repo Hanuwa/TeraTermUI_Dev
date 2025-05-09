@@ -1,25 +1,15 @@
-Version Number: v0.91.5
+Version Number: v0.92.0
 
-SHA-256 Checksum: 4380d4fd14997f9fdb71310d561b643eaf9555aff6c65be9bdaa5552768d8467
+SHA-256 Checksum: 6d42b4b10a3d18c8a8ae72ec17bf457aba9ccb02cf2b5cc27bf65386df39da9e
 
-Release Date: 05/04/2025
+Release Date: 05/08/2025
 
 Patch Notes:
- - Introduced new feature called "Swap Rows": You can now quickly swap the content between two adjacent rows in the Multiple 
-   Classes Enrollment screen. Clicking the ⇅ Swap Button next to a class row exchanges its class code, section, semester, and 
-   enrollment action with its neighbor
- - Added new image called "arrows" for the swap buttons for clarity
- - Improved implementation of "Auto-Enroll", also better responsiveness and accuracy of countdown window
- - Added awareness to take into account a new class status on enrollment called "RECOMMENDED"
- - Added new error message from enrollment called "PRESENTLY ENROLLED"
- - Fixed an issue that prevented remembering credentials, when you had data previously saved
- - Updated dependencies, one of which is for the .exe covertion tool of the main app and updater for stability
-
-Hotfix*
- - When multiple courses share the same code and semester, they are now enumarated (Ex. ESPA3101 #1 or ESPA3101 #2 - C51)
- - Now before we start to execute any command on the terminal we first send "Ctrl+Q" to resume the shell if it was paused
- - Optimized and improved the performance of the class schedule conflicts functionality
- - Cleanup up some logic inside the updater
+ - Introduced new feature, Added support for scheduled login: If personal credentials are saved, During Auto-Enroll event, 
+   Tera Term will now close temporarily to reduce server load and automatically re-open 15–30 minutes before the enrollment
+   window to log in        
+ - Improved the way personal user credentials are securely stored and retrieved
+ - Other miscellaneous fixes
  - Updated dependencies
 
 Updating: To update, the app includes an auto updater tool that will prompt you whenever there's a new version available 
