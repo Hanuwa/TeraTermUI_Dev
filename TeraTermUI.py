@@ -676,6 +676,7 @@ class TeraTermUI(customtkinter.CTk):
         self.check_update = False
         self.delete_tesseract_dir = False
         self.muted_tera = False
+        self.beep_off_default = False
         self.muted_app = False
         self.focus_or_not = False
         self.changed_location = False
@@ -9084,6 +9085,12 @@ class TeraTermUI(customtkinter.CTk):
                             current_value = line.strip().split("=")[1]
                             if current_value not in ["0", "1"]:
                                 lines[index] = "AuthBanner=1\n"
+                        if line.startswith("Beep="):
+                            current_beep_value = line.strip().split("=", 1)[1]
+                            if current_beep_value == "off":
+                                self.beep_off_default = True
+                            else:
+                                self.beep_off_default = False
                         self.can_edit = True
                     with open(file_path, "w", encoding=detected_encoding) as file:
                         file.writelines(lines)
@@ -11326,8 +11333,8 @@ class TeraTermUI(customtkinter.CTk):
         if idle and idle[0] is not None:
             if idle[0] == "Disabled":
                 self.disable_idle.select()
-        if audio_tera and audio_tera[0] is not None:
-            if audio_tera[0] == "Disabled":
+        if audio_tera and audio_tera[0] is not None or self.beep_off_default:
+            if audio_tera[0] == "Disabled" or self.beep_off_default:
                 self.disable_audio_tera.select()
         if audio_app and audio_app[0] is not None:
             if audio_app[0] == "Disabled":
@@ -11561,6 +11568,10 @@ class TeraTermUI(customtkinter.CTk):
                     if line.startswith("Beep="):
                         lines[index] = f"Beep={beep_setting}\n"
                         self.muted_tera = disable_beep
+                        if beep_setting == "on":
+                            self.beep_off_default = False
+                        else:
+                            self.beep_off_default = True
                 with open(file_path, "w", encoding=detected_encoding) as file:
                     file.writelines(lines)
             except FileNotFoundError:
@@ -11637,6 +11648,12 @@ class TeraTermUI(customtkinter.CTk):
                         current_value = line.strip().split("=")[1]
                         if current_value not in ["0", "1"]:
                             lines[index] = "AuthBanner=1\n"
+                    if line.startswith("Beep="):
+                        current_beep_value = line.strip().split("=", 1)[1]
+                        if current_beep_value == "off":
+                            self.beep_off_default = True
+                        else:
+                            self.beep_off_default = False
                     self.can_edit = True
                 with open(file_path, "w", encoding=detected_encoding) as file:
                     file.writelines(lines)
