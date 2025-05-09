@@ -74,7 +74,6 @@ from datetime import datetime, timedelta, UTC
 from difflib import SequenceMatcher, get_close_matches
 from filelock import FileLock, Timeout
 from functools import wraps, lru_cache
-from getpass import getuser
 from hmac import compare_digest
 from mss import mss
 from pathlib import Path
@@ -13554,7 +13553,7 @@ class SecureDataStore:
         encrypted = win32crypt.CryptProtectData(master_key, None, None,
                                                 None, None, 0)
         key_id = str(os.urandom(16).hex())
-        user_sid, _, _ = win32security.LookupAccountName(None, getuser())
+        user_sid, _, _ = win32security.LookupAccountName(None, os.getlogin())
         user_sid_str = win32security.ConvertSidToStringSid(user_sid)
 
         passphrase = get_random_bytes(32)
@@ -13567,7 +13566,7 @@ class SecureDataStore:
             "expires_at": (datetime.now(UTC) + timedelta(days=self.auto_rotate_days)).isoformat(),
             "last_used": None,
             "encrypted_key": base64.b64encode(encrypted).decode(),
-            "os_username": getuser(),
+            "os_username": os.getlogin(),
             "user_sid": user_sid_str,
             "machine_id": platform.node(),
             "key_usage": "encryption",
