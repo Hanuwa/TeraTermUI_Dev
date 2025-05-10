@@ -185,7 +185,7 @@ class TeraTermUI(customtkinter.CTk):
         self.REAZIONE = self.ottenere_protetta_salasana()
         self.USER_APP_VERSION = "0.92.0"
         self.mode = "Portable"
-        self.updater_hash = "348d947212262fdf1054853c82af8f134499e429d3ef6d0e383bd93f74e772bb"
+        self.updater_hash = "5f6f57ad40db84e67c80d6e290c86c722b4a66a2188d697dc089326c3643ee62"
         self.running_updater = False
         self.credentials = None
         # disabled/enables keybind events
@@ -605,6 +605,7 @@ class TeraTermUI(customtkinter.CTk):
         self.search_box = None
         self.class_list = None
         self.courses_db_cache = None
+        self.normalized_courses_cache = None
         self.curriculum_text = None
         self.curriculum = None
         self.terms_text = None
@@ -11090,10 +11091,19 @@ class TeraTermUI(customtkinter.CTk):
             s = s.encode("ascii", "ignore").decode("utf-8")
             return s.lower()
 
-        def is_fuzzy_match(needle, haystack, threshold=0.7):
-            if needle in haystack:
-                return True
-            return SequenceMatcher(None, needle, haystack).ratio() >= threshold
+        def tokenize(s):
+            return re.findall(r"\w+", normalize_string(s))
+
+        def match_score(words, target):
+            if words == target:
+                return 2.0
+            elif target.startswith(words):
+                return 1.5
+            elif words in target:
+                return 1.2
+            elif SequenceMatcher(None, words, target).ratio() >= 0.7:
+                return 1.0
+            return 0.0
 
         translation = self.load_language()
         self.class_list.delete(0, tk.END)
@@ -11102,48 +11112,28 @@ class TeraTermUI(customtkinter.CTk):
             return
 
         normalized_search = normalize_string(search_term)
-        search_words = normalized_search.split()
+        search_words = tokenize(search_term)
+
         try:
             if self.courses_db_cache is None:
                 self.courses_db_cache = self.cursor_db.execute("SELECT name, code FROM courses").fetchall()
+                self.normalized_courses_cache = [(name, code, tokenize(name), tokenize(code))
+                                                 for name, code in self.courses_db_cache]
 
             if normalized_search in ["all", "todo", "todos", "todas"]:
                 results = sorted(self.courses_db_cache, key=lambda x: x[0])
+            else:
+                results = []
+                for name, code, tokens_name, tokens_code in self.normalized_courses_cache:
+                    total_score = 0
+                    for word in search_words:
+                        scores = [match_score(word, token) for token in tokens_name + tokens_code]
+                        total_score += max(scores, default=0)
+                    if total_score >= len(search_words):
+                        results.append((total_score, name, code))
 
-                if not results:
-                    self.class_list.insert(tk.END, translation["no_results"])
-                    self.search_box.configure(border_color="#c30101")
-                else:
-                    default_border_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
-                    self.search_box.configure(border_color=default_border_color)
-                    for name, code in results:
-                        self.class_list.insert(tk.END, name)
-                return
-
-            results = self.courses_db_cache
-            scored_results = []
-            for name, code in results:
-                normalized_name = normalize_string(name)
-                normalized_code = normalize_string(code)
-                words_in_name = normalized_name.split()
-
-                exact_match = False
-                match_count = 0
-                for word in search_words:
-                    if word == normalized_name or word == normalized_code:
-                        exact_match = True
-                        match_count += 1
-                    elif any(word == course_word for course_word in words_in_name):
-                        exact_match = True
-                        match_count += 1
-                    elif (any(is_fuzzy_match(word, course_word) for course_word in words_in_name)
-                          or is_fuzzy_match(word, normalized_code)):
-                        match_count += 1
-
-                if match_count >= max(1, int(0.6 * len(search_words))):
-                    scored_results.append((exact_match, match_count, name, code))
-
-            results = sorted(scored_results, key=lambda x: (-int(x[0]), -x[1], x[2]))
+                results = sorted(results, key=lambda x: -x[0])
+                results = [(name, code) for _, name, code in results]
 
             if not results:
                 self.class_list.insert(tk.END, translation["no_results"])
@@ -11151,8 +11141,7 @@ class TeraTermUI(customtkinter.CTk):
             else:
                 default_border_color = customtkinter.ThemeManager.theme["CTkEntry"]["border_color"]
                 self.search_box.configure(border_color=default_border_color)
-                for result in results:
-                    name = result[2]
+                for name, code in results:
                     self.class_list.insert(tk.END, name)
         except sqlite3.Error as err:
             logging.error(f"Database search error: {err}")
@@ -11169,7 +11158,6 @@ class TeraTermUI(customtkinter.CTk):
 
         query = "SELECT code FROM courses WHERE name = ? OR code = ?"
         result = self.cursor_db.execute(query, (selected_class, selected_class)).fetchone()
-
         if result is None:
             self.class_list.delete(0, tk.END)
             self.class_list.insert(tk.END, translation["no_results"])
