@@ -1,8 +1,8 @@
 Version Number: v0.92.0
 
-SHA-256 Checksum: 017d1b55c70bdf4fde0c7d750c9e55eea660720769c02b7ea9b2f4d1e6299cf1
+SHA-256 Checksum: 85a8768d3616f648e630ef54a0fb88ed2d6d1c528854ecab8081d2679efd4c5a
 
-Release Date: 05/09/2025
+Release Date: 05/10/2025
 
 Patch Notes:
  - Introduced new feature, Added support for scheduled login: If personal credentials are saved, During Auto-Enroll event, 
@@ -10,6 +10,7 @@ Patch Notes:
    window to log in        
  - Improved the way personal user credentials are securely stored and retrieved
  - Further refined the search accuracy for course titles in the "Help" window
+ - Adjusted the grid/layout of widgets of the "Multiple Classes" screen
  - Other miscellaneous fixes
  - Updated dependencies
 
