@@ -1,6 +1,6 @@
 Version Number: v0.92.0
 
-SHA-256 Checksum: 42cdf76d423fe875376a08d96363bf880142b16735dabce6b6c724e434160f9d
+SHA-256 Checksum: 017d1b55c70bdf4fde0c7d750c9e55eea660720769c02b7ea9b2f4d1e6299cf1
 
 Release Date: 05/09/2025
 
@@ -9,6 +9,7 @@ Patch Notes:
    Tera Term will now close temporarily to reduce server load and automatically re-open 15–30 minutes before the enrollment
    window to log in        
  - Improved the way personal user credentials are securely stored and retrieved
+ - Further refined the search accuracy for course titles in the "Help" window
  - Other miscellaneous fixes
  - Updated dependencies
 
