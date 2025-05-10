@@ -5,17 +5,21 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.92.0 - 5/9/25
+# DATE - Started 1/1/23, Current Build v0.92.0 - 5/10/25
 
-# BUGS / ISSUES - The implementation of pytesseract could be improved, it sometimes fails to read the screen properly,
-# depends a lot on the user's system and takes a bit of time to process.
-# Application sometimes feels sluggish/slow to use, could use some efficiency/performance improvements.
-# The grid of the UI interface and placement of widgets could use some work.
-# Option Menu of all tera term's screens requires more work, project needs more documentation.
+# BUGS / ISSUES:
+# pytesseract integration is inconsistent across systems, sometimes failing to read the screen
+# accurately and processing slowly.
+# The application can feel sluggish and would benefit from performance optimizations.
+# UI layout (widget grid and placement) needs refinement for better usability.
+# Option Menu does not yet support all Tera Term screens.
+# Project lacks sufficient documentation for contributors.
 
-# FUTURE PLANS: Display more information in the app itself, which will make the app less reliant on Tera Term,
-# refactor the architecture of the codebase, split things into multiple files, right now everything is in 1 file
-# and with over 14,400 lines of codes, it definitely makes things harder to work with
+# FUTURE PLANS:
+# Display more in-app information to reduce reliance on Tera Term.
+# Refactor the codebase into multiple files; current single-file structure (14,400+ lines) hinders maintainability.
+# Redesign UI layout for clarity and better user experience.
+# Expand documentation to support development and onboarding.
 
 import asyncio
 import atexit
@@ -127,6 +131,7 @@ if sys.platform.startswith("win"):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
+# Measures the time it takes for the app to log-in
 def measure_time(threshold):
     def decorator(func):
         @wraps(func)
@@ -905,6 +910,7 @@ class TeraTermUI(customtkinter.CTk):
         self.after(0, self.unload_image("help"))
         self.after(0, self.set_focus_to_tkinter)
 
+    # creates taskbar icon for the app and its options
     def create_tray_menu(self):
         translation = self.load_language()
         return pystray.Menu(
@@ -913,6 +919,7 @@ class TeraTermUI(customtkinter.CTk):
             pystray.MenuItem(translation["exit_tray"], self.direct_close_on_tray)
         )
 
+    # taskbar function to hide the app completely from view
     def hide_all_windows(self):
         if self.state() == "withdrawn" or (self.loading_screen_status is not None and
                                            self.loading_screen_status.winfo_exists()):
@@ -959,6 +966,7 @@ class TeraTermUI(customtkinter.CTk):
             if hwnd and win32gui.IsWindowVisible(hwnd):
                 win32gui.ShowWindow(hwnd, win32con.SW_HIDE)
 
+    # taskbar function to bring back the app
     def show_all_windows(self):
         if self.state() == "normal" and (self.loading_screen_status is not None and
                                          self.loading_screen_status.winfo_exists()):
@@ -1049,6 +1057,7 @@ class TeraTermUI(customtkinter.CTk):
             sys.exit(0)
         self.last_closing_time = current_time
 
+    # close app without messagebox
     def direct_close(self):
         if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
             return
@@ -1164,6 +1173,7 @@ class TeraTermUI(customtkinter.CTk):
             else:
                 raise err
 
+    # creates a txt file file containing logs for critical erros encountered in the app
     def log_error(self):
         import inspect
 
@@ -2141,10 +2151,10 @@ class TeraTermUI(customtkinter.CTk):
                             menu.set(action)
                 self.m_swap_buttons[self.a_counter + 1].grid(row=self.a_counter + 2, column=0, padx=(0, 20),
                                                              pady=(20, 0))
-                self.m_num_class[self.a_counter + 1].grid(row=self.a_counter + 2, column=0, padx=(50, 0), pady=(20, 0))
-                self.m_classes_entry[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(0, 460),
+                self.m_num_class[self.a_counter + 1].grid(row=self.a_counter + 2, column=0, padx=(42, 0), pady=(20, 0))
+                self.m_classes_entry[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(0, 470),
                                                               pady=(20, 0))
-                self.m_section_entry[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(0, 145),
+                self.m_section_entry[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(0, 155),
                                                               pady=(20, 0))
                 self.m_semester_entry[self.a_counter + 1].configure(state="normal")
                 if semester == curr_sem:
@@ -2152,9 +2162,9 @@ class TeraTermUI(customtkinter.CTk):
                 else:
                     self.m_semester_entry[self.a_counter + 1].set(semester)
                 self.m_semester_entry[self.a_counter + 1].configure(state="disabled")
-                self.m_semester_entry[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(170, 0),
+                self.m_semester_entry[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(160, 0),
                                                                pady=(20, 0))
-                self.m_register_menu[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(485, 0),
+                self.m_register_menu[self.a_counter + 1].grid(row=self.a_counter + 2, column=1, padx=(475, 0),
                                                               pady=(20, 0))
                 self.a_counter += 1
                 if self.m_register_menu[0].get() == translation["register"]:
@@ -2265,16 +2275,16 @@ class TeraTermUI(customtkinter.CTk):
         self.auto_frame.grid(row=3, column=1, padx=(50, 0), pady=(0, 8), sticky="w")
         self.auto_frame.grid_columnconfigure(2, weight=1)
         self.title_multiple.grid(row=0, column=1, padx=(0, 50), pady=(0, 20))
-        self.m_class.grid(row=0, column=1, padx=(0, 460), pady=(32, 0))
-        self.m_section.grid(row=0, column=1, padx=(0, 145), pady=(32, 0))
-        self.m_semester.grid(row=0, column=1, padx=(170, 0), pady=(32, 0))
-        self.m_choice.grid(row=0, column=1, padx=(485, 0), pady=(32, 0))
+        self.m_class.grid(row=0, column=1, padx=(0, 470), pady=(32, 0))
+        self.m_section.grid(row=0, column=1, padx=(0, 155), pady=(32, 0))
+        self.m_semester.grid(row=0, column=1, padx=(160, 0), pady=(32, 0))
+        self.m_choice.grid(row=0, column=1, padx=(475, 0), pady=(32, 0))
         self.m_swap_buttons[0].grid(row=1, column=0, padx=(0, 20), pady=(0, 0))
-        self.m_num_class[0].grid(row=1, column=0, padx=(50, 0), pady=(0, 0))
-        self.m_classes_entry[0].grid(row=1, column=1, padx=(0, 460), pady=(0, 0))
-        self.m_section_entry[0].grid(row=1, column=1, padx=(0, 145), pady=(0, 0))
-        self.m_semester_entry[0].grid(row=1, column=1, padx=(170, 0), pady=(0, 0))
-        self.m_register_menu[0].grid(row=1, column=1, padx=(485, 0), pady=(0, 0))
+        self.m_num_class[0].grid(row=1, column=0, padx=(42, 0), pady=(0, 0))
+        self.m_classes_entry[0].grid(row=1, column=1, padx=(0, 470), pady=(0, 0))
+        self.m_section_entry[0].grid(row=1, column=1, padx=(0, 155), pady=(0, 0))
+        self.m_semester_entry[0].grid(row=1, column=1, padx=(160, 0), pady=(0, 0))
+        self.m_register_menu[0].grid(row=1, column=1, padx=(475, 0), pady=(0, 0))
         self.m_add.grid(row=3, column=0, padx=(0, 20), pady=(0, 0))
         self.back_multiple.grid(row=3, column=1, padx=(0, 20), pady=(0, 0))
         self.submit_multiple.grid(row=3, column=2, padx=(0, 0), pady=(0, 0))
@@ -5451,8 +5461,8 @@ class TeraTermUI(customtkinter.CTk):
                                                       text=translation["title_auth"],
                                                       font=customtkinter.CTkFont(size=20, weight="bold"))
             self.uprb_image = self.get_image("uprb")
-            self.uprb_image_grid = CustomButton(master=self.authentication_frame, text="", image=self.uprb_image, width=322,
-                                                height=115, command=self.uprb_event, fg_color="transparent",
+            self.uprb_image_grid = CustomButton(master=self.authentication_frame, text="", image=self.uprb_image,
+                                                width=322, height=115, command=self.uprb_event, fg_color="transparent",
                                                 hover=False)
             self.disclaimer = customtkinter.CTkLabel(master=self.authentication_frame, text=translation["disclaimer"])
             self.username = customtkinter.CTkLabel(master=self.authentication_frame, text=translation["username"])
@@ -5860,7 +5870,7 @@ class TeraTermUI(customtkinter.CTk):
             self.m_semester = customtkinter.CTkLabel(master=self.multiple_frame, text=translation["semester"])
             self.m_choice = customtkinter.CTkLabel(master=self.multiple_frame, text=translation["choice"])
             for i in range(8):
-                self.m_swap_buttons.append(CustomButton(master=self.multiple_frame, text="", width=38, height=26,
+                self.m_swap_buttons.append(CustomButton(master=self.multiple_frame, text="", width=36, height=26,
                                                         image=self.get_image("arrows"),
                                                         command=lambda idx=i: self.swap_rows(idx)))
                 self.m_num_class.append(customtkinter.CTkLabel(master=self.multiple_frame, text=f"{i + 1}.", height=26))
