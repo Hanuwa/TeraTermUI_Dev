@@ -104,6 +104,7 @@ except Exception as e:
     logging.error(f"Error occurred: {e}")
     if restart_count >= MAX_RESTARTS:
         sys.exit(1)
+    # We do this because, sometimes this cache gets corrupted and prevents the application from being launched
     temp_dir = tempfile.gettempdir()
     exe_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]
     comtypes_cache_dir = os.path.join(temp_dir, "comtypes_cache")
