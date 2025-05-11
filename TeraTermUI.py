@@ -17,7 +17,7 @@
 
 # FUTURE PLANS:
 # Display more in-app information to reduce reliance on Tera Term.
-# Refactor the codebase into multiple files; current single-file structure (14,400+ lines) hinders maintainability.
+# Refactor the codebase into multiple files; current single-file structure (14,500+ lines) hinders maintainability.
 # Redesign UI layout for clarity and better user experience.
 # Expand documentation to support development and onboarding.
 
@@ -190,7 +190,7 @@ class TeraTermUI(customtkinter.CTk):
         self.REAZIONE = self.ottenere_protetta_salasana()
         self.USER_APP_VERSION = "0.92.0"
         self.mode = "Portable"
-        self.updater_hash = "5f6f57ad40db84e67c80d6e290c86c722b4a66a2188d697dc089326c3643ee62"
+        self.updater_hash = "8dbea1f40df7e0ac16ad8618238278be2fa3c3681f36a5977a86b17a229cf9ad"
         self.running_updater = False
         self.credentials = None
         # disabled/enables keybind events
@@ -1076,6 +1076,7 @@ class TeraTermUI(customtkinter.CTk):
         self.end_app()
         sys.exit(0)
 
+    # Closes GUI and the tray
     def end_app(self, forced=False):
         try:
             if forced:
@@ -1107,6 +1108,7 @@ class TeraTermUI(customtkinter.CTk):
             logging.error(f"Error converting path '{relative_path}' to absolute path: {err}")
             raise
 
+    # Returns the monitor that contains the given (x, y) window position
     @staticmethod
     def get_monitor_bounds(window_x, window_y):
         from screeninfo import get_monitors
@@ -1133,6 +1135,7 @@ class TeraTermUI(customtkinter.CTk):
         except subprocess.CalledProcessError:
             logging.error("Could not terminate ttermpro.exe")
 
+    # Checks if tera term process is running in the background
     @staticmethod
     def check_tera_term_hidden():
         def enum_window_callback(hwnd_win, window_list):
@@ -1210,6 +1213,7 @@ class TeraTermUI(customtkinter.CTk):
         except Exception as err:
             logging.error(f"[LOG_ERROR_FAILURE] [{timestamp}] Could not write error log: {str(err)}")
 
+    # Attempt to zero out memory for a bytes value
     @staticmethod
     def secure_zeroize_string(value):
         if value:
@@ -1387,6 +1391,7 @@ class TeraTermUI(customtkinter.CTk):
             self.after(0, self.switch_tab)
         self.initialization_multiple()
 
+    # Loads saved courses information from the database to the entries
     def load_saved_classes(self):
         lang = self.language_menu.get()
         reverse_language_mapping = {
@@ -1882,6 +1887,7 @@ class TeraTermUI(customtkinter.CTk):
         self.search.grid(row=1, column=1, padx=(285, 0), pady=(0, 5), sticky="n")
         self.search_next_page.grid(row=1, column=1, padx=(465, 0), pady=(0, 5), sticky="n")
 
+    # Check whether there were any changes made to the courses of the enrolled courses tables
     def check_refresh_semester(self):
         if self.enrolled_classes_data is None or not self.ask_semester_refresh:
             return False
@@ -2093,6 +2099,7 @@ class TeraTermUI(customtkinter.CTk):
                 TeraTermUI.manage_user_input()
                 self.my_classes_event_completed = True
 
+    # Moves course information from one row to another
     def swap_rows(self, idx):
         if idx == 0:
             swap_idx = idx + 1
@@ -2292,6 +2299,7 @@ class TeraTermUI(customtkinter.CTk):
         self.save_class_data.grid(row=0, column=0, padx=(0, 0), pady=(0, 0))
         self.auto_enroll.grid(row=0, column=0, padx=(0, 0), pady=(0, 0))
 
+    # Detects if there is any changes from whats saved in the database from what is written in entries
     def detect_change(self, event=None):
         self.cursor_db.execute("SELECT COUNT(*) FROM saved_classes")
         count = self.cursor_db.fetchone()[0]
@@ -2368,6 +2376,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.changed_registers.discard(index)
         self.update_save_data_state()
 
+    # If any changes were detected then update the checkbox, to let the user know about it
     def update_save_data_state(self):
         if any([self.changed_classes, self.changed_sections, self.changed_semesters, self.changed_registers]):
             if self.save_class_data.get() == "on":
@@ -2909,6 +2918,7 @@ class TeraTermUI(customtkinter.CTk):
                 TeraTermUI.manage_user_input()
                 self.option_menu_event_completed = True
 
+    # Lets the user exit tera term by using the SIS's built in functionality
     def sign_out(self):
         translation = self.load_language()
         msg = CTkMessagebox(title=translation["so_title"], message=translation["so_message"],
@@ -3250,6 +3260,7 @@ class TeraTermUI(customtkinter.CTk):
             self.back_student.configure(state="disabled")
             self.after(750, self.skip_auth_prompt)
 
+    # Messagebox that lets the user skip the authentication screen
     def skip_auth_prompt(self):
         translation = self.load_language()
         self.play_sound("update.wav")
@@ -3304,6 +3315,7 @@ class TeraTermUI(customtkinter.CTk):
             self.skip_auth = False
         self.connection_db.commit()
 
+    # Message that informs the user that logging-in tooked too long
     def notice_user(self, running_launchers):
         if self.error is not None and self.error.winfo_exists():
             return
@@ -3339,6 +3351,7 @@ class TeraTermUI(customtkinter.CTk):
         self.tooltip.bind("<Button-2>", lambda event: self.destroy_tooltip())
         self.tooltip.bind("<Button-3>", lambda event: self.destroy_tooltip())
 
+    # validation of the host entry
     @staticmethod
     def check_host(host, threshold=0.8):
         def normalize_string(s):
@@ -3528,6 +3541,7 @@ class TeraTermUI(customtkinter.CTk):
         self.intro_box.stop_autoscroll(event=None)
         self.slideshow_frame.pause_cycle()
 
+    # Will let the user connect to any screen they are currently at in tera term, instead of starting the process from 0
     def login_to_existent_connection(self):
         timeout_counter = 0
         skip = False
@@ -3627,6 +3641,7 @@ class TeraTermUI(customtkinter.CTk):
             self.after(100, self.show_error_message, 315, 235,
                        translation["tera_term_failed_to_connect"])
 
+    # Setup for controlling tera term
     def connect_to_uprb(self):
         self.uprb = Application(backend="uia").connect(
             title="uprbay.uprb.edu - Tera Term VT", timeout=3, class_name="VTWin32", control_type="Window")
@@ -3641,6 +3656,7 @@ class TeraTermUI(customtkinter.CTk):
         self.focus_tera_term()
         self.uprbay_window.wait("visible", timeout=3)
 
+    # Check that all the tera term's connection configs are well set
     @staticmethod
     def new_connection(window):
         new_connection = window.child_window(title="Tera Term: New connection")
@@ -4532,6 +4548,7 @@ class TeraTermUI(customtkinter.CTk):
         self.detect_change(event)
         self.check_class_conflicts(event)
 
+    # generates all possible sections combinations
     @staticmethod
     def generate_schedule():
         days = {
@@ -4600,6 +4617,7 @@ class TeraTermUI(customtkinter.CTk):
         time_obj = datetime.strptime(time_str, "%H:%M")
         return time_obj.strftime("%I:%M %p").lstrip("0")
 
+    # Creates a tooltip to tell the user the schedule information about that class
     def check_class_time(self):
         lang = self.language_menu.get()
         translation = self.load_language()
@@ -4635,6 +4653,7 @@ class TeraTermUI(customtkinter.CTk):
         else:
             self.e_section_tooltip.configure(message="", visibility=False)
 
+    # tells the user that it detected potential schedule conflicts with another section
     def check_class_conflicts(self, event=None):
         current_translation = self.load_language()
         current_schedule_map = self.schedule_map
@@ -4841,7 +4860,7 @@ class TeraTermUI(customtkinter.CTk):
             self.auto_enroll.configure(state="disabled")
         self.auto_enroll_focus = False
 
-    # Auto-Enroll classes
+    # Auto-Enroll classes, will basically automatically enroll your classes at the exact time of your enrollment date
     def auto_enroll_event(self):
         with self.lock_thread:
             try:
@@ -5093,6 +5112,7 @@ class TeraTermUI(customtkinter.CTk):
 
         self.countdown(pr_date)
 
+    # Exact time messages of the timer
     def get_countdown_message(self, total_seconds):
         lang = self.language_menu.get()
         translation = self.load_language()
@@ -5154,6 +5174,7 @@ class TeraTermUI(customtkinter.CTk):
                     return "1 segundo restante hasta la matrícula"
             return None
 
+    # Ends the auto-enroll event and the timer
     def end_countdown(self):
         translation = self.load_language()
         self.pr_date = None
@@ -5188,6 +5209,7 @@ class TeraTermUI(customtkinter.CTk):
         CTkMessagebox(title=translation["notif_auto_boot"], icon="info", message=translation["auto_boot_up"],
                       button_width=380)
 
+    # countdown window with a timer of how long till the enrollment process starts
     def create_timer_window(self):
         lang = self.language_menu.get()
         translation = self.load_language()
@@ -5236,6 +5258,7 @@ class TeraTermUI(customtkinter.CTk):
         self.timer_window.bind("<Escape>", lambda event: self.end_countdown())
         self.timer_window.protocol("WM_DELETE_WINDOW", self.end_countdown)
 
+    # Let the user hide the application and tera term while only having the timer window opened
     def bring_back_timer_window(self):
         translation = self.load_language()
         if self.timer_window is not None and self.timer_window.winfo_exists():
@@ -5256,6 +5279,7 @@ class TeraTermUI(customtkinter.CTk):
             self.timer_window.attributes("-topmost", 1)
             self.timer_window.after_idle(self.timer_window.attributes, "-topmost", 0)
 
+    # Boots up and completely log-in tera term in the last 30 mins of enrollment
     def boot_be_ready_for_auto_enroll(self):
         MAX_BOOT_RETRIES = 3
         retry_delay = 2.5
@@ -5383,6 +5407,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.set_focus_to_tkinter()
                 TeraTermUI.manage_user_input()
 
+    # Disables some parts of the GUI while the auto-enroll event is running
     def disable_enable_gui(self):
         if self.countdown_running:
             self.submit_multiple.configure(state="disabled")
@@ -5414,6 +5439,7 @@ class TeraTermUI(customtkinter.CTk):
             if self.enrolled_classes_data is not None:
                 self.submit_my_classes.configure(state="normal")
 
+    # Moves tera term window behind our app
     def move_window(self):
         try:
             window = gw.getWindowsWithTitle("uprbay.uprb.edu - Tera Term VT")[0]
@@ -5449,6 +5475,7 @@ class TeraTermUI(customtkinter.CTk):
             window.moveTo(current_x, current_y)
             time.sleep(delay_time)
 
+    # Init of auth screen widgets
     def initialization_auth(self):
         # (Auth Screen)
         if not self.init_auth:
@@ -5484,6 +5511,7 @@ class TeraTermUI(customtkinter.CTk):
             self.username.bind("<Button-1>", lambda event: self.focus_set())
             self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_home())
 
+    # Destruction of auth screen widgets
     def destroy_auth(self):
         if self.init_auth:
             self.init_auth = False
@@ -5525,6 +5553,7 @@ class TeraTermUI(customtkinter.CTk):
 
             self.after(100, destroy)
 
+    # Init of student screen widgets
     def initialization_student(self):
         # Student Information
         if not self.init_student:
@@ -5577,6 +5606,7 @@ class TeraTermUI(customtkinter.CTk):
             for entry in [self.student_id_entry, self.code_entry]:
                 entry.lang = lang
 
+    # Destruction of student screen widgets
     def destroy_student(self):
         if self.init_student:
             self.init_student = False
@@ -5641,6 +5671,7 @@ class TeraTermUI(customtkinter.CTk):
 
             self.after(100, destroy)
 
+    # Init of class screen widgets
     def initialization_class(self):
         # Classes
         if not self.init_class:
@@ -5852,6 +5883,7 @@ class TeraTermUI(customtkinter.CTk):
             self._683_screen = False
             self._4CM_screen = False
 
+    # Init of multiple screen widgets
     def initialization_multiple(self):
         # Multiple Classes Enrollment
         if not self.init_multiple:
@@ -5939,6 +5971,7 @@ class TeraTermUI(customtkinter.CTk):
                     entry.lang = lang
             self.load_saved_classes()
 
+    # Check whether we have any credentials from the user saved locally in the db
     def has_saved_user_data(self):
         self.cursor_db.execute("SELECT COUNT(*) FROM user_data")
         count = self.cursor_db.fetchone()[0]
@@ -6002,6 +6035,7 @@ class TeraTermUI(customtkinter.CTk):
         if event and event.keysym == "space":
             self.remember_me._on_enter()
 
+    # Saves credentials to local database, encrypted
     def save_user_data(self):
         now = time.time()
         save_threshold = 1.25
@@ -6184,7 +6218,7 @@ class TeraTermUI(customtkinter.CTk):
             self.cursor_db.execute("DELETE FROM saved_classes")
             self.connection_db.commit()
 
-    # shows the important information window
+    # shows loading screen while doing automations of pywinauto
     def show_loading_screen(self):
         translation = self.load_language()
         if self.loading_screen is None or not self.loading_screen.winfo_exists():
@@ -6288,6 +6322,7 @@ class TeraTermUI(customtkinter.CTk):
         else:
             self.after(100, self.update_loading_screen, loading_screen, future)
 
+    # Disables widgets while loading screen is on, to avoid user interacting with widgets
     def disable_widgets(self, *containers):
         valid_containers = [container for container in containers if container is not None]
         stack = list(valid_containers)
@@ -6304,6 +6339,7 @@ class TeraTermUI(customtkinter.CTk):
                 elif hasattr(widget, "winfo_children"):
                     stack.append(widget)
 
+    # Re-enables widgets after loading screen closes
     def enable_widgets(self, *containers):
         valid_containers = [container for container in containers if container is not None]
         stack = list(valid_containers)
@@ -6320,6 +6356,7 @@ class TeraTermUI(customtkinter.CTk):
                 elif hasattr(widget, "winfo_children"):
                     stack.append(widget)
 
+    # Some widgets need manual intervention
     def update_widgets(self):
         if self.countdown_running and self.in_multiple_screen:
             self.auto_enroll.configure(state="normal")
@@ -6424,6 +6461,7 @@ class TeraTermUI(customtkinter.CTk):
             return False
         return True
 
+    # checks if windows exist in bulk
     @staticmethod
     def close_matching_windows(titles_to_close):
 
@@ -6615,6 +6653,7 @@ class TeraTermUI(customtkinter.CTk):
         # Create the PDF
         pdf.build(elems)
 
+    # If both files have the same name, we simply merge the content of both into one
     @staticmethod
     def merge_tables(classes_list, data_list, semesters_list):
         grouped_data = defaultdict(lambda: [])
@@ -6642,6 +6681,7 @@ class TeraTermUI(customtkinter.CTk):
 
         return merged_classes_list, merged_data_list, merged_semesters_list
 
+    # Makes sure the default name of the file is unique
     @staticmethod
     def get_unique_filename(directory, filename):
         base, ext = os.path.splitext(filename)
@@ -6705,6 +6745,7 @@ class TeraTermUI(customtkinter.CTk):
         self.create_search_pdf(data, classes_list, filepath, semester_list)
         self.show_success_message(350, 265, translation["pdf_save_success"])
 
+    # left click on a cell of a table copies the data to clipboard
     def copy_cell_data_to_clipboard(self, cell_data):
         translation = self.load_language()
         cell_value = cell_data.cget("text").strip()
@@ -6749,12 +6790,14 @@ class TeraTermUI(customtkinter.CTk):
             self.notice_user_msg = None
             gc.collect()
 
+    # Make sure that during the existence of the tooltip its stays on top
     def lift_tooltip(self):
         if self.tooltip is not None and self.tooltip.winfo_exists():
             self.tooltip.lift()
 
             self.after(100, self.lift_tooltip)
 
+    # right clickng a section cell of the search table will copy it class data to the enroll tabs
     def transfer_class_data_to_enroll_tab(self, event, cell):
         section_text = cell.cget("text")
         if not section_text.strip():
@@ -6861,12 +6904,14 @@ class TeraTermUI(customtkinter.CTk):
         # Auto-destroy after a couple seconds and reset the tooltip variable
         self.tooltip.after(delay, self.destroy_tooltip)
 
+    # opens student help website when user rights click a cell with "RESERVED" in it
     @staticmethod
     def open_student_help(event, cell):
         av_value = cell.cget("text")
         if av_value == "RSVD":
             webbrowser.open("https://studenthelp.uprb.edu/")
 
+    # Opens the professor's notaso page when right clicking their name on the cell the search table
     def open_professor_profile(self, event, cell):
         def remove_prefixes(name_parts):
             return [part for part in name_parts if part.lower() not in ["de", "del"]]
@@ -7187,6 +7232,7 @@ class TeraTermUI(customtkinter.CTk):
         self.bind("<Control-w>", lambda event: self.keybind_remove_current_table())
         self.bind("<Control-W>", lambda event: self.keybind_remove_current_table())
 
+    # finds if there's already a course in the tables with the same exact params
     def find_duplicate(self, new_display_class, new_semester, show_all_sections_state, available_values):
         for index, (display_class, table, semester, existing_show_all_sections_state,
                     existing_available_values, _) in enumerate(self.class_table_pairs):
@@ -7196,6 +7242,7 @@ class TeraTermUI(customtkinter.CTk):
                 return index
         return None
 
+    # will automatically sort the data of a new table being added to the current selected sorting option
     def sort_data(self, data, sort_by_option):
         translation = self.load_language()
         headers = list(data[0].keys()) if data else []
@@ -7291,6 +7338,7 @@ class TeraTermUI(customtkinter.CTk):
 
         return sorted_data
 
+    # sorts the tables by the selected criteria (AV spaces or Time)
     def sort_tables(self, sort_by_option):
         translation = self.load_language()
 
@@ -7415,6 +7463,7 @@ class TeraTermUI(customtkinter.CTk):
         self.after(0, self.search_scrollbar.scroll_to_top)
         self.after(0, self.focus_set)
 
+    # Udates widgets info of the search tab when performing different actions (Ex. Removing a table)
     def check_and_update_labels(self):
         class_info = {}
         all_semesters = set()
@@ -7510,6 +7559,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.move_slider_left_enabled:
             self.after(0, self.show_next_table)
 
+    # lets the user move the positions of the tables
     def move_tables_overlay_event(self):
         if len(self.class_table_pairs) == 1:
             return
@@ -7633,6 +7683,7 @@ class TeraTermUI(customtkinter.CTk):
         self.remove_current_table()
         self.last_remove_time = current_time
 
+    # removes the selected table from view
     def remove_current_table(self):
         translation = self.load_language()
         display_class_to_remove, table_to_remove, _, _, _, more_sections \
@@ -7734,6 +7785,7 @@ class TeraTermUI(customtkinter.CTk):
         self.after(100, self.display_current_table)
         self.after(125, reshow_widgets)
 
+    # Process for copying search class data
     def automate_copy_class_data(self):
         import pyautogui
 
@@ -7775,6 +7827,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.loading_screen_status is not None and self.loading_screen_status.winfo_exists():
             self.after(0, self.loading_screen.attributes, "-topmost", True)
 
+    # Tries to find the latest term within the SIS menu
     @staticmethod
     def get_latest_term(input_text):
         term_pattern = r"\b[A-Z][0-9]{2}[%*]"
@@ -7835,6 +7888,7 @@ class TeraTermUI(customtkinter.CTk):
         else:
             return self.DEFAULT_SEMESTER
 
+    # determines the current semester automatically
     @staticmethod
     def calculate_default_semester():
         # Preset base year and starting letter
@@ -7911,6 +7965,7 @@ class TeraTermUI(customtkinter.CTk):
         terms.append([translation["semester"], translation["seasons"]])
         return terms
 
+    # determines the season for a specific semester code
     def get_semester_season(self, semester_code):
         lang = self.language_menu.get()
         translation = self.load_language()
@@ -7957,6 +8012,7 @@ class TeraTermUI(customtkinter.CTk):
         for widget in entries:
             self.update_semester_tooltip(widget)
 
+    # Captures specific search class data to be extracted and manipulated
     @staticmethod
     def specific_class_data(data):
         modified_data = []
@@ -8101,6 +8157,7 @@ class TeraTermUI(customtkinter.CTk):
 
         return data, course_found, invalid_action, y_n_found, y_n_value, term_value
 
+    # extracts the text from the enrolled classes to get the important information
     def extract_my_enrolled_classes(self, text):
         translation = self.load_language()
 
@@ -8253,6 +8310,7 @@ class TeraTermUI(customtkinter.CTk):
         self.create_enrolled_classes_pdf(data, creds, semester, filepath)
         self.show_success_message(350, 265, translation["pdf_save_success"])
 
+    # shows the table of and screen of the selected semester of enrolled classes
     def display_enrolled_data(self, data, creds, dialog_input):
         lang = self.language_menu.get()
         translation = self.load_language()
@@ -8514,6 +8572,7 @@ class TeraTermUI(customtkinter.CTk):
             future = self.thread_pool.submit(self.submit_modify_classes)
             self.update_loading_screen(loading_screen, future)
 
+    # lets user modify their current enrolled classes (dropping them or changing their section)
     def submit_modify_classes(self):
         with self.lock_thread:
             try:
@@ -8842,6 +8901,7 @@ class TeraTermUI(customtkinter.CTk):
                 return "Timeout"
             time.sleep(0.5)
 
+    # some actions within tera term take some time to process, we have this to wait for the response to show up
     def wait_for_response(self, keywords, init_timeout=True, timeout=2.5):
         if init_timeout:
             time.sleep(1)
@@ -8857,6 +8917,7 @@ class TeraTermUI(customtkinter.CTk):
 
         return last_text_output
 
+    # in here we determine if tera term window is prepared to recieve commands
     def wait_for_window(self):
         try:
             self.focus_tera_term()
@@ -8919,6 +8980,7 @@ class TeraTermUI(customtkinter.CTk):
         self.future_backup = self.thread_pool.submit(self.backup_and_config_ini, file_path, self.geometry())
         self.future_feedback = self.thread_pool.submit(self.setup_feedback)
 
+    # We have tesseract compressed in a folder, each time we use the app we unzip it
     def setup_tesseract(self):
         unzip_tesseract = True
         tesseract_dir_path = self.app_temp_dir / "Tesseract-OCR"
@@ -8982,6 +9044,7 @@ class TeraTermUI(customtkinter.CTk):
                         messagebox.showerror("Error", f"Fatal Error!\n\n{str(err)}")
                     self.after(0, self.end_app(forced=True))
 
+    # determines the version of the tera term binary, since we have to do different setups between version 4 and 5
     @staticmethod
     def get_teraterm_version(executable_path):
         import win32api
@@ -9008,6 +9071,7 @@ class TeraTermUI(customtkinter.CTk):
                         return teraterm_ini_path
         return None
 
+    # determines if the location specified has write permissions
     def has_write_permission(self):
         try:
             test_file = os.path.join(os.path.dirname(self.teraterm_directory), "temp_test_file.txt")
@@ -9018,8 +9082,9 @@ class TeraTermUI(customtkinter.CTk):
         except PermissionError:
             return False
 
+    # detects the current enconding of said file
     @staticmethod
-    def detect_encoding(file_path, sample_size=4096):
+    def detect_encoding(file_path, sample_size=8192):
         import chardet
 
         with open(file_path, "rb") as f:
@@ -9027,6 +9092,7 @@ class TeraTermUI(customtkinter.CTk):
         result = chardet.detect(raw_data)
         return result["encoding"]
 
+    # Before we make any changes to any tera term files we back them up
     def backup_and_config_ini(self, file_path, geometry):
         # backup for config file of tera term
         if TeraTermUI.is_file_in_directory("ttermpro.exe", self.teraterm_directory):
@@ -9137,6 +9203,7 @@ class TeraTermUI(customtkinter.CTk):
             original_parts.append(unscrambled_part)
         return "".join(original_parts)
 
+    # feedback submission of the app av for the user to submit
     def setup_feedback(self):
         from google.auth.transport.requests import Request
         from google.oauth2 import service_account
@@ -9167,6 +9234,7 @@ class TeraTermUI(customtkinter.CTk):
             os.environ.pop("DURATA_FUSCAZIONE_AVAIN", None)
             os.environ.pop("oletuksena_segreto", None)
 
+    # prompt for user to update the app
     def update_app(self, latest_version):
         lang = self.language_menu.get()
         translation = self.load_language()
@@ -9314,6 +9382,7 @@ class TeraTermUI(customtkinter.CTk):
             self.changed_location = False
         gc.collect()
 
+    # detects the error message that a class produced when trying to enroll it
     def parse_enrollment_errors(self, text_output, submitted_classes=None):
         translation = self.load_language()
         found_errors = []
@@ -9472,6 +9541,7 @@ class TeraTermUI(customtkinter.CTk):
         self.information = None
         gc.collect()
 
+    # visual indication of what entry produced the error
     @staticmethod
     def check_and_update_border_color(container):
         stack = [container]
@@ -9492,6 +9562,7 @@ class TeraTermUI(customtkinter.CTk):
                 if hasattr(widget, "winfo_children"):
                     stack.append(widget)
 
+    # if running on admin, it will disable user input while app is doing automations to avoid user error
     @staticmethod
     def manage_user_input(state="off"):
         if TeraTermUI.is_admin():
@@ -9500,6 +9571,7 @@ class TeraTermUI(customtkinter.CTk):
             elif state == "off":
                 ctypes.windll.user32.BlockInput(False)
 
+    # prep we do before any pywinauto actions
     def automation_preparations(self):
         self.focus_set()
         self.destroy_windows()
@@ -9534,6 +9606,7 @@ class TeraTermUI(customtkinter.CTk):
             self.bind("<Left>", self.move_slider_left)
             self.bind("<Right>", self.move_slider_right)
 
+    # moves the slider of the UI scaler
     def move_slider(self, event):
         if self.debounce_slider:
             self.after_cancel(self.debounce_slider)
@@ -9757,6 +9830,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.status.focus_set()
                 self.update_event_completed = True
 
+    # checks that we are actually running our updater binary and that it has not been tampered with
     @staticmethod
     def verify_file_integrity(file_path, expected_hash):
         import hashlib
@@ -9775,6 +9849,7 @@ class TeraTermUI(customtkinter.CTk):
             logging.error(f"Failed to compute hash for {file_path}: {err}")
             raise
 
+    # runs the updater binary to update the app
     def run_updater(self, latest_version):
         try:
             current_exe = sys.executable
@@ -9807,6 +9882,7 @@ class TeraTermUI(customtkinter.CTk):
             self.log_error()
             webbrowser.open("https://github.com/Hanuwa/TeraTermUI/releases/latest")
 
+    # deletes any stored credentials of the user we had saved
     def del_user_data(self):
         translation = self.load_language()
         now = time.time()
@@ -9890,6 +9966,7 @@ class TeraTermUI(customtkinter.CTk):
                 TeraTermUI.manage_user_input()
                 self.fix_execution_event_completed = True
 
+    # determines wheter the user is using a laptop or desktop
     @staticmethod
     def get_device_type():
         try:
@@ -9903,6 +9980,7 @@ class TeraTermUI(customtkinter.CTk):
             logging.error(f"Error determining device type: {err}")
             return None
 
+    # if user is has a battery devices, get its power settings, for tera term idle managment
     @staticmethod
     def get_power_timeout():
         def query_timeout(subgroup, setting):
@@ -9932,6 +10010,7 @@ class TeraTermUI(customtkinter.CTk):
 
         return power_timeout if power_timeout else None
 
+    # checks whether windows is currently on
     @staticmethod
     def is_win_session_interactive():
         try:
@@ -9975,6 +10054,7 @@ class TeraTermUI(customtkinter.CTk):
         self.check_process_thread.daemon = True
         self.check_process_thread.start()
 
+    # checks if tera term is open every so often in its own thread
     def check_process_periodically(self):
         import pyautogui
 
@@ -10110,6 +10190,7 @@ class TeraTermUI(customtkinter.CTk):
             logging.error("An error occurred: %s", err)
             self.log_error()
 
+    # action we perform to keep tera term opened
     def keep_teraterm_open(self):
         try:
             main_window = self.uprb_32.window(title="uprbay.uprb.edu - Tera Term VT")
@@ -10253,6 +10334,7 @@ class TeraTermUI(customtkinter.CTk):
                 return False
         return False
 
+    # checks whether the user is connected to the internet
     async def test_connection(self):
         from aiohttp import ClientSession, TCPConnector
 
@@ -10419,6 +10501,7 @@ class TeraTermUI(customtkinter.CTk):
             self.table_count.configure(text=table_count_label)
             self.table_position.configure(text=table_position_label)
 
+    # Init of the status window widgets
     def status_widgets(self):
         lang = self.language_menu.get()
         translation = self.load_language()
@@ -10644,6 +10727,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.move_slider_right_enabled or self.move_slider_left_enabled:
             self.status_frame.scroll_to_bottom()
 
+    # Gets the CPU of the user, for the feedback submission
     @staticmethod
     def get_cpu_info():
         try:
@@ -10655,6 +10739,7 @@ class TeraTermUI(customtkinter.CTk):
         except Exception:
             return "Unknown"
 
+    # Gets the current windows version of the user, for the feedback submission
     @staticmethod
     def get_os_info():
         os_name = platform.system()
@@ -10807,6 +10892,7 @@ class TeraTermUI(customtkinter.CTk):
                     self.status.focus_set()
                 self.submit_feedback_event_completed = True
 
+    # accurately determines the version of tera term binary
     @staticmethod
     def get_file_version_info(file_path):
         size = ctypes.windll.version.GetFileVersionInfoSizeW(file_path, None)
@@ -10840,6 +10926,7 @@ class TeraTermUI(customtkinter.CTk):
 
         return metadata.get("ProductName", "").lower() == "tera term"
 
+    # will search through the whole main drive to find where tera term is installed
     @staticmethod
     def find_ttermpro():
         main_drive = os.environ["SystemRoot"][:3]
@@ -10982,6 +11069,7 @@ class TeraTermUI(customtkinter.CTk):
 
             self.after(0, handle_not_found)
 
+    # tries to locate tera term though common installed dirs
     @staticmethod
     def find_teraterm_directory():
         import glob
@@ -11159,6 +11247,7 @@ class TeraTermUI(customtkinter.CTk):
             self.class_list.insert(tk.END, translation["no_results"])
             self.search_box.configure(border_color="#c30101")
 
+    # when click on the list box entry it will give you the class code
     def show_class_code(self, event):
         translation = self.load_language()
         selection = self.class_list.curselection()
@@ -11177,6 +11266,7 @@ class TeraTermUI(customtkinter.CTk):
             self.search_box.insert(0, result[0])
             self.search_box.configure(border_color="#228B22")
 
+    # Init the help window widgets
     def help_widgets(self):
         lang = self.language_menu.get()
         translation = self.load_language()
@@ -11523,12 +11613,14 @@ class TeraTermUI(customtkinter.CTk):
                 return True
         return len(latest_version_parts) <= len(user_version_parts)
 
+    # plays corresponding audio
     def play_sound(self, audio_file):
         if not self.muted_app:
             winsound.PlaySound(None, winsound.SND_PURGE)
             winsound.PlaySound(TeraTermUI.get_absolute_path(f"sounds/{audio_file}"),
                                winsound.SND_FILENAME | winsound.SND_ASYNC | winsound.SND_NOWAIT)
 
+    # disables the beep sound you here when performing actions in tera term
     def set_beep_sound(self, file_path, disable_beep=True):
         if not self.can_edit:
             return
@@ -11728,6 +11820,7 @@ class TeraTermUI(customtkinter.CTk):
             self.information = None
             gc.collect()
 
+    # loads selected image
     def get_image(self, image_name):
         if image_name not in self.images:
             logging.error(f"Unknown image name: {image_name}")
@@ -13379,6 +13472,7 @@ class ImageSlideshow(customtkinter.CTkFrame):
         super().destroy()
 
 
+# tool that gives us an estimation of the university's server load
 class SSHMonitor:
     def __init__(self, host, port=22):
         self.host = host
@@ -13493,7 +13587,7 @@ class SSHMonitor:
             return False
         return True
 
-
+# Manages credentials being saved locally
 class SecureDataStore:
     def __init__(self, key_path=None, auto_rotate_days=30):
         self.key_path = key_path or os.path.join(os.getcwd(), "masterkey.json")
@@ -13740,7 +13834,7 @@ class SecureDataStore:
         except Exception as err:
             logging.warning(f"Could not lock file ACL for {path}: {err}")
 
-    # Attempt to zero out memory for a bytes value.
+    # Attempt to zero out memory for a bytes value
     @staticmethod
     def zeroize(value):
         if value:
@@ -13752,6 +13846,8 @@ class SecureDataStore:
                 logging.warning("Failed to zero memory: %s", str(err))
 
 
+# Overkill, but since we sometimes need to overwrite user's clipboard we try to save the current information
+# they have and restore it afterwards, does not cover all cases and it is not clean either but works well and safe
 class ClipboardHandler:
     def __init__(self, max_data_size=100 * 1024 * 1024, retention_time=timedelta(minutes=30),
                  key_rotation_interval=timedelta(hours=24)):
@@ -14301,7 +14397,7 @@ class ClipboardHandler:
         finally:
             self.cleanup_all_resources()
 
-
+# gets tera term's window dimensions for accurate screenshots for OCR
 def get_window_rect(hwnd):
     class RECT(ctypes.Structure):
         _fields_ = [("left", wintypes.LONG),
@@ -14317,7 +14413,7 @@ def get_window_rect(hwnd):
     DwmGetWindowAttribute(hwnd, DWMWA_EXTENDED_FRAME_BOUNDS, ctypes.byref(rect), ctypes.sizeof(rect))
     return rect.left, rect.top, rect.right, rect.bottom
 
-
+# gets the exact time that user last perform an action in the os
 def get_idle_duration():
     class LASTINPUTINFO(ctypes.Structure):
         _fields_ = [("cbSize", ctypes.c_uint),
@@ -14330,7 +14426,7 @@ def get_idle_duration():
     millis = ctypes.windll.kernel32.GetTickCount() - lii.dwTime
     return millis / 1000.0
 
-
+# check whether if we actually have writing permissions in the dir we are running on
 def has_write_permission():
     testfile_path = os.path.join(os.getcwd(), ".write_test")
     try:
@@ -14341,7 +14437,7 @@ def has_write_permission():
     except (OSError, IOError):
         return False
 
-
+# IF the user tries to run the app even though it is already running, we simply bring the app to view
 def bring_to_front():
     def restore_window(title_win):
         t_hwnd = win32gui.FindWindow(None, title_win)
@@ -14390,7 +14486,7 @@ def bring_to_front():
                 except:
                     pass
 
-
+# Main entry point of the app, checks important things, and setups of a FILELOCK, so we only run one instance of the app
 def main():
     mode = "Portable"
     SPANISH = 0x0A
