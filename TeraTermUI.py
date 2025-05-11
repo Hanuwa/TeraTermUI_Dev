@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.92.0 - 5/10/25
+# DATE - Started 1/1/23, Current Build v0.92.0 - 5/11/25
 
 # BUGS / ISSUES:
 # pytesseract integration is inconsistent across systems, sometimes failing to read the screen
@@ -1286,6 +1286,11 @@ class TeraTermUI(customtkinter.CTk):
                                 else:
                                     self.after(100, self.show_error_message, 315, 230,
                                                translation["error_sign-in"])
+                                if self.remember_me.get() == "on" and self.has_saved_user_data:
+                                    self.must_save_user_data = True
+                                    self.cursor_db.execute("DELETE FROM user_data")
+                                    self.connection_db.commit()
+                                    self.crypto.reset()
                         else:
                             self.after(350, self.bind, "<Return>",
                                        lambda event: self.student_event_handler())
@@ -1302,6 +1307,11 @@ class TeraTermUI(customtkinter.CTk):
                             elif not code.isdigit() or len(code) != 4:
                                 self.after(0, self.code_entry.configure(border_color="#c30101"))
                                 self.after(100, self.show_error_message, 315, 230, translation["error_code"])
+                            if self.remember_me.get() == "on" and self.has_saved_user_data:
+                                self.must_save_user_data = True
+                                self.cursor_db.execute("DELETE FROM user_data")
+                                self.connection_db.commit()
+                                self.crypto.reset()
                     else:
                         self.after(350, self.bind, "<Return>", lambda event: self.student_event_handler())
                         self.after(100, self.show_error_message, 300, 215,
