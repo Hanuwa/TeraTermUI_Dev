@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-  <assemblyIdentity version="0.9.0.0" processorArchitecture="*" name="Tera Term UI" type="win32"/>
+  <assemblyIdentity version="0.92.0.0" processorArchitecture="*" name="Tera Term UI" type="win32"/>
   <description>TeraTermUI</description>
   <dependency>
     <dependentAssembly>
@@ -29,5 +29,5 @@
       <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"/>
     </application>
   </compatibility>
-  <file name="TeraTermUI.exe" hashalg="SHA1" hash=""/>
+  <file name="TeraTermUI.exe" hashalg="SHA1" hash="a454e043fbbb92e44c96361b84a581835486e863"/>
 </assembly>
