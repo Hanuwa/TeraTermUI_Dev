@@ -77,17 +77,17 @@ def attach_manifest(executable_path, manifest_path, version):
         executable_name = os.path.basename(executable_path)
         with open(manifest_path, "r", encoding="utf-8") as file:
             manifest_content = file.read()
-        manifest_content = re.sub(fr'<file name="{re.escape(executable_name)}" hashalg="SHA1" hash=".*?"/>',
-                                  f'<file name="{executable_name}" hashalg="SHA1" hash="{sha1_checksum}"/>',
-                                  manifest_content)
 
+        manifest_content = re.sub(
+            fr'<file name="{re.escape(executable_name)}" hashalg="SHA1" hash=".*?"/>',
+            f'<file name="{executable_name}" hashalg="SHA1" hash="{sha1_checksum}"/>',
+            manifest_content)
         version_parts = version.split(".")
         while len(version_parts) < 4:
             version_parts.append("0")
         padded_version = ".".join(version_parts[:4])
-        manifest_content = re.sub(
-            r'(<assemblyIdentity\b[^>]*\bversion=")[^"]+(".*?\bname="Tera Term UI(?: Updater)?"[^>]*/>)',
-            lambda m: f"{m.group(1)}{padded_version}{m.group(2)}", manifest_content)
+        manifest_content = re.sub(r'(<assemblyIdentity\b[^>]*\bversion=")[^"]+(".*?\bname="Tera Term UI"[^>]*/>)',
+                                  lambda m: f"{m.group(1)}{padded_version}{m.group(2)}", manifest_content)
         with open(manifest_path, "w", encoding="utf-8") as file:
             file.write(manifest_content)
 
