@@ -1,8 +1,8 @@
 Version Number: v0.92.0
 
-SHA-256 Checksum: cc843c91f729f77476a92430bc3156d2c8cd372311923d9685a046c4386ff958
+SHA-256 Checksum: 1c0eba380d88b8f1773b88e3da213011e1bd60239e71f3624d3e48c97476fa37
 
-Release Date: 05/11/2025
+Release Date: 05/12/2025
 
 Patch Notes:
  - Introduced new feature, Added support for scheduled login: If personal credentials are saved, During Auto-Enroll event, 
