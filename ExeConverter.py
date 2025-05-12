@@ -66,7 +66,7 @@ def check_and_restore_backup():
                     Style.RESET_ALL)
                 os.remove(program_backup)
 
-def attach_manifest(executable_path, manifest_path):
+def attach_manifest(executable_path, manifest_path, version):
     try:
         sha1_hash = hashlib.sha1()
         with open(executable_path, "rb") as file:
@@ -75,14 +75,20 @@ def attach_manifest(executable_path, manifest_path):
         sha1_checksum = sha1_hash.hexdigest()
 
         executable_name = os.path.basename(executable_path)
-        with open(manifest_path, "r") as file:
+        with open(manifest_path, "r", encoding="utf-8") as file:
             manifest_content = file.read()
-        updated_manifest_content = re.sub(
-            fr'<file name="{re.escape(executable_name)}" hashalg="SHA1" hash=".*?"/>',
-            f'<file name="{executable_name}" hashalg="SHA1" hash="{sha1_checksum}"/>',
-            manifest_content)
-        with open(manifest_path, "w") as file:
-            file.write(updated_manifest_content)
+        manifest_content = re.sub(fr'<file name="{re.escape(executable_name)}" hashalg="SHA1" hash=".*?"/>',
+                                  f'<file name="{executable_name}" hashalg="SHA1" hash="{sha1_checksum}"/>',
+                                  manifest_content)
+
+        version_parts = version.split(".")
+        while len(version_parts) < 4:
+            version_parts.append("0")
+        padded_version = ".".join(version_parts[:4])
+        manifest_content = re.sub(r'(<assemblyIdentity\b[^>]*\bversion=")[^"]+(".*?\bname="Tera Term UI(?: Updater)?"[^>]*/>)',
+                                  lambda m: f"{m.group(1)}{padded_version}{m.group(2)}", manifest_content)
+        with open(manifest_path, "w", encoding="utf-8") as file:
+            file.write(manifest_content)
 
         subprocess.run(f"mt.exe -manifest {manifest_path} -outputresource:{executable_path};1", check=True)
         print(Fore.GREEN + "\nSuccessfully attached manifest\n" + Style.RESET_ALL)
@@ -347,7 +353,7 @@ try:
             subprocess.run(nuitka_updater_command, shell=True, check=True)
             print(Fore.GREEN + "\nSuccessfully compiled updater.py\n" + Style.RESET_ALL)
             manifest_path = os.path.join(project_directory, "updater.manifest")
-            attach_manifest(updater_exe_path, manifest_path)
+            attach_manifest(updater_exe_path, manifest_path, updater_version)
             updater_checksum = generate_checksum(None, updater_exe_path)
             update_updater_hash_value(os.path.join(project_directory, "TeraTermUI.py"), updater_checksum)
             shutil.copy2(updater_exe_path, updater_dist_path)
@@ -439,7 +445,7 @@ for version in versions:
         executable_path = os.path.join(output_directory, "TeraTermUI.dist", "TeraTermUI.exe")
         version_path = os.path.join(output_directory, "TeraTermUI.dist", "VERSION.txt")
         manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
-        attach_manifest(executable_path, manifest_path)
+        attach_manifest(executable_path, manifest_path, update_without_v)
         generate_checksum(version_path, executable_path)
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
