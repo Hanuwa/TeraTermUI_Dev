@@ -85,8 +85,9 @@ def attach_manifest(executable_path, manifest_path, version):
         while len(version_parts) < 4:
             version_parts.append("0")
         padded_version = ".".join(version_parts[:4])
-        manifest_content = re.sub(r'(<assemblyIdentity\b[^>]*\bversion=")[^"]+(".*?\bname="Tera Term UI(?: Updater)?"[^>]*/>)',
-                                  lambda m: f"{m.group(1)}{padded_version}{m.group(2)}", manifest_content)
+        manifest_content = re.sub(
+            r'(<assemblyIdentity\b[^>]*\bversion=")[^"]+(".*?\bname="Tera Term UI(?: Updater)?"[^>]*/>)',
+            lambda m: f"{m.group(1)}{padded_version}{m.group(2)}", manifest_content)
         with open(manifest_path, "w", encoding="utf-8") as file:
             file.write(manifest_content)
 
@@ -101,6 +102,7 @@ def attach_manifest(executable_path, manifest_path, version):
         shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
         os.remove(program_backup)
         print(Fore.RED + f"Failed to attach manifest: {e}\n" + Style.RESET_ALL)
+        sys.exit(1)
 
 def generate_checksum(version_filename, executable_filename):
     try:
@@ -141,18 +143,24 @@ def generate_checksum(version_filename, executable_filename):
         shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
         os.remove(program_backup)
         print(Fore.RED + f"Failed to generate SHA-256 checksum {e}\n" + Style.RESET_ALL)
+        sys.exit(1)
 
 def update_updater_hash_value(main_file_path, new_hash):
     try:
         with open(main_file_path, "r", encoding="utf-8") as file:
             content = file.read()
-        updated_content = re.sub(r'self\.updater_hash\s*=\s*".*?"',
-                                 f'self.updater_hash = "{new_hash}"',
-                                 content)
+
+        content = re.sub(r'self\.updater_hash\s*=\s*".*?"', f'self.updater_hash = "{new_hash}"', content)
+        old_date = extract_second_date_from_file(main_file_path)
+        if old_date:
+            now = datetime.now()
+            today_date = f"{now.month}/{now.day}/{now.year}"
+            content = content.replace(old_date, today_date, 1)
+
         with open(main_file_path, "w", encoding="utf-8") as file:
-            file.write(updated_content)
+            file.write(content)
     except Exception as e:
-        print(Fore.RED + f"Error updating updater_hash: {e}\n" + Style.RESET_ALL)
+        print(Fore.RED + f"Error updating updater_hash and date: {e}\n" + Style.RESET_ALL)
 
 def freeze_requirements(project_directory):
     scripts_directory = os.path.join(project_directory, ".venv", "Scripts")
