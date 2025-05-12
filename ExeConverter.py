@@ -154,7 +154,7 @@ def update_updater_hash_value(main_file_path, new_hash):
         old_date = extract_second_date_from_file(main_file_path)
         if old_date:
             now = datetime.now()
-            today_date = f"{now.month}/{now.day}/{now.year}"
+            today_date = f"{now.month}/{now.day}/{str(now.year)[-2:]}"
             content = content.replace(old_date, today_date, 1)
 
         with open(main_file_path, "w", encoding="utf-8") as file:
