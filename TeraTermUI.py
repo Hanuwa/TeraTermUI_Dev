@@ -422,6 +422,7 @@ class TeraTermUI(customtkinter.CTk):
         self.back_student = None
         self.back_student_tooltip = None
         self.save_timer = None
+        self.saving_in_progress = False
         self.focus_screen = True
         self.must_save_user_data = False
         self.last_save_time = 0
@@ -1040,6 +1041,8 @@ class TeraTermUI(customtkinter.CTk):
                     future.result()
             self.stop_check_process_thread()
             self.stop_check_idle_thread()
+            if hasattr(self, "save_timer") and self.save_timer is not None:
+                self.save_timer.cancel()
             self.clipboard_handler.close()
             self.save_user_config()
             self.end_app()
@@ -1074,6 +1077,11 @@ class TeraTermUI(customtkinter.CTk):
         else:
             for future in as_completed([self.future_tesseract, self.future_backup, self.future_feedback]):
                 future.result()
+        self.stop_check_process_thread()
+        self.stop_check_idle_thread()
+        if hasattr(self, "save_timer") and self.save_timer is not None:
+            self.save_timer.cancel()
+        self.clipboard_handler.close()
         self.save_user_config(include_exit=False)
         self.end_app()
         sys.exit(0)
@@ -6052,38 +6060,42 @@ class TeraTermUI(customtkinter.CTk):
         now = time.time()
         save_threshold = 1.25
         delay = 1.0
-        if now - self.last_save_time > save_threshold:
-            if self.save_timer is not None:
-                self.save_timer.cancel()
-                self.save_timer = None
-            self.perform_user_data_save()
-            self.last_save_time = time.time()
-        else:
-            if self.save_timer is not None:
-                self.save_timer.cancel()
-            self.focus_screen = False
-            self.save_timer = threading.Timer(delay, self.perform_user_data_save)
-            self.save_timer.start()
+        if (now - self.last_save_time <= save_threshold and self.save_timer is not None and self.save_timer.is_alive()):
+            return
+        if self.save_timer is not None:
+            self.save_timer.cancel()
+            self.save_timer = None
+        self.focus_screen = False
+        self.save_timer = threading.Timer(delay, self.perform_user_data_save)
+        self.save_timer.daemon = True
+        self.save_timer.start()
 
     def perform_user_data_save(self):
-        self.last_save_time = time.time()
-        if self.remember_me.get() == "on":
-            student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
-            code = self.code_entry.get().replace(" ", "")
-            if ((re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", student_id) or
-                 (student_id.isdigit() and len(student_id) == 9)) and code.isdigit() and len(code) == 4):
-                if self.focus_screen:
-                    self.focus_set()
-                    self.focus_screen = True
-                self.encrypt_data_db(student_id, code)
-                self.connection_db.commit()
+        if getattr(self, "saving_in_progress", False):
+            return
+
+        self.saving_in_progress = True
+        try:
+            self.last_save_time = time.time()
+            if self.remember_me.get() == "on":
+                student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
+                code = self.code_entry.get().replace(" ", "")
+                if ((re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", student_id) or
+                     (student_id.isdigit() and len(student_id) == 9)) and code.isdigit() and len(code) == 4):
+                    if self.focus_screen:
+                        self.focus_set()
+                        self.focus_screen = True
+                    self.encrypt_data_db(student_id, code)
+                    self.connection_db.commit()
+                else:
+                    self.must_save_user_data = True
             else:
-                self.must_save_user_data = True
-        else:
-            if self.has_saved_user_data():
-                self.cursor_db.execute("DELETE FROM user_data")
-                self.connection_db.commit()
-                self.crypto.reset()
+                if self.has_saved_user_data():
+                    self.cursor_db.execute("DELETE FROM user_data")
+                    self.connection_db.commit()
+                    self.crypto.reset()
+        finally:
+            self.saving_in_progress = False
 
     def encrypt_data_db(self, st_id, code):
         self.must_save_user_data = False
@@ -13948,10 +13960,19 @@ class ClipboardHandler:
     # Starts a background timer that rotates the encryption key periodically
     def _start_key_rotation_timer(self):
         def rotate_periodically():
-            if self._active:
+            with self.key_rotation_lock:
+                if not self._active:
+                    return
                 self._rotate_keys()
-                threading.Timer(self.KEY_ROTATION_INTERVAL.total_seconds(), rotate_periodically).start()
-        threading.Timer(self.KEY_ROTATION_INTERVAL.total_seconds(), rotate_periodically).start()
+                self._key_rotation_timer = threading.Timer(self.KEY_ROTATION_INTERVAL.total_seconds(),
+                                                           rotate_periodically)
+                self._key_rotation_timer.daemon = True
+                self._key_rotation_timer.start()
+
+        self._key_rotation_timer = threading.Timer(self.KEY_ROTATION_INTERVAL.total_seconds(),
+                                                   rotate_periodically)
+        self._key_rotation_timer.daemon = True
+        self._key_rotation_timer.start()
 
     # Generates a new 256-bit encryption key using HKDF
     @staticmethod
@@ -14062,6 +14083,8 @@ class ClipboardHandler:
             return
 
         self._active = False
+        if hasattr(self, "_key_rotation_timer") and self._key_rotation_timer:
+            self._key_rotation_timer.cancel()
         if self.clipboard_lock.locked():
             try:
                 self.clipboard_lock.release()
