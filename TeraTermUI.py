@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.92.0 - 5/12/25
+# DATE - Started 1/1/23, Current Build v0.92.0 - 5/13/25
 
 # BUGS / ISSUES:
 # pytesseract integration is inconsistent across systems, sometimes failing to read the screen
@@ -874,7 +874,7 @@ class TeraTermUI(customtkinter.CTk):
                             if latest_version is None:
                                 logging.warning("No latest release found. Starting app with the current version")
                                 latest_version = self.USER_APP_VERSION
-                            if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION):
+                            if TeraTermUI.is_version_outdated(self.USER_APP_VERSION, latest_version):
                                 self.after(1000, self.update_app, latest_version)
                                 self.after(1250, enable)
                             else:
@@ -9799,7 +9799,7 @@ class TeraTermUI(customtkinter.CTk):
 
                         self.after(50, error)
                         return
-                    if not TeraTermUI.compare_versions(latest_version, self.USER_APP_VERSION):
+                    if TeraTermUI.is_version_outdated(self.USER_APP_VERSION, latest_version):
                         def update():
                             current = None
                             latest = None
@@ -11624,18 +11624,22 @@ class TeraTermUI(customtkinter.CTk):
 
     # Compares the current version that user is using with the latest available
     @staticmethod
-    def compare_versions(latest_version, user_version):
-        if latest_version is None or user_version is None:
+    def is_version_outdated(user_version, latest_version):
+        if not user_version or not latest_version:
             return False
-        latest_version_parts = [int(part) for part in latest_version.split(".")]
-        user_version_parts = [int(part) for part in user_version.split(".")]
 
-        for latest, user in zip(latest_version_parts, user_version_parts):
-            if latest > user:
-                return False
-            elif latest < user:
-                return True
-        return len(latest_version_parts) <= len(user_version_parts)
+        def extract_numeric_parts(version):
+            parts = re.findall(r"\d+", version)
+            return [int(p) for p in parts[:3]]
+
+        user_parts = extract_numeric_parts(user_version)
+        latest_parts = extract_numeric_parts(latest_version)
+    
+        max_len = max(len(user_parts), len(latest_parts))
+        user_parts += [0] * (max_len - len(user_parts))
+        latest_parts += [0] * (max_len - len(latest_parts))
+    
+        return user_parts < latest_parts
 
     # plays corresponding audio
     def play_sound(self, audio_file):
