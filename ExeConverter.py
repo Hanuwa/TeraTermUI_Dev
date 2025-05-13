@@ -86,8 +86,9 @@ def attach_manifest(executable_path, manifest_path, version):
         while len(version_parts) < 4:
             version_parts.append("0")
         padded_version = ".".join(version_parts[:4])
-        manifest_content = re.sub(r'(<assemblyIdentity\b[^>]*\bversion=")[^"]+(".*?\bname="Tera Term UI"[^>]*/>)',
-                                  lambda m: f"{m.group(1)}{padded_version}{m.group(2)}", manifest_content)
+        manifest_content = re.sub(
+            r'(<assemblyIdentity\b[^>]*\bversion=")[^"]+(".*?\bname="Tera Term UI"[^>]*/>)',
+            lambda m: f"{m.group(1)}{padded_version}{m.group(2)}", manifest_content)
         with open(manifest_path, "w", encoding="utf-8") as file:
             file.write(manifest_content)
 
@@ -181,8 +182,9 @@ def freeze_requirements(project_directory):
         os.chdir(original_dir)
 
 def validate_version(ver):
-    pattern = r"^[vV]?([0-9]{1,3}\.[0-9]{1,3}(\.[0-9]{1,3})?|[0-9]{1,3})$"
-    return bool(re.match(pattern, ver, re.IGNORECASE))
+    pattern = r"^[vV]?(\d{1,3}\.){0,3}\d{1,3}([\-_.]?[a-zA-Z]+[0-9]*)?$"
+    return bool(re.match(pattern, ver))
+
 
 init()
 username = os.getlogin()
