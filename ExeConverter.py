@@ -217,6 +217,7 @@ if user_input.startswith("v"):
 else:
     update_without_v = user_input
     update = "v" + update_without_v
+numeric_version = re.match(r'^(\d+(?:\.\d+){0,3})', update_without_v).group(1)
 versions = ["installer", "portable"]
 updater_version = args.updater_version
 db_version = args.db_version
@@ -292,7 +293,7 @@ try:
     with open(inno_file_path, "w") as file:
         for line in lines:
             if line.startswith("#define MyAppVersion"):
-                line = '#define MyAppVersion "' + update_without_v + '"\n'
+                line = '#define MyAppVersion "' + numeric_version + '"\n'
             elif line.startswith("OutputBaseFilename="):
                 line = 'OutputBaseFilename="TeraTermUI_x64_Installer-' + update + '"\n'
             file.write(line)
@@ -330,7 +331,7 @@ nuitka_command = (
     '--windows-icon-from-ico="' + project_directory + '/images/tera-term.ico" '
     '--nofollow-import-to=unittest --python-flag=no_docstrings --product-name="Tera Term UI" '
     '--company-name="Armando Del Valle Tejada" --file-description="TeraTermUI" '  
-    '--file-version="' + update_without_v + '" --product-version="' + update_without_v + '" '
+    '--file-version="' + numeric_version + '" --product-version="' + numeric_version + '" '
     '--copyright="Copyright (c) ' + str(current_year) + ' Armando Del Valle Tejada" '
 )
 if args.report:
@@ -455,7 +456,7 @@ for version in versions:
         executable_path = os.path.join(output_directory, "TeraTermUI.dist", "TeraTermUI.exe")
         version_path = os.path.join(output_directory, "TeraTermUI.dist", "VERSION.txt")
         manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
-        attach_manifest(executable_path, manifest_path, update_without_v)
+        attach_manifest(executable_path, manifest_path, numeric_version)
         generate_checksum(version_path, executable_path)
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
