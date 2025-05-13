@@ -29,5 +29,5 @@
       <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"/>
     </application>
   </compatibility>
-  <file name="TeraTermUI.exe" hashalg="SHA1" hash="8cd587fb68683ceb2814d854dd68d471d79b0772"/>
+  <file name="TeraTermUI.exe" hashalg="SHA1" hash="f341151d6b28d6d5f0f841995ac4ba41ca8d8e07"/>
 </assembly>
