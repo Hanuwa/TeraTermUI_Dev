@@ -43,9 +43,10 @@ Name: "teraterm"; Description: "{cm:teraterm}"; GroupDescription: "Additional in
 
 [Files]
 Source: "TeraTermUI_installer\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "database.db"; DestDir: "{code:GetDataDir}"; Permissions: everyone-modify; Flags: ignoreversion
-Source: "feedback.zip"; DestDir: "{code:GetDataDir}"; Permissions: everyone-modify; Flags: ignoreversion
-Source: "updater.exe"; DestDir: "{code:GetDataDir}"; Permissions: everyone-modify; Flags: ignoreversion
+Source: "database.db"; DestDir: "{userappdata}\TeraTermUI"; Permissions: everyone-modify; Flags: ignoreversion
+Source: "feedback.zip"; DestDir: "{userappdata}\TeraTermUI"; Permissions: everyone-modify; Flags: ignoreversion
+Source: "del_cred.ps1"; DestDir: "{userappdata}\TeraTermUI"; Permissions: everyone-modify; Flags: ignoreversion
+Source: "updater.exe"; DestDir: "{userappdata}\TeraTermUI"; Permissions: everyone-modify; Flags: ignoreversion
 Source: "TeraTermUI_installer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "teraterm-4.108.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
 
@@ -56,7 +57,7 @@ Root: HKCU; Subkey: "Software\TeraTermUI"; ValueType: string; ValueName: "Versio
 Root: HKCU; Subkey: "Software\TeraTermUI"; Flags: uninsdeletekey
 
 [UninstallDelete]
-Type: filesandordirs; Name: "{code:GetDataDir}"
+Type: filesandordirs; Name: "{userappdata}\TeraTermUI"
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
@@ -67,18 +68,13 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
 [Code]
-function GetDataDir(Default: string): string;
-begin
-  if IsAdminInstallMode then
-    Result := ExpandConstant('{commonappdata}\TeraTermUI')
-  else
-    Result := ExpandConstant('{userappdata}\TeraTermUI');
-end;
-
 procedure CreateDataDirectory();
+var
+  DataDir: string;
 begin
-  if not DirExists(GetDataDir('')) then
-    ForceDirectories(GetDataDir(''));
+  DataDir := ExpandConstant('{userappdata}\TeraTermUI');
+  if not DirExists(DataDir) then
+    ForceDirectories(DataDir);
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
@@ -202,5 +198,10 @@ begin
         DelTree(TeraTermUITempDir, True, True, True);
       end;
     end;
+    ScriptPath := ExpandConstant('{userappdata}\TeraTermUI\del_cred.ps1');
+    if FileExists(ScriptPath) then
+    begin
+      Exec('powershell.exe', '-WindowStyle Hidden -ExecutionPolicy Bypass -File "' + ScriptPath + '"',
+           '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   end;
 end;
