@@ -201,16 +201,14 @@ class TeraTermUI(customtkinter.CTk):
         self.up_arrow_key_enabled = True
         self.down_arrow_key_enabled = True
 
-        # Installer Directories
-        scope, _ = TeraTermUI.get_installation_scope()
+        # Installer Appdata Directory
         if self.mode == "Installation":
-            if scope in ["all_users", "current_user"]:
-                appdata_path = os.environ.get("PROGRAMDATA") if scope == "all_users" else os.environ.get("APPDATA")
-                tera_path = os.path.join(appdata_path, "TeraTermUI")
-                self.db_path = os.path.join(tera_path, "database.db")
-                self.ath = os.path.join(tera_path, "feedback.zip")
-                self.logs = os.path.join(tera_path, "logs.txt")
-                self.crypto = SecureDataStore(key_path=os.path.join(tera_path, "masterkey.json"))
+            appdata_path = os.environ.get("APPDATA")
+            tera_path = os.path.join(appdata_path, "TeraTermUI")
+            self.db_path = os.path.join(tera_path, "database.db")
+            self.ath = os.path.join(tera_path, "feedback.zip")
+            self.logs = os.path.join(tera_path, "logs.txt")
+            self.crypto = SecureDataStore(key_path=os.path.join(tera_path, "masterkey.json"))
         else:
             self.crypto = SecureDataStore()
 
@@ -1161,21 +1159,6 @@ class TeraTermUI(customtkinter.CTk):
                     TeraTermUI.terminate_process()
                     break
 
-    @staticmethod
-    def get_installation_scope():
-        common_appdata_path = os.environ.get("PROGRAMDATA")
-        common_install_path = os.path.join(common_appdata_path, "TeraTermUI")
-
-        user_appdata_path = os.environ.get("APPDATA")
-        user_install_path = os.path.join(user_appdata_path, "TeraTermUI")
-
-        if os.path.exists(common_install_path):
-            return "all_users", common_install_path
-        elif os.path.exists(user_install_path):
-            return "current_user", user_install_path
-        else:
-            return "not_installed", None
-
     def check_database_lock(self):
         try:
             self.cursor_db.execute("SELECT 1")
@@ -1205,14 +1188,9 @@ class TeraTermUI(customtkinter.CTk):
             separator = "-" * 125 + "\n"
 
             if self.mode == "Installation":
-                scope, install_path = TeraTermUI.get_installation_scope()
-                if scope in ["all_users", "current_user"]:
-                    tera_term_ui_path = install_path
-                else:
-                    raise Exception("TeraTermUI is not installed")
-                if not os.path.isdir(tera_term_ui_path):
-                    raise Exception(f"Program Data directory not found at {tera_term_ui_path}")
-                logs_path = os.path.join(tera_term_ui_path, "logs.txt")
+                appdata_path = os.environ.get("APPDATA")
+                tera_path = os.path.join(appdata_path, "TeraTermUI")
+                logs_path = os.path.join(tera_path, "logs.txt")
             else:
                 logs_path = TeraTermUI.get_absolute_path("logs.txt")
 
@@ -9883,15 +9861,11 @@ class TeraTermUI(customtkinter.CTk):
                 db_folder = sys_path
                 shutil.copy2(str(updater_exe_src), str(updater_exe_dest))
             elif self.mode == "Installation":
-                appdata_path = None
-                scope, _ = TeraTermUI.get_installation_scope()
-                if scope == "all_users":
-                    appdata_path = os.environ.get("PROGRAMDATA")
-                elif scope == "current_user":
-                    appdata_path = os.environ.get("APPDATA")
-                if appdata_path:
-                    updater_exe_src = Path(appdata_path) / "TeraTermUI" / "updater.exe"
-                    db_folder = Path(appdata_path) / "TeraTermUI"
+                appdata_path = os.environ.get("APPDATA")
+                tera_path = os.path.join(appdata_path, "TeraTermUI")
+                if tera_path:
+                    updater_exe_src = Path(tera_path) / "updater.exe"
+                    db_folder = Path(tera_path)
                     shutil.copy2(str(updater_exe_src), str(updater_exe_dest))
             if not TeraTermUI.verify_file_integrity(updater_exe_dest, self.updater_hash, sample_size=65536): # 64 KB
                 return
@@ -13626,6 +13600,24 @@ class SecureDataStore:
         self.creating_key_file = False
         self.initialize_keys()
 
+    @staticmethod
+    def build_metadata(raw, encode=True):
+        data = {
+            "version": raw["version"],
+            "key_id": raw["key_id"],
+            "created_at": raw["created_at"],
+            "expires_at": raw["expires_at"],
+            "last_used": raw["last_used"],
+            "encrypted_key": raw["encrypted_key"],
+            "os_username": raw["os_username"],
+            "user_sid": raw["user_sid"],
+            "machine_id": raw["machine_id"],
+            "key_usage": raw["key_usage"],
+            "key_algorithm": raw["key_algorithm"],
+            "protected_by": raw["protected_by"]
+        }
+        return json.dumps(data, separators=(",", ":")).encode() if encode else data
+
     # Load and validate the encrypted key file, verify HMAC, derive AES
     def initialize_keys(self):
         try:
@@ -13634,26 +13626,18 @@ class SecureDataStore:
                 self.create_new_key_file()
 
             with open(self.key_path, "r") as f:
-                raw = json.load(f)
+                content = f.read().strip()
+                if not content:
+                    raise ValueError("Master key file is empty")
 
-            metadata = json.dumps({
-                "version": raw["version"],
-                "key_id": raw["key_id"],
-                "created_at": raw["created_at"],
-                "expires_at": raw["expires_at"],
-                "last_used": raw["last_used"],
-                "encrypted_key": raw["encrypted_key"],
-                "os_username": raw["os_username"],
-                "user_sid": raw["user_sid"],
-                "machine_id": raw["machine_id"],
-                "key_usage": raw["key_usage"],
-                "key_algorithm": raw["key_algorithm"],
-                "protected_by": raw["protected_by"]
-            }, separators=(",", ":")).encode()
+                try:
+                    raw = json.loads(content)
+                except json.JSONDecodeError:
+                    raise ValueError("Master key file is not valid JSON")
 
             hmac_stored = base64.b64decode(raw["hmac"])
             hmac_calc = HMAC.new(self.get_dynamic_hmac_key(), digestmod=SHA256)
-            hmac_calc.update(metadata)
+            hmac_calc.update(SecureDataStore.build_metadata(raw))
 
             if not compare_digest(hmac_stored, hmac_calc.digest()):
                 raise ValueError("HMAC verification failed on masterkey.json")
@@ -13666,12 +13650,10 @@ class SecureDataStore:
                 return
 
             encrypted_key = base64.b64decode(raw["encrypted_key"])
-            master_key = win32crypt.CryptUnprotectData(encrypted_key, None,
-                                                       None, None, 0)[1]
+            master_key = win32crypt.CryptUnprotectData(encrypted_key, None, None, None, 0)[1]
             passphrase = self.retrieve_passphrase()
             hybrid_key = bytes(a ^ b for a, b in zip(master_key, passphrase))
             self.aes_key = HKDF(hybrid_key, 32, salt=b"student_event_salt", hashmod=SHA256)
-
         except Exception as err:
             logging.error("Key initialization failed: %s", str(err))
             self.reset()
@@ -13711,8 +13693,8 @@ class SecureDataStore:
         with open(self.key_path, "w") as f:
             json.dump(metadata, f, indent=2)
 
-        self.lock_file_to_user(self.key_path)
-        self.hide_file(self.key_path)
+        SecureDataStore.lock_file_to_user(self.key_path)
+        SecureDataStore.hide_file(self.key_path)
 
     # Securely store passphrase in Windows Credential Manager
     def store_passphrase(self, passphrase):
@@ -13748,7 +13730,7 @@ class SecureDataStore:
         try:
             yield key
         finally:
-            self.zeroize(key)
+            SecureDataStore.zeroize(key)
 
     # Encrypt plaintext string using AES-GCM and return ciphertext, nonce, tag
     def encrypt(self, plaintext):
@@ -13774,17 +13756,11 @@ class SecureDataStore:
         if not os.path.exists(self.key_path):
             logging.warning("Key file missing — skipping last_used update")
             return
-
         try:
             with open(self.key_path, "r+") as f:
                 raw = json.load(f)
                 raw["last_used"] = datetime.now(UTC).isoformat()
-                metadata = json.dumps({
-                    k: raw[k] for k in ["version", "key_id", "created_at", "expires_at", "last_used",
-                                        "encrypted_key", "os_username", "user_sid", "machine_id", "key_usage",
-                                        "key_algorithm", "protected_by"]},
-                    separators=(",", ":")).encode()
-
+                metadata = SecureDataStore.build_metadata(raw)
                 hmac_obj = HMAC.new(self.get_dynamic_hmac_key(), digestmod=SHA256)
                 hmac_obj.update(metadata)
                 raw["hmac"] = base64.b64encode(hmac_obj.digest()).decode()
@@ -13805,23 +13781,9 @@ class SecureDataStore:
     def verify_integrity(self):
         with open(self.key_path, "r") as f:
             raw = json.load(f)
-        metadata = json.dumps({
-            "version": raw["version"],
-            "key_id": raw["key_id"],
-            "created_at": raw["created_at"],
-            "expires_at": raw["expires_at"],
-            "last_used": raw["last_used"],
-            "encrypted_key": raw["encrypted_key"],
-            "os_username": raw["os_username"],
-            "user_sid": raw["user_sid"],
-            "machine_id": raw["machine_id"],
-            "key_usage": raw["key_usage"],
-            "key_algorithm": raw["key_algorithm"],
-            "protected_by": raw["protected_by"]
-        }, separators=(",", ":")).encode()
         expected_hmac = base64.b64decode(raw["hmac"])
         actual_hmac = HMAC.new(self.get_dynamic_hmac_key(), digestmod=SHA256)
-        actual_hmac.update(metadata)
+        actual_hmac.update(SecureDataStore.build_metadata(raw))
         return compare_digest(expected_hmac, actual_hmac.digest())
 
     def get_dynamic_hmac_key(self):
@@ -13895,7 +13857,7 @@ class ClipboardHandler:
 
         # Data storage
         self.clipboard_data = {}
-        self.current_key = self.generate_new_key()
+        self.current_key = ClipboardHandler.generate_new_key()
         self.last_key_rotation = datetime.now()
 
         self._start_key_rotation_timer()
@@ -13990,9 +13952,9 @@ class ClipboardHandler:
     def _rotate_keys(self):
         with self.key_rotation_lock:
             old_key = self.current_key
-            self.current_key = self.generate_new_key()
+            self.current_key = ClipboardHandler.generate_new_key()
             self.last_key_rotation = datetime.now()
-            self.secure_erase(old_key)
+            ClipboardHandler.secure_erase(old_key)
             logging.info("Encryption key rotated")
 
     # Encrypts plaintext using AES-CFB mode with the current key and a random IV
@@ -14002,7 +13964,7 @@ class ClipboardHandler:
         iv = get_random_bytes(16)
         cipher = AES.new(self.current_key, AES.MODE_CFB, iv=iv)
         ciphertext = cipher.encrypt(plaintext)
-        self.secure_erase(plaintext)
+        ClipboardHandler.secure_erase(plaintext)
         return iv + ciphertext
 
     # Decrypts AES-CFB encrypted data using the current key and extracted IV
@@ -14013,7 +13975,7 @@ class ClipboardHandler:
         ciphertext = encrypted_data[16:]
         cipher = AES.new(self.current_key, AES.MODE_CFB, iv=iv)
         result = cipher.decrypt(ciphertext)
-        self.secure_erase(ciphertext)
+        ClipboardHandler.secure_erase(ciphertext)
         return result
 
     # Attempts to securely erase sensitive data from memory (best-effort for bytearrays only)
@@ -14035,7 +13997,7 @@ class ClipboardHandler:
         if not self.clipboard_lock.acquire(timeout=1.0):
             raise TimeoutError("Could not acquire clipboard lock")
         try:
-            if not self.open_clipboard_with_retries():
+            if not ClipboardHandler.open_clipboard_with_retries():
                 raise RuntimeError("Failed to open clipboard")
             yield
         finally:
@@ -14110,7 +14072,7 @@ class ClipboardHandler:
             try:
                 if fmt == win32con.CF_BITMAP and win32gui.GetObjectType(data):
                     win32gui.DeleteObject(data)
-                self.secure_erase(data)
+                ClipboardHandler.secure_erase(data)
             except Exception as error:
                 logging.debug(f"Failed to cleanup format {fmt}: {error}")
         self.clipboard_data.clear()
@@ -14118,7 +14080,7 @@ class ClipboardHandler:
 
     # Encodes a list of sanitized file paths into a DROPFILES structure (used by CF_HDROP)
     def encode_hdrop_paths(self, paths):
-        sanitized = list(self.sanitize_file_paths(paths))
+        sanitized = list(ClipboardHandler.sanitize_file_paths(paths))
         file_list = b"".join(p.encode("utf-16le") + b"\0\0" for p in sanitized)
         return struct.pack("Iiii", 20, 0, 0, 1) + file_list + b"\0\0"
 
