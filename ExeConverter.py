@@ -66,11 +66,11 @@ def check_and_restore_backup():
                     Style.RESET_ALL)
                 os.remove(program_backup)
 
-def attach_manifest(executable_path, manifest_path, version):
+def attach_manifest(executable_path, manifest_path, version, sample_size=8192):
     try:
         sha1_hash = hashlib.sha1()
         with open(executable_path, "rb") as file:
-            for byte_block in iter(lambda: file.read(8192), b""):
+            for byte_block in iter(lambda: file.read(sample_size), b""):
                 sha1_hash.update(byte_block)
         sha1_checksum = sha1_hash.hexdigest()
 
@@ -105,11 +105,11 @@ def attach_manifest(executable_path, manifest_path, version):
         print(Fore.RED + f"Failed to attach manifest: {e}\n" + Style.RESET_ALL)
         sys.exit(1)
 
-def generate_checksum(version_filename, executable_filename):
+def generate_checksum(version_filename, executable_filename, sample_size=8192):
     try:
         sha256_hash = hashlib.sha256()
         with open(executable_filename, "rb") as file:
-            for byte_block in iter(lambda: file.read(8192), b""):
+            for byte_block in iter(lambda: file.read(sample_size), b""):
                 sha256_hash.update(byte_block)
         sha256_checksum = sha256_hash.hexdigest()
 
@@ -364,8 +364,8 @@ try:
             subprocess.run(nuitka_updater_command, shell=True, check=True)
             print(Fore.GREEN + "\nSuccessfully compiled updater.py\n" + Style.RESET_ALL)
             manifest_path = os.path.join(project_directory, "updater.manifest")
-            attach_manifest(updater_exe_path, manifest_path, updater_version)
-            updater_checksum = generate_checksum(None, updater_exe_path)
+            attach_manifest(updater_exe_path, manifest_path, updater_version, sample_size=65536)
+            updater_checksum = generate_checksum(None, updater_exe_path, sample_size=65536)
             update_updater_hash_value(os.path.join(project_directory, "TeraTermUI.py"), updater_checksum)
             shutil.copy2(updater_exe_path, updater_dist_path)
             shutil.copy2(updater_exe_path, output_directory)
@@ -456,8 +456,8 @@ for version in versions:
         executable_path = os.path.join(output_directory, "TeraTermUI.dist", "TeraTermUI.exe")
         version_path = os.path.join(output_directory, "TeraTermUI.dist", "VERSION.txt")
         manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
-        attach_manifest(executable_path, manifest_path, numeric_version)
-        generate_checksum(version_path, executable_path)
+        attach_manifest(executable_path, manifest_path, numeric_version, sample_size=262144)
+        generate_checksum(version_path, executable_path, sample_size=262144)
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
         os.remove(program_backup)
@@ -523,7 +523,7 @@ for version in versions:
             installer_executable_path = output_directory + "/TeraTermUI_x64_Installer-" + update + ".exe"
             shutil.move(output_directory + "/output/TeraTermUI_x64_Installer-" + update + ".exe", output_directory)
             shutil.rmtree(output_directory + "/output")
-            installer_checksum = generate_checksum(None, installer_executable_path)
+            installer_checksum = generate_checksum(None, installer_executable_path, sample_size=131072)
             print(Fore.GREEN + "Successfully completed installer version\n" + Style.RESET_ALL)
         except KeyboardInterrupt as e:
             shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
@@ -549,7 +549,7 @@ for version in versions:
                 version_path = os.path.join(output_directory, app_folder, "VERSION.txt")
                 destination_path = os.path.join(project_directory, "VERSION.txt")
                 shutil.copy(version_path, destination_path)
-                portable_checksum = generate_checksum(version_path, zip_file_path + ".zip")
+                portable_checksum = generate_checksum(version_path, zip_file_path + ".zip", sample_size=131072)
                 print(Fore.GREEN + "Successfully completed portable version\n" + Style.RESET_ALL)
                 break
             except OSError as e:
