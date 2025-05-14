@@ -250,7 +250,6 @@ class CustomEntry(CTkEntry):
 
         self.bindings = []
         self.setup_bindings()
-        self.setup_context_menu()
 
     def setup_bindings(self):
         self.focus_out_bind_id = self.root.bind("<FocusOut>", self._on_window_focus_out, add="+")
@@ -394,23 +393,14 @@ class CustomEntry(CTkEntry):
         return None
 
     def custom_middle_mouse(self, event=None):
-        context_menu = self.find_context_menu()
-        if context_menu:
+        if self.find_context_menu() or (self.get() == "" and not self._placeholder_text_active):
             return "break"
         if self.select_present():
             char_index = self.index("@%d" % event.x)
             self.icursor(char_index)
             self.select_clear()
             return "break"
-
-    def setup_context_menu(self):
-        self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10),
-                                    relief="flat", background="gray40", fg="snow")
-        menu_items = [("Cut", lambda: self.cut()), ("Copy", lambda: self.copy()), ("Paste", lambda: self.paste()),
-                      ("Select All", lambda: self.select_all()), ("Undo", lambda: self.undo()),
-                      ("Redo", lambda: self.redo())]
-        for label, command in menu_items:
-            self.context_menu.add_command(label=label, command=command)
+        return None
 
     def show_menu(self, event):
         if self.cget("state") == "disabled":
@@ -418,6 +408,15 @@ class CustomEntry(CTkEntry):
 
         self.focus_set()
         self.selected_text = True
+
+        if self.context_menu is None:
+            self.context_menu = tk.Menu(self, tearoff=0, font=("Arial", 10), relief="flat", background="gray40",
+                                        fg="snow")
+            menu_items = [("Cut", lambda: self.cut()), ("Copy", lambda: self.copy()), ("Paste", lambda: self.paste()),
+                          ("Select All", lambda: self.select_all()), ("Undo", lambda: self.undo()),
+                          ("Redo", lambda: self.redo())]
+            for label, command in menu_items:
+                self.context_menu.add_command(label=label, command=command)
 
         if self.lang == "English":
             self.context_menu.entryconfigure(0, label="Cut")
@@ -577,8 +576,7 @@ class CustomEntry(CTkEntry):
             self._placeholder_text_active = True
             self._pre_placeholder_arguments = {"show": self._entry.cget("show")}
             self._entry.config(fg=self._apply_appearance_mode(self._placeholder_text_color),
-                               disabledforeground=self._apply_appearance_mode(self._placeholder_text_color),
-                               show="")
+                               disabledforeground=self._apply_appearance_mode(self._placeholder_text_color), show="")
             self._entry.delete(0, tk.END)
             self._entry.insert(0, self._placeholder_text)
 
