@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.92.0 - 5/13/25
+# DATE - Started 1/1/23, Current Build v0.92.0 - 5/14/25
 
 # BUGS / ISSUES:
 # pytesseract integration is inconsistent across systems, sometimes failing to read the screen
@@ -84,8 +84,7 @@ from mss import mss
 from pathlib import Path
 from PIL import Image
 from py7zr import SevenZipFile
-from tkinter import filedialog
-from tkinter import messagebox
+from tkinter import filedialog, messagebox
 
 MAX_RESTARTS = 3
 restart_count = 0
@@ -9856,16 +9855,15 @@ class TeraTermUI(customtkinter.CTk):
 
     # checks that we are actually running our updater binary and that it has not been tampered with
     @staticmethod
-    def verify_file_integrity(file_path, expected_hash):
+    def verify_file_integrity(file_path, expected_hash, sample_size=8192):
         import hashlib
 
         hasher = hashlib.sha256()
         try:
             with open(file_path, "rb") as f:
-                while chunk := f.read(8192):
+                while chunk := f.read(sample_size):
                     hasher.update(chunk)
             actual_hash = hasher.hexdigest()
-
             if actual_hash != expected_hash:
                 raise ValueError(f"Hash mismatch for {file_path}. Expected: {expected_hash}, Got: {actual_hash}")
             return True
@@ -9895,7 +9893,7 @@ class TeraTermUI(customtkinter.CTk):
                     updater_exe_src = Path(appdata_path) / "TeraTermUI" / "updater.exe"
                     db_folder = Path(appdata_path) / "TeraTermUI"
                     shutil.copy2(str(updater_exe_src), str(updater_exe_dest))
-            if not TeraTermUI.verify_file_integrity(updater_exe_dest, self.updater_hash):
+            if not TeraTermUI.verify_file_integrity(updater_exe_dest, self.updater_hash, sample_size=65536): # 64 KB
                 return
             updater_args = [str(updater_exe_dest), self.mode, latest_version, str(sys_path), str(db_folder)]
             subprocess.Popen(updater_args)
@@ -12315,6 +12313,7 @@ class CustomTextBox(customtkinter.CTkTextbox):
             self.stop_autoscroll(event=None)
             self.tag_add(tk.SEL, "1.0", tk.END)
             return "break"
+        return None
 
     def show_menu(self, event):
         self.saved_cursor_position = self.index(tk.INSERT)
@@ -12705,6 +12704,7 @@ class CustomEntry(customtkinter.CTkEntry):
             self.icursor(char_index)
             self.select_clear()
             return "break"
+        return None
 
     def show_menu(self, event):
         if self.cget("state") == "disabled":
@@ -13098,6 +13098,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
             self._entry.icursor(char_index)
             self._entry.select_clear()
             return "break"
+        return None
 
     def show_menu(self, event):
         if self.cget("state") == "disabled":
