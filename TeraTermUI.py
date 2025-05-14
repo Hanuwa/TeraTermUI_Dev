@@ -17,7 +17,7 @@
 
 # FUTURE PLANS:
 # Display more in-app information to reduce reliance on Tera Term.
-# Refactor the codebase into multiple files; current single-file structure (14,400+ lines) hinders maintainability.
+# Refactor the codebase into multiple files; current single-file structure (14,300+ lines) hinders maintainability.
 # Redesign UI layout for clarity and better user experience.
 # Expand documentation to support development and onboarding.
 
@@ -13650,7 +13650,8 @@ class SecureDataStore:
                 return
 
             encrypted_key = base64.b64decode(raw["encrypted_key"])
-            master_key = win32crypt.CryptUnprotectData(encrypted_key, None, None, None, 0)[1]
+            master_key = win32crypt.CryptUnprotectData(encrypted_key, None,
+                                                       None, None, 0)[1]
             passphrase = self.retrieve_passphrase()
             hybrid_key = bytes(a ^ b for a, b in zip(master_key, passphrase))
             self.aes_key = HKDF(hybrid_key, 32, salt=b"student_event_salt", hashmod=SHA256)
