@@ -29,7 +29,7 @@ except ImportError:
 
 MAX_RETRIES = 5
 RETRY_DELAY = 0.2
-CHUNK_SIZE = 8192
+CHUNK_SIZE = 131072
 UI_UPDATE_DELAY = 1000
 
 temp_dir = os.path.join(tempfile.gettempdir(), "TeraTermUI")
@@ -1041,8 +1041,7 @@ def check_installation_status(gui, process, version, downloaded_file, app_direct
 
         logging.info("Installer process completed successfully")
         gui.update_progress(90, "Verifying installation...")
-        gui.root.after(1500, lambda: verify_and_finalize_installation(
-            gui, version, downloaded_file, app_directory))
+        gui.root.after(1500, lambda: verify_and_finalize_installation(gui, version, downloaded_file, app_directory))
 
     except Exception as e:
         logging.error(f"Error monitoring installation: {e}")
