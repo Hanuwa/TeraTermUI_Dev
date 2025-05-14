@@ -45,7 +45,6 @@ Name: "teraterm"; Description: "{cm:teraterm}"; GroupDescription: "Additional in
 Source: "TeraTermUI_installer\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "database.db"; DestDir: "{userappdata}\TeraTermUI"; Permissions: everyone-modify; Flags: ignoreversion
 Source: "feedback.zip"; DestDir: "{userappdata}\TeraTermUI"; Permissions: everyone-modify; Flags: ignoreversion
-Source: "del_cred.ps1"; DestDir: "{userappdata}\TeraTermUI"; Permissions: everyone-modify; Flags: ignoreversion
 Source: "updater.exe"; DestDir: "{userappdata}\TeraTermUI"; Permissions: everyone-modify; Flags: ignoreversion
 Source: "TeraTermUI_installer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "teraterm-4.108.exe"; DestDir: "{tmp}"; Flags: ignoreversion; Tasks: teraterm
@@ -198,10 +197,5 @@ begin
         DelTree(TeraTermUITempDir, True, True, True);
       end;
     end;
-    ScriptPath := ExpandConstant('{userappdata}\TeraTermUI\del_cred.ps1');
-    if FileExists(ScriptPath) then
-    begin
-      Exec('powershell.exe', '-WindowStyle Hidden -ExecutionPolicy Bypass -File "' + ScriptPath + '"',
-           '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   end;
 end;
