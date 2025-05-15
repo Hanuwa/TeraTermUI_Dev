@@ -205,6 +205,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.mode == "Installation":
             appdata_path = os.environ.get("APPDATA")
             tera_path = os.path.join(appdata_path, "TeraTermUI")
+            os.makedirs(tera_path, exist_ok=True)
             self.db_path = os.path.join(tera_path, "database.db")
             self.ath = os.path.join(tera_path, "feedback.zip")
             self.logs = os.path.join(tera_path, "logs.txt")
