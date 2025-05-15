@@ -1203,12 +1203,15 @@ class TeraTermUI(customtkinter.CTk):
     # Attempt to zero out memory for a bytes value
     @staticmethod
     def secure_zeroize_string(value):
-        if value:
-            try:
-                val_bytes = bytearray(value.encode())
-                ctypes.memset(ctypes.addressof(ctypes.c_char.from_buffer(val_bytes)), 0, len(val_bytes))
-            except Exception as error:
-                logging.warning(f"Secure zeroize failed: {error}")
+        if not value:
+            return
+        try:
+            val_bytes = bytearray(value.encode('utf-8'))
+            addr = ctypes.addressof(ctypes.c_char.from_buffer(val_bytes))
+            ctypes.memset(addr, 0, len(val_bytes))
+            del val_bytes  
+        except Exception as error:
+            logging.warning(f"Secure zeroize failed: {error}")
 
     def student_event_handler(self):
         loading_screen = self.show_loading_screen()
@@ -13829,13 +13832,15 @@ class SecureDataStore:
     # Attempt to zero out memory for a bytes value
     @staticmethod
     def zeroize(value):
-        if value:
-            try:
-                if isinstance(value, bytes):
-                    value = bytearray(value)
-                ctypes.memset(ctypes.addressof(ctypes.c_char.from_buffer(value)), 0, len(value))
-            except Exception as err:
-                logging.warning("Failed to zero memory: %s", str(err))
+        if not value:
+            return
+        try:
+            if isinstance(value, bytes):
+                value = bytearray(value)
+            addr = ctypes.addressof(ctypes.c_char.from_buffer(value))
+            ctypes.memset(addr, 0, len(value))
+        except Exception as err:
+            logging.warning("Memory zeroization failed: %s", str(err))
 
 
 # Overkill, but since we sometimes need to overwrite user's clipboard we try to save the current information
