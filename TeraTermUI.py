@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.92.0 - 5/14/25
+# DATE - Started 1/1/23, Current Build v0.92.0 - 5/15/25
 
 # BUGS / ISSUES:
 # pytesseract integration is inconsistent across systems, sometimes failing to read the screen
@@ -191,7 +191,7 @@ class TeraTermUI(customtkinter.CTk):
         self.REAZIONE = self.ottenere_protetta_salasana()
         self.USER_APP_VERSION = "0.92.0"
         self.mode = "Portable"
-        self.updater_hash = "f38aa7875af6742820691be01c5f90b6cb1cb60218839c9c269cd62127ba9112"
+        self.updater_hash = "a7b2ac1bf6793e7cd986464343745e8081e34bc434bac202e07f22db39cafb8d"
         self.running_updater = False
         self.credentials = None
         # disabled/enables keybind events
