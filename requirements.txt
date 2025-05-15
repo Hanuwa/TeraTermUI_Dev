@@ -59,7 +59,7 @@ pywin32==310
 pywinauto==0.6.9
 pyzipper==0.3.6
 pyzstd==0.17.0
-reportlab==4.4.0
+reportlab==4.4.1
 requests==2.32.3
 requests-oauthlib==2.0.0
 rsa==4.9.1
