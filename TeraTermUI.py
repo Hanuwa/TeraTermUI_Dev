@@ -13598,6 +13598,7 @@ class SSHMonitor:
 
 # Manages credentials being saved locally
 class SecureDataStore:
+    CURRENT_VERSION = "1.1.0"
     def __init__(self, key_path=None, auto_rotate_days=30):
         self.key_path = key_path or os.path.join(os.getcwd(), "masterkey.json")
         self.auto_rotate_days = auto_rotate_days
@@ -13635,11 +13636,21 @@ class SecureDataStore:
                 content = f.read().strip()
                 if not content:
                     raise ValueError("Master key file is empty")
-
                 try:
                     raw = json.loads(content)
                 except json.JSONDecodeError:
                     raise ValueError("Master key file is not valid JSON")
+
+            def version_tuple(v):
+                return tuple(map(int, v.split(".")))
+
+            if version_tuple(raw.get("version", "0.0.0")) < version_tuple(SecureDataStore.CURRENT_VERSION):
+                logging.info(f"Outdated master key version {raw.get('version')} detected — "
+                             f"upgrading to {SecureDataStore.CURRENT_VERSION}")
+                self.reset()
+                self.creating_key_file = True
+                self.create_new_key_file()
+                return
 
             hmac_stored = base64.b64decode(raw["hmac"])
             hmac_calc = HMAC.new(self.get_dynamic_hmac_key(), digestmod=SHA256)
@@ -13671,7 +13682,7 @@ class SecureDataStore:
     def create_new_key_file(self):
         master_key = get_random_bytes(32)
         encrypted = win32crypt.CryptProtectData(master_key, None, None,
-                                                None, None, 0)
+                                        None, None, 0)
         key_id = str(os.urandom(16).hex())
         user_sid, _, _ = win32security.LookupAccountName(None, os.getlogin())
         user_sid_str = win32security.ConvertSidToStringSid(user_sid)
@@ -13680,7 +13691,7 @@ class SecureDataStore:
         self.store_passphrase(passphrase)
 
         metadata = {
-            "version": "1.1.0",
+            "version": SecureDataStore.CURRENT_VERSION,
             "key_id": key_id,
             "created_at": datetime.now(UTC).isoformat(),
             "expires_at": (datetime.now(UTC) + timedelta(days=self.auto_rotate_days)).isoformat(),
@@ -13723,16 +13734,13 @@ class SecureDataStore:
             win32cred.CredRead(self.cred_name, win32cred.CRED_TYPE_GENERIC)
             win32cred.CredDelete(self.cred_name, win32cred.CRED_TYPE_GENERIC, 0)
         except Exception as err:
-            if err.args[0] == 1168:
-                pass
-            else:
+            if err.args[0] != 1168:
                 logging.warning(f"Could not delete passphrase from Credential Manager: {err}")
 
     @contextmanager
     def unlock_aes_key(self):
         if self.aes_key is None:
             self.initialize_keys()
-
         key = bytearray(self.aes_key)
         try:
             yield key
