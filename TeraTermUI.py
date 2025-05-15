@@ -17,7 +17,7 @@
 
 # FUTURE PLANS:
 # Display more in-app information to reduce reliance on Tera Term.
-# Refactor the codebase into multiple files; current single-file structure (14,300+ lines) hinders maintainability.
+# Refactor the codebase into multiple files; current single-file structure (14,400+ lines) hinders maintainability.
 # Redesign UI layout for clarity and better user experience.
 # Expand documentation to support development and onboarding.
 
@@ -3662,7 +3662,10 @@ class TeraTermUI(customtkinter.CTk):
         new_connection = window.child_window(title="Tera Term: New connection")
         new_connection.wait("visible", timeout=5)
         tcp_ip_radio = new_connection.child_window(title="TCP/IP", control_type="RadioButton")
-        history_checkbox = new_connection.child_window(title="History", control_type="CheckBox")
+        if new_connection.child_window(title="History", control_type="CheckBox").exists():
+            history_checkbox = new_connection.child_window(title="History", control_type="CheckBox")
+        else:
+            history_checkbox = new_connection.child_window(title="Add host list", control_type="CheckBox")
         ssh_radio = new_connection.child_window(title="SSH", control_type="RadioButton")
         tcp_port_edit = new_connection.child_window(title="TCP port#:", control_type="Edit")
         ssh_version_combo = new_connection.child_window(title="SSH version:", control_type="ComboBox")
