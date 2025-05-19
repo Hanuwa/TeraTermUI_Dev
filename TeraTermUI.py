@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.92.0 - 5/17/25
+# DATE - Started 1/1/23, Current Build v0.92.0 - 5/18/25
 
 # BUGS / ISSUES:
 # pytesseract integration is inconsistent across systems, sometimes failing to read the screen
@@ -8131,9 +8131,7 @@ class TeraTermUI(customtkinter.CTk):
             rf"([\d\s]+)?\s+.*?\s*([NFUL\s]*.*)"
         )
         # Regex pattern to match additional time slots
-        time_pattern = re.compile(
-            r"^(\s+)(\w{2})\s+([\dAMP\-]+)\s*$"
-        )
+        time_pattern = re.compile(r"^(\s+)([A-Z]{1,3})\s+([\dAMP\-]+)\s*$")
         for line in lines:
             if any(x in line for x in session_types):
                 match = pattern.search(line)
@@ -8165,51 +8163,63 @@ class TeraTermUI(customtkinter.CTk):
 
         return data, course_found, invalid_action, y_n_found, y_n_value, term_value
 
-    # extracts the text from the enrolled classes to get the important information
-    def extract_my_enrolled_classes(self, text):
-        translation = self.load_language()
+        # extracts the text from the enrolled classes to get the important information
+        def extract_my_enrolled_classes(self, text):
+            translation = self.load_language()
 
-        class_pattern = re.compile(
-            r"(\b[A-Z])\s+([A-Z]{4}\d{4}[A-Z0-9]{3})\s+([A-Z])?\s+(.*?)\s+([A-Z]{2})\s*([A-FI-NPW]*)\s+"
-            r"([A-Z]{1,5}|TBA)\s+(\d{4}[AP]M-\d{4}[AP]M|TBA)\s*(?:\s+([\dA-Z]*?)\s+([A-Z\d]{3,4})?)?"
-            r"(?:\s+([A-Z]{1,5}|TBA)\s+(\d{4}[AP]M-\d{4}[AP]M|TBA)\s*(?:\s+([\dA-Z]*?)\s+([A-Z\d]{3,4})?)?)"
-            r"?(?=\s+\b[A-Z]|\s*$)", re.DOTALL)
+            # Regex to match the main course entry line
+            main_pattern = re.compile(
+                r"(\b[A-Z])\s+([A-Z]{4}\d{4}[A-Z0-9]{3})\s+([A-Z])?\s+(.+?)\s+([A-Z]{2})\s*([A-GI-NPW]*)\s+"
+                r"([A-Z]{1,5}|TBA)\s+(\d{4}[AP]M-\d{4}[AP]M|TBA)\s*(?:\s+([\dA-Z]*?)\s+([A-Z\d]{3,4}))?"
+                r"(?=\s+\b[A-Z]|\s*$)", re.DOTALL)
+            # Regex to match additional rows with just DIAS, HORAS
+            additional_pattern = re.compile(r"^[ \t]*([A-Z]{1,5})\s+(\d{4}[AP]M-\d{4}[AP]M|TBA)"
+                                            r"(?:\s+([A-Z\d]{3,4}))?(?!.*CREDITOS|TOTAL)", re.MULTILINE)
 
-        matches = class_pattern.findall(text)
-        enrolled_classes = []
-        for match in matches:
-            course_code = f"{match[1][:4]}-{match[1][4:8]}-{match[1][8:]}"
-            modality = match[2] if match[2] else ""
-            formatted_time = TeraTermUI.parse_time(match[7])
-            class_info = {
-                translation["course"]: course_code,
-                translation["m"]: modality,
-                translation["grade"]: match[5],
-                translation["days"]: match[6],
-                translation["times"]: formatted_time,
-                translation["room"]: match[9]
-            }
-            enrolled_classes.append(class_info)
+            enrolled_classes = []
+            # Iterate through each main class match
+            for m in main_pattern.finditer(text):
+                code = f"{m.group(2)[:4]}-{m.group(2)[4:8]}-{m.group(2)[8:]}"
+                modality = m.group(3) or ""
+                grade = m.group(6) or ""
+                days = m.group(7)
+                times = TeraTermUI.parse_time(m.group(8))
+                room = m.group(10) or ""
 
-            # Check for and add a new entry for additional DIAS and HORAS without the course name
-            if match[10]:
-                additional_formatted_time = TeraTermUI.parse_time(match[11])
-                additional_class_info = {
-                    translation["course"]: "",
+                # Append primary schedule entry
+                enrolled_classes.append({
+                    translation["course"]: code,
                     translation["m"]: modality,
-                    translation["grade"]: "",
-                    translation["days"]: match[10],
-                    translation["times"]: additional_formatted_time,
-                    translation["room"]: match[13]
-                }
-                enrolled_classes.append(additional_class_info)
+                    translation["grade"]: grade,
+                    translation["days"]: days,
+                    translation["times"]: times,
+                    translation["room"]: room
+                })
 
-        # Search for total credits
-        credits_pattern = re.compile(r"CREDITOS TOTAL:\s+(\d+\.\d+)")
-        credits_match = credits_pattern.search(text)
-        total_credits = credits_match.group(1) if credits_match else "0.00"
+                # Extract block of text after this match and before the next course
+                start = m.end()
+                nxt = main_pattern.search(text, start)
+                block = text[start:(nxt.start() if nxt else len(text))]
 
-        return enrolled_classes, total_credits
+                # Search for extra schedule-only rows within the current block
+                for a in additional_pattern.finditer(block):
+                    extra_days = a.group(1)
+                    extra_times = TeraTermUI.parse_time(a.group(2))
+                    extra_room = a.group(3) or ""
+                    enrolled_classes.append({
+                        translation["course"]: "",
+                        translation["m"]: modality,
+                        translation["grade"]: "",
+                        translation["days"]: extra_days,
+                        translation["times"]: extra_times,
+                        translation["room"]: extra_room
+                    })
+
+            # Capture total credits from footer line
+            credits_match = re.search(r"CREDITOS TOTAL:\s+(\d+\.\d+)", text)
+            total_credits = credits_match.group(1) if credits_match else "0.00"
+
+            return enrolled_classes, total_credits
 
     @staticmethod
     def parse_time(time_str):
@@ -8415,7 +8425,6 @@ class TeraTermUI(customtkinter.CTk):
                         if change_section_entry.get():
                             change_section_entry.delete(0, "end")
                         change_section_entry.configure(state="disabled")
-                        self.check_class_conflicts()
                     mod_selection.grid(row=row_index, column=0, padx=(0, 100), pady=(pad_y, 0))
                     change_section_entry.grid(row=row_index, column=0, padx=(56, 0), pady=(pad_y, 0))
                     change_section_entry.configure(state="disabled")
@@ -8426,6 +8435,7 @@ class TeraTermUI(customtkinter.CTk):
                     if self.change_section_entries[row_index] is not None:
                         self.change_section_entries[row_index].grid_forget()
                     previous_row_had_widgets = False
+            self.check_class_conflicts()
             for extra_index in range(len(data), len(self.mod_selection_list)):
                 if self.mod_selection_list[extra_index] is not None:
                     self.mod_selection_list[extra_index].grid_forget()
