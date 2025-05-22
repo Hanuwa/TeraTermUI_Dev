@@ -19,26 +19,24 @@ VENV_PYTHON = os.path.join(VENV_SCRIPTS_DIR, "python.exe")
 VENV_PIP = os.path.join(VENV_SCRIPTS_DIR, "pip.exe")
 VENV_LIB_DIR = os.path.join(VENV_DIR, "Lib", "site-packages")
 CTK_PACKAGE_PATH = os.path.join(VENV_LIB_DIR, "customtkinter")
-TESSERACT_DIR = os.path.join(ROOT_DIR, "Tesseract-OCR")
-TESSERACT_INSTALLER = os.path.join(TESSERACT_DIR, "tesseract_setup.exe")
 DIST_FOLDER = os.path.join(ROOT_DIR, "dist")
 REQUIREMENTS_FILE = os.path.join(ROOT_DIR, "requirements.txt")
 FILES_TO_COPY = ["database.db", "feedback.zip", "updater.exe"]
 
 CTK_FOLDERS = {
     "windows": ["ctk_input_dialog.py", "ctk_tk.py", "ctk_toplevel.py"],
-    "widgets": [
+    "windows/widgets": [
         "ctk_button.py", "ctk_checkbox.py", "ctk_combobox.py", "ctk_frame.py", "ctk_optionmenu.py",
         "ctk_progressbar.py", "ctk_radiobutton.py", "ctk_scrollable_frame.py", "ctk_scrollbar.py",
         "ctk_switch.py", "ctk_tabview.py", "ctk_textbox.py"
     ],
-    "appearance_mode": ["appearance_mode_tracker.py"],
-    "core_rendering": ["ctk_canvas.py", "draw_engine.py"],
-    "core_widget_classes": ["ctk_base_class.py", "dropdown_menu.py"],
-    "font": ["ctk_font.py"],
-    "image": ["ctk_image.py"],
-    "scaling": ["scaling_base_class.py", "scaling_tracker.py"],
-    "theme": ["theme_manager.py"]
+    "windows/appearance_mode": ["appearance_mode_tracker.py"],
+    "windows/core_rendering": ["ctk_canvas.py", "draw_engine.py"],
+    "windows/core_widget_classes": ["ctk_base_class.py", "dropdown_menu.py"],
+    "windows/font": ["ctk_font.py"],
+    "windows/image": ["ctk_image.py"],
+    "windows/scaling": ["scaling_base_class.py", "scaling_tracker.py"],
+    "windows/theme": ["theme_manager.py"]
 }
 
 def find_python_312():
@@ -62,7 +60,8 @@ def force_admin():
         print(f"[INFO] Restarting as admin using {python_exe} (Python {python_required_str})...")
         time.sleep(2)
         script_path = os.path.abspath(__file__)
-        cmd = f'powershell -Command "Start-Process \'{python_exe}\' -ArgumentList \'{script_path}\' -Verb RunAs"'
+        python_exe = sys.executable
+        cmd = f'powershell -Command "Start-Process -FilePath \'{python_exe}\' -ArgumentList \'{script_path}\' -Verb RunAs"'
         subprocess.run(cmd, shell=True)
         sys.exit(0)
 
@@ -111,15 +110,14 @@ def move_ctk_files():
             else:
                 print(f"[WARNING] {file} not found in modules")
 
-    ctkmsg_src = os.path.join("modules", "CTkMessageBox")
-    ctkmsg_dst = os.path.join(VENV_LIB_DIR, "CTkMessageBox")
+    ctkmsg_src = os.path.join("modules", "ctkmessagebox.py")
+    ctkmsg_dst_dir = os.path.join(VENV_LIB_DIR, "CTkMessageBox")
+    ctkmsg_dst = os.path.join(ctkmsg_dst_dir, "ctkmessagebox.py")
     if os.path.exists(ctkmsg_src):
-        if os.path.exists(ctkmsg_dst):
-            shutil.rmtree(ctkmsg_dst)
         shutil.move(ctkmsg_src, ctkmsg_dst)
-        print("[OK] Moved CTkMessageBox package to site-packages")
+        print("[OK] Copied ctkmessagebox.py to CTkMessageBox package directory")
     else:
-        print("[WARNING] CTkMessageBox folder not found in modules. Skipping.")
+        print("[WARNING] CTkMessageBox folder not found in modules. Skipping")
 
     if os.path.exists("modules") and not os.listdir("modules"):
         os.rmdir("modules")
