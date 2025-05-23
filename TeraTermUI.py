@@ -3670,6 +3670,7 @@ class TeraTermUI(customtkinter.CTk):
         ssh_radio = new_connection.child_window(title="SSH", control_type="RadioButton")
         tcp_port_edit = new_connection.child_window(title="TCP port#:", control_type="Edit")
         ssh_version_combo = new_connection.child_window(title="SSH version:", control_type="ComboBox")
+        ip_version_combo = new_connection.child_window(title="IP version:", control_type="ComboBox")
         if not tcp_ip_radio.is_selected():
             tcp_ip_radio.invoke()
         if not history_checkbox.get_toggle_state():
@@ -3681,6 +3682,9 @@ class TeraTermUI(customtkinter.CTk):
         if ssh_version_combo.selected_text() != "SSH2":
             ssh_version_combo.expand()
             ssh_version_combo.child_window(title="SSH2", control_type="ListItem").select()
+        if ip_version_combo.selected_text() != "AUTO":
+            ip_version_combo.expand()
+            ip_version_combo.child_window(title="AUTO", control_type="ListItem").select()
 
     def keybind_go_back_home(self):
         if self.move_slider_right_enabled or self.move_slider_left_enabled:
