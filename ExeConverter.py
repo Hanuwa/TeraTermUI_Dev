@@ -12,16 +12,20 @@ import win32cred
 from colorama import init, Fore, Style
 from datetime import datetime, UTC
 
+DEFAULT_UPDATER_VERSION = "1.1.3"
+DEFAULT_DB_VERSION = "1.0.0"
+DEFAULT_LTO = "yes"
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description="TeraTermUI Exe Converter")
-    parser.add_argument("--updater-version", type=str, default="1.1.3",
-                        help="Specify the version number for updater.exe (default: 1.1.3)")
-    parser.add_argument("--db-version", type=str, default="1.0.0",
-                        help="Specify the version number for the database (default: 1.0.0)")
+    parser.add_argument("--updater-version", type=str, default=DEFAULT_UPDATER_VERSION,
+                        help=f"Specify the version number for updater.exe (default: {DEFAULT_UPDATER_VERSION})")
+    parser.add_argument("--db-version", type=str, default=DEFAULT_DB_VERSION,
+                        help=f"Specify the version number for the database (default: {DEFAULT_DB_VERSION})")
     parser.add_argument("--output-dir", type=str,
                         help="Specify custom output directory path (default: C:/Users/username/TeraTermUI_Builds)")
-    parser.add_argument("--lto", choices=["auto", "yes", "no"], default="yes",
-                        help="Set LTO (Link-Time Optimization) value")
+    parser.add_argument("--lto", choices=["auto", "yes", "no"], default=DEFAULT_LTO,
+                        help=f"Set LTO (Link-Time Optimization) value (default: {DEFAULT_LTO})")
     parser.add_argument("--report", action="store_true", help="Generate Nuitka compilation report")
 
     args = parser.parse_args()
@@ -339,6 +343,11 @@ if args.report:
 try:
     updater_exe_path = os.path.join(project_directory, "updater.exe")
     updater_dist_path = os.path.join(project_directory, "dist", "updater.exe")
+    if args.updater_version != DEFAULT_UPDATER_VERSION:
+        if os.path.isfile(updater_exe_path):
+            os.remove(updater_exe_path)
+        if os.path.isfile(updater_dist_path):
+            os.remove(updater_dist_path)
     if not os.path.isfile(updater_exe_path) or not os.path.isfile(updater_dist_path):
         if os.path.isfile(updater_exe_path):
             shutil.copy2(updater_exe_path, updater_dist_path)
