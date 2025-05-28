@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.92.0 - 5/27/25
+# DATE - Started 1/1/23, Current Build v0.92.0 - 5/28/25
 
 # BUGS / ISSUES:
 # pytesseract integration is inconsistent across systems, sometimes failing to read the screen
@@ -17,7 +17,7 @@
 
 # FUTURE PLANS:
 # Display more in-app information to reduce reliance on Tera Term.
-# Refactor the codebase into multiple files; current single-file structure (14,400+ lines) hinders maintainability.
+# Refactor the codebase into multiple files; current single-file structure (14,500+ lines) hinders maintainability.
 # Redesign UI layout for clarity and better user experience.
 # Expand documentation to support development and onboarding.
 
