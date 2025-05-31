@@ -189,7 +189,7 @@ class TeraTermUI(customtkinter.CTk):
 
         # GitHub's information for feedback and key data for updating app
         self.SERVICE_ACCOUNT_FILE = TeraTermUI.get_absolute_path("feedback.zip")
-        self.REAZIONE = self.ottenere_protetta_salasana()
+        self.FEEDBACK = TeraTermUI.obtain()
         self.USER_APP_VERSION = "0.92.0"
         self.mode = "Portable"
         self.updater_hash = "313c36328ac5f7ca8bfa4a862db5d0aa8a7fbb4e47a0b3b2fb3df84ac54fbc2a"
@@ -9287,15 +9287,16 @@ class TeraTermUI(customtkinter.CTk):
         else:
             self.teraterm_not_found = True
 
-    def ottenere_protetta_salasana(self):
+    @staticmethod
+    def obtain():
         parts = ["$QojxnTKT8ecke49mf%bd", "U64m#8XaR$QNog$QdPL1Fp", "3%fHhv^ds7@CDDSag8PYt", "dM&R8fqu*&bUjmSZfgM^%"]
-        scrambled_password = self.purkaa_reazione(parts)
-        runtime_key = os.getenv("DURATA_FUSCAZIONE_AVAIN", "oletuksena_segreto").encode()
+        scrambled_password = TeraTermUI.dismantle(parts)
+        runtime_key = os.getenv("KEY_DURATION", "DEFAULT_SCT").encode()
         encoded_password = base64.b64encode(scrambled_password.encode())
         return base64.b64encode(runtime_key + encoded_password).decode()
 
     @staticmethod
-    def purkaa_reazione(scrambled_parts):
+    def dismantle(scrambled_parts):
         original_parts = []
         ascii_to_remove = [106, 97, 49]
         for i, part in enumerate(scrambled_parts):
@@ -9318,8 +9319,8 @@ class TeraTermUI(customtkinter.CTk):
 
         # Reads from the feedback.json file to connect to Google's Sheets Api for user feedback
         try:
-            encoded_password = base64.b64decode(self.REAZIONE.encode())
-            runtime_key = os.getenv("DURATA_FUSCAZIONE_AVAIN", "oletuksena_segreto").encode()
+            encoded_password = base64.b64decode(self.FEEDBACK.encode())
+            runtime_key = os.getenv("KEY_DURATION", "DEFAULT_SCT").encode()
             actual_password = base64.b64decode(encoded_password[len(runtime_key):]).decode()
             with AESZipFile(self.SERVICE_ACCOUNT_FILE) as archive:
                 archive.setpassword(actual_password.encode())
@@ -9335,11 +9336,11 @@ class TeraTermUI(customtkinter.CTk):
             self.credentials = None
             self.disable_feedback = True
         finally:
-            if hasattr(self, "REAZIONE"):
-                del self.REAZIONE
-            os.environ.pop("REAZIONE", None)
-            os.environ.pop("DURATA_FUSCAZIONE_AVAIN", None)
-            os.environ.pop("oletuksena_segreto", None)
+            if hasattr(self, "FEEDBACK"):
+                del self.FEEDBACK
+            os.environ.pop("FEEDBACK", None)
+            os.environ.pop("KEY_DURATION", None)
+            os.environ.pop("DEFAULT_SCT", None)
 
     # prompt for user to update the app
     def update_app(self, latest_version):
@@ -13723,7 +13724,7 @@ class ServerLoadMonitor:
         if not os.path.exists(self.csv_path):
             return
 
-        cutoff = datetime.utcnow() - timedelta(minutes=max_age_minutes)
+        cutoff = datetime.now(UTC) - timedelta(minutes=max_age_minutes)
         cleaned_rows = []
         with open(self.csv_path, mode="r") as f:
             reader = csv.DictReader(f)
