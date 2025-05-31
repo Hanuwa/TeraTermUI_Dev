@@ -253,6 +253,8 @@ try:
         cursor.execute("DELETE FROM user_config")
         cursor.execute("DELETE FROM user_data")
         cursor.execute("DELETE FROM saved_classes")
+        if os.path.exists(project_directory + "/server_load.csv"):
+            os.remove(project_directory + "/server_load.csv")
         if os.path.exists(project_directory + "/masterkey.json"):
             os.remove(project_directory + "/masterkey.json")
         cred_name = f"TeraTermUI/Passphrase/{os.getlogin()}@{platform.node()}"
