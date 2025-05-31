@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.92.0 - 5/29/25
+# DATE - Started 1/1/23, Current Build v0.92.0 - 5/30/25
 
 # BUGS / ISSUES:
 # pytesseract integration is inconsistent across systems, sometimes failing to read the screen
@@ -24,6 +24,7 @@
 import asyncio
 import atexit
 import base64
+import csv
 import ctypes
 import customtkinter
 import gc
@@ -209,9 +210,11 @@ class TeraTermUI(customtkinter.CTk):
             self.db_path = os.path.join(tera_path, "database.db")
             self.ath = os.path.join(tera_path, "feedback.zip")
             self.logs = os.path.join(tera_path, "logs.txt")
-            self.crypto = SecureDataStore(key_path=os.path.join(tera_path, "masterkey.json"))
+            self.data_storage = SecureDataStore(key_path=os.path.join(tera_path, "masterkey.json"))
+            self.server_monitor = ServerLoadMonitor(csv_path=os.path.join(tera_path, "server_load.csv"))
         else:
-            self.crypto = SecureDataStore()
+            self.data_storage = SecureDataStore()
+            self.server_monitor = ServerLoadMonitor()
 
         # Instance variables not yet needed but defined
         # to avoid the instance attribute defined outside __init__ warning
@@ -639,7 +642,6 @@ class TeraTermUI(customtkinter.CTk):
         self.DEFAULT_SEMESTER = TeraTermUI.calculate_default_semester()
         self.semester_values = TeraTermUI.generate_semester_values(self.DEFAULT_SEMESTER)
         self.clipboard_handler = ClipboardHandler()
-        self.ssh_monitor = SSHMonitor("uprbay.uprb.edu")
         self.prev_sample_count = None
         self.search_event_completed = True
         self.option_menu_event_completed = True
@@ -849,7 +851,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.log_in.configure(state="normal")
                 self.bind("<Return>", lambda event: self.login_event_handler())
                 self.bind("<F1>", lambda event: self.help_button_event())
-                if self.crypto.creating_key_file:
+                if self.data_storage.creating_key_file:
                     self.creating_key_file = False
                     if self.has_saved_user_data():
                         self.cursor_db.execute("DELETE FROM user_data")
@@ -1042,6 +1044,7 @@ class TeraTermUI(customtkinter.CTk):
             if hasattr(self, "save_timer") and self.save_timer is not None:
                 self.save_timer.cancel()
             self.clipboard_handler.close()
+            self.server_monitor.save_stats()
             self.save_user_config()
             self.end_app()
             if self.exit_checkbox_state:
@@ -1080,6 +1083,7 @@ class TeraTermUI(customtkinter.CTk):
         if hasattr(self, "save_timer") and self.save_timer is not None:
             self.save_timer.cancel()
         self.clipboard_handler.close()
+        self.server_monitor.save_stats()
         self.save_user_config(include_exit=False)
         self.end_app()
         sys.exit(0)
@@ -1227,8 +1231,8 @@ class TeraTermUI(customtkinter.CTk):
                 translation = self.load_language()
                 if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
-                        student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
-                        code = self.code_entry.get().replace(" ", "")
+                        student_id = TeraTermUI.sanitize_input(self.student_id_entry.get())
+                        code = TeraTermUI.sanitize_input(self.code_entry.get())
                         if ((re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", student_id) or
                              (student_id.isdigit() and len(student_id) == 9)) and code.isdigit() and len(code) == 4):
                             if not self.wait_for_window():
@@ -1280,7 +1284,7 @@ class TeraTermUI(customtkinter.CTk):
                                     self.must_save_user_data = True
                                     self.cursor_db.execute("DELETE FROM user_data")
                                     self.connection_db.commit()
-                                    self.crypto.reset()
+                                    self.data_storage.reset()
                         else:
                             self.after(350, self.bind, "<Return>",
                                        lambda event: self.student_event_handler())
@@ -1301,7 +1305,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.must_save_user_data = True
                                 self.cursor_db.execute("DELETE FROM user_data")
                                 self.connection_db.commit()
-                                self.crypto.reset()
+                                self.data_storage.reset()
                     else:
                         self.after(350, self.bind, "<Return>", lambda event: self.student_event_handler())
                         self.after(100, self.show_error_message, 300, 215,
@@ -1513,10 +1517,10 @@ class TeraTermUI(customtkinter.CTk):
                 self.automation_preparations()
                 translation = self.load_language()
                 choice = self.radio_var.get()
-                course = self.e_class_entry.get().upper().replace(" ", "").replace("-", "")
                 curr_sem = translation["current"].upper()
-                section = self.e_section_entry.get().upper().replace(" ", "")
-                semester = self.e_semester_entry.get().upper().replace(" ", "")
+                course = TeraTermUI.sanitize_input(self.e_class_entry.get(), to_upper=True)
+                section = TeraTermUI.sanitize_input(self.e_section_entry.get(), to_upper=True)
+                semester = TeraTermUI.sanitize_input(self.e_semester_entry.get(), to_upper=True)
                 if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if (choice == "register" and (
@@ -1700,10 +1704,10 @@ class TeraTermUI(customtkinter.CTk):
                 self.automation_preparations()
                 lang = self.language_menu.get()
                 translation = self.load_language()
-                course = self.s_class_entry.get().upper().replace(" ", "").replace("-", "")
-                semester = self.s_semester_entry.get().upper().replace(" ", "")
-                curr_sem = translation["current"].upper()
                 show_all = self.show_all.get()
+                curr_sem = translation["current"].upper()
+                course = TeraTermUI.sanitize_input(self.s_class_entry.get(), to_upper=True)
+                semester = TeraTermUI.sanitize_input(self.s_semester_entry.get(), to_upper=True)
                 if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if (re.fullmatch("^[A-Z]{4}[0-9]{4}$", course) and (
@@ -2023,8 +2027,8 @@ class TeraTermUI(customtkinter.CTk):
             try:
                 self.automation_preparations()
                 translation = self.load_language()
-                dialog_input = dialog_input.upper().replace(" ", "")
                 curr_sem = translation["current"].upper()
+                dialog_input = TeraTermUI.sanitize_input(dialog_input, to_upper=True)
                 if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
                         if re.fullmatch("^[A-Z][0-9]{2}$", dialog_input) or dialog_input == curr_sem:
@@ -2147,8 +2151,8 @@ class TeraTermUI(customtkinter.CTk):
     def add_event(self):
         self.focus_set()
         translation = self.load_language()
-        semester = self.m_semester_entry[0].get().upper().replace(" ", "")
         curr_sem = translation["current"].upper()
+        semester = TeraTermUI.sanitize_input(self.m_semester_entry[0].get(), to_upper=True)
         if re.fullmatch("^[A-Z][0-9]{2}$", semester) or semester == curr_sem:
             if self.a_counter + 1 < len(self.m_semester_entry):
                 if self.a_counter == 0 and self.m_register_menu[0].get() \
@@ -2331,7 +2335,7 @@ class TeraTermUI(customtkinter.CTk):
                 continue
 
             entry_index = entry_list.index(triggered_widget)
-            entry_value = triggered_widget.get().upper().replace(" ", "").replace("-", "")
+            entry_value = TeraTermUI.sanitize_input(triggered_widget.get(), to_upper=True)
             if triggered_widget in self.m_semester_entry:
                 if entry_value in ["CURRENT", "ACTUAL"]:
                     entry_value = "CURRENT"
@@ -2340,7 +2344,7 @@ class TeraTermUI(customtkinter.CTk):
             self.cursor_db.execute(query, (db_row_number - 1,))
             result = self.cursor_db.fetchone()
             if column_name == "semester" and result:
-                db_value = result[0].upper().replace(" ", "").replace("-", "")
+                db_value = TeraTermUI.sanitize_input(result[0], to_upper=True)
                 if db_value in ["CURRENT", "ACTUAL"]:
                     db_value = "CURRENT"
                 result = (db_value,)
@@ -2425,11 +2429,11 @@ class TeraTermUI(customtkinter.CTk):
                 classes = []
                 sections = []
                 choices = []
-                semester = self.m_semester_entry[0].get().upper().replace(" ", "")
                 curr_sem = translation["current"].upper()
+                semester = TeraTermUI.sanitize_input(self.m_semester_entry[0].get(), to_upper=True)
                 for i in range(self.a_counter + 1):
-                    classes.append(self.m_classes_entry[i].get().upper().replace(" ", "").replace("-", ""))
-                    sections.append(self.m_section_entry[i].get().upper().replace(" ", ""))
+                    classes.append(TeraTermUI.sanitize_input(self.m_classes_entry[i].get(), to_upper=True))
+                    sections.append(TeraTermUI.sanitize_input(self.m_section_entry[i].get(), to_upper=True))
                     choices.append(self.m_register_menu[i].get())
                 can_enroll_classes = self.e_counter + self.m_counter + self.a_counter + 1 <= 15
                 if asyncio.run(self.test_connection()) and self.check_server() and self.check_format():
@@ -2481,9 +2485,9 @@ class TeraTermUI(customtkinter.CTk):
                                     self.e_counter -= count_dropped
                                     choice = [
                                         (self.m_register_menu[i].get(), i,
-                                         self.m_section_entry[i].get().upper().replace(" ", ""),
-                                         self.m_classes_entry[i].get().upper().replace(" ", ""),
-                                         self.m_semester_entry[i].get().upper().replace(" ", ""))
+                                         TeraTermUI.sanitize_input(self.m_section_entry[i].get(), to_upper=True),
+                                         TeraTermUI.sanitize_input(self.m_classes_entry[i].get(), to_upper=True),
+                                         TeraTermUI.sanitize_input(self.m_semester_entry[i].get(), to_upper=True))
                                         for i in range(self.a_counter + 1)
                                     ]
                                     for c, cnt, sec, cls, sem in choice:
@@ -2604,8 +2608,8 @@ class TeraTermUI(customtkinter.CTk):
                 menu = self.menu_entry.get()
                 lang = self.language_menu.get()
                 translation = self.load_language()
-                semester = self.menu_semester_entry.get().upper().replace(" ", "")
                 curr_sem = translation["current"].upper()
+                semester = TeraTermUI.sanitize_input(self.menu_semester_entry.get(), to_upper=True)
                 menu_dict = {
                     "SRM (Main Menu)": "SRM",
                     "SRM (Menú Principal)": "SRM",
@@ -2631,7 +2635,7 @@ class TeraTermUI(customtkinter.CTk):
                     "SO (Sign out)": "SO",
                     "SO (Cerrar Sesión)": "SO"
                 }
-                menu = menu_dict.get(menu, menu).replace(" ", "").upper()
+                menu = TeraTermUI.sanitize_input(menu_dict.get(menu, menu), to_upper=True)
                 valid_menu_options = set(menu_dict.values())
                 if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.checkIfProcessRunning("ttermpro"):
@@ -3053,7 +3057,7 @@ class TeraTermUI(customtkinter.CTk):
                                 self.search_next_page_status = False
 
                             self.after(0, hide_next_button)
-                        section = self.s_class_entry.get().upper().replace(" ", "").replace("-", "")
+                        section = TeraTermUI.sanitize_input(self.s_class_entry.get(), to_upper=True)
                         if section != self.get_class_for_table:
                             self.s_class_entry.configure(state="normal")
                             self.s_class_entry.delete(0, "end")
@@ -3115,7 +3119,7 @@ class TeraTermUI(customtkinter.CTk):
             try:
                 self.automation_preparations()
                 if not self.skip_auth:
-                    username = self.username_entry.get().replace(" ", "").lower()
+                    username = TeraTermUI.sanitize_input(self.username_entry.get(), to_lower=True)
                 else:
                     username = "students"
                 translation = self.load_language()
@@ -3236,10 +3240,10 @@ class TeraTermUI(customtkinter.CTk):
         if row and all(isinstance(x, bytes) for x in row):
             student_ct, code_ct, nonce_sid, nonce_code, tag_sid, tag_code = row
             if len(nonce_sid) == 16 and len(nonce_code) == 16 and len(tag_sid) == 16 and len(tag_code) == 16:
-                if os.path.exists(self.crypto.key_path):
+                if os.path.exists(self.data_storage.key_path):
                     try:
-                        student_id = self.crypto.decrypt(student_ct, nonce_sid, tag_sid)
-                        code = self.crypto.decrypt(code_ct, nonce_code, tag_code)
+                        student_id = self.data_storage.decrypt(student_ct, nonce_sid, tag_sid)
+                        code = self.data_storage.decrypt(code_ct, nonce_code, tag_code)
                         self.student_id_entry.insert(0, student_id)
                         self.code_entry.insert(0, code)
                         self.remember_me.toggle()
@@ -3248,12 +3252,12 @@ class TeraTermUI(customtkinter.CTk):
                         if self.has_saved_user_data():
                             self.cursor_db.execute("DELETE FROM user_data")
                             self.connection_db.commit()
-                        self.crypto.reset()
+                        self.data_storage.reset()
                 else:
                     if self.has_saved_user_data():
                         self.cursor_db.execute("DELETE FROM user_data")
                         self.connection_db.commit()
-                    self.crypto.create_new_key_file()
+                    self.data_storage.create_new_key_file()
         if self.ask_skip_auth and not self.skipped_login:
             self.unbind("<Return>")
             self.unbind("<Control-BackSpace>")
@@ -3359,7 +3363,7 @@ class TeraTermUI(customtkinter.CTk):
             return "".join(
                 c for c in unicodedata.normalize("NFD", s)
                 if unicodedata.category(c) != "Mn"
-            ).lower().replace(",", "").replace(" ", "")
+            ).lower().replace(",", "").replace(" ", "").strip()
 
         allowed_hosts = ["uprbay.uprb.edu", "uprb", "bayamon"]
         host_normalized = normalize_string(host)
@@ -3385,7 +3389,7 @@ class TeraTermUI(customtkinter.CTk):
                 dont_close = False
                 self.automation_preparations()
                 translation = self.load_language()
-                host = self.host_entry.get().replace(" ", "").lower()
+                host = TeraTermUI.sanitize_input(self.host_entry.get(), to_lower=True)
                 if asyncio.run(self.test_connection()) and self.check_server():
                     if TeraTermUI.check_host(host):
                         self.saved_host = host
@@ -3787,8 +3791,8 @@ class TeraTermUI(customtkinter.CTk):
             self.main_menu = True
             self.add_key_bindings(event=None)
             if self.must_save_user_data and self.in_student_frame:
-                student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
-                code = self.code_entry.get().replace(" ", "")
+                student_id = TeraTermUI.sanitize_input(self.student_id_entry.get())
+                code = TeraTermUI.sanitize_input(self.code_entry.get())
                 self.encrypt_data_db(student_id, code)
                 self.connection_db.commit()
             if self.error_occurred:
@@ -3894,7 +3898,7 @@ class TeraTermUI(customtkinter.CTk):
                        translation["days"], translation["times"], translation["av"],
                        translation["instructor"]]
 
-        for _, table, _, _, _, _ in self.class_table_pairs:
+        for _, table, _, _, _ in self.class_table_pairs:
             table.update_headers(new_headers)
             if table.values:
                 table.values[0] = new_headers
@@ -4158,7 +4162,7 @@ class TeraTermUI(customtkinter.CTk):
             for widget in [self.e_semester_entry, self.s_semester_entry,
                            self.menu_semester_entry, self.m_semester_entry[0]]:
                 if widget in self.semesters_tooltips:
-                    selected_semester = widget.get().upper().replace(" ", "")
+                    selected_semester = TeraTermUI.sanitize_input(widget.get(), to_upper=True)
                     self.semesters_tooltips[widget].configure(message=self.get_semester_season(selected_semester))
             self.register.configure(text=translation["register"])
             self.drop.configure(text=translation["drop"])
@@ -4207,14 +4211,14 @@ class TeraTermUI(customtkinter.CTk):
                 self.menu_entry.set(translation["SRM"])
             self.menu_semester.configure(text=translation["semester"])
             self.menu_semester_entry.configure(values=self.semester_values + [translation["current"]])
-            if (self.e_semester_entry.get().upper().replace(" ", "") == "CURRENT" or
-                    self.e_semester_entry.get().upper().replace(" ", "") == "ACTUAL"):
+            if (TeraTermUI.sanitize_input(self.e_semester_entry.get(), to_upper=True) == "CURRENT" or
+                    TeraTermUI.sanitize_input(self.e_semester_entry.get(), to_upper=True) == "ACTUAL"):
                 self.e_semester_entry.set(translation["current"])
-            if (self.s_semester_entry.get().upper().replace(" ", "") == "CURRENT" or
-                    self.s_semester_entry.get().upper().replace(" ", "") == "ACTUAL"):
+            if (TeraTermUI.sanitize_input(self.s_semester_entry.get(), to_upper=True) == "CURRENT" or
+                    TeraTermUI.sanitize_input(self.s_semester_entry.get(), to_upper=True) == "ACTUAL"):
                 self.s_semester_entry.set(translation["current"])
-            if (self.menu_semester_entry.get().upper().replace(" ", "") == "CURRENT" or
-                    self.menu_semester_entry.get().upper().replace(" ", "") == "ACTUAL"):
+            if (TeraTermUI.sanitize_input(self.menu_semester_entry.get(), to_upper=True) == "CURRENT" or
+                    TeraTermUI.sanitize_input(self.menu_semester_entry.get(), to_upper=True) == "ACTUAL"):
                 self.menu_semester_entry.set(translation["current"])
             self.menu_submit.configure(text=translation["submit"])
             self.submit.configure(text=translation["submit"])
@@ -4230,7 +4234,7 @@ class TeraTermUI(customtkinter.CTk):
             self.m_section.configure(text=translation["section"])
             self.m_semester.configure(text=translation["semester"])
             self.m_semester_entry[0].configure(values=self.semester_values + [translation["current"]])
-            semester_multiple = self.m_semester_entry[0].get().upper().replace(" ", "")
+            semester_multiple = TeraTermUI.sanitize_input(self.m_semester_entry[0].get(), to_upper=True)
             if semester_multiple == "CURRENT" or semester_multiple == "ACTUAL":
                 self.m_semester_entry[0].set(translation["current"])
                 self.change_semester(translation["current"])
@@ -4264,7 +4268,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.timer_window.title(translation["auto_enroll"])
                 self.timer_header.configure(text=translation["auto_enroll_activated"])
                 self.cancel_button.configure(text=translation["option_1"])
-                rating, color = self.ssh_monitor.get_reliability_rating(lang)
+                rating, color = self.server_monitor.get_reliability_rating(lang)
                 puerto_rico_tz = pytz.timezone("America/Puerto_Rico")
                 current_date = datetime.now(puerto_rico_tz)
                 time_difference = self.pr_date - current_date
@@ -4375,7 +4379,7 @@ class TeraTermUI(customtkinter.CTk):
         if not current_message:
             return
 
-        if self.e_section_entry.get().upper().startswith("EL"):
+        if TeraTermUI.sanitize_input(self.e_section_entry, to_upper=True).startswith("EL"):
             self.e_section_tooltip.configure(message=translation["online_class"], visibility=True)
             return
 
@@ -4418,7 +4422,7 @@ class TeraTermUI(customtkinter.CTk):
             if not current_message:
                 continue
 
-            if self.m_section_entry[idx].get().upper().startswith("EL"):
+            if TeraTermUI.sanitize_input(self.m_section_entry[idx], to_upper=True).startswith("EL"):
                 tooltip.configure(message=translation["online_class"])
                 continue
 
@@ -4485,7 +4489,7 @@ class TeraTermUI(customtkinter.CTk):
 
             if idx % 2 == 1:
                 entry_idx = idx // 2
-                if self.change_section_entries[entry_idx].get().upper().startswith("EL"):
+                if TeraTermUI.sanitize_input(self.change_section_entries[entry_idx], to_upper=True).startswith("EL"):
                     tooltip.configure(message=translation["online_class"])
                     continue
 
@@ -4539,7 +4543,7 @@ class TeraTermUI(customtkinter.CTk):
     def change_semester(self, semester):
         translation = self.load_language()
         self.update_semester_tooltip(self.m_semester_entry[0])
-        semester = self.m_semester_entry[0].get().upper().replace(" ", "")
+        semester = TeraTermUI.sanitize_input(self.m_semester_entry[0].get(), to_upper=True)
         curr_sem = translation["current"].upper()
         dummy_event = type("Dummy", (object,), {"widget": self.m_semester_entry[0]})()
         self.detect_change(dummy_event)
@@ -4640,7 +4644,7 @@ class TeraTermUI(customtkinter.CTk):
             "Online": "En Línea"
         }
 
-        section = self.e_section_entry.get().upper().replace(" ", "")
+        section = TeraTermUI.sanitize_input(self.e_section_entry.get(), to_upper=True)
         schedule_map = self.schedule_map
 
         if section[:2] == "EL" or section[:2] in schedule_map:
@@ -4681,7 +4685,8 @@ class TeraTermUI(customtkinter.CTk):
             for row in (self.enrolled_classes_data or []) if row.get(current_translation["course"], ""))
 
         def collect_valid_entries(entries):
-            return [(entry.get().upper().replace(" ", ""), entry) for entry in entries if entry and entry.get().strip()]
+            return [(TeraTermUI.sanitize_input(entry.get(), to_upper=True), entry) for entry in entries
+                    if entry and entry.get().strip()]
 
         valid_main_entries = collect_valid_entries(self.m_section_entry)
         valid_change_entries = collect_valid_entries(self.change_section_entries or [])
@@ -4756,7 +4761,7 @@ class TeraTermUI(customtkinter.CTk):
 
         def apply_tooltip_visuals(entry_group, conflict_set, tooltip_group, is_change=False):
             for index, inputs_entry in enumerate(entry_group):
-                code_raw = inputs_entry.get().upper().replace(" ", "")
+                code_raw = TeraTermUI.sanitize_input(inputs_entry.get(), to_upper=True)
                 tooltips_pos = idx * 2 + 1 if is_change else index
                 if not code_raw:
                     inputs_entry.configure(border_color=default_border)
@@ -4787,7 +4792,7 @@ class TeraTermUI(customtkinter.CTk):
                 if input_entry is None:
                     continue
 
-                section_code = input_entry.get().upper().replace(" ", "")
+                section_code = TeraTermUI.sanitize_input(input_entry.get(), to_upper=True)
                 tooltip_pos = idx * 2 + 1
 
                 if not section_code:
@@ -4873,12 +4878,12 @@ class TeraTermUI(customtkinter.CTk):
         with self.lock_thread:
             try:
                 translation = self.load_language()
-                semester = self.m_semester_entry[0].get().upper().replace(" ", "")
+                semester = TeraTermUI.sanitize_input(self.m_semester_entry[0].get(), to_upper=True)
                 self.automation_preparations()
                 self.auto_enroll_flag = True
                 if asyncio.run(self.test_connection()) and self.check_server() and self.check_format():
-                    self.ssh_monitor.sample(count=50, force=True)
-                    if not self.ssh_monitor.is_responsive():
+                    self.server_monitor.sample(count=50, force=True)
+                    if not self.server_monitor.is_responsive():
                         def deny_auto_enroll():
                             self.play_sound("error.wav")
                             CTkMessagebox(title=translation["auto_enroll"], icon="cancel", button_width=380,
@@ -5080,12 +5085,12 @@ class TeraTermUI(customtkinter.CTk):
 
             if self.has_saved_user_data():
                 lang = self.language_menu.get()
-                stats = self.ssh_monitor.get_stats()
-                host = self.ssh_monitor.host
-                rating, color = self.ssh_monitor.get_reliability_rating(lang)
+                stats = self.server_monitor.get_stats()
+                host = self.server_monitor.host
+                rating, color = self.server_monitor.get_reliability_rating(lang)
                 sample_count = (40 if not stats or stats["samples"] < 10 else 30 if stats["std_dev"] > 100
                                 or stats["max"] > 1000 or stats["average"] > 400 else 20)
-                self.ssh_monitor.sample(count=sample_count)
+                self.server_monitor.sample(count=sample_count)
                 if self.prev_sample_count != stats.get("samples"):
                     self.server_rating.configure(text=f"{translation['server_status_rating']}{rating}",
                                                  text_color=color)
@@ -5242,7 +5247,7 @@ class TeraTermUI(customtkinter.CTk):
         self.timer_window.attributes("-alpha", 0.90)
         self.timer_window.resizable(False, False)
         self.timer_window.iconbitmap(self.icon_path)
-        rating, color = self.ssh_monitor.get_reliability_rating(lang)
+        rating, color = self.server_monitor.get_reliability_rating(lang)
         self.timer_header = customtkinter.CTkLabel(self.timer_window, font=customtkinter.CTkFont(
             size=20, weight="bold"), text=translation["auto_enroll_activated"])
         self.timer_header.pack()
@@ -5369,8 +5374,8 @@ class TeraTermUI(customtkinter.CTk):
                                            "tag_code FROM user_data WHERE id = 1")
                     row = self.cursor_db.fetchone()
                     student_ct, code_ct, nonce_sid, nonce_code, tag_sid, tag_code = row
-                    student_id = self.crypto.decrypt(student_ct, nonce_sid, tag_sid)
-                    code = self.crypto.decrypt(code_ct, nonce_code, tag_code)
+                    student_id = self.data_storage.decrypt(student_ct, nonce_sid, tag_sid)
+                    code = self.data_storage.decrypt(code_ct, nonce_code, tag_code)
                     self.uprb.UprbayTeraTermVt.type_keys("{TAB}" + student_id + code + "{ENTER}")
                     text_output = self.wait_for_response(["SIGN-IN", "ON FILE",  "PIN NUMBER", "ERRORS FOUND"],
                                                          init_timeout=False, timeout=7)
@@ -6009,7 +6014,7 @@ class TeraTermUI(customtkinter.CTk):
                     if self.saved_host is not None:
                         host_entry_value = self.saved_host
                     else:
-                        host_entry_value = self.host_entry.get().replace(" ", "").lower()
+                        host_entry_value = TeraTermUI.sanitize_input(self.host_entry.get(), to_lower=True)
                     if not TeraTermUI.check_host(host_entry_value):
                         continue
                 result = self.cursor_db.execute(f"SELECT {field} FROM user_config").fetchone()
@@ -6018,13 +6023,13 @@ class TeraTermUI(customtkinter.CTk):
                 elif result[0] != value:
                     self.cursor_db.execute(f"UPDATE user_config SET {field} = ? ", (value,))
             if self.must_save_user_data and self.in_student_frame:
-                student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
-                code = self.code_entry.get().replace(" ", "")
+                student_id = TeraTermUI.sanitize_input(self.student_id_entry.get())
+                code = TeraTermUI.sanitize_input(self.code_entry.get())
                 self.encrypt_data_db(student_id, code)
             self.cursor_db.execute("SELECT COUNT(*) FROM user_data")
             count = self.cursor_db.fetchone()[0]
             if count == 0:
-                self.crypto.reset()
+                self.data_storage.reset()
             self.connection_db.commit()
             if not self.saved_classes and self.init_multiple:
                 self.delete_saved_classes()
@@ -6066,8 +6071,8 @@ class TeraTermUI(customtkinter.CTk):
         try:
             self.last_save_time = time.time()
             if self.remember_me.get() == "on":
-                student_id = self.student_id_entry.get().replace(" ", "").replace("-", "")
-                code = self.code_entry.get().replace(" ", "")
+                student_id = TeraTermUI.sanitize_input(self.student_id_entry.get())
+                code = TeraTermUI.sanitize_input(self.code_entry.get())
                 if ((re.match(r"^(?!000|666|9\d{2})\d{3}(?!00)\d{2}(?!0000)\d{4}$", student_id) or
                      (student_id.isdigit() and len(student_id) == 9)) and code.isdigit() and len(code) == 4):
                     if self.focus_screen:
@@ -6081,14 +6086,14 @@ class TeraTermUI(customtkinter.CTk):
                 if self.has_saved_user_data():
                     self.cursor_db.execute("DELETE FROM user_data")
                     self.connection_db.commit()
-                    self.crypto.reset()
+                    self.data_storage.reset()
         finally:
             self.saving_in_progress = False
 
     def encrypt_data_db(self, st_id, code):
         self.must_save_user_data = False
-        sid_cipher, sid_nonce, sid_tag = self.crypto.encrypt(st_id)
-        code_cipher, code_nonce, code_tag = self.crypto.encrypt(code)
+        sid_cipher, sid_nonce, sid_tag = self.data_storage.encrypt(st_id)
+        code_cipher, code_nonce, code_tag = self.data_storage.encrypt(code)
         self.cursor_db.execute(
             "INSERT INTO user_data (id, student_id, code, nonce_student_id, nonce_code, tag_student_id, tag_code) "
             "VALUES (1, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET student_id = excluded.student_id, "
@@ -6115,10 +6120,10 @@ class TeraTermUI(customtkinter.CTk):
             is_empty = False
             is_invalid_format = False
             for index in range(self.a_counter + 1):
-                class_value = self.m_classes_entry[index].get().upper().replace(" ", "").replace("-", "")
-                section_value = self.m_section_entry[index].get().upper().replace(" ", "").replace("-", "")
-                semester_value = self.m_semester_entry[index].get().replace(" ", "").lower()
-                curr_sem = translation["current"].replace(" ", "").lower()
+                curr_sem = translation["current"].lower()
+                class_value = TeraTermUI.sanitize_input(self.m_classes_entry[index].get(), to_upper=True)
+                section_value = TeraTermUI.sanitize_input(self.m_section_entry[index].get(), to_upper=True)
+                semester_value = TeraTermUI.sanitize_input(self.m_semester_entry[index].get(), to_lower=True)
                 if semester_value == curr_sem:
                     semester_value = translation["current"]
                 else:
@@ -6181,19 +6186,19 @@ class TeraTermUI(customtkinter.CTk):
 
         normalized_saved_data = []
         for class_value, section_value, semester_value, action_value in saved_data:
-            normalized_class = class_value.upper().replace(" ", "").replace("-", "")
-            normalized_section = section_value.upper().replace(" ", "").replace("-", "")
-            normalized_semester = semester_value.upper().replace(" ", "")
-            normalized_action = action_value.upper().replace(" ", "")
+            normalized_class = TeraTermUI.sanitize_input(class_value, to_upper=True)
+            normalized_section = TeraTermUI.sanitize_input(section_value, to_upper=True)
+            normalized_semester = TeraTermUI.sanitize_input(semester_value, to_upper=True)
+            normalized_action = TeraTermUI.sanitize_input(action_value, to_upper=True)
             normalized_saved_data.append((normalized_class, normalized_section, normalized_semester, normalized_action))
 
         entry_data = []
         num_saved_entries = len(normalized_saved_data)
         for index in range(num_saved_entries):
-            class_value = self.m_classes_entry[index].get().upper().replace(" ", "").replace("-", "")
-            section_value = self.m_section_entry[index].get().upper().replace(" ", "").replace("-", "")
-            semester_value = self.m_semester_entry[index].get().upper().replace(" ", "")
-            action_value = self.m_register_menu[index].get().upper().replace(" ", "")
+            class_value = TeraTermUI.sanitize_input(self.m_classes_entry[index].get(), to_upper=True)
+            section_value = TeraTermUI.sanitize_input(self.m_section_entry[index].get(), to_upper=True)
+            semester_value = TeraTermUI.sanitize_input(self.m_semester_entry[index].get(), to_upper=True)
+            action_value = TeraTermUI.sanitize_input(self.m_register_menu[index].get(), to_upper=True)
             entry_data.append((class_value, section_value, semester_value, action_value))
 
         num_field_differences = 0
@@ -6508,7 +6513,7 @@ class TeraTermUI(customtkinter.CTk):
                     logging.error("An error occurred: %s", err)
                     self.log_error()
                 if idle[0] != "Disabled":
-                    self.after(500, self.ssh_monitor.sample)
+                    self.after(500, self.server_monitor.sample)
                 # the connection attempt succeeded
                 return True
         except (socket.timeout, ConnectionRefusedError, OSError):
@@ -6719,7 +6724,7 @@ class TeraTermUI(customtkinter.CTk):
         semester_list = []
 
         # Loop through each table in self.class_table_pairs
-        for display_class, table, semester, _, _, _ in self.class_table_pairs:
+        for display_class, table, semester, _, _ in self.class_table_pairs:
             class_name = display_class.cget("text").split("-")[0].strip()
             table_data = table.get()
 
@@ -6817,7 +6822,7 @@ class TeraTermUI(customtkinter.CTk):
 
         self.e_class_entry.delete(0, "end")
         self.e_section_entry.delete(0, "end")
-        display_class, _, semester_text, _, _, _ = self.class_table_pairs[self.current_table_index]
+        display_class, _, semester_text, _, _ = self.class_table_pairs[self.current_table_index]
         class_text = display_class.cget("text").split("-")[0].strip()
         self.e_class_entry.insert(0, class_text)
         self.e_section_entry.insert(0, section_text)
@@ -7036,20 +7041,19 @@ class TeraTermUI(customtkinter.CTk):
             if self.sort_by is not None and self.sort_by.get() == translation["original_data"]:
                 self.sort_by.set(translation["sort_by"])
 
-        available_key = translation["av"]
-        available_values = sorted([row[available_key] for row in modified_data])
         duplicate_index = self.find_duplicate(self.get_class_for_table, self.get_semester_for_table,
-                                              self.show_all_sections, available_values)
+                                              self.show_all_sections)
         if duplicate_index is not None:
-            _, _, _, _, existing_available_values, _ = self.class_table_pairs[duplicate_index]
-            if sorted(existing_available_values) != available_values:
-                _, table_update, _, _, _, _ = self.class_table_pairs[duplicate_index]
-                new_row_count = len(table_values) - 1
-                current_row_count = len(table_update.values) if table_update.values else 0
-                if new_row_count > current_row_count:
-                    table_update.refresh_table(table_values)
-                else:
-                    table_update.update_values(table_values)
+            display_class, table_update, semester, show_all_sections, search_next_page_status = self.class_table_pairs[
+                duplicate_index]
+            self.class_table_pairs[duplicate_index] = (display_class, table_update, self.get_semester_for_table,
+                                                       self.show_all_sections, self.search_next_page_status)
+            new_row_count = len(table_values) - 1
+            current_row_count = len(table_update.values) - 1 if table_update.values else 0
+            if new_row_count != current_row_count:
+                table_update.refresh_table(table_values)
+            elif table_update.values != table_values:
+                table_update.update_values(table_values)
             self.current_table_index = duplicate_index
             self.search_scrollbar.scroll_to_top()
             self.update_buttons()
@@ -7172,7 +7176,7 @@ class TeraTermUI(customtkinter.CTk):
                                               bg_color="#1E90FF")
 
         self.class_table_pairs.append((display_class, new_table, self.get_semester_for_table, self.show_all_sections,
-                                       available_values, self.search_next_page_status))
+                                       self.search_next_page_status))
         if self.sort_by is not None and self.sort_by.get() != translation["sort_by"] and \
                 self.sort_by.get() != translation["original_data"]:
             self.last_sort_option = (self.sort_by.get(), len(self.class_table_pairs))
@@ -7181,7 +7185,7 @@ class TeraTermUI(customtkinter.CTk):
         self.table_position.configure(text=f"{self.current_table_index + 1}")
 
         if len(self.class_table_pairs) > 20:
-            display_class_to_remove, table_to_remove, _, _, _, more_sections = self.class_table_pairs[0]
+            display_class_to_remove, table_to_remove, _, _, more_sections = self.class_table_pairs[0]
             display_class_to_remove.grid_remove()
             table_to_remove.grid_remove()
             for i in range(table_to_remove.rows):
@@ -7245,12 +7249,13 @@ class TeraTermUI(customtkinter.CTk):
         self.bind("<Control-W>", lambda event: self.keybind_remove_current_table())
 
     # finds if there's already a course in the tables with the same exact params
-    def find_duplicate(self, new_display_class, new_semester, show_all_sections_state, available_values):
-        for index, (display_class, table, semester, existing_show_all_sections_state,
-                    existing_available_values, _) in enumerate(self.class_table_pairs):
-            if (display_class.cget("text").split("-")[0].strip().split(" #")[0] == new_display_class
-                    and semester == new_semester and existing_show_all_sections_state == show_all_sections_state
-                    and sorted(existing_available_values) == sorted(available_values)):
+    def find_duplicate(self, new_display_class, new_semester, show_all_sections_state):
+        for index, (display_class, _, semester, existing_show_all_sections_state, _) in enumerate(
+                self.class_table_pairs):
+            class_name = display_class.cget("text").split(" #")[0].strip()
+            if (class_name == new_display_class
+                    and semester == new_semester
+                    and existing_show_all_sections_state == show_all_sections_state):
                 return index
         return None
 
@@ -7359,7 +7364,7 @@ class TeraTermUI(customtkinter.CTk):
             return
 
         if sort_by_option == translation["original_data"]:
-            for _, table, _, _, _, _ in self.class_table_pairs:
+            for _, table, _, _, _ in self.class_table_pairs:
                 original_data = self.original_table_data[table]
                 table.update_values(original_data)
             self.last_sort_option = (sort_by_option, len(self.class_table_pairs))
@@ -7370,7 +7375,7 @@ class TeraTermUI(customtkinter.CTk):
         headers = None
         time_index = av_index = section_index = -1
 
-        for _, table, _, _, _, _ in self.class_table_pairs:
+        for _, table, _, _, _ in self.class_table_pairs:
             table_data = table.values
             if not headers:
                 headers = table_data[0]
@@ -7479,7 +7484,7 @@ class TeraTermUI(customtkinter.CTk):
     def check_and_update_labels(self):
         class_info = {}
         all_semesters = set()
-        for display_class, _, semester, _, _, _ in self.class_table_pairs:
+        for display_class, _, semester, _, _ in self.class_table_pairs:
             base_name = display_class.cget("text").split("-")[0].strip().split(" #")[0]
             key = (base_name, semester)
             if key not in class_info:
@@ -7503,15 +7508,14 @@ class TeraTermUI(customtkinter.CTk):
         for display_class, new_text in updated_labels:
             display_class.configure(text=new_text)
 
+    # shows the up to date information on the current class the user is viewing
     def display_current_table(self):
         translation = self.load_language()
-        # Hide all tables and display_classes
-        for display_class, curr_table, _, _, _, _ in self.class_table_pairs:
+        for display_class, curr_table, _, _, _ in self.class_table_pairs:
             display_class.grid_forget()
             curr_table.grid_forget()
 
-        # Show the current display_class and table
-        display_class, curr_table, semester, _, _, _ = self.class_table_pairs[self.current_table_index]
+        display_class, curr_table, semester, show_all_sections, _ = self.class_table_pairs[self.current_table_index]
         table_position_label = (f" {translation['table_position']}{self.current_table_index + 1}"
                                 f"/{len(self.class_table_pairs)}")
         if self.table_position.cget("text") != table_position_label:
@@ -7520,14 +7524,21 @@ class TeraTermUI(customtkinter.CTk):
         curr_table.grid(row=2, column=1, padx=(0, 15), pady=(40, 0), sticky="n")
         self.table = curr_table
         self.current_class = display_class
-        section = self.s_class_entry.get().upper().replace(" ", "").replace("-", "")
         display_class_text = display_class.cget("text").split(" ")[0]
-        if section != display_class_text and self.loading_screen_status is None:
+
+        if self.loading_screen_status is None:
             if self.s_class_entry.get() != display_class_text:
                 self.s_class_entry.delete(0, "end")
                 self.s_class_entry.insert(0, display_class_text)
             if self.s_semester_entry.get() != semester:
                 self.s_semester_entry.set(semester)
+            is_checked = self.show_all.get() == "on"
+            should_be_checked = show_all_sections == "on"
+            if is_checked != should_be_checked:
+                if should_be_checked:
+                    self.show_all.select()
+                else:
+                    self.show_all.deselect()
         self.after(0, self.focus_set)
 
     def update_buttons(self):
@@ -7673,7 +7684,7 @@ class TeraTermUI(customtkinter.CTk):
         self.class_table_pairs[source_index], self.class_table_pairs[target_index] = \
             self.class_table_pairs[target_index], self.class_table_pairs[source_index]
 
-        for _, table_widget, _, _, _, _ in self.class_table_pairs:
+        for _, table_widget, _, _, _ in self.class_table_pairs:
             table_widget.grid(row=2, column=1, padx=(0, 0), pady=(40, 0), sticky="n")
 
         if self.current_table_index == source_index:
@@ -7698,7 +7709,7 @@ class TeraTermUI(customtkinter.CTk):
     # removes the selected table from view
     def remove_current_table(self):
         translation = self.load_language()
-        display_class_to_remove, table_to_remove, _, _, _, more_sections \
+        display_class_to_remove, table_to_remove, _, _, more_sections \
             = self.class_table_pairs[self.current_table_index]
 
         display_class_to_remove.grid_remove()
@@ -8009,7 +8020,7 @@ class TeraTermUI(customtkinter.CTk):
         return f"{semester_name} {full_year}"
 
     def update_semester_tooltip(self, widget):
-        selected_semester = widget.get().upper().replace(" ", "")
+        selected_semester = TeraTermUI.sanitize_input(widget.get(), to_upper=True)
         new_tooltip_text = self.get_semester_season(selected_semester)
         if widget in self.semesters_tooltips:
             self.semesters_tooltips[widget].configure(message=new_tooltip_text)
@@ -8380,7 +8391,7 @@ class TeraTermUI(customtkinter.CTk):
             return
 
         translation = self.load_language()
-        semester = self.dialog_input.upper().replace(" ", "")
+        semester = TeraTermUI.sanitize_input(self.dialog_input, to_upper=True)
         self.focus_set()
 
         # Define default save directory
@@ -8409,7 +8420,7 @@ class TeraTermUI(customtkinter.CTk):
     def display_enrolled_data(self, data, creds, dialog_input):
         lang = self.language_menu.get()
         translation = self.load_language()
-        semester = dialog_input.upper().replace(" ", "")
+        semester = TeraTermUI.sanitize_input(dialog_input, to_upper=True)
         if not data:
             self.after(100, self.show_error_message, 320, 235, translation["semester_no_data"] + semester)
             self.after(150, self.switch_tab)
@@ -8673,7 +8684,7 @@ class TeraTermUI(customtkinter.CTk):
             try:
                 self.automation_preparations()
                 translation = self.load_language()
-                dialog_input = self.dialog_input.upper().replace(" ", "")
+                dialog_input = TeraTermUI.sanitize_input(self.dialog_input, to_upper=True)
                 show_error = False
                 first_loop = True
                 section_closed = False
@@ -8693,7 +8704,7 @@ class TeraTermUI(customtkinter.CTk):
                                                          translation["course"]].replace("-", "")[:8]
                             if mod_selection is not None and change_section_entry is not None:
                                 mod = mod_selection.get()
-                                section = change_section_entry.get().upper().replace(" ", "")
+                                section = TeraTermUI.sanitize_input(change_section_entry.get(), to_upper=True)
                                 if mod != translation["choose"]:
                                     not_all_choose = True
                                 if mod == translation["section"] and not re.fullmatch("^[A-Z0-9]{3}$", section):
@@ -8719,9 +8730,10 @@ class TeraTermUI(customtkinter.CTk):
                                     is_final = row_index == len(self.enrolled_classes_data) - 1
                                     if mod_selection is not None and change_section_entry is not None:
                                         mod = self.mod_selection_list[row_index].get()
-                                        section = self.change_section_entries[row_index].get().upper().replace(" ", "")
+                                        section = TeraTermUI.sanitize_input(
+                                            self.change_section_entries[row_index].get(), to_upper=True)
                                         course_code = self.enrolled_classes_data[row_index][
-                                            translation["course"]].replace("-", "")
+                                            TeraTermUI.sanitize_input(translation["course"])]
                                         course_code_no_section = self.enrolled_classes_data[row_index][
                                                                      translation["course"]].replace("-", "")[:8]
                                         old_section = self.enrolled_classes_data[row_index][
@@ -9983,7 +9995,7 @@ class TeraTermUI(customtkinter.CTk):
         if self.has_saved_user_data():
             self.cursor_db.execute("DELETE FROM user_data")
             self.connection_db.commit()
-            self.crypto.reset()
+            self.data_storage.reset()
             if self.in_student_frame:
                 if self.remember_me.get() == "on":
                     self.remember_me.toggle()
@@ -10182,12 +10194,12 @@ class TeraTermUI(customtkinter.CTk):
                         pyautogui.press("scrolllock")
                         time.sleep(1)
                         pyautogui.press("scrolllock")
-                stats = self.ssh_monitor.get_stats()
-                host = self.ssh_monitor.host
-                rating, color = self.ssh_monitor.get_reliability_rating(lang)
+                stats = self.server_monitor.get_stats()
+                host = self.server_monitor.host
+                rating, color = self.server_monitor.get_reliability_rating(lang)
                 sample_count = (40 if not stats or stats["samples"] < 10 else 30 if stats["std_dev"] > 100
                                 or stats["max"] > 1000 or stats["average"] > 400 else 20)
-                self.ssh_monitor.sample(count=sample_count)
+                self.server_monitor.sample(count=sample_count)
                 new_sample_count = stats.get("samples")
                 has_new_data = (self.prev_sample_count != new_sample_count)
                 if self.timer_window is not None and self.timer_window.winfo_exists() and has_new_data:
@@ -10381,68 +10393,62 @@ class TeraTermUI(customtkinter.CTk):
 
     @staticmethod
     async def fetch(session, url):
-        from aiohttp import ClientConnectionError
+        from aiohttp import ClientConnectionError, ClientSSLError
+        from ssl import SSLError
 
         headers = {"User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                                   "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")}
-        try:
-            async with session.head(url, timeout=5.0, headers=headers) as response:
-                if response.status == 200:
-                    return True
-                logging.error(f"Non-200 response code with HEAD: {response.status}")
-        except ClientConnectionError:
-            logging.error(f"Failed to connect to {url} with HEAD request")
-        except asyncio.TimeoutError:
-            logging.error(f"HEAD request to {url} timed out")
-        except Exception as err:
-            logging.error(f"An unexpected error occurred during HEAD request: {err}")
         delay = 1
-        retries = 5
-        for attempt in range(retries):
+        attempts = 5
+        for _ in range(attempts):
             try:
-                async with session.get(url, timeout=5.0, headers=headers) as response:
-                    if response.status == 200:
+                async with session.get(url, timeout=5.0, headers=headers) as resp:
+                    if resp.status == 200:
                         return True
-                    elif response.status == 429:
-                        retry_after = response.headers.get("Retry-After")
-                        if retry_after and retry_after.isdigit():
-                            delay = int(retry_after)
-                        logging.warning(f"GET request to {url} rate-limited. Retrying in {delay} seconds...")
+                    if resp.status == 429:
+                        retry = resp.headers.get("Retry-After")
+                        if retry and retry.isdigit():
+                            delay = int(retry)
                         await asyncio.sleep(delay)
                         delay *= 2
                         continue
-                    logging.error(f"Non-200 response code with GET: {response.status}")
-                    return False
-            except ClientConnectionError:
-                logging.error(f"Failed to connect to {url} with GET request")
-                return False
-            except asyncio.TimeoutError:
-                logging.error(f"GET request to {url} timed out")
-                return False
+                    logging.debug(f"GET {url} returned status: {resp.status}")
+                    continue
+            except (ClientConnectionError, asyncio.TimeoutError, SSLError) as err:
+                logging.debug(f"Network/SSL error on {url}: {err}")
             except Exception as err:
-                logging.error(f"An unexpected error occurred during GET request: {err}")
-                return False
+                logging.debug(f"Unexpected error on {url}: {err}")
         return False
 
-    # checks whether the user is connected to the internet
     async def test_connection(self):
         from aiohttp import ClientSession, TCPConnector
 
         translation = self.load_language()
-        urls = ["https://www.google.com/", "https://www.bing.com/", "https://duckduckgo.com/"]
-        async with ClientSession(connector=TCPConnector(limit=5)) as session:
-            tasks = [asyncio.create_task(TeraTermUI.fetch(session, url)) for url in urls]
-            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-            connected = any(task.result() for task in done if not task.exception()
-                            and isinstance(task.result(), bool) and task.result())
-            for task in pending:
-                task.cancel()
-            if not connected:
-                if not self.check_update:
-                    await asyncio.sleep(1)
-                    self.after(100, self.show_error_message, 300, 215, translation["no_internet"])
-                if self.check_update:
-                    self.check_update = False
+        urls = ["https://www.google.com/", "https://www.bing.com/", "https://duckduckgo.com/",
+                "https://cloudflare.com/", "https://example.com/", "https://httpstat.us/200"]
+        random.shuffle(urls)
+        connector = TCPConnector(limit=5)
+        async with ClientSession(connector=connector) as session:
+            tasks = [asyncio.create_task(self.fetch(session, url)) for url in urls]
+            connected = False
+            try:
+                for completed in asyncio.as_completed(tasks):
+                    result = await completed
+                    if result:
+                        connected = True
+                        break
+            finally:
+                for task in tasks:
+                    if not task.done():
+                        task.cancel()
+                await asyncio.gather(*tasks, return_exceptions=True)
+
+        if not connected:
+            if not self.check_update:
+                await asyncio.sleep(1)
+                self.after(100, self.show_error_message, 300, 215, translation["no_internet"])
+            self.check_update = False
+
         return connected
 
     # Set focus on the UI application window
@@ -11939,6 +11945,24 @@ class TeraTermUI(customtkinter.CTk):
         if image_name in self.loaded_images:
             del self.loaded_images[image_name]
 
+    @staticmethod
+    def sanitize_input(text, *, to_upper=False, to_lower=False, remove_chars=" \t\n\r-_,./\\\"'()[]{}", strip=True):
+        if not isinstance(text, str):
+            text = str(text)
+
+        if remove_chars:
+            pattern = f"[{re.escape(remove_chars)}]"
+            text = re.sub(pattern, "", text)
+        if strip:
+            text = text.strip()
+
+        if to_upper:
+            text = text.upper()
+        elif to_lower:
+            text = text.lower()
+
+        return text
+
     # checks if there is no problems with the information in the entries
     def check_format(self):
         translation = self.load_language()
@@ -11948,13 +11972,13 @@ class TeraTermUI(customtkinter.CTk):
         error_msg_long = ""
 
         # Get the choices from the entries
+        curr_sem = translation["current"].upper()
         for i in range(self.a_counter + 1):
-            classes = self.m_classes_entry[i].get().upper().replace(" ", "").replace("-", "")
-            sections = self.m_section_entry[i].get().upper().replace(" ", "")
+            classes = TeraTermUI.sanitize_input(self.m_classes_entry[i].get(), to_upper=True)
+            sections = TeraTermUI.sanitize_input(self.m_section_entry[i].get(), to_upper=True)
             choices = self.m_register_menu[i].get()
             entries.append((choices, classes, sections))
-        semester = self.m_semester_entry[0].get().upper().replace(" ", "")
-        curr_sem = translation["current"].upper()
+        semester = TeraTermUI.sanitize_input(self.m_semester_entry[0].get(), to_upper=True)
 
         # Check for empty entries and format errors
         error_entries = []
@@ -13570,14 +13594,18 @@ class ImageSlideshow(customtkinter.CTkFrame):
 
 
 # tool that gives us an estimation of the university's server load
-class SSHMonitor:
-    def __init__(self, host, port=22):
+class ServerLoadMonitor:
+    def __init__(self, csv_path=None, host="uprbay.uprb.edu", port=22):
+        self.csv_path = csv_path or os.path.join(os.getcwd(), "server_load.csv")
         self.host = host
         self.port = port
-        self.latencies = []
+        self.latencies = deque(maxlen=5000)
+        self.loaded_latencies = set()
         self.failures = 0
         self.failure_streak = 0
         self.last_sample_time = 0
+        self.clear_stale()
+        self.load_recent_stats()
 
     def measure_latency(self, timeout=5):
         try:
@@ -13645,16 +13673,75 @@ class SSHMonitor:
                 "average": round(avg_latency, 2),
                 "std_dev": round(std_dev, 2)
             })
+
             score = 100
             score -= stats["failure_rate"] * 0.5
             score -= min(avg_latency, 1000) * 0.05
             score -= min(std_dev, 300) * 0.1
             stats["reliability_score"] = max(0, round(score, 2))
-
         else:
             stats["reliability_score"] = 0.0
 
         return stats
+
+    def save_stats(self):
+        new_samples = [lat for lat in self.latencies if lat not in self.loaded_latencies]
+        if not new_samples:
+            return
+
+        row = {
+            "timestamp": datetime.now(UTC).isoformat(),
+            "host": self.host,
+            "latencies": ";".join(f"{lat:.2f}" for lat in new_samples),
+        }
+        fieldnames = ["timestamp", "host", "latencies"]
+        file_exists = os.path.isfile(self.csv_path)
+        with open(self.csv_path, mode="a", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            if not file_exists:
+                writer.writeheader()
+            writer.writerow(row)
+
+        self.loaded_latencies.update(new_samples)
+
+    def load_recent_stats(self):
+        if not os.path.exists(self.csv_path):
+            return
+
+        with open(self.csv_path, mode="r") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                raw_latencies = row.get("latencies", "")
+                try:
+                    samples = [float(val) for val in raw_latencies.split(";") if val]
+                except ValueError:
+                    continue
+                self.latencies.extend(samples)
+                self.loaded_latencies.update(samples)
+
+    def clear_stale(self, max_age_minutes=30):
+        if not os.path.exists(self.csv_path):
+            return
+
+        cutoff = datetime.utcnow() - timedelta(minutes=max_age_minutes)
+        cleaned_rows = []
+        with open(self.csv_path, mode="r") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                try:
+                    ts = datetime.fromisoformat(row["timestamp"])
+                    if ts >= cutoff:
+                        cleaned_rows.append(row)
+                except Exception:
+                    continue
+
+        if cleaned_rows:
+            with open(self.csv_path, mode="w", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=reader.fieldnames)
+                writer.writeheader()
+                writer.writerows(cleaned_rows)
+        else:
+            os.remove(self.csv_path)
 
     def get_reliability_rating(self, lang):
         stats = self.get_stats()
