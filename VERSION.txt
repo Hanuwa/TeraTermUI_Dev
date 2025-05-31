@@ -1,16 +1,19 @@
 Version Number: v0.92.0
 
-SHA-256 Checksum: 3c99fa56331ba985f1896fac2eddd7b98fb66cb705a29c954d65b0edc2946bf1
+SHA-256 Checksum: 305a34e101e9cc4f24a18f7fa408d1471cbbd0a3e9e580c2371353d34cde8fb6
 
-Release Date: 05/29/2025
+Release Date: 05/30/2025
 
 Patch Notes:
  - Introduced new feature, Added support for scheduled login: If personal credentials are saved, During Auto-Enroll event, 
    Tera Term will now close temporarily to reduce server load and automatically re-open 15–30 minutes before the enrollment
-   window to log in        
+   window to log in      
+ - Enhanced server load monitor with persistent CSV logging  
  - Improved the way personal user credentials are securely stored and retrieved
  - Further refined the search accuracy for course titles in the "Help" window
  - Adjusted the grid/layout of widgets of the "Multiple Classes" screen
+ - Resolved an issue where re-searching a class created a duplicate table instead of updating the existing one
+ - Refined entry sanitation to prevent malformed or inconsistent inputs
  - Other miscellaneous fixes
  - Updated dependencies
 
