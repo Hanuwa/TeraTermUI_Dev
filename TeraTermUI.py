@@ -13599,7 +13599,7 @@ class ServerLoadMonitor:
         self.csv_path = csv_path or os.path.join(os.getcwd(), "server_load.csv")
         self.host = host
         self.port = port
-        self.latencies = deque(maxlen=5000)
+        self.latencies = deque(maxlen=2500)
         self.loaded_latencies = set()
         self.failures = 0
         self.failure_streak = 0
