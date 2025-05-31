@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.92.0 - 5/30/25
+# DATE - Started 1/1/23, Current Build v0.92.0 - 5/31/25
 
 # BUGS / ISSUES:
 # pytesseract integration is inconsistent across systems, sometimes failing to read the screen
@@ -17,7 +17,7 @@
 
 # FUTURE PLANS:
 # Display more in-app information to reduce reliance on Tera Term.
-# Refactor the codebase into multiple files; current single-file structure (14,500+ lines) hinders maintainability.
+# Refactor the codebase into multiple files; current single-file structure (14,600+ lines) hinders maintainability.
 # Redesign UI layout for clarity and better user experience.
 # Expand documentation to support development and onboarding.
 
@@ -1177,8 +1177,8 @@ class TeraTermUI(customtkinter.CTk):
     def log_error(self):
         import inspect
 
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         try:
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             exc_type, exc_value, exc_traceback = sys.exc_info()
             full_traceback = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback)).strip()
             stack = inspect.stack()
@@ -1201,7 +1201,6 @@ class TeraTermUI(customtkinter.CTk):
 
             with open(logs_path, "a", encoding="utf-8") as file:
                 file.write(f"{error_message}\n{separator}")
-
         except Exception as err:
             logging.error(f"[LOG_ERROR_FAILURE] [{timestamp}] Could not write error log: {str(err)}")
 
@@ -1211,7 +1210,7 @@ class TeraTermUI(customtkinter.CTk):
         if not value:
             return
         try:
-            val_bytes = bytearray(value.encode('utf-8'))
+            val_bytes = bytearray(value.encode("utf-8"))
             addr = ctypes.addressof(ctypes.c_char.from_buffer(val_bytes))
             ctypes.memset(addr, 0, len(val_bytes))
             del val_bytes  
@@ -5088,8 +5087,17 @@ class TeraTermUI(customtkinter.CTk):
                 stats = self.server_monitor.get_stats()
                 host = self.server_monitor.host
                 rating, color = self.server_monitor.get_reliability_rating(lang)
-                sample_count = (40 if not stats or stats["samples"] < 10 else 30 if stats["std_dev"] > 100
-                                or stats["max"] > 1000 or stats["average"] > 400 else 20)
+                if not stats or stats["samples"] <= 30:
+                    sample_count = 40
+                elif stats["failure_rate"] > 20 or (stats.get("median") and stats["median"] > 1000):
+                    sample_count = 80
+                elif stats["failure_rate"] < 5 and stats["median"] is not None and stats["median"] < 200 and stats[
+                    "std_dev"] < 50:
+                    sample_count = 10
+                elif stats["std_dev"] > 100 or stats["max"] > 1000 or stats["average"] > 400:
+                    sample_count = 30
+                else:
+                    sample_count = 20
                 self.server_monitor.sample(count=sample_count)
                 if self.prev_sample_count != stats.get("samples"):
                     self.server_rating.configure(text=f"{translation['server_status_rating']}{rating}",
@@ -7042,12 +7050,9 @@ class TeraTermUI(customtkinter.CTk):
                 self.sort_by.set(translation["sort_by"])
 
         duplicate_index = self.find_duplicate(self.get_class_for_table, self.get_semester_for_table,
-                                              self.show_all_sections)
+                                              self.show_all_sections, table_values)
         if duplicate_index is not None:
-            display_class, table_update, semester, show_all_sections, search_next_page_status = self.class_table_pairs[
-                duplicate_index]
-            self.class_table_pairs[duplicate_index] = (display_class, table_update, self.get_semester_for_table,
-                                                       self.show_all_sections, self.search_next_page_status)
+            table_update = self.class_table_pairs[duplicate_index][1]
             new_row_count = len(table_values) - 1
             current_row_count = len(table_update.values) - 1 if table_update.values else 0
             if new_row_count != current_row_count:
@@ -7249,14 +7254,17 @@ class TeraTermUI(customtkinter.CTk):
         self.bind("<Control-W>", lambda event: self.keybind_remove_current_table())
 
     # finds if there's already a course in the tables with the same exact params
-    def find_duplicate(self, new_display_class, new_semester, show_all_sections_state):
-        for index, (display_class, _, semester, existing_show_all_sections_state, _) in enumerate(
+    def find_duplicate(self, new_display_class, new_semester, show_all_sections_state, new_table_values):
+        for index, (display_class, table_widget, semester, existing_show_all_sections_state, _) in enumerate(
                 self.class_table_pairs):
             class_name = display_class.cget("text").split(" #")[0].strip()
             if (class_name == new_display_class
                     and semester == new_semester
                     and existing_show_all_sections_state == show_all_sections_state):
-                return index
+                existing_sec_values = [row[0] for row in table_widget.values[1:]] if table_widget.values else []
+                new_sec_values = [row[0] for row in new_table_values[1:]] if new_table_values else []
+                if existing_sec_values == new_sec_values:
+                    return index
         return None
 
     # will automatically sort the data of a new table being added to the current selected sorting option
@@ -7732,8 +7740,8 @@ class TeraTermUI(customtkinter.CTk):
         if more_sections and self.search_next_page.grid_info():
             next_index = min(self.current_table_index + 1, len(self.class_table_pairs) - 1)
             prev_index = max(self.current_table_index - 1, 0)
-            next_has_more = self.class_table_pairs[next_index][5] if next_index != self.current_table_index else False
-            prev_has_more = self.class_table_pairs[prev_index][5] if prev_index != self.current_table_index else False
+            next_has_more = self.class_table_pairs[next_index][4] if next_index != self.current_table_index else False
+            prev_has_more = self.class_table_pairs[prev_index][4] if prev_index != self.current_table_index else False
             if not next_has_more and not prev_has_more:
                 self.search_next_page.grid_forget()
                 self.search.grid(row=1, column=1, padx=(385, 0), pady=(0, 5), sticky="n")
@@ -10198,8 +10206,17 @@ class TeraTermUI(customtkinter.CTk):
                 stats = self.server_monitor.get_stats()
                 host = self.server_monitor.host
                 rating, color = self.server_monitor.get_reliability_rating(lang)
-                sample_count = (40 if not stats or stats["samples"] < 10 else 30 if stats["std_dev"] > 100
-                                or stats["max"] > 1000 or stats["average"] > 400 else 20)
+                if not stats or stats["samples"] <= 30:
+                    sample_count = 40
+                elif stats["failure_rate"] > 20 or (stats.get("median") and stats["median"] > 1000):
+                    sample_count = 80
+                elif stats["failure_rate"] < 5 and stats["median"] is not None and stats["median"] < 200 and stats[
+                    "std_dev"] < 50:
+                    sample_count = 10
+                elif stats["std_dev"] > 100 or stats["max"] > 1000 or stats["average"] > 400:
+                    sample_count = 30
+                else:
+                    sample_count = 20
                 self.server_monitor.sample(count=sample_count)
                 new_sample_count = stats.get("samples")
                 has_new_data = (self.prev_sample_count != new_sample_count)
@@ -13608,31 +13625,41 @@ class ServerLoadMonitor:
         self.clear_stale()
         self.load_recent_stats()
 
+        try:
+            self.ip = socket.gethostbyname(self.host)
+        except socket.gaierror:
+            self.ip = self.host
+
     def measure_latency(self, timeout=5):
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(timeout)
-            start = time.time()
-            result = sock.connect_ex((self.host, self.port))
-            end = time.time()
-            sock.close()
-            if result == 0:
-                return (end - start) * 1000
-        except (socket.timeout, ConnectionRefusedError, OSError):
-            pass
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.settimeout(timeout)
+                start = time.time()
+                result = sock.connect_ex((self.ip, self.port))
+                end = time.time()
+                if result == 0:
+                    return (end - start) * 1000
+        except (socket.timeout, ConnectionRefusedError, OSError) as error:
+            logging.debug(f"Socket error during latency measurement: {error}")
         return None
 
-    def sample(self, count=30, concurrent=True, force=False, cooldown=25):
+    def sample(self, count=30, concurrent=True, force=False, cooldown=25, max_workers=None, seq_delay=0.3):
         now = time.time()
         if now - self.last_sample_time < cooldown and not force:
             return
 
         self.last_sample_time = now
+
         if concurrent:
-            with ThreadPoolExecutor(max_workers=count) as executor:
+            pool_size = min(count, max_workers or 100)
+            with ThreadPoolExecutor(max_workers=pool_size) as executor:
                 futures = [executor.submit(self.measure_latency) for _ in range(count)]
                 for future in as_completed(futures):
-                    latency = future.result()
+                    try:
+                        latency = future.result()
+                    except Exception as error:
+                        logging.debug(f"Exception in latency sampling thread: {error}")
+                        latency = None
                     if latency is not None:
                         self.latencies.append(latency)
                         self.failure_streak = 0
@@ -13648,7 +13675,7 @@ class ServerLoadMonitor:
                 else:
                     self.failures += 1
                     self.failure_streak += 1
-                time.sleep(0.3)
+                time.sleep(seq_delay)
 
     def get_stats(self):
         total_attempts = len(self.latencies) + self.failures
@@ -13658,7 +13685,7 @@ class ServerLoadMonitor:
         stats = {
             "samples": len(self.latencies),
             "failures": self.failures,
-            "failure_rate": round((self.failures / total_attempts) * 100, 2),
+            "failure_rate": round((self.failures / total_attempts) * 100, 2) if total_attempts else 0.0,
             "failure_streak": self.failure_streak,
         }
 
@@ -13666,12 +13693,14 @@ class ServerLoadMonitor:
             min_latency = min(self.latencies)
             max_latency = max(self.latencies)
             avg_latency = statistics.mean(self.latencies)
+            median_latency = statistics.median(self.latencies)
             std_dev = statistics.stdev(self.latencies) if len(self.latencies) > 1 else 0.0
 
             stats.update({
                 "min": round(min_latency, 2),
                 "max": round(max_latency, 2),
                 "average": round(avg_latency, 2),
+                "median": round(median_latency, 2),
                 "std_dev": round(std_dev, 2)
             })
 
@@ -13681,19 +13710,28 @@ class ServerLoadMonitor:
             score -= min(std_dev, 300) * 0.1
             stats["reliability_score"] = max(0, round(score, 2))
         else:
-            stats["reliability_score"] = 0.0
+            stats.update({
+                "min": None,
+                "max": None,
+                "average": None,
+                "median": None,
+                "std_dev": None,
+                "reliability_score": 0.0
+            })
 
         return stats
 
     def save_stats(self):
-        new_samples = [lat for lat in self.latencies if lat not in self.loaded_latencies]
+        now_ts = datetime.now(UTC).timestamp()
+        new_samples = [(round(lat, 2), now_ts)  for lat in self.latencies
+                       if (round(lat, 2), now_ts) not in self.loaded_latencies]
         if not new_samples:
             return
 
         row = {
             "timestamp": datetime.now(UTC).isoformat(),
             "host": self.host,
-            "latencies": ";".join(f"{lat:.2f}" for lat in new_samples),
+            "latencies": ";".join(f"{lat:.2f}" for lat, _ in new_samples),
         }
         fieldnames = ["timestamp", "host", "latencies"]
         file_exists = os.path.isfile(self.csv_path)
@@ -13703,7 +13741,8 @@ class ServerLoadMonitor:
                 writer.writeheader()
             writer.writerow(row)
 
-        self.loaded_latencies.update(new_samples)
+        for lat, ts in new_samples:
+            self.loaded_latencies.add((lat, ts))
 
     def load_recent_stats(self):
         if not os.path.exists(self.csv_path):
@@ -13713,12 +13752,15 @@ class ServerLoadMonitor:
             reader = csv.DictReader(f)
             for row in reader:
                 raw_latencies = row.get("latencies", "")
+                timestamp_str = row.get("timestamp", "")
                 try:
                     samples = [float(val) for val in raw_latencies.split(";") if val]
+                    ts = datetime.fromisoformat(timestamp_str).timestamp()
                 except ValueError:
                     continue
                 self.latencies.extend(samples)
-                self.loaded_latencies.update(samples)
+                for lat in samples:
+                    self.loaded_latencies.add((round(lat, 2), ts))
 
     def clear_stale(self, max_age_minutes=30):
         if not os.path.exists(self.csv_path):
@@ -13764,13 +13806,39 @@ class ServerLoadMonitor:
 
         return ("Unknown", "black") if lang == "English" else ("Desconocido", "black")
 
-    def is_responsive(self, avg_cutoff=800, max_cutoff=1500, max_failure_rate=20):
+    @staticmethod
+    def percentile(data, percent):
+        data = sorted(data)
+        k = (len(data) - 1) * (percent / 100.0)
+        f = int(k)
+        c = min(f + 1, len(data) - 1)
+        if f == c:
+            return data[int(k)]
+        d0 = data[f] * (c - k)
+        d1 = data[c] * (k - f)
+        return d0 + d1
+
+    def is_responsive(self, avg_cutoff=800, max_cutoff=1500, median_cutoff=700, percentile_cutoff=None,
+                      max_failure_rate=20, max_failure_streak=5):
         stats = self.get_stats()
         if not stats or stats["samples"] == 0:
             return False
-        if stats["average"] > avg_cutoff or stats["max"] > max_cutoff or stats["failure_rate"] > max_failure_rate:
+        if stats["average"] and stats["average"] > avg_cutoff:
             return False
+        if stats["max"] and stats["max"] > max_cutoff:
+            return False
+        if stats["median"] and stats["median"] > median_cutoff:
+            return False
+        if stats["failure_rate"] > max_failure_rate:
+            return False
+        if stats["failure_streak"] > max_failure_streak:
+            return False
+        if percentile_cutoff is not None and self.latencies:
+            perc_val = ServerLoadMonitor.percentile(self.latencies, 90)
+            if perc_val > percentile_cutoff:
+                return False
         return True
+
 
 # Manages credentials being saved locally
 class SecureDataStore:
@@ -14152,7 +14220,7 @@ class ClipboardHandler:
 
     # Encrypts plaintext using AES-CFB mode with the current key and a random IV
     def encrypt_data(self, plaintext):
-        if not plaintext:
+        if not plaintext or len(plaintext) == 0:
             raise ValueError("Cannot encrypt empty data")
         iv = get_random_bytes(16)
         cipher = AES.new(self.current_key, AES.MODE_CFB, iv=iv)
@@ -14272,6 +14340,7 @@ class ClipboardHandler:
         gc.collect()
 
     # Encodes a list of sanitized file paths into a DROPFILES structure (used by CF_HDROP)
+    @staticmethod
     def encode_hdrop_paths(self, paths):
         sanitized = list(ClipboardHandler.sanitize_file_paths(paths))
         file_list = b"".join(p.encode("utf-16le") + b"\0\0" for p in sanitized)
@@ -14308,7 +14377,18 @@ class ClipboardHandler:
                     continue
                 try:
                     if isinstance(data, str):
-                        data = data.encode("utf-8")
+                        if not data.strip():
+                            continue
+                        try:
+                            data = data.encode("utf-8", errors="surrogatepass")
+                        except UnicodeEncodeError as error:
+                            logging.warning(f"Unicode encoding failed for {self._format_names.get(format_id)}: {error}")
+                            continue
+
+                    elif isinstance(data, bytes):
+                        if not data.strip():
+                            logging.info(f"Skipping empty byte format: {self._format_names.get(format_id)}")
+                            continue
 
                     if format_id == win32con.CF_HDROP and isinstance(data, tuple):
                         data = self.encode_hdrop_paths(data)
@@ -14327,27 +14407,37 @@ class ClipboardHandler:
                         else:
                             continue
 
-                    elif format_id == self.CF_HTML and isinstance(data, str):
-                        if "<html>" in data and "</html>" in data:
-                            html_content = data[data.find("<html>"): data.find("</html>") + 7]
+                    elif format_id == self.CF_HTML and isinstance(data, bytes):
+                        try:
+                            text = data.decode("utf-8")
+                        except UnicodeDecodeError:
+                            continue
+                        if "<html>" in text and "</html>" in text:
+                            html_content = text[text.find("<html>"): text.find("</html>") + 7]
                             header = ("Version:0.9\r\n"
-                                      f"StartHTML:{data.find('<html>')}\r\n"
-                                      f"EndHTML:{data.find('</html>') + 7}\r\n"
-                                      f"StartFragment:{data.find('<html>')}\r\n"
-                                      f"EndFragment:{data.find('</html>')}\r\n\r\n")
+                                      f"StartHTML:{text.find('<html>')}\r\n"
+                                      f"EndHTML:{text.find('</html>') + 7}\r\n"
+                                      f"StartFragment:{text.find('<html>')}\r\n"
+                                      f"EndFragment:{text.find('</html>')}\r\n\r\n")
                             data = (header + html_content).encode("utf-8")
                         else:
                             continue
 
-                    elif format_id == self.CF_RTF and isinstance(data, str):
-                        if not data.strip().startswith("{\\rtf"):
+                    elif format_id == self.CF_RTF and isinstance(data, bytes):
+                        try:
+                            text = data.decode("utf-8")
+                            if not text.strip().startswith("{\\rtf"):
+                                continue
+                        except UnicodeDecodeError:
                             continue
-                        data = data.encode("utf-8")
 
-                    elif format_id == self.CF_SVG and isinstance(data, str):
-                        if "<svg" not in data.lower() or "</svg>" not in data.lower():
+                    elif format_id == self.CF_SVG and isinstance(data, bytes):
+                        try:
+                            text = data.decode("utf-8")
+                            if "<svg" not in text.lower() or "</svg>" not in text.lower():
+                                continue
+                        except UnicodeDecodeError:
                             continue
-                        data = data.encode("utf-8")
 
                     elif format_id == win32con.CF_DIB and isinstance(data, bytes):
                         if len(data) < 4 or struct.unpack("I", data[:4])[0] != 40:
