@@ -4198,15 +4198,14 @@ class TeraTermUI(customtkinter.CTk):
                 "1GP (Class Schedule)": "1GP", "118 (Academic Statistics)": "118",
                 "1VE (Academic Record)": "1VE", "3DD (Scholarship Payment Record)": "3DD",
                 "409 (Account Balance)": "409", "683 (Academic Evaluation)": "683",
-                "1PL (Basic Personal Data)": "1PL", "4CM (Tuition Calculation)": "4CM",
-                "4SP (Apply for Extension)": "4SP", "SO (Sign out)": "SO",
+                "1PL (Basic Personal Data)": "1PL", "1S4 (Add and/or Remove Courses)": "1S4",
+                "4CM (Tuition Calculation)": "4CM", "4SP (Apply for Extension)": "4SP", "SO (Sign out)": "SO",
                 "SRM (Menú Principal)": "SRM", "004 (Flags de Retención)": "004",
                 "1GP (Programa de Clases)": "1GP", "118 (Estadísticas Académicas)": "118",
                 "1VE (Expediente Académico)": "1VE", "3DD (Historial de Pagos de Beca)": "3DD",
                 "409 (Balance de Cuenta)": "409", "683 (Evaluación Académica)": "683",
                 "1PL (Datos Básicos)": "1PL", "1S4 (Altas y/o Bajas de Cursos)": "1S4",
-                "4CM (Cómputo de Matrícula)": "4CM", "4SP (Solicitud de Prórroga)": "4SP",
-                "SO (Cerrar Sesión)": "SO"
+                "4CM (Cómputo de Matrícula)": "4CM", "4SP (Solicitud de Prórroga)": "4SP", "SO (Cerrar Sesión)": "SO"
             }
             current_menu_selection = self.menu_entry.get()
             translated_menu_values = [translation["SRM"], translation["004"], translation["1GP"], translation["118"],
