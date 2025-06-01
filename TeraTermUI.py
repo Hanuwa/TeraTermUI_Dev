@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.92.0 - 5/31/25
+# DATE - Started 1/1/23, Current Build v0.92.0 - 6/1/25
 
 # BUGS / ISSUES:
 # pytesseract integration is inconsistent across systems, sometimes failing to read the screen
@@ -2627,6 +2627,8 @@ class TeraTermUI(customtkinter.CTk):
                     "683 (Evaluación Académica)": "683",
                     "1PL (Basic Personal Data)": "1PL",
                     "1PL (Datos Básicos)": "1PL",
+                    "1S4 (Add and/or Remove Courses)": "1S4",
+                    "1S4 (Altas y/o Bajas de Cursos)": "1S4",
                     "4CM (Tuition Calculation)": "4CM",
                     "4CM (Cómputo de Matrícula)": "4CM",
                     "4SP (Apply for Extension)": "4SP",
@@ -2814,6 +2816,14 @@ class TeraTermUI(customtkinter.CTk):
 
                                         self.focus_or_not = True
                                         self.after(100, warning)
+                                case "1S4":
+                                    self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}1S4" + semester + "{ENTER}")
+                                    self.after(0, self.disable_go_next_buttons)
+                                    text_output = self.capture_screenshot()
+                                    if "INVALID TERM SELECTION" in text_output or "USO INTERNO" not in text_output \
+                                        and "TERMINO LA MATRICULA" not in text_output:
+                                        self.uprb.UprbayTeraTermVt.type_keys(self.DEFAULT_SEMESTER + "SRM{ENTER}")
+                                        self.reset_activity_timer()
                                 case "4CM":
                                     self.uprb.UprbayTeraTermVt.type_keys("SRM{ENTER}4CM" + semester + "{ENTER}")
                                     self.after(0, self.disable_go_next_buttons)
@@ -4194,13 +4204,15 @@ class TeraTermUI(customtkinter.CTk):
                 "1GP (Programa de Clases)": "1GP", "118 (Estadísticas Académicas)": "118",
                 "1VE (Expediente Académico)": "1VE", "3DD (Historial de Pagos de Beca)": "3DD",
                 "409 (Balance de Cuenta)": "409", "683 (Evaluación Académica)": "683",
-                "1PL (Datos Básicos)": "1PL", "4CM (Cómputo de Matrícula)": "4CM",
-                "4SP (Solicitud de Prórroga)": "4SP", "SO (Cerrar Sesión)": "SO"
+                "1PL (Datos Básicos)": "1PL", "1S4 (Altas y/o Bajas de Cursos)": "1S4",
+                "4CM (Cómputo de Matrícula)": "4CM", "4SP (Solicitud de Prórroga)": "4SP",
+                "SO (Cerrar Sesión)": "SO"
             }
             current_menu_selection = self.menu_entry.get()
             translated_menu_values = [translation["SRM"], translation["004"], translation["1GP"], translation["118"],
                                       translation["1VE"], translation["3DD"], translation["409"], translation["683"],
-                                      translation["1PL"], translation["4CM"], translation["4SP"], translation["SO"]]
+                                      translation["1PL"], translation["1S4"], translation["4CM"], translation["4SP"],
+                                      translation["SO"]]
             self.menu_entry.configure(values=translated_menu_values)
             selection_key = menu_mapping.get(current_menu_selection)
             if selection_key and selection_key in translation:
@@ -5818,7 +5830,8 @@ class TeraTermUI(customtkinter.CTk):
                                              values=[translation["SRM"], translation["004"], translation["1GP"],
                                                      translation["118"], translation["1VE"], translation["3DD"],
                                                      translation["409"], translation["683"], translation["1PL"],
-                                                     translation["4CM"], translation["4SP"], translation["SO"]])
+                                                     translation["1S4"], translation["4CM"], translation["4SP"],
+                                                     translation["SO"]])
             self.menu_entry.set(translation["SRM"])
             self.menu_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.other_tab),
                                                         text=translation["semester"])
