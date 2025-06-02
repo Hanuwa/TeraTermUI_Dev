@@ -38,7 +38,7 @@ propcache==0.3.1
 proto-plus==1.26.1
 protobuf==6.31.1
 psutil==7.0.0
-py7zr==0.22.0
+py7zr==1.0.0
 pyasn1==0.6.1
 pyasn1_modules==0.4.2
 PyAutoGUI==0.9.54
