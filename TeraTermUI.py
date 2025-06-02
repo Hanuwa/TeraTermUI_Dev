@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.92.0 - 6/1/25
+# DATE - Started 1/1/23, Current Build v0.92.0 - 6/2/25
 
 # BUGS / ISSUES:
 # pytesseract integration is inconsistent across systems, sometimes failing to read the screen
@@ -17,7 +17,7 @@
 
 # FUTURE PLANS:
 # Display more in-app information to reduce reliance on Tera Term.
-# Refactor the codebase into multiple files; current single-file structure (14,600+ lines) hinders maintainability.
+# Refactor the codebase into multiple files; current single-file structure (14,700+ lines) hinders maintainability.
 # Redesign UI layout for clarity and better user experience.
 # Expand documentation to support development and onboarding.
 
@@ -58,6 +58,7 @@ import unicodedata
 import warnings
 import weakref
 import webbrowser
+import win32api
 import win32clipboard
 import win32con
 import win32cred
@@ -676,6 +677,7 @@ class TeraTermUI(customtkinter.CTk):
         self.run_fix = False
         self.teraterm_not_found = False
         self.teraterm5_first_boot = False
+        self.last_teraterm_path = None
         self.tesseract_unzipped = False
         self.in_multiple_screen = False
         self.started_auto_enroll = False
@@ -710,8 +712,9 @@ class TeraTermUI(customtkinter.CTk):
         self.tray.run_detached()
         # default location of Tera Term
         teraterm_directory = TeraTermUI.find_teraterm_directory()
-        if teraterm_directory:
-            self.teraterm_exe_location = os.path.join(teraterm_directory, "ttermpro.exe")
+        tera_exe = os.path.join(teraterm_directory, "ttermpro.exe")
+        if teraterm_directory and TeraTermUI.is_valid_teraterm_exe(tera_exe):
+            self.teraterm_exe_location = tera_exe
             self.teraterm_config = os.path.join(teraterm_directory, "TERATERM.ini")
             self.teraterm_directory = teraterm_directory
         else:
@@ -9171,11 +9174,30 @@ class TeraTermUI(customtkinter.CTk):
                         messagebox.showerror("Error", f"Fatal Error!\n\n{str(err)}")
                     self.after(0, self.end_app(forced=True))
 
+    # determines if tera term .exe selected is actually the offical app
+    @staticmethod
+    def is_valid_teraterm_exe(file_path):
+        if not os.path.exists(file_path):
+            return False
+
+        try:
+            translations = list(win32api.GetFileVersionInfo(file_path, "\\VarFileInfo\\Translation"))
+            lang, codepage = translations[0]
+            lang_codepage = f"{lang:04x}{codepage:04x}".lower()
+            base = f"\\StringFileInfo\\{lang_codepage}\\"
+            product = str(win32api.GetFileVersionInfo(file_path, base + "ProductName"))
+            company = str(win32api.GetFileVersionInfo(file_path, base + "CompanyName"))
+            description = str(win32api.GetFileVersionInfo(file_path, base + "FileDescription"))
+            original = str(win32api.GetFileVersionInfo(file_path, base + "OriginalFilename"))
+            return ("Tera Term" in product and "TeraTerm" in company.replace(" ", "") and
+                    "Tera Term" in description and original.lower() == "ttermpro.exe")
+        except Exception as err:
+            print("Validation exception:", err)
+            return False
+
     # determines the version of the tera term binary, since we have to do different setups between version 4 and 5
     @staticmethod
     def get_teraterm_version(executable_path):
-        import win32api
-
         try:
             info = win32api.GetFileVersionInfo(executable_path, "\\")
             ms = info["FileVersionMS"]
@@ -11041,17 +11063,6 @@ class TeraTermUI(customtkinter.CTk):
         return {"CompanyName": company.strip("\x00") if company else None,
                 "ProductName": product.strip("\x00") if product else None}
 
-    @staticmethod
-    def is_valid_teraterm_exe(exe_path):
-        if not os.path.exists(exe_path):
-            return False
-
-        metadata = TeraTermUI.get_file_version_info(exe_path)
-        if not metadata:
-            return False
-
-        return metadata.get("ProductName", "").lower() == "tera term"
-
     # will search through the whole main drive to find where tera term is installed
     @staticmethod
     def find_ttermpro():
@@ -11242,50 +11253,71 @@ class TeraTermUI(customtkinter.CTk):
     # Function that lets user select where their Tera Term application is located
     def manually_change_location(self):
         translation = self.load_language()
-        filename = filedialog.askopenfilename(
-            initialdir=os.environ["SystemRoot"][:3], title=translation["select_tera_term"],
-            filetypes=(("Tera Term", "*ttermpro.exe"),))
-        if re.search("ttermpro.exe", filename):
-            self.teraterm_exe_location = os.path.normpath(filename)
-            directory, filename = os.path.split(self.teraterm_exe_location)
-            self.teraterm_directory = directory
-            minimum_required_version = "5.0.0.0"
-            version = TeraTermUI.get_teraterm_version(self.teraterm_exe_location)
-            version_parts = list(map(int, version.split(".")))
-            compare_version_parts = list(map(int, minimum_required_version.split(".")))
-            if version and version_parts >= compare_version_parts:
-                ini_location = TeraTermUI.find_appdata_teraterm_ini()
-                if ini_location and not os.path.isfile(os.path.join(self.teraterm_directory, "portable.ini")):
-                    self.teraterm_config = ini_location
-                else:
-                    if (os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini"))
-                            and self.has_write_permission()):
+        if self.last_teraterm_path is not None and os.path.isdir(os.path.dirname(self.last_teraterm_path)):
+            start_dir = os.path.dirname(self.last_teraterm_path)
+        else:
+            start_dir = os.environ["SystemRoot"][:3]
+        filename = filedialog.askopenfilename(initialdir=start_dir, title=translation["select_tera_term"],
+                                              filetypes=(("Tera Term", "*ttermpro.exe"),))
+        if filename:
+            self.last_teraterm_path = filename
+            found_exe = bool(re.search("ttermpro.exe", filename, re.IGNORECASE))
+            exe_is_valid = TeraTermUI.is_valid_teraterm_exe(filename)
+            if found_exe and exe_is_valid:
+                self.teraterm_exe_location = os.path.normpath(filename)
+                directory, _ = os.path.split(self.teraterm_exe_location)
+                self.teraterm_directory = directory
+                minimum_required_version = "5.0.0.0"
+                version = TeraTermUI.get_teraterm_version(self.teraterm_exe_location)
+                version_parts = list(map(int, version.split(".")))
+                compare_version_parts = list(map(int, minimum_required_version.split(".")))
+                if version and version_parts >= compare_version_parts:
+                    ini_location = TeraTermUI.find_appdata_teraterm_ini()
+                    if ini_location and not os.path.isfile(os.path.join(self.teraterm_directory, "portable.ini")):
+                        self.teraterm_config = ini_location
+                    elif (os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini"))
+                          and self.has_write_permission()):
                         self.teraterm_config = os.path.join(self.teraterm_directory, "TERATERM.ini")
                     else:
                         self.teraterm5_first_boot = True
-            else:
-                if (os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini"))
-                        and self.has_write_permission()):
+                elif (os.path.isfile(os.path.join(self.teraterm_directory, "TERATERM.ini"))
+                      and self.has_write_permission()):
                     self.teraterm_config = os.path.join(self.teraterm_directory, "TERATERM.ini")
                 else:
                     self.teraterm5_first_boot = True
-            row_exists = self.cursor_db.execute("SELECT 1 FROM user_config").fetchone()
-            if not row_exists:
-                self.cursor_db.execute(
-                    "INSERT INTO user_config (directory, location, config) VALUES (?, ?, ?)",
-                    (self.teraterm_directory, self.teraterm_exe_location, self.teraterm_config)
-                )
+                row_exists = self.cursor_db.execute("SELECT 1 FROM user_config").fetchone()
+                if not row_exists:
+                    self.cursor_db.execute(
+                        "INSERT INTO user_config (directory, location, config) VALUES (?, ?, ?)",
+                        (self.teraterm_directory, self.teraterm_exe_location, self.teraterm_config)
+                    )
+                else:
+                    self.cursor_db.execute("UPDATE user_config SET directory=?",
+                                           (self.teraterm_directory,))
+                    self.cursor_db.execute("UPDATE user_config SET location=?",
+                                           (self.teraterm_exe_location,))
+                    self.cursor_db.execute("UPDATE user_config SET config=?",
+                                           (self.teraterm_config,))
+                self.connection_db.commit()
+                self.changed_location = True
+                self.edit_teraterm_ini(self.teraterm_config)
+                self.show_success_message(350, 265, translation["tera_term_success"])
+                atexit.unregister(self.restore_teraterm_ini)
+                atexit.register(self.restore_teraterm_ini, self.teraterm_config)
             else:
-                self.cursor_db.execute("UPDATE user_config SET directory=?", (self.teraterm_directory,))
-                self.cursor_db.execute("UPDATE user_config SET location=?", (self.teraterm_exe_location,))
-                self.cursor_db.execute("UPDATE user_config SET config=?", (self.teraterm_config,))
-            self.connection_db.commit()
-            self.changed_location = True
-            self.edit_teraterm_ini(self.teraterm_config)
-            self.show_success_message(350, 265, translation["tera_term_success"])
-            atexit.unregister(self.restore_teraterm_ini)
-            atexit.register(self.restore_teraterm_ini, self.teraterm_config)
-        if not re.search("ttermpro.exe", filename):
+                if not exe_is_valid:
+                    lang = self.load_language()
+                    message_english = ("The file you selected is not recognized as the official Tera Term application."
+                                       "\n\nPlease verify the path and select the correct ttermpro.exe")
+                    message_spanish = ("El archivo seleccionado no se reconoce como la aplicación oficial de Tera Term."
+                                       "\n\nVerifique la ruta y seleccione el archivo ttermpro.exe correcto")
+                    message = message_english if lang == "English" else message_spanish
+                    messagebox.showinfo("Tera Term", message)
+                if self.help is not None and self.help.winfo_exists():
+                    self.files.configure(state="normal")
+                    self.help.lift()
+                    self.help.focus_set()
+        else:
             if self.help is not None and self.help.winfo_exists():
                 self.files.configure(state="normal")
                 self.help.lift()
