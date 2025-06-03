@@ -34,5 +34,5 @@
       <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"/>
     </application>
   </compatibility>
-  <file name="updater.exe" hashalg="SHA1" hash="5208b20c6cd89ad4319adec03a78e57606fd6fa3"/>
+  <file name="updater.exe" hashalg="SHA1" hash="adda8488bc07eda068d1ca10c11081eadbab5654"/>
 </assembly>
