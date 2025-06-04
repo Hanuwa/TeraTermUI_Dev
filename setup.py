@@ -8,7 +8,7 @@ import time
 import urllib.request
 import winreg
 
-PYTHON_REQUIRED = (3, 12, 10)
+PYTHON_REQUIRED = (3, 13, 4)
 MSVC_URL = "https://aka.ms/vs/17/release/vs_BuildTools.exe"
 INNO_SETUP_URL = "https://files.jrsoftware.org/is/6/innosetup-6.4.3.exe"
 
@@ -39,9 +39,9 @@ CTK_FOLDERS = {
     "windows/theme": ["theme_manager.py"]
 }
 
-def find_python_312():
+def find_python_313():
     try:
-        output = subprocess.check_output(["py", "-3.12", "-c", "import sys; print(sys.executable)"], text=True).strip()
+        output = subprocess.check_output(["py", "-3.13", "-c", "import sys; print(sys.executable)"], text=True).strip()
         return output if os.path.exists(output) else None
     except subprocess.CalledProcessError:
         return None
@@ -52,7 +52,7 @@ def is_admin():
 def force_admin():
     if not is_admin():
         python_required_str = ".".join(map(str, PYTHON_REQUIRED))
-        python_exe = find_python_312()
+        python_exe = find_python_313()
         if not python_exe:
             print(f"[ERROR] Python {python_required_str} not found")
             input("Press Enter to exit...")
@@ -67,10 +67,10 @@ def force_admin():
 
 def check_python_version():
     major, minor, patch = sys.version_info[:3]
-    if (major, minor) == (3, 12) and patch >= 10:
+    if (major, minor) == (3, 13) and patch >= 4:
         print(f"[OK] Python {major}.{minor}.{patch} is compatible")
     else:
-        print(f"[ERROR] Python 3.12 with patch version 10 or higher is required; found {major}.{minor}.{patch}")
+        print(f"[ERROR] Python 3.13 with patch version 4 or higher is required; found {major}.{minor}.{patch}")
         input("Press Enter to exit...")
         sys.exit(1)
 
@@ -90,8 +90,9 @@ def update_pip():
 
 def install_dependencies():
     update_pip()
-    shutil.move(REQUIREMENTS_FILE, os.path.join(VENV_SCRIPTS_DIR, "requirements.txt"))
-    subprocess.run([VENV_PIP, "install", "-r", os.path.join(VENV_SCRIPTS_DIR, "requirements.txt")], check=True)
+    temp_req = os.path.join(VENV_SCRIPTS_DIR, "requirements.txt")
+    shutil.move(REQUIREMENTS_FILE, temp_req)
+    subprocess.run([VENV_PIP, "install", "--no-deps", "--no-input", "-r", temp_req], check=True)
 
 def move_ctk_files():
     if not os.path.exists(CTK_PACKAGE_PATH):
