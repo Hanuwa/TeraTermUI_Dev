@@ -13015,7 +13015,7 @@ class CustomEntry(customtkinter.CTkEntry):
 
     def select_all(self, event=None):
         if self.cget("state") == "disabled":
-            return None
+            return "break"
 
         self.focus_set()
         self.icursor(tk.END)
@@ -13359,7 +13359,7 @@ class CustomComboBox(customtkinter.CTkComboBox):
 
     def select_all(self, event=None):
         if self.cget("state") == "disabled":
-            return None
+            return "break"
 
         self.focus_set()
         self._entry.icursor(tk.END)
