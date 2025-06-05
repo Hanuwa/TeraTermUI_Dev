@@ -210,7 +210,7 @@ class CustomButton(CTkButton):
             self.configure(cursor="")
 
     def destroy(self):
-        if hasattr(self, "bindings"):
+        if hasattr(self, "bindings") and isinstance(self.bindings, (list, tuple)):
             for event, bind_id in self.bindings:
                 try:
                     self.unbind(event, bind_id)
@@ -470,8 +470,8 @@ class CustomEntry(CTkEntry):
 
             if self.is_listbox_entry:
                 self.update_listbox()
-        except tk.TclError:
-            logging.info("No text selected to cut")
+        except tk.TclError as error:
+            logging.info(f"Error in cut operation in widget {self}: {error}")
 
     def copy(self):
         self.focus_set()
@@ -482,8 +482,8 @@ class CustomEntry(CTkEntry):
             self.clipboard_clear()
             self.clipboard_append(selected_text)
             self.update_idletasks()
-        except tk.TclError:
-            logging.info("No text selected to copy")
+        except tk.TclError as error:
+            logging.info(f"Error in copy operation in widget {self}: {error}")
 
     def custom_paste(self, event=None):
         self.paste()
@@ -505,13 +505,14 @@ class CustomEntry(CTkEntry):
                 self._redo_stack.clear()
 
             insert_index = self.index(tk.INSERT)
+            # Handle any selected text replacement
             try:
                 start_index = self.index(tk.SEL_FIRST)
                 end_index = self.index(tk.SEL_LAST)
                 self.delete(start_index, end_index)
                 insert_index = start_index
-            except tk.TclError:
-                pass  # Nothing selected, which is fine
+            except tk.TclError as error:
+                logging.debug(f"No selection to replace in paste operation for widget {self}: {error}")
 
             space_left = self.max_length - len(self.get())
             if len(clipboard_text) > space_left:
@@ -529,13 +530,13 @@ class CustomEntry(CTkEntry):
 
             if self.is_listbox_entry:
                 self.update_listbox()
-        except tk.TclError:
-            pass  # Clipboard empty or other issue
+        except tk.TclError as error:
+            logging.info(f"Error in paste operation in widget {self}: {error}")
         return "break"
 
     def select_all(self, event=None):
         if self.cget("state") == "disabled":
-            return
+            return "break"
 
         self.focus_set()
         self.icursor(tk.END)
@@ -546,7 +547,8 @@ class CustomEntry(CTkEntry):
                 # Select all text if nothing is selected
                 self.select_range(0, "end")
                 self.icursor("end")
-        except tk.TclError:
+        except tk.TclError as error:
+            logging.info(f"Error in select operation in widget {self}: {error}")
             # No text was selected, so select all
             self.select_range(0, "end")
             self.icursor("end")
@@ -584,7 +586,7 @@ class CustomEntry(CTkEntry):
         self.teraterm_ui.search_classes(None)
 
     def destroy(self):
-        if hasattr(self, "bindings"):
+        if hasattr(self, "bindings") and isinstance(self.bindings, (list, tuple)):
             for event, bind_id in self.bindings:
                 self.unbind(event, bind_id)
         if hasattr(self, "focus_out_bind_id") and self.focus_out_bind_id:
