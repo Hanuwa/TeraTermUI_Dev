@@ -648,7 +648,7 @@ class CustomButton(customtkinter.CTkButton):
             self.configure(cursor="")
 
     def destroy(self):
-        if hasattr(self, "bindings"):
+        if hasattr(self, "bindings") and isinstance(self.bindings, (list, tuple)):
             for event, bind_id in self.bindings:
                 try:
                     self.unbind(event, bind_id)
