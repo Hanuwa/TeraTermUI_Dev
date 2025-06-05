@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.92.0 - 6/4/25
+# DATE - Started 1/1/23, Current Build v0.92.0 - 6/5/25
 
 # BUGS / ISSUES:
 # pytesseract integration is inconsistent across systems, sometimes failing to read the screen
@@ -17,7 +17,7 @@
 
 # FUTURE PLANS:
 # Display more in-app information to reduce reliance on Tera Term.
-# Refactor the codebase into multiple files; current single-file structure (14,700+ lines) hinders maintainability.
+# Refactor the codebase into multiple files; current single-file structure (14,600+ lines) hinders maintainability.
 # Redesign UI layout for clarity and better user experience.
 # Expand documentation to support development and onboarding.
 
@@ -7142,8 +7142,9 @@ class TeraTermUI(customtkinter.CTk):
                     new_table.refresh_table(table_values)
         else:
             new_table = CTkTable(self.search_scrollbar, column=len(headers), row=len(table_values),
-                                 values=table_values, header_color="#145DA0", hover_color="#339CFF", command=lambda row,
-                                 col: self.copy_cell_data_to_clipboard(new_table.get_cell(row, col)))
+                                 values=table_values, header_color="#145DA0", hover_color="#339CFF",
+                                 command=lambda t_row, col: self.copy_cell_data_to_clipboard(
+                                     new_table.get_cell(t_row, col)))
             display_class = customtkinter.CTkLabel(self.search_scrollbar, text=self.get_class_for_table,
                                                    font=customtkinter.CTkFont(size=15, weight="bold", underline=True))
             display_class.bind("<Button-1>", lambda event: self.focus_set())
@@ -8144,80 +8145,6 @@ class TeraTermUI(customtkinter.CTk):
                 modified_data.append(modified_item)
 
         return modified_data
-
-    # extracts the text from the searched class to get the important information
-    @staticmethod
-    def extract_class_data(text):
-        from typing import List
-
-        lines = text.split("\n")
-        data: List[dict] = []
-        course_found = False
-        invalid_action = False
-        y_n_found = False
-        y_n_value = None
-        current_section = None
-        term_value = None
-
-        for i, line in enumerate(lines):
-            if "INVALID ACTION" in line:
-                invalid_action = True
-
-            if "COURSE NOT IN COURSE TERM FILE" in line:
-                text_next_to_course = line.split("COURSE NOT IN COURSE TERM FILE")[-1].strip()
-                if text_next_to_course:
-                    course_found = True
-
-            if "ALL (Y/N):" in line:
-                y_n_value = line.split("ALL (Y/N):")[-1].strip()
-                if y_n_value in ["Y", "N"]:
-                    y_n_found = True
-                if y_n_value == "Y":
-                    y_n_value = "on"
-                elif y_n_value == "N":
-                    y_n_value = "off"
-
-            if "TERM:" in line:
-                term_value = line.split("TERM:")[-1].strip()[:3]
-
-        session_types = ["LEC", "LAB", "INT", "PRA", "SEM"]
-        session_pattern = "|".join(session_types)
-        pattern = re.compile(
-            rf"(\w+)\s+(\w)\s+({session_pattern})\s+(\d+\.\d+)\s+(?:\w{{1,2}})?\s+(\w+)\s+([\dAMP\-TBA]+)\s+"
-            rf"([\d\s]+)?\s+.*?\s*([NFUL\s]*.*)"
-        )
-        # Regex pattern to match additional time slots
-        time_pattern = re.compile(r"^(\s+)([A-Z]{1,3})\s+([\dAMP\-]+)\s*$")
-        for line in lines:
-            if any(x in line for x in session_types):
-                match = pattern.search(line)
-                if match:
-                    instructor = match.group(8).strip()
-                    instructor_cleaned = re.sub(r"\b(N|FULL|RSVD|RSTR|CANC)\b", "", instructor).strip()
-                    av_value = next(
-                        (val for val in ["RSVD", "RSTR", "CANC", "999", "998"] if val in instructor),
-                        match.group(7).strip() if match.group(7) else "0")
-                    current_section = {
-                        "SEC": match.group(1),
-                        "M": match.group(2),
-                        "CRED": match.group(4),
-                        "DAYS": [match.group(5)],
-                        "TIMES": [match.group(6)],
-                        "AV": av_value,
-                        "INSTRUCTOR": instructor_cleaned
-                    }
-                    data.append(current_section)
-            else:
-                time_match = time_pattern.search(line)
-                if time_match and current_section:
-                    current_section["DAYS"].append(time_match.group(2))
-                    current_section["TIMES"].append(time_match.group(3))
-        # Combine days and times into single strings
-        for section in data:
-            section["DAYS"] = ", ".join(section["DAYS"])
-            section["TIMES"] = ", ".join(section["TIMES"])
-
-        return data, course_found, invalid_action, y_n_found, y_n_value, term_value
 
     # extracts the text from the searched class to get the important information
     @staticmethod
@@ -10532,14 +10459,14 @@ class TeraTermUI(customtkinter.CTk):
             self.error.lift()
             self.error.focus_force()
             self.error.attributes("-topmost", True)
-            self.error.after_idle(self.attributes, "-topmost", False)
+            self.error.after_idle(self.error.attributes, "-topmost", False)
         elif self.success is not None and self.success.winfo_exists():
             self.success.focus_set()
         elif self.information is not None and self.information.winfo_exists():
             self.information.lift()
             self.information.focus_force()
             self.information.attributes("-topmost", True)
-            self.information.after_idle(self.attributes, "-topmost", False)
+            self.information.after_idle(self.information.attributes, "-topmost", False)
         elif self.timer_window is not None and self.timer_window.winfo_exists() and self.in_multiple_screen:
             self.timer_window.lift()
             self.timer_window.focus_force()
@@ -10821,8 +10748,8 @@ class TeraTermUI(customtkinter.CTk):
                     if isinstance(widget_s.bindings, (list, tuple)):
                         widget_s.bindings = []
                 widget_s.destroy()
-            except (AttributeError, TclError) as err:
-                logging.debug(f"Failed to destroy widget {widget_s}: {err}")
+            except (AttributeError, TclError) as error:
+                logging.debug(f"Failed to destroy widget {widget_s}: {error}")
 
         if self.status:
             clear_commands(self.status)
@@ -11672,8 +11599,8 @@ class TeraTermUI(customtkinter.CTk):
                     if isinstance(widget_h.bindings, (list, tuple)):
                         widget_h.bindings = []
                 widget_h.destroy()
-            except (AttributeError, TclError) as err:
-                logging.debug(f"Failed to destroy widget {widget_h}: {err}")
+            except (AttributeError, TclError) as error:
+                logging.debug(f"Failed to destroy widget {widget_h}: {error}")
 
         if self.help:
             clear_commands(self.help)
@@ -13687,11 +13614,11 @@ class ServerLoadMonitor:
         self.host = host
         self.port = port
         self.latencies = deque(maxlen=2500)
-        self.loaded_latencies = set()
+        self.latency_history = set()
         self.failures = 0
         self.failure_streak = 0
         self.last_sample_time = 0
-        self.clear_stale()
+        self.clear_stale_stats()
         self.load_recent_stats()
 
         try:
@@ -13791,70 +13718,79 @@ class ServerLoadMonitor:
         return stats
 
     def save_stats(self):
-        now_ts = datetime.now(UTC).timestamp()
-        new_samples = [(round(lat, 2), now_ts)  for lat in self.latencies
-                       if (round(lat, 2), now_ts) not in self.loaded_latencies]
+        now = datetime.now(UTC)
+        iso_now = now.isoformat()
+        new_samples = []
+        for lat in self.latencies:
+            lat_r = round(lat, 2)
+            if lat_r not in self.latency_history:
+                new_samples.append(lat_r)
+                self.latency_history.add(lat_r)
         if not new_samples:
             return
 
-        row = {
-            "timestamp": datetime.now(UTC).isoformat(),
-            "host": self.host,
-            "latencies": ";".join(f"{lat:.2f}" for lat, _ in new_samples),
-        }
-        fieldnames = ["timestamp", "host", "latencies"]
-        file_exists = os.path.isfile(self.csv_path)
-        with open(self.csv_path, mode="a", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
-            if not file_exists:
-                writer.writeheader()
-            writer.writerow(row)
-
-        for lat, ts in new_samples:
-            self.loaded_latencies.add((lat, ts))
+        row = {"timestamp": iso_now, "host": self.host, "latencies": ";".join(f"{x:.2f}" for x in new_samples)}
+        try:
+            file_exists = os.path.isfile(self.csv_path)
+            with open(self.csv_path, mode="a", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=["timestamp", "host", "latencies"])
+                if not file_exists:
+                    writer.writeheader()
+                writer.writerow(row)
+        except (IOError, OSError) as e:
+            logging.error(f"Failed to save stats to CSV: {e}")
 
     def load_recent_stats(self):
         if not os.path.exists(self.csv_path):
             return
 
-        with open(self.csv_path, mode="r") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                raw_latencies = row.get("latencies", "")
-                timestamp_str = row.get("timestamp", "")
-                try:
-                    samples = [float(val) for val in raw_latencies.split(";") if val]
-                    ts = datetime.fromisoformat(timestamp_str).timestamp()
-                except ValueError:
-                    continue
-                self.latencies.extend(samples)
-                for lat in samples:
-                    self.loaded_latencies.add((round(lat, 2), ts))
+        try:
+            with open(self.csv_path, mode="r") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    try:
+                        latencies = [round(float(x), 2) for x in row["latencies"].split(";") if x]
+                        self.latencies.extend(latencies)
+                        self.latency_history.update(latencies)
+                    except (ValueError, KeyError) as err:
+                        logging.debug(f"Skipping malformed row due to error: {err} (row: {row})")
+        except (IOError, OSError) as e:
+            logging.error(f"Failed to load stats from CSV: {e}")
 
-    def clear_stale(self, max_age_minutes=30):
+    def clear_stale_stats(self, max_age_minutes=30, max_rows=80):
         if not os.path.exists(self.csv_path):
             return
 
         cutoff = datetime.now(UTC) - timedelta(minutes=max_age_minutes)
-        cleaned_rows = []
-        with open(self.csv_path, mode="r") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                try:
-                    ts = datetime.fromisoformat(row["timestamp"])
-                    if ts >= cutoff:
-                        cleaned_rows.append(row)
-                except (ValueError, KeyError) as err:
-                    logging.debug(f"Skipping row due to error: {err} (row: {row})")
-                    continue
+        rows = []
+        try:
+            with open(self.csv_path, mode="r") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    try:
+                        ts = datetime.fromisoformat(row["timestamp"])
+                        if ts >= cutoff:
+                            rows.append(row)
+                    except (ValueError, KeyError) as err:
+                        logging.debug(f"Skipping malformed row due to error: {err} (row: {row})")
+        except (IOError, OSError) as e:
+            logging.error(f"Failed to read CSV for stale clearing: {e}")
+            return
 
-        if cleaned_rows:
-            with open(self.csv_path, mode="w", newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=reader.fieldnames)
-                writer.writeheader()
-                writer.writerows(cleaned_rows)
-        else:
-            os.remove(self.csv_path)
+        rows.sort(key=lambda r: r["timestamp"], reverse=True)
+        if len(rows) > max_rows:
+            rows = rows[:max_rows]
+        rows.sort(key=lambda r: r["timestamp"])
+        try:
+            if rows:
+                with open(self.csv_path, mode="w", newline="") as f:
+                    writer = csv.DictWriter(f, fieldnames=["timestamp", "host", "latencies"])
+                    writer.writeheader()
+                    writer.writerows(rows)
+            else:
+                os.remove(self.csv_path)
+        except (IOError, OSError) as e:
+            logging.error(f"Failed to write CSV during stale clearing: {e}")
 
     def get_reliability_rating(self, lang):
         stats = self.get_stats()
@@ -13878,6 +13814,9 @@ class ServerLoadMonitor:
 
     @staticmethod
     def percentile(data, percent):
+        if not data:
+            return None
+
         data = sorted(data)
         k = (len(data) - 1) * (percent / 100.0)
         f = int(k)
