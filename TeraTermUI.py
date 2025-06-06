@@ -13757,7 +13757,7 @@ class ServerLoadMonitor:
         except (IOError, OSError) as e:
             logging.error(f"Failed to load stats from CSV: {e}")
 
-    def clear_stale_stats(self, max_age_minutes=30, max_rows=80):
+    def clear_stale_stats(self, max_age_minutes=30, max_rows=15):
         if not os.path.exists(self.csv_path):
             return
 
