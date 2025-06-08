@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.92.0 - 6/5/25
+# DATE - Started 1/1/23, Current Build v0.92.0 - 6/8/25
 
 # BUGS / ISSUES:
 # pytesseract integration is inconsistent across systems, sometimes failing to read the screen
@@ -5756,7 +5756,9 @@ class TeraTermUI(customtkinter.CTk):
                                              placeholder_text=class_code)
             self.e_section = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab),
                                                     text=translation["section"])
-            self.e_section_entry = CustomEntry(self.tabview.tab(self.enroll_tab), self, lang, placeholder_text="LM1")
+            section_placeholder = random.choice(list(self.schedule_map.keys())) + "1"
+            self.e_section_entry = CustomEntry(self.tabview.tab(self.enroll_tab), self, lang,
+                                               placeholder_text=section_placeholder)
             self.e_section_tooltip = CTkToolTip(self.e_section_entry, message="", bg_color="#1E90FF", visibility=False)
             self.e_semester = customtkinter.CTkLabel(master=self.tabview.tab(self.enroll_tab),
                                                      text=translation["semester"])
