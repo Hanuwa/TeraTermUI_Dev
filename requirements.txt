@@ -13,7 +13,7 @@ CTkMessagebox==2.7
 customtkinter==5.2.2
 darkdetect==0.8.0
 filelock==3.18.0
-frozenlist==1.6.2
+frozenlist==1.7.0
 google-api-core==2.25.0
 google-api-python-client==2.171.0
 google-auth==2.40.3
@@ -34,7 +34,7 @@ ordered-set==4.1.0
 packaging==25.0
 pillow==11.2.1
 pipdeptree==2.26.1
-propcache==0.3.1
+propcache==0.3.2
 proto-plus==1.26.1
 protobuf==6.31.1
 psutil==7.0.0
@@ -60,7 +60,7 @@ pywinauto==0.6.9
 pyzipper==0.3.6
 pyzstd==0.17.0
 reportlab==4.4.1
-requests==2.32.3
+requests==2.32.4
 requests-oauthlib==2.0.0
 rsa==4.9.1
 screeninfo==0.8.1
