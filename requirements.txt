@@ -70,5 +70,5 @@ texttable==1.7.0
 typing_extensions==4.14.0
 uritemplate==4.2.0
 urllib3==2.4.0
-yarl==1.20.0
+yarl==1.20.1
 zstandard==0.23.0
