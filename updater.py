@@ -5,6 +5,7 @@ import json
 import logging
 import mmap
 import os
+import psutil
 import re
 import shutil
 import sqlite3
@@ -20,12 +21,6 @@ import urllib.request
 import zipfile
 from filelock import FileLock, Timeout
 from tkinter import messagebox, ttk
-
-try:
-    import psutil
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "psutil"])
-    import psutil
 
 MAX_RETRIES = 5
 RETRY_DELAY = 0.2
@@ -1319,17 +1314,12 @@ def restart_application(app_directory):
 
         subprocess.Popen([executable_path], shell=True, startupinfo=startupinfo)
         logging.info("Application restart initiated successfully")
-
     except Exception as e:
         error_msg = f"Failed to restart application: {str(e)}"
         logging.error(error_msg)
-        messagebox.showerror(
-            "Error",
-            f"{error_msg}\nPlease start the application manually")
-
-    finally:
-        logging.info("Updater process completing")
-        sys.exit(0)
+        messagebox.showerror("Error",f"{error_msg}\nPlease start the application manually")
+    logging.info("Updater process completing")
+    sys.exit(0)
 
 
 if __name__ == "__main__":
