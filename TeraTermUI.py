@@ -193,7 +193,7 @@ class TeraTermUI(customtkinter.CTk):
         self.FEEDBACK = TeraTermUI.obtain()
         self.USER_APP_VERSION = "0.92.0"
         self.mode = "Portable"
-        self.updater_hash = "d8bb736e067cedaab2e1ce44e6591badbff313215a892537c4e9e31a683d6cb0"
+        self.updater_hash = "c490a506c8e017386a703fedc7eae2ed1635d5943c35005c44ff43022a39bf2c"
         self.running_updater = False
         self.credentials = None
         # disabled/enables keybind events
@@ -11084,7 +11084,7 @@ class TeraTermUI(customtkinter.CTk):
                           "NOTA:  Este proceso podría tardar un poco y causar que la aplicación brevemente no responda"
         message = message_english if lang == "English" else message_spanish
         response = messagebox.askyesnocancel("Tera Term", message)
-        if response is True:
+        if response:
             self.auto_search = True
             loading_screen = self.show_loading_screen()
             future = self.thread_pool.submit(self.change_location_event)
@@ -13739,7 +13739,7 @@ class ServerLoadMonitor:
                 if not file_exists:
                     writer.writeheader()
                 writer.writerow(row)
-        except (IOError, OSError) as e:
+        except (IOError, OSError) as err:
             logging.error(f"Failed to save stats to CSV: {e}")
 
     def load_recent_stats(self):
@@ -13756,8 +13756,8 @@ class ServerLoadMonitor:
                         self.latency_history.update(latencies)
                     except (ValueError, KeyError) as err:
                         logging.debug(f"Skipping malformed row due to error: {err} (row: {row})")
-        except (IOError, OSError) as e:
-            logging.error(f"Failed to load stats from CSV: {e}")
+        except (IOError, OSError) as err:
+            logging.error(f"Failed to load stats from CSV: {err}")
 
     def clear_stale_stats(self, max_age_minutes=30, max_rows=15):
         if not os.path.exists(self.csv_path):
@@ -14015,7 +14015,8 @@ class SecureDataStore:
         try:
             with self.unlock_aes_key() as key:
                 cipher = AES.new(bytes(key), AES.MODE_GCM, nonce=nonce)
-                return cipher.decrypt_and_verify(ciphertext, tag).decode()
+                result = cipher.decrypt_and_verify(ciphertext, tag).decode()
+            return result
         except (ValueError, KeyError) as err:
             logging.error("Decryption failed or tag mismatch: %s", str(err))
             raise ValueError("Decryption failed or data integrity check failed")
