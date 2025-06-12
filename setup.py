@@ -8,7 +8,7 @@ import time
 import urllib.request
 import winreg
 
-PYTHON_REQUIRED = (3, 13, 3)
+PYTHON_REQUIRED = (3, 13, 5)
 MSVC_URL = "https://aka.ms/vs/17/release/vs_BuildTools.exe"
 INNO_SETUP_URL = "https://files.jrsoftware.org/is/6/innosetup-6.4.3.exe"
 
@@ -67,10 +67,10 @@ def force_admin():
 
 def check_python_version():
     major, minor, patch = sys.version_info[:3]
-    if (major, minor) == (3, 13) and patch >= 3:
+    if (major, minor) == (3, 13) and patch >= 5:
         print(f"[OK] Python {major}.{minor}.{patch} is compatible")
     else:
-        print(f"[ERROR] Python 3.13 with patch version 3 or higher is required; found {major}.{minor}.{patch}")
+        print(f"[ERROR] Python 3.13 with patch version 5 or higher is required; found {major}.{minor}.{patch}")
         input("Press Enter to exit...")
         sys.exit(1)
 
