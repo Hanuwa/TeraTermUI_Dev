@@ -193,7 +193,7 @@ class TeraTermUI(customtkinter.CTk):
         self.FEEDBACK = TeraTermUI.obtain()
         self.USER_APP_VERSION = "0.92.0"
         self.mode = "Portable"
-        self.updater_hash = "76528145cdc94bcdcef28f17ed36a885d852a491ecad121a528f13e15191ff3c"
+        self.updater_hash = "4ac0fb7e463d3e9d9141573361bcb81b7a5f7aed07dd266095eb525b3f6f0b12"
         self.running_updater = False
         self.credentials = None
         # disabled/enables keybind events
