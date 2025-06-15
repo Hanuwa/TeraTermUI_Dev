@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.92.0 - 6/12/25
+# DATE - Started 1/1/23, Current Build v0.92.0 - 6/15/25
 
 # BUGS / ISSUES:
 # pytesseract integration is inconsistent across systems, sometimes failing to read the screen
@@ -3438,9 +3438,7 @@ class TeraTermUI(customtkinter.CTk):
                             if self.teraterm5_first_boot:
                                 first_boot = Application(backend="uia").start(self.teraterm_exe_location, timeout=3)
                                 first_boot.window(title="Tera Term - [disconnected] VT", class_name="VTWin32",
-                                                  control_type="Window").wait("visible", timeout=10)
-                                first_boot.connect(title="Tera Term - [disconnected] VT", class_name="VTWin32",
-                                                   control_type="Window", timeout=3)
+                                                  control_type="Window").wait("visible", timeout=3)
                                 first_boot.kill(soft=True)
                                 self.set_focus_to_tkinter()
                             if self.download or self.teraterm_not_found or self.teraterm5_first_boot:
@@ -3450,8 +3448,6 @@ class TeraTermUI(customtkinter.CTk):
                                 timings.wait_until_passes(10, 1, lambda: self.uprb.window(
                                     title="Tera Term - [disconnected] VT", class_name="VTWin32",
                                     control_type="Window").exists())
-                                self.uprb.connect(title="Tera Term - [disconnected] VT", class_name="VTWin32",
-                                                  control_type="Window", timeout=3)
                             else:
                                 self.uprb = Application(backend="uia").connect(
                                     title="Tera Term - [disconnected] VT", timeout=3,
@@ -5364,8 +5360,6 @@ class TeraTermUI(customtkinter.CTk):
                     timings.wait_until_passes(10, 1, lambda: self.uprb.window(
                         title="Tera Term - [disconnected] VT", class_name="VTWin32",
                         control_type="Window").exists())
-                    self.uprb.connect(title="Tera Term - [disconnected] VT", class_name="VTWin32",
-                                      control_type="Window", timeout=3)
                     self.uprb_32 = Application().connect(title="Tera Term - [disconnected] VT",
                                                          timeout=3, class_name="VTWin32")
                     edit_menu = self.uprb.UprbayTeraTermVt.child_window(title="Edit", control_type="MenuItem")
