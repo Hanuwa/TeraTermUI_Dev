@@ -28,7 +28,7 @@ mss==10.0.0
 multidict==6.5.0
 multivolumefile==0.2.3
 Nuitka==2.7.10
-oauthlib==3.3.0
+oauthlib==3.3.1
 objgraph==3.6.2
 ordered-set==4.1.0
 packaging==25.0
