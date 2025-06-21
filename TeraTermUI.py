@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.92.0 - 6/19/25
+# DATE - Started 1/1/23, Current Build v0.92.0 - 6/20/25
 
 # BUGS / ISSUES:
 # pytesseract integration is inconsistent across systems, sometimes failing to read the screen
@@ -17,7 +17,7 @@
 
 # FUTURE PLANS:
 # Display more in-app information to reduce reliance on Tera Term.
-# Refactor the codebase into multiple files; current single-file structure (14,600+ lines) hinders maintainability.
+# Refactor the codebase into multiple files; current single-file structure (14,700+ lines) hinders maintainability.
 # Redesign UI layout for clarity and better user experience.
 # Expand documentation to support development and onboarding.
 
@@ -6936,8 +6936,8 @@ class TeraTermUI(customtkinter.CTk):
                     msg = translation["pasted"]
                     delay = 3500
             else:
-                msg = translation["pasted"]
-                delay = 3500
+                msg = translation["pasted_mult"]
+                delay = 5000
 
         self.focus_set()
         # Close existing tooltip if any
@@ -14109,7 +14109,7 @@ class SecureDataStore:
 class ClipboardHandler:
     def __init__(self, max_data_size=100 * 1024 * 1024, retention_time=timedelta(minutes=30),
                  key_rotation_interval=timedelta(hours=24)):
-        # General configuration settings for size, retention, and key rotation
+        # General configuration
         self.MAX_DATA_SIZE = max_data_size
         self.RETENTION_TIME = retention_time
         self.KEY_ROTATION_INTERVAL = key_rotation_interval
@@ -14158,7 +14158,6 @@ class ClipboardHandler:
             self.CF_JPEG: "JPEG", self.CF_WEBP: "WebP", self.CF_SVG: "SVG",
             self.CF_SHELLURL: "URL", self.CF_FILENAME: "Filename"
         }
-
         # Default system encoding for text
         self.default_encoding = locale.getpreferredencoding()
 
@@ -14202,7 +14201,6 @@ class ClipboardHandler:
                                                            rotate_periodically)
                 self._key_rotation_timer.daemon = True
                 self._key_rotation_timer.start()
-
         self._key_rotation_timer = threading.Timer(self.KEY_ROTATION_INTERVAL.total_seconds(),
                                                    rotate_periodically)
         self._key_rotation_timer.daemon = True
@@ -14315,10 +14313,10 @@ class ClipboardHandler:
     def close(self):
         if not self._active:
             return
-
-        self._active = False
-        if hasattr(self, "_key_rotation_timer") and self._key_rotation_timer:
-            self._key_rotation_timer.cancel()
+        with self.key_rotation_lock:
+            self._active = False
+            if hasattr(self, "_key_rotation_timer") and self._key_rotation_timer:
+                self._key_rotation_timer.cancel()
         if self.clipboard_lock.locked():
             try:
                 self.clipboard_lock.release()
@@ -14335,7 +14333,8 @@ class ClipboardHandler:
                 self.gdi_handles.remove(handle)
             except Exception as error:
                 logging.debug(f"Failed to delete GDI handle {handle}: {error}")
-        for fmt, (data, _) in list(self.clipboard_data.items()):
+        for fmt, entry in list(self.clipboard_data.items()):
+            data = entry.get("data", None)
             try:
                 if fmt == win32con.CF_BITMAP and win32gui.GetObjectType(data):
                     win32gui.DeleteObject(data)
@@ -14373,50 +14372,73 @@ class ClipboardHandler:
                         data = win32clipboard.GetClipboardData(format_id)
                         if data is not None:
                             clipboard_cache[format_id] = data
+                            format_name = self._format_names.get(format_id, str(format_id))
+                            logging.debug(f"Fetched clipboard data: {format_name} ({format_id}), type: {type(data)}, "
+                                          f"length: {len(data) if hasattr(data, "__len__") else 'N/A'}")
                     except Exception as error:
-                        logging.debug(
-                            f"Failed to get clipboard data for format {self._format_names.get(format_id)}: {error}")
+                        format_name = self._format_names.get(format_id, str(format_id))
+                        logging.warning(f"Failed to get clipboard data for {format_name}: {error}", exc_info=True)
                         continue
 
             for format_id, data in clipboard_cache.items():
-                if not self.check_data_size(data, self._format_names.get(format_id)):
+                format_name = self._format_names.get(format_id, str(format_id))
+                if not self.check_data_size(data, format_name):
+                    logging.warning(f"Skipping {format_name} due to size limit")
                     continue
                 try:
-                    if isinstance(data, str):
-                        if not data.strip():
-                            continue
-                        try:
-                            data = data.encode("utf-8", errors="surrogatepass")
-                        except UnicodeEncodeError as error:
-                            logging.warning(f"Unicode encoding failed for {self._format_names.get(format_id)}: {error}")
-                            continue
+                    if format_id == win32con.CF_BITMAP:
+                        logging.info(f"Skipping {format_name}: cannot serialize/restore GDI handles")
+                        continue
 
-                    elif isinstance(data, bytes):
+                    encoding_used = None
+                    data_type = type(data).__name__
+                    original_length = len(data) if hasattr(data, "__len__") else None
+
+                    if format_id == win32con.CF_UNICODETEXT:
+                        if isinstance(data, str):
+                            encoding_used = "utf-16le"
+                            data = data.encode(encoding_used)
+                            logging.debug(f"Encoded {format_name} as UTF-16LE bytes")
+                    elif format_id == win32con.CF_TEXT:
+                        if isinstance(data, str):
+                            encoding_used = "mbcs"
+                            data = data.encode(encoding_used, errors="replace")
+                            logging.debug(f"Encoded {format_name} as MBCS bytes")
+                    elif isinstance(data, str):
+                        encoding_used = "utf-8"
+                        data = data.encode(encoding_used, errors="surrogatepass")
+                        logging.debug(f"Fallback-encoded {format_name} as UTF-8 bytes")
+
+                    if isinstance(data, bytes):
                         if not data.strip():
-                            logging.info(f"Skipping empty byte format: {self._format_names.get(format_id)}")
+                            logging.info(f"Skipping {format_name}: empty bytes")
                             continue
 
                     if format_id == win32con.CF_HDROP and isinstance(data, tuple):
                         data = ClipboardHandler.encode_hdrop_paths(data)
-
+                        logging.debug(f"Encoded {format_name} as HDROP structure")
                     elif format_id == win32con.CF_LOCALE:
                         if isinstance(data, int):
                             data = struct.pack("i", data)
+                            logging.debug(f"Packed {format_name} integer as bytes")
                         elif isinstance(data, bytes) and len(data) == 4:
                             pass
                         else:
+                            logging.info(f"Skipping {format_name}: invalid LOCALE data")
                             continue
-
                     elif format_id in (self.CF_SHELLURL, self.CF_FILENAME):
                         if isinstance(data, str):
                             data = data.encode("utf-8") + b"\0"
+                            encoding_used = "utf-8"
+                            logging.debug(f"Encoded {format_name} with null terminator")
                         else:
+                            logging.info(f"Skipping {format_name}: expected str for SHELLURL/FILENAME")
                             continue
-
                     elif format_id == self.CF_HTML and isinstance(data, bytes):
                         try:
                             text = data.decode("utf-8")
                         except UnicodeDecodeError:
+                            logging.info(f"Skipping {format_name}: could not decode HTML as utf-8")
                             continue
                         if "<html>" in text and "</html>" in text:
                             html_content = text[text.find("<html>"): text.find("</html>") + 7]
@@ -14426,44 +14448,55 @@ class ClipboardHandler:
                                       f"StartFragment:{text.find('<html>')}\r\n"
                                       f"EndFragment:{text.find('</html>')}\r\n\r\n")
                             data = (header + html_content).encode("utf-8")
+                            encoding_used = "utf-8"
+                            logging.debug(f"Constructed HTML clipboard format for {format_name}")
                         else:
+                            logging.info(f"Skipping {format_name}: not valid HTML format")
                             continue
-
                     elif format_id == self.CF_RTF and isinstance(data, bytes):
                         try:
                             text = data.decode("utf-8")
                             if not text.strip().startswith("{\\rtf"):
+                                logging.info(f"Skipping {format_name}: does not start with '{{\\rtf'")
                                 continue
                         except UnicodeDecodeError:
+                            logging.info(f"Skipping {format_name}: could not decode RTF as utf-8")
                             continue
-
                     elif format_id == self.CF_SVG and isinstance(data, bytes):
                         try:
                             text = data.decode("utf-8")
                             if "<svg" not in text.lower() or "</svg>" not in text.lower():
+                                logging.info(f"Skipping {format_name}: not valid SVG format")
                                 continue
                         except UnicodeDecodeError:
+                            logging.info(f"Skipping {format_name}: could not decode SVG as utf-8")
                             continue
-
                     elif format_id == win32con.CF_DIB and isinstance(data, bytes):
                         if len(data) < 4 or struct.unpack("I", data[:4])[0] != 40:
+                            logging.info(f"Skipping {format_name}: not a valid BITMAPINFOHEADER")
                             continue
 
-                    if format_id == win32con.CF_BITMAP:
-                        logging.debug("Skipping CF_BITMAP: cannot encrypt raw GDI handles")
-                        continue
-
                     encrypted_data = self.encrypt_data(data)
-                    self.clipboard_data[format_id] = (encrypted_data, datetime.now())
+                    self.clipboard_data[format_id] = {
+                        "data": encrypted_data,
+                        "saved_at": datetime.now(),
+                        "encoding": encoding_used,
+                        "type": data_type,
+                        "original_length": original_length,
+                    }
+                    logging.debug(f"Stored encrypted clipboard data for {format_name} ({format_id}), size: {len(data)}")
+
                 except Exception as error:
-                    logging.warning(f"Error encrypting clipboard format {self._format_names.get(format_id)}: {error}")
+                    logging.error(f"Error encrypting clipboard format {format_name} "
+                                  f"({format_id}): {error}", exc_info=True)
 
         except (RuntimeError, TimeoutError) as error:
-            logging.error(f"Failed to access clipboard: {error}")
+            logging.error(f"Failed to access clipboard: {error}", exc_info=True)
             raise
 
     def restore_clipboard_content(self):
         if not self.clipboard_data:
+            logging.debug("No clipboard data to restore")
             return
 
         if not self._active:
@@ -14472,78 +14505,123 @@ class ClipboardHandler:
         try:
             with self.clipboard_access():
                 win32clipboard.EmptyClipboard()
-                for fmt, (encrypted_data, _) in self.clipboard_data.items():
+                logging.debug("Clipboard emptied before restore")
+                for fmt, entry in self.clipboard_data.items():
+                    format_name = self._format_names.get(fmt, str(fmt))
                     try:
-                        data = self.decrypt_data(encrypted_data)
+                        data = self.decrypt_data(entry["data"])
+                        encoding_used = entry.get("encoding")
+                        data_type = entry.get("type")
+                        original_length = entry.get("original_length")
+
+                        logging.debug(f"Restoring format {format_name} ({fmt}), type: {data_type}, "
+                                      f"saved as: {encoding_used}, orig_len: {original_length}")
+
+                        if fmt == win32con.CF_UNICODETEXT:
+                            if isinstance(data, bytes):
+                                decode_as = encoding_used or "utf-16le"
+                                try:
+                                    data = data.decode(decode_as, errors="replace")
+                                    logging.debug(f"Decoded {format_name} using {decode_as}")
+                                except UnicodeDecodeError:
+                                    data = data.decode("utf-8", errors="replace")
+                                    logging.debug(f"Fallback-decoded {format_name} using utf-8")
+                        elif fmt == win32con.CF_TEXT:
+                            if isinstance(data, bytes):
+                                decode_as = encoding_used or "mbcs"
+                                data = data.decode(decode_as, errors="replace")
+                                logging.debug(f"Decoded {format_name} using {decode_as}")
 
                         if fmt == self.CF_HTML:
-                            if not isinstance(data, bytes):
+                            if not isinstance(data, (bytes, str)):
+                                logging.info(f"Skipping {format_name}: expected str or bytes for HTML")
                                 continue
-                            try:
-                                text = data.decode("utf-8")
-                                if "<html>" not in text or "</html>" not in text:
+                            if isinstance(data, bytes):
+                                try:
+                                    text = data.decode("utf-8")
+                                except UnicodeDecodeError:
+                                    logging.info(f"Skipping {format_name}: could not decode HTML as utf-8")
                                     continue
-                            except UnicodeDecodeError:
+                            else:
+                                text = data
+                            if "<html>" not in text or "</html>" not in text:
+                                logging.info(f"Skipping {format_name}: not valid HTML")
                                 continue
-
                         elif fmt == self.CF_RTF:
-                            if not isinstance(data, bytes):
+                            if not isinstance(data, (bytes, str)):
+                                logging.info(f"Skipping {format_name}: expected str or bytes for RTF")
                                 continue
-                            try:
-                                text = data.decode("utf-8")
-                                if not text.strip().startswith("{\\rtf"):
+                            if isinstance(data, bytes):
+                                try:
+                                    text = data.decode("utf-8")
+                                except UnicodeDecodeError:
+                                    logging.info(f"Skipping {format_name}: could not decode RTF as utf-8")
                                     continue
-                            except UnicodeDecodeError:
+                            else:
+                                text = data
+                            if not text.strip().startswith("{\\rtf"):
+                                logging.info(f"Skipping {format_name}: does not start with '{{\\rtf'")
                                 continue
-
                         elif fmt == self.CF_SVG:
-                            if not isinstance(data, bytes):
+                            if not isinstance(data, (bytes, str)):
+                                logging.info(f"Skipping {format_name}: expected str or bytes for SVG")
                                 continue
-                            try:
-                                text = data.decode("utf-8")
-                                if "<svg" not in text.lower() or "</svg>" not in text.lower():
+                            if isinstance(data, bytes):
+                                try:
+                                    text = data.decode("utf-8")
+                                except UnicodeDecodeError:
+                                    logging.info(f"Skipping {format_name}: could not decode SVG as utf-8")
                                     continue
-                            except UnicodeDecodeError:
+                            else:
+                                text = data
+                            if "<svg" not in text.lower() or "</svg>" not in text.lower():
+                                logging.info(f"Skipping {format_name}: not valid SVG")
                                 continue
-
                         elif fmt == win32con.CF_DIB:
-                            if not isinstance(data, bytes) or len(data) < 4 or struct.unpack(
-                                    "I", data[:4])[0] != 40:
+                            if (not isinstance(data, bytes) or len(data) < 4 or
+                                struct.unpack("I", data[:4])[0] != 40):
+                                logging.info(f"Skipping {format_name}: not a valid BITMAPINFOHEADER")
                                 continue
-
                         elif fmt == win32con.CF_LOCALE:
                             if not isinstance(data, bytes) or len(data) != 4:
+                                logging.info(f"Skipping {format_name}: invalid LOCALE data")
                                 continue
-
                         elif fmt == win32con.CF_HDROP:
                             if not isinstance(data, bytes) or len(data) < 20:
+                                logging.info(f"Skipping {format_name}: invalid HDROP data")
                                 continue
                             offset, = struct.unpack("I", data[:4])
                             is_unicode, = struct.unpack("I", data[16:20])
                             if offset != 20 or not is_unicode:
+                                logging.info(f"Skipping {format_name}: HDROP not Unicode or bad offset")
                                 continue
-
                         elif fmt in (self.CF_SHELLURL, self.CF_FILENAME):
                             if not isinstance(data, bytes):
+                                logging.info(f"Skipping {format_name}: expected bytes for SHELLURL/FILENAME")
                                 continue
                             try:
                                 if not data.endswith(b"\0"):
+                                    logging.info(f"Skipping {format_name}: missing null terminator")
                                     continue
                                 text = data[:-1].decode("utf-8")
                                 if not text.strip():
+                                    logging.info(f"Skipping {format_name}: data is empty after decode")
                                     continue
                             except UnicodeDecodeError:
+                                logging.info(f"Skipping {format_name}: could not decode as utf-8")
                                 continue
 
                         win32clipboard.SetClipboardData(fmt, data)
+                        logging.debug(f"Restored {format_name} ({fmt}) to clipboard")
 
                     except Exception as error:
-                        logging.warning(f"Failed to restore format {self._format_names.get(fmt)}: {error}")
+                        logging.warning(f"Failed to restore format {format_name} ({fmt}): {error}", exc_info=True)
         except (RuntimeError, TimeoutError) as error:
-            logging.error(f"Failed to restore clipboard content: {error}")
+            logging.error(f"Failed to restore clipboard content: {error}", exc_info=True)
             raise
         finally:
             self.cleanup_all_resources()
+            logging.debug("Cleanup complete after restore")
 
 
 # gets tera term's window dimensions for accurate screenshots for OCR
