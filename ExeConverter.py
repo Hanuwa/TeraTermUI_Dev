@@ -109,7 +109,7 @@ def attach_manifest(executable_path, manifest_path, version, sample_size=8192):
         print(Fore.RED + f"Failed to attach manifest: {e}\n" + Style.RESET_ALL)
         sys.exit(1)
 
-def generate_checksum(version_filename, executable_filename, sample_size=8192):
+def generate_checksum(version_filename, executable_filename, sample_size=8192, label=None):
     try:
         sha256_hash = hashlib.sha256()
         with open(executable_filename, "rb") as file:
@@ -137,7 +137,10 @@ def generate_checksum(version_filename, executable_filename, sample_size=8192):
 
                 if not checksum_updated:
                     file.write("\n" + checksum_line)
-        print(Fore.GREEN + "Successfully generated SHA-256 checksum\n" + Style.RESET_ALL)
+        if label:
+            print(Fore.GREEN + f"Successfully generated SHA-256 checksum for {label}\n" + Style.RESET_ALL)
+        else:
+            print(Fore.GREEN + "Successfully generated SHA-256 checksum\n" + Style.RESET_ALL)
         return sha256_checksum
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
@@ -376,7 +379,8 @@ try:
             print(Fore.GREEN + "\nSuccessfully compiled updater.py\n" + Style.RESET_ALL)
             manifest_path = os.path.join(project_directory, "updater.manifest")
             attach_manifest(updater_exe_path, manifest_path, updater_version, sample_size=65536)
-            updater_checksum = generate_checksum(None, updater_exe_path, sample_size=65536)
+            updater_checksum = generate_checksum(None, updater_exe_path, sample_size=65536,
+                                                 label="Updater EXE")
             update_updater_hash_value(os.path.join(project_directory, "TeraTermUI.py"), updater_checksum)
             shutil.copy2(updater_exe_path, updater_dist_path)
             shutil.copy2(updater_exe_path, output_directory)
@@ -464,7 +468,7 @@ for version in versions:
         version_path = os.path.join(output_directory, "TeraTermUI.dist", "VERSION.txt")
         manifest_path = os.path.join(project_directory, "TeraTermUI.manifest")
         attach_manifest(executable_path, manifest_path, numeric_version, sample_size=262144)
-        generate_checksum(version_path, executable_path, sample_size=262144)
+        generate_checksum(version_path, executable_path, sample_size=262144, label="Main Application EXE")
     except KeyboardInterrupt as e:
         shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
         os.remove(program_backup)
@@ -530,7 +534,8 @@ for version in versions:
             installer_executable_path = output_directory + "/TeraTermUI_x64_Installer-" + update + ".exe"
             shutil.move(output_directory + "/output/TeraTermUI_x64_Installer-" + update + ".exe", output_directory)
             shutil.rmtree(output_directory + "/output")
-            installer_checksum = generate_checksum(None, installer_executable_path, sample_size=131072)
+            installer_checksum = generate_checksum(None, installer_executable_path, sample_size=131072,
+                                                   label="Installer EXE")
             print(Fore.GREEN + "Successfully completed installer version\n" + Style.RESET_ALL)
         except KeyboardInterrupt as e:
             shutil.copy2(program_backup, project_directory + "/TeraTermUI.py")
@@ -554,9 +559,8 @@ for version in versions:
                 zip_file_path = output_directory + f"/{app_folder}_x64-" + update + ""
                 shutil.make_archive(zip_file_path, "zip", output_directory, app_folder)
                 version_path = os.path.join(output_directory, app_folder, "VERSION.txt")
-                destination_path = os.path.join(project_directory, "VERSION.txt")
-                shutil.copy(version_path, destination_path)
-                portable_checksum = generate_checksum(version_path, zip_file_path + ".zip", sample_size=131072)
+                portable_checksum = generate_checksum(None, zip_file_path + ".zip", sample_size=131072,
+                                                      label="Portable ZIP")
                 print(Fore.GREEN + "Successfully completed portable version\n" + Style.RESET_ALL)
                 break
             except OSError as e:
@@ -578,6 +582,9 @@ for version in versions:
                 sys.exit(1)
 print(Fore.BLUE + "Checksum results:\n" + Style.RESET_ALL)
 if portable_checksum:
+    final_version_path = os.path.join(output_directory, app_folder, "VERSION.txt")
+    destination_path = os.path.join(project_directory, "VERSION.txt")
+    shutil.copy2(final_version_path, destination_path)
     print(Fore.BLUE + f"Portable (ZIP) Checksum: {portable_checksum}\n" + Style.RESET_ALL)
 if installer_checksum:
     print(Fore.BLUE+ f"Installer (EXE) Checksum: {installer_checksum}\n" + Style.RESET_ALL)
