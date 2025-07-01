@@ -32,7 +32,7 @@ oauthlib==3.3.1
 objgraph==3.6.2
 ordered-set==4.1.0
 packaging==25.0
-pillow==11.2.1
+pillow==11.3.0
 pipdeptree==2.26.1
 propcache==0.3.2
 proto-plus==1.26.1
