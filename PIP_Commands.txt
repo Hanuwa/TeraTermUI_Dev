@@ -27,5 +27,5 @@ If you run the application as an Administrator, it grants the benefit of disabli
 
 **Important*** After downloading the Installation File, right-click on the file, select Properties, and then check the "Unblock" box next to the security section if it is present. This ensures the file is not blocked by Windows security features.
 
-Be sure to check out the "VERSION.txt" file for patch notes and the SHA-256 checksum. 
+Be sure to check out the "VERSION.txt" file for patch notes and the SHA-256 checksum or view the full changelog [here](https://github.com/Hanuwa/TeraTermUI/blob/main/CHANGELOG.md). 
 Stay updated regularly for new features and bug fixes!
