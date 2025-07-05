@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.92.0 - 7/4/25
+# DATE - Started 1/1/23, Current Build v0.92.0 - 7/5/25
 
 # BUGS / ISSUES:
 # pytesseract integration is inconsistent across systems, sometimes failing to read the screen
@@ -3344,6 +3344,8 @@ class TeraTermUI(customtkinter.CTk):
     def notice_user(self, running_launchers):
         if self.error is not None and self.error.winfo_exists():
             return
+
+        self.destroy_tooltip()
         translation = self.load_language()
         main_window_x = self.winfo_x()
         main_window_y = self.winfo_y()
@@ -6840,10 +6842,28 @@ class TeraTermUI(customtkinter.CTk):
 
     # Make sure that during the existence of the tooltip its stays on top
     def lift_tooltip(self):
-        if self.tooltip is not None and self.tooltip.winfo_exists():
-            self.tooltip.lift()
+        if self.tooltip is None or not self.tooltip.winfo_exists():
+            return
 
-            self.after(100, lambda: self.lift_tooltip())
+        self.tooltip.lift()
+        main_x = self.winfo_x()
+        main_y = self.winfo_y()
+        main_width = self.winfo_width()
+        main_height = self.winfo_height()
+
+        tooltip_x = self.tooltip.winfo_x()
+        tooltip_y = self.tooltip.winfo_y()
+        tooltip_width = self.tooltip.winfo_width()
+        tooltip_height = self.tooltip.winfo_height()
+
+        inside = (tooltip_x >= main_x and tooltip_y >= main_y and
+                  tooltip_x + tooltip_width <= main_x + main_width and
+                  tooltip_y + tooltip_height <= main_y + main_height)
+        if not inside:
+            self.tooltip.withdraw()
+            return
+
+        self.after(250, lambda: self.lift_tooltip())
 
     # right clickng a section cell of the search table will copy it class data to the enroll tabs
     def transfer_class_data_to_enroll_tab(self, event, cell):
