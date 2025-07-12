@@ -6917,9 +6917,10 @@ class TeraTermUI(customtkinter.CTk):
         tooltip_width = self.tooltip.winfo_width()
         tooltip_height = self.tooltip.winfo_height()
 
-        inside = (tooltip_x >= root_x and tooltip_y >= root_y and
-                  tooltip_x + tooltip_width <= root_x + root_width and
-                  tooltip_y + tooltip_height <= root_y + root_height)
+        margin = 15
+        inside = (tooltip_x + margin >= root_x and tooltip_y + margin >= root_y and
+                  tooltip_x + tooltip_width - margin <= root_x + root_width and
+                  tooltip_y + tooltip_height - margin <= root_y + root_height)
         if not inside:
             self.tooltip.withdraw()
             return
