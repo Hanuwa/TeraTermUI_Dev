@@ -5,7 +5,7 @@
 # DESCRIPTION - Controls The application called Tera Term through a GUI interface to make the process of
 # enrolling classes for the university of Puerto Rico at Bayamon easier
 
-# DATE - Started 1/1/23, Current Build v0.92.0 - 7/5/25
+# DATE - Started 1/1/23, Current Build v0.92.0 - 7/12/25
 
 # BUGS / ISSUES:
 # pytesseract integration is inconsistent across systems, sometimes failing to read the screen
@@ -17,7 +17,7 @@
 
 # FUTURE PLANS:
 # Display more in-app information to reduce reliance on Tera Term.
-# Refactor the codebase into multiple files; current single-file structure (14,900+ lines) hinders maintainability.
+# Refactor the codebase into multiple files; current single-file structure (15,000+ lines) hinders maintainability.
 # Redesign UI layout for clarity and better user experience.
 # Expand documentation to support development and onboarding.
 
@@ -28,6 +28,7 @@ import csv
 import ctypes
 import customtkinter
 import gc
+import hashlib
 import json
 import locale
 import logging
@@ -194,7 +195,7 @@ class TeraTermUI(customtkinter.CTk):
         self.FEEDBACK = TeraTermUI.obtain()
         self.USER_APP_VERSION = "0.92.0"
         self.mode = "Portable"
-        self.updater_hash = "93fe569a9f62cd724bdf39a6b05b3d201f7b20b0ba7c8f4630358a503aa26391"
+        self.updater_hash = "3f45aeacd17a2849eda4c74bf99d7835e1af93f6d3b6d3bdd070e988425342ab"
         self.running_updater = False
         self.credentials = None
         # disabled/enables keybind events
@@ -418,6 +419,7 @@ class TeraTermUI(customtkinter.CTk):
         self.code = None
         self.code_entry = None
         self.code_tooltip = None
+        self.last_user = None
         self.show = None
         self.remember_me = None
         self.remember_me_tooltip = None
@@ -428,6 +430,8 @@ class TeraTermUI(customtkinter.CTk):
         self.saving_in_progress = False
         self.focus_screen = True
         self.must_save_user_data = False
+        self.different_user = False
+        self.identity_salt = os.urandom(16)
         self.last_save_time = 0
 
         # Classes
@@ -1212,6 +1216,12 @@ class TeraTermUI(customtkinter.CTk):
         except Exception as err:
             logging.error(f"[LOG_ERROR_FAILURE] [{timestamp}] Could not write error log: {str(err)}")
 
+    # Checks if the user was logged in previously is the same as the current one
+    @staticmethod
+    def hash_user_identity(student_id, code, salt):
+        combined = f"{student_id}:{code}".encode("utf-8")
+        return hashlib.pbkdf2_hmac("sha256", combined, salt, 100_000).hex()
+
     # Attempt to zero out memory for a bytes value
     @staticmethod
     def secure_zeroize_string(value):
@@ -1252,6 +1262,10 @@ class TeraTermUI(customtkinter.CTk):
                                 if self.remember_me.get() == "on" and self.must_save_user_data:
                                     self.encrypt_data_db(student_id, code)
                                     self.connection_db.commit()
+                                user = TeraTermUI.hash_user_identity(student_id, code, self.identity_salt)
+                                if self.last_user is not None and self.last_user != user:
+                                    self.handle_different_user_login()
+                                self.last_user = user
                                 TeraTermUI.secure_zeroize_string(student_id)
                                 TeraTermUI.secure_zeroize_string(code)
                                 self.reset_activity_timer()
@@ -1404,6 +1418,46 @@ class TeraTermUI(customtkinter.CTk):
             self.renamed_tabs = None
             self.after(0, lambda: self.switch_tab())
         self.initialization_multiple()
+
+    def handle_different_user_login(self):
+        translation = self.load_language()
+        self.different_user = True
+        self.e_class_entry.delete(0, "end")
+        self.e_class_entry._activate_placeholder()
+        self.e_section_entry.delete(0, "end")
+        self.e_section_entry._activate_placeholder()
+        self.register.select()
+        self.e_semester_entry.set(self.DEFAULT_SEMESTER)
+        self.s_class_entry.delete(0, "end")
+        self.s_class_entry._activate_placeholder()
+        self.s_semester_entry.set(self.DEFAULT_SEMESTER)
+        self.show_all.deselect()
+        while len(self.class_table_pairs) > 0:
+            self.remove_current_table()
+        self.menu_entry.set(translation["SRM"])
+        self.menu_semester_entry.set(self.DEFAULT_SEMESTER)
+        self.disable_go_next_buttons()
+        for i in range(8):
+            self.m_classes_entry[i].delete(0, "end")
+            self.m_classes_entry[i]._activate_placeholder()
+            self.m_section_entry[i].delete(0, "end")
+            self.m_section_entry[i]._activate_placeholder()
+            self.m_semester_entry[i].configure(state="normal")
+            self.m_semester_entry[i].set(self.DEFAULT_SEMESTER)
+            self.m_semester_entry[i].configure(state="disabled")
+            self.m_register_menu[i].set(translation["choose"])
+        self.m_semester_entry[0].configure(state="normal")
+        self.save_class_data.deselect()
+        while self.a_counter > 0:
+            self.remove_event()
+        self.tabview.set(self.enroll_tab)
+        self.check_class_time()
+        for i in range(8):
+            dummy_event_classes = type("Dummy", (object,), {"widget": self.m_classes_entry[i]})()
+            self.detect_change(dummy_event_classes)
+            dummy_event_sections = type("Dummy", (object,), {"widget": self.m_section_entry[i]})()
+            self.detect_change(dummy_event_sections)
+        self.check_class_conflicts()
 
     # Loads saved courses information from the database to the entries
     def load_saved_classes(self):
@@ -1955,36 +2009,41 @@ class TeraTermUI(customtkinter.CTk):
 
         return False
 
+    # Some things to adjust before showing enrolled screen
+    def enrolled_display_config(self):
+        translation = self.load_language()
+        if self.countdown_running:
+            self.submit_my_classes.configure(state="disabled")
+        self.show_classes.configure(text=translation["show_my_new"])
+        self.in_enroll_frame = False
+        self.in_search_frame = False
+        self.add_key_bindings(event=None)
+        self.my_classes_frame.scroll_to_top()
+        self.unbind("<Control-Tab>")
+        self.unbind("<Control-w>")
+        self.unbind("<Control-W>")
+        self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
+        self.bind("<Up>", lambda event: self.move_up_scrollbar())
+        self.bind("<Down>", lambda event: self.move_down_scrollbar())
+        self.bind("<Home>", lambda event: self.move_top_scrollbar())
+        self.bind("<End>", lambda event: self.move_bottom_scrollbar())
+        self.bind("<Control-s>", lambda event: self.download_enrolled_classes_as_pdf(
+            self.enrolled_classes_data, self.enrolled_classes_credits))
+        self.bind("<Control-S>", lambda event: self.download_enrolled_classes_as_pdf(
+            self.enrolled_classes_data, self.enrolled_classes_credits))
+        self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_menu())
+
     def my_classes_event_handler(self):
         lang = self.language_menu.get()
         translation = self.load_language()
         self.destroy_tooltip()
-        if self.enrolled_classes_data is not None and not self.my_classes_frame.grid_info():
+        if self.enrolled_classes_data is not None and not self.my_classes_frame.grid_info() and not self.different_user:
             self.tabview.grid_forget()
             self.back_classes.grid_forget()
             self.my_classes_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
             self.modify_classes_frame.grid(row=2, column=2, sticky="nw", padx=(12, 0))
             self.back_my_classes.grid(row=4, column=0, padx=(0, 10), pady=(0, 0), sticky="w")
-            if self.countdown_running:
-                self.submit_my_classes.configure(state="disabled")
-            self.show_classes.configure(text=translation["show_my_new"])
-            self.in_enroll_frame = False
-            self.in_search_frame = False
-            self.add_key_bindings(event=None)
-            self.my_classes_frame.scroll_to_top()
-            self.unbind("<Control-Tab>")
-            self.unbind("<Control-w>")
-            self.unbind("<Control-W>")
-            self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
-            self.bind("<Up>", lambda event: self.move_up_scrollbar())
-            self.bind("<Down>", lambda event: self.move_down_scrollbar())
-            self.bind("<Home>", lambda event: self.move_top_scrollbar())
-            self.bind("<End>", lambda event: self.move_bottom_scrollbar())
-            self.bind("<Control-s>", lambda event: self.download_enrolled_classes_as_pdf(
-                self.enrolled_classes_data, self.enrolled_classes_credits))
-            self.bind("<Control-S>", lambda event: self.download_enrolled_classes_as_pdf(
-                self.enrolled_classes_data, self.enrolled_classes_credits))
-            self.bind("<Control-BackSpace>", lambda event: self.keybind_go_back_menu())
+            self.enrolled_display_config()
             def delayed_refresh_semester():
                 refresh_semester = self.check_refresh_semester()
                 if refresh_semester:
@@ -6846,24 +6905,26 @@ class TeraTermUI(customtkinter.CTk):
             return
 
         self.tooltip.lift()
-        main_x = self.winfo_x()
-        main_y = self.winfo_y()
-        main_width = self.winfo_width()
-        main_height = self.winfo_height()
 
-        tooltip_x = self.tooltip.winfo_x()
-        tooltip_y = self.tooltip.winfo_y()
+        root = self.winfo_toplevel()
+        root_x = root.winfo_rootx()
+        root_y = root.winfo_rooty()
+        root_width = root.winfo_width()
+        root_height = root.winfo_height()
+
+        tooltip_x = self.tooltip.winfo_rootx()
+        tooltip_y = self.tooltip.winfo_rooty()
         tooltip_width = self.tooltip.winfo_width()
         tooltip_height = self.tooltip.winfo_height()
 
-        inside = (tooltip_x >= main_x and tooltip_y >= main_y and
-                  tooltip_x + tooltip_width <= main_x + main_width and
-                  tooltip_y + tooltip_height <= main_y + main_height)
+        inside = (tooltip_x >= root_x and tooltip_y >= root_y and
+                  tooltip_x + tooltip_width <= root_x + root_width and
+                  tooltip_y + tooltip_height <= root_y + root_height)
         if not inside:
             self.tooltip.withdraw()
             return
 
-        self.after(250, lambda: self.lift_tooltip())
+        self.after(250, self.lift_tooltip)
 
     # right clickng a section cell of the search table will copy it class data to the enroll tabs
     def transfer_class_data_to_enroll_tab(self, event, cell):
@@ -6893,6 +6954,7 @@ class TeraTermUI(customtkinter.CTk):
             msg = translation["pasted"]
             delay = 3500
         else:
+            self.check_class_conflicts()
             existing_index = -1
             for i in range(8):
                 existing_class = self.m_classes_entry[i].get().strip()
@@ -6918,12 +6980,12 @@ class TeraTermUI(customtkinter.CTk):
                         while self.a_counter < existing_index:
                             self.add_event()
 
-                    self.check_class_conflicts()
                     dummy_event = type("Dummy", (object,), {"widget": self.m_section_entry[existing_index]})()
                     self.detect_change(dummy_event)
                     msg = translation["pasted_mult"]
                     delay = 5000
                 else:
+                    self.check_class_conflicts()
                     for i in range(8):
                         if not self.m_classes_entry[i].get().strip() and not self.m_section_entry[i].get().strip():
                             self.m_classes_entry[i].insert(0, class_text)
@@ -6937,7 +6999,6 @@ class TeraTermUI(customtkinter.CTk):
                                 while self.a_counter < i:
                                     self.add_event()
 
-                            self.check_class_conflicts()
                             dummy_event_class = type("Dummy", (object,), {"widget": self.m_classes_entry[i]})()
                             self.detect_change(dummy_event_class)
                             dummy_event_section = type("Dummy", (object,), {"widget": self.m_section_entry[i]})()
@@ -7563,6 +7624,9 @@ class TeraTermUI(customtkinter.CTk):
     # shows the up to date information on the current class the user is viewing
     def display_current_table(self):
         translation = self.load_language()
+        if not self.class_table_pairs:
+            return
+
         for display_class, curr_table, _, _, _ in self.class_table_pairs:
             display_class.grid_forget()
             curr_table.grid_forget()
@@ -7847,6 +7911,9 @@ class TeraTermUI(customtkinter.CTk):
         self.update_buttons()
 
         def reshow_widgets():
+            if len(self.class_table_pairs) == 0:
+                return
+
             self.table_count.grid(row=4, column=1, padx=(0, 95), pady=(10, 0), sticky="n")
             self.table_pipe.grid(row=4, column=1, padx=(0, 0), pady=(10, 0), sticky="n")
             self.table_position.grid(row=4, column=1, padx=(95, 0), pady=(10, 0), sticky="n")
@@ -8612,6 +8679,9 @@ class TeraTermUI(customtkinter.CTk):
             self.title_my_classes.bind("<Button-1>", lambda event: self.focus_set())
             self.modify_classes_frame.bind("<Button-1>", lambda event: self.focus_set())
             self.total_credits_label.bind("<Button-1>", lambda event: self.focus_set())
+        if self.different_user:
+            self.different_user = False
+            self.enrolled_display_config()
         self.my_classes_frame.grid(row=0, column=1, columnspan=5, rowspan=5, padx=(0, 0), pady=(0, 100))
         self.modify_classes_frame.grid(row=2, column=2, sticky="nw", padx=(12, 0))
         self.bind("<Return>", lambda event: self.submit_modify_classes_handler())
@@ -9574,7 +9644,7 @@ class TeraTermUI(customtkinter.CTk):
                 self.detect_change(dummy_event_classes)
                 dummy_event_sections = type("Dummy", (object,), {"widget": self.m_section_entry[i]})()
                 self.detect_change(dummy_event_sections)
-                self.check_class_conflicts()
+            self.check_class_conflicts()
         self.submit.configure(state="normal")
         self.submit_multiple.configure(state="normal")
         self.not_rebind = False
@@ -9936,8 +10006,6 @@ class TeraTermUI(customtkinter.CTk):
     # checks that we are actually running our updater binary and that it has not been tampered with
     @staticmethod
     def verify_file_integrity(file_path, expected_hash, sample_size=8192):
-        import hashlib
-
         hasher = hashlib.sha256()
         try:
             with open(file_path, "rb") as f:
