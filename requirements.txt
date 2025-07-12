@@ -1,10 +1,10 @@
 aiohappyeyeballs==2.6.1
-aiohttp==3.12.13
+aiohttp==3.12.14
 aiosignal==1.4.0
 attrs==25.3.0
 Brotli==1.1.0
 cachetools==6.1.0
-certifi==2025.6.15
+certifi==2025.7.9
 chardet==5.2.0
 charset-normalizer==3.4.2
 colorama==0.4.6
@@ -33,7 +33,7 @@ objgraph==3.6.2
 ordered-set==4.1.0
 packaging==25.0
 pillow==11.3.0
-pipdeptree==2.26.1
+pipdeptree==2.27.0
 propcache==0.3.2
 proto-plus==1.26.1
 protobuf==6.31.1
